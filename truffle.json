@@ -1,0 +1,11 @@
+{
+  "deploy": [
+    // Names of contracts that should be deployed to the network.
+    "Colony"
+  ],
+  "rpc": {
+    // Default RPC configuration.
+    "host": "localhost",
+    "port": 8545
+  }
+}
