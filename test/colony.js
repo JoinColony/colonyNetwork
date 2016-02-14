@@ -62,16 +62,17 @@ contract('Colony', function(accounts) {
         }).then(done).catch(done);
     });
 
-    it.skip('should not allow non-admin to close suggestion', function(done) {
+    it('should not allow non-admin to close suggestion', function(done) {
         var colony = Colony.deployed();
         var prevBalance = web3.eth.getBalance(otheraccount);
-
+        var completeAndPayProposalFailed = false;
         colony.completeAndPayProposal(0, otheraccount, {
-            from: otheraccount,
-            gas: 3141592
-        }).then(function() {
+            from: otheraccount
+        }).catch(function(val) {
+            completeAndPayProposalFailed = true;
             return colony.getProposal.call(0);
         }).then(function(value) {
+            assert.equal(completeAndPayProposalFailed, true, 'The completeAndPayProposal call succeeded when it should not');
             assert.equal(value[0], 'nameedit', 'No proposal?');
             assert.equal(value[1], 'summary', 'No proposal?');
             assert.equal(value[2], false, 'No proposal?');
