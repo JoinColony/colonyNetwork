@@ -13,10 +13,10 @@ contract ColonyToken is AbstractToken{
 
   function ColonyToken(uint256 _ownerAmount, uint256 _totalSupply,
     string _symbol, string _name)
+    refundEtherSentByAccident
   {
 
-    if(_ownerAmount < 0) throw;
-    if(_totalSupply < 0) throw;
+    if(_totalSupply < _ownerAmount) throw;
 
     balances[owner] = _ownerAmount;
     total_supply = _totalSupply;
@@ -26,22 +26,28 @@ contract ColonyToken is AbstractToken{
 
   modifier hasEnoughBalance(address _from, uint256 _value)
   {
-    if(_value <= 0) throw;
+    if(_value == 0) throw;
     if(balances[_from] < _value) throw;
     if(balances[_from] + _value < balances[_from]) throw;
     _
   }
 
+  modifier refundEtherSentByAccident()
+  {
+      if(msg.value > 0) throw;
+      _
+  }
+
   modifier hasEnoughAllowedBalance(address _from, address _to, uint256 _value)
   {
-    if(_value <= 0) throw;
+    if(_value == 0) throw;
     if(allowed[_from][_to] < _value) throw;
     if(allowed[_from][_to] + _value < allowed[_from][_to]) throw;
     _
   }
 
-
   function transfer(address _to, uint256 _value)
+    refundEtherSentByAccident
     hasEnoughBalance(msg.sender, _value)
   {
       balances[msg.sender] -= _value;
@@ -51,6 +57,7 @@ contract ColonyToken is AbstractToken{
   }
 
   function transferFrom(address _from, address _to, uint256 _value)
+    refundEtherSentByAccident
     hasEnoughBalance(_from, _value)
     hasEnoughAllowedBalance(_from, _to, _value)
   {
@@ -62,26 +69,28 @@ contract ColonyToken is AbstractToken{
   }
 
   function approve(address _spender, uint256 _value)
+    refundEtherSentByAccident
   {
-      if(_value <= 0) throw;
-
       allowed[msg.sender][_spender] = _value;
       Approval(msg.sender, _spender, _value);
   }
 
   function allowance(address _owner, address _spender)
+    refundEtherSentByAccident
     constant returns (uint256 remaining)
   {
     return allowed[_owner][_spender];
   }
 
   function balanceOf(address _owner)
+    refundEtherSentByAccident
     constant returns (uint256 balance)
   {
     return balances[_owner];
   }
 
   function totalSupply()
+    refundEtherSentByAccident
     constant returns (uint256 _total)
   {
     return total_supply;

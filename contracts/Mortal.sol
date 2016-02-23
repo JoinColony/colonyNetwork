@@ -1,7 +1,9 @@
 
 import "Owned.sol";
 contract Mortal is Owned {
-	function kill() onlyOwner {
+	function kill()
+		onlyOwner
+	{
 		suicide(owner);
 	}
 }

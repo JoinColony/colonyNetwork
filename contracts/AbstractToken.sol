@@ -5,7 +5,6 @@ contract AbstractToken is Mortal{
     event Transfer(address indexed _from, address indexed _to, uint256 indexed _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 indexed _value);
 
-
     /// @return total amount of tokens
     function totalSupply() constant returns (uint256 supply) {}
 

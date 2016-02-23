@@ -1,5 +1,5 @@
 'use strict';
-/* globals ColonyToken, web3 */
+/* globals ColonyToken */
 
 contract('ColonyToken', function(accounts) {
 
@@ -8,7 +8,7 @@ contract('ColonyToken', function(accounts) {
   var colonyToken;
 
   beforeEach(function(done){
-    ColonyToken.new(1000, 1000, 'CNY', 'COLONY', { from : _MAIN_ACCOUNT_ , value: 1000})
+    ColonyToken.new(1000, 1000, 'CNY', 'COLONY', { from : _MAIN_ACCOUNT_ })
     .then(function(contract){
       colonyToken = contract;
       done();
@@ -17,24 +17,10 @@ contract('ColonyToken', function(accounts) {
 
   describe('when created', function(){
 
-    it('should have an initial ETH balance of 1000', function() {
-      var initialBalance = web3.eth.getBalance(colonyToken.address).toNumber();
-      assert.equal(initialBalance, 1000, 'initial balance is incorrect');
-    });
-
     it('should have an initial supply', function(done) {
       colonyToken.totalSupply.call()
       .then(function(total_supply){
         assert.equal(total_supply, 1000, 'initial supply is different from  1000');
-        done();
-      })
-      .catch(done);
-    });
-
-    it('should have an owner initial supply', function(done) {
-      colonyToken.balanceOf.call(_MAIN_ACCOUNT_)
-      .then(function(owner_initial_supply){
-        assert.equal(owner_initial_supply, 1000, 'owner initial supply is different from  1000');
         done();
       })
       .catch(done);
@@ -46,6 +32,29 @@ contract('ColonyToken', function(accounts) {
         assert.equal(_MAIN_ACCOUNT_, owner, 'owner does not match');
         done();
       })
+      .catch(done);
+    });
+
+    it('should give the owner an initial supply', function(done) {
+      colonyToken.balanceOf.call(_MAIN_ACCOUNT_)
+      .then(function(owner_initial_supply){
+        assert.equal(owner_initial_supply, 1000, 'owner initial supply is different from  1000');
+        done();
+      })
+      .catch(done);
+    });
+
+    it('should fail if owner initial supply is bigger than total supply', function(done) {
+
+      var creationFailed = false;
+      ColonyToken.new(10000, 1000, 'CNY', 'COLONY', { from : _MAIN_ACCOUNT_ })
+      .catch(function(){
+        creationFailed = true;
+      })
+      .then(function(){
+        assert.equal(creationFailed, true, 'creation didnt fail');
+      })
+      .then(done)
       .catch(done);
     });
 
@@ -67,11 +76,24 @@ contract('ColonyToken', function(accounts) {
       .catch(done);
     });
 
+    it('should fail if ETHER is sent', function(done) {
+
+      var creationFailed = false;
+      ColonyToken.new(10000, 1000, 'CNY', 'COLONY', { from : _MAIN_ACCOUNT_, value: 1})
+      .catch(function(){
+        creationFailed = true;
+      })
+      .then(function(){
+        assert.equal(creationFailed, true, 'creation didnt fail');
+      })
+      .then(done)
+      .catch(done);
+    });
   });
 
-  describe('when transferring funds directly to third parties', function (){
+  describe('when transferring funds directly to other parties', function (){
 
-    it('should sender balance be decreased and receiver balance should increase by the same amount',
+    it('should decrease the sender balance and increase the receiver balance by the same amount',
     function(done){
 
       var previousBalance;
@@ -95,7 +117,29 @@ contract('ColonyToken', function(accounts) {
       .catch(done);
     });
 
-    it('should fail if the sender does not has funds', function(done){
+    it('should fail if ETHER is sent', function(done){
+
+      var previousBalance;
+      var shouldFailIfEtherWasSentInTransference;
+
+      colonyToken.balanceOf.call(_MAIN_ACCOUNT_)
+      .then(function(prevBalance){
+        previousBalance = prevBalance.toNumber();
+        return colonyToken.transfer(_OTHER_ACCOUNT_, 1, { value: 1});
+      })
+      .catch(function(){
+        shouldFailIfEtherWasSentInTransference = true;
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(balance){
+        assert.equal(shouldFailIfEtherWasSentInTransference, true, 'transference did not failed');
+        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if the sender does not have funds', function(done){
 
       var previousBalance;
       var transferenceWithNoFundsFailed;
@@ -104,8 +148,7 @@ contract('ColonyToken', function(accounts) {
       .then(function(prevBalance){
 
         previousBalance = prevBalance.toNumber();
-        return colonyToken.transfer(_OTHER_ACCOUNT_, 100000000000000,
-          {from: _MAIN_ACCOUNT_, value: 1000});
+        return colonyToken.transfer(_OTHER_ACCOUNT_, 100000000000000);
       })
       .catch(function(){
         transferenceWithNoFundsFailed = true;
@@ -119,22 +162,44 @@ contract('ColonyToken', function(accounts) {
       .catch(done);
     });
 
-    it('should fail if the payload is either equal or less than zero (0)', function(done){
+    it('should fail if the payload is equal to zero', function(done){
 
       var previousBalance;
-      var transferenceWithInvalidValueFailed;
+      var transferenceOfZeroValue;
 
       colonyToken.balanceOf.call(_MAIN_ACCOUNT_)
       .then(function(prevBalance){
         previousBalance = prevBalance.toNumber();
-        return colonyToken.transfer(_OTHER_ACCOUNT_, -1, {from: _MAIN_ACCOUNT_, value: 1000});
+        return colonyToken.transfer(_OTHER_ACCOUNT_, 0);
       })
       .catch(function(){
-        transferenceWithInvalidValueFailed = true;
+        transferenceOfZeroValue = true;
         return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function(balance){
-        assert.equal(transferenceWithInvalidValueFailed, true, 'transference did not failed');
+        assert.equal(transferenceOfZeroValue, true, 'transference did not failed');
+        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if transferred value causes uints to "wrap"', function(done){
+
+      var previousBalance;
+      var transferenceOfNegativeValue;
+
+      colonyToken.balanceOf.call(_MAIN_ACCOUNT_)
+      .then(function(prevBalance){
+        previousBalance = prevBalance.toNumber();
+        return colonyToken.transfer(_OTHER_ACCOUNT_, -1);
+      })
+      .catch(function(){
+        transferenceOfNegativeValue = true;
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(balance){
+        assert.equal(transferenceOfNegativeValue, true, 'transference did not failed');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -186,7 +251,32 @@ contract('ColonyToken', function(accounts) {
       .catch(done);
     });
 
-    it('should fail if the sender does not has funds', function(done){
+    it('should fail if ETHER is sent', function(done){
+
+      var previousBalance;
+      var shouldFailIfEtherWasSent;
+
+      colonyToken.approve(_OTHER_ACCOUNT_, 100000000)
+      .then(function(){
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(prevBalance){
+        previousBalance = prevBalance.toNumber();
+        return colonyToken.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, 100000000, { value: 1});
+      })
+      .catch(function(){
+        shouldFailIfEtherWasSent = true;
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(balance){
+        assert.equal(shouldFailIfEtherWasSent, true, 'transference did not failed');
+        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if the sender does not have funds', function(done){
 
       var previousBalance;
       var transferenceFromAnotherAddressWithNoFundsFailed;
@@ -212,7 +302,59 @@ contract('ColonyToken', function(accounts) {
       .catch(done);
     });
 
-    it('should fail if the sender does not has allowance value enough', function(done){
+    it('should fail if the value is equal to zero', function(done){
+
+      var previousBalance;
+      var transferenceFromAnotherAddressWithValueEqualsToZero;
+
+      colonyToken.approve(_OTHER_ACCOUNT_, 100000000)
+      .then(function(){
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(prevBalance){
+        previousBalance = prevBalance.toNumber();
+        return colonyToken.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, 0);
+      })
+      .catch(function(){
+        transferenceFromAnotherAddressWithValueEqualsToZero = true;
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(balance){
+        assert.equal(transferenceFromAnotherAddressWithValueEqualsToZero, true,
+          'transference did not failed');
+        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if transferred value causes uints to "wrap"', function(done){
+
+      var previousBalance;
+      var transferenceFromAnotherAddressWithValueLessThanZero;
+
+      colonyToken.approve(_OTHER_ACCOUNT_, 100000000)
+      .then(function(){
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(prevBalance){
+        previousBalance = prevBalance.toNumber();
+        return colonyToken.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, -1);
+      })
+      .catch(function(){
+        transferenceFromAnotherAddressWithValueLessThanZero = true;
+        return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(balance){
+        assert.equal(transferenceFromAnotherAddressWithValueLessThanZero, true,
+          'transference did not failed');
+        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if the sender does not have a high enough allowance', function(done){
 
       var previousBalance;
       var previousAllowance;
@@ -246,7 +388,7 @@ contract('ColonyToken', function(accounts) {
 
   describe('when approving allowance to a third party', function(){
 
-    it('should allowed value be equal to the approved value', function(done){
+    it('should set the allowed value to be equal to the approved value', function(done){
       colonyToken.approve(_OTHER_ACCOUNT_, 100)
       .then(function(){
         return colonyToken.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
@@ -257,7 +399,24 @@ contract('ColonyToken', function(accounts) {
       }).catch(done);
     });
 
-    it('should a sender be able to update the allowed value to another user', function(done){
+    it('should fail if ETHER is sent', function(done){
+
+      var shouldFailEtherWasSentInApproval = false;
+      colonyToken.approve(_OTHER_ACCOUNT_, 100, { value: 1})
+      .then(function(){
+        return colonyToken.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
+      })
+      .catch(function(){
+        shouldFailEtherWasSentInApproval = true;
+      })
+      .then(function(){
+        assert.equal(shouldFailEtherWasSentInApproval, true, 'approval didnt fail.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should let a sender update the allowed value of another user', function(done){
       colonyToken.approve(_OTHER_ACCOUNT_, 100)
       .then(function(){
         return colonyToken.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
@@ -275,27 +434,6 @@ contract('ColonyToken', function(accounts) {
       }).catch(done);
     });
 
-    it('should fail when approving a value equal or less than zero', function(done){
-
-      var previousBalance;
-      var approvalNotEnoughFundsFailed;
-
-      colonyToken.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_)
-      .then(function(prevBalance){
-        previousBalance = prevBalance.toNumber();
-        return colonyToken.approve(_OTHER_ACCOUNT_, 0);
-      })
-      .catch(function(){
-        approvalNotEnoughFundsFailed = true;
-        return colonyToken.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
-      })
-      .then(function(balance){
-        assert.equal(approvalNotEnoughFundsFailed, true, 'transference did not failed');
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
-    });
   });
 
 });

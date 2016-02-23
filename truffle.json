@@ -1,7 +1,8 @@
 {
   "deploy": [
     // Names of contracts that should be deployed to the network.
-    "Colony"
+    "Colony",
+    "ColonyToken"
   ],
   "rpc": {
     // Default RPC configuration.
