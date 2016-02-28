@@ -5,13 +5,12 @@ contract('ColonyShare', function(accounts) {
 
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
-  var _OWNER_INITIAL_SUPPLY_ = 1000;
   var _TOTAL_SUPPLY_ = 1000;
 
   var colonyShare;
 
   beforeEach(function(done){
-    ColonyShare.new(_OWNER_INITIAL_SUPPLY_, _TOTAL_SUPPLY_, 'CNY', 'COLONY')
+    ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY')
     .then(function(contract){
       colonyShare = contract;
       done();
@@ -47,20 +46,6 @@ contract('ColonyShare', function(accounts) {
       .catch(done);
     });
 
-    it('should fail if owner initial supply is bigger than total supply', function(done) {
-
-      var creationFailed = false;
-      ColonyShare.new(_OWNER_INITIAL_SUPPLY_ + 1, _OWNER_INITIAL_SUPPLY_, 'CNY', 'COLONY')
-      .catch(function(){
-        creationFailed = true;
-      })
-      .then(function(){
-        assert.equal(creationFailed, true, 'creation didnt fail');
-      })
-      .then(done)
-      .catch(done);
-    });
-
     it('should have a symbol', function(done) {
       colonyShare.symbol.call()
       .then(function(symbol){
@@ -82,7 +67,7 @@ contract('ColonyShare', function(accounts) {
     it('should fail if ETHER is sent', function(done) {
 
       var creationFailed = false;
-      ColonyShare.new(_OWNER_INITIAL_SUPPLY_, _TOTAL_SUPPLY_, 'CNY', 'COLONY', { value: 1})
+      ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY', { value: 1})
       .catch(function(){
         creationFailed = true;
       })
@@ -181,6 +166,28 @@ contract('ColonyShare', function(accounts) {
       })
       .then(function(balance){
         assert.equal(transferenceOfZeroValue, true, 'transference did not fail');
+        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if the value is bigger than the upper limit', function(done){
+
+      var previousBalance;
+      var payloadBiggerThanUpperLimit = false;
+
+      colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
+      .then(function(prevBalance){
+        previousBalance = prevBalance.toNumber();
+        return colonyShare.transfer(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
+      })
+      .catch(function(){
+        payloadBiggerThanUpperLimit = true;
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(balance){
+        assert.equal(payloadBiggerThanUpperLimit, true, 'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -310,6 +317,32 @@ contract('ColonyShare', function(accounts) {
       .catch(done);
     });
 
+    it('should fail if the value is bigger than the upper limit', function(done){
+
+      var previousBalance;
+      var transferenceOfValueBiggerThanTheUpperLimit;
+
+      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      .then(function(){
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(prevBalance){
+        previousBalance = prevBalance.toNumber();
+        return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
+      })
+      .catch(function(){
+        transferenceOfValueBiggerThanTheUpperLimit = true;
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(balance){
+        assert.equal(transferenceOfValueBiggerThanTheUpperLimit, true,
+          'transference did not fail');
+        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should fail if the sender does not have a high enough allowance', function(done){
 
       var previousBalance;
@@ -359,14 +392,25 @@ contract('ColonyShare', function(accounts) {
 
       var shouldFailEtherWasSentInApproval = false;
       colonyShare.approve(_OTHER_ACCOUNT_, 100, { value: 1})
-      .then(function(){
-        return colonyShare.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
-      })
       .catch(function(){
         shouldFailEtherWasSentInApproval = true;
       })
       .then(function(){
         assert.equal(shouldFailEtherWasSentInApproval, true, 'approval didnt fail.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if the value is bigger than upper limit', function(done){
+
+      var shoudFailIfValueIsBiggerThanUpperLimit = false;
+      colonyShare.approve(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1)
+      .catch(function(){
+        shoudFailIfValueIsBiggerThanUpperLimit = true;
+      })
+      .then(function(){
+        assert.equal(shoudFailIfValueIsBiggerThanUpperLimit, true, 'approval didnt fail.');
       })
       .then(done)
       .catch(done);
@@ -388,6 +432,57 @@ contract('ColonyShare', function(accounts) {
         assert.equal(allowed.toNumber(), 50, 'amount approved was not updated correctly.');
         done();
       }).catch(done);
+    });
+  });
+
+  describe('when generating shares', function(){
+
+    it('should let the total supply be increased', function(done){
+
+      var previousSupply = 0;
+      colonyShare.totalSupply.call()
+      .then(function(total_supply){
+        previousSupply = total_supply.toNumber();
+        return colonyShare.generateShares(100);
+      })
+      .then(function(){
+        return colonyShare.totalSupply.call();
+      })
+      .then(function(_totalSupply){
+        assert.equal(previousSupply + 100, _totalSupply.toNumber(), 'total supply is incorrect.');
+        done();
+      })
+      .catch(done);
+    });
+
+    it('should fail if ETHER is sent', function(done){
+
+      var shouldFailEtherWasSentWhileGeneratingShares = false;
+      colonyShare.generateShares(_OTHER_ACCOUNT_, 100, { value: 1})
+      .catch(function(){
+        shouldFailEtherWasSentWhileGeneratingShares = true;
+      })
+      .then(function(){
+        assert.equal(shouldFailEtherWasSentWhileGeneratingShares, true,
+          'shares generation did not fail.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if the value is equal to zero', function(done){
+
+      var shouldFailIfSharesGenerationValueIsZero = false;
+      colonyShare.generateShares(0)
+      .catch(function(){
+        shouldFailIfSharesGenerationValueIsZero = true;
+      })
+      .then(function(){
+        assert.equal(shouldFailIfSharesGenerationValueIsZero, true,
+          'shares generation did not fail.');
+      })
+      .then(done)
+      .catch(done);
     });
   });
 });

@@ -6,13 +6,10 @@ import "AbstractShare.sol";
 contract ColonyShare is AbstractShare {
 
   /// @notice if the owner initial supply is bigger than the total supply than it raises an error
-  function ColonyShare(uint256 _ownerAmount, uint256 _totalSupply, string _symbol, string _name)
+  function ColonyShare(uint256 _totalSupply, string _symbol, string _name)
     refundEtherSentByAccident
   {
-    
-    if(_totalSupply < _ownerAmount) throw;
-
-    balances[owner] = _ownerAmount;
+    balances[owner] = _totalSupply;
     total_supply = _totalSupply;
     name = _name;
     symbol = _symbol;
@@ -24,6 +21,7 @@ contract ColonyShare is AbstractShare {
   modifier hasEnoughBalance(address _from, uint256 _value)
   {
     if(_value == 0) throw;
+    if(_value > total_supply) throw;
     if(balances[_from] < _value) throw;
     if(balances[_from] + _value < balances[_from]) throw;
     _
@@ -43,6 +41,7 @@ contract ColonyShare is AbstractShare {
   modifier hasEnoughAllowedBalance(address _from, address _to, uint256 _value)
   {
     if(_value == 0) throw;
+    if(_value > total_supply) throw;
     if(allowed[_from][_to] < _value) throw;
     if(allowed[_from][_to] + _value < allowed[_from][_to]) throw;
     _
@@ -86,8 +85,10 @@ contract ColonyShare is AbstractShare {
   function approve(address _spender, uint256 _value)
     refundEtherSentByAccident
   {
-      allowed[msg.sender][_spender] = _value;
-      Approval(msg.sender, _spender, _value);
+    if(_value > total_supply) throw;
+
+    allowed[msg.sender][_spender] = _value;
+    Approval(msg.sender, _spender, _value);
   }
 
   /// @param _owner The address of the account owning tokens
@@ -107,6 +108,16 @@ contract ColonyShare is AbstractShare {
     constant returns (uint256 balance)
   {
     return balances[_owner];
+  }
+
+  /// @notice this function is used to increase the amount of shares available limited by `total_supply`
+  /// @param _amount The amount to be increased in the upper bound total_supply
+  function generateShares(uint256 _amount)
+    onlyOwner
+    refundEtherSentByAccident
+  {
+      if(_amount <= 0) throw;
+      total_supply += _amount;
   }
 
   /// @return total amount of tokens
