@@ -1,6 +1,13 @@
 
-import "Mortal.sol";
-contract AbstractToken is Mortal{
+import "Killable.sol";
+contract AbstractShare is Killable{
+
+    uint256 total_supply;
+    string public name;
+    string public symbol;
+
+    mapping (address => uint256) balances;
+    mapping (address => mapping (address => uint256)) allowed;
 
     event Transfer(address indexed _from, address indexed _to, uint256 indexed _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 indexed _value);

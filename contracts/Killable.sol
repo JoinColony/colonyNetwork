@@ -1,6 +1,6 @@
 
-import "Owned.sol";
-contract Mortal is Owned {
+import "Ownable.sol";
+contract Killable is Ownable {
 	function kill()
 		onlyOwner
 	{

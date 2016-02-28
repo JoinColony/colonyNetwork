@@ -1,21 +1,15 @@
 /*
   IMPLEMENTING TOKEN STANDARD BASED ON: https://github.com/ConsenSys/Tokens
 */
-import "AbstractToken.sol";
-contract ColonyToken is AbstractToken{
 
-  uint256 total_supply;
-  string public name;
-  string public symbol;
+import "AbstractShare.sol";
+contract ColonyShare is AbstractShare {
 
-  mapping (address => uint256) balances;
-  mapping (address => mapping (address => uint256)) allowed;
-
-  function ColonyToken(uint256 _ownerAmount, uint256 _totalSupply,
-    string _symbol, string _name)
+  /// @notice if the owner initial supply is bigger than the total supply than it raises an error
+  function ColonyShare(uint256 _ownerAmount, uint256 _totalSupply, string _symbol, string _name)
     refundEtherSentByAccident
   {
-
+    
     if(_totalSupply < _ownerAmount) throw;
 
     balances[owner] = _ownerAmount;
@@ -24,6 +18,9 @@ contract ColonyToken is AbstractToken{
     symbol = _symbol;
   }
 
+  /// @notice verifies if the sender has enough balance, otherwise, raises an error
+  /// @param _from sender of value
+  /// @param _value The amount of token to be transferred
   modifier hasEnoughBalance(address _from, uint256 _value)
   {
     if(_value == 0) throw;
@@ -32,12 +29,17 @@ contract ColonyToken is AbstractToken{
     _
   }
 
+  /// @notice raise an error if user sends ether by accident
   modifier refundEtherSentByAccident()
   {
       if(msg.value > 0) throw;
       _
   }
 
+  /// @notice verifies if the address `_to` has enough balance approved from `_from` address
+  /// @param _from approver of the transference
+  /// @param _to approved address to receive the transferred value
+  /// @param _value The amount of token to be transferred
   modifier hasEnoughAllowedBalance(address _from, address _to, uint256 _value)
   {
     if(_value == 0) throw;
@@ -46,6 +48,10 @@ contract ColonyToken is AbstractToken{
     _
   }
 
+  /// @notice send `_value` token to `_to` from `msg.sender`
+  /// @param _to The address of the recipient
+  /// @param _value The amount of token to be transferred
+  /// @return Whether the transfer was successful or not
   function transfer(address _to, uint256 _value)
     refundEtherSentByAccident
     hasEnoughBalance(msg.sender, _value)
@@ -56,6 +62,11 @@ contract ColonyToken is AbstractToken{
       Transfer(msg.sender, _to, _value);
   }
 
+  /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
+  /// @param _from The address of the sender
+  /// @param _to The address of the recipient
+  /// @param _value The amount of token to be transferred
+  /// @return Whether the transfer was successful or not
   function transferFrom(address _from, address _to, uint256 _value)
     refundEtherSentByAccident
     hasEnoughBalance(_from, _value)
@@ -68,6 +79,10 @@ contract ColonyToken is AbstractToken{
       Transfer(_from, _to, _value);
   }
 
+  /// @notice `msg.sender` approves `_addr` to spend `_value` tokens
+  /// @param _spender The address of the account able to transfer the tokens
+  /// @param _value The amount of wei to be approved for transfer
+  /// @return Whether the approval was successful or not
   function approve(address _spender, uint256 _value)
     refundEtherSentByAccident
   {
@@ -75,6 +90,9 @@ contract ColonyToken is AbstractToken{
       Approval(msg.sender, _spender, _value);
   }
 
+  /// @param _owner The address of the account owning tokens
+  /// @param _spender The address of the account able to transfer the tokens
+  /// @return Amount of remaining tokens allowed to spent
   function allowance(address _owner, address _spender)
     refundEtherSentByAccident
     constant returns (uint256 remaining)
@@ -82,6 +100,8 @@ contract ColonyToken is AbstractToken{
     return allowed[_owner][_spender];
   }
 
+  /// @param _owner The address from which the balance will be retrieved
+  /// @return The balance
   function balanceOf(address _owner)
     refundEtherSentByAccident
     constant returns (uint256 balance)
@@ -89,6 +109,7 @@ contract ColonyToken is AbstractToken{
     return balances[_owner];
   }
 
+  /// @return total amount of tokens
   function totalSupply()
     refundEtherSentByAccident
     constant returns (uint256 _total)

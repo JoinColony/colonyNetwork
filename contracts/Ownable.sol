@@ -1,5 +1,5 @@
 
-contract Owned {
+contract Ownable {
 	modifier onlyOwner {
 		if (msg.sender != owner) throw;
 		_ 
