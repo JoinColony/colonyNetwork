@@ -1,22 +1,23 @@
-// Forwarding contract for the network of Colonies. 
+import "Colony.sol";
 contract ColonyNetwork {
 
-    uint nextColonyId;
-    mapping(address => Colony) private colonies;
-    
-    address owner;
-    
-    function ColonyMasterNetwork() {
-		owner = msg.sender;
-	}
-	
-    // Create a colony
-    function createColony() returns (Colony colonyAddress)
-    {
-        return new Colony();
-    }
-    
-    function () {
-			throw;
-	}
+   mapping (uint => Colony) colonies;
+   address public owner;
+   uint numColonies;
+
+   function ColonyNetwork() {
+        owner = msg.sender;
+   }
+	// Creates a colony
+  // Creating a new contract returns the address of the contract to the creator contract
+   function createColony() returns (address colonyAddress)
+   {
+     colonies[numColonies] = new Colony();
+     numColonies++;
+     return colonies[numColonies];
+   }
+
+   function () {
+      throw;
+   }
 }
