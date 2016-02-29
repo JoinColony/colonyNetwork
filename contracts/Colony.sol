@@ -12,7 +12,6 @@ contract Colony {
 			uint contributed; //Amount of ETH contributed to the proposal
 	}
 
-
 	// A dynamically-sized array of `Proposal` structs.
 	Proposal[] public proposals;
  	// This declares a state variable that
@@ -20,7 +19,7 @@ contract Colony {
  	mapping(address => User) public users;
 
 	function Colony() {
-		users[msg.sender].admin=true;
+		users[tx.origin].admin=true;
 	}
 
 	//Contribute ETH to a proposal

@@ -1,20 +1,26 @@
 import "Colony.sol";
 contract ColonyNetwork {
 
-   mapping (uint => Colony) colonies;
+   mapping (uint => Colony) private colonies;
+   uint coloniesNum;
+
    address public owner;
-   uint numColonies;
 
    function ColonyNetwork() {
         owner = msg.sender;
    }
-	// Creates a colony
-  // Creating a new contract returns the address of the contract to the creator contract
-   function createColony() returns (address colonyAddress)
+
+   // Creates a colony
+   function createColony() returns (uint)
    {
-     colonies[numColonies] = new Colony();
-     numColonies++;
-     return colonies[numColonies];
+     colonies[coloniesNum] = new Colony();
+     coloniesNum ++;
+     return coloniesNum;
+   }
+
+   function getColony(uint coloniesNum) constant returns (address)
+   {
+     return colonies[coloniesNum];
    }
 
    function () {
