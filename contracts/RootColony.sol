@@ -1,12 +1,12 @@
 import "Colony.sol";
-contract ColonyNetwork {
+contract RootColony {
 
    mapping (uint => Colony) private colonies;
    uint coloniesNum;
 
    address public owner;
 
-   function ColonyNetwork() {
+   function RootColony() {
         owner = msg.sender;
    }
 

@@ -2,7 +2,7 @@
   "deploy": [
     // Names of contracts that should be deployed to the network.
     "Colony",
-    "ColonyNetwork"],
+    "RootColony"],
   "rpc": {
     // Default RPC configuration.
     "host": "localhost",

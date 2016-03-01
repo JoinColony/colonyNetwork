@@ -1,23 +1,23 @@
-contract('ColonyNetwork', function(accounts) {
+contract('RootColony', function(accounts) {
 
   it('deployed user should be admin', function(done) {
-      var colonyNetwork = ColonyNetwork.deployed();
-      colonyNetwork.owner.call(accounts[0])
+      var rootColony = RootColony.deployed();
+      rootColony.owner.call(accounts[0])
         .then(function(owner) { assert.equal(owner, accounts[0], 'First user isn\'t an admin'); })
         .then(done)
         .catch(done);
   });
 
-  it('the master network should allow users to create new colonies', function(done) {
-    var colonyNetwork, newColony;
+  it('the root network should allow users to create new colonies', function(done) {
+    var rootColony, newColony;
     var mainaccount = accounts[0];
     var otheraccount = accounts[1];
 
-    ColonyNetwork.new({ from: mainaccount })
-      .then(function(instance) { colonyNetwork = instance;
-          return colonyNetwork.createColony({ from: otheraccount }); })
+    RootColony.new({ from: mainaccount })
+      .then(function(instance) { rootColony = instance;
+          return rootColony.createColony({ from: otheraccount }); })
       .then(function(tx) { console.log("New Colony transaction hash is: ", tx);
-          return colonyNetwork.getColony(0); })
+          return rootColony.getColony(0); })
       .then(function(address){
           console.log("Colony address is: ", address);
           newColony = Colony.at(address);
