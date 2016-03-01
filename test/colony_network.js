@@ -10,9 +10,12 @@ contract('ColonyNetwork', function(accounts) {
 
   it('the master network should allow users to create new colonies', function(done) {
     var colonyNetwork, newColony;
-    ColonyNetwork.new({ from: accounts[0] })
+    var mainaccount = accounts[0];
+    var otheraccount = accounts[1];
+
+    ColonyNetwork.new({ from: mainaccount })
       .then(function(instance) { colonyNetwork = instance;
-          return colonyNetwork.createColony(accounts[0]); })
+          return colonyNetwork.createColony({ from: otheraccount }); })
       .then(function(tx) { console.log("New Colony transaction hash is: ", tx);
           return colonyNetwork.getColony(0); })
       .then(function(address){
@@ -20,7 +23,7 @@ contract('ColonyNetwork', function(accounts) {
           newColony = Colony.at(address);
           return newColony; })
       .then(function(newColony){
-          return newColony.getUserInfo.call(accounts[0]); })
+          return newColony.getUserInfo.call(otheraccount); })
       .then(function(isAdmin){ assert.equal(isAdmin, true, 'First user isn\'t an admin'); })
       .then(done)
       .catch(done);
