@@ -21,7 +21,6 @@ contract ColonyShare is AbstractShare {
   modifier hasEnoughBalance(address _from, uint256 _value)
   {
     if(_value == 0) throw;
-    if(_value > total_supply) throw;
     if(balances[_from] < _value) throw;
     if(balances[_from] + _value < balances[_from]) throw;
     _
@@ -36,14 +35,12 @@ contract ColonyShare is AbstractShare {
 
   /// @notice verifies if the address `_to` has enough balance approved from `_from` address
   /// @param _from approver of the transference
-  /// @param _to approved address to receive the transferred value
   /// @param _value The amount of token to be transferred
-  modifier hasEnoughAllowedBalance(address _from, address _to, uint256 _value)
+  modifier hasEnoughAllowedBalance(address _from, uint256 _value)
   {
     if(_value == 0) throw;
-    if(_value > total_supply) throw;
-    if(allowed[_from][_to] < _value) throw;
-    if(allowed[_from][_to] + _value < allowed[_from][_to]) throw;
+    if(allowed[_from][msg.sender] < _value) throw;
+    if(allowed[_from][msg.sender] + _value < allowed[_from][msg.sender]) throw;
     _
   }
 
@@ -61,7 +58,7 @@ contract ColonyShare is AbstractShare {
       Transfer(msg.sender, _to, _value);
   }
 
-  /// @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
+  /// @notice send `_value` token/s to `_to` from `_from` on the condition it is approved by `_from`
   /// @param _from The address of the sender
   /// @param _to The address of the recipient
   /// @param _value The amount of token to be transferred
@@ -69,16 +66,17 @@ contract ColonyShare is AbstractShare {
   function transferFrom(address _from, address _to, uint256 _value)
     refundEtherSentByAccident
     hasEnoughBalance(_from, _value)
-    hasEnoughAllowedBalance(_from, _to, _value)
+    hasEnoughAllowedBalance(_from, _value)
   {
-      balances[_to] += _value;
       balances[_from] -= _value;
-      allowed[_from][_to] -= _value;
+      balances[_to] += _value;
+
+      allowed[_from][msg.sender] -= _value;
 
       Transfer(_from, _to, _value);
   }
 
-  /// @notice `msg.sender` approves `_addr` to spend `_value` tokens
+  /// @notice `msg.sender` approves `_spender` to spend `_value` tokens
   /// @param _spender The address of the account able to transfer the tokens
   /// @param _value The amount of wei to be approved for transfer
   /// @return Whether the approval was successful or not
@@ -111,13 +109,17 @@ contract ColonyShare is AbstractShare {
   }
 
   /// @notice this function is used to increase the amount of shares available limited by `total_supply`
+  /// and assign it to the contract owner.
   /// @param _amount The amount to be increased in the upper bound total_supply
   function generateShares(uint256 _amount)
     onlyOwner
     refundEtherSentByAccident
   {
-      if(_amount <= 0) throw;
+      if(_amount == 0) throw;
+      if (total_supply + _amount < _amount) throw;
+
       total_supply += _amount;
+      balances[owner] += _amount;
   }
 
   /// @return total amount of tokens
@@ -129,12 +131,6 @@ contract ColonyShare is AbstractShare {
   }
 
 	function () {
-			// This function gets executed if a
-			// transaction with invalid data is sent to
-			// the contract or just ether without data.
-			// We revert the send so that no-one
-			// accidentally loses money when using the
-			// contract.
 			throw;
 	}
 }
