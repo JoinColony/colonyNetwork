@@ -33,7 +33,7 @@ contract ColonyShare is AbstractShare {
       _
   }
 
-  /// @notice verifies if the address `_to` has enough balance approved from `_from` address
+  /// @notice verifies if the address msg.sender has enough balance approved from `_from` address
   /// @param _from approver of the transference
   /// @param _value The amount of token to be transferred
   modifier hasEnoughAllowedBalance(address _from, uint256 _value)
@@ -47,7 +47,6 @@ contract ColonyShare is AbstractShare {
   /// @notice send `_value` token to `_to` from `msg.sender`
   /// @param _to The address of the recipient
   /// @param _value The amount of token to be transferred
-  /// @return Whether the transfer was successful or not
   function transfer(address _to, uint256 _value)
     refundEtherSentByAccident
     hasEnoughBalance(msg.sender, _value)
@@ -62,7 +61,6 @@ contract ColonyShare is AbstractShare {
   /// @param _from The address of the sender
   /// @param _to The address of the recipient
   /// @param _value The amount of token to be transferred
-  /// @return Whether the transfer was successful or not
   function transferFrom(address _from, address _to, uint256 _value)
     refundEtherSentByAccident
     hasEnoughBalance(_from, _value)
@@ -79,7 +77,6 @@ contract ColonyShare is AbstractShare {
   /// @notice `msg.sender` approves `_spender` to spend `_value` tokens
   /// @param _spender The address of the account able to transfer the tokens
   /// @param _value The amount of wei to be approved for transfer
-  /// @return Whether the approval was successful or not
   function approve(address _spender, uint256 _value)
     refundEtherSentByAccident
   {
