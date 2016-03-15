@@ -2,11 +2,11 @@
   IMPLEMENTING TOKEN STANDARD BASED ON: https://github.com/ConsenSys/Tokens
 */
 
-import "AbstractShare.sol";
-contract ColonyShare is AbstractShare {
+import "AbstractShareLedger.sol";
+contract ColonyShareLedger is AbstractShareLedger {
 
-  /// @notice if the owner initial supply is bigger than the total supply than it raises an error
-  function ColonyShare(uint256 _totalSupply, string _symbol, string _name)
+  /// @notice if the owner initial supply is bigger than the total supply then it raises an error
+  function ColonyShareLedger(uint256 _totalSupply, string _symbol, string _name)
     refundEtherSentByAccident
   {
     balances[owner] = _totalSupply;

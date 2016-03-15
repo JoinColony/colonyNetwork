@@ -2,17 +2,13 @@
 // These globals are added by Truffle:
 /* globals contract, Colony, web3, assert */
 
-function ifUsingTestRPC(){
-  return;
-}
-
 contract('Colony', function (accounts) {
   var mainaccount = accounts[0];
   var otheraccount = accounts[1];
-  var colony;
+  var rootColony, colony;
 
   beforeEach(function (done) {
-    Colony.new()
+    Colony.new({from:mainaccount})
       .then(function (contract) {
         colony = contract;
         done();
@@ -31,92 +27,127 @@ contract('Colony', function (accounts) {
     }).then(done).catch(done);
   });
 
-  it('should allow user to make suggestion', function (done) {
-    colony.makeProposal('name', 'summary').then(function () {
-      return colony.getProposal.call(0);
+  it('should update rootContract address', function(done){
+    console.log(colony.rootContract.call());
+  });
+
+  it('should allow user to make task', function (done) {
+    colony.makeTask('name', 'summary').then(function () {
+      return colony.getTask.call(0);
     }).then(function (value) {
-      assert.equal(value[0], 'name', 'No proposal?');
-      assert.equal(value[1], 'summary', 'No proposal?');
-      assert.equal(value[2], false, 'No proposal?');
-      assert.equal(value[3].toNumber(), 0, 'No proposal?');
+      assert.equal(value[0], 'name', 'No task?');
+      assert.equal(value[1], 'summary', 'No task?');
+      assert.equal(value[2], false, 'No task?');
+      assert.equal(value[3].toNumber(), 0, 'No task?');
     }).then(done).catch(done);
   });
 
-  it('should allow user to edit suggestion', function (done) {
-    colony.makeProposal('name', 'summary').then(function () {
-      return colony.updateProposal(0, 'nameedit', 'summary');
+  it('should allow user to edit task', function (done) {
+    colony.makeTask('name', 'summary').then(function () {
+      return colony.updateTask(0, 'nameedit', 'summary');
     }).then(function () {
-      return colony.getProposal.call(0);
+      return colony.getTask.call(0);
     }).then(function (value) {
-      assert.equal(value[0], 'nameedit', 'No proposal?');
-      assert.equal(value[1], 'summary', 'No proposal?');
-      assert.equal(value[2], false, 'No proposal?');
-      assert.equal(value[3].toNumber(), 0, 'No proposal?');
+      assert.equal(value[0], 'nameedit', 'No task?');
+      assert.equal(value[1], 'summary', 'No task?');
+      assert.equal(value[2], false, 'No task?');
+      assert.equal(value[3].toNumber(), 0, 'No task?');
     }).then(done).catch(done);
   });
 
-  it('should allow user to contribute ETH to suggestion', function (done) {
-    colony.makeProposal('name', 'summary').then(function () {
-      return colony.updateProposal(0, 'nameedit', 'summary');
+  it('should allow user to contribute ETH to task', function (done) {
+    colony.makeTask('name', 'summary').then(function () {
+      return colony.updateTask(0, 'nameedit', 'summary');
     }).then(function () {
       return colony.contribute(0, {
         value: 10000
       });
     }).then(function () {
-      return colony.getProposal.call(0);
+      return colony.getTask.call(0);
     }).then(function (value) {
-      assert.equal(value[0], 'nameedit', 'No proposal?');
-      assert.equal(value[1], 'summary', 'No proposal?');
-      assert.equal(value[2], false, 'No proposal?');
-      assert.equal(value[3].toNumber(), 10000, 'No proposal?');
+      assert.equal(value[0], 'nameedit', 'No task?');
+      assert.equal(value[1], 'summary', 'No task?');
+      assert.equal(value[2], false, 'No task?');
+      assert.equal(value[3].toNumber(), 10000, 'No task?');
     }).then(done).catch(done);
   });
 
-  it('should not allow non-admin to close suggestion', function (done) {
+  it('should allow user to contribute Shares to task', function (done) {
+    colony.makeTask('name', 'summary').then(function () {
+      return colony.updateTask(0, 'nameedit', 'summary');
+    }).then(function () {
+      return colony.contributeShares(0, 10);
+    }).then(function () {
+      return colony.getTask.call(0);
+    }).then(function (value) {
+      assert.equal(value[0], 'nameedit', 'No task?');
+      assert.equal(value[1], 'summary', 'No task?');
+      assert.equal(value[2], false, 'No task?');
+      assert.equal(value[3].toNumber(), 0, 'No task?');
+      assert.equal(value[4].toNumber(), 10, 'No task?');
+    }).then(done).catch(done);
+  });
+
+  it('should not allow non-admin to close task', function (done) {
     var prevBalance = web3.eth.getBalance(otheraccount);
-    colony.makeProposal('name', 'summary').then(function () {
-      return colony.updateProposal(0, 'nameedit', 'summary');
+    var completeAndPayTaskFailed = false;
+    colony.makeTask('name', 'summary').then(function () {
+      return colony.updateTask(0, 'nameedit', 'summary');
     }).then(function () {
       return colony.contribute(0, {
         value: 10000
       });
     }).then(function () {
-      return colony.completeAndPayProposal(0, otheraccount, {
+      return colony.completeAndPayTask(0, otheraccount, {
         from: otheraccount
       });
-    }).catch(ifUsingTestRPC)
-    .then(function(){
-      return colony.getProposal.call(0);
+    }).catch(function () {
+      completeAndPayTaskFailed = true;
+      return colony.getTask.call(0);
     }).then(function (value) {
-      assert.equal(value[0], 'nameedit', 'No proposal?');
-      assert.equal(value[1], 'summary', 'No proposal?');
-      assert.equal(value[2], false, 'No proposal?');
-      assert.equal(value[3].toNumber(), 10000, 'No proposal?');
+      assert.equal(completeAndPayTaskFailed, true,
+        'The completeAndPayTask call succeeded when it should not');
+      assert.equal(value[0], 'nameedit', 'No task?');
+      assert.equal(value[1], 'summary', 'No task?');
+      assert.equal(value[2], false, 'No task?');
+      assert.equal(value[3].toNumber(), 10000, 'No task?');
       assert.equal(web3.eth.getBalance(otheraccount).lessThan(prevBalance), true);
     }).then(done).catch(done);
   });
 
-  it('should allow admin to close suggestion', function (done) {
+  it('should allow admin to close task', function (done) {
     var prevBalance = web3.eth.getBalance(otheraccount);
 
-    colony.makeProposal('name', 'summary').then(function () {
-      return colony.updateProposal(0, 'nameedit', 'summary');
+    colony.makeTask('name', 'summary').then(function () {
+      return colony.updateTask(0, 'nameedit', 'summary');
     }).then(function () {
       return colony.contribute(0, {
         value: 10000
       });
     }).then(function () {
-      return colony.completeAndPayProposal(0, otheraccount, {
+      return colony.completeAndPayTask(0, otheraccount, {
         from: mainaccount
       });
     }).then(function () {
-      return colony.getProposal.call(0);
+      return colony.getTask.call(0);
     }).then(function (value) {
-      assert.equal(value[0], 'nameedit', 'No proposal?');
-      assert.equal(value[1], 'summary', 'No proposal?');
-      assert.equal(value[2], true, 'No proposal?');
-      assert.equal(value[3].toNumber(), 10000, 'No proposal?');
-      assert.equal(web3.eth.getBalance(otheraccount).minus(prevBalance).toNumber(), 10000);
+      assert.equal(value[0], 'nameedit', 'No task?');
+      assert.equal(value[1], 'summary', 'No task?');
+      assert.equal(value[2], true, 'No task?');
+      assert.equal(value[3].toNumber(), 10000, 'No task?');
+      assert.equal(web3.eth.getBalance(otheraccount).minus(prevBalance).toNumber(), 9500);
     }).then(done).catch(done);
   });
+
+  it('should be instantiated with 0 total shares', function(done){
+    colony.shareLedger.call(0)
+    .then(function(shareLedgerAddress) {
+      var shareLedger = ColonyShareLedger.at(shareLedgerAddress);
+      return shareLedger.totalSupply.call();
+    })
+    .then(function(totalSupplyShares){
+      assert.equal(totalSupplyShares, 0);
+    })
+    .then(done).catch(done)
+    });
 });

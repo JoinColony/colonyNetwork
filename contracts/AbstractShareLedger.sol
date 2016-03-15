@@ -1,6 +1,6 @@
 
 import "Killable.sol";
-contract AbstractShare is Killable{
+contract AbstractShareLedger is Killable{
 
     uint256 total_supply;
     string public name;
