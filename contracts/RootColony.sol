@@ -1,30 +1,37 @@
-import "Colony.sol";
-contract RootColony {
 
-   mapping (uint => Colony) private colonies;
-   uint coloniesNum;
+import "AColonyFactory.sol";
 
-   address public owner;
+contract RootColony is LocatorConsumer {
 
-   function RootColony() {
-        owner = msg.sender;
-   }
+  address public colonyFactoryAddress;
+  address public owner;
+  uint coloniesNum;
 
-   // Creates a colony
-   function createColony(uint256 _totalSharesSupply)
-   {
-     var colony = new Colony(_totalSharesSupply);
-     colonies[coloniesNum] = colony;
-     coloniesNum ++;
-   }
+  function RootColony(address _colonyFactory) {
+    owner = msg.sender;
+    locator = Locator(_locatorAddress);
+  }
 
-   function getColony(uint coloniesNum) constant returns (Colony)
-   {
-     return colonies[coloniesNum];
-   }
+  function setColonyFactoryAddress(address _colonyFactoryAddress) {
+    colonyFactoryAddress = _colonyFactoryAddress;
+  }
 
-   function getNColonies() constant returns (uint)
-   {
-     return coloniesNum;
-   }
+  // Creates a colony
+  function createColony(bytes32 _key, uint256 _initialSharesSupply) {
+    if(_key == "") throw;
+    var colonyFactory = AColonyFactory(colonyFactoryAddress);
+    colonyFactoryAddress.createColony(msg.sender, _key, _initialSharesSupply);
+    coloniesNum++;
+  }
+
+  function countColonies() constant returns (uint)
+  {
+    return coloniesNum;
+  }
+
+  function getColony(bytes32 _key) constant returns (address)
+  {
+    var colonyFactory = AColonyFactory(colonyFactoryAddress);
+    return colonyFactory.colonies[_key];
+  }
 }
