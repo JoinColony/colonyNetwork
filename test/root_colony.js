@@ -16,17 +16,11 @@ contract('RootColony', function (accounts) {
 
   it('the root network should allow users to create new colonies', function (done) {
     var rootColony, newColony;
-    var mainaccount = accounts[0];
     var otheraccount = accounts[1];
 
-    RootColony.new({
-        from: mainaccount
-      })
-      .then(function (instance) {
-        rootColony = instance;
-        return rootColony.createColony({
-          from: otheraccount
-        });
+    rootColony = RootColony.deployed();
+    rootColony.createColony({
+        from: otheraccount
       })
       .then(function (tx) {
         console.log('New Colony transaction hash is: ', tx);
