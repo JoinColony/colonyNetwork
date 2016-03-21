@@ -2,6 +2,10 @@
 // These globals are added by Truffle:
 /* globals contract, Colony, web3, assert */
 
+function ifUsingTestRPC(){
+  return;
+}
+
 contract('Colony', function (accounts) {
   var mainaccount = accounts[0];
   var otheraccount = accounts[1];
@@ -70,7 +74,6 @@ contract('Colony', function (accounts) {
 
   it('should not allow non-admin to close suggestion', function (done) {
     var prevBalance = web3.eth.getBalance(otheraccount);
-    var completeAndPayProposalFailed = false;
     colony.makeProposal('name', 'summary').then(function () {
       return colony.updateProposal(0, 'nameedit', 'summary');
     }).then(function () {
@@ -81,12 +84,10 @@ contract('Colony', function (accounts) {
       return colony.completeAndPayProposal(0, otheraccount, {
         from: otheraccount
       });
-    }).catch(function () {
-      completeAndPayProposalFailed = true;
+    }).catch(ifUsingTestRPC)
+    .then(function(){
       return colony.getProposal.call(0);
     }).then(function (value) {
-      assert.equal(completeAndPayProposalFailed, true,
-        'The completeAndPayProposal call succeeded when it should not');
       assert.equal(value[0], 'nameedit', 'No proposal?');
       assert.equal(value[1], 'summary', 'No proposal?');
       assert.equal(value[2], false, 'No proposal?');

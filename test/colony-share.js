@@ -2,7 +2,7 @@
 // These globals are added by Truffle:
 /* globals contract, ColonyShare, assert, web3*/
 
-function ifUsingTestRPC(err){ // eslint-disable-line no-unused-vars
+function ifUsingTestRPC() {
   //Okay, so, there is a discrepancy between how testrpc handles
   //OOG errors (throwing an exception all the way up to these tests) and
   //how geth handles them (still making a valid transaction and returning
@@ -21,6 +21,13 @@ function ifUsingTestRPC(err){ // eslint-disable-line no-unused-vars
   return;
 }
 
+function checkAllGasSpent(gasAmount, gasPrice, account, prevBalance){
+  var newBalance = web3.eth.getBalance(account);
+  //When a transaction throws, all the gas sent is spent. So let's check that
+  //we spent all the gas that we sent.
+  assert.equal(prevBalance.minus(newBalance).toNumber(), gasAmount*gasPrice, 'creation didnt fail - didn\'t throw and use all gas');
+}
+
 contract('ColonyShare', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
@@ -31,7 +38,6 @@ contract('ColonyShare', function (accounts) {
   beforeEach(function (done) {
     ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY',{from:_MAIN_ACCOUNT_})
     .then(function (contract) {
-      console.log(contract.address)
       colonyShare = contract;
       done();
     });
@@ -91,11 +97,8 @@ contract('ColonyShare', function (accounts) {
         gasPrice: _GAS_PRICE_
       })
       .catch(ifUsingTestRPC)
-      .then(function () {
-        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        //When a transaction throws, all the gas sent is spent. So let's check that
-        //we spent all the gas that we sent.
-        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -387,9 +390,8 @@ contract('ColonyShare', function (accounts) {
         gasPrice: _GAS_PRICE_
       })
       .catch(ifUsingTestRPC)
-      .then(function () {
-        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -403,9 +405,8 @@ contract('ColonyShare', function (accounts) {
         gasPrice: _GAS_PRICE_
       })
       .catch(ifUsingTestRPC)
-      .then(function () {
-        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -475,9 +476,8 @@ contract('ColonyShare', function (accounts) {
         gasPrice: _GAS_PRICE_
       })
       .catch(ifUsingTestRPC)
-      .then(function () {
-        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -490,9 +490,8 @@ contract('ColonyShare', function (accounts) {
         gasPrice: _GAS_PRICE_
       })
       .catch(ifUsingTestRPC)
-      .then(function () {
-        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -505,9 +504,8 @@ contract('ColonyShare', function (accounts) {
         gasPrice: _GAS_PRICE_
       })
       .catch(ifUsingTestRPC)
-      .then(function () {
-        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
