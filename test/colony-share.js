@@ -1,16 +1,37 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, ColonyShare, assert */
+/* globals contract, ColonyShare, assert, web3*/
+
+function ifUsingTestRPC(err){ // eslint-disable-line no-unused-vars
+  //Okay, so, there is a discrepancy between how testrpc handles
+  //OOG errors (throwing an exception all the way up to these tests) and
+  //how geth handles them (still making a valid transaction and returning
+  //a txid). For the explanation of why, see
+  //
+  //See https://github.com/ethereumjs/testrpc/issues/39
+  //
+  //Obviously, we want our tests to pass on both, so this is a
+  //bit of a problem. We have to have this special function that we use to catch
+  //the error. I've named it so that it reads well in the tests below - i.e.
+  //.catch(ifUsingTestRPC)
+  //Note that it just swallows the error - open to debate on whether this is
+  //the best thing to do, or it should log it even though it's expected, in
+  //case we get an error that is unexpected...
+  // console.log('Error:',err)
+  return;
+}
 
 contract('ColonyShare', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _TOTAL_SUPPLY_ = 1000;
+  var _GAS_PRICE_ = 20e9;
   var colonyShare;
 
   beforeEach(function (done) {
-    ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY')
+    ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY',{from:_MAIN_ACCOUNT_})
     .then(function (contract) {
+      console.log(contract.address)
       colonyShare = contract;
       done();
     });
@@ -63,15 +84,18 @@ contract('ColonyShare', function (accounts) {
     });
 
     it('should fail if ETHER is sent', function (done) {
-      var creationFailed = false;
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
       ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY', {
-        value: 1
+        value: 1,
+        gas: 1e6,
+        gasPrice: _GAS_PRICE_
       })
-      .catch(function () {
-        creationFailed = true;
-      })
+      .catch(ifUsingTestRPC)
       .then(function () {
-        assert.equal(creationFailed, true, 'creation didnt fail');
+        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        //When a transaction throws, all the gas sent is spent. So let's check that
+        //we spent all the gas that we sent.
+        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
       })
       .then(done)
       .catch(done);
@@ -102,23 +126,23 @@ contract('ColonyShare', function (accounts) {
         .catch(done);
       });
 
-    it('should fail if ETHER is sent', function (done) {
+    it('should fail if ETHER is sent',  function (done) {
       var previousBalance;
-      var shouldFailIfEtherWasSentInTransference;
 
       colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, 1, {
-          value: 1
+          value: 1,
+          gas:1e6,
+          gasPrice: _GAS_PRICE_
         });
       })
-      .catch(function () {
-        shouldFailIfEtherWasSentInTransference = true;
+      .catch(ifUsingTestRPC)
+      .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(shouldFailIfEtherWasSentInTransference, true, 'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -127,19 +151,17 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if the sender does not have funds', function (done) {
       var previousBalance;
-      var transferenceWithNoFundsFailed;
 
       colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, previousBalance + 1);
       })
-      .catch(function () {
-        transferenceWithNoFundsFailed = true;
+      .catch(ifUsingTestRPC)
+      .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(transferenceWithNoFundsFailed, true, 'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -148,19 +170,17 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if the payload is equal to zero', function (done) {
       var previousBalance;
-      var transferenceOfZeroValue;
 
       colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, 0);
       })
-      .catch(function () {
-        transferenceOfZeroValue = true;
+      .catch(ifUsingTestRPC)
+      .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(transferenceOfZeroValue, true, 'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -169,19 +189,17 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if the value is bigger than the upper limit', function (done) {
       var previousBalance;
-      var payloadBiggerThanUpperLimit = false;
 
       colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
       })
-      .catch(function () {
-        payloadBiggerThanUpperLimit = true;
+      .catch(ifUsingTestRPC)
+      .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(payloadBiggerThanUpperLimit, true, 'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -234,7 +252,6 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if ETHER is sent', function (done) {
       var previousBalance;
-      var shouldFailIfEtherWasSent;
 
       colonyShare.approve(_OTHER_ACCOUNT_, 100)
       .then(function () {
@@ -246,12 +263,11 @@ contract('ColonyShare', function (accounts) {
           value: 1
         });
       })
-      .catch(function () {
-        shouldFailIfEtherWasSent = true;
+      .catch(ifUsingTestRPC)
+      .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(shouldFailIfEtherWasSent, true, 'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -260,7 +276,6 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if the sender does not have funds', function (done) {
       var previousBalance;
-      var transferenceFromAnotherAddressWithNoFundsFailed;
 
       colonyShare.approve(_OTHER_ACCOUNT_, 100)
       .then(function () {
@@ -270,13 +285,11 @@ contract('ColonyShare', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, previousBalance + 1);
       })
-      .catch(function () {
-        transferenceFromAnotherAddressWithNoFundsFailed = true;
+      .catch(ifUsingTestRPC)
+      .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(transferenceFromAnotherAddressWithNoFundsFailed, true,
-          'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -285,7 +298,6 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if the value is equal to zero', function (done) {
       var previousBalance;
-      var transferenceFromAnotherAddressWithValueEqualsToZero;
 
       colonyShare.approve(_OTHER_ACCOUNT_, 100)
       .then(function () {
@@ -295,13 +307,11 @@ contract('ColonyShare', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, 0);
       })
-      .catch(function () {
-        transferenceFromAnotherAddressWithValueEqualsToZero = true;
+      .catch(ifUsingTestRPC)
+      .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(transferenceFromAnotherAddressWithValueEqualsToZero, true,
-          'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -310,7 +320,6 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if the value is bigger than the upper limit', function (done) {
       var previousBalance;
-      var transferenceOfValueBiggerThanTheUpperLimit;
 
       colonyShare.approve(_OTHER_ACCOUNT_, 100)
       .then(function () {
@@ -320,13 +329,11 @@ contract('ColonyShare', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
       })
-      .catch(function () {
-        transferenceOfValueBiggerThanTheUpperLimit = true;
+      .catch(ifUsingTestRPC)
+      .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(transferenceOfValueBiggerThanTheUpperLimit, true,
-          'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -335,7 +342,6 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if the sender does not have a high enough allowance', function (done) {
       var previousBalance;
-      var transferenceFromAnotherAddressWithInvalidValueFailed;
 
       colonyShare.approve(_OTHER_ACCOUNT_, 100)
       .then(function () {
@@ -348,13 +354,11 @@ contract('ColonyShare', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, 500);
       })
-      .catch(function () {
-        transferenceFromAnotherAddressWithInvalidValueFailed = true;
+      .catch(ifUsingTestRPC)
+      .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (balance) {
-        assert.equal(transferenceFromAnotherAddressWithInvalidValueFailed, true,
-          'transference did not fail');
         assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
       })
       .then(done)
@@ -375,28 +379,33 @@ contract('ColonyShare', function (accounts) {
     });
 
     it('should fail if ETHER is sent', function (done) {
-      var shouldFailEtherWasSentInApproval = false;
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+
       colonyShare.approve(_OTHER_ACCOUNT_, 100, {
-        value: 1
+        value: 1,
+        gas: 1e6,
+        gasPrice: _GAS_PRICE_
       })
-      .catch(function () {
-        shouldFailEtherWasSentInApproval = true;
-      })
+      .catch(ifUsingTestRPC)
       .then(function () {
-        assert.equal(shouldFailEtherWasSentInApproval, true, 'approval didnt fail.');
+        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if the value is bigger than upper limit', function (done) {
-      var shoudFailIfValueIsBiggerThanUpperLimit = false;
-      colonyShare.approve(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1)
-      .catch(function () {
-        shoudFailIfValueIsBiggerThanUpperLimit = true;
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      colonyShare.approve(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1,
+      {
+        gas: 1e6,
+        gasPrice: _GAS_PRICE_
       })
+      .catch(ifUsingTestRPC)
       .then(function () {
-        assert.equal(shoudFailIfValueIsBiggerThanUpperLimit, true, 'approval didnt fail.');
+        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
       })
       .then(done)
       .catch(done);
@@ -445,7 +454,9 @@ contract('ColonyShare', function (accounts) {
       colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
       .then(function (_prevBalance) {
         previousBalance = _prevBalance.toNumber();
-        colonyShare.generateShares(100);
+        return colonyShare.generateShares(100);
+      })
+      .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (_currentBalance) {
@@ -456,43 +467,47 @@ contract('ColonyShare', function (accounts) {
     });
 
     it('should fail if ETHER is sent', function (done) {
-      var shouldFailEtherWasSentWhileGeneratingShares = false;
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+
       colonyShare.generateShares(_OTHER_ACCOUNT_, 100, {
-        value: 1
+        value: 1,
+        gas: 1e6,
+        gasPrice: _GAS_PRICE_
       })
-      .catch(function () {
-        shouldFailEtherWasSentWhileGeneratingShares = true;
-      })
+      .catch(ifUsingTestRPC)
       .then(function () {
-        assert.equal(shouldFailEtherWasSentWhileGeneratingShares, true,
-          'shares generation did not fail.');
+        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if the value is equal to zero', function (done) {
-      var shouldFailIfSharesGenerationValueIsZero = false;
-      colonyShare.generateShares(0)
-      .catch(function () {
-        shouldFailIfSharesGenerationValueIsZero = true;
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      colonyShare.generateShares(0, {
+        gas: 1e6,
+        gasPrice: _GAS_PRICE_
       })
+      .catch(ifUsingTestRPC)
       .then(function () {
-        assert.equal(shouldFailIfSharesGenerationValueIsZero, true,
-          'shares generation did not fail.');
+        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if the value causes uint to wrap', function (done) {
-      var shouldFailIfUintWrap = false;
-      colonyShare.generateShares(2e255)
-      .catch(function () {
-        shouldFailIfUintWrap = true;
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      colonyShare.generateShares(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
+        gas: 1e6,
+        gasPrice: _GAS_PRICE_
       })
+      .catch(ifUsingTestRPC)
       .then(function () {
-        assert.equal(shouldFailIfUintWrap, true, 'shares generation did not fail.');
+        var newBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        assert.equal(prevBalance.minus(newBalance).toNumber(), 1e6*_GAS_PRICE_, 'creation didnt fail - didn\'t throw and use all gas');
       })
       .then(done)
       .catch(done);
