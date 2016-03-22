@@ -27,10 +27,6 @@ contract('Colony', function (accounts) {
     }).then(done).catch(done);
   });
 
-  it('should update rootContract address', function(done){
-    console.log(colony.rootContract.call());
-  });
-
   it('should allow user to make task', function (done) {
     colony.makeTask('name', 'summary').then(function () {
       return colony.getTask.call(0);
@@ -91,13 +87,13 @@ contract('Colony', function (accounts) {
   it('should not allow non-admin to close task', function (done) {
     var prevBalance = web3.eth.getBalance(otheraccount);
     var completeAndPayTaskFailed = false;
-    colony.makeTask('name', 'summary').then(function () {
-      return colony.updateTask(0, 'nameedit', 'summary');
-    }).then(function () {
+    colony.makeTask('name', 'summary')
+    .then(function () {
+      return colony.updateTask(0, 'nameedit', 'summary'); })
+    .then(function () {
       return colony.contribute(0, {
-        value: 10000
-      });
-    }).then(function () {
+        value: 10000 }); })
+    .then(function () {
       return colony.completeAndPayTask(0, otheraccount, {
         from: otheraccount
       });
@@ -135,6 +131,7 @@ contract('Colony', function (accounts) {
       assert.equal(value[1], 'summary', 'No task?');
       assert.equal(value[2], true, 'No task?');
       assert.equal(value[3].toNumber(), 10000, 'No task?');
+      assert.equal(value[4].toNumber(), 0, 'No task?');
       assert.equal(web3.eth.getBalance(otheraccount).minus(prevBalance).toNumber(), 9500);
     }).then(done).catch(done);
   });

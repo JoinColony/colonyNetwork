@@ -1,4 +1,5 @@
 import "ColonyShareLedger.sol";
+import "ColonyPaymentProvider.sol";
 
 contract Colony {
 
@@ -86,25 +87,19 @@ contract Colony {
   	return tasks.length;
   }
 
-  //Mark a task as completed, pay a user
+  //Mark a task as completed, pay a user, pay root colony fee
   function completeAndPayTask(uint256 taskId, address paymentAddress){
   		if (tasks[taskId].accepted==true || taskId<0 || taskId >= tasks.length || users[msg.sender].admin==false)
   			throw;
 		var task = tasks[taskId];
 		task.accepted = true;
 
-	//ColonyPaymentProvider.SettleTaskFees(task.eth, paymentAddress, rootColony);
-		// Pay the task Ether and Shares value -5% to task completor
-		paymentAddress.send((task.eth * 95)/100);
-		// Pay root colony 5% fee
-		rootColony.send((task.eth * 5)/100);
+	  ColonyPaymentProvider.SettleTaskFees(task.eth, paymentAddress, rootColony);
 
-		//var t = ColonyShareLedger.at(shareLedger);
-
-		//if (t.totalSupply < task.shares)
-		//throw;
-		//shareLedger.transfer(paymentAddress, ((task.shares * 95)/100));
-    //shareLedger.transfer(rootColony, ((task.shares * 5)/100));
+		if (shareLedger.totalSupply < task.shares)
+			throw;
+		shareLedger.transfer(paymentAddress, ((task.shares * 95)/100));
+    shareLedger.transfer(rootColony, ((task.shares * 5)/100));
   }
 
 	function () {
@@ -116,5 +111,4 @@ contract Colony {
 			// contract.
 			throw;
 	}
-
 }

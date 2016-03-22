@@ -56,8 +56,10 @@ contract('RootColony', function(accounts) {
 
    it('should pay root colony 5% fee of a completed task value', function (done) {
      var colony;
+     var rootColonyAddress;
      var startingBalance = web3.eth.getBalance(rootColony.address);
      console.log("Starting rootColony balance: ", startingBalance.toNumber());
+     var completeAndPayTaskFailed = false;
 
      rootColony.createColony({ from: mainaccount })
        .then(function() {
@@ -67,17 +69,28 @@ contract('RootColony', function(accounts) {
            colony = Colony.at(address);
            return colony; })
         .then(function (colony) {
-           return colony.makeTask('name', 'summary'); })
+           return colony.rootColony.call(otheraccount); })
+          .then(function (rootColonyAddress) {
+            console.log("Root Colony address is: ",rootColonyAddress);
+            return colony.makeTask('name', 'summary');
+          })
         .then(function() {
-             return colony.updateTask(0, 'nameedit', 'summary'); })
+            return colony.updateTask(0, 'nameedit', 'summary'); })
         .then(function () {
            return colony.contribute(0, {value: 1000}); })
         .then(function () {
            return colony.completeAndPayTask(0, otheraccount, { from: mainaccount }); })
+        .catch(function () {
+            console.log("completeAndPayTaks failed");
+             completeAndPayTaskFailed = true;
+             return colony.getTask.call(0);
+           })
         .then(function (value) {
+          assert.equal(completeAndPayTaskFailed, false, 'The completeAndPayTask call failed when it should not');
           console.log("Updated rootColony balance: ", web3.eth.getBalance(rootColony.address).toNumber());
           var balance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
-          assert.equal(balance, 500);
+          console.log("Balance is: ", balance);
+          assert.equal(balance, 50);
         })
         .then(done)
         .catch(done);

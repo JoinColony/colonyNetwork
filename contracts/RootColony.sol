@@ -22,8 +22,4 @@ contract RootColony {
    {
      return colonies[coloniesNum];
    }
-
-   function () {
-      throw;
-   }
 }
