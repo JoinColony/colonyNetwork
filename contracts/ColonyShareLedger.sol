@@ -2,17 +2,14 @@
   IMPLEMENTING TOKEN STANDARD BASED ON: https://github.com/ConsenSys/Tokens
 */
 
-import "AbstractShareLedger.sol";
-contract ColonyShareLedger is AbstractShareLedger {
+import "IShareLedger.sol";
 
-  /// @notice if the owner initial supply is bigger than the total supply then it raises an error
-  function ColonyShareLedger(uint256 _totalSupply, string _symbol, string _name)
-    refundEtherSentByAccident
+contract ColonyShareLedger is IShareLedger {
+
+  function ColonyShareLedger()
+  refundEtherSentByAccident
   {
-    balances[owner] = _totalSupply;
-    total_supply = _totalSupply;
-    name = _name;
-    symbol = _symbol;
+    
   }
 
   /// @notice verifies if the sender has enough balance, otherwise, raises an error
@@ -26,13 +23,6 @@ contract ColonyShareLedger is AbstractShareLedger {
     _
   }
 
-  /// @notice raise an error if user sends ether by accident
-  modifier refundEtherSentByAccident()
-  {
-      if(msg.value > 0) throw;
-      _
-  }
-
   /// @notice verifies if the address msg.sender has enough balance approved from `_from` address
   /// @param _from approver of the transference
   /// @param _value The amount of token to be transferred
@@ -44,12 +34,28 @@ contract ColonyShareLedger is AbstractShareLedger {
     _
   }
 
+  /// @notice set the ColonyShareLedger symbol
+  /// @param _symbol the symbol of the Colony Share
+  function setSharesSymbol(string _symbol)
+  refundEtherSentByAccident
+  {
+    symbol = _symbol;
+  }
+
+  /// @notice set the ColonyShareLedger title
+  /// @param _title the title of the Colony Share
+  function setSharesTitle(string _title)
+  refundEtherSentByAccident
+  {
+    title = _title;
+  }
+
   /// @notice send `_value` token to `_to` from `msg.sender`
   /// @param _to The address of the recipient
   /// @param _value The amount of token to be transferred
   function transfer(address _to, uint256 _value)
-    refundEtherSentByAccident
-    hasEnoughBalance(msg.sender, _value)
+  refundEtherSentByAccident
+  hasEnoughBalance(msg.sender, _value)
   {
       balances[msg.sender] -= _value;
       balances[_to] += _value;
@@ -62,9 +68,9 @@ contract ColonyShareLedger is AbstractShareLedger {
   /// @param _to The address of the recipient
   /// @param _value The amount of token to be transferred
   function transferFrom(address _from, address _to, uint256 _value)
-    refundEtherSentByAccident
-    hasEnoughBalance(_from, _value)
-    hasEnoughAllowedBalance(_from, _value)
+  refundEtherSentByAccident
+  hasEnoughBalance(_from, _value)
+  hasEnoughAllowedBalance(_from, _value)
   {
       balances[_from] -= _value;
       balances[_to] += _value;
@@ -78,7 +84,7 @@ contract ColonyShareLedger is AbstractShareLedger {
   /// @param _spender The address of the account able to transfer the tokens
   /// @param _value The amount of wei to be approved for transfer
   function approve(address _spender, uint256 _value)
-    refundEtherSentByAccident
+  refundEtherSentByAccident
   {
     if(_value > total_supply) throw;
 
@@ -90,8 +96,8 @@ contract ColonyShareLedger is AbstractShareLedger {
   /// @param _spender The address of the account able to transfer the tokens
   /// @return Amount of remaining tokens allowed to spent
   function allowance(address _owner, address _spender)
-    refundEtherSentByAccident
-    constant returns (uint256 remaining)
+  refundEtherSentByAccident
+  constant returns (uint256 remaining)
   {
     return allowed[_owner][_spender];
   }
@@ -99,8 +105,8 @@ contract ColonyShareLedger is AbstractShareLedger {
   /// @param _owner The address from which the balance will be retrieved
   /// @return The balance
   function balanceOf(address _owner)
-    refundEtherSentByAccident
-    constant returns (uint256 balance)
+  refundEtherSentByAccident
+  constant returns (uint256 balance)
   {
     return balances[_owner];
   }
@@ -109,8 +115,8 @@ contract ColonyShareLedger is AbstractShareLedger {
   /// and assign it to the contract owner.
   /// @param _amount The amount to be increased in the upper bound total_supply
   function generateShares(uint256 _amount)
-    onlyOwner
-    refundEtherSentByAccident
+  onlyOwner
+  refundEtherSentByAccident
   {
       if(_amount == 0) throw;
       if (total_supply + _amount < _amount) throw;
@@ -121,13 +127,19 @@ contract ColonyShareLedger is AbstractShareLedger {
 
   /// @return total amount of tokens
   function totalSupply()
-    refundEtherSentByAccident
-    constant returns (uint256 _total)
+  refundEtherSentByAccident
+  constant returns (uint256 _total)
   {
     return total_supply;
   }
 
 	function () {
+			// This function gets executed if a
+			// transaction with invalid data is sent to
+			// the contract or just ether without data.
+			// We revert the send so that no-one
+			// accidentally loses money when using the
+			// contract.
 			throw;
 	}
 }

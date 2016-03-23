@@ -1,37 +1,48 @@
 
-import "AColonyFactory.sol";
+import "IColonyFactory.sol";
+import "Destructible.sol";
 
-contract RootColony is LocatorConsumer {
+contract RootColony is Destructible {
 
-  address public colonyFactoryAddress;
-  address public owner;
+  IColonyFactory colonyFactory;
   uint coloniesNum;
 
-  function RootColony(address _colonyFactory) {
-    owner = msg.sender;
-    locator = Locator(_locatorAddress);
+  /// @notice registers a colony factory using an address
+  /// @param _colonyFactoryAddress address used to locate the colony factory contract
+  function registerColonyFactory(address _colonyFactoryAddress)
+  refundEtherSentByAccident
+  onlyOwner
+  {
+    colonyFactory = IColonyFactory(_colonyFactoryAddress);
   }
 
-  function setColonyFactoryAddress(address _colonyFactoryAddress) {
-    colonyFactoryAddress = _colonyFactoryAddress;
-  }
-
-  // Creates a colony
-  function createColony(bytes32 _key, uint256 _initialSharesSupply) {
-    if(_key == "") throw;
-    var colonyFactory = AColonyFactory(colonyFactoryAddress);
-    colonyFactoryAddress.createColony(msg.sender, _key, _initialSharesSupply);
+  /// @notice creates a Colony
+  /// @param key_ the key to be used to keep track of the Colony
+  function createColony(bytes32 key_)
+  refundEtherSentByAccident
+  throwIfIsEmptyBytes32(key_)
+  {
+    colonyFactory.createColony(key_);
     coloniesNum++;
   }
 
-  function countColonies() constant returns (uint)
+  /// @notice this function returns the amount of colonies created
+  /// @return the amount of colonies created
+  function countColonies()
+  refundEtherSentByAccident
+  constant returns (uint)
   {
     return coloniesNum;
   }
 
-  function getColony(bytes32 _key) constant returns (address)
+  /// @notice this function can be used to fetch the address of a Colony by a key.
+  /// @param _key the key of the Colony created
+  /// @return the address for the given key.
+  function getColony(bytes32 _key)
+  refundEtherSentByAccident
+  throwIfIsEmptyBytes32(_key)
+  constant returns (address)
   {
-    var colonyFactory = AColonyFactory(colonyFactoryAddress);
-    return colonyFactory.colonies[_key];
+    return colonyFactory.colonies(_key);
   }
 }

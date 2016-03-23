@@ -1,10 +1,13 @@
 {
   "deploy": [
     // Names of contracts that should be deployed to the network.
-    "Colony",
     "ColonyShareLedger",
     "RootColony",
-    "ColonyPaymentProvider"],
+    "ColonyPaymentProvider",
+    "RootColonyResolver",
+    "TaskDB",
+    "ColonyFactory"
+  ],
   "rpc": {
     // Default RPC configuration.
     "host": "localhost",

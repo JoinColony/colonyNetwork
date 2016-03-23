@@ -1,88 +1,144 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, web3, assert */
+/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, assert */
 
-contract('RootColony', function(accounts) {
-  var mainaccount = accounts[0];
-  var otheraccount = accounts[1];
+var testHelper = require('./test-helper.js');
+contract('RootColony', function (accounts) {
+  var _MAIN_ACCOUNT_ = accounts[0];
+  var _OTHER_ACCOUNT_ = accounts[1];
+  var _GAS_PRICE_ = 20e9;
+  var _COLONY_KEY_ = 'COLONY_TEST';
+  var colonyFactory;
   var rootColony;
+  var rootColonyResolver;
+  var ifUsingTestRPC = testHelper.ifUsingTestRPC;
+  var checkAllGasSpent = testHelper.checkAllGasSpent;
 
-  beforeEach(function (done) {
-    RootColony.new({
-      from: mainaccount,
-      value: 3000000000000000000 // START CONTRACT WITH AN ENDOWMENT OF 3 ETH
-      })
-      .then(function (contract) {
-        rootColony = contract;
-        done();
-      });
+  before(function(done){
+
+    colonyFactory = ColonyFactory.deployed();
+    rootColony = RootColony.deployed();
+    rootColonyResolver = RootColonyResolver.deployed();
+
+    done();
   });
 
-  it('deployed user should be admin', function(done) {
-      rootColony.owner.call({ from: mainaccount })
-        .then(function(owner) { assert.equal(owner, mainaccount, 'First user isn\'t an admin'); })
-        .then(done)
-        .catch(done);
+  beforeEach(function(done){
+
+    rootColonyResolver.registerRootColony(rootColony.address)
+    .then(function(){
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+    })
+    .then(function(){
+      return rootColony.registerColonyFactory(colonyFactory.address);
+    })
+    .then(function(){
+      done();
+    })
+    .catch(done);
   });
 
-  it('the root network should allow users to create new colonies', function(done) {
-    rootColony.createColony(0, { from: mainaccount })
+  describe('when spawning new colonies', function(){
+    it('should allow users to create new colonies', function (done) {
+      var colony;
+      rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
       .then(function(){
-          return rootColony.getNColonies(); })
-      .then(function(nColonies) {
-          assert.equal(nColonies, 1, 'nColonies is wrong');
-          return rootColony.getColony.call(0); })
-      .then(function(address){
-          return Colony.at(address); })
-      .then(function(colony){
-          return colony.getUserInfo.call(mainaccount); })
-      .then(function(admin){
-        assert.equal(admin, true, 'First user isn\'t an admin'); })
+        return rootColony.getColony(_COLONY_KEY_);
+      })
+      .then(function (_address){
+        colony = Colony.at(_address);
+        return colony;
+      })
+      .then(function (colony) {
+        console.log('\tColony address: [ ', colony.address,' ]');
+        console.log('\tRootColony address: [ ', rootColony.address,' ]');
+        console.log('\tColonyFactory address: [ ', colonyFactory.address,' ]');
+        //console.log('\tColony owner: [ ', _owner,' ]');
+        console.log('\tMAIN ACCOUNT: [ ', _MAIN_ACCOUNT_,' ]');
+        //assert.equal(_owner, _MAIN_ACCOUNT_, 'owner user is not an admin');
+
+        return colony.getUserInfo.call(_MAIN_ACCOUNT_);
+      })
+      .then(function(_isAdmin){
+        assert.isTrue(_isAdmin, 'creator user is an admin');
+        return colony.getRootColony.call();
+      })
+      .then(function (_rootColonyAddress) {
+        assert.equal(rootColony.address, _rootColonyAddress, 'root colony address is incorrect');
+      })
       .then(done)
       .catch(done);
-   });
-
-   it('when creating a new colony should set its rootColony property to itself', function(done) {
-     rootColony.createColony(100, { from: otheraccount })
-       .then(function() {
-           return rootColony.getColony(0); })
-       .then(function(address){
-           return Colony.at(address); })
-       .then(function(colony){
-           return colony.rootColony.call(otheraccount); })
-       .then(function(rootColonyAddress){
-          assert.equal(rootColony.address, rootColonyAddress);})
-       .then(done)
-       .catch(done);
     });
 
-   it('should pay root colony 5% fee of a completed task value', function (done) {
-     var colony;
-     var startingBalance = web3.eth.getBalance(rootColony.address);
-     console.log('Starting rootColony balance: ', startingBalance.toNumber());
+    it('should fail if the key provided is empty', function (done) {
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      rootColony.createColony('',
+      {
+        from: _MAIN_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: 1e6
+      })
+      .catch(ifUsingTestRPC)
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
 
-     rootColony.createColony(100, { from: mainaccount })
-       .then(function() {
-           return rootColony.getColony(0); })
-       .then(function(address){
-           console.log('Colony address is: ', address);
-           colony = Colony.at(address);
-           return colony; })
-        .then(function (colony) {
-            return colony.makeTask('name', 'summary'); })
-        .then(function() {
-            return colony.updateTask(0, 'nameedit', 'summary'); })
-        .then(function () {
-           return colony.contribute(0, {value: 1000}); })
-        .then(function () {
-           return colony.completeAndPayTask(0, otheraccount, { from: mainaccount }); })
-        .then(function () {
-          console.log('Updated rootColony balance: ', web3.eth.getBalance(rootColony.address).toNumber());
-          var balance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
-          console.log('Balance is: ', balance);
-          assert.equal(balance, 50);
-        })
-        .then(done)
-        .catch(done);
-   });
- });
+    it('should fail if ETH is sent', function (done) {
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      rootColony.createColony(_COLONY_KEY_,
+      {
+        from: _MAIN_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: 1e6,
+        value: 1
+      })
+      .catch(ifUsingTestRPC)
+      .then(function(){
+        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should pay root colony 5% fee of a completed task value', function (done) {
+      var colony;
+      var startingBalance = web3.eth.getBalance(rootColony.address);
+      console.log('Starting rootColony balance: ', startingBalance.toNumber());
+
+      rootColony.createColony('TestColony', {from: _MAIN_ACCOUNT_})
+      .then(function(){
+        return rootColony.getColony('TestColony');
+      })
+      .then(function (_address){
+        colony = Colony.at(_address);
+        return colony.taskDB.call();
+      })
+      .then(function() {
+        return colony.addTask('name', 'summary', {from:_MAIN_ACCOUNT_});
+      })
+      .then(function() {
+        console.log('calling updateTask');
+        return colony.updateTask(0, 'nameedit', 'summary');
+      })
+      .then(function () {
+        console.log('calling completeAndPayTask');
+        return colony.contributeEth(0, {from: _MAIN_ACCOUNT_, value: 1000});
+      })
+      .then(function () {
+        console.log('calling completeAndPayTask');
+        return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
+      })
+      .then(function () {
+        console.log('Updated rootColony balance: ', web3.eth.getBalance(rootColony.address).toNumber());
+        var balance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
+        console.log('Balance is: ', balance);
+        assert.equal(balance, 50);
+      })
+      .then(done)
+      .catch(done);
+    });
+  });
+});

@@ -1,9 +1,9 @@
 
-import "Killable.sol";
-contract AbstractShareLedger is Killable{
+import "Destructible.sol";
+contract IShareLedger is Destructible {
 
     uint256 total_supply;
-    string public name;
+    string public title;
     string public symbol;
 
     mapping (address => uint256) balances;
@@ -11,6 +11,14 @@ contract AbstractShareLedger is Killable{
 
     event Transfer(address indexed _from, address indexed _to, uint256 indexed _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 indexed _value);
+
+    /// @notice set share ledger symbol
+    /// @param _symbol the symbol of the Colony Share
+    function setSharesSymbol(string _symbol);
+
+    /// @notice set the share ledger title
+    /// @param _title the title of the Colony Share
+    function setSharesTitle(string _title);
 
     /// @return total amount of tokens
     function totalSupply() constant returns (uint256 supply) {}

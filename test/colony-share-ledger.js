@@ -1,42 +1,18 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
 /* globals contract, ColonyShareLedger, assert, web3*/
-
-function ifUsingTestRPC() {
-  //Okay, so, there is a discrepancy between how testrpc handles
-  //OOG errors (throwing an exception all the way up to these tests) and
-  //how geth handles them (still making a valid transaction and returning
-  //a txid). For the explanation of why, see
-  //
-  //See https://github.com/ethereumjs/testrpc/issues/39
-  //
-  //Obviously, we want our tests to pass on both, so this is a
-  //bit of a problem. We have to have this special function that we use to catch
-  //the error. I've named it so that it reads well in the tests below - i.e.
-  //.catch(ifUsingTestRPC)
-  //Note that it just swallows the error - open to debate on whether this is
-  //the best thing to do, or it should log it even though it's expected, in
-  //case we get an error that is unexpected...
-  // console.log('Error:',err)
-  return;
-}
-
-function checkAllGasSpent(gasAmount, gasPrice, account, prevBalance){
-  var newBalance = web3.eth.getBalance(account);
-  //When a transaction throws, all the gas sent is spent. So let's check that
-  //we spent all the gas that we sent.
-  assert.equal(prevBalance.minus(newBalance).toNumber(), gasAmount*gasPrice, 'creation didnt fail - didn\'t throw and use all gas');
-}
-
+var testHelper = require('./test-helper.js');
 contract('ColonyShareLedger', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _TOTAL_SUPPLY_ = 1000;
+  var ifUsingTestRPC = testHelper.ifUsingTestRPC;
+  var checkAllGasSpent = testHelper.checkAllGasSpent;
   var _GAS_PRICE_ = 20e9;
   var colonyShare;
 
   beforeEach(function (done) {
-    ColonyShareLedger.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY',{from:_MAIN_ACCOUNT_})
+    ColonyShareLedger.new()
     .then(function (contract) {
       colonyShare = contract;
       done();
@@ -44,46 +20,10 @@ contract('ColonyShareLedger', function (accounts) {
   });
 
   describe('when created', function () {
-    it('should have an initial supply', function (done) {
+    it('should have an initial supply of zero shares', function (done) {
       colonyShare.totalSupply.call()
       .then(function (total_supply) {
-        assert.equal(total_supply, 1000, 'initial supply is different from  1000');
-        done();
-      })
-      .catch(done);
-    });
-
-    it('should have an owner', function (done) {
-      colonyShare.owner.call()
-      .then(function (owner) {
-        assert.equal(_MAIN_ACCOUNT_, owner, 'owner does not match');
-        done();
-      })
-      .catch(done);
-    });
-
-    it('should give the owner an initial supply', function (done) {
-      colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
-      .then(function (owner_initial_supply) {
-        assert.equal(owner_initial_supply, 1000, 'owner initial supply is different from  1000');
-        done();
-      })
-      .catch(done);
-    });
-
-    it('should have a symbol', function (done) {
-      colonyShare.symbol.call()
-      .then(function (symbol) {
-        assert.equal('CNY', symbol, 'symbol does not match');
-        done();
-      })
-      .catch(done);
-    });
-
-    it('should have a name', function (done) {
-      colonyShare.name.call()
-      .then(function (name) {
-        assert.equal('COLONY', name, 'name does not match');
+        assert.equal(total_supply, 0, 'initial supply is different from  1000');
         done();
       })
       .catch(done);
@@ -91,7 +31,7 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if ETHER is sent', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      ColonyShareLedger.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY', {
+      ColonyShareLedger.new({
         value: 1,
         gas: 1e6,
         gasPrice: _GAS_PRICE_
@@ -109,8 +49,10 @@ contract('ColonyShareLedger', function (accounts) {
     it('should decrease the sender balance and increase the receiver balance by the same amount',
       function (done) {
         var previousBalance;
-
-        colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
+        colonyShare.generateShares(_TOTAL_SUPPLY_)
+        .then(function(){
+          return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+        })
         .then(function (prevBalance) {
           previousBalance = prevBalance;
           return colonyShare.transfer(_OTHER_ACCOUNT_, 100);
@@ -131,8 +73,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if ETHER is sent',  function (done) {
       var previousBalance;
-
-      colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, 1, {
@@ -154,8 +98,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if the sender does not have funds', function (done) {
       var previousBalance;
-
-      colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, previousBalance + 1);
@@ -173,8 +119,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if the payload is equal to zero', function (done) {
       var previousBalance;
-
-      colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, 0);
@@ -192,8 +140,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if the value is bigger than the upper limit', function (done) {
       var previousBalance;
-
-      colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
       .then(function (prevBalance) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
@@ -215,8 +165,10 @@ contract('ColonyShareLedger', function (accounts) {
       var previousBalance;
       var otherAccountPreviousBalance;
       var previousAllowance;
-
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -256,7 +208,10 @@ contract('ColonyShareLedger', function (accounts) {
     it('should fail if ETHER is sent', function (done) {
       var previousBalance;
 
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -279,8 +234,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if the sender does not have funds', function (done) {
       var previousBalance;
-
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -301,8 +258,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if the value is equal to zero', function (done) {
       var previousBalance;
-
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -324,7 +283,10 @@ contract('ColonyShareLedger', function (accounts) {
     it('should fail if the value is bigger than the upper limit', function (done) {
       var previousBalance;
 
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -346,7 +308,10 @@ contract('ColonyShareLedger', function (accounts) {
     it('should fail if the sender does not have a high enough allowance', function (done) {
       var previousBalance;
 
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
       })
@@ -371,7 +336,11 @@ contract('ColonyShareLedger', function (accounts) {
 
   describe('when approving allowance to a third party', function () {
     it('should set the allowed value to be equal to the approved value', function (done) {
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
       })
@@ -382,12 +351,15 @@ contract('ColonyShareLedger', function (accounts) {
     });
 
     it('should fail if ETHER is sent', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-
-      colonyShare.approve(_OTHER_ACCOUNT_, 100, {
-        value: 1,
-        gas: 1e6,
-        gasPrice: _GAS_PRICE_
+      var prevBalance;
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100, {
+          value: 1,
+          gas: 1e6,
+          gasPrice: _GAS_PRICE_
+        });
       })
       .catch(ifUsingTestRPC)
       .then(function(){
@@ -398,11 +370,15 @@ contract('ColonyShareLedger', function (accounts) {
     });
 
     it('should fail if the value is bigger than upper limit', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colonyShare.approve(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1,
-      {
-        gas: 1e6,
-        gasPrice: _GAS_PRICE_
+      var prevBalance;
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        return colonyShare.approve(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1,
+        {
+          gas: 1e6,
+          gasPrice: _GAS_PRICE_
+        });
       })
       .catch(ifUsingTestRPC)
       .then(function(){
@@ -413,7 +389,10 @@ contract('ColonyShareLedger', function (accounts) {
     });
 
     it('should let a sender update the allowed value of another user', function (done) {
-      colonyShare.approve(_OTHER_ACCOUNT_, 100)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.approve(_OTHER_ACCOUNT_, 100);
+      })
       .then(function () {
         return colonyShare.allowance.call(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
       })
@@ -434,7 +413,10 @@ contract('ColonyShareLedger', function (accounts) {
   describe('when generating shares', function () {
     it('should let the total supply be increased', function (done) {
       var previousSupply = 0;
-      colonyShare.totalSupply.call()
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.totalSupply.call();
+      })
       .then(function (total_supply) {
         previousSupply = total_supply.toNumber();
         return colonyShare.generateShares(100);
@@ -451,8 +433,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should increase the owners balance by the same amount of generated shares', function (done) {
       var previousBalance = 0;
-
-      colonyShare.balanceOf.call(_MAIN_ACCOUNT_)
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
+      })
       .then(function (_prevBalance) {
         previousBalance = _prevBalance.toNumber();
         return colonyShare.generateShares(100);
@@ -469,11 +453,10 @@ contract('ColonyShareLedger', function (accounts) {
 
     it('should fail if ETHER is sent', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-
       colonyShare.generateShares(_OTHER_ACCOUNT_, 100, {
-        value: 1,
-        gas: 1e6,
-        gasPrice: _GAS_PRICE_
+          value: 1,
+          gas: 1e6,
+          gasPrice: _GAS_PRICE_
       })
       .catch(ifUsingTestRPC)
       .then(function(){
@@ -498,14 +481,44 @@ contract('ColonyShareLedger', function (accounts) {
     });
 
     it('should fail if the value causes uint to wrap', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colonyShare.generateShares(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
-        gas: 1e6,
-        gasPrice: _GAS_PRICE_
+      var prevBalance;
+      colonyShare.generateShares(_TOTAL_SUPPLY_)
+      .then(function(){
+        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        return colonyShare.generateShares(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
+          gas: 1e6,
+          gasPrice: _GAS_PRICE_
+        });
       })
       .catch(ifUsingTestRPC)
       .then(function(){
         checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+  });
+
+  describe('when setting default ledger attributes', function(){
+    it('should be able to define a symbol', function(done){
+      colonyShare.setSharesSymbol('CNY')
+      .then(function(){
+        return colonyShare.symbol.call();
+      })
+      .then(function(_symbol){
+        assert.equal(_symbol, 'CNY', 'shares symbol is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should be able to define a title', function(done){
+      colonyShare.setSharesTitle('COLONY')
+      .then(function(){
+        return colonyShare.title.call();
+      })
+      .then(function(_title){
+        assert.equal(_title, 'COLONY', 'shares title is incorrect');
       })
       .then(done)
       .catch(done);

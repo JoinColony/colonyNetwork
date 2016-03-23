@@ -1,126 +1,165 @@
-import "ColonyShareLedger.sol";
-import "ColonyPaymentProvider.sol";
 
-contract Colony {
+import "Modifiable.sol";
+import "ITaskDB.sol";
+import "IRootColonyResolver.sol";
+import "ColonyPaymentProvider.sol";
+import "ColonyShareLedger.sol";
+
+contract Colony is Modifiable {
+
+  // Event to raise when a Task is completed and paid
+  event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
+
+  modifier onlyOwner {
+    if ( !this.getUserInfo(msg.sender)) throw;
+    _
+  }
 
 	struct User
 	{
-			bool admin;  // if true, that person is an admin
+		bool admin;  // if true, that person is an admin
 	}
 
-	struct Task
-	{
-			string name; //Short name
-			string summary; //IPFS hash of the brief
-			bool accepted; //Whether the work has been accepted
-			uint eth; //Amount of ETH contributed to the task
-			uint shares; //Amount of shares contributed to the task
-	}
-
-	// A dynamically-sized array of `Task` structs.
-	Task[] public tasks;
-
-	// Event to raise when a Task is completed and paid
-	event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
-
-	// Used to manage this colony's shares.
+  IRootColonyResolver public rootColonyResolver;
   ColonyShareLedger public shareLedger;
-	address public rootColony;
+  ITaskDB public taskDB;
 
  	// This declares a state variable that
 	// stores a `User` struct for each possible address.
  	mapping(address => User) public users;
 
-	function Colony(uint256 _totalSharesSupply) {
-		users[tx.origin].admin=true;
-		rootColony = msg.sender;
-		shareLedger = new ColonyShareLedger(_totalSharesSupply, 'CNY', 'COLONY');
-	}
+  function Colony(
+    address rootColonyResolverAddress_,
+    address _tasksDBAddress)
+  {
+    users[tx.origin].admin = true;
+    shareLedger = new ColonyShareLedger();
 
-	//Contribute ETH to a task
-	function contribute(uint256 taskId) {
-		var task = tasks[taskId];
-		if (task.accepted != false) // check for non-existing task or completed task
-				throw;
-		task.eth += msg.value;
+    rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
+    taskDB = ITaskDB(_tasksDBAddress);
+  }
+
+  /// @notice registers a new RootColonyResolver contract.
+  /// Used to keep the reference of the RootColony.
+  /// @param rootColonyResolverAddress_ the RootColonyResolver address
+  function registerRootColonyResolver(address rootColonyResolverAddress_)
+  onlyOwner
+  throwIfAddressIsInvalid(rootColonyResolverAddress_)
+  {
+    rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
+  }
+
+  /// @notice registers a new ITaskDB contract
+  /// @param _tasksDBAddress the address of the ITaskDB
+  function registerTaskDB(address _tasksDBAddress)
+  onlyOwner
+  throwIfAddressIsInvalid(_tasksDBAddress)
+  {
+    taskDB = ITaskDB(_tasksDBAddress);
+  }
+
+  /// @notice contribute ETH to a task
+  /// @param taskId the task ID
+	function contributeEth(uint256 taskId) {
+    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
+		if (isTaskAccepted)
+			throw;
+
+    taskDB.contributeEth(taskId, msg.value);
 	}
 
 	//Contribute Shares to a task
-	function contributeShares(uint256 taskId, uint256 shares){
-		var task = tasks[taskId];
-		if (task.accepted != false) // check for non-existing task or completed task
-				throw;
-		task.shares += shares;
+	function contributeShares(uint256 taskId, uint256 shares) {
+    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
+    if (isTaskAccepted)
+      throw;
 
+    taskDB.contributeShares(taskId, shares);
 		shareLedger.transfer(this, shares);
 	}
 
-	function getUserInfo(address userAddress) constant returns (bool admin){
-		admin=users[userAddress].admin;
+  /// @notice this function is used to generate Colony shares
+  /// @param _amount The amount of shares to be generated
+  function generateColonyShares(uint256 _amount)
+  onlyOwner
+  refundEtherSentByAccident
+  {
+    shareLedger.generateShares(_amount);
+  }
+
+  function getRootColony()
+  constant returns(address)
+  {
+    return rootColonyResolver.rootColonyAddress();
+  }
+
+  /// @notice this function adds a task to the task DB.
+  /// @param _name the task name
+  /// @param _summary an IPFS hash
+  function addTask(
+    string _name,
+    string _summary
+  )
+  throwIfIsEmptyString(_name)
+  {
+    taskDB.addTask(_name, _summary);
+  }
+
+  /// @notice this function updates the 'accepted' flag in the task
+  /// @param _id the task id
+  function acceptTask(uint256 _id)
+  onlyOwner
+  {
+    taskDB.acceptTask(_id);
+  }
+
+  /// @notice this function is used to update task data.
+  /// @param _id the task id
+  /// @param _name the task name
+  /// @param _summary an IPFS hash
+  function updateTask(
+    uint256 _id,
+    string _name,
+    string _summary
+  )
+  throwIfIsEmptyString(_name)
+  {
+    taskDB.updateTask(_id, _name, _summary);
+  }
+
+	function getUserInfo(address userAddress)
+  constant returns (bool admin)
+  {
+		return users[userAddress].admin;
 	}
 
-	//Make a task for some work to be done
-  function makeTask(string name, string summary){
-    tasks.push(Task({
-        name: name,
-        summary:summary,
-        accepted: false,
-        eth: 0,
-				shares: 0
-    }));
-  }
-
-  function updateTask(uint256 taskId, string name, string summary){
-	    tasks[taskId].name = name;
-	    tasks[taskId].summary = summary;
-  }
-
-  function getTask(uint256 taskId) constant returns (string name, string summary, bool accepted, uint eth, uint shares) {
-  	var task = tasks[taskId];
-	name = task.name;
-	summary = task.summary;
-	accepted = task.accepted;
-	eth = task.eth;
-	shares = task.shares;
-  }
-
-  function getNTasks() returns (uint) {
-  	return tasks.length;
-  }
-
   //Mark a task as completed, pay a user, pay root colony fee
-  function completeAndPayTask(uint256 taskId, address paymentAddress){
-  		if (tasks[taskId].accepted==true || taskId<0 || taskId >= tasks.length || users[msg.sender].admin==false)
-  			throw;
-		var task = tasks[taskId];
-		task.accepted = true;
+  function completeAndPayTask(uint256 taskId, address paymentAddress)
+  onlyOwner
+  {
 
-		if (task.eth > 0)
+    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
+    if (isTaskAccepted || users[msg.sender].admin == false)
+			throw;
+
+    var (taskEth, taskShares) = taskDB.getTaskBalance(taskId);
+    taskDB.acceptTask(taskId);
+		if (taskEth > 0)
 		{
-			ColonyPaymentProvider.SettleTaskFees(task.eth, paymentAddress, rootColony);
+			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
 		}
 
-		if (task.shares > 0)
+		if (taskShares > 0)
 		{
 			// Check if there are enough shares to pay up
-			if (shareLedger.totalSupply() < task.shares)
+			if (shareLedger.totalSupply() < taskShares)
 				throw;
 
 	    //bytes4 colonyConstrCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
-			shareLedger.transfer(paymentAddress, ((task.shares * 95)/100));
-	    shareLedger.transfer(rootColony, ((task.shares * 5)/100));
+			shareLedger.transfer(paymentAddress, ((taskShares * 95)/100));
+	    shareLedger.transfer(rootColonyResolver.rootColonyAddress(), ((taskShares * 5)/100));
 		}
 
-		TaskCompletedAndPaid(this, paymentAddress, task.eth, task.shares);
+		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);
   }
-
-	function () {
-			// This function gets executed if a
-			// transaction with invalid data is sent to
-			// the contract or just eth without data.
-			// We revert the send so that no-one
-			// accidentally loses money when using the
-			// contract.
-			throw;
-	}
 }
