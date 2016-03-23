@@ -21,20 +21,20 @@ contract Colony {
 	Task[] public tasks;
 
 	// Event to raise when a Task is completed and paid
-	event TaskCompletedAndPaid (address indexed _from, address indexed _to, uint256 indexed _value);
+	event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
 
 	// Used to manage this colony's shares.
-  address public shareLedger;
+  ColonyShareLedger public shareLedger;
 	address public rootColony;
 
  	// This declares a state variable that
 	// stores a `User` struct for each possible address.
  	mapping(address => User) public users;
 
-	function Colony() {
+	function Colony(uint256 _totalSupply, string _symbol, string _name) {
 		users[tx.origin].admin=true;
 		rootColony = msg.sender;
-		shareLedger = new ColonyShareLedger(0, 'CNY', 'Colony');
+		shareLedger = new ColonyShareLedger(_totalSupply, _symbol, _name);
 	}
 
 	//Contribute ETH to a task
@@ -47,11 +47,13 @@ contract Colony {
 
 	//Contribute Shares to a task
 	function contributeShares(uint256 taskId, uint256 shares){
-
 		var task = tasks[taskId];
 		if (task.accepted != false) // check for non-existing task or completed task
 				throw;
 		task.shares += shares;
+
+		shareLedger.approve(msg.sender, shares);
+		shareLedger.transferFrom(msg.sender, this, shares);
 	}
 
 	function getUserInfo(address userAddress) constant returns (bool admin){
@@ -94,12 +96,21 @@ contract Colony {
 		var task = tasks[taskId];
 		task.accepted = true;
 
-	  ColonyPaymentProvider.SettleTaskFees(task.eth, paymentAddress, rootColony);
+		if (task.eth > 0)
+		{
+			ColonyPaymentProvider.SettleTaskFees(task.eth, paymentAddress, rootColony);
+		}
 
-		if (shareLedger.totalSupply < task.shares)
-			throw;
-		shareLedger.transfer(paymentAddress, ((task.shares * 95)/100));
-    shareLedger.transfer(rootColony, ((task.shares * 5)/100));
+		if (task.shares > 0)
+		{
+			// Check if there are enough shares to pay up
+			if (shareLedger.totalSupply() < task.shares)
+				throw;
+			shareLedger.transfer(paymentAddress, ((task.shares * 95)/100));
+	    shareLedger.transfer(rootColony, ((task.shares * 5)/100));
+		}
+
+		TaskCompletedAndPaid(this, paymentAddress, task.eth, task.shares);
   }
 
 	function () {

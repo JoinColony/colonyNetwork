@@ -23,7 +23,7 @@ contract('RootColony', function(accounts) {
 
   it('the root network should allow users to create new colonies', function(done) {
     var colony;
-    rootColony.createColony({ from: otheraccount })
+    rootColony.createColony(0, 'CNY', 'COLONY',{ from: otheraccount })
       .then(function() {
           return rootColony.getColony(0); })
       .then(function(address){
@@ -38,7 +38,7 @@ contract('RootColony', function(accounts) {
 
    it('when creating a new colony should set its rootColony property to itself', function(done) {
      var colony;
-     rootColony.createColony({ from: otheraccount })
+     rootColony.createColony(0, 'CNY', 'COLONY', { from: otheraccount })
        .then(function() {
            return rootColony.getColony(0); })
        .then(function(address){
@@ -61,7 +61,7 @@ contract('RootColony', function(accounts) {
      console.log("Starting rootColony balance: ", startingBalance.toNumber());
      var completeAndPayTaskFailed = false;
 
-     rootColony.createColony({ from: mainaccount })
+     rootColony.createColony(0, 'CNY', 'COLONY',{ from: mainaccount })
        .then(function() {
            return rootColony.getColony(0); })
        .then(function(address){

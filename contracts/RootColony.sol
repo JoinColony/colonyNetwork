@@ -11,9 +11,9 @@ contract RootColony {
    }
 
    // Creates a colony
-   function createColony() returns (uint)
+   function createColony(uint256 _totalSupply, string _symbol, string _name) returns (uint)
    {
-     colonies[coloniesNum] = new Colony();
+     colonies[coloniesNum] = new Colony(_totalSupply, _symbol, _name);
      coloniesNum ++;
      return coloniesNum;
    }
