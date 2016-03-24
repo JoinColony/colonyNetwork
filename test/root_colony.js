@@ -23,7 +23,7 @@ contract('RootColony', function(accounts) {
 
   it('the root network should allow users to create new colonies', function(done) {
     var colony;
-    rootColony.createColony(0, 'CNY', 'COLONY',{ from: otheraccount })
+    rootColony.createColony({ from: otheraccount })
       .then(function() {
           return rootColony.getColony(0); })
       .then(function(address){
@@ -38,7 +38,7 @@ contract('RootColony', function(accounts) {
 
    it('when creating a new colony should set its rootColony property to itself', function(done) {
      var colony;
-     rootColony.createColony(0, 'CNY', 'COLONY', { from: otheraccount })
+     rootColony.createColony({ from: otheraccount })
        .then(function() {
            return rootColony.getColony(0); })
        .then(function(address){
@@ -59,34 +59,23 @@ contract('RootColony', function(accounts) {
      var rootColonyAddress;
      var startingBalance = web3.eth.getBalance(rootColony.address);
      console.log("Starting rootColony balance: ", startingBalance.toNumber());
-     var completeAndPayTaskFailed = false;
 
-     rootColony.createColony(0, 'CNY', 'COLONY',{ from: mainaccount })
+     rootColony.createColony({ from: mainaccount })
        .then(function() {
            return rootColony.getColony(0); })
        .then(function(address){
            console.log("Colony address is: ", address);
            colony = Colony.at(address);
            return colony; })
-        .then(function (colony) {
-           return colony.rootColony.call(otheraccount); })
-          .then(function (rootColonyAddress) {
-            console.log("Root Colony address is: ",rootColonyAddress);
-            return colony.makeTask('name', 'summary');
-          })
+        .then(function () {
+            return colony.makeTask('name', 'summary'); })
         .then(function() {
             return colony.updateTask(0, 'nameedit', 'summary'); })
         .then(function () {
            return colony.contribute(0, {value: 1000}); })
         .then(function () {
            return colony.completeAndPayTask(0, otheraccount, { from: mainaccount }); })
-        .catch(function () {
-            console.log("completeAndPayTaks failed");
-             completeAndPayTaskFailed = true;
-             return colony.getTask.call(0);
-           })
         .then(function (value) {
-          assert.equal(completeAndPayTaskFailed, false, 'The completeAndPayTask call failed when it should not');
           console.log("Updated rootColony balance: ", web3.eth.getBalance(rootColony.address).toNumber());
           var balance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
           console.log("Balance is: ", balance);

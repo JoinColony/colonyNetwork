@@ -1,8 +1,8 @@
 
 contract Ownable {
 	modifier onlyOwner {
-		if (tx.origin != owner) throw;
+		if (msg.sender != owner) throw;
 		_
 	}
-	address public owner = tx.origin;
+	address public owner = msg.sender;
 }

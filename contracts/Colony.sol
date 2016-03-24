@@ -31,10 +31,10 @@ contract Colony {
 	// stores a `User` struct for each possible address.
  	mapping(address => User) public users;
 
-	function Colony(uint256 _totalSupply, string _symbol, string _name) {
+	function Colony(uint256 _totalSharesSupply) {
 		users[tx.origin].admin=true;
 		rootColony = msg.sender;
-		shareLedger = new ColonyShareLedger(_totalSupply, _symbol, _name);
+		shareLedger = new ColonyShareLedger(_totalSharesSupply, 'CNY', 'COLONY');
 	}
 
 	//Contribute ETH to a task
@@ -52,8 +52,7 @@ contract Colony {
 				throw;
 		task.shares += shares;
 
-		shareLedger.approve(msg.sender, shares);
-		shareLedger.transferFrom(msg.sender, this, shares);
+		shareLedger.transfer(this, shares);
 	}
 
 	function getUserInfo(address userAddress) constant returns (bool admin){
@@ -91,7 +90,7 @@ contract Colony {
 
   //Mark a task as completed, pay a user, pay root colony fee
   function completeAndPayTask(uint256 taskId, address paymentAddress){
-  		if (tasks[taskId].accepted==true || taskId<0 || taskId >= tasks.length || users[msg.sender].admin==false)
+  		if (tasks[taskId].accepted==true || taskId<0 || taskId >= tasks.length || users[tx.origin].admin==false)
   			throw;
 		var task = tasks[taskId];
 		task.accepted = true;
@@ -106,6 +105,8 @@ contract Colony {
 			// Check if there are enough shares to pay up
 			if (shareLedger.totalSupply() < task.shares)
 				throw;
+
+	    //bytes4 colonyConstrCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
 			shareLedger.transfer(paymentAddress, ((task.shares * 95)/100));
 	    shareLedger.transfer(rootColony, ((task.shares * 5)/100));
 		}

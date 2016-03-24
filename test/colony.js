@@ -8,15 +8,22 @@ contract('Colony', function (accounts) {
   var rootColony, colony;
 
   beforeEach(function (done) {
-    // Test colony has an endowment of 3 ETH and 100 Shares
-    Colony.new(100, 'CNY', 'COLONY', {
-      from: mainaccount,
-      value: 3000000000000000000
-      })
-      .then(function (contract) {
-        colony = contract;
-        done();
-      })});
+    RootColony.new({from:mainaccount, value: 300000000})
+    .then(function(rootColonyContract){
+      rootColony = rootColonyContract;
+      return rootColony;
+    })
+    .then(function(){
+      return rootColony.createColony(100, { from: mainaccount, value: 300000000 })
+    })
+      .then(function() {
+          return rootColony.getColony(0); })
+      .then(function(address){
+          colony = Colony.at(address);
+          done();
+    });
+  });
+
 describe('when created', function () {
   it('deployed user should be admin', function (done) {
     colony.getUserInfo.call(mainaccount).then(function (admin) {
@@ -30,38 +37,45 @@ describe('when created', function () {
     }).then(done).catch(done);
   });
 
-  it('should be instantiated with 100 total shares', function(done){
-    colony.shareLedger.call()
+  it('should be instantiated with 100 total shares when generateShares is called with 100', function(done){
+    colony.shareLedger.call(0)
     .then(function(shareLedgerAddress) {
       var shareLedger = ColonyShareLedger.at(shareLedgerAddress);
-      return shareLedger.totalSupply.call(0); })
+      shareLedger.generateShares(100, {from: colony.address });
+      return shareLedger.totalSupply.call(0);
+    })
     .then(function(totalSupplyShares){
-      assert.equal(totalSupplyShares, 100); })
+      console.log("Total supply of shares: ", totalSupplyShares.toNumber());
+      assert.equal(totalSupplyShares.toNumber(), 100);
+    })
     .then(done).catch(done)
     });
 
-    it('should set colony owner as its share ledger owner', function (done) {
+    it('should set colony as the share ledger owner', function (done) {
       colony.shareLedger.call(0)
         .then(function(shareLedgerAddress){
           return ColonyShareLedger.at(shareLedgerAddress); })
         .then(function(shareLedger){
           return shareLedger.owner.call(); })
         .then(function(shareLedgerOwner){
-          assert.equal(shareLedgerOwner, colony, 'Colony admin should be set as the owner of its Share Ledger.');  })
+          assert.equal(shareLedgerOwner, colony.address, 'Colony admin should be set as the owner of its Share Ledger.');  })
         .then(done).catch(done);
       });
 });
 
 describe('when working with tasks', function () {
   it('should allow user to make task', function (done) {
-    colony.makeTask('name', 'summary').then(function () {
+    colony.makeTask('name', 'summary')
+    .then(function () {
       return colony.getTask.call(0);
-    }).then(function (value) {
+    })
+    .then(function (value) {
       assert.equal(value[0], 'name', 'No task?');
       assert.equal(value[1], 'summary', 'No task?');
       assert.equal(value[2], false, 'No task?');
       assert.equal(value[3].toNumber(), 0, 'No task?');
-    }).then(done).catch(done);
+    })
+    .then(done).catch(done);
   });
 
   it('should allow user to edit task', function (done) {
@@ -95,41 +109,12 @@ describe('when working with tasks', function () {
   });
 
   it('should allow user to contribute Shares to task', function (done) {
-    var shareLedger;
-    colony.shareLedger.call(0)
-      .then(function(shareLedgerAddress){
-        shareLedger = ColonyShareLedger.at(shareLedgerAddress);
-        return shareLedger; })
-      .then(function(){
-      //  console.log("Generate 100 shares..");
-      //  return shareLedger.generateShares.call(100, {from: mainaccount}); })
-      //.then(function(){
-      //  console.log("balanceOf called", );
-        return shareLedger.totalSupply.call(); })
-      .then(function(balance){
-        assert.equal(1000, balance.toNumber(), 'share ledger did not get the 1000 generated shares.');
-      })
-      //.then(function(){
-      ///  console.log("..and transfer them to otheraccount");
-//shareLedger.approve.call(otheraccount, 100, {from: mainaccount});
-    //    return shareLedger.transferFrom.call(mainaccount, otheraccount, 100, {from: otheraccount});
-    //  })
-    //  .then(function(){
-    //    return shareLedger.allowance.call(mainaccount, otheraccount);
-    //  })
-    //  .then(function(allowance){
-    //    return console.log("allowance is : ", allowance);
-    //  })
-      .then(function(){
-        return colony.makeTask('name', 'summary'); })
+    colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary'); })
       .then(function() {
-        console.log("calling contribute shares");
-        shareLedger.transfer.call(otheraccount, 100, {from: mainaccount});
-        return colony.contributeShares(0, 100, {from: otheraccount});})
+        return colony.contributeShares(0, 100, {from: mainaccount}); })
       .then(function() {
-          console.log("calling getTask");
         return colony.getTask.call(0); })
       .then(function (value) {
         assert.equal(value[0], 'nameedit');
@@ -137,18 +122,6 @@ describe('when working with tasks', function () {
         assert.equal(value[2], false);
         assert.equal(value[3].toNumber(), 0);
         assert.equal(value[4].toNumber(), 100); })
-      .then(function() {
-        return shareLedger.balanceOf.call(mainaccount); })
-      .then(function(colonyOwnerBalance){
-          console.log("Share balance for Colony: ", colonyOwnerBalance.toNumber());
-          assert.strictEqual(colonyOwnerBalance.toNumber(), 1100, 'The colony share balance does not match the contributed shares to task');
-return shareLedger.balanceOf.call(otheraccount);
-        })
-        .then(function(taskcontributorShares){
-          console.log("Share balance for Colony: ", colonyOwnerBalance.toNumber());
-          assert.strictEqual(taskcontributorShares.toNumber(), 0, 'The colony share balance does not match the contributed shares to task');
-
-        })
       .then(done).catch(done);
   });
 
@@ -197,35 +170,35 @@ return shareLedger.balanceOf.call(otheraccount);
     }).then(done).catch(done);
   });
 
-    it('should transfer 95% of shares to task completor on completing a task', function (done) {
+    it('should transfer 95% of shares to task completor and 5% to rootColony on completing a task', function (done) {
+      var shareLedger;
+
       colony.makeTask('name', 'summary').then(function () {
         return colony.updateTask(0, 'nameedit', 'summary');
       }).then(function () {
         return colony.contributeShares(0, 100);
       }).then(function () {
-        return colony.completeAndPayTask(0, otheraccount, {
-          from: mainaccount
-        });
-      }).then(function () {
-        return colony.getTask.call(0);
-      }).then(function (value) {
-        assert.equal(value[0], 'nameedit');
-        assert.equal(value[1], 'summary');
-        assert.equal(value[2], true);
-        assert.equal(value[3].toNumber(), 0);
-        assert.equal(value[4].toNumber(), 100);
+        return colony.completeAndPayTask(0, otheraccount, { from: mainaccount });
+      })
+      .then(function(){
         return colony.shareLedger.call();
       })
       .then(function(shareLedgerAddress){
-        console.log("ShareLedgerAddress is: ", shareLedgerAddress);
-        return ColonyShareLedger.at(shareLedgerAddress); })
-      .then(function(shareLedger){
-        return shareLedger.balanceOf.call(otheraccount); })
-      .then(function(balance){
-        console.log("Otheraccount balance is: ", balance);
-        assert.strictEqual(balance.c[0], 95, 'Share balance is not 95% of task share value'); })
+        console.log("ShareLedger address is: ", shareLedgerAddress)
+        shareLedger = ColonyShareLedger.at(shareLedgerAddress);
+        return shareLedger; })
+      .then(function(){
+        return shareLedger.balanceOf.call(otheraccount);
+      })
+      .then(function(otherAccountShareBalance){
+        assert.strictEqual(otherAccountShareBalance.toNumber(), 95, 'Share balance is not 95% of task share value');
+        return shareLedger.balanceOf.call(rootColony.address);
+      })
+      .then(function(rootColonyShareBalance){
+        assert.strictEqual(rootColonyShareBalance.toNumber(), 5, 'RootColony share balance is not 5% of task share value');
+      })
       .then(done)
       .catch(done);
     });
-});
+  });
 });
