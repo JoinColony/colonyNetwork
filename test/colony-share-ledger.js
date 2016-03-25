@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, ColonyShare, assert, web3*/
+/* globals contract, ColonyShareLedger, assert, web3*/
 
 function ifUsingTestRPC() {
   //Okay, so, there is a discrepancy between how testrpc handles
@@ -28,7 +28,7 @@ function checkAllGasSpent(gasAmount, gasPrice, account, prevBalance){
   assert.equal(prevBalance.minus(newBalance).toNumber(), gasAmount*gasPrice, 'creation didnt fail - didn\'t throw and use all gas');
 }
 
-contract('ColonyShare', function (accounts) {
+contract('ColonyShareLedger', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _TOTAL_SUPPLY_ = 1000;
@@ -36,7 +36,7 @@ contract('ColonyShare', function (accounts) {
   var colonyShare;
 
   beforeEach(function (done) {
-    ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY',{from:_MAIN_ACCOUNT_})
+    ColonyShareLedger.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY',{from:_MAIN_ACCOUNT_})
     .then(function (contract) {
       colonyShare = contract;
       done();
@@ -91,7 +91,7 @@ contract('ColonyShare', function (accounts) {
 
     it('should fail if ETHER is sent', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      ColonyShare.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY', {
+      ColonyShareLedger.new(_TOTAL_SUPPLY_, 'CNY', 'COLONY', {
         value: 1,
         gas: 1e6,
         gasPrice: _GAS_PRICE_

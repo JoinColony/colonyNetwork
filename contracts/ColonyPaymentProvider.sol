@@ -7,9 +7,4 @@ library ColonyPaymentProvider
     // Pay root colony 5% fee
     rootColony.send((taskValueEth * 5)/100);
   }
-
-  modifier hasEnoughBalance(address _from, uint256 _value)
-  {
-    if(_value == 0) throw;
-  }
 }

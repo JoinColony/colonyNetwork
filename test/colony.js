@@ -2,6 +2,10 @@
 // These globals are added by Truffle:
 /* globals contract, Colony, web3, assert */
 
+function ifUsingTestRPC(){
+  return;
+}
+
 contract('Colony', function (accounts) {
   var mainaccount = accounts[0];
   var otheraccount = accounts[1];
@@ -136,10 +140,8 @@ describe('when working with tasks', function () {
         value: 10000 }); })
     .then(function () {
       return colony.completeAndPayTask(0, otheraccount, { from: otheraccount });
-    }).catch(function () {
-      completeAndPayTaskFailed = true;
-      return colony.getTask.call(0);
-    }).then(function (value) {
+    }).catch(ifUsingTestRPC)
+    .then(function (value) {
       assert.equal(completeAndPayTaskFailed, true,
         'The completeAndPayTask call succeeded when it should not');
       assert.equal(value[0], 'nameedit', 'No task?');
