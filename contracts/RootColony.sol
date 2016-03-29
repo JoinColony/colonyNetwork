@@ -22,4 +22,9 @@ contract RootColony {
    {
      return colonies[coloniesNum];
    }
+
+   function getNColonies() constant returns (uint)
+   {
+     return coloniesNum;
+   }
 }

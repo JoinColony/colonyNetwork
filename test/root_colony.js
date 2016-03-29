@@ -27,7 +27,10 @@ contract('RootColony', function(accounts) {
 
   it('the root network should allow users to create new colonies', function(done) {
     rootColony.createColony(0, { from: mainaccount })
+      .then(function(){
+          return rootColony.getNColonies(); })
       .then(function() {
+          assert.equal(nColonies, 1, 'nColonies is wrong');
           return rootColony.getColony.call(0); })
       .then(function(address){
           return Colony.at(address); })
