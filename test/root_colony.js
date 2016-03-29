@@ -29,7 +29,7 @@ contract('RootColony', function(accounts) {
     rootColony.createColony(0, { from: mainaccount })
       .then(function(){
           return rootColony.getNColonies(); })
-      .then(function() {
+      .then(function(nColonies) {
           assert.equal(nColonies, 1, 'nColonies is wrong');
           return rootColony.getColony.call(0); })
       .then(function(address){
