@@ -1,3 +1,7 @@
+/* eslint-env node, mocha */
+// These globals are added by Truffle:
+/* globals contract, RootColony, Colony, web3, assert */
+
 contract('RootColony', function(accounts) {
   var mainaccount = accounts[0];
   var otheraccount = accounts[1];
@@ -15,40 +19,35 @@ contract('RootColony', function(accounts) {
   });
 
   it('deployed user should be admin', function(done) {
-      rootColony.owner.call(mainaccount)
+      rootColony.owner.call({ from: mainaccount })
         .then(function(owner) { assert.equal(owner, mainaccount, 'First user isn\'t an admin'); })
         .then(done)
         .catch(done);
   });
 
   it('the root network should allow users to create new colonies', function(done) {
-    var colony;
-    rootColony.createColony({ from: otheraccount })
+    rootColony.createColony(0, { from: mainaccount })
       .then(function() {
-          return rootColony.getColony(0); })
+          return rootColony.getColony.call(0); })
       .then(function(address){
-          colony = Colony.at(address);
-          return colony; })
+          return Colony.at(address); })
       .then(function(colony){
-          return colony.getUserInfo.call(otheraccount); })
-      .then(function(isAdmin){ assert.equal(isAdmin, true, 'First user isn\'t an admin'); })
+          return colony.getUserInfo.call(mainaccount); })
+      .then(function(admin){
+        assert.equal(admin, true, 'First user isn\'t an admin'); })
       .then(done)
       .catch(done);
    });
 
    it('when creating a new colony should set its rootColony property to itself', function(done) {
-     var colony;
-     rootColony.createColony({ from: otheraccount })
+     rootColony.createColony(100, { from: otheraccount })
        .then(function() {
            return rootColony.getColony(0); })
        .then(function(address){
-           colony = Colony.at(address);
-           return colony; })
+           return Colony.at(address); })
        .then(function(colony){
            return colony.rootColony.call(otheraccount); })
        .then(function(rootColonyAddress){
-          console.log("RootColonyAddress is ", rootColony.address);
-          console.log("Colony.rootColony address is ", rootColonyAddress);
           assert.equal(rootColony.address, rootColonyAddress);})
        .then(done)
        .catch(done);
@@ -56,18 +55,17 @@ contract('RootColony', function(accounts) {
 
    it('should pay root colony 5% fee of a completed task value', function (done) {
      var colony;
-     var rootColonyAddress;
      var startingBalance = web3.eth.getBalance(rootColony.address);
-     console.log("Starting rootColony balance: ", startingBalance.toNumber());
+     console.log('Starting rootColony balance: ', startingBalance.toNumber());
 
-     rootColony.createColony({ from: mainaccount })
+     rootColony.createColony(100, { from: mainaccount })
        .then(function() {
            return rootColony.getColony(0); })
        .then(function(address){
-           console.log("Colony address is: ", address);
+           console.log('Colony address is: ', address);
            colony = Colony.at(address);
            return colony; })
-        .then(function () {
+        .then(function (colony) {
             return colony.makeTask('name', 'summary'); })
         .then(function() {
             return colony.updateTask(0, 'nameedit', 'summary'); })
@@ -75,10 +73,10 @@ contract('RootColony', function(accounts) {
            return colony.contribute(0, {value: 1000}); })
         .then(function () {
            return colony.completeAndPayTask(0, otheraccount, { from: mainaccount }); })
-        .then(function (value) {
-          console.log("Updated rootColony balance: ", web3.eth.getBalance(rootColony.address).toNumber());
+        .then(function () {
+          console.log('Updated rootColony balance: ', web3.eth.getBalance(rootColony.address).toNumber());
           var balance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
-          console.log("Balance is: ", balance);
+          console.log('Balance is: ', balance);
           assert.equal(balance, 50);
         })
         .then(done)

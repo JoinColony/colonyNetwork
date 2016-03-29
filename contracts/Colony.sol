@@ -90,7 +90,7 @@ contract Colony {
 
   //Mark a task as completed, pay a user, pay root colony fee
   function completeAndPayTask(uint256 taskId, address paymentAddress){
-  		if (tasks[taskId].accepted==true || taskId<0 || taskId >= tasks.length || users[tx.origin].admin==false)
+  		if (tasks[taskId].accepted==true || taskId<0 || taskId >= tasks.length || users[msg.sender].admin==false)
   			throw;
 		var task = tasks[taskId];
 		task.accepted = true;

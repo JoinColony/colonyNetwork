@@ -11,15 +11,14 @@ contract RootColony {
    }
 
    // Creates a colony
-   function createColony(uint256 _totalSharesSupply) returns (uint)
+   function createColony(uint256 _totalSharesSupply)
    {
      var colony = new Colony(_totalSharesSupply);
      colonies[coloniesNum] = colony;
      coloniesNum ++;
-     return coloniesNum;
    }
 
-   function getColony(uint coloniesNum) constant returns (address)
+   function getColony(uint coloniesNum) constant returns (Colony)
    {
      return colonies[coloniesNum];
    }
