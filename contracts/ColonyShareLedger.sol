@@ -9,7 +9,7 @@ contract ColonyShareLedger is IShareLedger {
   function ColonyShareLedger()
   refundEtherSentByAccident
   {
-    
+
   }
 
   /// @notice verifies if the sender has enough balance, otherwise, raises an error
@@ -36,7 +36,7 @@ contract ColonyShareLedger is IShareLedger {
 
   /// @notice set the ColonyShareLedger symbol
   /// @param _symbol the symbol of the Colony Share
-  function setSharesSymbol(string _symbol)
+  function setSharesSymbol(bytes4 _symbol)
   refundEtherSentByAccident
   {
     symbol = _symbol;
@@ -44,7 +44,7 @@ contract ColonyShareLedger is IShareLedger {
 
   /// @notice set the ColonyShareLedger title
   /// @param _title the title of the Colony Share
-  function setSharesTitle(string _title)
+  function setSharesTitle(bytes32 _title)
   refundEtherSentByAccident
   {
     title = _title;

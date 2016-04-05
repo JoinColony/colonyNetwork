@@ -24,5 +24,11 @@ module.exports = {
     //When a transaction throws, all the gas sent is spent. So let's check that
     //we spent all the gas that we sent.
     assert.equal(prevBalance.minus(newBalance).toNumber(), gasAmount*gasPrice, 'didnt fail - didn\'t throw and use all gas');
+  },
+  hexToUtf8 : function (text) {
+    return web3.toAscii(text).replace(/\u0000/g, '');
+  },
+  removeColony : function (rootColony, colonyKey) {
+    rootColony.removeColony(colonyKey);
   }
 };

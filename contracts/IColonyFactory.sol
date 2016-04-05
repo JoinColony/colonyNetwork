@@ -6,7 +6,13 @@ contract IColonyFactory is Destructible {
 
   /// @notice creates a Colony
   /// @param key_ the key to be used to keep track of the Colony
-  function createColony(bytes32 key_);
+  /// @param owner_ the owner of the Colony
+  /// @param initialSharesSupply_ the colony initial shares supply
+  function createColony(
+    bytes32 key_,
+    address owner_,
+    uint256 initialSharesSupply_
+  );
 
   address public rootColonyResolverAddress;
 

@@ -8,41 +8,50 @@ contract('Colony', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _COLONY_KEY_ = 'COLONY_TEST';
-  var _TOTAL_SUPPLY_ = 100;
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
   var ifUsingTestRPC = testHelper.ifUsingTestRPC;
+  var removeColony = testHelper.removeColony;
   var colony;
+  var colonyTaskDb;
 
-  before(function(){
+  before(function(done){
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
-  });
+    colonyFactory = ColonyFactory.deployed();
 
-  beforeEach(function (done) {
-    ColonyFactory.new()
-    .then(function(_colonyFactory){
-      colonyFactory = _colonyFactory;
-      return rootColonyResolver.registerRootColony(rootColony.address);
-    })
+    rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
-      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
       return rootColony.registerColonyFactory(colonyFactory.address);
     })
     .then(function(){
-      return colonyFactory.createColony(_COLONY_KEY_, _TOTAL_SUPPLY_);
+      done();
     })
+    .catch(done);
+  });
+
+  beforeEach(function(done){
+    rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
     .then(function(){
-      return rootColony.getColony.call(_COLONY_KEY_);
+      return rootColony.getColony(_COLONY_KEY_);
     })
     .then(function(colony_){
       colony = Colony.at(colony_);
+      return colony.taskDB.call();
+    })
+    .then(function(colonyTaskDbAddress_){
+      colonyTaskDb = TaskDB.at(colonyTaskDbAddress_);
     })
     .then(done)
     .catch(done);
+  });
+
+  afterEach(function(){
+    removeColony(rootColony, _COLONY_KEY_);
   });
 
   describe('when created', function () {
@@ -75,7 +84,6 @@ contract('Colony', function (accounts) {
         return shareLedger.balanceOf.call(colony.address);
       })
       .then(function(totalSupplyShares){
-        console.log('\ttotal supply of shares: ', totalSupplyShares.toNumber());
         assert.equal(totalSupplyShares.toNumber(), 100);
       })
       .then(done)
@@ -99,13 +107,9 @@ contract('Colony', function (accounts) {
 
   describe('when working with tasks', function () {
     it('should allow user to make task', function (done) {
-      colony.addTask('name', 'summary')
-      .then(function () {
-        return colony.taskDB.call();
-      })
-      .then(function (_taskDB) {
-        var taskDB = TaskDB.at(_taskDB);
-        return taskDB.getTask.call(0);
+      colony.makeTask('name', 'summary')
+      .then(function() {
+        return colonyTaskDb.getTask.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'name', 'No task?');
@@ -118,15 +122,11 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow user to edit task', function (done) {
-      colony.addTask('name', 'summary').then(function () {
+      colony.makeTask('name', 'summary').then(function () {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.taskDB.call();
-      })
-      .then(function (_taskDB) {
-        var taskDB = TaskDB.at(_taskDB);
-        return taskDB.getTask.call(0);
+        return colonyTaskDb.getTask.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');
@@ -139,7 +139,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow user to contribute ETH to task', function (done) {
-      colony.addTask('name', 'summary')
+      colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -149,11 +149,7 @@ contract('Colony', function (accounts) {
         });
       })
       .then(function () {
-        return colony.taskDB.call();
-      })
-      .then(function (_taskDB) {
-        var taskDB = TaskDB.at(_taskDB);
-        return taskDB.getTask.call(0);
+        return colonyTaskDb.getTask.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');
@@ -169,7 +165,7 @@ contract('Colony', function (accounts) {
 
       colony.generateColonyShares(100)
       .then(function(){
-        return colony.addTask('name', 'summary');
+        return colony.makeTask('name', 'summary');
       })
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
@@ -178,11 +174,7 @@ contract('Colony', function (accounts) {
         return colony.contributeShares(0, 100);
       })
       .then(function () {
-        return colony.taskDB.call();
-      })
-      .then(function (_taskDB) {
-        var taskDB = TaskDB.at(_taskDB);
-        return taskDB.getTask.call(0);
+        return colonyTaskDb.getTask.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit');
@@ -197,7 +189,7 @@ contract('Colony', function (accounts) {
 
     it('should not allow non-admin to close task', function (done) {
       var prevBalance;
-      colony.addTask('name', 'summary')
+      colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -212,11 +204,7 @@ contract('Colony', function (accounts) {
       })
       .catch(ifUsingTestRPC)
       .then(function () {
-        return colony.taskDB.call();
-      })
-      .then(function (_taskDB) {
-        var taskDB = TaskDB.at(_taskDB);
-        return taskDB.getTask.call(0);
+        return colonyTaskDb.getTask.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');
@@ -230,7 +218,7 @@ contract('Colony', function (accounts) {
 
     it('should allow admin to close task', function (done) {
       var prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-      colony.addTask('name', 'summary')
+      colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -243,11 +231,7 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {
-        return colony.taskDB.call();
-      })
-      .then(function (_taskDB) {
-        var taskDB = TaskDB.at(_taskDB);
-        return taskDB.getTask.call(0);
+        return colonyTaskDb.getTask.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');
@@ -265,7 +249,7 @@ contract('Colony', function (accounts) {
       var shareLedger;
       colony.generateColonyShares(100)
       .then(function(){
-        return colony.addTask('name', 'summary');
+        return colony.makeTask('name', 'summary');
       })
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
@@ -280,7 +264,6 @@ contract('Colony', function (accounts) {
         return colony.shareLedger.call();
       })
       .then(function(shareLedgerAddress){
-        console.log('ShareLedger address is: [ ', shareLedgerAddress, ']');
         shareLedger = ColonyShareLedger.at(shareLedgerAddress);
         return shareLedger;
       })

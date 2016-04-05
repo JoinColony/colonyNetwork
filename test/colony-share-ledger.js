@@ -8,6 +8,7 @@ contract('ColonyShareLedger', function (accounts) {
   var _TOTAL_SUPPLY_ = 1000;
   var ifUsingTestRPC = testHelper.ifUsingTestRPC;
   var checkAllGasSpent = testHelper.checkAllGasSpent;
+  var hexToUtf8 = testHelper.hexToUtf8;
   var _GAS_PRICE_ = 20e9;
   var colonyShare;
 
@@ -506,7 +507,7 @@ contract('ColonyShareLedger', function (accounts) {
         return colonyShare.symbol.call();
       })
       .then(function(_symbol){
-        assert.equal(_symbol, 'CNY', 'shares symbol is incorrect');
+        assert.equal(hexToUtf8(_symbol), 'CNY', 'shares symbol is incorrect');
       })
       .then(done)
       .catch(done);
@@ -518,7 +519,7 @@ contract('ColonyShareLedger', function (accounts) {
         return colonyShare.title.call();
       })
       .then(function(_title){
-        assert.equal(_title, 'COLONY', 'shares title is incorrect');
+        assert.equal(hexToUtf8(_title), 'COLONY', 'shares title is incorrect');
       })
       .then(done)
       .catch(done);

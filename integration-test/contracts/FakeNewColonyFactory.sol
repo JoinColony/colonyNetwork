@@ -1,16 +1,16 @@
 
 import "IColonyFactory.sol";
-import "Colony.sol";
+import "FakeUpdatedColony.sol";
 //import "TaskDB.sol";
 import "ColonyShareLedger.sol";
 
-contract ColonyFactory is IColonyFactory {
+contract FakeNewColonyFactory is IColonyFactory {
 
   event ColonyCreated(address colonyAddress, address colonyOwner, uint now);
   event ColonyDeleted(bytes32 colonyKey, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
 
-  function ColonyFactory()
+  function FakeNewColonyFactory()
   refundEtherSentByAccident
   {
 
@@ -34,7 +34,7 @@ contract ColonyFactory is IColonyFactory {
     if(colonies[key_] != 0x0) throw;
 
     var shareLedger = new ColonyShareLedger();
-    Colony colony = new Colony(rootColonyResolverAddress, shareLedger, taskdb);
+    FakeUpdatedColony colony = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskdb);
 
     shareLedger.changeOwner(colony);
     var taskDBAsOwnable = Ownable(taskdb);
@@ -61,13 +61,13 @@ contract ColonyFactory is IColonyFactory {
   {
     address colonyAddress = colonies[key_];
     // Get the current colony and its taskDb
-    Colony colony = Colony(colonyAddress);
+    FakeUpdatedColony colony = FakeUpdatedColony(colonyAddress);
     ITaskDB taskDb = colony.taskDB();
     IShareLedger shareLedger = colony.shareLedger();
 
     //TODO: create a colony from the colonyTemplateAddress_
     // Create a new Colony and attach existing TaskDB and ShareLedger to it.
-    Colony colonyNew = new Colony(rootColonyResolverAddress, shareLedger, taskDb);
+    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskDb);
     taskDb.changeOwner(colonyNew);
 
     // Kill old colony. This will transfer its Ether value to the upgraded colony.

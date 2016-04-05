@@ -40,7 +40,7 @@ contract ITaskDB is Destructible {
   /// considered as a contribution to the task
   /// @param _name the task name
   /// @param _summary an IPFS hash
-  function addTask(
+  function makeTask(
     string _name,
     string _summary
   );

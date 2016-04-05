@@ -13,21 +13,17 @@ contract('RootColony', function (accounts) {
   var rootColonyResolver;
   var ifUsingTestRPC = testHelper.ifUsingTestRPC;
   var checkAllGasSpent = testHelper.checkAllGasSpent;
+  var removeColony = testHelper.removeColony;
 
-  before(function(done){
-
+  beforeEach(function(done)
+  {
     colonyFactory = ColonyFactory.deployed();
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
 
-    done();
-  });
-
-  beforeEach(function(done){
-
     rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
-      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
       return rootColony.registerColonyFactory(colonyFactory.address);
@@ -36,6 +32,10 @@ contract('RootColony', function (accounts) {
       done();
     })
     .catch(done);
+  });
+
+  afterEach(function(){
+    removeColony(rootColony, _COLONY_KEY_);
   });
 
   describe('when spawning new colonies', function(){
@@ -50,13 +50,6 @@ contract('RootColony', function (accounts) {
         return colony;
       })
       .then(function (colony) {
-        console.log('\tColony address: [ ', colony.address,' ]');
-        console.log('\tRootColony address: [ ', rootColony.address,' ]');
-        console.log('\tColonyFactory address: [ ', colonyFactory.address,' ]');
-        //console.log('\tColony owner: [ ', _owner,' ]');
-        console.log('\tMAIN ACCOUNT: [ ', _MAIN_ACCOUNT_,' ]');
-        //assert.equal(_owner, _MAIN_ACCOUNT_, 'owner user is not an admin');
-
         return colony.getUserInfo.call(_MAIN_ACCOUNT_);
       })
       .then(function(_isAdmin){
@@ -106,36 +99,30 @@ contract('RootColony', function (accounts) {
     it('should pay root colony 5% fee of a completed task value', function (done) {
       var colony;
       var startingBalance = web3.eth.getBalance(rootColony.address);
-      console.log('Starting rootColony balance: ', startingBalance.toNumber());
 
-      rootColony.createColony('TestColony', {from: _MAIN_ACCOUNT_})
+      rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
       .then(function(){
-        return rootColony.getColony('TestColony');
+        return rootColony.getColony.call(_COLONY_KEY_);
       })
       .then(function (_address){
         colony = Colony.at(_address);
         return colony.taskDB.call();
       })
       .then(function() {
-        return colony.addTask('name', 'summary', {from:_MAIN_ACCOUNT_});
+        return colony.makeTask('name', 'summary', {from:_MAIN_ACCOUNT_});
       })
       .then(function() {
-        console.log('calling updateTask');
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        console.log('calling completeAndPayTask');
         return colony.contributeEth(0, {from: _MAIN_ACCOUNT_, value: 1000});
       })
       .then(function () {
-        console.log('calling completeAndPayTask');
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {
-        console.log('Updated rootColony balance: ', web3.eth.getBalance(rootColony.address).toNumber());
-        var balance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
-        console.log('Balance is: ', balance);
-        assert.equal(balance, 50);
+        var currentBalance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
+        assert.equal(currentBalance, 50, 'balance is incorrect or has a unexpected value');
       })
       .then(done)
       .catch(done);

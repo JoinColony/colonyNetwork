@@ -3,8 +3,8 @@ import "Destructible.sol";
 contract IShareLedger is Destructible {
 
     uint256 total_supply;
-    string public title;
-    string public symbol;
+    bytes32 public title;
+    bytes4 public symbol;
 
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
@@ -14,11 +14,11 @@ contract IShareLedger is Destructible {
 
     /// @notice set share ledger symbol
     /// @param _symbol the symbol of the Colony Share
-    function setSharesSymbol(string _symbol);
+    function setSharesSymbol(bytes4 _symbol);
 
     /// @notice set the share ledger title
     /// @param _title the title of the Colony Share
-    function setSharesTitle(string _title);
+    function setSharesTitle(bytes32 _title);
 
     /// @return total amount of tokens
     function totalSupply() constant returns (uint256 supply) {}
@@ -47,6 +47,8 @@ contract IShareLedger is Destructible {
     /// @param _spender The address of the account able to transfer the tokens
     /// @return Amount of remaining tokens allowed to spent
     function allowance(address _owner, address _spender) constant returns (uint256 remaining) {}
+
+    function generateShares(uint256 _amount) {}
 
   	function () {
   			// This function gets executed if a

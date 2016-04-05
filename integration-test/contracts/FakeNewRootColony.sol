@@ -3,7 +3,7 @@ import "IColonyFactory.sol";
 import "Destructible.sol";
 import "TaskDB.sol";
 
-contract RootColony is Destructible {
+contract FakeNewRootColony is Destructible {
 
   IColonyFactory public colonyFactory;
   uint coloniesNum;

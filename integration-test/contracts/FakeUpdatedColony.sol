@@ -5,7 +5,7 @@ import "IRootColonyResolver.sol";
 import "ColonyPaymentProvider.sol";
 import "IShareLedger.sol";
 
-contract Colony is Modifiable {
+contract FakeUpdatedColony is Modifiable {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
@@ -13,7 +13,7 @@ contract Colony is Modifiable {
   modifier onlyOwner {
     if ( !this.getUserInfo(msg.sender)) throw;
     _
-  }*/
+  }
 
 	struct User
 	{
@@ -21,14 +21,14 @@ contract Colony is Modifiable {
 	}
 
   IRootColonyResolver public rootColonyResolver;
-  ColonyShareLedger public shareLedger;
+  IShareLedger public shareLedger;
   ITaskDB public taskDB;
 
  	// This declares a state variable that
 	// stores a `User` struct for each possible address.
  	mapping(address => User) public users;
 
-  function Colony(
+  function FakeUpdatedColony(
     address rootColonyResolverAddress_,
     address _shareLedgerAddress,
     address _tasksDBAddress)
@@ -67,6 +67,12 @@ contract Colony is Modifiable {
 
     taskDB.contributeEth(taskId, msg.value);
 	}
+
+  function isUpdated()
+  constant returns(bool)
+  {
+    return true;
+  }
 
 	//Contribute Shares to a task
 	function contributeShares(uint256 taskId, uint256 shares) {

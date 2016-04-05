@@ -9,7 +9,8 @@ contract TaskDB is ITaskDB {
   event TaskUpdated(uint256 indexed id, uint256 indexed when);
 
   function TaskDB()
-  refundEtherSentByAccident { }
+  refundEtherSentByAccident {
+  }
 
   modifier ifTasksExists(uint256 _id) {
     if(!hasTask(_id)) throw;
@@ -32,7 +33,7 @@ contract TaskDB is ITaskDB {
   /// considered as a contribution to the task
   /// @param _name the task name
   /// @param _summary an IPFS hash
-  function addTask(
+  function makeTask(
     string _name,
     string _summary
   )
