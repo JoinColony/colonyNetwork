@@ -188,4 +188,21 @@ contract Colony is Modifiable {
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);
   }
+
+  function upgradeContract()
+  onlyOwner
+  {
+    // Create a new colony and associated ShareLedger
+    //TaskDB taskDB = new TaskDB();
+    //Colony colony = new Colony(rootColonyResolver.address, taskDB.address);
+    //taskDB.changeOwner(colony);
+
+    // Colony factory - list of colonies need to change?
+    //colonies[key_] = colony;
+    //ColonyUpgraded(colony, tx.origin, now);
+
+    // Move TaskDb
+    // Move users
+    // Transfer eth value
+  }
 }
