@@ -2,11 +2,11 @@
 contract Ownable {
 
   event OwnerChanged(address indexed _previousOwner, address indexed _newOwner, uint _now);
-  address public owner = tx.origin;
+  address public owner = msg.sender;
 
   /// @notice check if the msg.sender is the owner of the contract
 	modifier onlyOwner {
-		if (tx.origin != owner) throw;
+		if (msg.sender != owner) throw;
 		_
 	}
 

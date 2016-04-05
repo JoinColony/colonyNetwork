@@ -46,6 +46,7 @@ contract('RootColony', function (accounts) {
         return rootColony.getColony(_COLONY_KEY_);
       })
       .then(function (_address){
+        console.log('\tColony address: [ ', _address,' ]');
         colony = Colony.at(_address);
         return colony;
       })
