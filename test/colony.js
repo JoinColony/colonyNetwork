@@ -23,7 +23,7 @@ contract('Colony', function (accounts) {
 
     rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
       return rootColony.registerColonyFactory(colonyFactory.address);

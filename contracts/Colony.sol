@@ -113,6 +113,14 @@ contract Colony is Modifiable {
     taskDB.acceptTask(_id);
   }
 
+  /// @notice this function updates the 'accepted' flag in the task
+  /// @param _id the task id
+  function acceptTask(uint256 _id)
+  onlyOwner
+  {
+    taskDB.acceptTask(_id);
+  }
+
   /// @notice this function is used to update task data.
   /// @param _id the task id
   /// @param _name the task name

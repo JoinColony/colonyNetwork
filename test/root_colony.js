@@ -46,7 +46,6 @@ contract('RootColony', function (accounts) {
         return rootColony.getColony(_COLONY_KEY_);
       })
       .then(function (_address){
-        console.log('\tColony address: [ ', _address,' ]');
         colony = Colony.at(_address);
         return colony;
       })
@@ -113,12 +112,14 @@ contract('RootColony', function (accounts) {
         return colony.makeTask('name', 'summary', {from:_MAIN_ACCOUNT_});
       })
       .then(function() {
+        console.log('calling updateTask');
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
         return colony.contributeEth(0, {from: _MAIN_ACCOUNT_, value: 1000});
       })
       .then(function () {
+        console.log('calling completeAndPayTask');
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {
