@@ -11,7 +11,7 @@ contract Colony is Modifiable {
   event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
 
   modifier onlyOwner {
-    if ( !this.getUserInfo(msg.sender)) throw;
+    if (!this.getUserInfo(msg.sender)) throw;
     _
   }*/
 
@@ -111,6 +111,40 @@ contract Colony is Modifiable {
   onlyOwner
   {
     taskDB.acceptTask(_id);
+  }
+
+  /// @notice set the colony shares symbol
+  /// @param symbol_ the symbol of the colony shares
+  function setSharesSymbol(bytes4 symbol_)
+  refundEtherSentByAccident
+  onlyOwner
+  {
+    shareLedger.setSharesSymbol(symbol_);
+  }
+
+  /// @notice set the colony shares title
+  /// @param title_ the title of the colony shares
+  function setSharesTitle(bytes32 title_)
+  refundEtherSentByAccident
+  onlyOwner
+  {
+    shareLedger.setSharesTitle(title_);
+  }
+
+  /// @notice get the colony shares symbol
+  /// @return the symbol of the colony shares
+  function getSharesSymbol()
+  constant returns(bytes4)
+  {
+    return shareLedger.symbol();
+  }
+
+  /// @notice get the colony shares title
+  /// @return the title of the colony shares
+  function getSharesTitle()
+  constant returns(bytes32)
+  {
+    return shareLedger.title();
   }
 
   /// @notice this function updates the 'accepted' flag in the task

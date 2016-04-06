@@ -73,6 +73,30 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should set the value of shares title from share ledger', function (done) {
+      colony.setSharesTitle('COLONY')
+      .then(function () {
+        return colony.getSharesTitle.call();
+      })
+      .then(function (sharesTitle_) {
+        assert.equal(hexToUtf8(sharesTitle_), 'COLONY', 'shares title is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should set the value of shares symbol from share ledger', function (done) {
+      colony.setSharesSymbol('CNY')
+      .then(function () {
+        return colony.getSharesSymbol.call();
+      })
+      .then(function (sharesSymbol_) {
+        assert.equal(hexToUtf8(sharesSymbol_), 'CNY', 'shares symbol is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should generate shares and assign it to the colony', function(done){
       var shareLedger;
       colony.shareLedger.call()
