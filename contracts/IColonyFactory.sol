@@ -8,6 +8,8 @@ contract IColonyFactory is Destructible {
   /// @param key_ the key to be used to keep track of the Colony
   function createColony(bytes32 key_);
 
+  function upgradeColony(bytes32 colonyKey_, address colonyTemplateAddress_);
+
   address public rootColonyResolverAddress;
 
   /// @notice this function registers the address of the RootColonyResolver

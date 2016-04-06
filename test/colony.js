@@ -8,6 +8,7 @@ contract('Colony', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _COLONY_KEY_ = 'COLONY_TEST';
+  var _TOTAL_SUPPLY_ = 100;
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
@@ -73,30 +74,6 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should set the value of shares title from share ledger', function (done) {
-      colony.setSharesTitle('COLONY')
-      .then(function () {
-        return colony.getSharesTitle.call();
-      })
-      .then(function (sharesTitle_) {
-        assert.equal(hexToUtf8(sharesTitle_), 'COLONY', 'shares title is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should set the value of shares symbol from share ledger', function (done) {
-      colony.setSharesSymbol('CNY')
-      .then(function () {
-        return colony.getSharesSymbol.call();
-      })
-      .then(function (sharesSymbol_) {
-        assert.equal(hexToUtf8(sharesSymbol_), 'CNY', 'shares symbol is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-
     it('should generate shares and assign it to the colony', function(done){
       var shareLedger;
       colony.shareLedger.call()
@@ -108,6 +85,7 @@ contract('Colony', function (accounts) {
         return shareLedger.balanceOf.call(colony.address);
       })
       .then(function(totalSupplyShares){
+        console.log('\ttotal supply of shares: ', totalSupplyShares.toNumber());
         assert.equal(totalSupplyShares.toNumber(), 100);
       })
       .then(done)
@@ -131,7 +109,7 @@ contract('Colony', function (accounts) {
 
   describe('when working with tasks', function () {
     it('should allow user to make task', function (done) {
-      colony.makeTask('name', 'summary')
+      colony.addTask('name', 'summary')
       .then(function() {
         return colonyTaskDb.getTask.call(0);
       })
@@ -146,7 +124,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow user to edit task', function (done) {
-      colony.makeTask('name', 'summary').then(function () {
+      colony.addTask('name', 'summary').then(function () {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
@@ -163,7 +141,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow user to contribute ETH to task', function (done) {
-      colony.makeTask('name', 'summary')
+      colony.addTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -189,7 +167,7 @@ contract('Colony', function (accounts) {
 
       colony.generateColonyShares(100)
       .then(function(){
-        return colony.makeTask('name', 'summary');
+        return colony.addTask('name', 'summary');
       })
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
@@ -213,7 +191,7 @@ contract('Colony', function (accounts) {
 
     it('should not allow non-admin to close task', function (done) {
       var prevBalance;
-      colony.makeTask('name', 'summary')
+      colony.addTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -242,7 +220,7 @@ contract('Colony', function (accounts) {
 
     it('should allow admin to close task', function (done) {
       var prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-      colony.makeTask('name', 'summary')
+      colony.addTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -273,7 +251,7 @@ contract('Colony', function (accounts) {
       var shareLedger;
       colony.generateColonyShares(100)
       .then(function(){
-        return colony.makeTask('name', 'summary');
+        return colony.addTask('name', 'summary');
       })
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
@@ -288,6 +266,7 @@ contract('Colony', function (accounts) {
         return colony.shareLedger.call();
       })
       .then(function(shareLedgerAddress){
+        console.log('ShareLedger address is: [ ', shareLedgerAddress, ']');
         shareLedger = ColonyShareLedger.at(shareLedgerAddress);
         return shareLedger;
       })

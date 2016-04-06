@@ -63,4 +63,20 @@ contract RootColony is Destructible {
   {
     return coloniesNum;
   }
+
+  function upgradeColony(bytes32 _key, address colonyTemplateAddress_)
+  refundEtherSentByAccident
+  throwIfIsEmptyBytes32(_key)
+  {
+    return colonyFactory.upgradeColony(_key, colonyTemplateAddress_);
+  }
+
+  /// @notice this function returns the amount of colonies created
+  /// @return the amount of colonies created
+  function countColonies()
+  refundEtherSentByAccident
+  constant returns (uint)
+  {
+    return coloniesNum;
+  }
 }

@@ -5,13 +5,13 @@ import "IRootColonyResolver.sol";
 import "ColonyPaymentProvider.sol";
 import "IShareLedger.sol";
 
-contract Colony is Modifiable {
+contract Colony is Destructible {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
 
   modifier onlyOwner {
-    if (!this.getUserInfo(msg.sender)) throw;
+    if ( !this.getUserInfo(tx.origin)) throw;
     _
   }*/
 
@@ -21,7 +21,7 @@ contract Colony is Modifiable {
 	}
 
   IRootColonyResolver public rootColonyResolver;
-  ColonyShareLedger public shareLedger;
+  IShareLedger public shareLedger;
   ITaskDB public taskDB;
 
  	// This declares a state variable that
@@ -96,7 +96,7 @@ contract Colony is Modifiable {
   /// @notice this function adds a task to the task DB.
   /// @param _name the task name
   /// @param _summary an IPFS hash
-  function makeTask(
+  function addTask(
     string _name,
     string _summary
   )
@@ -221,22 +221,5 @@ contract Colony is Modifiable {
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);
-  }
-
-  function upgradeContract()
-  onlyOwner
-  {
-    // Create a new colony and associated ShareLedger
-    //TaskDB taskDB = new TaskDB();
-    //Colony colony = new Colony(rootColonyResolver.address, taskDB.address);
-    //taskDB.changeOwner(colony);
-
-    // Colony factory - list of colonies need to change?
-    //colonies[key_] = colony;
-    //ColonyUpgraded(colony, tx.origin, now);
-
-    // Move TaskDb
-    // Move users
-    // Transfer eth value
   }
 }
