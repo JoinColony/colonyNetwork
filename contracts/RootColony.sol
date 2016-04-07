@@ -59,7 +59,6 @@ contract RootColony is Destructible {
   /// @notice this function returns the amount of colonies created
   /// @return the amount of colonies created
   function countColonies()
-  refundEtherSentByAccident
   constant returns (uint)
   {
     return coloniesNum;

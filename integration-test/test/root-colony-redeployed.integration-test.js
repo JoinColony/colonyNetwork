@@ -102,6 +102,7 @@ contract('RootColony', function () {
 
     it('should be able to replace existing Colony\'s RootColony address at RootColonyResolver', function (done) {
 
+      console.log('\r\n');
       console.log('\tRootColony address: [ ', rootColony.address, ' ]');
       console.log('\tColonyFactory address: [ ', colonyFactory.address, ' ]');
       console.log('\tRegistering RootColonyResolver...');

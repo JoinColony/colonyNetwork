@@ -29,7 +29,9 @@ contract('RootColony', function (accounts) {
       return rootColony.registerColonyFactory(colonyFactory.address);
     })
     .then(function(){
-      rootColony.registerColonyFactory(colonyFactory.address);
+      return rootColony.registerColonyFactory(colonyFactory.address);
+    })
+    .then(function(){
       done();
     })
     .catch(done);
@@ -44,11 +46,9 @@ contract('RootColony', function (accounts) {
       var colony;
       rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
       .then(function(){
-        console.log("Colony key is: ", _COLONY_KEY_);
         return rootColony.getColony(_COLONY_KEY_);
       })
       .then(function (_address){
-        console.log("Colony address is:", _address);
         colony = Colony.at(_address);
         return colony;
       })
@@ -68,7 +68,7 @@ contract('RootColony', function (accounts) {
 
     it('should fail if the key provided is empty', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      rootColony.createColony.call('',
+      rootColony.createColony('',
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
@@ -84,7 +84,7 @@ contract('RootColony', function (accounts) {
 
     it('should fail if ETH is sent', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      rootColony.createColony.call(_COLONY_KEY_,
+      rootColony.createColony(_COLONY_KEY_,
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
@@ -115,14 +115,12 @@ contract('RootColony', function (accounts) {
         return colony.makeTask('name', 'summary', {from:_MAIN_ACCOUNT_});
       })
       .then(function() {
-        console.log('calling updateTask');
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
         return colony.contributeEth(0, {from: _MAIN_ACCOUNT_, value: 1000});
       })
       .then(function () {
-        console.log('calling completeAndPayTask');
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {

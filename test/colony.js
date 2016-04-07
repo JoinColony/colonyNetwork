@@ -8,7 +8,6 @@ contract('Colony', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _COLONY_KEY_ = 'COLONY_TEST';
-  var _TOTAL_SUPPLY_ = 100;
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
@@ -19,7 +18,6 @@ contract('Colony', function (accounts) {
 
   before(function(done){
     rootColony = RootColony.deployed();
-    console.log("RootColony deployed: ", rootColony.address);
     rootColonyResolver = RootColonyResolver.deployed();
     colonyFactory = ColonyFactory.deployed();
 
@@ -28,7 +26,7 @@ contract('Colony', function (accounts) {
       return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
-      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      return rootColony.registerColonyFactory(colonyFactory.address);
     })
     .then(function(){
       done();
@@ -42,20 +40,22 @@ contract('Colony', function (accounts) {
       return rootColony.getColony(_COLONY_KEY_);
     })
     .then(function(colony_){
-      console.log("Colony address: ", colony_);
       colony = Colony.at(colony_);
       return colony.taskDB.call();
     })
     .then(function(colonyTaskDbAddress_){
-      console.log("TaskDb address:", colonyTaskDbAddress_);
       colonyTaskDb = TaskDB.at(colonyTaskDbAddress_);
       done();
-    });
+    })
+    .catch(done);
   });
 
   afterEach(function(done){
-    rootColony.removeColony(_COLONY_KEY_);
-    done();
+    rootColony.removeColony(_COLONY_KEY_)
+    .then(function(){
+      done();
+    })
+    .catch(done);
   });
 
   afterEach(function(){
@@ -92,7 +92,6 @@ contract('Colony', function (accounts) {
         return shareLedger.balanceOf.call(colony.address);
       })
       .then(function(totalSupplyShares){
-        console.log('\ttotal supply of shares: ', totalSupplyShares.toNumber());
         assert.equal(totalSupplyShares.toNumber(), 100);
       })
       .then(done)
@@ -273,7 +272,6 @@ contract('Colony', function (accounts) {
         return colony.shareLedger.call();
       })
       .then(function(shareLedgerAddress){
-        console.log('ShareLedger address is: [ ', shareLedgerAddress, ']');
         shareLedger = ColonyShareLedger.at(shareLedgerAddress);
         return shareLedger;
       })

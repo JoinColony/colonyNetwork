@@ -9,7 +9,7 @@ contract ColonyShareLedger is IShareLedger {
   function ColonyShareLedger()
   refundEtherSentByAccident
   {
-
+  
   }
 
   /// @notice verifies if the sender has enough balance, otherwise, raises an error

@@ -13,7 +13,7 @@ contract Colony is Modifiable {
   modifier onlyOwner {
     if ( !this.getUserInfo(msg.sender)) throw;
     _
-  }*/
+  }
 
 	struct User
 	{
@@ -159,6 +159,24 @@ contract Colony is Modifiable {
   throwIfIsEmptyString(_name)
   {
     taskDB.updateTask(_id, _name, _summary);
+  }
+
+  /// @notice set the colony shares symbol
+  /// @param symbol_ the symbol of the colony shares
+  function setSharesSymbol(bytes4 symbol_)
+  refundEtherSentByAccident
+  onlyOwner
+  {
+    shareLedger.setSharesSymbol(symbol_);
+  }
+
+  /// @notice set the colony shares title
+  /// @param title_ the title of the colony shares
+  function setSharesTitle(bytes32 title_)
+  refundEtherSentByAccident
+  onlyOwner
+  {
+    shareLedger.setSharesTitle(title_);
   }
 
 	function getUserInfo(address userAddress)
