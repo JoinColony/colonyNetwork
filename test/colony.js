@@ -19,6 +19,7 @@ contract('Colony', function (accounts) {
 
   before(function(done){
     rootColony = RootColony.deployed();
+    console.log("RootColony deployed: ", rootColony.address);
     rootColonyResolver = RootColonyResolver.deployed();
     colonyFactory = ColonyFactory.deployed();
 
@@ -27,7 +28,7 @@ contract('Colony', function (accounts) {
       return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
-      return rootColony.registerColonyFactory(colonyFactory.address);
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
       done();
@@ -41,14 +42,20 @@ contract('Colony', function (accounts) {
       return rootColony.getColony(_COLONY_KEY_);
     })
     .then(function(colony_){
+      console.log("Colony address: ", colony_);
       colony = Colony.at(colony_);
       return colony.taskDB.call();
     })
     .then(function(colonyTaskDbAddress_){
+      console.log("TaskDb address:", colonyTaskDbAddress_);
       colonyTaskDb = TaskDB.at(colonyTaskDbAddress_);
-    })
-    .then(done)
-    .catch(done);
+      done();
+    });
+  });
+
+  afterEach(function(done){
+    rootColony.removeColony(_COLONY_KEY_);
+    done();
   });
 
   afterEach(function(){
@@ -109,7 +116,7 @@ contract('Colony', function (accounts) {
 
   describe('when working with tasks', function () {
     it('should allow user to make task', function (done) {
-      colony.addTask('name', 'summary')
+      colony.makeTask('name', 'summary')
       .then(function() {
         return colonyTaskDb.getTask.call(0);
       })
@@ -124,7 +131,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow user to edit task', function (done) {
-      colony.addTask('name', 'summary').then(function () {
+      colony.makeTask('name', 'summary').then(function () {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
@@ -141,7 +148,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow user to contribute ETH to task', function (done) {
-      colony.addTask('name', 'summary')
+      colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -167,7 +174,7 @@ contract('Colony', function (accounts) {
 
       colony.generateColonyShares(100)
       .then(function(){
-        return colony.addTask('name', 'summary');
+        return colony.makeTask('name', 'summary');
       })
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
@@ -191,7 +198,7 @@ contract('Colony', function (accounts) {
 
     it('should not allow non-admin to close task', function (done) {
       var prevBalance;
-      colony.addTask('name', 'summary')
+      colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -220,7 +227,7 @@ contract('Colony', function (accounts) {
 
     it('should allow admin to close task', function (done) {
       var prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-      colony.addTask('name', 'summary')
+      colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -251,7 +258,7 @@ contract('Colony', function (accounts) {
       var shareLedger;
       colony.generateColonyShares(100)
       .then(function(){
-        return colony.addTask('name', 'summary');
+        return colony.makeTask('name', 'summary');
       })
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');

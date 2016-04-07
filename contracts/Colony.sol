@@ -5,13 +5,13 @@ import "IRootColonyResolver.sol";
 import "ColonyPaymentProvider.sol";
 import "IShareLedger.sol";
 
-contract Colony is Destructible {
+contract Colony is Modifiable {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
 
   modifier onlyOwner {
-    if ( !this.getUserInfo(tx.origin)) throw;
+    if ( !this.getUserInfo(msg.sender)) throw;
     _
   }*/
 
@@ -96,7 +96,7 @@ contract Colony is Destructible {
   /// @notice this function adds a task to the task DB.
   /// @param _name the task name
   /// @param _summary an IPFS hash
-  function addTask(
+  function makeTask(
     string _name,
     string _summary
   )
@@ -147,14 +147,6 @@ contract Colony is Destructible {
     return shareLedger.title();
   }
 
-  /// @notice this function updates the 'accepted' flag in the task
-  /// @param _id the task id
-  function acceptTask(uint256 _id)
-  onlyOwner
-  {
-    taskDB.acceptTask(_id);
-  }
-
   /// @notice this function is used to update task data.
   /// @param _id the task id
   /// @param _name the task name
@@ -167,24 +159,6 @@ contract Colony is Destructible {
   throwIfIsEmptyString(_name)
   {
     taskDB.updateTask(_id, _name, _summary);
-  }
-
-  /// @notice set the colony shares symbol
-  /// @param symbol_ the symbol of the colony shares
-  function setSharesSymbol(bytes4 symbol_)
-  refundEtherSentByAccident
-  onlyOwner
-  {
-    shareLedger.setSharesSymbol(symbol_);
-  }
-
-  /// @notice set the colony shares title
-  /// @param title_ the title of the colony shares
-  function setSharesTitle(bytes32 title_)
-  refundEtherSentByAccident
-  onlyOwner
-  {
-    shareLedger.setSharesTitle(title_);
   }
 
 	function getUserInfo(address userAddress)

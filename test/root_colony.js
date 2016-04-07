@@ -23,12 +23,13 @@ contract('RootColony', function (accounts) {
 
     rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
       return rootColony.registerColonyFactory(colonyFactory.address);
     })
     .then(function(){
+      rootColony.registerColonyFactory(colonyFactory.address);
       done();
     })
     .catch(done);
@@ -43,9 +44,11 @@ contract('RootColony', function (accounts) {
       var colony;
       rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
       .then(function(){
+        console.log("Colony key is: ", _COLONY_KEY_);
         return rootColony.getColony(_COLONY_KEY_);
       })
       .then(function (_address){
+        console.log("Colony address is:", _address);
         colony = Colony.at(_address);
         return colony;
       })
@@ -65,7 +68,7 @@ contract('RootColony', function (accounts) {
 
     it('should fail if the key provided is empty', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      rootColony.createColony('',
+      rootColony.createColony.call('',
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
@@ -81,7 +84,7 @@ contract('RootColony', function (accounts) {
 
     it('should fail if ETH is sent', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      rootColony.createColony(_COLONY_KEY_,
+      rootColony.createColony.call(_COLONY_KEY_,
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
