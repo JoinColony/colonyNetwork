@@ -41,21 +41,20 @@ contract('Colony', function (accounts) {
     })
     .then(function(colony_){
       colony = Colony.at(colony_);
+      return colony;
+    })
+    .then(function(){
       return colony.taskDB.call();
     })
     .then(function(colonyTaskDbAddress_){
       colonyTaskDb = TaskDB.at(colonyTaskDbAddress_);
-      done();
     })
+    .then(done)
     .catch(done);
   });
 
-  afterEach(function(done){
-    rootColony.removeColony(_COLONY_KEY_)
-    .then(function(){
-      done();
-    })
-    .catch(done);
+  afterEach(function(){
+    removeColony(rootColony, _COLONY_KEY_);
   });
 
   afterEach(function(){

@@ -101,49 +101,7 @@ contract('RootColony', function () {
     });
 
     it('should be able to replace existing Colony\'s RootColony address at RootColonyResolver', function (done) {
-
-      console.log('\r\n');
-      console.log('\tRootColony address: [ ', rootColony.address, ' ]');
-      console.log('\tColonyFactory address: [ ', colonyFactory.address, ' ]');
-      console.log('\tRegistering RootColonyResolver...');
-
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address)
-      .then(function(){
-        console.log('\tRegistering ColonyFactory at RootColony...');
-        return rootColony.registerColonyFactory(colonyFactory.address);
-      })
-      .then(function(){
-        console.log('\tCreating Colony...');
-        return rootColony.createColony(_OTHER_COLONY_KEY_);
-      })
-      .then(function(){
-        return rootColony.getColony.call(_OTHER_COLONY_KEY_);
-      })
-      .then(function (address_) {
-        console.log('\tColony address: [ ', address_, ' ]');
-        colony = Colony.at(address_);
-        return colony.getRootColony.call();
-      })
-      .then(function(rootColonyAddress_){
-        console.log('\tColony RootColony address: [ ', rootColonyAddress_, ' ]');
-        console.log('\tCreating FakeNewRootColony...');
-        return FakeNewRootColony.new();
-      })
-      .then(function(rootColony_){
-        rootColony = rootColony_;
-        return colony.rootColonyResolver.call();
-      })
-      .then(function(rootColonyResolver_){
-        rootColonyResolver = RootColonyResolver.at(rootColonyResolver_);
-        return rootColonyResolver.registerRootColony(rootColony.address);
-      })
-      .then(function() {
-        console.log('\tRegistering ColonyFactory at FakeNewRootColony...');
-        return rootColony.registerColonyFactory(colonyFactory.address);
-      })
-      .then(function(){
-        return rootColony.colonyFactory.call();
-      })
+      rootColony.colonyFactory.call()
       .then(function(_newColonyFactoryAddress){
         console.log('\tFakeNewRootColony current colony factory address: [ ', _newColonyFactoryAddress, ' ]');
         assert.equal(colonyFactory.address, _newColonyFactoryAddress, 'FakeNewRootColony factory was not updated');
