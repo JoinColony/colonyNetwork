@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, assert */
+/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, ColonyShareLedger, TaskDB, assert */
 
 var testHelper = require('./test-helper.js');
 contract('RootColony', function (accounts) {
@@ -10,16 +10,21 @@ contract('RootColony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var colonyFactory;
   var rootColony;
+  var colony;
+  var shareLedger;
+  var taskDb;
   var rootColonyResolver;
   var ifUsingTestRPC = testHelper.ifUsingTestRPC;
   var checkAllGasSpent = testHelper.checkAllGasSpent;
   var removeColony = testHelper.removeColony;
 
-  beforeEach(function(done)
+  before(function(done)
   {
     colonyFactory = ColonyFactory.deployed();
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
+
+    console.log('test');
 
     rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
@@ -29,7 +34,38 @@ contract('RootColony', function (accounts) {
       return rootColony.registerColonyFactory(colonyFactory.address);
     })
     .then(function(){
-      return rootColony.registerColonyFactory(colonyFactory.address);
+      rootColony.registerColonyFactory(colonyFactory.address);
+    })
+    .then(function(){
+      done();
+    })
+    .catch(done);
+  });
+
+  beforeEach(function(done)
+  {
+    ColonyShareLedger.new()
+    .then(function(shareLedger_){
+      shareLedger_.changeOwner(colonyFactory.address);
+      shareLedger = shareLedger_;
+      console.log("ColonyShareLedger created at: ", shareLedger.address);
+      return TaskDB.new();
+    })
+    .then(function(taskDb_){
+      taskDb_.changeOwner(colonyFactory.address);
+      taskDb = taskDb_;
+      console.log("TaskDb created at: ", taskDb.address);
+    })
+    .then(function(){
+      return rootColony.createColony(_COLONY_KEY_, shareLedger.address, taskDb.address, { from: _MAIN_ACCOUNT_ });
+    })
+    .then(function(){
+      return rootColony.getColony.call(_COLONY_KEY_);
+    })
+    .then(function (_address){
+      console.log("Colony address: ", _address);
+      colony = Colony.at(_address);
+      return colony;
     })
     .then(function(){
       done();
@@ -43,16 +79,8 @@ contract('RootColony', function (accounts) {
 
   describe('when spawning new colonies', function(){
     it('should allow users to create new colonies', function (done) {
-      var colony;
-      rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
-      .then(function(){
-        return rootColony.getColony(_COLONY_KEY_);
-      })
-      .then(function (_address){
-        colony = Colony.at(_address);
-        return colony;
-      })
-      .then(function (colony) {
+
+      then(function(){
         return colony.getUserInfo.call(_MAIN_ACCOUNT_);
       })
       .then(function(_isAdmin){
@@ -62,13 +90,15 @@ contract('RootColony', function (accounts) {
       .then(function (_rootColonyAddress) {
         assert.equal(rootColony.address, _rootColonyAddress, 'root colony address is incorrect');
       })
-      .then(done)
+      .then(function(){
+        done();
+      })
       .catch(done);
     });
 
     it('should fail if the key provided is empty', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      rootColony.createColony('',
+      rootColony.createColony('', shareLedger, taskDb,
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
@@ -84,7 +114,7 @@ contract('RootColony', function (accounts) {
 
     it('should fail if ETH is sent', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      rootColony.createColony(_COLONY_KEY_,
+      rootColony.createColony('Test colony', shareLedger, taskDb,
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
@@ -103,14 +133,7 @@ contract('RootColony', function (accounts) {
       var colony;
       var startingBalance = web3.eth.getBalance(rootColony.address);
 
-      rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
-      .then(function(){
-        return rootColony.getColony.call(_COLONY_KEY_);
-      })
-      .then(function (_address){
-        colony = Colony.at(_address);
-        return colony.taskDB.call();
-      })
+      colony.taskDB.call()
       .then(function() {
         return colony.makeTask('name', 'summary', {from:_MAIN_ACCOUNT_});
       })

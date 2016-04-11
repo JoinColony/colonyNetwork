@@ -1,14 +1,16 @@
 
 import "Destructible.sol";
+import "IterableMapping.sol";
+
 contract IColonyFactory is Destructible {
 
   address public rootColonyResolverAddress;
-  mapping(bytes32 => address) public colonies;
+  IterableMapping.itmap public colonies;
 
   /// @notice creates a Colony
   /// @param key_ the key to be used to keep track of the Colony
-  /// @param taskDB_ the address of the taskDB to this Colony
-  function createColony(bytes32 key_, address taskDB_);
+  /// @param shareLedger_ the address of the ColonyShareLedger to this Colony
+  function createColony(bytes32 key_, address shareLedger_, address taskdb_);
 
   /// @notice removes a colony from the colonies mapping
   /// @param key_ the key of the colony to be removed

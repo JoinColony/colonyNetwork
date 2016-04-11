@@ -26,20 +26,21 @@ contract('Colony', function (accounts) {
       return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
-      return rootColony.registerColonyFactory(colonyFactory.address);
+      rootColony.registerColonyFactory(colonyFactory.address);
     })
-    .then(function(){
-      done();
-    })
+    .then(done)
     .catch(done);
   });
 
   beforeEach(function(done){
-    rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
+    console.log("Creating a colony.");
+    rootColony.createColony.call(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
     .then(function(){
-      return rootColony.getColony(_COLONY_KEY_);
+      console.log("Getting the created colony.");
+      return rootColony.getColony.call(_COLONY_KEY_);
     })
     .then(function(colony_){
+      console.log("Colony address: ", colony_);
       colony = Colony.at(colony_);
       return colony;
     })
@@ -54,6 +55,7 @@ contract('Colony', function (accounts) {
   });
 
   afterEach(function(){
+    console.log("Removing the colony.");
     removeColony(rootColony, _COLONY_KEY_);
   });
 

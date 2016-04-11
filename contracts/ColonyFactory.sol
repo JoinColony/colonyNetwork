@@ -1,12 +1,11 @@
 
 import "IColonyFactory.sol";
 import "Colony.sol";
-//import "TaskDB.sol";
-import "ColonyShareLedger.sol";
+import "IterableMapping.sol";
 
 contract ColonyFactory is IColonyFactory {
 
-  event ColonyCreated(address colonyAddress, address colonyOwner, uint now);
+  event ColonyCreated(bytes32 colonyKey, address colonyAddress, address colonyOwner, uint now);
   event ColonyDeleted(bytes32 colonyKey, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
 
@@ -26,44 +25,39 @@ contract ColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  /// @param key_ the key to be used to keep track of the Colony
-  function createColony(bytes32 key_, address taskdb)
-  refundEtherSentByAccident
-  throwIfIsEmptyBytes32(key_)
+  function createColony(bytes32 key_, address shareLedger_, address taskdb_)
   {
-    if(colonies[key_] != 0x0) throw;
+    var colony = new Colony(rootColonyResolverAddress, shareLedger_, taskdb_);
 
-    var shareLedger = new ColonyShareLedger();
-    Colony colony = new Colony(rootColonyResolverAddress, shareLedger, taskdb);
+    var shareLedgerAsOwnable = Ownable(shareLedger_);
+    shareLedgerAsOwnable.changeOwner(colony);
 
-    shareLedger.changeOwner(colony);
-    var taskDBAsOwnable = Ownable(taskdb);
+    var taskDBAsOwnable = Ownable(taskdb_);
     taskDBAsOwnable.changeOwner(colony);
 
-    colonies[key_] = colony;
-    ColonyCreated(colony, tx.origin, now);
+    IterableMapping.insert(colonies, key_, colony);
+    ColonyCreated(key_, colony, tx.origin, now);
   }
 
   function removeColony(bytes32 key_)
   refundEtherSentByAccident
-  throwIfIsEmptyBytes32(key_)
   {
-    delete colonies[key_];
+    IterableMapping.remove(colonies, key_);
     ColonyDeleted(key_, tx.origin, now);
   }
 
   function getColony(bytes32 key_) constant returns(address)
   {
-    return colonies[key_];
+    return IterableMapping.iterate_get(colonies, key_);
   }
 
   function upgradeColony(bytes32 key_, address colonyTemplateAddress_)
   {
-    address colonyAddress = colonies[key_];
+    var colonyAddress = IterableMapping.iterate_get(colonies, key_);
     // Get the current colony and its taskDb
     Colony colony = Colony(colonyAddress);
-    ITaskDB taskDb = colony.taskDB();
     IShareLedger shareLedger = colony.shareLedger();
+    ITaskDB taskDb = colony.taskDB();
 
     //TODO: create a colony from the colonyTemplateAddress_
     // Create a new Colony and attach existing TaskDB and ShareLedger to it.
@@ -74,7 +68,7 @@ contract ColonyFactory is IColonyFactory {
     //colony.kill(colonyNew);
 
     // Switch the colonies entry for key_ with the new Colony
-    colonies[key_] = colonyNew;
+    IterableMapping.insert(colonies, key_, colonyNew);
 
     ColonyUpgraded(colonyNew, tx.origin, now);
   }

@@ -1,7 +1,6 @@
 
 import "IColonyFactory.sol";
 import "FakeUpdatedColony.sol";
-//import "TaskDB.sol";
 import "ColonyShareLedger.sol";
 
 contract FakeNewColonyFactory is IColonyFactory {
@@ -40,7 +39,8 @@ contract FakeNewColonyFactory is IColonyFactory {
     var taskDBAsOwnable = Ownable(taskdb);
     taskDBAsOwnable.changeOwner(colony);
 
-    colonies[key_] = colony;
+    IterableMapping.insert(colonies, key_, colony);
+    //colonies[key_] = colony;
     ColonyCreated(colony, tx.origin, now);
   }
 
@@ -74,7 +74,8 @@ contract FakeNewColonyFactory is IColonyFactory {
     //colony.kill(colonyNew);
 
     // Switch the colonies entry for key_ with the new Colony
-    colonies[key_] = colonyNew;
+    IterableMapping.insert(colonies, key_, colonyNew);
+  //  colonies[key_] = colonyNew;
 
     ColonyUpgraded(colonyNew, tx.origin, now);
   }

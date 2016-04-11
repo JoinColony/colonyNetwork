@@ -1,7 +1,5 @@
-
 import "IColonyFactory.sol";
 import "Destructible.sol";
-import "TaskDB.sol";
 
 contract RootColony is Destructible {
 
@@ -19,14 +17,11 @@ contract RootColony is Destructible {
 
   /// @notice creates a Colony
   /// @param key_ the key to be used to keep track of the Colony
-  function createColony(bytes32 key_)
+  function createColony(bytes32 key_, address shareLedger_, address taskdb_)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(key_)
   {
-    TaskDB taskDB = new TaskDB();
-    taskDB.changeOwner(colonyFactory);
-
-    colonyFactory.createColony(key_, taskDB);
+    colonyFactory.createColony(key_, shareLedger_, taskdb_);
     coloniesNum ++;
   }
 
