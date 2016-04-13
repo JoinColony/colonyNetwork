@@ -3,7 +3,6 @@
 /* globals contract, FakeNewRootColony, RootColony, Colony, RootColonyResolver,
     ColonyFactory, assert
 */
-var testHelper = require('../../test/test-helper.js');
 
 contract('RootColony', function () {
   var _COLONY_KEY_ = 'COLONY_TEST';
@@ -12,7 +11,6 @@ contract('RootColony', function () {
   var rootColony;
   var colony;
   var rootColonyResolver;
-  var removeColony = testHelper.removeColony;
 
   before(function(done){
     rootColony = RootColony.deployed();
@@ -69,9 +67,15 @@ contract('RootColony', function () {
     .catch(done);
   });
 
-  afterEach(function(){
-    removeColony(rootColony, _COLONY_KEY_);
-    removeColony(rootColony, _NEW_COLONY_KEY_);
+  afterEach(function(done){
+    rootColony.removeColony(_COLONY_KEY_)
+    .then(function(){
+      return rootColony.removeColony(_NEW_COLONY_KEY_);
+    })
+    .then(function(){
+      done();
+    })
+    .catch(done);
   });
 
   describe('when redeploying root colony contract', function () {

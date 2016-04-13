@@ -1,13 +1,25 @@
 
 import "IColonyFactory.sol";
 import "Colony.sol";
-import "IterableMapping.sol";
+import "ColonyShareLedger.sol";
 
 contract ColonyFactory is IColonyFactory {
 
   event ColonyCreated(bytes32 colonyKey, address colonyAddress, address colonyOwner, uint now);
   event ColonyDeleted(bytes32 colonyKey, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
+
+  struct ColonyRecord {
+    uint index;
+    bool _exists;
+  }
+
+  struct ColonyMapping {
+    mapping(bytes32 => ColonyRecord) catalog;
+    address [] data;
+  }
+
+  ColonyMapping colonies;
 
   function ColonyFactory()
   refundEtherSentByAccident
@@ -25,61 +37,66 @@ contract ColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address shareLedger_, address taskdb_)
+  function createColony(bytes32 key_, address taskDB_)
   {
-    var colony = new Colony(rootColonyResolverAddress, shareLedger_, taskdb_);
+    var colonyIndex = colonies.data.length++;
+    var shareLedger = new ColonyShareLedger();
+    var colony = new Colony(rootColonyResolverAddress, shareLedger, taskDB_);
 
-    var shareLedgerAsOwnable = Ownable(shareLedger_);
-    shareLedgerAsOwnable.changeOwner(colony);
+    Ownable(taskDB_).changeOwner(colony);
+    Ownable(shareLedger).changeOwner(colony);
 
-    var taskDBAsOwnable = Ownable(taskdb_);
-    taskDBAsOwnable.changeOwner(colony);
+    colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
+    colonies.data[colonyIndex] = colony;
 
-    IterableMapping.insert(colonies, key_, colony);
     ColonyCreated(key_, colony, tx.origin, now);
   }
 
   function removeColony(bytes32 key_)
   refundEtherSentByAccident
   {
-    IterableMapping.remove(colonies, key_);
+    colonies.catalog[key_]._exists = false;
     ColonyDeleted(key_, tx.origin, now);
   }
 
   function getColony(bytes32 key_) constant returns(address)
   {
-    return IterableMapping.iterate_get(colonies, key_);
+    var colonyIndex = colonies.catalog[key_].index;
+    return colonies.data[colonyIndex];
   }
 
-  function upgradeColony(bytes32 key_, address colonyTemplateAddress_)
+  function getColonyAt(uint256 idx_) constant returns(address)
   {
-    var colonyAddress = IterableMapping.iterate_get(colonies, key_);
-    // Get the current colony and its taskDb
+    return colonies.data[idx_];
+  }
+
+/*
+  function upgradeColony(bytes32 key_)
+  {
+    var colonyIndex = colonies.catalog[key_].index;
+    var colonyAddress = colonies.data[colonyIndex];
+
     Colony colony = Colony(colonyAddress);
-    IShareLedger shareLedger = colony.shareLedger();
-    ITaskDB taskDb = colony.taskDB();
-
-    //TODO: create a colony from the colonyTemplateAddress_
+    var shareLedger = colony.shareLedger();
+    var taskDB = colony.taskDB();
     // Create a new Colony and attach existing TaskDB and ShareLedger to it.
-    Colony colonyNew = new Colony(rootColonyResolverAddress, shareLedger, taskDb);
-    taskDb.changeOwner(colonyNew);
-
-    // Kill old colony. This will transfer its Ether value to the upgraded colony.
-    //colony.kill(colonyNew);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, shareLedger, taskDB);
+    // Get the current colony and its taskDb
+    colony.upgrade(colonyNew);
 
     // Switch the colonies entry for key_ with the new Colony
-    IterableMapping.insert(colonies, key_, colonyNew);
+    colonies.data[colonyIndex] = colonyNew;
 
     ColonyUpgraded(colonyNew, tx.origin, now);
-  }
+  }*/
 
 	function () {
-			// This function gets executed if a
-			// transaction with invalid data is sent to
-			// the contract or just ether without data.
-			// We revert the send so that no-one
-			// accidentally loses money when using the
-			// contract.
-			throw;
+		// This function gets executed if a
+		// transaction with invalid data is sent to
+		// the contract or just ether without data.
+		// We revert the send so that no-one
+		// accidentally loses money when using the
+		// contract.
+		throw;
 	}
 }

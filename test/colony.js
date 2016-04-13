@@ -2,65 +2,54 @@
 // These globals are added by Truffle:
 /* globals contract, Colony, ColonyFactory, TaskDB, ColonyShareLedger, RootColony, RootColonyResolver, web3, assert
 */
-
 var testHelper = require('./test-helper.js');
 contract('Colony', function (accounts) {
+  var _COLONY_KEY_ = 'COLONY_TEST';
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
-  var _COLONY_KEY_ = 'COLONY_TEST';
+  var colony;
   var colonyFactory;
+  var colonyTaskDb;
   var rootColony;
   var rootColonyResolver;
-  var ifUsingTestRPC = testHelper.ifUsingTestRPC;
-  var removeColony = testHelper.removeColony;
-  var colony;
-  var colonyTaskDb;
 
-  before(function(done){
+  before(function(done)
+  {
+    colonyFactory = ColonyFactory.deployed();
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
-    colonyFactory = ColonyFactory.deployed();
 
     rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
       return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
-      rootColony.registerColonyFactory(colonyFactory.address);
+      return rootColony.registerColonyFactory(colonyFactory.address);
     })
-    .then(done)
+    .then(function(){
+      done();
+    })
     .catch(done);
+  });
+
+  afterEach(function(done){
+    rootColony.removeColony(_COLONY_KEY_).then(function(){ done(); }).catch(done);
   });
 
   beforeEach(function(done){
-    console.log("Creating a colony.");
-    rootColony.createColony.call(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
+    rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
     .then(function(){
-      console.log("Getting the created colony.");
       return rootColony.getColony.call(_COLONY_KEY_);
     })
     .then(function(colony_){
-      console.log("Colony address: ", colony_);
       colony = Colony.at(colony_);
-      return colony;
-    })
-    .then(function(){
       return colony.taskDB.call();
     })
-    .then(function(colonyTaskDbAddress_){
-      colonyTaskDb = TaskDB.at(colonyTaskDbAddress_);
+    .then(function(_taskDBAddress){
+      colonyTaskDb = TaskDB.at(_taskDBAddress);
     })
     .then(done)
     .catch(done);
-  });
-
-  afterEach(function(){
-    console.log("Removing the colony.");
-    removeColony(rootColony, _COLONY_KEY_);
-  });
-
-  afterEach(function(){
-    removeColony(rootColony, _COLONY_KEY_);
   });
 
   describe('when created', function () {
@@ -211,7 +200,7 @@ contract('Colony', function (accounts) {
         prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _OTHER_ACCOUNT_ });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         return colonyTaskDb.getTask.call(0);
       })

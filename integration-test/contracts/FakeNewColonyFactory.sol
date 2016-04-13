@@ -5,9 +5,21 @@ import "ColonyShareLedger.sol";
 
 contract FakeNewColonyFactory is IColonyFactory {
 
-  event ColonyCreated(address colonyAddress, address colonyOwner, uint now);
+  event ColonyCreated(bytes32 colonyKey, address colonyAddress, address colonyOwner, uint now);
   event ColonyDeleted(bytes32 colonyKey, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
+
+  struct ColonyRecord {
+    uint index;
+    bool _exists;
+  }
+
+  struct ColonyMapping {
+    mapping(bytes32 => ColonyRecord) catalog;
+    address [] data;
+  }
+
+  ColonyMapping colonies;
 
   function FakeNewColonyFactory()
   refundEtherSentByAccident
@@ -25,68 +37,67 @@ contract FakeNewColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  /// @param key_ the key to be used to keep track of the Colony
-  function createColony(bytes32 key_, address taskdb)
-  refundEtherSentByAccident
-  throwIfIsEmptyBytes32(key_)
+  function createColony(bytes32 key_, address taskDB_)
   {
-    if(colonies[key_] != 0x0) throw;
-
+    var colonyIndex = colonies.data.length++;
     var shareLedger = new ColonyShareLedger();
-    FakeUpdatedColony colony = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskdb);
+    var colony = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskDB_);
 
-    shareLedger.changeOwner(colony);
-    var taskDBAsOwnable = Ownable(taskdb);
-    taskDBAsOwnable.changeOwner(colony);
+    Ownable(taskDB_).changeOwner(colony);
+    Ownable(shareLedger).changeOwner(colony);
 
-    IterableMapping.insert(colonies, key_, colony);
-    //colonies[key_] = colony;
-    ColonyCreated(colony, tx.origin, now);
+    colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
+    colonies.data[colonyIndex] = colony;
+
+    ColonyCreated(key_, colony, tx.origin, now);
   }
 
   function removeColony(bytes32 key_)
   refundEtherSentByAccident
-  throwIfIsEmptyBytes32(key_)
   {
-    delete colonies[key_];
+    colonies.catalog[key_]._exists = false;
     ColonyDeleted(key_, tx.origin, now);
   }
 
   function getColony(bytes32 key_) constant returns(address)
   {
-    return colonies[key_];
+    var colonyIndex = colonies.catalog[key_].index;
+    return colonies.data[colonyIndex];
   }
 
-  function upgradeColony(bytes32 key_, address colonyTemplateAddress_)
+  function getColonyAt(uint256 idx_) constant returns(address)
   {
-    address colonyAddress = colonies[key_];
-    // Get the current colony and its taskDb
+    return colonies.data[idx_];
+  }
+
+/*
+  function upgradeColony(bytes32 key_)
+  {
+    var colonyIndex = colonies.catalog[key_].index;
+    var colonyAddress = colonies.data[colonyIndex];
+
     FakeUpdatedColony colony = FakeUpdatedColony(colonyAddress);
-    ITaskDB taskDb = colony.taskDB();
-    IShareLedger shareLedger = colony.shareLedger();
-
+    var shareLedger = colony.shareLedger();
+    var taskDB = colony.taskDB();
     //TODO: create a colony from the colonyTemplateAddress_
-    // Create a new Colony and attach existing TaskDB and ShareLedger to it.
-    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskDb);
-    taskDb.changeOwner(colonyNew);
-
-    // Kill old colony. This will transfer its Ether value to the upgraded colony.
-    //colony.kill(colonyNew);
+    // Create a new FakeUpdateColony and attach existing TaskDB and ShareLedger to it.
+    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskDB);
+    // Get the current colony and its taskDb
+    colony.upgrade(colonyNew);
 
     // Switch the colonies entry for key_ with the new Colony
-    IterableMapping.insert(colonies, key_, colonyNew);
-  //  colonies[key_] = colonyNew;
+    colonies.data[colonyIndex] = colonyNew;
 
     ColonyUpgraded(colonyNew, tx.origin, now);
-  }
+  }*/
 
 	function () {
-			// This function gets executed if a
-			// transaction with invalid data is sent to
-			// the contract or just ether without data.
-			// We revert the send so that no-one
-			// accidentally loses money when using the
-			// contract.
-			throw;
+		// This function gets executed if a
+		// transaction with invalid data is sent to
+		// the contract or just ether without data.
+		// We revert the send so that no-one
+		// accidentally loses money when using the
+		// contract.
+		throw;
 	}
 }

@@ -3,13 +3,10 @@
 /* globals contract, ColonyShareLedger, assert, web3*/
 var testHelper = require('./test-helper.js');
 contract('ColonyShareLedger', function (accounts) {
+  var _GAS_PRICE_ = 20e9;
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _TOTAL_SUPPLY_ = 1000;
-  var ifUsingTestRPC = testHelper.ifUsingTestRPC;
-  var checkAllGasSpent = testHelper.checkAllGasSpent;
-  var hexToUtf8 = testHelper.hexToUtf8;
-  var _GAS_PRICE_ = 20e9;
   var colonyShare;
 
   beforeEach(function (done) {
@@ -37,9 +34,9 @@ contract('ColonyShareLedger', function (accounts) {
         gas: 1e6,
         gasPrice: _GAS_PRICE_
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -86,7 +83,7 @@ contract('ColonyShareLedger', function (accounts) {
           gasPrice: _GAS_PRICE_
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -107,7 +104,7 @@ contract('ColonyShareLedger', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, previousBalance + 1);
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -128,7 +125,7 @@ contract('ColonyShareLedger', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, 0);
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -149,7 +146,7 @@ contract('ColonyShareLedger', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transfer(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -222,7 +219,7 @@ contract('ColonyShareLedger', function (accounts) {
           value: 1
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -246,7 +243,7 @@ contract('ColonyShareLedger', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, previousBalance + 1);
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -270,7 +267,7 @@ contract('ColonyShareLedger', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, 0);
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -295,7 +292,7 @@ contract('ColonyShareLedger', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -323,7 +320,7 @@ contract('ColonyShareLedger', function (accounts) {
         previousBalance = prevBalance.toNumber();
         return colonyShare.transferFrom(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_, 500);
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         return colonyShare.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -362,9 +359,9 @@ contract('ColonyShareLedger', function (accounts) {
           gasPrice: _GAS_PRICE_
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -381,9 +378,9 @@ contract('ColonyShareLedger', function (accounts) {
           gasPrice: _GAS_PRICE_
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -459,9 +456,9 @@ contract('ColonyShareLedger', function (accounts) {
           gas: 1e6,
           gasPrice: _GAS_PRICE_
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -473,9 +470,9 @@ contract('ColonyShareLedger', function (accounts) {
         gas: 1e6,
         gasPrice: _GAS_PRICE_
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -491,9 +488,9 @@ contract('ColonyShareLedger', function (accounts) {
           gasPrice: _GAS_PRICE_
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -507,7 +504,7 @@ contract('ColonyShareLedger', function (accounts) {
         return colonyShare.symbol.call();
       })
       .then(function(_symbol){
-        assert.equal(hexToUtf8(_symbol), 'CNY', 'shares symbol is incorrect');
+        assert.equal(testHelper.hexToUtf8(_symbol), 'CNY', 'shares symbol is incorrect');
       })
       .then(done)
       .catch(done);
@@ -519,7 +516,7 @@ contract('ColonyShareLedger', function (accounts) {
         return colonyShare.title.call();
       })
       .then(function(_title){
-        assert.equal(hexToUtf8(_title), 'COLONY', 'shares title is incorrect');
+        assert.equal(testHelper.hexToUtf8(_title), 'COLONY', 'shares title is incorrect');
       })
       .then(done)
       .catch(done);

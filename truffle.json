@@ -5,7 +5,6 @@
     "RootColony",
     "ColonyPaymentProvider",
     "RootColonyResolver",
-    "TaskDB",
     "ColonyFactory"
   ],
   "rpc": {

@@ -113,40 +113,6 @@ contract Colony is Modifiable {
     taskDB.acceptTask(_id);
   }
 
-  /// @notice set the colony shares symbol
-  /// @param symbol_ the symbol of the colony shares
-  function setSharesSymbol(bytes4 symbol_)
-  refundEtherSentByAccident
-  onlyOwner
-  {
-    shareLedger.setSharesSymbol(symbol_);
-  }
-
-  /// @notice set the colony shares title
-  /// @param title_ the title of the colony shares
-  function setSharesTitle(bytes32 title_)
-  refundEtherSentByAccident
-  onlyOwner
-  {
-    shareLedger.setSharesTitle(title_);
-  }
-
-  /// @notice get the colony shares symbol
-  /// @return the symbol of the colony shares
-  function getSharesSymbol()
-  constant returns(bytes4)
-  {
-    return shareLedger.symbol();
-  }
-
-  /// @notice get the colony shares title
-  /// @return the title of the colony shares
-  function getSharesTitle()
-  constant returns(bytes32)
-  {
-    return shareLedger.title();
-  }
-
   /// @notice this function is used to update task data.
   /// @param _id the task id
   /// @param _name the task name

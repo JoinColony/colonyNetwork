@@ -1,5 +1,8 @@
+/* eslint-env node */
 /* globals web3, assert, module */
 
+var Promise = require('bluebird');
+var _ = require('lodash');
 module.exports = {
   ifUsingTestRPC : function () {
     //Okay, so, there is a discrepancy between how testrpc handles
@@ -25,10 +28,20 @@ module.exports = {
     //we spent all the gas that we sent.
     assert.equal(prevBalance.minus(newBalance).toNumber(), gasAmount*gasPrice, 'didnt fail - didn\'t throw and use all gas');
   },
+  getRandomString : function(_length){
+    var length = _length || 7;
+    return Math.random().toString(36).substring(length);
+  },
+  waitAll : function(promises, callback){
+    return Promise.all(promises)
+    .then(function(){
+      callback();
+    })
+    .catch(callback);
+  },
+  _ : _,
+  Promise : Promise,
   hexToUtf8 : function (text) {
     return web3.toAscii(text).replace(/\u0000/g, '');
-  },
-  removeColony : function (rootColony, colonyKey) {
-    rootColony.removeColony(colonyKey);
   }
 };

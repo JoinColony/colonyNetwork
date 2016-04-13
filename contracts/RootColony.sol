@@ -1,5 +1,6 @@
 import "IColonyFactory.sol";
 import "Destructible.sol";
+import "TaskDB.sol";
 
 contract RootColony is Destructible {
 
@@ -17,12 +18,14 @@ contract RootColony is Destructible {
 
   /// @notice creates a Colony
   /// @param key_ the key to be used to keep track of the Colony
-  function createColony(bytes32 key_, address shareLedger_, address taskdb_)
+  function createColony(bytes32 key_)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(key_)
   {
-    colonyFactory.createColony(key_, shareLedger_, taskdb_);
-    coloniesNum ++;
+    var taskDB = new TaskDB();
+    taskDB.changeOwner(colonyFactory);
+    colonyFactory.createColony(key_, taskDB);
+    coloniesNum++;
   }
 
   function removeColony(bytes32 key_)
@@ -44,12 +47,22 @@ contract RootColony is Destructible {
     return colonyFactory.getColony(_key);
   }
 
-  function upgradeColony(bytes32 _key, address colonyTemplateAddress_)
+  /// @notice this function can be used to fetch the address of a Colony by index.
+  /// @param _idx the index of the Colony created
+  /// @return the address for the given key.
+  function getColonyAt(uint _idx)
+  refundEtherSentByAccident
+  constant returns (address)
+  {
+    return colonyFactory.getColonyAt(_idx);
+  }
+/*
+  function upgradeColony(bytes32 _key)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   {
-    return colonyFactory.upgradeColony(_key, colonyTemplateAddress_);
-  }
+    return colonyFactory.upgradeColony(_key);
+  }*/
 
   /// @notice this function returns the amount of colonies created
   /// @return the amount of colonies created

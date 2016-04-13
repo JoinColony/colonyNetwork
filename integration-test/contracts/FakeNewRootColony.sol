@@ -1,4 +1,3 @@
-
 import "IColonyFactory.sol";
 import "Destructible.sol";
 import "TaskDB.sol";
@@ -23,11 +22,10 @@ contract FakeNewRootColony is Destructible {
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(key_)
   {
-    TaskDB taskDB = new TaskDB();
+    var taskDB = new TaskDB();
     taskDB.changeOwner(colonyFactory);
-
     colonyFactory.createColony(key_, taskDB);
-    coloniesNum ++;
+    coloniesNum++;
   }
 
   function removeColony(bytes32 key_)
@@ -49,12 +47,22 @@ contract FakeNewRootColony is Destructible {
     return colonyFactory.getColony(_key);
   }
 
-  function upgradeColony(bytes32 _key, address colonyTemplateAddress_)
+  /// @notice this function can be used to fetch the address of a Colony by index.
+  /// @param _idx the index of the Colony created
+  /// @return the address for the given key.
+  function getColonyAt(uint _idx)
+  refundEtherSentByAccident
+  constant returns (address)
+  {
+    return colonyFactory.getColonyAt(_idx);
+  }
+/*
+  function upgradeColony(bytes32 _key)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   {
-    return colonyFactory.upgradeColony(_key, colonyTemplateAddress_);
-  }
+    return colonyFactory.upgradeColony(_key);
+  }*/
 
   /// @notice this function returns the amount of colonies created
   /// @return the amount of colonies created

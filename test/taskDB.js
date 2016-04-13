@@ -5,13 +5,11 @@
 var testHelper = require('./test-helper.js');
 contract('TaskDB', function (accounts) {
 
+  var _BIGGER_TASK_SUMMARY_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing el';
+  var _BIGGER_TASK_TITLE_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
+  var _GAS_PRICE_ = 20e9;
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
-  var _BIGGER_TASK_TITLE_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
-  var _BIGGER_TASK_SUMMARY_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing el';
-  var _GAS_PRICE_ = 20e9;
-  var ifUsingTestRPC = testHelper.ifUsingTestRPC;
-  var checkAllGasSpent = testHelper.checkAllGasSpent;
   var taskDB;
 
   beforeEach(function(done){
@@ -44,9 +42,9 @@ contract('TaskDB', function (accounts) {
         gasPrice : _GAS_PRICE_,
         gas: 1e6
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -60,9 +58,9 @@ contract('TaskDB', function (accounts) {
         gasPrice : _GAS_PRICE_,
         gas: 1e6
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -136,9 +134,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -156,9 +154,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -176,9 +174,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -196,9 +194,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -220,26 +218,6 @@ contract('TaskDB', function (accounts) {
       .then(done)
       .catch(done);
     });
-
-    //
-    // it('should fail if I try to retrieve data from a task using an invalid id', function (done) {
-    //   var itFailed = true;
-    //   taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY', 1, 1)
-    //   .then(function(){
-    //     return taskDB.getTask(10);
-    //   })
-    //   .then(function(){
-    //     console.log('\texception wasn\'t raised');
-    //     itFailed = false;
-    //   })
-    //   .catch(ifUsingTestRPC)
-    //   .then(function(){
-    //     //cant check if the gas was spent because the exception isnt thrown on a tx.
-    //     assert.isTrue(itFailed, 'didnt fail when an invalid key was used');
-    //   })
-    //   .then(done)
-    //   .catch(done);
-    // });
   });
 
   describe('when accepting a task', function(){
@@ -271,9 +249,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -294,9 +272,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -314,9 +292,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -391,9 +369,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -411,9 +389,9 @@ contract('TaskDB', function (accounts) {
           gas: 1e6
         });
       })
-      .catch(ifUsingTestRPC)
+      .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -486,25 +464,15 @@ contract('TaskDB', function (accounts) {
     });
 
     it('should return the number of tasks if tasks were added', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
-      .then(function(){
-        return taskDB.makeTask('TASK B', 'INTERESTING TASK SUMMARY');
-      })
-      .then(function(){
-        return taskDB.makeTask('TASK C', 'INTERESTING TASK SUMMARY');
-      })
-      .then(function(){
-        return taskDB.makeTask('TASK D', 'INTERESTING TASK SUMMARY');
-      })
-      .then(function(){
-        return taskDB.makeTask('TASK E', 'INTERESTING TASK SUMMARY');
-      })
-      .then(function(){
-        return taskDB.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_);
-      })
-      .then(function(){
-        return taskDB.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_);
-      })
+      testHelper.Promise.all([
+        taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY'),
+        taskDB.makeTask('TASK B', 'INTERESTING TASK SUMMARY'),
+        taskDB.makeTask('TASK C', 'INTERESTING TASK SUMMARY'),
+        taskDB.makeTask('TASK D', 'INTERESTING TASK SUMMARY'),
+        taskDB.makeTask('TASK E', 'INTERESTING TASK SUMMARY'),
+        taskDB.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_),
+        taskDB.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_)
+      ])
       .then(function(){
         return taskDB.count.call();
       })
