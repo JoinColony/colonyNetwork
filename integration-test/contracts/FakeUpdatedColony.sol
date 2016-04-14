@@ -2,7 +2,6 @@
 import "Modifiable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
-import "ColonyPaymentProvider.sol";
 import "IShareLedger.sol";
 
 contract FakeUpdatedColony is Modifiable {
@@ -39,6 +38,12 @@ contract FakeUpdatedColony is Modifiable {
     taskDB = ITaskDB(_tasksDBAddress);
   }
 
+  function isUpdated()
+  constant returns(bool)
+  {
+    return true;
+  }
+
   /// @notice registers a new RootColonyResolver contract.
   /// Used to keep the reference of the RootColony.
   /// @param rootColonyResolverAddress_ the RootColonyResolver address
@@ -58,79 +63,10 @@ contract FakeUpdatedColony is Modifiable {
     taskDB = ITaskDB(_tasksDBAddress);
   }
 
-  /// @notice contribute ETH to a task
-  /// @param taskId the task ID
-	function contributeEth(uint256 taskId) {
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-		if (isTaskAccepted)
-			throw;
-
-    taskDB.contributeEth(taskId, msg.value);
-	}
-
-  function isUpdated()
-  constant returns(bool)
-  {
-    return true;
-  }
-
-	//Contribute Shares to a task
-	function contributeShares(uint256 taskId, uint256 shares) {
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted)
-      throw;
-
-    taskDB.contributeShares(taskId, shares);
-		shareLedger.transfer(this, shares);
-	}
-
-  /// @notice this function is used to generate Colony shares
-  /// @param _amount The amount of shares to be generated
-  function generateColonyShares(uint256 _amount)
-  onlyOwner
-  refundEtherSentByAccident
-  {
-    shareLedger.generateShares(_amount);
-  }
-
   function getRootColony()
   constant returns(address)
   {
     return rootColonyResolver.rootColonyAddress();
-  }
-
-  /// @notice this function adds a task to the task DB.
-  /// @param _name the task name
-  /// @param _summary an IPFS hash
-  function makeTask(
-    string _name,
-    string _summary
-  )
-  throwIfIsEmptyString(_name)
-  {
-      taskDB.makeTask(_name, _summary);
-  }
-
-  /// @notice this function updates the 'accepted' flag in the task
-  /// @param _id the task id
-  function acceptTask(uint256 _id)
-  onlyOwner
-  {
-    taskDB.acceptTask(_id);
-  }
-
-  /// @notice this function is used to update task data.
-  /// @param _id the task id
-  /// @param _name the task name
-  /// @param _summary an IPFS hash
-  function updateTask(
-    uint256 _id,
-    string _name,
-    string _summary
-  )
-  throwIfIsEmptyString(_name)
-  {
-    taskDB.updateTask(_id, _name, _summary);
   }
 
   /// @notice set the colony shares symbol
@@ -156,34 +92,4 @@ contract FakeUpdatedColony is Modifiable {
   {
 		return users[userAddress].admin;
 	}
-
-  //Mark a task as completed, pay a user, pay root colony fee
-  function completeAndPayTask(uint256 taskId, address paymentAddress)
-  onlyOwner
-  {
-
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted || users[msg.sender].admin == false)
-			throw;
-
-    var (taskEth, taskShares) = taskDB.getTaskBalance(taskId);
-    taskDB.acceptTask(taskId);
-		if (taskEth > 0)
-		{
-			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
-		}
-
-		if (taskShares > 0)
-		{
-			// Check if there are enough shares to pay up
-			if (shareLedger.totalSupply() < taskShares)
-				throw;
-
-	    //bytes4 colonyConstrCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
-			shareLedger.transfer(paymentAddress, ((taskShares * 95)/100));
-	    shareLedger.transfer(rootColonyResolver.rootColonyAddress(), ((taskShares * 5)/100));
-		}
-
-		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);
-  }
 }
