@@ -160,26 +160,53 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow user to contribute shares to task', function (done) {
+      var shareLedger;
 
-      colony.generateColonyShares(100)
+      colony.generateColonyShares(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
+      })
+      .then(function(){
+        return colony.makeTask('name2', 'summary2');
       })
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
+        return colony.shareLedger.call();
+      })
+      .then(function(shareLedgerAddress){
+        shareLedger = ColonyShareLedger.at(shareLedgerAddress);
+      })
+      .then(function(){
+        return shareLedger.balanceOf.call(colony.address);
+      })
+      .then(function(colonyBalance){
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 shares.');
         return colony.contributeShares(0, 100);
       })
-      .then(function () {
-        return colonyTaskDb.getTask.call(0);
+      .then(function(){
+        return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return shareLedger.balanceOf.call(_OTHER_ACCOUNT_);
+      })
+      .then(function(otherAccountShareBalance){
+        assert.equal(otherAccountShareBalance.toNumber(), 95, '_OTHER_ACCOUNT_ balance should be 95 shares.');
+        return shareLedger.approve(colony.address, 95, {from: _OTHER_ACCOUNT_});
+      })
+      .then(function(){
+        return colony.contributeShares(1, 95, {from: _OTHER_ACCOUNT_});
+      })
+      .then(function() {
+        return colonyTaskDb.getTask.call(1);
       })
       .then(function (value) {
-        assert.equal(value[0], 'nameedit');
-        assert.equal(value[1], 'summary');
+        assert.equal(value[0], 'name2');
+        assert.equal(value[1], 'summary2');
         assert.equal(value[2], false);
         assert.equal(value[3].toNumber(), 0);
-        assert.equal(value[4].toNumber(), 100);
+        assert.equal(value[4].toNumber(), 95);
       })
       .then(done)
       .catch(done);
@@ -256,6 +283,7 @@ contract('Colony', function (accounts) {
         return colony.contributeShares(0, 100);
       })
       .then(function () {
+        //TODO:
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(){

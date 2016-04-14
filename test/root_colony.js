@@ -133,7 +133,6 @@ contract('RootColony', function (accounts) {
 
     it('should be able to upgrade colonies', function(done) {
       var oldColonyAddress;
-      var upgradedColony;
       rootColony.createColony(_COLONY_KEY_)
       .then(function(){
         return rootColony.getColony.call(_COLONY_KEY_);
