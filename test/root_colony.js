@@ -133,7 +133,6 @@ contract('RootColony', function (accounts) {
 
     it('should be able to upgrade colonies', function(done) {
       var oldColonyAddress;
-      var upgradedColony;
       rootColony.createColony(_COLONY_KEY_)
       .then(function(){
         return rootColony.getColony.call(_COLONY_KEY_);
@@ -151,7 +150,7 @@ contract('RootColony', function (accounts) {
       })
       .then(function(upgradedColonyAddress){
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
-      })      
+      })
       .then(done)
       .catch(done);
     });
