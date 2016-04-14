@@ -1,7 +1,6 @@
 
 import "IColonyFactory.sol";
 import "FakeUpdatedColony.sol";
-import "ColonyShareLedger.sol";
 
 contract FakeNewColonyFactory is IColonyFactory {
 
@@ -37,14 +36,13 @@ contract FakeNewColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address taskDB_)
+  function createColony(bytes32 key_, address shareLedger_, address taskDB_)
   {
     var colonyIndex = colonies.data.length++;
-    var shareLedger = new ColonyShareLedger();
-    var colony = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskDB_);
+    var colony = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger_, taskDB_);
 
     Ownable(taskDB_).changeOwner(colony);
-    Ownable(shareLedger).changeOwner(colony);
+    Ownable(shareLedger_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
     colonies.data[colonyIndex] = colony;
@@ -70,26 +68,9 @@ contract FakeNewColonyFactory is IColonyFactory {
     return colonies.data[idx_];
   }
 
-/*
   function upgradeColony(bytes32 key_)
   {
-    var colonyIndex = colonies.catalog[key_].index;
-    var colonyAddress = colonies.data[colonyIndex];
-
-    FakeUpdatedColony colony = FakeUpdatedColony(colonyAddress);
-    var shareLedger = colony.shareLedger();
-    var taskDB = colony.taskDB();
-    //TODO: create a colony from the colonyTemplateAddress_
-    // Create a new FakeUpdateColony and attach existing TaskDB and ShareLedger to it.
-    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger, taskDB);
-    // Get the current colony and its taskDb
-    colony.upgrade(colonyNew);
-
-    // Switch the colonies entry for key_ with the new Colony
-    colonies.data[colonyIndex] = colonyNew;
-
-    ColonyUpgraded(colonyNew, tx.origin, now);
-  }*/
+  }
 
 	function () {
 		// This function gets executed if a
