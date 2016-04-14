@@ -1,9 +1,7 @@
 {
   "deploy": [
     // Names of contracts that should be deployed to the network.
-    "ColonyShareLedger",
     "RootColony",
-    "ColonyPaymentProvider",
     "RootColonyResolver",
     "ColonyFactory"
   ],
