@@ -181,8 +181,10 @@ contract Colony is Modifiable {
 			if (shareLedger.totalSupply() < taskShares)
 				throw;
 
-			shareLedger.transfer(paymentAddress, ((taskShares * 95)/100));
-	    shareLedger.transfer(getRootColony(), ((taskShares * 5)/100));
+      var payout = ((taskShares * 95)/100);
+      var fee = taskShares - payout;
+			shareLedger.transfer(paymentAddress, payout);
+	    shareLedger.transfer(getRootColony(), fee);
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);
