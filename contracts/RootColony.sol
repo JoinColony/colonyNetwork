@@ -1,8 +1,10 @@
 import "IColonyFactory.sol";
 import "Destructible.sol";
+import "Modifiable.sol";
 import "TaskDB.sol";
+import "ColonyShareLedger.sol";
 
-contract RootColony is Destructible {
+contract RootColony is Destructible, Modifiable {
 
   IColonyFactory public colonyFactory;
   uint coloniesNum;
@@ -24,7 +26,10 @@ contract RootColony is Destructible {
   {
     var taskDB = new TaskDB();
     taskDB.changeOwner(colonyFactory);
-    colonyFactory.createColony(key_, taskDB);
+    var shareLedger = new ColonyShareLedger();
+    shareLedger.changeOwner(colonyFactory);
+
+    colonyFactory.createColony(key_, shareLedger, taskDB);
     coloniesNum++;
   }
 
@@ -56,13 +61,13 @@ contract RootColony is Destructible {
   {
     return colonyFactory.getColonyAt(_idx);
   }
-/*
+
   function upgradeColony(bytes32 _key)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   {
     return colonyFactory.upgradeColony(_key);
-  }*/
+  }
 
   /// @notice this function returns the amount of colonies created
   /// @return the amount of colonies created

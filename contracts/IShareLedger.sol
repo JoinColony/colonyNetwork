@@ -1,6 +1,6 @@
-
+import "Modifiable.sol";
 import "Destructible.sol";
-contract IShareLedger is Destructible {
+contract IShareLedger is Destructible, Modifiable {
 
     uint256 total_supply;
     bytes32 public title;

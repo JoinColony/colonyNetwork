@@ -164,7 +164,7 @@ contract Colony is Modifiable {
     taskDB.acceptTask(taskId);
 		if (taskEth > 0)
 		{
-			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, getRootColony());
 		}
 
 		if (taskShares > 0)
@@ -173,9 +173,8 @@ contract Colony is Modifiable {
 			if (shareLedger.totalSupply() < taskShares)
 				throw;
 
-	    //bytes4 colonyConstrCallSig = bytes4(sha3("scheduleCall(bytes4,uint256)"));
 			shareLedger.transfer(paymentAddress, ((taskShares * 95)/100));
-	    shareLedger.transfer(rootColonyResolver.rootColonyAddress(), ((taskShares * 5)/100));
+	    shareLedger.transfer(getRootColony(), ((taskShares * 5)/100));
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);

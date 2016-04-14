@@ -130,5 +130,30 @@ contract('RootColony', function (accounts) {
       .then(done)
       .catch(done);
     });
+
+    it('should be able to upgrade colonies', function(done) {
+      var oldColonyAddress;
+      var upgradedColony;
+      rootColony.createColony(_COLONY_KEY_)
+      .then(function(){
+        return rootColony.getColony.call(_COLONY_KEY_);
+      })
+      .then(function (_address){
+        oldColonyAddress = _address;
+        colony = Colony.at(_address);
+        return colony.makeTask('name', 'summary', {from:_MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return rootColony.upgradeColony(_COLONY_KEY_);
+      })
+      .then(function(){
+        return rootColony.getColony.call(_COLONY_KEY_);
+      })
+      .then(function(upgradedColonyAddress){
+        assert.notEqual(oldColonyAddress, upgradedColonyAddress);
+      })      
+      .then(done)
+      .catch(done);
+    });
   });
 });

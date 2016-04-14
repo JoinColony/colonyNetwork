@@ -1,6 +1,6 @@
-
+import "Modifiable.sol";
 import "Destructible.sol";
-contract ITaskDB is Destructible {
+contract ITaskDB is Destructible, Modifiable {
 
   /// @notice this function returns the number of tasks in the DB
   /// @return the number of tasks in DB
