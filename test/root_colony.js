@@ -151,7 +151,7 @@ contract('RootColony', function (accounts) {
       })
       .then(function(upgradedColonyAddress){
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
-      })      
+      })
       .then(done)
       .catch(done);
     });
