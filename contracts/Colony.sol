@@ -8,7 +8,7 @@ import "IShareLedger.sol";
 contract Colony is Modifiable {
 
   // Event to raise when a Task is completed and paid
-  event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
+  event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _sharesValue);
 
   modifier onlyOwner {
     if ( !this.getUserInfo(msg.sender)) throw;
@@ -75,7 +75,15 @@ contract Colony is Modifiable {
       throw;
 
     taskDB.contributeShares(taskId, shares);
-		shareLedger.transferFrom(msg.sender, this, shares);
+
+    if (this.getUserInfo(msg.sender))
+    {
+      shareLedger.transfer(this, shares);
+    }
+    else
+    {
+      shareLedger.transferFrom(msg.sender, this, shares);
+    }
 	}
 
   /// @notice this function is used to generate Colony shares
