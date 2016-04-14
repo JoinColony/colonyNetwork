@@ -75,7 +75,7 @@ contract Colony is Modifiable {
       throw;
 
     taskDB.contributeShares(taskId, shares);
-		shareLedger.transfer(this, shares);
+		shareLedger.transferFrom(msg.sender, this, shares);
 	}
 
   /// @notice this function is used to generate Colony shares
