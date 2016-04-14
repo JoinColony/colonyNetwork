@@ -1,6 +1,7 @@
 import "IColonyFactory.sol";
 import "Destructible.sol";
 import "TaskDB.sol";
+import "ColonyShareLedger.sol";
 
 contract FakeNewRootColony is Destructible, Modifiable {
 
@@ -24,7 +25,9 @@ contract FakeNewRootColony is Destructible, Modifiable {
   {
     var taskDB = new TaskDB();
     taskDB.changeOwner(colonyFactory);
-    colonyFactory.createColony(key_, taskDB);
+    var shareLedger = new ColonyShareLedger();
+    shareLedger.changeOwner(colonyFactory);
+    colonyFactory.createColony(key_, shareLedger, taskDB);
     coloniesNum++;
   }
 
