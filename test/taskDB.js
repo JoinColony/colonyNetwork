@@ -88,8 +88,8 @@ contract('TaskDB', function (accounts) {
       .catch(done);
     });
 
-    it('should not interfere in "accepted", "eth" or "shares" props', function (done) {
-      var prevEthBalance, prevSharesBalance, prevAcceptedValue;
+    it('should not interfere in "accepted", "eth" or "tokens" props', function (done) {
+      var prevEthBalance, prevTokensBalance, prevAcceptedValue;
       taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         return taskDB.getTask(0);
@@ -98,7 +98,7 @@ contract('TaskDB', function (accounts) {
         assert.isDefined(args, 'task was not created');
         prevAcceptedValue = args[2];
         prevEthBalance = args[3].toNumber();
-        prevSharesBalance = args[4].toNumber();
+        prevTokensBalance = args[4].toNumber();
         return taskDB.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
       })
       .then(function(){
@@ -109,7 +109,7 @@ contract('TaskDB', function (accounts) {
         assert.equal(args[1], 'ANOTHER INTERESTING TASK SUMMARY', 'task summary is incorrect');
         assert.equal(args[2], prevAcceptedValue, 'task "accepted" prop is incorrect');
         assert.equal(args[3].toNumber(), prevEthBalance, 'task "eth" is incorrect');
-        assert.equal(args[4].toNumber(), prevSharesBalance, 'task "shares" prop is incorrect');
+        assert.equal(args[4].toNumber(), prevTokensBalance, 'task "tokens" prop is incorrect');
       })
       .then(done)
       .catch(done);
@@ -302,17 +302,17 @@ contract('TaskDB', function (accounts) {
   });
 
   describe('when contributing to a task', function(){
-    it('should "shares" prop be raised by the amount of shares I send', function (done) {
+    it('should "tokens" prop be raised by the amount of tokens I send', function (done) {
       taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.contributeShares(0, 10);
+        return taskDB.contributeTokens(0, 10);
       })
       .then(function(){
         return taskDB.getTask(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
-        assert.equal(args[4].toNumber(), 10, '"shares" value is incorrect');
+        assert.equal(args[4].toNumber(), 10, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);
@@ -334,20 +334,20 @@ contract('TaskDB', function (accounts) {
       .catch(done);
     });
 
-    it('should "ETH" and "shares" props be raised by the amount of ETH and shares I send', function (done) {
+    it('should "ETH" and "tokens" props be raised by the amount of ETH and tokens I send', function (done) {
       taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         return taskDB.contributeEth(0, 10);
       })
       .then(function(){
-        return taskDB.contributeShares(0, 10);
+        return taskDB.contributeTokens(0, 10);
       })
       .then(function(){
         return taskDB.getTask(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
-        assert.equal(args[4].toNumber(), 10, '"shares" value is incorrect');
+        assert.equal(args[4].toNumber(), 10, '"tokens" value is incorrect');
         assert.equal(args[3].toNumber(), 10, '"eth" value is incorrect');
       })
       .then(done)

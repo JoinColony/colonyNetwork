@@ -2,13 +2,13 @@ import "Modifiable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
 import "ColonyPaymentProvider.sol";
-import "IShareLedger.sol";
+import "ITokenLedger.sol";
 
 contract Colony is Modifiable {
 
   // Event to raise when a Task is completed and paid
-  event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _sharesValue);
-  event ReservedShares (uint256 _taskId, uint256 shares);
+  event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
+  event ReservedTokens (uint256 _taskId, uint256 tokens);
 
   modifier onlyOwner {
     if ( !this.getUserInfo(msg.sender)) throw;
@@ -21,25 +21,25 @@ contract Colony is Modifiable {
 	}
 
   IRootColonyResolver public rootColonyResolver;
-  IShareLedger public shareLedger;
+  ITokenLedger public tokenLedger;
   ITaskDB public taskDB;
 
  	// This declares a state variable that
 	// stores a `User` struct for each possible address.
 
   mapping(address => User) public users;
-  // keeping track of how many shares are assigned to tasks by the colony itself (i.e. self-funding tasks).
-  mapping(uint256 => uint256) reserved_shares;
-  uint256 public total_reserved_shares;
+  // keeping track of how many tokens are assigned to tasks by the colony itself (i.e. self-funding tasks).
+  mapping(uint256 => uint256) reserved_tokens;
+  uint256 public total_reserved_tokens;
 
   function Colony(
     address rootColonyResolverAddress_,
-    address _shareLedgerAddress,
+    address _tokenLedgerAddress,
     address _tasksDBAddress)
   {
     users[tx.origin].admin = true;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
-    shareLedger = IShareLedger(_shareLedgerAddress);
+    tokenLedger = ITokenLedger(_tokenLedgerAddress);
     taskDB = ITaskDB(_tasksDBAddress);
   }
 
@@ -72,46 +72,46 @@ contract Colony is Modifiable {
     taskDB.contributeEth(taskId, msg.value);
 	}
 
-	//Contribute Shares to a task
-	function contributeShares(uint256 taskId, uint256 shares) {
+	//Contribute Tokens to a task
+	function contributeTokens(uint256 taskId, uint256 tokens) {
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted)
       throw;
 
     if (this.getUserInfo(msg.sender))
     {
-      // Throw if the colony is going to exceed its total supply of shares (considering the tasks it has already funded and the shares for current task).
-      if ((total_reserved_shares + shares) > shareLedger.totalSupply())
+      // Throw if the colony is going to exceed its total supply of tokens (considering the tasks it has already funded and the tokens for current task).
+      if ((total_reserved_tokens + tokens) > tokenLedger.totalSupply())
         throw;
 
-      // When the colony is self funding a task, shares are just being reserved.
-      reserved_shares[taskId] += shares;
-      total_reserved_shares += shares;
+      // When the colony is self funding a task, tokens are just being reserved.
+      reserved_tokens[taskId] += tokens;
+      total_reserved_tokens += tokens;
 
-      ReservedShares(taskId, shares);
+      ReservedTokens(taskId, tokens);
     }
     else
     {
-      // When a user funds a task, the actually is a transfer of shares ocurring from their address to the colony's one.
-      shareLedger.transferFrom(msg.sender, this, shares);
+      // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
+      tokenLedger.transferFrom(msg.sender, this, tokens);
     }
 
-    taskDB.contributeShares(taskId, shares);
+    taskDB.contributeTokens(taskId, tokens);
 	}
 
-  function getReservedShares(uint256 _taskId)
-  constant returns(uint256 _shares)
+  function getReservedTokens(uint256 _taskId)
+  constant returns(uint256 _tokens)
   {
-    _shares = reserved_shares[_taskId];
+    _tokens = reserved_tokens[_taskId];
   }
 
-  /// @notice this function is used to generate Colony shares
-  /// @param _amount The amount of shares to be generated
-  function generateColonyShares(uint256 _amount)
+  /// @notice this function is used to generate Colony tokens
+  /// @param _amount The amount of tokens to be generated
+  function generateColonyTokens(uint256 _amount)
   onlyOwner
   refundEtherSentByAccident
   {
-    shareLedger.generateShares(_amount);
+    tokenLedger.generateTokens(_amount);
   }
 
   function getRootColony()
@@ -154,22 +154,22 @@ contract Colony is Modifiable {
     taskDB.updateTask(_id, _name, _summary);
   }
 
-  /// @notice set the colony shares symbol
-  /// @param symbol_ the symbol of the colony shares
-  function setSharesSymbol(bytes4 symbol_)
+  /// @notice set the colony tokens symbol
+  /// @param symbol_ the symbol of the colony tokens
+  function setTokensSymbol(bytes4 symbol_)
   refundEtherSentByAccident
   onlyOwner
   {
-    shareLedger.setSharesSymbol(symbol_);
+    tokenLedger.setTokensSymbol(symbol_);
   }
 
-  /// @notice set the colony shares title
-  /// @param title_ the title of the colony shares
-  function setSharesTitle(bytes32 title_)
+  /// @notice set the colony tokens title
+  /// @param title_ the title of the colony tokens
+  function setTokensTitle(bytes32 title_)
   refundEtherSentByAccident
   onlyOwner
   {
-    shareLedger.setSharesTitle(title_);
+    tokenLedger.setTokensTitle(title_);
   }
 
 	function getUserInfo(address userAddress)
@@ -186,27 +186,27 @@ contract Colony is Modifiable {
     if (isTaskAccepted || users[msg.sender].admin == false)
 			throw;
 
-    var (taskEth, taskShares) = taskDB.getTaskBalance(taskId);
+    var (taskEth, taskTokens) = taskDB.getTaskBalance(taskId);
     taskDB.acceptTask(taskId);
 		if (taskEth > 0)
 		{
 			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, getRootColony());
 		}
 
-		if (taskShares > 0)
+		if (taskTokens > 0)
 		{
-			// Check if there are enough shares to pay up
-			if (shareLedger.totalSupply() < taskShares)
+			// Check if there are enough tokens to pay up
+			if (tokenLedger.totalSupply() < taskTokens)
 				throw;
 
-      var payout = ((taskShares * 95)/100);
-      var fee = taskShares - payout;
-			shareLedger.transfer(paymentAddress, payout);
-	    shareLedger.transfer(getRootColony(), fee);
+      var payout = ((taskTokens * 95)/100);
+      var fee = taskTokens - payout;
+			tokenLedger.transfer(paymentAddress, payout);
+	    tokenLedger.transfer(getRootColony(), fee);
 
-      reserved_shares[taskId] -= taskShares;
+      reserved_tokens[taskId] -= taskTokens;
 		}
 
-		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);
+		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskTokens);
   }
 }

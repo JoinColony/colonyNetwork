@@ -2,7 +2,7 @@ import "ITaskDB.sol";
 
 contract TaskDB is ITaskDB {
 
-  event ReceivedShares(uint256 taskId, uint256 amount, uint256 when);
+  event ReceivedTokens(uint256 taskId, uint256 amount, uint256 when);
   event ReceivedEther(uint256 taskId, uint256 amount, uint256 when);
   event TaskAdded(uint256 id, uint256 when);
   event TaskUpdated(uint256 id, uint256 when);
@@ -22,7 +22,7 @@ contract TaskDB is ITaskDB {
 		string summary; //IPFS hash of the brief
 		bool accepted; //Whether the work has been accepted
 		uint256 eth; //Amount of ETH contributed to the task
-		uint256 shares; //Amount of shares contributed to the task
+		uint256 tokens; //Amount of tokens contributed to the task
 	}
 
 	// A dynamically-sized array of `Task` structs.
@@ -45,7 +45,7 @@ contract TaskDB is ITaskDB {
     	summary       : _summary,
     	accepted      : false,
     	eth           : 0,
-    	shares        : 0
+    	tokens        : 0
     });
 
     TaskAdded(taskId, now);
@@ -76,13 +76,13 @@ contract TaskDB is ITaskDB {
 
   /// @notice this function returns if a task was accepted
   /// @param _id the task id
-  /// @return the amount of ether and the amount of shares funding a task
+  /// @return the amount of ether and the amount of tokens funding a task
   function getTaskBalance(uint256 _id)
   ifTasksExists(_id)
-  constant returns(uint256 _ether, uint256 _shares)
+  constant returns(uint256 _ether, uint256 _tokens)
   {
     var task = tasks[_id];
-    return (task.eth, task.shares);
+    return (task.eth, task.tokens);
   }
 
   /// @notice this function updates the 'accepted' flag in the task
@@ -120,7 +120,7 @@ contract TaskDB is ITaskDB {
   /// @param _id the task id
   /// @return the name, a flag indicating if the task was accepted or not,
   /// a hash pointing to the summary of a task (IPFS hash), the amount of ether
-  /// it holds, the amount of shares it holds
+  /// it holds, the amount of tokens it holds
   function getTask(uint256 _id)
   ifTasksExists(_id)
   constant returns (
@@ -128,7 +128,7 @@ contract TaskDB is ITaskDB {
       string _summary,
       bool _accepted,
       uint256 _eth,
-      uint256 _shares
+      uint256 _tokens
   )
   {
     var task = tasks[_id];
@@ -137,7 +137,7 @@ contract TaskDB is ITaskDB {
       task.summary,
       task.accepted,
       task.eth,
-      task.shares
+      task.tokens
     );
   }
 
@@ -155,17 +155,17 @@ contract TaskDB is ITaskDB {
     ReceivedEther(_id, _amount, now);
   }
 
-  /// @notice this function takes an amount of shares and add it to the task funds.
+  /// @notice this function takes an amount of tokens and add it to the task funds.
   /// @param _id the task id
-  /// @param _amount the amount of shares to contribute
-  function contributeShares(uint256 _id, uint256 _amount)
+  /// @param _amount the amount of tokens to contribute
+  function contributeTokens(uint256 _id, uint256 _amount)
   onlyOwner
   ifTasksExists(_id)
   {
-    if(tasks[_id].shares + _amount <= tasks[_id].shares) throw;
+    if(tasks[_id].tokens + _amount <= tasks[_id].tokens) throw;
     if(tasks[_id].accepted) throw;
 
-    tasks[_id].shares += _amount;
-    ReceivedShares(_id, _amount, now);
+    tasks[_id].tokens += _amount;
+    ReceivedTokens(_id, _amount, now);
   }
 }
