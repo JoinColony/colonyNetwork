@@ -66,8 +66,7 @@ contract('ColonyFactory', function () {
         return colony.rootColonyResolver.call();
       })
       .then(function(_rootColonyResolverAddress){
-        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
-        return rootColonyResolver.rootColonyAddress.call();
+        return RootColonyResolver.at(_rootColonyResolverAddress).rootColonyAddress.call();
       })
       .then(function(rootColonyAddress_){
         console.log('\tColony RootColony address: [ ', rootColonyAddress_, ' ]');
@@ -124,8 +123,7 @@ contract('ColonyFactory', function () {
         return colony.rootColonyResolver.call();
       })
       .then(function(_rootColonyResolverAddress){
-        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
-        return rootColonyResolver.rootColonyAddress.call();
+        return RootColonyResolver.at(_rootColonyResolverAddress).rootColonyAddress.call();
       })
       .then(function(rootColonyAddress_){
         console.log('\tFakeUpdatedColony RootColony address: [ ', rootColonyAddress_, ' ]');

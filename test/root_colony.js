@@ -45,8 +45,7 @@ contract('RootColony', function (accounts) {
         return colony.rootColonyResolver.call();
       })
       .then(function(_rootColonyResolverAddress){
-        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
-        return rootColonyResolver.rootColonyAddress.call();
+        return RootColonyResolver.at(_rootColonyResolverAddress).rootColonyAddress.call();
       })
       .then(function (_rootColonyAddress) {
         assert.equal(rootColony.address, _rootColonyAddress, 'root colony address is incorrect');

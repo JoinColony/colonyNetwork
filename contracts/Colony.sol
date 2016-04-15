@@ -3,7 +3,6 @@ import "ColonyPaymentProvider.sol";
 import "IUpgradable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
-import "ColonyPaymentProvider.sol";
 import "ITokenLedger.sol";
 
 contract Colony is Modifiable, IUpgradable  {

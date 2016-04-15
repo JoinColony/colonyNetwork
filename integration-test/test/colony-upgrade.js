@@ -21,7 +21,10 @@ contract('RootColony', function (accounts) {
       rootColonyResolver.registerRootColony(rootColony.address),
       colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
       rootColony.registerColonyFactory(colonyFactory.address)
-    ], done);
+    ], function(){
+      
+      done();
+    });
   });
 
   afterEach(function(done){
