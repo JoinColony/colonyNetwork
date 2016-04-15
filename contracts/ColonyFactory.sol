@@ -1,5 +1,6 @@
 
 import "IColonyFactory.sol";
+import "IUpgradable.sol";
 import "Colony.sol";
 
 contract ColonyFactory is IColonyFactory {
@@ -68,23 +69,17 @@ contract ColonyFactory is IColonyFactory {
     return colonies.data[idx_];
   }
 
-
   function upgradeColony(bytes32 key_)
   {
-    var colonyIndex = colonies.catalog[key_].index;
-    var colonyAddress = colonies.data[colonyIndex];
+    uint256 colonyIndex = colonies.catalog[key_].index;
+    address colonyAddress = colonies.data[colonyIndex];
+    address taskDb = Colony(colonyAddress).taskDB();
+    address tokenLedger = Colony(colonyAddress).tokenLedger();
 
-    var colony = Colony(colonyAddress);
-    var tokenLedger = colony.tokenLedger();
-    var taskDB = colony.taskDB();
-    // Create a new Colony and attach existing TaskDB and TokenLedger to it.
-    var colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, taskDB);
-    // Get the current colony and its taskDb
-    //colony.kill(colonyNew);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, taskDb);
+    IUpgradable(colonyAddress).upgrade(colonyNew);
 
-    // Switch the colonies entry for key_ with the new Colony
     colonies.data[colonyIndex] = colonyNew;
-
     ColonyUpgraded(colonyNew, tx.origin, now);
   }
 

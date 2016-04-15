@@ -2,7 +2,7 @@
 // These globals are added by Truffle:
 /* globals contract, Colony, ColonyFactory, TaskDB, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert
 */
-var testHelper = require('./test-helper.js');
+var testHelper = require('../helpers/test-helper.js');
 contract('Colony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var _MAIN_ACCOUNT_ = accounts[0];

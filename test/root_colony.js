@@ -2,7 +2,7 @@
 // These globals are added by Truffle:
 /* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, assert */
 
-var testHelper = require('./test-helper.js');
+var testHelper = require('../helpers/test-helper.js');
 contract('RootColony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var _GAS_PRICE_ = 20e9;
@@ -42,7 +42,11 @@ contract('RootColony', function (accounts) {
       })
       .then(function(_isAdmin){
         assert.isTrue(_isAdmin, 'creator user is an admin');
-        return colony.getRootColony.call();
+        return colony.rootColonyResolver.call();
+      })
+      .then(function(_rootColonyResolverAddress){
+        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
+        return rootColonyResolver.rootColonyAddress.call();
       })
       .then(function (_rootColonyAddress) {
         assert.equal(rootColony.address, _rootColonyAddress, 'root colony address is incorrect');
@@ -140,9 +144,6 @@ contract('RootColony', function (accounts) {
       .then(function (_address){
         oldColonyAddress = _address;
         colony = Colony.at(_address);
-        return colony.makeTask('name', 'summary', {from:_MAIN_ACCOUNT_});
-      })
-      .then(function(){
         return rootColony.upgradeColony(_COLONY_KEY_);
       })
       .then(function(){

@@ -1,10 +1,12 @@
 import "Modifiable.sol";
+import "ColonyPaymentProvider.sol";
+import "IUpgradable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
 import "ColonyPaymentProvider.sol";
 import "ITokenLedger.sol";
 
-contract Colony is Modifiable {
+contract Colony is Modifiable, IUpgradable  {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
@@ -114,12 +116,6 @@ contract Colony is Modifiable {
     tokenLedger.generateTokens(_amount);
   }
 
-  function getRootColony()
-  constant returns(address)
-  {
-    return rootColonyResolver.rootColonyAddress();
-  }
-
   /// @notice this function adds a task to the task DB.
   /// @param _name the task name
   /// @param _summary an IPFS hash
@@ -190,7 +186,7 @@ contract Colony is Modifiable {
     taskDB.acceptTask(taskId);
 		if (taskEth > 0)
 		{
-			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, getRootColony());
+			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
 		}
 
 		if (taskTokens > 0)
@@ -202,11 +198,26 @@ contract Colony is Modifiable {
       var payout = ((taskTokens * 95)/100);
       var fee = taskTokens - payout;
 			tokenLedger.transfer(paymentAddress, payout);
-	    tokenLedger.transfer(getRootColony(), fee);
+	    tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee);
 
       reserved_tokens[taskId] -= taskTokens;
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskTokens);
+  }
+
+  function upgrade(address newColonyAddress_) {
+
+    if(!users[tx.origin].admin) throw;
+
+    var tokensBalance = tokenLedger.balanceOf(this);
+    if(tokensBalance > 0){
+      tokenLedger.transfer(newColonyAddress_, tokensBalance);
+    }
+
+    tokenLedger.changeOwner(newColonyAddress_);
+    taskDB.changeOwner(newColonyAddress_);
+
+    selfdestruct(newColonyAddress_);
   }
 }

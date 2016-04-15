@@ -63,7 +63,11 @@ contract('ColonyFactory', function () {
       })
       .then(function(symbol_){
         console.log('\tColony symbol is: [ ', symbol_, ' ]');
-        return colony.getRootColony.call();
+        return colony.rootColonyResolver.call();
+      })
+      .then(function(_rootColonyResolverAddress){
+        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
+        return rootColonyResolver.rootColonyAddress.call();
       })
       .then(function(rootColonyAddress_){
         console.log('\tColony RootColony address: [ ', rootColonyAddress_, ' ]');
@@ -117,7 +121,11 @@ contract('ColonyFactory', function () {
         assert.isTrue(_result, 'colony implementation was not updated');
       })
       .then(function(){
-        return colony.getRootColony.call();
+        return colony.rootColonyResolver.call();
+      })
+      .then(function(_rootColonyResolverAddress){
+        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
+        return rootColonyResolver.rootColonyAddress.call();
       })
       .then(function(rootColonyAddress_){
         console.log('\tFakeUpdatedColony RootColony address: [ ', rootColonyAddress_, ' ]');
