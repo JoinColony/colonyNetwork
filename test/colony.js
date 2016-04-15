@@ -227,10 +227,11 @@ contract('Colony', function (accounts) {
         assert.equal(reservedTokens.toNumber(), 70, 'Has not reserved the right amount of colony tokens.');
         return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_});
       })
-      .catch(function(){
-        //console.log('contributeTokens has thrown : ', e);
+      .catch(testHelper.ifUsingTestRPC)
+
+      .then(function(){
+        done();
       })
-      .then(done)
       .catch(done);
     });
 
