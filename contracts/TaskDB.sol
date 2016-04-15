@@ -1,12 +1,11 @@
-
 import "ITaskDB.sol";
 
 contract TaskDB is ITaskDB {
 
-  event ReceivedShares(uint256 indexed taskId, uint256 indexed amount, uint256 indexed when);
-  event ReceivedEther(uint256 indexed taskId, uint256 indexed amount, uint256 indexed when);
-  event TaskAdded(uint256 indexed id, uint256 indexed when);
-  event TaskUpdated(uint256 indexed id, uint256 indexed when);
+  event ReceivedShares(uint256 taskId, uint256 amount, uint256 when);
+  event ReceivedEther(uint256 taskId, uint256 amount, uint256 when);
+  event TaskAdded(uint256 id, uint256 when);
+  event TaskUpdated(uint256 id, uint256 when);
 
   function TaskDB()
   refundEtherSentByAccident {

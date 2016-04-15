@@ -1,4 +1,3 @@
-
 import "Modifiable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
@@ -9,6 +8,7 @@ contract Colony is Modifiable {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _sharesValue);
+  event ReservedShares (uint256 _taskId, uint256 shares);
 
   modifier onlyOwner {
     if ( !this.getUserInfo(msg.sender)) throw;
@@ -26,7 +26,11 @@ contract Colony is Modifiable {
 
  	// This declares a state variable that
 	// stores a `User` struct for each possible address.
- 	mapping(address => User) public users;
+
+  mapping(address => User) public users;
+  // keeping track of how many shares are assigned to tasks by the colony itself (i.e. self-funding tasks).
+  mapping(uint256 => uint256) reserved_shares;
+  uint256 public total_reserved_shares;
 
   function Colony(
     address rootColonyResolverAddress_,
@@ -74,17 +78,32 @@ contract Colony is Modifiable {
     if (isTaskAccepted)
       throw;
 
-    taskDB.contributeShares(taskId, shares);
-
     if (this.getUserInfo(msg.sender))
     {
-      shareLedger.transfer(this, shares);
+      // Throw if the colony is going to exceed its total supply of shares (considering the tasks it has already funded and the shares for current task).
+      if ((total_reserved_shares + shares) > shareLedger.totalSupply())
+        throw;
+
+      // When the colony is self funding a task, shares are just being reserved.
+      reserved_shares[taskId] += shares;
+      total_reserved_shares += shares;
+
+      ReservedShares(taskId, shares);
     }
     else
     {
+      // When a user funds a task, the actually is a transfer of shares ocurring from their address to the colony's one.
       shareLedger.transferFrom(msg.sender, this, shares);
     }
+
+    taskDB.contributeShares(taskId, shares);
 	}
+
+  function getReservedShares(uint256 _taskId)
+  constant returns(uint256 _shares)
+  {
+    _shares = reserved_shares[_taskId];
+  }
 
   /// @notice this function is used to generate Colony shares
   /// @param _amount The amount of shares to be generated
@@ -163,7 +182,6 @@ contract Colony is Modifiable {
   function completeAndPayTask(uint256 taskId, address paymentAddress)
   onlyOwner
   {
-
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted || users[msg.sender].admin == false)
 			throw;
@@ -185,6 +203,8 @@ contract Colony is Modifiable {
       var fee = taskShares - payout;
 			shareLedger.transfer(paymentAddress, payout);
 	    shareLedger.transfer(getRootColony(), fee);
+
+      reserved_shares[taskId] -= taskShares;
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);

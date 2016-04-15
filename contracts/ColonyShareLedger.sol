@@ -37,6 +37,7 @@ contract ColonyShareLedger is IShareLedger {
   /// @notice set the ColonyShareLedger symbol
   /// @param _symbol the symbol of the Colony Share
   function setSharesSymbol(bytes4 _symbol)
+  onlyOwner
   refundEtherSentByAccident
   {
     symbol = _symbol;
@@ -45,6 +46,7 @@ contract ColonyShareLedger is IShareLedger {
   /// @notice set the ColonyShareLedger title
   /// @param _title the title of the Colony Share
   function setSharesTitle(bytes32 _title)
+  onlyOwner
   refundEtherSentByAccident
   {
     title = _title;
