@@ -44,7 +44,11 @@ contract('RootColony', function () {
     .then(function (address_) {
       console.log('\tColony address: [ ', address_, ' ]');
       colony = Colony.at(address_);
-      return colony.getRootColony.call();
+      return colony.rootColonyResolver.call();
+    })
+    .then(function(_rootColonyResolverAddress){
+      var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
+      return rootColonyResolver.rootColonyAddress.call();
     })
     .then(function(rootColonyAddress_){
       console.log('\tColony RootColony address: [ ', rootColonyAddress_, ' ]');
@@ -94,7 +98,11 @@ contract('RootColony', function () {
       .then(function (_address) {
         console.log('\tColony address: [ ', _address, ' ]');
         colony = Colony.at(_address);
-        return colony.getRootColony.call();
+        return colony.rootColonyResolver.call();
+      })
+      .then(function(_rootColonyResolverAddress){
+        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
+        return rootColonyResolver.rootColonyAddress.call();
       })
       .then(function(rootColonyAddress_){
         console.log('\tColony RootColony address: [ ', rootColonyAddress_,' ]');
@@ -109,7 +117,11 @@ contract('RootColony', function () {
       .then(function(_newColonyFactoryAddress){
         console.log('\tFakeNewRootColony current colony factory address: [ ', _newColonyFactoryAddress, ' ]');
         assert.equal(colonyFactory.address, _newColonyFactoryAddress, 'FakeNewRootColony factory was not updated');
-        return colony.getRootColony.call();
+        return colony.rootColonyResolver.call();
+      })
+      .then(function(_rootColonyResolverAddress){
+        var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
+        return rootColonyResolver.rootColonyAddress.call();
       })
       .then(function(rootColonyAddress_){
         console.log('\tColony updated RootColony address: [ ', rootColonyAddress_, ' ]');

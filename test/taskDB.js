@@ -2,7 +2,7 @@
 // These globals are added by Truffle:
 /* globals contract, TaskDB, assert, web3 */
 
-var testHelper = require('./test-helper.js');
+var testHelper = require('../helpers/test-helper.js');
 contract('TaskDB', function (accounts) {
 
   var _BIGGER_TASK_SUMMARY_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing el';

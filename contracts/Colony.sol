@@ -1,10 +1,11 @@
 import "Modifiable.sol";
+import "ColonyPaymentProvider.sol";
+import "IUpgradable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
-import "ColonyPaymentProvider.sol";
 import "IShareLedger.sol";
 
-contract Colony is Modifiable {
+contract Colony is Modifiable, IUpgradable  {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _sharesValue);
@@ -113,12 +114,12 @@ contract Colony is Modifiable {
   {
     shareLedger.generateShares(_amount);
   }
-
+/*
   function getRootColony()
   constant returns(address)
   {
     return rootColonyResolver.rootColonyAddress();
-  }
+  }*/
 
   /// @notice this function adds a task to the task DB.
   /// @param _name the task name
@@ -190,7 +191,7 @@ contract Colony is Modifiable {
     taskDB.acceptTask(taskId);
 		if (taskEth > 0)
 		{
-			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, getRootColony());
+			ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
 		}
 
 		if (taskShares > 0)
@@ -202,11 +203,26 @@ contract Colony is Modifiable {
       var payout = ((taskShares * 95)/100);
       var fee = taskShares - payout;
 			shareLedger.transfer(paymentAddress, payout);
-	    shareLedger.transfer(getRootColony(), fee);
+	    shareLedger.transfer(rootColonyResolver.rootColonyAddress(), fee);
 
       reserved_shares[taskId] -= taskShares;
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskShares);
+  }
+
+  function upgrade(address newColonyAddress_) {
+
+    if(!users[tx.origin].admin) throw;
+
+    var sharesBalance = shareLedger.balanceOf(this);
+    if(sharesBalance > 0){
+      shareLedger.transfer(newColonyAddress_, sharesBalance);
+    }
+
+    shareLedger.changeOwner(newColonyAddress_);
+    taskDB.changeOwner(newColonyAddress_);
+
+    selfdestruct(newColonyAddress_);
   }
 }

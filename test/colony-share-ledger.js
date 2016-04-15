@@ -1,7 +1,7 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
 /* globals contract, ColonyShareLedger, assert, web3*/
-var testHelper = require('./test-helper.js');
+var testHelper = require('../helpers/test-helper.js');
 contract('ColonyShareLedger', function (accounts) {
   var _GAS_PRICE_ = 20e9;
   var _MAIN_ACCOUNT_ = accounts[0];
