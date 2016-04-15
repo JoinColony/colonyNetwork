@@ -36,13 +36,13 @@ contract FakeNewColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address shareLedger_, address taskDB_)
+  function createColony(bytes32 key_, address tokenLedger_, address taskDB_)
   {
     var colonyIndex = colonies.data.length++;
-    var colony = new FakeUpdatedColony(rootColonyResolverAddress, shareLedger_, taskDB_);
+    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, taskDB_);
 
     Ownable(taskDB_).changeOwner(colony);
-    Ownable(shareLedger_).changeOwner(colony);
+    Ownable(tokenLedger_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
     colonies.data[colonyIndex] = colony;

@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, ColonyFactory, TaskDB, ColonyShareLedger, RootColony, RootColonyResolver, web3, assert
+/* globals contract, Colony, ColonyFactory, TaskDB, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert
 */
 var testHelper = require('./test-helper.js');
 contract('Colony', function (accounts) {
@@ -71,32 +71,32 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should generate shares and assign it to the colony', function(done){
-      var shareLedger;
-      colony.shareLedger.call()
-      .then(function(shareLedgerAddress) {
-        shareLedger = ColonyShareLedger.at(shareLedgerAddress);
-        return colony.generateColonyShares(100);
+    it('should generate tokens and assign it to the colony', function(done){
+      var tokenLedger;
+      colony.tokenLedger.call()
+      .then(function(tokenLedgerAddress) {
+        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
+        return colony.generateColonyTokens(100);
       })
       .then(function(){
-        return shareLedger.balanceOf.call(colony.address);
+        return tokenLedger.balanceOf.call(colony.address);
       })
-      .then(function(totalSupplyShares){
-        assert.equal(totalSupplyShares.toNumber(), 100);
+      .then(function(totalSupplyTokens){
+        assert.equal(totalSupplyTokens.toNumber(), 100);
       })
       .then(done)
       .catch(done);
     });
 
-    it('should set colony as the share ledger owner', function (done) {
-      var shareLedger;
-      colony.shareLedger.call()
-      .then(function(shareLedgerAddress){
-        shareLedger = ColonyShareLedger.at(shareLedgerAddress);
-        return shareLedger.owner.call();
+    it('should set colony as the token ledger owner', function (done) {
+      var tokenLedger;
+      colony.tokenLedger.call()
+      .then(function(tokenLedgerAddress){
+        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
+        return tokenLedger.owner.call();
       })
-      .then(function(_shareLedgerOwner){
-        assert.equal(_shareLedgerOwner, colony.address, 'Colony admin should be set as the owner of its Share Ledger.');
+      .then(function(_tokenLedgerOwner){
+        assert.equal(_tokenLedgerOwner, colony.address, 'Colony admin should be set as the owner of its Token Ledger.');
       })
       .then(done)
       .catch(done);
@@ -159,10 +159,10 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow user to contribute shares to task', function (done) {
-      var shareLedger;
+    it('should allow user to contribute tokens to task', function (done) {
+      var tokenLedger;
 
-      colony.generateColonyShares(100, {from: _MAIN_ACCOUNT_})
+      colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -173,30 +173,30 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.shareLedger.call();
+        return colony.tokenLedger.call();
       })
-      .then(function(shareLedgerAddress){
-        shareLedger = ColonyShareLedger.at(shareLedgerAddress);
+      .then(function(tokenLedgerAddress){
+        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
       })
       .then(function(){
-        return shareLedger.balanceOf.call(colony.address);
+        return tokenLedger.balanceOf.call(colony.address);
       })
       .then(function(colonyBalance){
-        assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 shares.');
-        return colony.contributeShares(0, 100);
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
+        return colony.contributeTokens(0, 100);
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        return shareLedger.balanceOf.call(_OTHER_ACCOUNT_);
+        return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
       })
-      .then(function(otherAccountShareBalance){
-        assert.equal(otherAccountShareBalance.toNumber(), 95, '_OTHER_ACCOUNT_ balance should be 95 shares.');
-        return shareLedger.approve(colony.address, 95, {from: _OTHER_ACCOUNT_});
+      .then(function(otherAccountTokenBalance){
+        assert.equal(otherAccountTokenBalance.toNumber(), 95, '_OTHER_ACCOUNT_ balance should be 95 tokens.');
+        return tokenLedger.approve(colony.address, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function(){
-        return colony.contributeShares(1, 95, {from: _OTHER_ACCOUNT_});
+        return colony.contributeTokens(1, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function() {
         return colonyTaskDb.getTask.call(1);
@@ -212,23 +212,23 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should not allow colonies to double spend shares when funding tasks with shares', function (done) {
-      colony.generateColonyShares(100, {from: _MAIN_ACCOUNT_})
+    it('should not allow colonies to double spend tokens when funding tasks with tokens', function (done) {
+      colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
       .then(function(){
-        return colony.contributeShares(0, 70, {from:_MAIN_ACCOUNT_});
+        return colony.contributeTokens(0, 70, {from:_MAIN_ACCOUNT_});
       })
       .then(function(){
-        return colony.getReservedShares.call(0);
+        return colony.getReservedTokens.call(0);
       })
-      .then(function(reservedShares){
-        assert.equal(reservedShares.toNumber(), 70, 'Has not reserved the right amount of colony shares.');
-        return colony.contributeShares(0, 100, {from:_MAIN_ACCOUNT_});
+      .then(function(reservedTokens){
+        assert.equal(reservedTokens.toNumber(), 70, 'Has not reserved the right amount of colony tokens.');
+        return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_});
       })
       .catch(function(){
-        //console.log('contributeShares has thrown : ', e);
+        //console.log('contributeTokens has thrown : ', e);
       })
       .then(done)
       .catch(done);
@@ -292,9 +292,9 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should transfer 95% of shares to task completor and 5% to rootColony on completing a task', function (done) {
-      var shareLedger;
-      colony.generateColonyShares(100)
+    it('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
+      var tokenLedger;
+      colony.generateColonyTokens(100)
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -302,27 +302,27 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.contributeShares(0, 100);
+        return colony.contributeTokens(0, 100);
       })
       .then(function () {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(){
-        return colony.shareLedger.call();
+        return colony.tokenLedger.call();
       })
-      .then(function(shareLedgerAddress){
-        shareLedger = ColonyShareLedger.at(shareLedgerAddress);
-        return shareLedger;
+      .then(function(tokenLedgerAddress){
+        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
+        return tokenLedger;
       })
       .then(function(){
-        return shareLedger.balanceOf.call(_OTHER_ACCOUNT_);
+        return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
       })
-      .then(function(otherAccountShareBalance){
-        assert.strictEqual(otherAccountShareBalance.toNumber(), 95, 'Share balance is not 95% of task share value');
-        return shareLedger.balanceOf.call(rootColony.address);
+      .then(function(otherAccountTokenBalance){
+        assert.strictEqual(otherAccountTokenBalance.toNumber(), 95, 'Token balance is not 95% of task token value');
+        return tokenLedger.balanceOf.call(rootColony.address);
       })
-      .then(function(rootColonyShareBalance){
-        assert.strictEqual(rootColonyShareBalance.toNumber(), 5, 'RootColony share balance is not 5% of task share value');
+      .then(function(rootColonyTokenBalance){
+        assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'RootColony token balance is not 5% of task token value');
       })
       .then(done)
       .catch(done);

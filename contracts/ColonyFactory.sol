@@ -36,13 +36,13 @@ contract ColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address shareLedger_, address taskDB_)
+  function createColony(bytes32 key_, address tokenLedger_, address taskDB_)
   {
     var colonyIndex = colonies.data.length++;
-    var colony = new Colony(rootColonyResolverAddress, shareLedger_, taskDB_);
+    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, taskDB_);
 
     Ownable(taskDB_).changeOwner(colony);
-    Ownable(shareLedger_).changeOwner(colony);
+    Ownable(tokenLedger_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
     colonies.data[colonyIndex] = colony;
@@ -75,10 +75,10 @@ contract ColonyFactory is IColonyFactory {
     var colonyAddress = colonies.data[colonyIndex];
 
     var colony = Colony(colonyAddress);
-    var shareLedger = colony.shareLedger();
+    var tokenLedger = colony.tokenLedger();
     var taskDB = colony.taskDB();
-    // Create a new Colony and attach existing TaskDB and ShareLedger to it.
-    var colonyNew = new Colony(rootColonyResolverAddress, shareLedger, taskDB);
+    // Create a new Colony and attach existing TaskDB and TokenLedger to it.
+    var colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, taskDB);
     // Get the current colony and its taskDb
     //colony.kill(colonyNew);
 

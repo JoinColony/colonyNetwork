@@ -2,7 +2,7 @@ import "IColonyFactory.sol";
 import "Destructible.sol";
 import "Modifiable.sol";
 import "TaskDB.sol";
-import "ColonyShareLedger.sol";
+import "ColonyTokenLedger.sol";
 
 contract RootColony is Destructible, Modifiable {
 
@@ -26,10 +26,10 @@ contract RootColony is Destructible, Modifiable {
   {
     var taskDB = new TaskDB();
     taskDB.changeOwner(colonyFactory);
-    var shareLedger = new ColonyShareLedger();
-    shareLedger.changeOwner(colonyFactory);
+    var tokenLedger = new ColonyTokenLedger();
+    tokenLedger.changeOwner(colonyFactory);
 
-    colonyFactory.createColony(key_, shareLedger, taskDB);
+    colonyFactory.createColony(key_, tokenLedger, taskDB);
     coloniesNum++;
   }
 

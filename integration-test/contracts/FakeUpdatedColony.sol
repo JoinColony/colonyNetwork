@@ -2,12 +2,12 @@
 import "Modifiable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
-import "IShareLedger.sol";
+import "ITokenLedger.sol";
 
 contract FakeUpdatedColony is Modifiable {
 
   // Event to raise when a Task is completed and paid
-  event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _sharesValue);
+  event TaskCompletedAndPaid (address _from, address indexed _to, uint256 indexed _ethValue, uint256 indexed _tokensValue);
 
   modifier onlyOwner {
     if ( !this.getUserInfo(msg.sender)) throw;
@@ -20,7 +20,7 @@ contract FakeUpdatedColony is Modifiable {
 	}
 
   IRootColonyResolver public rootColonyResolver;
-  IShareLedger public shareLedger;
+  ITokenLedger public tokenLedger;
   ITaskDB public taskDB;
 
  	// This declares a state variable that
@@ -29,12 +29,12 @@ contract FakeUpdatedColony is Modifiable {
 
   function FakeUpdatedColony(
     address rootColonyResolverAddress_,
-    address _shareLedgerAddress,
+    address _tokenLedgerAddress,
     address _tasksDBAddress)
   {
     users[tx.origin].admin = true;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
-    shareLedger = IShareLedger(_shareLedgerAddress);
+    tokenLedger = ITokenLedger(_tokenLedgerAddress);
     taskDB = ITaskDB(_tasksDBAddress);
   }
 
@@ -69,22 +69,22 @@ contract FakeUpdatedColony is Modifiable {
     return rootColonyResolver.rootColonyAddress();
   }
 
-  /// @notice set the colony shares symbol
-  /// @param symbol_ the symbol of the colony shares
-  function setSharesSymbol(bytes4 symbol_)
+  /// @notice set the colony tokens symbol
+  /// @param symbol_ the symbol of the colony tokens
+  function setTokensSymbol(bytes4 symbol_)
   refundEtherSentByAccident
   onlyOwner
   {
-    shareLedger.setSharesSymbol(symbol_);
+    tokenLedger.setTokensSymbol(symbol_);
   }
 
-  /// @notice set the colony shares title
-  /// @param title_ the title of the colony shares
-  function setSharesTitle(bytes32 title_)
+  /// @notice set the colony tokens title
+  /// @param title_ the title of the colony tokens
+  function setTokensTitle(bytes32 title_)
   refundEtherSentByAccident
   onlyOwner
   {
-    shareLedger.setSharesTitle(title_);
+    tokenLedger.setTokensTitle(title_);
   }
 
 	function getUserInfo(address userAddress)
