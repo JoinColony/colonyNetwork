@@ -212,6 +212,28 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should not allow colonies to double spend shares when funding tasks with shares', function (done) {
+      colony.generateColonyShares(100, {from: _MAIN_ACCOUNT_})
+      .then(function(){
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function(){
+        return colony.contributeShares(0, 70, {from:_MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return colony.getReservedShares.call(0);
+      })
+      .then(function(reservedShares){
+        assert.equal(reservedShares.toNumber(), 70, 'Has not reserved the right amount of colony shares.');
+        return colony.contributeShares(0, 100, {from:_MAIN_ACCOUNT_});
+      })
+      .catch(function(){
+        //console.log('contributeShares has thrown : ', e);
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should not allow non-admin to close task', function (done) {
       var prevBalance;
       colony.makeTask('name', 'summary')
@@ -283,7 +305,6 @@ contract('Colony', function (accounts) {
         return colony.contributeShares(0, 100);
       })
       .then(function () {
-        //TODO:
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(){
