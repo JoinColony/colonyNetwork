@@ -1,6 +1,6 @@
 import "Modifiable.sol";
 import "Destructible.sol";
-contract IShareLedger is Destructible, Modifiable {
+contract ITokenLedger is Destructible, Modifiable {
 
     uint256 total_supply;
     bytes32 public title;
@@ -12,13 +12,13 @@ contract IShareLedger is Destructible, Modifiable {
     event Transfer(address indexed _from, address indexed _to, uint256 indexed _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 indexed _value);
 
-    /// @notice set share ledger symbol
-    /// @param _symbol the symbol of the Colony Share
-    function setSharesSymbol(bytes4 _symbol);
+    /// @notice set token ledger symbol
+    /// @param _symbol the symbol of the Colony Token
+    function setTokensSymbol(bytes4 _symbol);
 
-    /// @notice set the share ledger title
-    /// @param _title the title of the Colony Share
-    function setSharesTitle(bytes32 _title);
+    /// @notice set the token ledger title
+    /// @param _title the title of the Colony Token
+    function setTokensTitle(bytes32 _title);
 
     /// @return total amount of tokens
     function totalSupply() constant returns (uint256 supply) {}
@@ -48,7 +48,7 @@ contract IShareLedger is Destructible, Modifiable {
     /// @return Amount of remaining tokens allowed to spent
     function allowance(address _owner, address _spender) constant returns (uint256 remaining) {}
 
-    function generateShares(uint256 _amount) {}
+    function generateTokens(uint256 _amount) {}
 
   	function () {
   			// This function gets executed if a

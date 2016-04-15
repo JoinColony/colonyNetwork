@@ -1,7 +1,7 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
 /* globals contract, RootColony, Colony, FakeUpdatedColony, RootColonyResolver,
-  ColonyFactory, ColonyShareLedger, FakeNewColonyFactory, assert
+  ColonyFactory, ColonyTokenLedger, FakeNewColonyFactory, assert
 */
 
 contract('ColonyFactory', function () {
@@ -52,14 +52,14 @@ contract('ColonyFactory', function () {
         console.log('\t"isUpdated" function NOT available in old ColonyFactory colonies: [ ', !!colony.isUpdated, ' ]');
         assert.isUndefined(colony.isUpdated, 'function exists on the old contract version');
 
-        return colony.setSharesSymbol('CNY');
+        return colony.setTokensSymbol('CNY');
       })
       .then(function(){
-        return colony.shareLedger.call();
+        return colony.tokenLedger.call();
       })
-      .then(function(_shareLedgerAddress){
-        var shareLedger = ColonyShareLedger.at(_shareLedgerAddress);
-        return shareLedger.symbol.call();
+      .then(function(_tokenLedgerAddress){
+        var tokenLedger = ColonyTokenLedger.at(_tokenLedgerAddress);
+        return tokenLedger.symbol.call();
       })
       .then(function(symbol_){
         console.log('\tColony symbol is: [ ', symbol_, ' ]');
@@ -100,14 +100,14 @@ contract('ColonyFactory', function () {
       .then(function (_address) {
         console.log('\tFakeUpdatedColony address: [ ', _address, ' ]');
         colony = FakeUpdatedColony.at(_address);
-        return colony.setSharesSymbol('UPD');
+        return colony.setTokensSymbol('UPD');
       })
       .then(function(){
-        return colony.shareLedger.call();
+        return colony.tokenLedger.call();
       })
-      .then(function(_shareLedgerAddress){
-        var colonyShareLedger = ColonyShareLedger.at(_shareLedgerAddress);
-        return colonyShareLedger.symbol.call();
+      .then(function(_tokenLedgerAddress){
+        var colonyTokenLedger = ColonyTokenLedger.at(_tokenLedgerAddress);
+        return colonyTokenLedger.symbol.call();
       })
       .then(function(symbol_){
         console.log('\tFakeUpdatedColony symbol is: [ ', symbol_, ' ]');

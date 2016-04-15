@@ -2,11 +2,11 @@
   IMPLEMENTING TOKEN STANDARD BASED ON: https://github.com/ConsenSys/Tokens
 */
 
-import "IShareLedger.sol";
+import "ITokenLedger.sol";
 
-contract ColonyShareLedger is IShareLedger {
+contract ColonyTokenLedger is ITokenLedger {
 
-  function ColonyShareLedger()
+  function ColonyTokenLedger()
   refundEtherSentByAccident
   {
 
@@ -34,18 +34,18 @@ contract ColonyShareLedger is IShareLedger {
     _
   }
 
-  /// @notice set the ColonyShareLedger symbol
-  /// @param _symbol the symbol of the Colony Share
-  function setSharesSymbol(bytes4 _symbol)
+  /// @notice set the ColonyTokenLedger symbol
+  /// @param _symbol the symbol of the Colony Token
+  function setTokensSymbol(bytes4 _symbol)
   onlyOwner
   refundEtherSentByAccident
   {
     symbol = _symbol;
   }
 
-  /// @notice set the ColonyShareLedger title
-  /// @param _title the title of the Colony Share
-  function setSharesTitle(bytes32 _title)
+  /// @notice set the ColonyTokenLedger title
+  /// @param _title the title of the Colony Token
+  function setTokensTitle(bytes32 _title)
   onlyOwner
   refundEtherSentByAccident
   {
@@ -113,10 +113,10 @@ contract ColonyShareLedger is IShareLedger {
     return balances[_owner];
   }
 
-  /// @notice this function is used to increase the amount of shares available limited by `total_supply`
+  /// @notice this function is used to increase the amount of tokens available limited by `total_supply`
   /// and assign it to the contract owner.
   /// @param _amount The amount to be increased in the upper bound total_supply
-  function generateShares(uint256 _amount)
+  function generateTokens(uint256 _amount)
   onlyOwner
   refundEtherSentByAccident
   {

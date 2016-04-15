@@ -37,13 +37,13 @@ contract ColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address shareLedger_, address taskDB_)
+  function createColony(bytes32 key_, address tokenLedger_, address taskDB_)
   {
     var colonyIndex = colonies.data.length++;
-    var colony = new Colony(rootColonyResolverAddress, shareLedger_, taskDB_);
+    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, taskDB_);
 
     Ownable(taskDB_).changeOwner(colony);
-    Ownable(shareLedger_).changeOwner(colony);
+    Ownable(tokenLedger_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
     colonies.data[colonyIndex] = colony;
@@ -74,9 +74,9 @@ contract ColonyFactory is IColonyFactory {
     uint256 colonyIndex = colonies.catalog[key_].index;
     address colonyAddress = colonies.data[colonyIndex];
     address taskDb = Colony(colonyAddress).taskDB();
-    address shareLedger = Colony(colonyAddress).shareLedger();
+    address tokenLedger = Colony(colonyAddress).tokenLedger();
 
-    Colony colonyNew = new Colony(rootColonyResolverAddress, shareLedger, taskDb);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, taskDb);
     IUpgradable(colonyAddress).upgrade(colonyNew);
 
     colonies.data[colonyIndex] = colonyNew;

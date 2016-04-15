@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, TaskDB, RootColonyResolver, web3, ColonyFactory, assert */
+/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, assert */
 
 var testHelper = require('../helpers/test-helper.js');
 contract('RootColony', function (accounts) {
@@ -137,7 +137,6 @@ contract('RootColony', function (accounts) {
 
     it('should be able to upgrade colonies', function(done) {
       var oldColonyAddress;
-      var taskDB;
       rootColony.createColony(_COLONY_KEY_)
       .then(function(){
         return rootColony.getColony.call(_COLONY_KEY_);
