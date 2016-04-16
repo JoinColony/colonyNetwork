@@ -242,7 +242,6 @@ contract('Colony', function (accounts) {
 
     it('should not allow colonies to assign more tokens to tasks than they have', function (done) {
       var prevBalance;
-      var tokenLedger;
       colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
@@ -253,17 +252,7 @@ contract('Colony', function (accounts) {
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
-      .then(function () {
-        return colony.tokenLedger.call();
-      })
-      .then(function(tokenLedgerAddress){
-        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-      })
       .then(function(){
-        return tokenLedger.balanceOf.call(colony.address);
-      })
-      .then(function(colonyBalance){
-        assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
         return colony.contributeTokensFromPool(0, 100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
@@ -271,13 +260,6 @@ contract('Colony', function (accounts) {
       })
       .then(function(){
         colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_});
-      })
-      .then(function(){
-        return colony.tokenLedger.call();
-      })
-      .then(function(tokenLedgerAddress){
-        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-        return tokenLedger;
       })
       .then(function(){
         return colony.makeTask('name', 'summary');
@@ -377,7 +359,6 @@ contract('Colony', function (accounts) {
       })
       .then(function(tokenLedgerAddress){
         tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-        return tokenLedger;
       })
       .then(function(){
         return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
