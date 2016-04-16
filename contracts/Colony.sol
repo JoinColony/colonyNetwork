@@ -90,12 +90,12 @@ contract Colony is Modifiable, IUpgradable  {
   function contributeTokensFromPool(uint256 taskId, uint256 tokens)
   onlyOwner
   {
-    // if (!this.getUserInfo(msg.sender))
-      // throw
 
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted)
       throw;
+    //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
+    //assigned.
     reserved_tokens[taskId] += tokens;
     total_reserved_tokens += tokens;
 
@@ -199,6 +199,7 @@ contract Colony is Modifiable, IUpgradable  {
 	    tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee);
 
       reserved_tokens[taskId] -= taskTokens;
+      total_reserved_tokens -= taskTokens;
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskTokens);
