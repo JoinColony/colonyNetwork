@@ -82,7 +82,7 @@ contract Colony is Modifiable, IUpgradable  {
     if (this.getUserInfo(msg.sender))
     {
       // Throw if the colony is going to exceed its total supply of tokens (considering the tasks it has already funded and the tokens for current task).
-      if ((total_reserved_tokens + tokens) > tokenLedger.totalSupply())
+      if ((total_reserved_tokens + tokens) > tokenLedger.balanceOf(this))
         throw;
 
       // When the colony is self funding a task, tokens are just being reserved.
@@ -191,7 +191,7 @@ contract Colony is Modifiable, IUpgradable  {
 		if (taskTokens > 0)
 		{
 			// Check if there are enough tokens to pay up
-			if (tokenLedger.totalSupply() < taskTokens)
+			if (tokenLedger.balanceOf(this) < taskTokens)
 				throw;
 
       var payout = ((taskTokens * 95)/100);

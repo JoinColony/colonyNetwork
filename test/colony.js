@@ -7,6 +7,7 @@ contract('Colony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
+  var _GAS_PRICE_ = 20e9;
   var colony;
   var colonyFactory;
   var colonyTaskDb;
@@ -183,7 +184,7 @@ contract('Colony', function (accounts) {
       })
       .then(function(colonyBalance){
         assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
-        return colony.contributeTokens(0, 100);
+        return colony.contributeTokens(0, 100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
@@ -212,7 +213,7 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should not allow colonies to double spend tokens when funding tasks with tokens', function (done) {
+    it('should allow colonies to assign tokens to tasks', function (done) {
       colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
@@ -229,6 +230,64 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
 
+      .then(function(){
+        done();
+      })
+      .catch(done);
+    });
+
+    it('should not allow colonies to assign more tokens to tasks than they have', function (done) {
+      var prevBalance;
+      var tokenLedger;
+      colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
+      .then(function(){
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function(){
+        return colony.makeTask('name2', 'summary2');
+      })
+      .then(function() {
+        return colony.updateTask(0, 'nameedit', 'summary');
+      })
+      .then(function () {
+        return colony.tokenLedger.call();
+      })
+      .then(function(tokenLedgerAddress){
+        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
+      })
+      .then(function(){
+        return tokenLedger.balanceOf.call(colony.address);
+      })
+      .then(function(colonyBalance){
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
+        return colony.contributeTokens(0, 100, {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return colony.tokenLedger.call();
+      })
+      .then(function(tokenLedgerAddress){
+        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
+        return tokenLedger;
+      })
+      .then(function(){
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function(){
+          prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      })
+      .then(function(){
+        return colony.contributeTokens(0, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:1e6});
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
       .then(function(){
         done();
       })
