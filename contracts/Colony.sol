@@ -79,26 +79,28 @@ contract Colony is Modifiable, IUpgradable  {
     if (isTaskAccepted)
       throw;
 
-    if (this.getUserInfo(msg.sender))
-    {
-      // Throw if the colony is going to exceed its total supply of tokens (considering the tasks it has already funded and the tokens for current task).
-      if ((total_reserved_tokens + tokens) > tokenLedger.balanceOf(this))
-        throw;
-
-      // When the colony is self funding a task, tokens are just being reserved.
-      reserved_tokens[taskId] += tokens;
-      total_reserved_tokens += tokens;
-
-      ReservedTokens(taskId, tokens);
-    }
-    else
-    {
-      // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-      tokenLedger.transferFrom(msg.sender, this, tokens);
-    }
+    // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
+    tokenLedger.transferFrom(msg.sender, this, tokens);
+    reserved_tokens[taskId] += tokens;
+    total_reserved_tokens += tokens;
 
     taskDB.contributeTokens(taskId, tokens);
 	}
+
+  function contributeTokensFromPool(uint256 taskId, uint256 tokens)
+  onlyOwner
+  {
+    // if (!this.getUserInfo(msg.sender))
+      // throw
+
+    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
+    if (isTaskAccepted)
+      throw;
+    reserved_tokens[taskId] += tokens;
+    total_reserved_tokens += tokens;
+
+    taskDB.contributeTokens(taskId, tokens);
+  }
 
   function getReservedTokens(uint256 _taskId)
   constant returns(uint256 _tokens)
@@ -190,9 +192,6 @@ contract Colony is Modifiable, IUpgradable  {
 
 		if (taskTokens > 0)
 		{
-			// Check if there are enough tokens to pay up
-			if (tokenLedger.balanceOf(this) < taskTokens)
-				throw;
 
       var payout = ((taskTokens * 95)/100);
       var fee = taskTokens - payout;

@@ -184,7 +184,7 @@ contract('Colony', function (accounts) {
       })
       .then(function(colonyBalance){
         assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
-        return colony.contributeTokens(0, 100, {from: _MAIN_ACCOUNT_});
+        return colony.contributeTokensFromPool(0, 100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
@@ -214,22 +214,26 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow colonies to assign tokens to tasks', function (done) {
+      var prevBalance;
       colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
       .then(function(){
-        return colony.contributeTokens(0, 70, {from:_MAIN_ACCOUNT_});
+        return colony.contributeTokensFromPool(0, 70, {from:_MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.getReservedTokens.call(0);
       })
       .then(function(reservedTokens){
         assert.equal(reservedTokens.toNumber(), 70, 'Has not reserved the right amount of colony tokens.');
-        return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_});
+        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:1e6});
       })
       .catch(testHelper.ifUsingTestRPC)
-
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
       .then(function(){
         done();
       })
@@ -260,7 +264,7 @@ contract('Colony', function (accounts) {
       })
       .then(function(colonyBalance){
         assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
-        return colony.contributeTokens(0, 100, {from: _MAIN_ACCOUNT_});
+        return colony.contributeTokensFromPool(0, 100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
@@ -282,7 +286,8 @@ contract('Colony', function (accounts) {
           prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
       })
       .then(function(){
-        return colony.contributeTokens(0, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:1e6});
+        //More than the pool, less than totalsupply
+        return colony.contributeTokensFromPool(0, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:1e6});
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
@@ -362,7 +367,7 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.contributeTokens(0, 100);
+        return colony.contributeTokensFromPool(0, 100);
       })
       .then(function () {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
