@@ -28,7 +28,7 @@ contract Colony is Modifiable, IUpgradable  {
  	// This declares a state variable that
 	// stores a `User` struct for each possible address.
 
-  mapping(address => User) public users;
+  mapping(address => User) users;
   // keeping track of how many tokens are assigned to tasks by the colony itself (i.e. self-funding tasks).
   mapping(uint256 => uint256) reserved_tokens;
   uint256 public total_reserved_tokens;
@@ -96,6 +96,8 @@ contract Colony is Modifiable, IUpgradable  {
       throw;
     //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
     //assigned.
+    if (total_reserved_tokens + tokens > tokenLedger.balanceOf(this))
+      throw;
     reserved_tokens[taskId] += tokens;
     total_reserved_tokens += tokens;
 

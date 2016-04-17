@@ -269,7 +269,7 @@ contract('Colony', function (accounts) {
       })
       .then(function(){
         //More than the pool, less than totalsupply
-        return colony.contributeTokensFromPool(0, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:1e6});
+        return colony.contributeTokensFromPool(1, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:1e6});
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
