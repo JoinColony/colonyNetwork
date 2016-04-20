@@ -26,6 +26,7 @@ contract Colony is Modifiable, IUpgradable  {
     bool _exists;
   }
 
+  address owner;
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
   ITaskDB public taskDB;

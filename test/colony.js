@@ -54,7 +54,7 @@ contract('Colony', function (accounts) {
   });
 
   describe('when created', function () {
-    it('should take deploying user as an admin', function (done) {
+    it('deploying user should be admin', function (done) {
       colony.getUserInfo.call(_MAIN_ACCOUNT_)
       .then(function (admin) {
         assert.equal(admin, true, 'First user isn\'t an admin');
@@ -63,7 +63,16 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should other users not be an admin until I add s/he', function (done) {
+    it('deploying user should be the colony owner', function (done) {
+      colony.owner.call()
+      .then(function (ownerAddress) {
+        assert.equal(ownerAddress, _MAIN_ACCOUNT_, 'Tx.origin isn\'t the colony owner');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('other users should not be an admin', function (done) {
       colony.getUserInfo.call(_OTHER_ACCOUNT_)
       .then(function (admin) {
         assert.equal(admin, false, 'Other user is an admin');
