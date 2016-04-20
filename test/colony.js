@@ -54,7 +54,7 @@ contract('Colony', function (accounts) {
   });
 
   describe('when created', function () {
-    it('deployed user should be admin', function (done) {
+    it('deploying user should be admin', function (done) {
       colony.getUserInfo.call(_MAIN_ACCOUNT_)
       .then(function (admin) {
         assert.equal(admin, true, 'First user isn\'t an admin');
@@ -63,7 +63,16 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('other user should not be admin', function (done) {
+    it('deploying user should be the colony owner', function (done) {
+      colony.owner.call()
+      .then(function (ownerAddress) {
+        assert.equal(ownerAddress, _MAIN_ACCOUNT_, 'Tx.origin isn\'t the colony owner');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('other users should not be an admin', function (done) {
       colony.getUserInfo.call(_OTHER_ACCOUNT_)
       .then(function (admin) {
         assert.equal(admin, false, 'Other user is an admin');
@@ -102,10 +111,24 @@ contract('Colony', function (accounts) {
       .then(done)
       .catch(done);
     });
+
+    it('should set colony as the TaskDB owner', function (done) {
+      var taskDB;
+      colony.taskDB.call()
+      .then(function(taskDBAddress){
+        taskDB = TaskDB.at(taskDBAddress);
+        return taskDB.owner.call();
+      })
+      .then(function(_taskDBOwner){
+        assert.equal(_taskDBOwner, colony.address, 'Colony admin should be set as the owner of its TaskDB.');
+      })
+      .then(done)
+      .catch(done);
+    });
   });
 
-  describe('when working with tasks', function () {
-    it('should allow user to make task', function (done) {
+  describe('when creating/updating tasks', function () {
+    it('should allow admins to make task', function (done) {
       colony.makeTask('name', 'summary')
       .then(function() {
         return colonyTaskDb.getTask.call(0);
@@ -120,7 +143,7 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow user to edit task', function (done) {
+    it('should allow admins to edit task', function (done) {
       colony.makeTask('name', 'summary').then(function () {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
@@ -137,7 +160,44 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow user to contribute ETH to task', function (done) {
+    it('should fail if other users non-admins try to edit a task', function (done) {
+      var prevBalance;
+      colony.makeTask('name', 'summary').then(function () {
+        prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
+        return colony.updateTask(0, 'nameedit', 'summary',
+        {
+          from: _OTHER_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 1e6
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if other users non-admins try to make a task', function (done) {
+      var prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
+      colony.makeTask('name', 'summary',
+      {
+        from: _OTHER_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: 1e6
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+  });
+
+  describe('when contributing to tasks', function(){
+    it('should allow admins to contribute ETH to task', function (done) {
       colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
@@ -160,7 +220,27 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow user to contribute tokens to task', function (done) {
+    it('should fail if non-admins try to contribute ETH to task', function (done) {
+      var prevBalance;
+      colony.makeTask('name', 'summary')
+      .then(function () {
+        prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
+        return colony.contributeEth(0, {
+          value: 10000,
+          from: _OTHER_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 1e6
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should allow admins to contribute tokens to task', function (done) {
       var tokenLedger;
 
       colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
@@ -375,6 +455,50 @@ contract('Colony', function (accounts) {
       })
       .then(function(rootColonyTokenBalance){
         assert.strictEqual(rootColonyTokenBalance.toNumber(), 5 * 1e18, 'RootColony token balance is not 5% of task token value');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if non-admins try to contribute with tokens from the pool', function (done) {
+      var prevBalance;
+      colony.generateColonyTokens(100)
+      .then(function(){
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function () {
+        prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
+        return colony.contributeTokens(0, 100, {
+          from: _OTHER_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 1e6
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if non-admins try to contribute with tokens', function (done) {
+      var prevBalance;
+      colony.generateColonyTokens(100)
+      .then(function(){
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function () {
+        prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
+        return colony.contributeTokensFromPool(0, 100, {
+          from: _OTHER_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 1e6
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);

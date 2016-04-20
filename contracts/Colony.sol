@@ -10,8 +10,8 @@ contract Colony is Modifiable, IUpgradable  {
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
 
-  modifier onlyOwner {
-    if ( !this.getUserInfo(msg.sender)) throw;
+  modifier onlyOwnerOrAdmins {
+    if (owner != msg.sender && !this.getUserInfo(msg.sender)) throw;
     _
   }
 
@@ -20,6 +20,7 @@ contract Colony is Modifiable, IUpgradable  {
 		bool admin;  // if true, that person is an admin
 	}
 
+  address owner;
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
   ITaskDB public taskDB;
@@ -38,6 +39,7 @@ contract Colony is Modifiable, IUpgradable  {
     address _tasksDBAddress)
   {
     users[tx.origin].admin = true;
+    owner = tx.origin;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
     taskDB = ITaskDB(_tasksDBAddress);
@@ -47,16 +49,30 @@ contract Colony is Modifiable, IUpgradable  {
   /// Used to keep the reference of the RootColony.
   /// @param rootColonyResolverAddress_ the RootColonyResolver address
   function registerRootColonyResolver(address rootColonyResolverAddress_)
-  onlyOwner
+  onlyOwnerOrAdmins
   throwIfAddressIsInvalid(rootColonyResolverAddress_)
   {
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
   }
 
+  /// @notice adds a new admin user to the colony
+  /// @param newAdminAddress the address of the new admin user
+  function addAdmin(address newAdminAddress)
+  {
+    users[newAdminAddress].admin = true;
+  }
+
+  /// @notice removes an admin from the colony
+  /// @param adminAddress the address of the admin to be removed
+  function removeAdmin(address adminAddress)
+  {
+    delete users[adminAddress];
+  }
+
   /// @notice registers a new ITaskDB contract
   /// @param _tasksDBAddress the address of the ITaskDB
   function registerTaskDB(address _tasksDBAddress)
-  onlyOwner
+  onlyOwnerOrAdmins
   throwIfAddressIsInvalid(_tasksDBAddress)
   {
     taskDB = ITaskDB(_tasksDBAddress);
@@ -64,7 +80,9 @@ contract Colony is Modifiable, IUpgradable  {
 
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
-	function contributeEth(uint256 taskId) {
+	function contributeEth(uint256 taskId)
+  onlyOwnerOrAdmins
+  {
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
 		if (isTaskAccepted)
 			throw;
@@ -73,7 +91,9 @@ contract Colony is Modifiable, IUpgradable  {
 	}
 
 	//Contribute Tokens to a task
-	function contributeTokens(uint256 taskId, uint256 tokens) {
+	function contributeTokens(uint256 taskId, uint256 tokens)
+  onlyOwnerOrAdmins
+  {
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted)
       throw;
@@ -88,7 +108,7 @@ contract Colony is Modifiable, IUpgradable  {
 	}
 
   function contributeTokensFromPool(uint256 taskId, uint256 tokens)
-  onlyOwner
+  onlyOwnerOrAdmins
   {
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted)
@@ -107,7 +127,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @notice this function is used to generate Colony tokens
   /// @param _amount The amount of tokens to be generated
   function generateColonyTokens(uint256 _amount)
-  onlyOwner
+  onlyOwnerOrAdmins
   refundEtherSentByAccident
   {
     tokenLedger.generateTokensWei(_amount * 1000000000000000000);
@@ -120,7 +140,7 @@ contract Colony is Modifiable, IUpgradable  {
     string _name,
     string _summary
   )
-  throwIfIsEmptyString(_name)
+  onlyOwnerOrAdmins
   {
       taskDB.makeTask(_name, _summary);
   }
@@ -128,7 +148,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @notice this function updates the 'accepted' flag in the task
   /// @param _id the task id
   function acceptTask(uint256 _id)
-  onlyOwner
+  onlyOwnerOrAdmins
   {
     taskDB.acceptTask(_id);
   }
@@ -142,7 +162,7 @@ contract Colony is Modifiable, IUpgradable  {
     string _name,
     string _summary
   )
-  throwIfIsEmptyString(_name)
+  onlyOwnerOrAdmins
   {
     taskDB.updateTask(_id, _name, _summary);
   }
@@ -151,7 +171,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @param symbol_ the symbol of the colony tokens
   function setTokensSymbol(bytes4 symbol_)
   refundEtherSentByAccident
-  onlyOwner
+  onlyOwnerOrAdmins
   {
     tokenLedger.setTokensSymbol(symbol_);
   }
@@ -160,7 +180,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @param title_ the title of the colony tokens
   function setTokensTitle(bytes32 title_)
   refundEtherSentByAccident
-  onlyOwner
+  onlyOwnerOrAdmins
   {
     tokenLedger.setTokensTitle(title_);
   }
@@ -173,7 +193,7 @@ contract Colony is Modifiable, IUpgradable  {
 
   //Mark a task as completed, pay a user, pay root colony fee
   function completeAndPayTask(uint256 taskId, address paymentAddress)
-  onlyOwner
+  onlyOwnerOrAdmins
   {
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted || users[msg.sender].admin == false)
@@ -203,7 +223,7 @@ contract Colony is Modifiable, IUpgradable  {
 
   function upgrade(address newColonyAddress_) {
 
-    if(!users[tx.origin].admin) throw;
+    if(!users[tx.origin].admin && owner != tx.origin) throw;
 
     var tokensBalance = tokenLedger.balanceOf(this);
     if(tokensBalance > 0){
