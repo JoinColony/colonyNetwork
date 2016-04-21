@@ -61,6 +61,8 @@ contract ColonyFactory is IColonyFactory {
     ColonyCreated(key_, colony, tx.origin, now);
   }
 
+  /// @notice removes a colony based on the colony key
+  /// @param key_ the key of the colony in the catalog
   function removeColony(bytes32 key_)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(key_)
@@ -70,6 +72,8 @@ contract ColonyFactory is IColonyFactory {
     ColonyDeleted(key_, tx.origin, now);
   }
 
+  /// @notice get the colony address by the colony key
+  /// @param key_ the key of the colony in the catalog
   function getColony(bytes32 key_) constant returns(address)
   {
     if(!colonies.catalog[key_]._exists) return address(0x0);
@@ -78,11 +82,15 @@ contract ColonyFactory is IColonyFactory {
     return colonies.data[colonyIndex];
   }
 
+  /// @notice get the colony address at the specified position
+  /// @param idx_ the index of the colony in the catalog
   function getColonyAt(uint256 idx_) constant returns(address)
   {
     return colonies.data[idx_];
   }
 
+  /// @notice upgrade the Colony address
+  /// @param key_ the colony key in the catalog
   function upgradeColony(bytes32 key_)
   {
     uint256 colonyIndex = colonies.catalog[key_].index;
