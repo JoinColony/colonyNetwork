@@ -74,34 +74,51 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
+    it('should return an empty address if there is no colony for the key provided', function (done) {
+      rootColony.getColony.call('DOESNT-EXIST')
+      .then(function(_address){
+        assert.equal(testHelper.hexToUtf8(_address), '', 'address returned is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should fail if the key provided is empty', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
       rootColony.createColony('',
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
-        gas: 1e6
+        gas: 3e6
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(3e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
     });
 
-    it('should fail if ETH is sent', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+    it('should fail if the key provided is already in use', function (done) {
+      var prevBalance;
       rootColony.createColony(_COLONY_KEY_,
       {
         from: _MAIN_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
-        gas: 1e6,
-        value: 1
+        gas: 3e6
+      })
+      .then(function(){
+        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        return rootColony.createColony(_COLONY_KEY_,
+        {
+          from: _MAIN_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 3e6
+        });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(3e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -150,6 +167,23 @@ contract('RootColony', function (accounts) {
       })
       .then(function(upgradedColonyAddress){
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if ETH is sent', function (done) {
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      rootColony.createColony(_COLONY_KEY_,
+      {
+        from: _MAIN_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: 3e6,
+        value: 1
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(3e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);

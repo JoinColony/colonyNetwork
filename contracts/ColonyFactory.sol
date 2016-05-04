@@ -1,6 +1,7 @@
 
 import "IColonyFactory.sol";
 import "IUpgradable.sol";
+import "IRootColonyResolver.sol";
 import "Colony.sol";
 
 contract ColonyFactory is IColonyFactory {
@@ -8,6 +9,11 @@ contract ColonyFactory is IColonyFactory {
   event ColonyCreated(bytes32 colonyKey, address colonyAddress, address colonyOwner, uint now);
   event ColonyDeleted(bytes32 colonyKey, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
+
+  modifier onlyRootColony(){
+    if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) throw;
+    _
+  }
 
   struct ColonyRecord {
     uint index;
@@ -38,7 +44,13 @@ contract ColonyFactory is IColonyFactory {
 
   /// @notice creates a Colony
   function createColony(bytes32 key_, address tokenLedger_, address taskDB_)
+  throwIfIsEmptyBytes32(key_)
+  throwIfAddressIsInvalid(tokenLedger_)
+  throwIfAddressIsInvalid(taskDB_)
+  onlyRootColony
   {
+    if(colonies.catalog[key_]._exists) throw;
+
     var colonyIndex = colonies.data.length++;
     var colony = new Colony(rootColonyResolverAddress, tokenLedger_, taskDB_);
 
@@ -53,6 +65,8 @@ contract ColonyFactory is IColonyFactory {
 
   function removeColony(bytes32 key_)
   refundEtherSentByAccident
+  throwIfIsEmptyBytes32(key_)
+  onlyRootColony
   {
     colonies.catalog[key_]._exists = false;
     ColonyDeleted(key_, tx.origin, now);
@@ -60,6 +74,8 @@ contract ColonyFactory is IColonyFactory {
 
   function getColony(bytes32 key_) constant returns(address)
   {
+    if(!colonies.catalog[key_]._exists) return address(0x0);
+
     var colonyIndex = colonies.catalog[key_].index;
     return colonies.data[colonyIndex];
   }
@@ -73,6 +89,8 @@ contract ColonyFactory is IColonyFactory {
   {
     uint256 colonyIndex = colonies.catalog[key_].index;
     address colonyAddress = colonies.data[colonyIndex];
+    if(!Colony(colonyAddress).getUserInfo(tx.origin)) throw;
+
     address taskDb = Colony(colonyAddress).taskDB();
     address tokenLedger = Colony(colonyAddress).tokenLedger();
 
