@@ -396,7 +396,7 @@ contract('Colony', function (accounts) {
         assert.equal(value[4].toNumber(), 95000000000000000000);
       })
       .then(done)
-    //   .catch(done);
+      .catch(done);
     });
 
     it('should allow colonies to assign tokens to tasks', function (done) {

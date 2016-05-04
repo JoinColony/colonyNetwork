@@ -230,7 +230,7 @@ contract Colony is Modifiable, IUpgradable  {
       paymentAddress.send(ethPayout);
       rootColonyResolver.rootColonyAddress().send(ethFee);
       //If I add the library call, tests starts to fail
-      //ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+      ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
     }
 
     if (taskTokens > 0)
