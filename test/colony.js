@@ -54,7 +54,7 @@ contract('Colony', function (accounts) {
   });
 
   describe('when created', function () {
-    it('deploying user should be admin', function (done) {
+    it('should take deploying user as an admin', function (done) {
       colony.getUserInfo.call(_MAIN_ACCOUNT_)
       .then(function (admin) {
         assert.equal(admin, true, 'First user isn\'t an admin');
@@ -63,19 +63,117 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('deploying user should be the colony owner', function (done) {
-      colony.owner.call()
-      .then(function (ownerAddress) {
-        assert.equal(ownerAddress, _MAIN_ACCOUNT_, 'Tx.origin isn\'t the colony owner');
+    it('should other users not be an admin until I add s/he', function (done) {
+      colony.getUserInfo.call(_OTHER_ACCOUNT_)
+      .then(function (admin) {
+        assert.equal(admin, false, 'Other user is an admin');
       })
       .then(done)
       .catch(done);
     });
 
-    it('other users should not be an admin', function (done) {
-      colony.getUserInfo.call(_OTHER_ACCOUNT_)
-      .then(function (admin) {
-        assert.equal(admin, false, 'Other user is an admin');
+    it('should keep a count of the number of admins', function (done) {
+      colony.adminsCount.call()
+      .then(function (_adminsCount) {
+        assert.equal(_adminsCount, 1, 'Admin count is different from 1');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should increase admin count by the number of admins added', function (done) {
+      colony.addAdmin(_OTHER_ACCOUNT_)
+      .then(function () {
+        return colony.adminsCount.call();
+      })
+      .then(function (_adminsCount) {
+        assert.equal(_adminsCount, 2, 'Admin count is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should decrease admin count by the number of admins removed', function (done) {
+      colony.addAdmin(_OTHER_ACCOUNT_)
+      .then(function(){
+        return colony.removeAdmin(_OTHER_ACCOUNT_);
+      })
+      .then(function () {
+        return colony.adminsCount.call();
+      })
+      .then(function (_adminsCount) {
+        assert.equal(_adminsCount, 1, 'Admin count is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove the last admin', function (done) {
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      colony.removeAdmin(_MAIN_ACCOUNT_,
+      {
+        from: _MAIN_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: 1e6
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to add the same address multiple times', function (done) {
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      colony.addAdmin(_MAIN_ACCOUNT_,
+      {
+        from: _MAIN_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: 1e6
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove an address that is currently not an admin', function (done) {
+      var prevBalance;
+      colony.addAdmin(_OTHER_ACCOUNT_)
+      .then(function(){
+        return colony.removeAdmin(_OTHER_ACCOUNT_);
+      })
+      .then(function(){
+        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        return colony.removeAdmin(_OTHER_ACCOUNT_,
+        {
+          from: _MAIN_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 1e6
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove an address that was never an admin', function (done) {
+      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      colony.removeAdmin(_OTHER_ACCOUNT_,
+      {
+        from: _MAIN_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: 1e6
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function(){
+        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -405,7 +503,7 @@ contract('Colony', function (accounts) {
         assert.equal(value[4].toNumber(), 95000000000000000000);
       })
       .then(done)
-      .catch(done);
+    //   .catch(done);
     });
 
     it('should allow colonies to assign tokens to tasks', function (done) {

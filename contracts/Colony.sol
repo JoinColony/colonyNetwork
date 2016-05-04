@@ -9,6 +9,10 @@ contract Colony is Modifiable, IUpgradable  {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
+  event ReservedTokens (uint256 _taskId, uint256 tokens);
+  event UintEvent(uint value);
+  event BoolEvent(bool value);
+  event AddressEvent(address value);
 
   modifier onlyAdminsOrigin {
     if (!this.getUserInfo(tx.origin)) throw;
@@ -26,7 +30,6 @@ contract Colony is Modifiable, IUpgradable  {
     bool _exists;
   }
 
-  address owner;
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
   ITaskDB public taskDB;
