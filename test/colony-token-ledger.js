@@ -47,7 +47,7 @@ contract('ColonyTokenLedger', function (accounts) {
     it('should decrease the sender balance and increase the receiver balance by the same amount',
       function (done) {
         var previousBalance;
-        colonyToken.generateTokens(_TOTAL_SUPPLY_)
+        colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
         .then(function(){
           return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
         })
@@ -71,7 +71,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if ETHER is sent',  function (done) {
       var previousBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -96,7 +96,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the sender does not have funds', function (done) {
       var previousBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -117,7 +117,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the payload is equal to zero', function (done) {
       var previousBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -138,7 +138,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the value is bigger than the upper limit', function (done) {
       var previousBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
       })
@@ -163,7 +163,7 @@ contract('ColonyTokenLedger', function (accounts) {
       var previousBalance;
       var otherAccountPreviousBalance;
       var previousAllowance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -206,7 +206,7 @@ contract('ColonyTokenLedger', function (accounts) {
     it('should fail if ETHER is sent', function (done) {
       var previousBalance;
 
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -232,7 +232,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the sender does not have funds', function (done) {
       var previousBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -256,7 +256,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the value is equal to zero', function (done) {
       var previousBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -281,7 +281,7 @@ contract('ColonyTokenLedger', function (accounts) {
     it('should fail if the value is bigger than the upper limit', function (done) {
       var previousBalance;
 
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -306,7 +306,7 @@ contract('ColonyTokenLedger', function (accounts) {
     it('should fail if the sender does not have a high enough allowance', function (done) {
       var previousBalance;
 
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -335,7 +335,7 @@ contract('ColonyTokenLedger', function (accounts) {
   describe('when approving allowance to a third party', function () {
     it('should set the allowed value to be equal to the approved value', function (done) {
 
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -350,7 +350,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if ETHER is sent', function (done) {
       var prevBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
         return colonyToken.approve(_OTHER_ACCOUNT_, 100, {
@@ -369,7 +369,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the value is bigger than upper limit', function (done) {
       var prevBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
         return colonyToken.approve(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1,
@@ -387,7 +387,7 @@ contract('ColonyTokenLedger', function (accounts) {
     });
 
     it('should let a sender update the allowed value of another user', function (done) {
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.approve(_OTHER_ACCOUNT_, 100);
       })
@@ -411,13 +411,13 @@ contract('ColonyTokenLedger', function (accounts) {
   describe('when generating tokens', function () {
     it('should let the total supply be increased', function (done) {
       var previousSupply = 0;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.totalSupply.call();
       })
       .then(function (total_supply) {
         previousSupply = total_supply.toNumber();
-        return colonyToken.generateTokens(100);
+        return colonyToken.generateTokensWei(100);
       })
       .then(function () {
         return colonyToken.totalSupply.call();
@@ -431,13 +431,13 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should increase the owners balance by the same amount of generated tokens', function (done) {
       var previousBalance = 0;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
       })
       .then(function (_prevBalance) {
         previousBalance = _prevBalance.toNumber();
-        return colonyToken.generateTokens(100);
+        return colonyToken.generateTokensWei(100);
       })
       .then(function(){
         return colonyToken.balanceOf.call(_MAIN_ACCOUNT_);
@@ -451,7 +451,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if ETHER is sent', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colonyToken.generateTokens(_OTHER_ACCOUNT_, 100, {
+      colonyToken.generateTokensWei(_OTHER_ACCOUNT_, 100, {
           value: 1,
           gas: 1e6,
           gasPrice: _GAS_PRICE_
@@ -466,7 +466,7 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the value is equal to zero', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colonyToken.generateTokens(0, {
+      colonyToken.generateTokensWei(0, {
         gas: 1e6,
         gasPrice: _GAS_PRICE_
       })
@@ -480,10 +480,10 @@ contract('ColonyTokenLedger', function (accounts) {
 
     it('should fail if the value causes uint to wrap', function (done) {
       var prevBalance;
-      colonyToken.generateTokens(_TOTAL_SUPPLY_)
+      colonyToken.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colonyToken.generateTokens(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
+        return colonyToken.generateTokensWei(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
           gas: 1e6,
           gasPrice: _GAS_PRICE_
         });

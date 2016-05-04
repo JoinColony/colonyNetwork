@@ -19,9 +19,9 @@ contract ITaskDB is Destructible, Modifiable {
 
   /// @notice this function returns if a task was accepted
   /// @param _id the task id
-  /// @return the amount of ether and the amount of tokens funding a task
+  /// @return the amount of ether and the amount of tokens wei unding a task
   function getTaskBalance(uint256 _id)
-  constant returns(uint256 _ether, uint256 _tokens);
+  constant returns(uint256 _ether, uint256 _tokensWei);
 
   /// @notice this function returns the attributes of a task
   /// @param _id the task id
@@ -33,7 +33,7 @@ contract ITaskDB is Destructible, Modifiable {
     string _summary,
     bool _accepted,
     uint256 _eth,
-    uint256 _tokens
+    uint256 _tokensWei
   );
 
   /// @notice this function adds a task to the task DB. Any ETH sent will be
@@ -56,8 +56,8 @@ contract ITaskDB is Destructible, Modifiable {
 
   /// @notice this function takes an amount of tokens and add it to the task funds.
   /// @param _id the task id
-  /// @param _amount the amount of tokens to contribute
-  function contributeTokens(uint256 _id, uint256 _amount);
+  /// @param _amount the amount of tokens wei to contribute
+  function contributeTokensWei(uint256 _id, uint256 _amount);
 
   /// @notice this function is used to update task data.
   /// @param _id the task id

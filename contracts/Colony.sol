@@ -9,7 +9,6 @@ contract Colony is Modifiable, IUpgradable  {
 
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
-  event ReservedTokens (uint256 _taskId, uint256 tokens);
 
   modifier onlyOwner {
     if ( !this.getUserInfo(msg.sender)) throw;
@@ -31,7 +30,7 @@ contract Colony is Modifiable, IUpgradable  {
   mapping(address => User) users;
   // keeping track of how many tokens are assigned to tasks by the colony itself (i.e. self-funding tasks).
   mapping(uint256 => uint256) reserved_tokens;
-  uint256 public total_reserved_tokens;
+  uint256 public reservedTokensWei = 0;
 
   function Colony(
     address rootColonyResolverAddress_,
@@ -79,35 +78,30 @@ contract Colony is Modifiable, IUpgradable  {
     if (isTaskAccepted)
       throw;
 
+    var tokensInWei = tokens * 1000000000000000000;
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-    tokenLedger.transferFrom(msg.sender, this, tokens);
-    reserved_tokens[taskId] += tokens;
-    total_reserved_tokens += tokens;
+    tokenLedger.transferFrom(msg.sender, this, tokensInWei);
+    reserved_tokens[taskId] += tokensInWei;
+    reservedTokensWei += tokensInWei;
 
-    taskDB.contributeTokens(taskId, tokens);
+    taskDB.contributeTokensWei(taskId, tokensInWei);
 	}
 
   function contributeTokensFromPool(uint256 taskId, uint256 tokens)
   onlyOwner
   {
-
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted)
       throw;
     //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
     //assigned.
-    if (total_reserved_tokens + tokens > tokenLedger.balanceOf(this))
+    var tokensInWei = tokens * 1000000000000000000;
+    if (reservedTokensWei + tokensInWei > tokenLedger.balanceOf(this))
       throw;
-    reserved_tokens[taskId] += tokens;
-    total_reserved_tokens += tokens;
+    reserved_tokens[taskId] += tokensInWei;
+    reservedTokensWei += tokensInWei;
 
-    taskDB.contributeTokens(taskId, tokens);
-  }
-
-  function getReservedTokens(uint256 _taskId)
-  constant returns(uint256 _tokens)
-  {
-    _tokens = reserved_tokens[_taskId];
+    taskDB.contributeTokensWei(taskId, tokensInWei);
   }
 
   /// @notice this function is used to generate Colony tokens
@@ -116,7 +110,7 @@ contract Colony is Modifiable, IUpgradable  {
   onlyOwner
   refundEtherSentByAccident
   {
-    tokenLedger.generateTokens(_amount);
+    tokenLedger.generateTokensWei(_amount * 1000000000000000000);
   }
 
   /// @notice this function adds a task to the task DB.
@@ -201,7 +195,7 @@ contract Colony is Modifiable, IUpgradable  {
 	    tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee);
 
       reserved_tokens[taskId] -= taskTokens;
-      total_reserved_tokens -= taskTokens;
+      reservedTokensWei -= taskTokens;
 		}
 
 		TaskCompletedAndPaid(this, paymentAddress, taskEth, taskTokens);

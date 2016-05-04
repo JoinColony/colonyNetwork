@@ -22,7 +22,7 @@ contract TaskDB is ITaskDB {
 		string summary; //IPFS hash of the brief
 		bool accepted; //Whether the work has been accepted
 		uint256 eth; //Amount of ETH contributed to the task
-		uint256 tokens; //Amount of tokens contributed to the task
+		uint256 tokensWei; //Amount of tokens wei contributed to the task
 	}
 
 	// A dynamically-sized array of `Task` structs.
@@ -45,7 +45,7 @@ contract TaskDB is ITaskDB {
     	summary       : _summary,
     	accepted      : false,
     	eth           : 0,
-    	tokens        : 0
+    	tokensWei     : 0
     });
 
     TaskAdded(taskId, now);
@@ -82,7 +82,7 @@ contract TaskDB is ITaskDB {
   constant returns(uint256 _ether, uint256 _tokens)
   {
     var task = tasks[_id];
-    return (task.eth, task.tokens);
+    return (task.eth, task.tokensWei);
   }
 
   /// @notice this function updates the 'accepted' flag in the task
@@ -120,7 +120,7 @@ contract TaskDB is ITaskDB {
   /// @param _id the task id
   /// @return the name, a flag indicating if the task was accepted or not,
   /// a hash pointing to the summary of a task (IPFS hash), the amount of ether
-  /// it holds, the amount of tokens it holds
+  /// it holds, the amount of tokens wei it holds
   function getTask(uint256 _id)
   ifTasksExists(_id)
   constant returns (
@@ -128,7 +128,7 @@ contract TaskDB is ITaskDB {
       string _summary,
       bool _accepted,
       uint256 _eth,
-      uint256 _tokens
+      uint256 _tokensWei
   )
   {
     var task = tasks[_id];
@@ -137,7 +137,7 @@ contract TaskDB is ITaskDB {
       task.summary,
       task.accepted,
       task.eth,
-      task.tokens
+      task.tokensWei
     );
   }
 
@@ -157,15 +157,15 @@ contract TaskDB is ITaskDB {
 
   /// @notice this function takes an amount of tokens and add it to the task funds.
   /// @param _id the task id
-  /// @param _amount the amount of tokens to contribute
-  function contributeTokens(uint256 _id, uint256 _amount)
+  /// @param _amount the amount of tokens wei to contribute
+  function contributeTokensWei(uint256 _id, uint256 _amount)
   onlyOwner
   ifTasksExists(_id)
   {
-    if(tasks[_id].tokens + _amount <= tasks[_id].tokens) throw;
+    if(tasks[_id].tokensWei + _amount <= tasks[_id].tokensWei) throw;
     if(tasks[_id].accepted) throw;
 
-    tasks[_id].tokens += _amount;
+    tasks[_id].tokensWei += _amount;
     ReceivedTokens(_id, _amount, now);
   }
 }

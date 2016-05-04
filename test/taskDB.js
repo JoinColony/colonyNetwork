@@ -305,14 +305,14 @@ contract('TaskDB', function (accounts) {
     it('should "tokens" prop be raised by the amount of tokens I send', function (done) {
       taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.contributeTokens(0, 10);
+        return taskDB.contributeTokensWei(0, 10000000000000000000);
       })
       .then(function(){
         return taskDB.getTask(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
-        assert.equal(args[4].toNumber(), 10, '"tokens" value is incorrect');
+        assert.equal(args[4].toNumber(), 10000000000000000000, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);
@@ -340,14 +340,14 @@ contract('TaskDB', function (accounts) {
         return taskDB.contributeEth(0, 10);
       })
       .then(function(){
-        return taskDB.contributeTokens(0, 10);
+        return taskDB.contributeTokensWei(0, 10000000000000000000);
       })
       .then(function(){
         return taskDB.getTask(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
-        assert.equal(args[4].toNumber(), 10, '"tokens" value is incorrect');
+        assert.equal(args[4].toNumber(), 10000000000000000000, '"tokens" value is incorrect');
         assert.equal(args[3].toNumber(), 10, '"eth" value is incorrect');
       })
       .then(done)

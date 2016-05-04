@@ -83,7 +83,7 @@ contract('Colony', function (accounts) {
         return tokenLedger.balanceOf.call(colony.address);
       })
       .then(function(totalSupplyTokens){
-        assert.equal(totalSupplyTokens.toNumber(), 100);
+        assert.equal(totalSupplyTokens.toNumber(), 100 * 1e18);
       })
       .then(done)
       .catch(done);
@@ -183,8 +183,14 @@ contract('Colony', function (accounts) {
         return tokenLedger.balanceOf.call(colony.address);
       })
       .then(function(colonyBalance){
-        assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
+        assert.equal(colonyBalance.toNumber(), 100 * 1e18 , 'Colony address balance should be 100 tokens.');
         return colony.contributeTokensFromPool(0, 100, {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return colony.reservedTokensWei.call();
+      })
+      .then(function(reservedTokensWei){
+        assert.equal(100 * 1e18, reservedTokensWei, 'Colony tokens were not reserved for task');
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
@@ -193,8 +199,8 @@ contract('Colony', function (accounts) {
         return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
       })
       .then(function(otherAccountTokenBalance){
-        assert.equal(otherAccountTokenBalance.toNumber(), 95, '_OTHER_ACCOUNT_ balance should be 95 tokens.');
-        return tokenLedger.approve(colony.address, 95, {from: _OTHER_ACCOUNT_});
+        assert.equal(otherAccountTokenBalance.toNumber(), 95 * 1e18, '_OTHER_ACCOUNT_ balance should be 95 tokens.');
+        return tokenLedger.approve(colony.address, 95 * 1e18, {from: _OTHER_ACCOUNT_});
       })
       .then(function(){
         return colony.contributeTokens(1, 95, {from: _OTHER_ACCOUNT_});
@@ -207,7 +213,7 @@ contract('Colony', function (accounts) {
         assert.equal(value[1], 'summary2');
         assert.equal(value[2], false);
         assert.equal(value[3].toNumber(), 0);
-        assert.equal(value[4].toNumber(), 95);
+        assert.equal(value[4].toNumber(), 95000000000000000000);
       })
       .then(done)
       .catch(done);
@@ -223,10 +229,10 @@ contract('Colony', function (accounts) {
         return colony.contributeTokensFromPool(0, 70, {from:_MAIN_ACCOUNT_});
       })
       .then(function(){
-        return colony.getReservedTokens.call(0);
+        return colony.reservedTokensWei.call();
       })
-      .then(function(reservedTokens){
-        assert.equal(reservedTokens.toNumber(), 70, 'Has not reserved the right amount of colony tokens.');
+      .then(function(reservedTokensWei){
+        assert.equal(reservedTokensWei.toNumber(), 70 * 1e18, 'Has not reserved the right amount of colony tokens.');
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
         return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:1e6});
       })
@@ -364,11 +370,11 @@ contract('Colony', function (accounts) {
         return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
       })
       .then(function(otherAccountTokenBalance){
-        assert.strictEqual(otherAccountTokenBalance.toNumber(), 95, 'Token balance is not 95% of task token value');
+        assert.strictEqual(otherAccountTokenBalance.toNumber(), 95 * 1e18, 'Token balance is not 95% of task token value');
         return tokenLedger.balanceOf.call(rootColony.address);
       })
       .then(function(rootColonyTokenBalance){
-        assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'RootColony token balance is not 5% of task token value');
+        assert.strictEqual(rootColonyTokenBalance.toNumber(), 5 * 1e18, 'RootColony token balance is not 5% of task token value');
       })
       .then(done)
       .catch(done);
