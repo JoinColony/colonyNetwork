@@ -374,9 +374,6 @@ contract('Colony', function (accounts) {
         return tokenLedger.approve(colony.address, 95 * 1e18, {from: _OTHER_ACCOUNT_});
       })
       .then(function(){
-        return colony.addAdmin(_OTHER_ACCOUNT_);
-      })
-      .then(function(){
         return colony.contributeTokens(1, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function() {
