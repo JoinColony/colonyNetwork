@@ -225,11 +225,6 @@ contract Colony is Modifiable, IUpgradable  {
     var (taskEth, taskTokens) = taskDB.getTaskBalance(taskId);
     if (taskEth > 0)
     {
-      var ethPayout = (taskEth * 95)/100;
-      var ethFee = taskEth - ethPayout;
-      paymentAddress.send(ethPayout);
-      rootColonyResolver.rootColonyAddress().send(ethFee);
-      //If I add the library call, tests starts to fail
       ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
     }
 
