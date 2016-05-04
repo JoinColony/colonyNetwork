@@ -8,8 +8,8 @@
   "rpc": {
     // Default RPC configuration.
     "host": "localhost",
-    "port": 8545
-  //  "gas": 400000000
+    "port": 8545,
+    "gas": 4000000
   },
   "mocha":{
   	"reporter": "spec"
