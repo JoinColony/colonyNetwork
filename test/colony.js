@@ -8,6 +8,14 @@ contract('Colony', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _GAS_PRICE_ = 20e9;
+  var _GAS_TO_SPEND_ = 1e6;
+
+  var optionsToSpotTransactionFailure = {
+        from: _MAIN_ACCOUNT_,
+        gasPrice : _GAS_PRICE_,
+        gas: _GAS_TO_SPEND_
+  };
+
   var colony;
   var colonyFactory;
   var colonyTaskDb;
@@ -110,15 +118,10 @@ contract('Colony', function (accounts) {
 
     it('should fail to remove the last admin', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colony.removeAdmin(_MAIN_ACCOUNT_,
-      {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
+      colony.removeAdmin(_MAIN_ACCOUNT_,optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -126,15 +129,10 @@ contract('Colony', function (accounts) {
 
     it('should fail to add the same address multiple times', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colony.addAdmin(_MAIN_ACCOUNT_,
-      {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
+      colony.addAdmin(_MAIN_ACCOUNT_,optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -152,12 +150,12 @@ contract('Colony', function (accounts) {
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
-          gas: 1e6
+          gas: _GAS_TO_SPEND_
         });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -165,122 +163,10 @@ contract('Colony', function (accounts) {
 
     it('should fail to remove an address that was never an admin', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colony.removeAdmin(_OTHER_ACCOUNT_,
-      {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
+      colony.removeAdmin(_OTHER_ACCOUNT_, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should keep a count of the number of admins', function (done) {
-      colony.adminsCount.call()
-      .then(function (_adminsCount) {
-        assert.equal(_adminsCount, 1, 'Admin count is different from 1');
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should increase admin count by the number of admins added', function (done) {
-      colony.addAdmin(_OTHER_ACCOUNT_)
-      .then(function () {
-        return colony.adminsCount.call();
-      })
-      .then(function (_adminsCount) {
-        assert.equal(_adminsCount, 2, 'Admin count is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should decrease admin count by the number of admins removed', function (done) {
-      colony.addAdmin(_OTHER_ACCOUNT_)
-      .then(function(){
-        return colony.removeAdmin(_OTHER_ACCOUNT_);
-      })
-      .then(function () {
-        return colony.adminsCount.call();
-      })
-      .then(function (_adminsCount) {
-        assert.equal(_adminsCount, 1, 'Admin count is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should fail to remove the last admin', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colony.removeAdmin(_MAIN_ACCOUNT_,
-      {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should fail to add the same address multiple times', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colony.addAdmin(_MAIN_ACCOUNT_,
-      {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should fail to remove an address that is currently not an admin', function (done) {
-      var prevBalance;
-      colony.addAdmin(_OTHER_ACCOUNT_)
-      .then(function(){
-        return colony.removeAdmin(_OTHER_ACCOUNT_);
-      })
-      .then(function(){
-        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colony.removeAdmin(_OTHER_ACCOUNT_,
-        {
-          from: _MAIN_ACCOUNT_,
-          gasPrice : _GAS_PRICE_,
-          gas: 1e6
-        });
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should fail to remove an address that was never an admin', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      colony.removeAdmin(_OTHER_ACCOUNT_,
-      {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -373,12 +259,12 @@ contract('Colony', function (accounts) {
         {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
-          gas: 1e6
+          gas: _GAS_TO_SPEND_
         });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -390,11 +276,11 @@ contract('Colony', function (accounts) {
       {
         from: _OTHER_ACCOUNT_,
         gasPrice : _GAS_PRICE_,
-        gas: 1e6
+        gas: _GAS_TO_SPEND_
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -434,12 +320,12 @@ contract('Colony', function (accounts) {
           value: 10000,
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
-          gas: 1e6
+          gas: _GAS_TO_SPEND_
         });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -521,11 +407,11 @@ contract('Colony', function (accounts) {
       .then(function(reservedTokensWei){
         assert.equal(reservedTokensWei.toNumber(), 70 * 1e18, 'Has not reserved the right amount of colony tokens.');
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:1e6});
+        return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:_GAS_TO_SPEND_});
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(function(){
         done();
@@ -562,11 +448,11 @@ contract('Colony', function (accounts) {
       })
       .then(function(){
         //More than the pool, less than totalsupply
-        return colony.contributeTokensFromPool(1, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:1e6});
+        return colony.contributeTokensFromPool(1, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:_GAS_TO_SPEND_});
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(function(){
         done();
@@ -678,12 +564,12 @@ contract('Colony', function (accounts) {
         return colony.contributeTokens(0, 100, {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
-          gas: 1e6
+          gas: _GAS_TO_SPEND_
         });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
@@ -700,12 +586,12 @@ contract('Colony', function (accounts) {
         return colony.contributeTokensFromPool(0, 100, {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
-          gas: 1e6
+          gas: _GAS_TO_SPEND_
         });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
       })
       .then(done)
       .catch(done);
