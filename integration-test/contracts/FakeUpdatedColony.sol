@@ -58,7 +58,26 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   onlyAdmins
   throwIfAddressIsInvalid(rootColonyResolverAddress_)
   {
-    rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
+    if(users[newAdminAddress]._exists && users[newAdminAddress].admin)
+      throw;
+
+    if(!users[newAdminAddress]._exists)
+      adminsCount += 1;
+
+    users[newAdminAddress] = User({admin: true, _exists: true});
+  }
+
+  /// @notice removes an admin from the colony
+  /// @param adminAddress the address of the admin to be removed
+  function removeAdmin(address adminAddress)
+  onlyAdmins
+  {
+    if(!users[adminAddress]._exists) throw;
+    if(users[adminAddress]._exists && !users[adminAddress].admin) throw;
+    if(adminsCount == 1) throw;
+
+    users[adminAddress].admin = false;
+    adminsCount -= 1;
   }
 
   function isUpdated() constant returns(bool)
