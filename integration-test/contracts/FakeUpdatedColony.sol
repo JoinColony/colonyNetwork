@@ -61,6 +61,39 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
   }
 
+  function isUpdated()
+  constant returns(bool)
+  {
+      return true;
+  }
+
+  /// @notice adds a new admin user to the colony
+  /// @param newAdminAddress the address of the new admin user
+  function addAdmin(address newAdminAddress)
+  onlyAdmins
+  {
+    if(users[newAdminAddress]._exists && users[newAdminAddress].admin)
+      throw;
+
+    if(!users[newAdminAddress]._exists)
+      adminsCount += 1;
+
+    users[newAdminAddress] = User({admin: true, _exists: true});
+  }
+
+  /// @notice removes an admin from the colony
+  /// @param adminAddress the address of the admin to be removed
+  function removeAdmin(address adminAddress)
+  onlyAdmins
+  {
+    if(!users[adminAddress]._exists) throw;
+    if(users[adminAddress]._exists && !users[adminAddress].admin) throw;
+    if(adminsCount == 1) throw;
+
+    users[adminAddress].admin = false;
+    adminsCount -= 1;
+  }
+
   function isUpdated() constant returns(bool)
   {
     return true;
@@ -209,7 +242,10 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     tokenLedger.setTokensTitle(title_);
   }
 
-	function getUserInfo(address userAddress)
+  /// @notice returns user info based in a given address
+  /// @param userAddress the address to be verified
+  /// @return a boolean value indicating if the user is an admin
+  function getUserInfo(address userAddress)
   constant returns (bool admin)
   {
 		return users[userAddress].admin;
