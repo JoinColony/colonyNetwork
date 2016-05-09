@@ -6,9 +6,9 @@ import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
 
 contract Colony is Modifiable, IUpgradable  {
-
   // Event to raise when a Task is completed and paid
   event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
+
 
   modifier onlyAdminsOrigin {
     if (!this.getUserInfo(tx.origin)) throw;
@@ -233,7 +233,15 @@ contract Colony is Modifiable, IUpgradable  {
     var (taskEth, taskTokens) = taskDB.getTaskBalance(taskId);
     if (taskEth > 0)
     {
-      ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+      //TODO: ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+
+      // Pay the task Ether and Tokens value -5% to task completor
+      var payoutEth = (taskEth * 95)/100;
+      var feeEth = taskEth - payoutEth;
+      paymentAddress.send(payoutEth);
+      // Pay root colony 5% fee
+      var rootColony = rootColonyResolver.rootColonyAddress();
+      rootColony.send(feeEth);
     }
 
     if (taskTokens > 0)

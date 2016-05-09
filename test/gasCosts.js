@@ -6,7 +6,7 @@ var testHelper = require('../helpers/test-helper.js');
 
 contract('all', function (accounts) {
   var _GAS_PRICE_ = 20e9;
-  var _GAS_TO_SPEND_ = 1e10;
+  //var _GAS_TO_SPEND_ = 1e6;
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var colony;
@@ -16,14 +16,14 @@ contract('all', function (accounts) {
 
   before(function(done)
   {
-    colonyFactory = ColonyFactory.deployed();
     rootColony = RootColony.deployed();
+    colonyFactory = ColonyFactory.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
 
     testHelper.waitAll([
-      rootColonyResolver.registerRootColony(rootColony.address),
+      rootColony.registerColonyFactory(colonyFactory.address),
       colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
-      rootColony.registerColonyFactory(colonyFactory.address)
+      rootColonyResolver.registerRootColony(rootColony.address)
     ], done);
   });
 
@@ -66,29 +66,26 @@ contract('all', function (accounts) {
       })
       .then(function(cost){
         console.log('acceptTask : ', cost);
-        colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_});
+        return colony.generateColonyTokens(100, { from: _MAIN_ACCOUNT_ });
+      })
+      .then(function(){
       // When working with tokens
-        return colony.generateColonyTokens.estimateGas(100, _OTHER_ACCOUNT_, { });
+        return colony.generateColonyTokens.estimateGas(100, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(cost){
         console.log('generateColonyTokens : ', cost);
-        return colony.contributeEth.estimateGas(0, { value: 5, gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_ });
+        return colony.contributeEth.estimateGas(0, { value: 50 });
       })
       .then(function(cost){
         console.log('contributeEth : ', cost);
-        return colony.contributeTokens.estimateGas(0, 100, { gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_ });
+        return colony.contributeEth(0, { value: 50 });
       })
-      .then(function(cost){
-        console.log('contributeTokens : ', cost);
-        return colony.contributeTokensFromPool.estimateGas(0, 50, { gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_ });
+      .then(function(){
+        return colony.contributeTokensFromPool.estimateGas(0, 50, { from:_MAIN_ACCOUNT_ });
       })
       .then(function(cost){
         console.log('contributeTokensFromPool : ', cost);
-      })
-      .then(function(){
-        colony.contributeEth(0, { value: 500 });
-        colony.contributeTokensFromPool(0, 100, {from: _MAIN_ACCOUNT_});
-        return;
+        return colony.contributeTokensFromPool(0, 50, { from:_MAIN_ACCOUNT_ });
       })
       .then(function(){
         return colony.completeAndPayTask.estimateGas(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
