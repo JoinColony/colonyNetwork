@@ -110,6 +110,25 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should allow a revoked admin to be promoted to an admin again', function (done) {
+      var prevBalance;
+      colony.addAdmin(_OTHER_ACCOUNT_)
+      .then(function(){
+        return colony.removeAdmin(_OTHER_ACCOUNT_);
+      })
+      .then(function(){
+        return colony.addAdmin(_OTHER_ACCOUNT_);
+      })
+      .then(function(){
+        return colony.getUserInfo.call(_OTHER_ACCOUNT_);
+      })
+      .then(function(_isAdmin){
+        assert.isTrue(_isAdmin, 'previously revoked admins cannot be promoted to admin again');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should fail to remove the last admin', function (done) {
       var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
       colony.removeAdmin(_MAIN_ACCOUNT_,optionsToSpotTransactionFailure)
