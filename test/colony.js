@@ -8,12 +8,13 @@ contract('Colony', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _GAS_PRICE_ = 20e9;
-  var _GAS_TO_SPEND_ = 1e6;
+  //this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
+  var _GAS_TO_SPEND_ = 4e6;
 
   var optionsToSpotTransactionFailure = {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: _GAS_TO_SPEND_
+    from: _MAIN_ACCOUNT_,
+    gasPrice : _GAS_PRICE_,
+    gas: _GAS_TO_SPEND_
   };
 
   var colony;

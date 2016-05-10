@@ -1,5 +1,5 @@
-import "Modifiable.sol";
 import "ColonyPaymentProvider.sol";
+import "Modifiable.sol";
 import "IUpgradable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
@@ -216,7 +216,7 @@ contract Colony is Modifiable, IUpgradable  {
   {
 
     bool isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted || !users[msg.sender].admin)
+    if (isTaskAccepted || !this.getUserInfo(msg.sender))
     {
       throw;
     }
@@ -240,7 +240,7 @@ contract Colony is Modifiable, IUpgradable  {
       reservedTokensWei -= taskTokens;
 		}
 
-    TaskCompletedAndPaid(this, paymentAddress, taskEth, taskTokens);
+    TaskCompletedAndPaid(this, paymentAddress, 0, 0);
   }
 
   function upgrade(address newColonyAddress_)
