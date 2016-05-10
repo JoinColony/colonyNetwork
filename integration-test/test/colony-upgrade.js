@@ -53,7 +53,7 @@ contract('RootColony', function (accounts) {
       })
       .then(function(){
         var colonyBalance = web3.eth.getBalance(colony.address);
-        assert.equal(colonyBalance, 100, 'Colony balance is incorrect');
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
 
         return rootColony.upgradeColony(_COLONY_KEY_);
       })
