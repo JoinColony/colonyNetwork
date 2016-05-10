@@ -125,6 +125,12 @@ contract('Colony', function (accounts) {
       .then(function(_isAdmin){
         assert.isTrue(_isAdmin, 'previously revoked admins cannot be promoted to admin again');
       })
+      .then(function(){
+        return colony.adminsCount.call();
+      })
+      .then(function(_adminsCount){
+        assert.equal(_adminsCount.toNumber(), 2, 'admins count is incorrect');
+      })
       .then(done)
       .catch(done);
     });

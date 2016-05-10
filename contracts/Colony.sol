@@ -63,10 +63,8 @@ contract Colony is Modifiable, IUpgradable  {
     if(users[newAdminAddress]._exists && users[newAdminAddress].admin)
       throw;
 
-    if(!users[newAdminAddress]._exists)
-      adminsCount += 1;
-
     users[newAdminAddress] = User({admin: true, _exists: true});
+    adminsCount += 1;
   }
 
   /// @notice removes an admin from the colony
