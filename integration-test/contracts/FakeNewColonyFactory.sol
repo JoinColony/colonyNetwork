@@ -1,5 +1,6 @@
 
 import "IColonyFactory.sol";
+import "IUpgradable.sol";
 import "FakeUpdatedColony.sol";
 
 contract FakeNewColonyFactory is IColonyFactory {
@@ -70,6 +71,16 @@ contract FakeNewColonyFactory is IColonyFactory {
 
   function upgradeColony(bytes32 key_)
   {
+    uint256 colonyIndex = colonies.catalog[key_].index;
+    address colonyAddress = colonies.data[colonyIndex];
+    address taskDb = FakeUpdatedColony(colonyAddress).taskDB();
+    address tokenLedger = FakeUpdatedColony(colonyAddress).tokenLedger();
+
+    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger, taskDb);
+    IUpgradable(colonyAddress).upgrade(colonyNew);
+
+    colonies.data[colonyIndex] = colonyNew;
+    ColonyUpgraded(colonyNew, tx.origin, now);
   }
 
 	function () {

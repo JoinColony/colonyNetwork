@@ -22,7 +22,7 @@ contract('RootColony', function (accounts) {
       colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
       rootColony.registerColonyFactory(colonyFactory.address)
     ], function(){
-      
+
       done();
     });
   });
@@ -96,10 +96,10 @@ contract('RootColony', function (accounts) {
         return tokenLedger.balanceOf.call(colony.address);
       })
       .then(function(colonyTokenBalance){
-        assert.equal(colonyTokenBalance, 100, 'Colony token balance is incorrect');
+        assert.equal(colonyTokenBalance.toNumber(), 100000000000000000000, 'Colony token balance is incorrect');
 
         var colonyBalance = web3.eth.getBalance(colony.address);
-        assert.equal(colonyBalance, 100, 'Colony balance is incorrect');
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
       })
       .then(done)
       .catch(done);

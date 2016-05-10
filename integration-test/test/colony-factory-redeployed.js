@@ -26,6 +26,7 @@ contract('ColonyFactory', function () {
 
       var colony;
       colonyFactory = ColonyFactory.deployed();
+
       console.log('\r\n');
       console.log('\tColonyFactory address: [ ', colonyFactory.address, ' ]');
       console.log('\tRegistering RootColonyResolver...');
@@ -71,7 +72,7 @@ contract('ColonyFactory', function () {
       .then(function(rootColonyAddress_){
         console.log('\tColony RootColony address: [ ', rootColonyAddress_, ' ]');
         console.log('\tCreating FakeNewColonyFactory...');
-        return FakeNewColonyFactory.new();
+        return FakeNewColonyFactory.new({gas: 4e6, gasPrice: 20e9});
       })
       .then(function(colonyFactory_){
         colonyFactory = colonyFactory_;
