@@ -72,7 +72,7 @@ contract('ColonyFactory', function () {
       .then(function(rootColonyAddress_){
         console.log('\tColony RootColony address: [ ', rootColonyAddress_, ' ]');
         console.log('\tCreating FakeNewColonyFactory...');
-        return FakeNewColonyFactory.new({gas: 4e6, gasPrice: 20e9});
+        return FakeNewColonyFactory.new({gas: 4000000, gasPrice: 20e9});
       })
       .then(function(colonyFactory_){
         colonyFactory = colonyFactory_;
