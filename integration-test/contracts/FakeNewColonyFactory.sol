@@ -9,11 +9,6 @@ contract FakeNewColonyFactory is IColonyFactory {
   event ColonyDeleted(bytes32 colonyKey, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
 
-  modifier onlyRootColony(){
-    if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) throw;
-    _
-  }
-
   struct ColonyRecord {
     uint index;
     bool _exists;
@@ -43,13 +38,7 @@ contract FakeNewColonyFactory is IColonyFactory {
 
   /// @notice creates a Colony
   function createColony(bytes32 key_, address tokenLedger_, address taskDB_)
-  throwIfIsEmptyBytes32(key_)
-  throwIfAddressIsInvalid(tokenLedger_)
-  throwIfAddressIsInvalid(taskDB_)
-  onlyRootColony
   {
-    if(colonies.catalog[key_]._exists) throw;
-
     var colonyIndex = colonies.data.length++;
     var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, taskDB_);
 
@@ -64,8 +53,6 @@ contract FakeNewColonyFactory is IColonyFactory {
 
   function removeColony(bytes32 key_)
   refundEtherSentByAccident
-  throwIfIsEmptyBytes32(key_)
-  onlyRootColony
   {
     colonies.catalog[key_]._exists = false;
     ColonyDeleted(key_, tx.origin, now);
@@ -73,8 +60,6 @@ contract FakeNewColonyFactory is IColonyFactory {
 
   function getColony(bytes32 key_) constant returns(address)
   {
-    if(!colonies.catalog[key_]._exists) return address(0x0);
-
     var colonyIndex = colonies.catalog[key_].index;
     return colonies.data[colonyIndex];
   }
