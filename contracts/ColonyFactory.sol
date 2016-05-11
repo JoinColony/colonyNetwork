@@ -43,7 +43,8 @@ contract ColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address tokenLedger_, address taskDB_)
+
+  function createColony(bytes32 key_, address tokenLedger_)
   throwIfIsEmptyBytes32(key_)
   throwIfAddressIsInvalid(tokenLedger_)
   throwIfAddressIsInvalid(taskDB_)
@@ -52,9 +53,9 @@ contract ColonyFactory is IColonyFactory {
     if(colonies.catalog[key_]._exists) throw;
 
     var colonyIndex = colonies.data.length++;
-    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, taskDB_);
+    var colony = new Colony(rootColonyResolverAddress, tokenLedger_);
 
-    Ownable(taskDB_).changeOwner(colony);
+    //TODO:E  Ownable(taskDB_).changeOwner(colony);
     Ownable(tokenLedger_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
@@ -89,12 +90,12 @@ contract ColonyFactory is IColonyFactory {
   {
     uint256 colonyIndex = colonies.catalog[key_].index;
     address colonyAddress = colonies.data[colonyIndex];
+
     if(!Colony(colonyAddress).getUserInfo(tx.origin)) throw;
 
-    address taskDb = Colony(colonyAddress).taskDB();
     address tokenLedger = Colony(colonyAddress).tokenLedger();
 
-    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, taskDb);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger);
     IUpgradable(colonyAddress).upgrade(colonyNew);
 
     colonies.data[colonyIndex] = colonyNew;

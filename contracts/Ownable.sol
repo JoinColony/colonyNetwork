@@ -1,7 +1,5 @@
 
 contract Ownable {
-
-  event OwnerChanged(address indexed _previousOwner, address indexed _newOwner, uint _now);
   address public owner = msg.sender;
 
   /// @notice check if the msg.sender is the owner of the contract
@@ -17,7 +15,6 @@ contract Ownable {
   {
     if(_newOwner == 0x0) throw;
 
-    OwnerChanged(owner, _newOwner, now);
     owner = _newOwner;
   }
 }

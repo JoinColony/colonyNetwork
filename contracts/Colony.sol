@@ -1,14 +1,14 @@
-import "ColonyPaymentProvider.sol";
 import "Modifiable.sol";
+import "ColonyPaymentProvider.sol";
 import "IUpgradable.sol";
-import "ITaskDB.sol";
+import "TaskDB.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
 
 contract Colony is Modifiable, IUpgradable  {
-  // Event to raise when a Task is completed and paid
-  event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
 
+  using TaskDB for TaskDB.Task[];
+  TaskDB.Task[] public taskDB;
 
   modifier onlyAdminsOrigin {
     if (!this.getUserInfo(tx.origin)) throw;
@@ -28,7 +28,6 @@ contract Colony is Modifiable, IUpgradable  {
 
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
-  ITaskDB public taskDB;
 
   // This declares a state variable that
   // stores a `User` struct for each possible address.
@@ -40,14 +39,12 @@ contract Colony is Modifiable, IUpgradable  {
 
   function Colony(
     address rootColonyResolverAddress_,
-    address _tokenLedgerAddress,
-    address _tasksDBAddress)
+    address _tokenLedgerAddress)
   {
     users[tx.origin] = User({admin: true, _exists: true});
     adminsCount = 1;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
-    taskDB = ITaskDB(_tasksDBAddress);
   }
 
   /// @notice registers a new RootColonyResolver contract used to keep the reference of the RootColony.
@@ -86,20 +83,12 @@ contract Colony is Modifiable, IUpgradable  {
     adminsCount -= 1;
   }
 
-  /// @notice registers a new ITaskDB contract
-  /// @param _tasksDBAddress the address of the ITaskDB
-  function registerTaskDB(address _tasksDBAddress)
-  onlyAdmins
-  throwIfAddressIsInvalid(_tasksDBAddress)
-  {
-    taskDB = ITaskDB(_tasksDBAddress);
-  }
-
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
 	function contributeEth(uint256 taskId)
   onlyAdmins
   {
+    //TODO:E taskAccepted should be a modifier
     var isTaskAccepted = taskDB.isTaskAccepted(taskId);
     if (isTaskAccepted)
       throw;
@@ -163,6 +152,7 @@ contract Colony is Modifiable, IUpgradable  {
     string _summary
   )
   onlyAdmins
+  throwIfIsEmptyString(_name)
   {
       taskDB.makeTask(_name, _summary);
   }
@@ -185,6 +175,7 @@ contract Colony is Modifiable, IUpgradable  {
     string _summary
   )
   onlyAdmins
+  throwIfIsEmptyString(_name)
   {
     taskDB.updateTask(_id, _name, _summary);
   }
@@ -233,7 +224,7 @@ contract Colony is Modifiable, IUpgradable  {
     var (taskEth, taskTokens) = taskDB.getTaskBalance(taskId);
     if (taskEth > 0)
     {
-      //TODO: ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+      //ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
 
       // Pay the task Ether and Tokens value -5% to task completor
       var payoutEth = (taskEth * 95)/100;
@@ -254,8 +245,6 @@ contract Colony is Modifiable, IUpgradable  {
       reserved_tokens[taskId] -= taskTokens;
       reservedTokensWei -= taskTokens;
     }
-
-    TaskCompletedAndPaid(this, paymentAddress, 0, 0);
   }
 
   /// @notice upgrade the colony migrating its data to another colony instance
@@ -269,8 +258,6 @@ contract Colony is Modifiable, IUpgradable  {
     }
 
     tokenLedger.changeOwner(newColonyAddress_);
-    taskDB.changeOwner(newColonyAddress_);
-
     selfdestruct(newColonyAddress_);
   }
 }

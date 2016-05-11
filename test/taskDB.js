@@ -1,84 +1,113 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, TaskDB, assert, web3 */
+/* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, web3, TaskDB, assert */
 
 var testHelper = require('../helpers/test-helper.js');
 contract('TaskDB', function (accounts) {
-
+  var _COLONY_KEY_ = 'COLONY_TEST';
   var _BIGGER_TASK_SUMMARY_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing el';
   var _BIGGER_TASK_TITLE_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
   var _GAS_PRICE_ = 20e9;
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
-  var taskDB;
+  var colony;
+  var colonyFactory;
+  var rootColony;
+  var rootColonyResolver;
 
-  beforeEach(function(done){
-    TaskDB.new(_MAIN_ACCOUNT_)
-    .then(function(_taskDB){
-      taskDB = _taskDB;
+  before(function(done)
+  {
+    colonyFactory = ColonyFactory.deployed();
+    rootColony = RootColony.deployed();
+    rootColonyResolver = RootColonyResolver.deployed();
+
+    rootColonyResolver.registerRootColony(rootColony.address)
+    .then(function(){
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+    })
+    .then(function(){
+      return rootColony.registerColonyFactory(colonyFactory.address);
+    })
+    .then(function(){
+      return rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
+    })
+    .then(function(){
+      return rootColony.getColony.call(_COLONY_KEY_);
+    })
+    .then(function(colony_){
+      colony = Colony.at(colony_);
     })
     .then(done)
     .catch(done);
   });
 
-  describe('when adding tasks', function(){
-    it('should add an entry to tasks array', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
-      .then(function(){
-        return taskDB.getTask(0);
-      })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
-      })
-      .then(done)
-      .catch(done);
-    });
+  afterEach(function(){
+    console.log('colony tasks before : ', colony.taskDB.length);
+    for (var i = 0; i < colony.taskDB.length; i++) {
+      delete colony.taskDB[i];
+    }
 
-    it('should fail if another user (not the owner) tries to add a new task', function (done) {
-      var prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-      taskDB.makeTask('', 'INTERESTING TASK SUMMARY',
-      {
-        from: _OTHER_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should fail if I give it an invalid title', function (done) {
-      var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      taskDB.makeTask('', 'INTERESTING TASK SUMMARY',
-      {
-        from: _MAIN_ACCOUNT_,
-        gasPrice : _GAS_PRICE_,
-        gas: 1e6
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function(){
-        testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
-      })
-      .then(done)
-      .catch(done);
-    });
+    console.log('colony tasks after : ', colony.taskDB.length);
   });
+
+    describe('when adding tasks', function(){
+      it('should add an entry to tasks array', function (done) {
+        colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY', { from: _MAIN_ACCOUNT_ })
+        .then(function(){
+          return colony.taskDB.call(0);
+        })
+        .then(function(args){
+          assert.isDefined(args, 'task was not created');
+        })
+        .then(done)
+        .catch(done);
+      });
+
+      it('should fail if another user (not the owner) tries to add a new task', function (done) {
+        var prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
+        colony.makeTask('', 'INTERESTING TASK SUMMARY',
+        {
+          from: _OTHER_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 1e6
+        })
+        .catch(testHelper.ifUsingTestRPC)
+        .then(function(){
+          testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _OTHER_ACCOUNT_, prevBalance);
+        })
+        .then(done)
+        .catch(done);
+      });
+
+      it('should fail if I give it an invalid title', function (done) {
+        var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+        colony.makeTask('', 'INTERESTING TASK SUMMARY',
+        {
+          from: _MAIN_ACCOUNT_,
+          gasPrice : _GAS_PRICE_,
+          gas: 1e6
+        })
+        .catch(testHelper.ifUsingTestRPC)
+        .then(function(){
+          testHelper.checkAllGasSpent(1e6, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
+        })
+        .then(done)
+        .catch(done);
+      });
+    });
 
   describe('when updating existing tasks', function(){
     it('should update data to tasks array', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
-        return taskDB.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
+        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
       })
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.equal(args[0], 'TASK B', 'task title is incorrect');
@@ -90,19 +119,20 @@ contract('TaskDB', function (accounts) {
 
     it('should not interfere in "accepted", "eth" or "tokens" props', function (done) {
       var prevEthBalance, prevTokensBalance, prevAcceptedValue;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
         prevAcceptedValue = args[2];
         prevEthBalance = args[3].toNumber();
         prevTokensBalance = args[4].toNumber();
-        return taskDB.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
+        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
       })
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.equal(args[0], 'TASK B', 'task title is incorrect');
@@ -117,17 +147,17 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if the task was already accepted', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.acceptTask(0);
+        return colony.acceptTask(0);
       })
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isTrue(args[2], 'task "accepted" prop is incorrect');
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return taskDB.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY',
+        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY',
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -144,10 +174,10 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I give it an invalid title', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return taskDB.updateTask(0, '', 'INTERESTING TASK SUMMARY',
+        return colony.updateTask(0, '', 'INTERESTING TASK SUMMARY',
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -164,10 +194,10 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I try to update a task when i\'m not the owner', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-        return taskDB.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY',
+        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY',
         {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -184,10 +214,10 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I try to update a task using an invalid id', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return taskDB.updateTask(10, '', 'INTERESTING TASK SUMMARY',
+        return colony.updateTask(10, '', 'INTERESTING TASK SUMMARY',
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -205,9 +235,9 @@ contract('TaskDB', function (accounts) {
 
   describe('when retrieving task data', function(){
     it('should return every task attribute for a valid id', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
@@ -222,12 +252,12 @@ contract('TaskDB', function (accounts) {
 
   describe('when accepting a task', function(){
     it('should the "accepted" prop be set as "true"', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.acceptTask(0);
+        return colony.acceptTask(0);
       })
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
@@ -239,10 +269,10 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I try to accept a task when i\'m not the owner', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-        return taskDB.acceptTask(0,
+        return colony.acceptTask(0,
         {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -259,13 +289,13 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I try to accept a task was accepted before', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.acceptTask(0);
+        return colony.acceptTask(0);
       })
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return taskDB.acceptTask(0,
+        return colony.acceptTask(0,
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -282,10 +312,10 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I try to accept a task using an invalid id', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return taskDB.acceptTask(10,
+        return colony.acceptTask(10,
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -303,12 +333,12 @@ contract('TaskDB', function (accounts) {
 
   describe('when contributing to a task', function(){
     it('should "tokens" prop be raised by the amount of tokens I send', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.contributeTokensWei(0, 10000000000000000000);
+        return colony.taskDB.contributeTokensWei(0, 10000000000000000000);
       })
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
@@ -319,12 +349,12 @@ contract('TaskDB', function (accounts) {
     });
 
     it('should "ETH" prop be raised by the amount of ETH I send', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.contributeEth(0, 10);
+        return colony.contributeEth(0, 10);
       })
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
@@ -335,15 +365,15 @@ contract('TaskDB', function (accounts) {
     });
 
     it('should "ETH" and "tokens" props be raised by the amount of ETH and tokens I send', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.contributeEth(0, 10);
+        return colony.contributeEth(0, 10);
       })
       .then(function(){
-        return taskDB.contributeTokensWei(0, 10000000000000000000);
+        return colony.contributeTokensWei(0, 10000000000000000000);
       })
       .then(function(){
-        return taskDB.getTask(0);
+        return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
@@ -356,13 +386,13 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I try to contribute to an accepted task', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.acceptTask(0);
+        return colony.acceptTask(0);
       })
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return taskDB.contributeEth(0, 10,
+        return colony.contributeEth(0, 10,
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -379,10 +409,10 @@ contract('TaskDB', function (accounts) {
 
     it('should fail if I try to contribute to a task using an invalid id', function (done) {
       var prevBalance;
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return taskDB.contributeEth(10, 10,
+        return colony.contributeEth(10, 10,
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -400,9 +430,9 @@ contract('TaskDB', function (accounts) {
 
   describe('when verifying if a task exists', function(){
     it('should return true for a valid task id', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.hasTask(0);
+        return colony.taskDB.hasTask.call(0);
       })
       .then(function(_exists){
         assert.isTrue(_exists, '"hasTask" return is incorrect');
@@ -412,9 +442,9 @@ contract('TaskDB', function (accounts) {
     });
 
     it('should return false for an invalid task id', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.hasTask(10);
+        return colony.taskDB.hasTask.call(10);
       })
       .then(function(_exists){
         assert.isFalse(_exists, '"hasTask" return is incorrect');
@@ -426,12 +456,12 @@ contract('TaskDB', function (accounts) {
 
   describe('when verifying if a task is already accepted', function(){
     it('should return true for a valid task id', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.acceptTask(0);
+        return colony.acceptTask(0);
       })
       .then(function(){
-        return taskDB.isTaskAccepted(0);
+        return colony.taskDB.isTaskAccepted.call(0);
       })
       .then(function(_isAccepted){
         assert.isTrue(_isAccepted, '"isTaskAccepted" return is incorrect');
@@ -441,9 +471,9 @@ contract('TaskDB', function (accounts) {
     });
 
     it('should return false if a task wasn\'t accepted', function (done) {
-      taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return taskDB.isTaskAccepted(0);
+        return colony.isTaskAccepted.call(0);
       })
       .then(function(_isAccepted){
         assert.isFalse(_isAccepted, '"isTaskAccepted" return is incorrect');
@@ -455,9 +485,9 @@ contract('TaskDB', function (accounts) {
 
   describe('when using count function', function(){
     it('should return zero if no task was added', function (done) {
-      taskDB.count.call()
+      colony.taskDB.length
       .then(function(_count){
-        assert.equal(_count.toNumber(), 0, '"count" return is incorrect');
+        assert.equal(_count, 0, '"count" return is incorrect');
       })
       .then(done)
       .catch(done);
@@ -465,19 +495,16 @@ contract('TaskDB', function (accounts) {
 
     it('should return the number of tasks if tasks were added', function (done) {
       testHelper.Promise.all([
-        taskDB.makeTask('TASK A', 'INTERESTING TASK SUMMARY'),
-        taskDB.makeTask('TASK B', 'INTERESTING TASK SUMMARY'),
-        taskDB.makeTask('TASK C', 'INTERESTING TASK SUMMARY'),
-        taskDB.makeTask('TASK D', 'INTERESTING TASK SUMMARY'),
-        taskDB.makeTask('TASK E', 'INTERESTING TASK SUMMARY'),
-        taskDB.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_),
-        taskDB.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_)
+        colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY'),
+        colony.makeTask('TASK B', 'INTERESTING TASK SUMMARY'),
+        colony.makeTask('TASK C', 'INTERESTING TASK SUMMARY'),
+        colony.makeTask('TASK D', 'INTERESTING TASK SUMMARY'),
+        colony.makeTask('TASK E', 'INTERESTING TASK SUMMARY'),
+        colony.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_),
+        colony.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_)
       ])
       .then(function(){
-        return taskDB.count.call();
-      })
-      .then(function(_count){
-        assert.equal(_count.toNumber(), 7, '"count" return is incorrect');
+        assert.equal(colony.taskDB.length, 7, '"length" return is incorrect');
       })
       .then(done)
       .catch(done);

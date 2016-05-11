@@ -8,7 +8,7 @@ contract IColonyFactory is Destructible, Modifiable {
 
   /// @notice creates a Colony
   /// @param key_ the key to be used to keep track of the Colony
-  function createColony(bytes32 key_, address tokenLedger_, address taskdb_);
+  function createColony(bytes32 key_, address tokenLedger_);
 
   /// @notice removes a colony from the colonies mapping
   /// @param key_ the key of the colony to be removed

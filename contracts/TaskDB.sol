@@ -1,20 +1,4 @@
-import "ITaskDB.sol";
-
-contract TaskDB is ITaskDB {
-
-  event ReceivedTokens(uint256 taskId, uint256 amount, uint256 when);
-  event ReceivedEther(uint256 taskId, uint256 amount, uint256 when);
-  event TaskAdded(uint256 id, uint256 when);
-  event TaskUpdated(uint256 id, uint256 when);
-
-  function TaskDB()
-  refundEtherSentByAccident {
-  }
-
-  modifier ifTasksExists(uint256 _id) {
-    if(!hasTask(_id)) throw;
-    _
-  }
+library TaskDB {
 
 	struct Task
 	{
@@ -25,19 +9,20 @@ contract TaskDB is ITaskDB {
 		uint256 tokensWei; //Amount of tokens wei contributed to the task
 	}
 
-	// A dynamically-sized array of `Task` structs.
-	Task[] public tasks;
+	modifier ifTasksExists(Task[] storage tasks, uint256 _id) {
+    if(!hasTask(tasks, _id)) throw;
+	    _
+	  }
 
   /// @notice this function adds a task to the task DB. Any ETH sent will be
   /// considered as a contribution to the task
   /// @param _name the task name
   /// @param _summary an IPFS hash
   function makeTask(
+    Task[] storage tasks,
     string _name,
     string _summary
   )
-  onlyOwner
-  throwIfIsEmptyString(_name)
   {
     var taskId = tasks.length++;
     tasks[taskId] = Task({
@@ -47,29 +32,24 @@ contract TaskDB is ITaskDB {
     	eth           : 0,
     	tokensWei     : 0
     });
-
-    TaskAdded(taskId, now);
-  }
-
-  /// @notice this function returns the number of tasks in the DB
-  /// @return the number of tasks in DB
-  function count() constant returns(uint256) {
-    return tasks.length;
   }
 
   /// @notice this task is useful when we need to know if a task exists
   /// @param _id the task id
   /// @return true - if the task if is valid, false - if the task id is invalid.
-  function hasTask(uint256 _id) constant returns(bool) {
+  function hasTask(Task[] storage tasks, uint256 _id) constant returns(bool) {
     return (!(_id >= tasks.length));
   }
 
   /// @notice this function returns if a task was accepted
   /// @param _id the task id
   /// @return a flag indicating if the task was accepted or not
-  function isTaskAccepted(uint256 _id)
-  ifTasksExists(_id)
-  constant returns(bool)
+  function isTaskAccepted(
+    Task[] storage tasks,
+    uint256 _id)
+  ifTasksExists(tasks, _id)
+  constant
+  returns(bool)
   {
     return (tasks[_id].accepted);
   }
@@ -77,8 +57,10 @@ contract TaskDB is ITaskDB {
   /// @notice this function returns if a task was accepted
   /// @param _id the task id
   /// @return the amount of ether and the amount of tokens funding a task
-  function getTaskBalance(uint256 _id)
-  ifTasksExists(_id)
+  function getTaskBalance(
+    Task[] storage tasks,
+    uint256 _id)
+  ifTasksExists(tasks, _id)
   constant returns(uint256 _ether, uint256 _tokens)
   {
     var task = tasks[_id];
@@ -87,9 +69,10 @@ contract TaskDB is ITaskDB {
 
   /// @notice this function updates the 'accepted' flag in the task
   /// @param _id the task id
-  function acceptTask(uint256 _id)
-  onlyOwner
-  ifTasksExists(_id)
+  function acceptTask(
+    Task[] storage tasks,
+    uint256 _id)
+  ifTasksExists(tasks, _id)
   {
     if(tasks[_id].accepted) throw;
     tasks[_id].accepted = true;
@@ -100,20 +83,17 @@ contract TaskDB is ITaskDB {
   /// @param _name the task name
   /// @param _summary an IPFS hash
   function updateTask(
+    Task[] storage tasks,
     uint256 _id,
     string _name,
     string _summary
   )
-  onlyOwner
-  ifTasksExists(_id)
-  throwIfIsEmptyString(_name)
+  ifTasksExists(tasks, _id)
   {
     if(tasks[_id].accepted) throw;
 
     tasks[_id].name = _name;
     tasks[_id].summary = _summary;
-
-    TaskUpdated(_id, now);
   }
 
   /// @notice this function returns the attributes of a task
@@ -121,8 +101,10 @@ contract TaskDB is ITaskDB {
   /// @return the name, a flag indicating if the task was accepted or not,
   /// a hash pointing to the summary of a task (IPFS hash), the amount of ether
   /// it holds, the amount of tokens wei it holds
-  function getTask(uint256 _id)
-  ifTasksExists(_id)
+  function getTask(
+    Task[] storage tasks,
+    uint256 _id)
+  ifTasksExists(tasks, _id)
   constant returns (
       string _name,
       string _summary,
@@ -144,28 +126,30 @@ contract TaskDB is ITaskDB {
   /// @notice this function takes ETH and add it to the task funds.
   /// @param _id the task id
   /// @param _amount the amount to contribute
-  function contributeEth(uint256 _id, uint256 _amount)
-  onlyOwner
-  ifTasksExists(_id)
+  function contributeEth(
+    Task[] storage tasks,
+    uint256 _id,
+    uint256 _amount)
+  ifTasksExists(tasks, _id)
   {
     if(tasks[_id].eth + _amount <= tasks[_id].eth) throw;
     if(tasks[_id].accepted) throw;
 
     tasks[_id].eth += _amount;
-    ReceivedEther(_id, _amount, now);
   }
 
   /// @notice this function takes an amount of tokens and add it to the task funds.
   /// @param _id the task id
   /// @param _amount the amount of tokens wei to contribute
-  function contributeTokensWei(uint256 _id, uint256 _amount)
-  onlyOwner
-  ifTasksExists(_id)
+  function contributeTokensWei(
+    Task[] storage tasks,
+    uint256 _id,
+    uint256 _amount)
+	ifTasksExists(tasks, _id)
   {
     if(tasks[_id].tokensWei + _amount <= tasks[_id].tokensWei) throw;
     if(tasks[_id].accepted) throw;
 
     tasks[_id].tokensWei += _amount;
-    ReceivedTokens(_id, _amount, now);
   }
 }

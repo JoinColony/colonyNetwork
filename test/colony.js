@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, ColonyFactory, TaskDB, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert
+/* globals contract, Colony, ColonyFactory, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert
 */
 var testHelper = require('../helpers/test-helper.js');
 contract('Colony', function (accounts) {
@@ -19,7 +19,6 @@ contract('Colony', function (accounts) {
 
   var colony;
   var colonyFactory;
-  var colonyTaskDb;
   var rootColony;
   var rootColonyResolver;
 
@@ -31,14 +30,12 @@ contract('Colony', function (accounts) {
 
     rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
-      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
-      return rootColony.registerColonyFactory(colonyFactory.address);
+      rootColony.registerColonyFactory(colonyFactory.address);
     })
-    .then(function(){
-      done();
-    })
+    .then(done)
     .catch(done);
   });
 
@@ -53,10 +50,6 @@ contract('Colony', function (accounts) {
     })
     .then(function(colony_){
       colony = Colony.at(colony_);
-      return colony.taskDB.call();
-    })
-    .then(function(_taskDBAddress){
-      colonyTaskDb = TaskDB.at(_taskDBAddress);
     })
     .then(done)
     .catch(done);
@@ -203,27 +196,13 @@ contract('Colony', function (accounts) {
       .then(done)
       .catch(done);
     });
-
-    it('should set colony as the TaskDB owner', function (done) {
-      var taskDB;
-      colony.taskDB.call()
-      .then(function(taskDBAddress){
-        taskDB = TaskDB.at(taskDBAddress);
-        return taskDB.owner.call();
-      })
-      .then(function(_taskDBOwner){
-        assert.equal(_taskDBOwner, colony.address, 'Colony admin should be set as the owner of its TaskDB.');
-      })
-      .then(done)
-      .catch(done);
-    });
   });
 
   describe('when creating/updating tasks', function () {
     it('should allow admins to make task', function (done) {
       colony.makeTask('name', 'summary')
       .then(function() {
-        return colonyTaskDb.getTask.call(0);
+        return colony.taskDB.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'name', 'No task?');
@@ -240,7 +219,7 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colonyTaskDb.getTask.call(0);
+        return colony.taskDB.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');
@@ -300,7 +279,7 @@ contract('Colony', function (accounts) {
         });
       })
       .then(function () {
-        return colonyTaskDb.getTask.call(0);
+        return colony.taskDB.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');
@@ -380,7 +359,7 @@ contract('Colony', function (accounts) {
         return colony.contributeTokens(1, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function() {
-        return colonyTaskDb.getTask.call(1);
+        return colony.taskDB.call(1);
       })
       .then(function (value) {
         assert.equal(value[0], 'name2');
@@ -478,7 +457,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function () {
-        return colonyTaskDb.getTask.call(0);
+        return colony.taskDB.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');
@@ -505,7 +484,7 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {
-        return colonyTaskDb.getTask.call(0);
+        return colony.taskDB.call(0);
       })
       .then(function (value) {
         assert.equal(value[0], 'nameedit', 'No task?');

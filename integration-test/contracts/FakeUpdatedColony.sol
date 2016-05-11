@@ -1,14 +1,13 @@
 import "ColonyPaymentProvider.sol";
 import "Modifiable.sol";
 import "IUpgradable.sol";
-import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
+import "TaskDB.sol";
 
 contract FakeUpdatedColony is Modifiable, IUpgradable  {
-
-  // Event to raise when a Task is completed and paid
-  event TaskCompletedAndPaid (address _from, address _to, uint256 _ethValue, uint256 _tokensValue);
+  using TaskDB for TaskDB.Task[];
+  TaskDB.Task[] public taskDB;
 
   modifier onlyAdminsOrigin {
     if (!this.getUserInfo(tx.origin)) throw;
@@ -28,7 +27,6 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
-  ITaskDB public taskDB;
 
  	// This declares a state variable that
 	// stores a `User` struct for each possible address.
@@ -41,14 +39,12 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
   function FakeUpdatedColony(
     address rootColonyResolverAddress_,
-    address _tokenLedgerAddress,
-    address _tasksDBAddress)
+    address _tokenLedgerAddress)
   {
     users[tx.origin] = User({admin: true, _exists: true});
     adminsCount = 1;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
-    taskDB = ITaskDB(_tasksDBAddress);
   }
 
   /// @notice registers a new RootColonyResolver contract.
@@ -90,15 +86,6 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
     users[adminAddress].admin = false;
     adminsCount -= 1;
-  }
-
-  /// @notice registers a new ITaskDB contract
-  /// @param _tasksDBAddress the address of the ITaskDB
-  function registerTaskDB(address _tasksDBAddress)
-  onlyAdmins
-  throwIfAddressIsInvalid(_tasksDBAddress)
-  {
-    taskDB = ITaskDB(_tasksDBAddress);
   }
 
   /// @notice contribute ETH to a task
@@ -248,9 +235,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
       reserved_tokens[taskId] -= taskTokens;
       reservedTokensWei -= taskTokens;
-    }
-
-    TaskCompletedAndPaid(this, paymentAddress, 0, 0);
+		}
   }
 
   /// @notice upgrade the colony migrating its data to another colony instance
