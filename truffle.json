@@ -3,6 +3,7 @@
     // Names of contracts that should be deployed to the network.
     "RootColony",
     "RootColonyResolver",
+    "FakeNewColonyFactory",
     "ColonyFactory"
   ],
   "rpc": {
