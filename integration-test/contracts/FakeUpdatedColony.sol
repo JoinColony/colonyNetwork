@@ -1,5 +1,5 @@
-import "Modifiable.sol";
 import "ColonyPaymentProvider.sol";
+import "Modifiable.sol";
 import "IUpgradable.sol";
 import "ITaskDB.sol";
 import "IRootColonyResolver.sol";
@@ -58,30 +58,10 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   onlyAdmins
   throwIfAddressIsInvalid(rootColonyResolverAddress_)
   {
-    if(users[newAdminAddress]._exists && users[newAdminAddress].admin)
-      throw;
-
-    if(!users[newAdminAddress]._exists)
-      adminsCount += 1;
-
-    users[newAdminAddress] = User({admin: true, _exists: true});
+    rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
   }
 
-  /// @notice removes an admin from the colony
-  /// @param adminAddress the address of the admin to be removed
-  function removeAdmin(address adminAddress)
-  onlyAdmins
-  {
-    if(!users[adminAddress]._exists) throw;
-    if(users[adminAddress]._exists && !users[adminAddress].admin) throw;
-    if(adminsCount == 1) throw;
-
-    users[adminAddress].admin = false;
-    adminsCount -= 1;
-  }
-
-  function isUpdated() constant returns(bool)
-  {
+  function isUpdated() constant returns(bool) {
     return true;
   }
 
@@ -233,10 +213,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     tokenLedger.setTokensTitle(title_);
   }
 
-  /// @notice returns user info based in a given address
-  /// @param userAddress the address to be verified
-  /// @return a boolean value indicating if the user is an admin
-  function getUserInfo(address userAddress)
+	function getUserInfo(address userAddress)
   constant returns (bool admin)
   {
     return users[userAddress].admin;
@@ -250,7 +227,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   {
 
     bool isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted || !users[msg.sender].admin)
+    if (isTaskAccepted || !this.getUserInfo(msg.sender))
     {
       throw;
     }
@@ -273,7 +250,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
       reservedTokensWei -= taskTokens;
     }
 
-    TaskCompletedAndPaid(this, paymentAddress, taskEth, taskTokens);
+    TaskCompletedAndPaid(this, paymentAddress, 0, 0);
   }
 
   /// @notice upgrade the colony migrating its data to another colony instance
