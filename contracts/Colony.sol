@@ -1,5 +1,4 @@
 import "Modifiable.sol";
-import "ColonyPaymentProvider.sol";
 import "IUpgradable.sol";
 import "TaskDB.sol";
 import "IRootColonyResolver.sol";
@@ -88,11 +87,6 @@ contract Colony is Modifiable, IUpgradable  {
 	function contributeEth(uint256 taskId)
   onlyAdmins
   {
-    //TODO:E taskAccepted should be a modifier
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted)
-      throw;
-
     taskDB.contributeEth(taskId, msg.value);
   }
 
@@ -102,10 +96,6 @@ contract Colony is Modifiable, IUpgradable  {
   function contributeTokens(uint256 taskId, uint256 tokens)
   onlyAdmins
   {
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted)
-      throw;
-
     var tokensInWei = tokens * 1000000000000000000;
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     tokenLedger.transferFrom(msg.sender, this, tokensInWei);
@@ -121,9 +111,6 @@ contract Colony is Modifiable, IUpgradable  {
   function contributeTokensFromPool(uint256 taskId, uint256 tokens)
   onlyAdmins
   {
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted)
-      throw;
     //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
     //assigned.
     var tokensInWei = tokens * 1000000000000000000;
@@ -142,6 +129,11 @@ contract Colony is Modifiable, IUpgradable  {
   refundEtherSentByAccident
   {
     tokenLedger.generateTokensWei(_amount * 1000000000000000000);
+  }
+
+  function getTaskCount() constant returns (uint256)
+  {
+    return taskDB.count();
   }
 
   /// @notice this function adds a task to the task DB.
@@ -213,13 +205,6 @@ contract Colony is Modifiable, IUpgradable  {
   function completeAndPayTask(uint256 taskId, address paymentAddress)
   onlyAdmins
   {
-
-    bool isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted || !this.getUserInfo(msg.sender))
-    {
-      throw;
-    }
-
     taskDB.acceptTask(taskId);
     var (taskEth, taskTokens) = taskDB.getTaskBalance(taskId);
     if (taskEth > 0)

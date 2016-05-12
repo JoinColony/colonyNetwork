@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, web3, TaskDB, assert */
+/* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, web3, assert */
 
 var testHelper = require('../helpers/test-helper.js');
 contract('TaskDB', function (accounts) {
@@ -26,11 +26,18 @@ contract('TaskDB', function (accounts) {
       return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
-      return rootColony.registerColonyFactory(colonyFactory.address);
+      rootColony.registerColonyFactory(colonyFactory.address);
     })
-    .then(function(){
-      return rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
-    })
+    .then(done)
+    .catch(done);
+  });
+
+  afterEach(function(done){
+    rootColony.removeColony(_COLONY_KEY_).then(function(){ done(); }).catch(done);
+  });
+
+  beforeEach(function(done){
+    rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
     .then(function(){
       return rootColony.getColony.call(_COLONY_KEY_);
     })
@@ -39,15 +46,6 @@ contract('TaskDB', function (accounts) {
     })
     .then(done)
     .catch(done);
-  });
-
-  afterEach(function(){
-    console.log('colony tasks before : ', colony.taskDB.length);
-    for (var i = 0; i < colony.taskDB.length; i++) {
-      delete colony.taskDB[i];
-    }
-
-    console.log('colony tasks after : ', colony.taskDB.length);
   });
 
     describe('when adding tasks', function(){
@@ -335,14 +333,17 @@ contract('TaskDB', function (accounts) {
     it('should "tokens" prop be raised by the amount of tokens I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.taskDB.contributeTokensWei(0, 10000000000000000000);
+        return colony.generateColonyTokens(100);
+      })
+      .then(function(){
+        return colony.contributeTokensFromPool(0, 10);
       })
       .then(function(){
         return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
-        assert.equal(args[4].toNumber(), 10000000000000000000, '"tokens" value is incorrect');
+        assert.equal(args[4].toNumber(), 10*1e18, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);
@@ -351,7 +352,7 @@ contract('TaskDB', function (accounts) {
     it('should "ETH" prop be raised by the amount of ETH I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.contributeEth(0, 10);
+        return colony.contributeEth(0, {value: 10});
       })
       .then(function(){
         return colony.taskDB.call(0);
@@ -367,18 +368,21 @@ contract('TaskDB', function (accounts) {
     it('should "ETH" and "tokens" props be raised by the amount of ETH and tokens I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.contributeEth(0, 10);
+        return colony.generateColonyTokens(100);
       })
       .then(function(){
-        return colony.contributeTokensWei(0, 10000000000000000000);
+        return colony.contributeEth(0, {value: 10});
+      })
+      .then(function(){
+        return colony.contributeTokensFromPool(0, 100);
       })
       .then(function(){
         return colony.taskDB.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
-        assert.equal(args[4].toNumber(), 10000000000000000000, '"tokens" value is incorrect');
         assert.equal(args[3].toNumber(), 10, '"eth" value is incorrect');
+        assert.equal(args[4].toNumber(), 100*1e18, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);
@@ -407,7 +411,7 @@ contract('TaskDB', function (accounts) {
       .catch(done);
     });
 
-    it('should fail if I try to contribute to a task using an invalid id', function (done) {
+    it('should fail if I try to contribute to a nonexistent task', function (done) {
       var prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
@@ -428,64 +432,9 @@ contract('TaskDB', function (accounts) {
     });
   });
 
-  describe('when verifying if a task exists', function(){
-    it('should return true for a valid task id', function (done) {
-      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
-      .then(function(){
-        return colony.taskDB.hasTask.call(0);
-      })
-      .then(function(_exists){
-        assert.isTrue(_exists, '"hasTask" return is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should return false for an invalid task id', function (done) {
-      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
-      .then(function(){
-        return colony.taskDB.hasTask.call(10);
-      })
-      .then(function(_exists){
-        assert.isFalse(_exists, '"hasTask" return is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-  });
-
-  describe('when verifying if a task is already accepted', function(){
-    it('should return true for a valid task id', function (done) {
-      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
-      .then(function(){
-        return colony.acceptTask(0);
-      })
-      .then(function(){
-        return colony.taskDB.isTaskAccepted.call(0);
-      })
-      .then(function(_isAccepted){
-        assert.isTrue(_isAccepted, '"isTaskAccepted" return is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should return false if a task wasn\'t accepted', function (done) {
-      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
-      .then(function(){
-        return colony.isTaskAccepted.call(0);
-      })
-      .then(function(_isAccepted){
-        assert.isFalse(_isAccepted, '"isTaskAccepted" return is incorrect');
-      })
-      .then(done)
-      .catch(done);
-    });
-  });
-
   describe('when using count function', function(){
     it('should return zero if no task was added', function (done) {
-      colony.taskDB.length
+      colony.getTaskCount.call()
       .then(function(_count){
         assert.equal(_count, 0, '"count" return is incorrect');
       })
@@ -504,7 +453,10 @@ contract('TaskDB', function (accounts) {
         colony.makeTask(_BIGGER_TASK_TITLE_, _BIGGER_TASK_SUMMARY_)
       ])
       .then(function(){
-        assert.equal(colony.taskDB.length, 7, '"length" return is incorrect');
+        return colony.getTaskCount.call();
+      })
+      .then(function(count){
+        assert.equal(count, 7, '"count" return is incorrect');
       })
       .then(done)
       .catch(done);

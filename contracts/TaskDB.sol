@@ -1,5 +1,5 @@
 library TaskDB {
-
+  event TaskAdded(uint256 id, uint256 when);
 	struct Task
 	{
 		string name; //Short name
@@ -12,7 +12,18 @@ library TaskDB {
 	modifier ifTasksExists(Task[] storage tasks, uint256 _id) {
     if(!hasTask(tasks, _id)) throw;
 	    _
-	  }
+	}
+
+	modifier ifTasksNotAccepted(Task[] storage self, uint256 _id) {
+		if(isTaskAccepted(self, _id)) throw;
+			_
+	}
+
+	/// @notice this function returns the number of tasks in the DB
+	/// @return the number of tasks in DB
+	function count(Task[] storage tasks) constant returns(uint256) {
+		return tasks.length;
+	}
 
   /// @notice this function adds a task to the task DB. Any ETH sent will be
   /// considered as a contribution to the task
@@ -32,6 +43,8 @@ library TaskDB {
     	eth           : 0,
     	tokensWei     : 0
     });
+
+		TaskAdded(taskId, now);
   }
 
   /// @notice this task is useful when we need to know if a task exists
@@ -73,8 +86,8 @@ library TaskDB {
     Task[] storage tasks,
     uint256 _id)
   ifTasksExists(tasks, _id)
+	ifTasksNotAccepted(tasks, _id)
   {
-    if(tasks[_id].accepted) throw;
     tasks[_id].accepted = true;
   }
 
@@ -89,9 +102,8 @@ library TaskDB {
     string _summary
   )
   ifTasksExists(tasks, _id)
+	ifTasksNotAccepted(tasks, _id)
   {
-    if(tasks[_id].accepted) throw;
-
     tasks[_id].name = _name;
     tasks[_id].summary = _summary;
   }
@@ -131,6 +143,7 @@ library TaskDB {
     uint256 _id,
     uint256 _amount)
   ifTasksExists(tasks, _id)
+	ifTasksNotAccepted(tasks, _id)
   {
     if(tasks[_id].eth + _amount <= tasks[_id].eth) throw;
     if(tasks[_id].accepted) throw;
@@ -146,6 +159,7 @@ library TaskDB {
     uint256 _id,
     uint256 _amount)
 	ifTasksExists(tasks, _id)
+	ifTasksNotAccepted(tasks, _id)
   {
     if(tasks[_id].tokensWei + _amount <= tasks[_id].tokensWei) throw;
     if(tasks[_id].accepted) throw;

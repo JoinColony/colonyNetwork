@@ -47,7 +47,6 @@ contract ColonyFactory is IColonyFactory {
   function createColony(bytes32 key_, address tokenLedger_)
   throwIfIsEmptyBytes32(key_)
   throwIfAddressIsInvalid(tokenLedger_)
-  throwIfAddressIsInvalid(taskDB_)
   onlyRootColony
   {
     if(colonies.catalog[key_]._exists) throw;
