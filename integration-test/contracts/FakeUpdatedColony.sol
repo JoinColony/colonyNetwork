@@ -249,7 +249,6 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     }
 
     tokenLedger.changeOwner(newColonyAddress_);
-    taskDB.changeOwner(newColonyAddress_);
 
     selfdestruct(newColonyAddress_);
   }

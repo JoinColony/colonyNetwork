@@ -38,12 +38,11 @@ contract FakeNewColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address tokenLedger_, address taskDB_)
+  function createColony(bytes32 key_, address tokenLedger_)
   {
     var colonyIndex = colonies.data.length++;
-    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, taskDB_);
+    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_);
 
-    Ownable(taskDB_).changeOwner(colony);
     Ownable(tokenLedger_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
@@ -76,10 +75,9 @@ contract FakeNewColonyFactory is IColonyFactory {
     address colonyAddress = colonies.data[colonyIndex];
     if(!FakeUpdatedColony(colonyAddress).getUserInfo(tx.origin)) throw;
 
-    address taskDb = FakeUpdatedColony(colonyAddress).taskDB();
     address tokenLedger = FakeUpdatedColony(colonyAddress).tokenLedger();
 
-    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger, taskDb);
+    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger);
     IUpgradable(colonyAddress).upgrade(colonyNew);
 
     colonies.data[colonyIndex] = colonyNew;

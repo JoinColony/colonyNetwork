@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, ColonyTokenLedger, TaskDB, RootColonyResolver, web3, ColonyFactory, assert */
+/* globals contract, RootColony, Colony, ColonyTokenLedger, RootColonyResolver, web3, ColonyFactory, assert */
 
 var testHelper = require('../../helpers/test-helper.js');
 contract('RootColony', function (accounts) {
@@ -34,7 +34,6 @@ contract('RootColony', function (accounts) {
   describe('when upgrading a colony', function(){
     it('should carry colony dependencies to the new colony', function(done) {
       var oldColonyAddress;
-      var taskDB;
       var tokenLedger;
       rootColony.createColony(_COLONY_KEY_)
       .then(function(){
@@ -62,13 +61,8 @@ contract('RootColony', function (accounts) {
       })
       .then(function(upgradedColonyAddress){
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
-
         colony = Colony.at(upgradedColonyAddress);
-        return colony.taskDB.call();
-      })
-      .then(function(taskDBAddress){
-        taskDB = TaskDB.at(taskDBAddress);
-        return taskDB.getTask.call(0);
+        return colony.taskDB.call(0);
       })
       .then(function(value){
         assert.isDefined(value, 'Task doesn\'t exists');
@@ -80,7 +74,7 @@ contract('RootColony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function(){
-        return taskDB.getTask.call(0);
+        return colony.taskDB.call(0);
       })
       .then(function(value){
         assert.isDefined(value, 'Task doesn\'t exists');

@@ -1,7 +1,6 @@
 import "IColonyFactory.sol";
 import "Destructible.sol";
 import "Modifiable.sol";
-import "TaskDB.sol";
 import "ColonyTokenLedger.sol";
 
 contract FakeNewRootColony is Destructible, Modifiable {
@@ -24,12 +23,10 @@ contract FakeNewRootColony is Destructible, Modifiable {
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(key_)
   {
-    var taskDB = new TaskDB();
-    taskDB.changeOwner(colonyFactory);
     var tokenLedger = new ColonyTokenLedger();
     tokenLedger.changeOwner(colonyFactory);
 
-    colonyFactory.createColony(key_, tokenLedger, taskDB);
+    colonyFactory.createColony(key_, tokenLedger);
     coloniesNum++;
   }
 

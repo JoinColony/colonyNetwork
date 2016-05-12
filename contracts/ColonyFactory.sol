@@ -43,7 +43,6 @@ contract ColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-
   function createColony(bytes32 key_, address tokenLedger_)
   throwIfIsEmptyBytes32(key_)
   throwIfAddressIsInvalid(tokenLedger_)
@@ -54,7 +53,6 @@ contract ColonyFactory is IColonyFactory {
     var colonyIndex = colonies.data.length++;
     var colony = new Colony(rootColonyResolverAddress, tokenLedger_);
 
-    //TODO:E  Ownable(taskDB_).changeOwner(colony);
     Ownable(tokenLedger_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});

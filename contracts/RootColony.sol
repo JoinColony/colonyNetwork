@@ -2,7 +2,6 @@ import "IColonyFactory.sol";
 import "Destructible.sol";
 import "Modifiable.sol";
 import "ColonyTokenLedger.sol";
-import "TaskDB.sol";
 
 contract RootColony is Destructible, Modifiable {
 
