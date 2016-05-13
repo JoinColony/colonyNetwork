@@ -3,8 +3,10 @@
     // Names of contracts that should be deployed to the network.
     "RootColony",
     "RootColonyResolver",
+    "ColonyFactory",
     "FakeNewColonyFactory",
-    "ColonyFactory"
+    "FakeNewRootColony",
+    "FakeUpdatedColony"
   ],
   "rpc": {
     // Default RPC configuration.
