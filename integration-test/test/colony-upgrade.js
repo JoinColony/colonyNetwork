@@ -1,7 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
 /* globals contract, RootColony, Colony, ColonyTokenLedger, RootColonyResolver, web3, ColonyFactory, assert */
-
 var testHelper = require('../../helpers/test-helper.js');
 contract('RootColony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
@@ -51,6 +50,12 @@ contract('RootColony', function (accounts) {
         return colony.contributeEth(0, {from: _MAIN_ACCOUNT_, value: 100});
       })
       .then(function(){
+        return colony.contributeTokensFromPool(0, 20, {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return colony.addAdmin('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778', {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
         var colonyBalance = web3.eth.getBalance(colony.address);
         assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
 
@@ -82,7 +87,14 @@ contract('RootColony', function (accounts) {
         assert.equal(value[1], 'summary', 'Task summary is incorrect');
         assert.equal(value[2], false, 'Task "accepted" flag is incorrect');
         assert.equal(value[3].toNumber(), 100, 'Task funds are incorrect');
-
+        return colony.reservedTokensWei();
+      })
+      .then(function(tokens){
+        assert.equal(tokens.toNumber(),20e18,'Incorrect amount of reserved tokens');
+        return colony.getUserInfo('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778');
+      })
+      .then(function(userInfo){
+        assert.equal(userInfo, true, 'User added as admin is no longer admin');
         return colony.tokenLedger.call();
       })
       .then(function(tokenLedgerAddress){

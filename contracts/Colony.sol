@@ -38,12 +38,16 @@ contract Colony is Modifiable, IUpgradable  {
 
   function Colony(
     address rootColonyResolverAddress_,
-    address _tokenLedgerAddress)
+    address _tokenLedgerAddress,
+    address _oldColonyAddress)
   {
     users[tx.origin] = User({admin: true, _exists: true});
     adminsCount = 1;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
+    if (_oldColonyAddress!=0x0){ //i.e. if it was supplied.
+      reservedTokensWei = Colony(_oldColonyAddress).reservedTokensWei();
+    }
   }
 
   /// @notice registers a new RootColonyResolver contract used to keep the reference of the RootColony.
