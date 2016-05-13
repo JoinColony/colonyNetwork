@@ -33,7 +33,7 @@ contract('TaskDB', function (accounts) {
   });
 
   afterEach(function(done){
-    rootColony.removeColony(_COLONY_KEY_).then(function(){ done(); }).catch(done);
+    testHelper.waitAll([rootColony.removeColony(_COLONY_KEY_)], done);
   });
 
   beforeEach(function(done){
@@ -41,8 +41,8 @@ contract('TaskDB', function (accounts) {
     .then(function(){
       return rootColony.getColony.call(_COLONY_KEY_);
     })
-    .then(function(colony_){
-      colony = Colony.at(colony_);
+    .then(function(colonyAddress){
+      colony = Colony.at(colonyAddress);
     })
     .then(done)
     .catch(done);
