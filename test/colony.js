@@ -111,7 +111,6 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow a revoked admin to be promoted to an admin again', function (done) {
-      var prevBalance;
       colony.addAdmin(_OTHER_ACCOUNT_)
       .then(function(){
         return colony.removeAdmin(_OTHER_ACCOUNT_);
