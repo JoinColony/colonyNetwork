@@ -3,6 +3,7 @@ import "IColonyFactory.sol";
 import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
 import "Colony.sol";
+import "EternalStorage.sol";
 
 contract ColonyFactory is IColonyFactory {
 
@@ -50,10 +51,14 @@ contract ColonyFactory is IColonyFactory {
   {
     if(colonies.catalog[key_]._exists) throw;
 
+    // Initialise EternalStorage for Colony
+    var eternalStorage = new EternalStorage();
+
     var colonyIndex = colonies.data.length++;
-    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, 0x0);
+    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, 0x0, eternalStorage);
 
     Ownable(tokenLedger_).changeOwner(colony);
+    //Ownable(extStorage).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
     colonies.data[colonyIndex] = colony;
@@ -91,8 +96,9 @@ contract ColonyFactory is IColonyFactory {
     if(!Colony(colonyAddress).getUserInfo(tx.origin)) throw;
 
     address tokenLedger = Colony(colonyAddress).tokenLedger();
+    address extStorage = Colony(colonyAddress).eternalStorage();
 
-    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, colonyAddress);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, colonyAddress, extStorage);
     IUpgradable(colonyAddress).upgrade(colonyNew);
 
     colonies.data[colonyIndex] = colonyNew;

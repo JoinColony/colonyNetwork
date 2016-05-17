@@ -53,12 +53,13 @@ contract('RootColony', function (accounts) {
         return colony.contributeTokensFromPool(0, 20, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
+        var colonyBalance = web3.eth.getBalance(colony.address);
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
+      })
+      .then(function(){
         return colony.addAdmin('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778', {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        var colonyBalance = web3.eth.getBalance(colony.address);
-        assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
-
         return rootColony.upgradeColony(_COLONY_KEY_);
       })
       .then(function(){

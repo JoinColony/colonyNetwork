@@ -6,9 +6,6 @@ import "ITokenLedger.sol";
 
 contract Colony is Modifiable, IUpgradable  {
 
-  using TaskDB for TaskDB.Task[];
-  TaskDB.Task[] public taskDB;
-
   modifier onlyAdminsOrigin {
     if (!this.getUserInfo(tx.origin)) throw;
     _
@@ -28,6 +25,10 @@ contract Colony is Modifiable, IUpgradable  {
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
 
+  // EternalStorage address passed to TaskDB library for management of tasks
+  using TaskDB for address;
+  address public eternalStorage;
+
   // This declares a state variable that
   // stores a `User` struct for each possible address.
   mapping(address => User) users;
@@ -39,7 +40,8 @@ contract Colony is Modifiable, IUpgradable  {
   function Colony(
     address rootColonyResolverAddress_,
     address _tokenLedgerAddress,
-    address _oldColonyAddress)
+    address _oldColonyAddress,
+    address _eternalStorage)
   {
     users[tx.origin] = User({admin: true, _exists: true});
     adminsCount = 1;
@@ -48,6 +50,8 @@ contract Colony is Modifiable, IUpgradable  {
     if (_oldColonyAddress!=0x0){ //i.e. if it was supplied.
       reservedTokensWei = Colony(_oldColonyAddress).reservedTokensWei();
     }
+
+    eternalStorage = _eternalStorage;
   }
 
   /// @notice registers a new RootColonyResolver contract used to keep the reference of the RootColony.
@@ -89,7 +93,7 @@ contract Colony is Modifiable, IUpgradable  {
   function contributeEth(uint256 taskId)
   onlyAdmins
   {
-    taskDB.contributeEth(taskId, msg.value);
+    eternalStorage.contributeEth(taskId, msg.value);
   }
 
   /// @notice contribute tokens from an admin to fund a task
@@ -104,7 +108,7 @@ contract Colony is Modifiable, IUpgradable  {
     reserved_tokens[taskId] += tokensInWei;
     reservedTokensWei += tokensInWei;
 
-    taskDB.contributeTokensWei(taskId, tokensInWei);
+    eternalStorage.contributeTokensWei(taskId, tokensInWei);
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
@@ -121,7 +125,7 @@ contract Colony is Modifiable, IUpgradable  {
     reserved_tokens[taskId] += tokensInWei;
     reservedTokensWei += tokensInWei;
 
-    taskDB.contributeTokensWei(taskId, tokensInWei);
+    eternalStorage.contributeTokensWei(taskId, tokensInWei);
   }
 
   /// @notice this function is used to generate Colony tokens
@@ -135,7 +139,7 @@ contract Colony is Modifiable, IUpgradable  {
 
   function getTaskCount() constant returns (uint256)
   {
-    return taskDB.count();
+    return eternalStorage.count();
   }
 
   /// @notice this function adds a task to the task DB.
@@ -148,7 +152,7 @@ contract Colony is Modifiable, IUpgradable  {
   onlyAdmins
   throwIfIsEmptyString(_name)
   {
-      taskDB.makeTask(_name, _summary);
+      eternalStorage.makeTask(_name, _summary);
   }
 
   /// @notice this function updates the 'accepted' flag in the task
@@ -156,7 +160,7 @@ contract Colony is Modifiable, IUpgradable  {
   function acceptTask(uint256 _id)
   onlyAdmins
   {
-    taskDB.acceptTask(_id);
+    eternalStorage.acceptTask(_id);
   }
 
   /// @notice this function is used to update task data.
@@ -171,7 +175,7 @@ contract Colony is Modifiable, IUpgradable  {
   onlyAdmins
   throwIfIsEmptyString(_name)
   {
-    taskDB.updateTask(_id, _name, _summary);
+    eternalStorage.updateTask(_id, _name, _summary);
   }
 
   /// @notice set the colony tokens symbol
@@ -207,8 +211,8 @@ contract Colony is Modifiable, IUpgradable  {
   function completeAndPayTask(uint256 taskId, address paymentAddress)
   onlyAdmins
   {
-    taskDB.acceptTask(taskId);
-    var (taskEth, taskTokens) = taskDB.getTaskBalance(taskId);
+    eternalStorage.acceptTask(taskId);
+    var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0)
     {
       //ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());

@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, web3, assert */
+/* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, EternalStorage, web3, assert */
 
 var testHelper = require('../helpers/test-helper.js');
 contract('TaskDB', function (accounts) {
@@ -14,6 +14,7 @@ contract('TaskDB', function (accounts) {
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
+  var eternalStorage;
 
   before(function(done)
   {
@@ -44,6 +45,12 @@ contract('TaskDB', function (accounts) {
     .then(function(colonyAddress){
       colony = Colony.at(colonyAddress);
     })
+    .then(function(){
+      return colony.eternalStorage.call();
+    })
+    .then(function(etStorageAddress){
+      eternalStorage = EternalStorage.at(etStorageAddress);
+    })
     .then(done)
     .catch(done);
   });
@@ -51,11 +58,11 @@ contract('TaskDB', function (accounts) {
     describe('when adding tasks', function(){
       it('should add an entry to tasks array', function (done) {
         colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY', { from: _MAIN_ACCOUNT_ })
-        .then(function(){
-          return colony.taskDB.call(0);
+        .then(function () {
+          return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
         })
-        .then(function(args){
-          assert.isDefined(args, 'task was not created');
+        .then(function (_name) {
+          assert.equal(_name, 'TASK A', 'Wrong task name');
         })
         .then(done)
         .catch(done);
@@ -98,18 +105,21 @@ contract('TaskDB', function (accounts) {
     it('should update data to tasks array', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.taskDB.call(0);
+        return eternalStorage.hasTask.call(0);
       })
       .then(function(args){
         assert.isDefined(args, 'task was not created');
         return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
       })
-      .then(function(){
-        return colony.taskDB.call(0);
+      .then(function () {
+        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
       })
-      .then(function(args){
-        assert.equal(args[0], 'TASK B', 'task title is incorrect');
-        assert.equal(args[1], 'ANOTHER INTERESTING TASK SUMMARY', 'task summary is incorrect');
+      .then(function (_name) {
+        assert.equal(_name, 'TASK B', 'Wrong task name');
+        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+      })
+      .then(function(_summary){
+        assert.equal(_summary, 'ANOTHER INTERESTING TASK SUMMARY', 'Wrong task summary');
       })
       .then(done)
       .catch(done);
@@ -120,24 +130,41 @@ contract('TaskDB', function (accounts) {
 
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.taskDB.call(0);
+        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
       })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
-        prevAcceptedValue = args[2];
-        prevEthBalance = args[3].toNumber();
-        prevTokensBalance = args[4].toNumber();
+      .then(function(_accepted){
+        prevAcceptedValue = _accepted;
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+      })
+      .then(function(_eth){
+        prevEthBalance = _eth;
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
+      })
+      .then(function(_tokensWei){
+        prevTokensBalance = _tokensWei;
         return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
       })
-      .then(function(){
-        return colony.taskDB.call(0);
+      .then(function () {
+        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
       })
-      .then(function(args){
-        assert.equal(args[0], 'TASK B', 'task title is incorrect');
-        assert.equal(args[1], 'ANOTHER INTERESTING TASK SUMMARY', 'task summary is incorrect');
-        assert.equal(args[2], prevAcceptedValue, 'task "accepted" prop is incorrect');
-        assert.equal(args[3].toNumber(), prevEthBalance, 'task "eth" is incorrect');
-        assert.equal(args[4].toNumber(), prevTokensBalance, 'task "tokens" prop is incorrect');
+      .then(function (name) {
+        assert.equal(name, 'TASK B', 'Incorrect task name');
+        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+      })
+      .then(function(_summary){
+        assert.equal(_summary, 'ANOTHER INTERESTING TASK SUMMARY', 'Wrong task summary');
+        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+      })
+      .then(function(_accepted){
+        assert.equal(_accepted, prevAcceptedValue, 'Wrong accepted value');
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+      })
+      .then(function(_eth){
+        assert.equal(_eth.toNumber(), prevEthBalance, 'Wrong task ether value');
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
+      })
+      .then(function(_tokensWei){
+        assert.equal(_tokensWei.toNumber(), prevTokensBalance, 'Wrong tokens wei value');
       })
       .then(done)
       .catch(done);
@@ -150,10 +177,10 @@ contract('TaskDB', function (accounts) {
         return colony.acceptTask(0);
       })
       .then(function(){
-        return colony.taskDB.call(0);
+        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
       })
-      .then(function(args){
-        assert.isTrue(args[2], 'task "accepted" prop is incorrect');
+      .then(function(_accepted){
+        assert.isTrue(_accepted, 'Wrong accepted value');
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
         return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY',
         {
@@ -234,14 +261,19 @@ contract('TaskDB', function (accounts) {
   describe('when retrieving task data', function(){
     it('should return every task attribute for a valid id', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
-      .then(function(){
-        return colony.taskDB.call(0);
+      .then(function () {
+        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
       })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
-        assert.equal(args[0], 'TASK A', 'task title is incorrect');
-        assert.equal(args[1], 'INTERESTING TASK SUMMARY', 'task summary is incorrect');
-        assert.equal(args[2], false, '"accepted" flag is "true" after creating a task');
+      .then(function (_name) {
+        assert.equal(_name, 'TASK A', 'Wrong task name');
+        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+      })
+      .then(function(_summary){
+        assert.equal(_summary, 'INTERESTING TASK SUMMARY', 'Wrong task summary');
+        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+      })
+      .then(function(_accepted){
+        assert.equal(_accepted, false, '"accepted" flag is "true" after creating a task');
       })
       .then(done)
       .catch(done);
@@ -255,11 +287,10 @@ contract('TaskDB', function (accounts) {
         return colony.acceptTask(0);
       })
       .then(function(){
-        return colony.taskDB.call(0);
+        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
       })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
-        assert.equal(args[2], true, '"accepted" flag is incorrect');
+      .then(function(accepted){
+        assert.equal(accepted, true, '"accepted" flag is incorrect');
       })
       .then(done)
       .catch(done);
@@ -338,12 +369,11 @@ contract('TaskDB', function (accounts) {
       .then(function(){
         return colony.contributeTokensFromPool(0, 10);
       })
-      .then(function(){
-        return colony.taskDB.call(0);
+      .then(function () {
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
       })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
-        assert.equal(args[4].toNumber(), 10*1e18, '"tokens" value is incorrect');
+      .then(function(tokensWei){
+        assert.equal(tokensWei.toNumber(), 10*1e18, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);
@@ -355,11 +385,10 @@ contract('TaskDB', function (accounts) {
         return colony.contributeEth(0, {value: 10});
       })
       .then(function(){
-        return colony.taskDB.call(0);
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
       })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
-        assert.equal(args[3].toNumber(), 10, '"eth" value is incorrect');
+      .then(function(_eth){
+        assert.equal(_eth.toNumber(), 10, '"eth" value is incorrect');
       })
       .then(done)
       .catch(done);
@@ -376,13 +405,15 @@ contract('TaskDB', function (accounts) {
       .then(function(){
         return colony.contributeTokensFromPool(0, 100);
       })
-      .then(function(){
-        return colony.taskDB.call(0);
+      .then(function () {
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
       })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
-        assert.equal(args[3].toNumber(), 10, '"eth" value is incorrect');
-        assert.equal(args[4].toNumber(), 100*1e18, '"tokens" value is incorrect');
+      .then(function(eth){
+        assert.equal(eth.toNumber(), 10, '"eth" value is incorrect');
+        return eternalStorage.getUIntValue.call(testHelper.solSha3("task_tokensWei", 0));
+      })
+      .then(function(_tokensWei){
+        assert.equal(_tokensWei.toNumber(), 100*1e18, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);

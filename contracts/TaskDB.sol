@@ -1,6 +1,9 @@
+import "EternalStorage.sol";
+
 library TaskDB {
-  event TaskAdded(uint256 id, uint256 when);
-	struct Task
+  event TaskAdded(bytes32 key, uint256 count, uint256 when);
+  event TaskUpdated(bytes32 key, uint256 when);
+  struct Task
 	{
 		string name; //Short name
 		string summary; //IPFS hash of the brief
@@ -9,20 +12,20 @@ library TaskDB {
 		uint256 tokensWei; //Amount of tokens wei contributed to the task
 	}
 
-	modifier ifTasksExists(Task[] storage tasks, uint256 _id) {
-    if(!hasTask(tasks, _id)) throw;
+	modifier ifTasksExists(address _storageContract, uint256 _id) {
+    if(!hasTask(_storageContract, _id)) throw;
 	    _
 	}
 
-	modifier ifTasksNotAccepted(Task[] storage self, uint256 _id) {
-		if(isTaskAccepted(self, _id)) throw;
+	modifier ifTasksNotAccepted(address _storageContract, uint256 _id) {
+		if(isTaskAccepted(_storageContract, _id)) throw;
 			_
 	}
 
 	/// @notice this function returns the number of tasks in the DB
 	/// @return the number of tasks in DB
-	function count(Task[] storage tasks) constant returns(uint256) {
-		return tasks.length;
+	function count(address _storageContract) constant returns(uint256) {
+		return EternalStorage(_storageContract).getUIntValue(sha3("tasks_count"));
 	}
 
   /// @notice this function adds a task to the task DB. Any ETH sent will be
@@ -30,65 +33,64 @@ library TaskDB {
   /// @param _name the task name
   /// @param _summary an IPFS hash
   function makeTask(
-    Task[] storage tasks,
+    address _storageContract,
     string _name,
     string _summary
   )
   {
-    var taskId = tasks.length++;
-    tasks[taskId] = Task({
-      name         : _name,
-    	summary       : _summary,
-    	accepted      : false,
-    	eth           : 0,
-    	tokensWei     : 0
-    });
-
-		TaskAdded(taskId, now);
+    var idx = count(_storageContract);
+    EternalStorage(_storageContract).setStringValue(sha3("task_name", idx), _name);
+    EternalStorage(_storageContract).setStringValue(sha3("task_summary", idx), _summary);
+    EternalStorage(_storageContract).setBooleanValue(sha3("task_accepted", idx), false);
+    EternalStorage(_storageContract).setUIntValue(sha3("task_eth", idx), 0);
+    EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", idx), 0);
+    EternalStorage(_storageContract).setUIntValue(sha3("tasks_count"), count(_storageContract) + 1);
+		TaskAdded(sha3("task_name", idx), count(_storageContract), now);
   }
 
   /// @notice this task is useful when we need to know if a task exists
   /// @param _id the task id
   /// @return true - if the task if is valid, false - if the task id is invalid.
-  function hasTask(Task[] storage tasks, uint256 _id) constant returns(bool) {
-    return (!(_id >= tasks.length));
+  function hasTask(address _storageContract, uint256 _id) constant returns(bool) {
+    return (!(_id >= count(_storageContract)-1));
   }
 
   /// @notice this function returns if a task was accepted
   /// @param _id the task id
   /// @return a flag indicating if the task was accepted or not
   function isTaskAccepted(
-    Task[] storage tasks,
+    address _storageContract,
     uint256 _id)
-  ifTasksExists(tasks, _id)
+  ifTasksExists(_storageContract, _id)
   constant
   returns(bool)
   {
-    return (tasks[_id].accepted);
+    return EternalStorage(_storageContract).getBooleanValue(sha3("task_accepted", _id));
   }
 
   /// @notice this function returns if a task was accepted
   /// @param _id the task id
   /// @return the amount of ether and the amount of tokens funding a task
   function getTaskBalance(
-    Task[] storage tasks,
+    address _storageContract,
     uint256 _id)
-  ifTasksExists(tasks, _id)
+  ifTasksExists(_storageContract, _id)
   constant returns(uint256 _ether, uint256 _tokens)
   {
-    var task = tasks[_id];
-    return (task.eth, task.tokensWei);
+    var eth = EternalStorage(_storageContract).getUIntValue(sha3("task_eth", _id));
+    var tokensWei = EternalStorage(_storageContract).getUIntValue(sha3("task_tokensWei", _id));
+    return (eth, tokensWei);
   }
 
   /// @notice this function updates the 'accepted' flag in the task
   /// @param _id the task id
   function acceptTask(
-    Task[] storage tasks,
+    address _storageContract,
     uint256 _id)
-  ifTasksExists(tasks, _id)
-	ifTasksNotAccepted(tasks, _id)
+  ifTasksExists(_storageContract, _id)
+	ifTasksNotAccepted(_storageContract, _id)
   {
-    tasks[_id].accepted = true;
+    EternalStorage(_storageContract).setBooleanValue(sha3("task_accepted", _id), true);
   }
 
   /// @notice this function is used to update task data.
@@ -96,74 +98,47 @@ library TaskDB {
   /// @param _name the task name
   /// @param _summary an IPFS hash
   function updateTask(
-    Task[] storage tasks,
+    address _storageContract,
     uint256 _id,
     string _name,
     string _summary
   )
-  ifTasksExists(tasks, _id)
-	ifTasksNotAccepted(tasks, _id)
+  ifTasksExists(_storageContract, _id)
+	ifTasksNotAccepted(_storageContract, _id)
   {
-    tasks[_id].name = _name;
-    tasks[_id].summary = _summary;
-  }
+    EternalStorage(_storageContract).setStringValue(sha3("task_name", _id), _name);
+    EternalStorage(_storageContract).setStringValue(sha3("task_summary", _id), _summary);
 
-  /// @notice this function returns the attributes of a task
-  /// @param _id the task id
-  /// @return the name, a flag indicating if the task was accepted or not,
-  /// a hash pointing to the summary of a task (IPFS hash), the amount of ether
-  /// it holds, the amount of tokens wei it holds
-  function getTask(
-    Task[] storage tasks,
-    uint256 _id)
-  ifTasksExists(tasks, _id)
-  constant returns (
-      string _name,
-      string _summary,
-      bool _accepted,
-      uint256 _eth,
-      uint256 _tokensWei
-  )
-  {
-    var task = tasks[_id];
-    return (
-      task.name,
-      task.summary,
-      task.accepted,
-      task.eth,
-      task.tokensWei
-    );
+    TaskUpdated(sha3("task_name", _id), now);
   }
 
   /// @notice this function takes ETH and add it to the task funds.
   /// @param _id the task id
   /// @param _amount the amount to contribute
   function contributeEth(
-    Task[] storage tasks,
+    address _storageContract,
     uint256 _id,
     uint256 _amount)
-  ifTasksExists(tasks, _id)
-	ifTasksNotAccepted(tasks, _id)
+  ifTasksExists(_storageContract, _id)
+	ifTasksNotAccepted(_storageContract, _id)
   {
-    if(tasks[_id].eth + _amount <= tasks[_id].eth) throw;
-    if(tasks[_id].accepted) throw;
-
-    tasks[_id].eth += _amount;
+    var eth = EternalStorage(_storageContract).getUIntValue(sha3("task_eth", _id));
+    if(eth + _amount <= eth) throw;
+    EternalStorage(_storageContract).setUIntValue(sha3("task_eth", _id), eth+_amount);
   }
 
   /// @notice this function takes an amount of tokens and add it to the task funds.
   /// @param _id the task id
   /// @param _amount the amount of tokens wei to contribute
   function contributeTokensWei(
-    Task[] storage tasks,
+    address _storageContract,
     uint256 _id,
     uint256 _amount)
-	ifTasksExists(tasks, _id)
-	ifTasksNotAccepted(tasks, _id)
+	ifTasksExists(_storageContract, _id)
+	ifTasksNotAccepted(_storageContract, _id)
   {
-    if(tasks[_id].tokensWei + _amount <= tasks[_id].tokensWei) throw;
-    if(tasks[_id].accepted) throw;
-
-    tasks[_id].tokensWei += _amount;
+    var tokensWei = EternalStorage(_storageContract).getUIntValue(sha3("task_tokensWei", _id));
+    if(tokensWei + _amount <= tokensWei) throw;
+    EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", _id), tokensWei + _amount);
   }
 }
