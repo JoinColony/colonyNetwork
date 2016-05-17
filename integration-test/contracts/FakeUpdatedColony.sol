@@ -167,7 +167,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   onlyAdmins
   throwIfIsEmptyString(_name)
   {
-    taskDB.acceptTask(_id);
+    taskDB.updateTask(_id, _name, _summary);
   }
 
   /// @notice set the colony tokens symbol
