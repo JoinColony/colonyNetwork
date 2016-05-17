@@ -1,6 +1,6 @@
 /* eslint-env node */
 /* globals web3, assert, module */
-
+var leftPad = require('left-pad');
 var Promise = require('bluebird');
 var _ = require('lodash');
 module.exports = {
@@ -43,5 +43,24 @@ module.exports = {
   Promise : Promise,
   hexToUtf8 : function (text) {
     return web3.toAscii(text).replace(/\u0000/g, '');
-  }
+  },
+  solSha3 : function (...args) {
+    args = args.map(arg => {
+        if (typeof arg === 'string') {
+            if (arg.substring(0, 2) === '0x') {
+                return arg.slice(2)
+            } else {
+                return web3.toHex(arg).slice(2)
+            }
+        }
+
+        if (typeof arg === 'number') {
+            return leftPad((arg).toString(16), 64, 0)
+        } else {
+          return ''
+        }
+    })
+    args = args.join('')
+    return '0x' + web3.sha3(args, { encoding: 'hex' })
+}
 };
