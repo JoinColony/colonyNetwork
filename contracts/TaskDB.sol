@@ -52,7 +52,7 @@ library TaskDB {
   /// @param _id the task id
   /// @return true - if the task if is valid, false - if the task id is invalid.
   function hasTask(address _storageContract, uint256 _id) constant returns(bool) {
-    return (!(_id >= count(_storageContract)-1));
+    return (_id < count(_storageContract));
   }
 
   /// @notice this function returns if a task was accepted
