@@ -74,11 +74,11 @@ contract('all', function (accounts) {
       })
       .then(function(cost){
         console.log('generateColonyTokens : ', cost);
-        return colony.contributeEth.estimateGas(0, { value: 50 });
+        return colony.contributeEthToTask.estimateGas(0, { value: 50 });
       })
       .then(function(cost){
-        console.log('contributeEth : ', cost);
-        return colony.contributeEth(0, { value: 50 });
+        console.log('contributeEthToTask : ', cost);
+        return colony.contributeEthToTask(0, { value: 50 });
       })
       .then(function(){
         return colony.contributeTokensFromPool.estimateGas(0, 50, { from:_MAIN_ACCOUNT_ });

@@ -3,7 +3,7 @@
 /* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, EternalStorage, web3, assert */
 
 var testHelper = require('../helpers/test-helper.js');
-contract('TaskDB', function (accounts) {
+contract('TaskLibrary', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var _BIGGER_TASK_SUMMARY_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing el';
   var _BIGGER_TASK_TITLE_ = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
@@ -378,7 +378,7 @@ contract('TaskDB', function (accounts) {
     it('should "ETH" prop be raised by the amount of ETH I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.contributeEth(0, {value: 10});
+        return colony.contributeEthToTask(0, {value: 10});
       })
       .then(function(){
         return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
@@ -396,7 +396,7 @@ contract('TaskDB', function (accounts) {
         return colony.generateColonyTokens(100);
       })
       .then(function(){
-        return colony.contributeEth(0, {value: 10});
+        return colony.contributeEthToTask(0, {value: 10});
       })
       .then(function(){
         return colony.contributeTokensFromPool(0, 100);
@@ -423,7 +423,7 @@ contract('TaskDB', function (accounts) {
       })
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colony.contributeEth(0, 10,
+        return colony.contributeEthToTask(0, 10,
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -443,7 +443,7 @@ contract('TaskDB', function (accounts) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colony.contributeEth(10, 10,
+        return colony.contributeEthToTask(10, 10,
         {
           from: _MAIN_ACCOUNT_,
           gasPrice : _GAS_PRICE_,

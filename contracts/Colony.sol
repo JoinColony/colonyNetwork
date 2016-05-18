@@ -1,6 +1,6 @@
 import "Modifiable.sol";
 import "IUpgradable.sol";
-import "TaskDB.sol";
+import "TaskLibrary.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
 import "Ownable.sol";
@@ -26,8 +26,8 @@ contract Colony is Modifiable, IUpgradable  {
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
 
-  // EternalStorage address passed to TaskDB library for management of tasks
-  using TaskDB for address;
+  // EternalStorage address passed to TaskLibrary library for management of tasks
+  using TaskLibrary for address;
   address public eternalStorage;
 
   // This declares a state variable that
@@ -91,16 +91,16 @@ contract Colony is Modifiable, IUpgradable  {
 
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
-  function contributeEth(uint256 taskId)
+  function contributeEthToTask(uint256 taskId)
   onlyAdmins
   {
-    eternalStorage.contributeEth(taskId, msg.value);
+    eternalStorage.contributeEthToTask(taskId, msg.value);
   }
 
   /// @notice contribute tokens from an admin to fund a task
   /// @param taskId the task ID
   /// @param tokens the amount of tokens to fund the task
-  function contributeTokens(uint256 taskId, uint256 tokens)
+  function contributeTokensToTask(uint256 taskId, uint256 tokens)
   onlyAdmins
   {
     var tokensInWei = tokens * 1000000000000000000;
@@ -109,7 +109,7 @@ contract Colony is Modifiable, IUpgradable  {
     reserved_tokens[taskId] += tokensInWei;
     reservedTokensWei += tokensInWei;
 
-    eternalStorage.contributeTokensWei(taskId, tokensInWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensInWei);
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
@@ -126,7 +126,7 @@ contract Colony is Modifiable, IUpgradable  {
     reserved_tokens[taskId] += tokensInWei;
     reservedTokensWei += tokensInWei;
 
-    eternalStorage.contributeTokensWei(taskId, tokensInWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensInWei);
   }
 
   /// @notice this function is used to generate Colony tokens

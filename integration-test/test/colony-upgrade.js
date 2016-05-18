@@ -48,7 +48,7 @@ contract('RootColony', function (accounts) {
         return colony.makeTask('name', 'summary');
       })
       .then(function(){
-        return colony.contributeEth(0, {from: _MAIN_ACCOUNT_, value: 100});
+        return colony.contributeEthToTask(0, {from: _MAIN_ACCOUNT_, value: 100});
       })
       .then(function(){
         return colony.contributeTokensFromPool(0, 20, {from: _MAIN_ACCOUNT_});

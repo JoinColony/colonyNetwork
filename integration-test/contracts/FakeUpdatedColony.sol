@@ -1,20 +1,16 @@
 import "Modifiable.sol";
 import "IUpgradable.sol";
-import "TaskDB.sol";
+import "TaskLibrary.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
 
 contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
-<<<<<<< HEAD
-  using TaskDB for TaskDB.Task[];
-  TaskDB.Task[] public taskDB;
-=======
   // Function only present in this updated Colony contract
-  function isUpdated() constant returns(bool) {
+  function isUpdated()
+  constant returns(bool) {
       return true;
     }
->>>>>>> 64616ec... Wiring of new permanent storage for tasks
 
   modifier onlyAdminsOrigin {
     if (!this.getUserInfo(tx.origin)) throw;
@@ -35,17 +31,9 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-  // ExtensibleStorage address passed to TaskDB library for management of tasks
-=======
-  // EternalStorage address passed to TaskDB library for management of tasks
->>>>>>> dd8b6b1... Rename to EternalStorage.
-  using TaskDB for address;
+  using TaskLibrary for address;
   address public eternalStorage;
 
->>>>>>> 64616ec... Wiring of new permanent storage for tasks
   // This declares a state variable that
   // stores a `User` struct for each possible address.
   mapping(address => User) users;
@@ -107,24 +95,16 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
-  function contributeEth(uint256 taskId)
+  function contributeEthToTask(uint256 taskId)
   onlyAdmins
   {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    taskDB.contributeEth(taskId, msg.value);
-=======
-    extendedStorage.contributeEth(taskId, msg.value);
->>>>>>> 64616ec... Wiring of new permanent storage for tasks
-=======
-    eternalStorage.contributeEth(taskId, msg.value);
->>>>>>> dd8b6b1... Rename to EternalStorage.
+    eternalStorage.contributeEthToTask(taskId, msg.value);
   }
 
   /// @notice contribute tokens from an admin to fund a task
   /// @param taskId the task ID
   /// @param tokens the amount of tokens to fund the task
-  function contributeTokens(uint256 taskId, uint256 tokens)
+  function contributeTokensToTask(uint256 taskId, uint256 tokens)
   onlyAdmins
   {
     var tokensInWei = tokens * 1000000000000000000;
@@ -133,7 +113,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     reserved_tokens[taskId] += tokensInWei;
     reservedTokensWei += tokensInWei;
 
-    eternalStorage.contributeTokensWei(taskId, tokensInWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensInWei);
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
@@ -150,7 +130,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     reserved_tokens[taskId] += tokensInWei;
     reservedTokensWei += tokensInWei;
 
-    eternalStorage.contributeTokensWei(taskId, tokensInWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensInWei);
   }
 
   /// @notice this function is used to generate Colony tokens
@@ -164,15 +144,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
   function getTaskCount() constant returns (uint256)
   {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    return taskDB.count();
-=======
-    return extendedStorage.count();
->>>>>>> 64616ec... Wiring of new permanent storage for tasks
-=======
     return eternalStorage.count();
->>>>>>> dd8b6b1... Rename to EternalStorage.
   }
 
   /// @notice this function adds a task to the task DB.
@@ -246,7 +218,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   {
     eternalStorage.acceptTask(taskId);
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
-    
+
     if (taskEth > 0)
     {
       //ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
@@ -270,12 +242,6 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
       reserved_tokens[taskId] -= taskTokens;
       reservedTokensWei -= taskTokens;
     }
-  }
-
-  function isUpdated()
-  constant returns(bool)
-  {
-    return true;
   }
 
   /// @notice upgrade the colony migrating its data to another colony instance

@@ -1,6 +1,6 @@
 import "EternalStorage.sol";
 
-library TaskDB {
+library TaskLibrary {
   event TaskAdded(bytes32 key, uint256 count, uint256 when);
   event TaskUpdated(bytes32 key, uint256 when);
   struct Task
@@ -115,7 +115,7 @@ library TaskDB {
   /// @notice this function takes ETH and add it to the task funds.
   /// @param _id the task id
   /// @param _amount the amount to contribute
-  function contributeEth(
+  function contributeEthToTask(
     address _storageContract,
     uint256 _id,
     uint256 _amount)
@@ -130,7 +130,7 @@ library TaskDB {
   /// @notice this function takes an amount of tokens and add it to the task funds.
   /// @param _id the task id
   /// @param _amount the amount of tokens wei to contribute
-  function contributeTokensWei(
+  function contributeTokensWeiToTask(
     address _storageContract,
     uint256 _id,
     uint256 _amount)

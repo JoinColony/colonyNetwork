@@ -138,7 +138,7 @@ contract('RootColony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.contributeEth(0, {from: _MAIN_ACCOUNT_, value: 1000});
+        return colony.contributeEthToTask(0, {from: _MAIN_ACCOUNT_, value: 1000});
       })
       .then(function () {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });

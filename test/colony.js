@@ -332,7 +332,7 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summaryedit');
       })
       .then(function () {
-        return colony.contributeEth(0, {
+        return colony.contributeEthToTask(0, {
           value: 10000
         });
       })
@@ -367,7 +367,7 @@ contract('Colony', function (accounts) {
       colony.makeTask('name', 'summary')
       .then(function () {
         prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-        return colony.contributeEth(0, {
+        return colony.contributeEthToTask(0, {
           value: 10000,
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
@@ -427,7 +427,7 @@ contract('Colony', function (accounts) {
         return colony.addAdmin(_OTHER_ACCOUNT_);
       })
       .then(function(){
-        return colony.contributeTokens(1, 95, {from: _OTHER_ACCOUNT_});
+        return colony.contributeTokensToTask(1, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function () {
         return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 1));
@@ -470,7 +470,7 @@ contract('Colony', function (accounts) {
       .then(function(reservedTokensWei){
         assert.equal(reservedTokensWei.toNumber(), 70 * 1e18, 'Has not reserved the right amount of colony tokens.');
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colony.contributeTokens(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:_GAS_TO_SPEND_});
+        return colony.contributeTokensToTask(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:_GAS_TO_SPEND_});
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
@@ -530,7 +530,7 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.contributeEth(0, {
+        return colony.contributeEthToTask(0, {
           value: 10000
         });
       })
@@ -565,7 +565,7 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.contributeEth(0, {
+        return colony.contributeEthToTask(0, {
           value: 10000
         });
       })
@@ -642,7 +642,7 @@ contract('Colony', function (accounts) {
       })
       .then(function () {
         prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-        return colony.contributeTokens(0, 100, {
+        return colony.contributeTokensToTask(0, 100, {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
           gas: _GAS_TO_SPEND_
