@@ -99,13 +99,13 @@ contract ColonyFactory is IColonyFactory {
     ColonyUpgraded(colonyNew, tx.origin, now);
   }
 
-	function () {
-		// This function gets executed if a
-		// transaction with invalid data is sent to
-		// the contract or just ether without data.
-		// We revert the send so that no-one
-		// accidentally loses money when using the
-		// contract.
-		throw;
-	}
+  function () {
+    // This function gets executed if a
+    // transaction with invalid data is sent to
+    // the contract or just ether without data.
+    // We revert the send so that no-one
+    // accidentally loses money when using the
+    // contract.
+    throw;
+  }
 }

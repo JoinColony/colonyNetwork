@@ -82,7 +82,7 @@ contract Colony is Modifiable, IUpgradable  {
 
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
-	function contributeEth(uint256 taskId)
+  function contributeEth(uint256 taskId)
   onlyAdmins
   {
     taskDB.contributeEth(taskId, msg.value);

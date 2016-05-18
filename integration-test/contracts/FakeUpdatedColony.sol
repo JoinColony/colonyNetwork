@@ -1,11 +1,11 @@
-import "ColonyPaymentProvider.sol";
 import "Modifiable.sol";
 import "IUpgradable.sol";
+import "TaskDB.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
-import "TaskDB.sol";
 
 contract FakeUpdatedColony is Modifiable, IUpgradable  {
+
   using TaskDB for TaskDB.Task[];
   TaskDB.Task[] public taskDB;
 
@@ -28,9 +28,8 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
 
- 	// This declares a state variable that
-	// stores a `User` struct for each possible address.
-
+  // This declares a state variable that
+  // stores a `User` struct for each possible address.
   mapping(address => User) users;
   uint public adminsCount;
   // keeping track of how many tokens are assigned to tasks by the colony itself (i.e. self-funding tasks).
@@ -47,18 +46,13 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
   }
 
-  /// @notice registers a new RootColonyResolver contract.
-  /// Used to keep the reference of the RootColony.
+  /// @notice registers a new RootColonyResolver contract used to keep the reference of the RootColony.
   /// @param rootColonyResolverAddress_ the RootColonyResolver address
   function registerRootColonyResolver(address rootColonyResolverAddress_)
   onlyAdmins
   throwIfAddressIsInvalid(rootColonyResolverAddress_)
   {
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
-  }
-
-  function isUpdated() constant returns(bool) {
-    return true;
   }
 
   /// @notice adds a new admin user to the colony
@@ -69,10 +63,8 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     if(users[newAdminAddress]._exists && users[newAdminAddress].admin)
       throw;
 
-    if(!users[newAdminAddress]._exists)
-      adminsCount += 1;
-
     users[newAdminAddress] = User({admin: true, _exists: true});
+    adminsCount += 1;
   }
 
   /// @notice removes an admin from the colony
@@ -90,13 +82,9 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
-	function contributeEth(uint256 taskId)
+  function contributeEth(uint256 taskId)
   onlyAdmins
   {
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted)
-      throw;
-
     taskDB.contributeEth(taskId, msg.value);
   }
 
@@ -106,10 +94,6 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   function contributeTokens(uint256 taskId, uint256 tokens)
   onlyAdmins
   {
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted)
-      throw;
-
     var tokensInWei = tokens * 1000000000000000000;
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     tokenLedger.transferFrom(msg.sender, this, tokensInWei);
@@ -125,9 +109,6 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   function contributeTokensFromPool(uint256 taskId, uint256 tokens)
   onlyAdmins
   {
-    var isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted)
-      throw;
     //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
     //assigned.
     var tokensInWei = tokens * 1000000000000000000;
@@ -148,6 +129,11 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     tokenLedger.generateTokensWei(_amount * 1000000000000000000);
   }
 
+  function getTaskCount() constant returns (uint256)
+  {
+    return taskDB.count();
+  }
+
   /// @notice this function adds a task to the task DB.
   /// @param _name the task name
   /// @param _summary an IPFS hash
@@ -156,6 +142,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     string _summary
   )
   onlyAdmins
+  throwIfIsEmptyString(_name)
   {
       taskDB.makeTask(_name, _summary);
   }
@@ -178,6 +165,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     string _summary
   )
   onlyAdmins
+  throwIfIsEmptyString(_name)
   {
     taskDB.updateTask(_id, _name, _summary);
   }
@@ -200,7 +188,10 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     tokenLedger.setTokensTitle(title_);
   }
 
-	function getUserInfo(address userAddress)
+  /// @notice returns user info based in a given address
+  /// @param userAddress the address to be verified
+  /// @return a boolean value indicating if the user is an admin
+  function getUserInfo(address userAddress)
   constant returns (bool admin)
   {
     return users[userAddress].admin;
@@ -212,18 +203,19 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   function completeAndPayTask(uint256 taskId, address paymentAddress)
   onlyAdmins
   {
-
-    bool isTaskAccepted = taskDB.isTaskAccepted(taskId);
-    if (isTaskAccepted || !this.getUserInfo(msg.sender))
-    {
-      throw;
-    }
-
     taskDB.acceptTask(taskId);
     var (taskEth, taskTokens) = taskDB.getTaskBalance(taskId);
     if (taskEth > 0)
     {
-      ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+      //ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+
+      // Pay the task Ether and Tokens value -5% to task completor
+      var payoutEth = (taskEth * 95)/100;
+      var feeEth = taskEth - payoutEth;
+      paymentAddress.send(payoutEth);
+      // Pay root colony 5% fee
+      var rootColony = rootColonyResolver.rootColonyAddress();
+      rootColony.send(feeEth);
     }
 
     if (taskTokens > 0)
@@ -235,7 +227,13 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
       reserved_tokens[taskId] -= taskTokens;
       reservedTokensWei -= taskTokens;
-		}
+    }
+  }
+
+  function isUpdated()
+  constant returns(bool)
+  {
+    return true;
   }
 
   /// @notice upgrade the colony migrating its data to another colony instance
@@ -249,7 +247,6 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     }
 
     tokenLedger.changeOwner(newColonyAddress_);
-
     selfdestruct(newColonyAddress_);
   }
 }
