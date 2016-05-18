@@ -2,12 +2,13 @@ import "IColonyFactory.sol";
 import "Destructible.sol";
 import "Modifiable.sol";
 import "ColonyTokenLedger.sol";
+import "EternalStorage.sol";
 
 contract RootColony is Destructible, Modifiable {
 
   IColonyFactory public colonyFactory;
   uint coloniesNum;
-
+  event EternalStorageCreated(address owner);
   /// @notice registers a colony factory using an address
   /// @param _colonyFactoryAddress address used to locate the colony factory contract
   function registerColonyFactory(address _colonyFactoryAddress)
@@ -26,7 +27,11 @@ contract RootColony is Destructible, Modifiable {
     var tokenLedger = new ColonyTokenLedger();
     tokenLedger.changeOwner(colonyFactory);
 
-    colonyFactory.createColony(key_, tokenLedger);
+    var eternalStorage = new EternalStorage();
+    eternalStorage.setUIntValue(sha3('tasks_count'), 0);
+    eternalStorage.changeOwner(colonyFactory);
+    
+    colonyFactory.createColony(key_, tokenLedger, eternalStorage);
     coloniesNum++;
   }
 

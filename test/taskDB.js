@@ -406,7 +406,7 @@ contract('TaskDB', function (accounts) {
       })
       .then(function(eth){
         assert.equal(eth.toNumber(), 10, '"eth" value is incorrect');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3("task_tokensWei", 0));
+        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
       })
       .then(function(_tokensWei){
         assert.equal(_tokensWei.toNumber(), 100*1e18, '"tokens" value is incorrect');

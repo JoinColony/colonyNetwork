@@ -3,6 +3,7 @@ import "IUpgradable.sol";
 import "TaskDB.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
+import "Ownable.sol";
 
 contract Colony is Modifiable, IUpgradable  {
 
@@ -249,6 +250,8 @@ contract Colony is Modifiable, IUpgradable  {
     }
 
     tokenLedger.changeOwner(newColonyAddress_);
+    Ownable(eternalStorage).changeOwner(newColonyAddress_);
+
     selfdestruct(newColonyAddress_);
   }
 }

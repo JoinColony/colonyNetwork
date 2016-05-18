@@ -3,7 +3,7 @@ import "Ownable.sol";
 contract EternalStorage is Ownable{
 
     function EternalStorage(){
-      this.setUIntValue(sha3('tasks_count'), 0);
+
     }
 
     ////////////
@@ -17,7 +17,7 @@ contract EternalStorage is Ownable{
     }
 
     function setUIntValue(bytes32 record, uint value)
-    //onlyOwner
+    onlyOwner
     {
         UIntStorage[record] = value;
     }
@@ -33,7 +33,7 @@ contract EternalStorage is Ownable{
     }
 
     function setStringValue(bytes32 record, string value)
-    //onlyOwner
+    onlyOwner
     {
         StringStorage[record] = value;
     }
@@ -49,7 +49,7 @@ contract EternalStorage is Ownable{
     }
 
     function setAddressValue(bytes32 record, address value)
-    //onlyOwner
+    onlyOwner
     {
         AddressStorage[record] = value;
     }
@@ -65,7 +65,7 @@ contract EternalStorage is Ownable{
     }
 
     function setBytesValue(bytes32 record, bytes value)
-    //onlyOwner
+    onlyOwner
     {
         BytesStorage[record] = value;
     }
@@ -81,7 +81,7 @@ contract EternalStorage is Ownable{
     }
 
     function setBooleanValue(bytes32 record, bool value)
-    //onlyOwner
+    onlyOwner
     {
         BooleanStorage[record] = value;
     }
@@ -96,7 +96,7 @@ contract EternalStorage is Ownable{
     }
 
     function setIntValue(bytes32 record, int value)
-    //onlyOwner
+    onlyOwner
     {
         IntStorage[record] = value;
     }
