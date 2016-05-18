@@ -105,10 +105,6 @@ contract('TaskDB', function (accounts) {
     it('should update data to tasks array', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return eternalStorage.hasTask.call(0);
-      })
-      .then(function(args){
-        assert.isDefined(args, 'task was not created');
         return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
       })
       .then(function () {

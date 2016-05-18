@@ -60,7 +60,7 @@ contract('Colony', function (accounts) {
     .then(done)
     .catch(done);
   });
-/*
+
   describe('when created', function () {
 
     it('should take deploying user as an admin', function (done) {
@@ -228,7 +228,7 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
   });
-*/
+
   describe('when creating/updating tasks', function () {
     it('should allow admins to make task', function (done) {
       colony.makeTask('name', 'summary')
