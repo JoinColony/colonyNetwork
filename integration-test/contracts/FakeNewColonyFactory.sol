@@ -3,7 +3,6 @@ import "IColonyFactory.sol";
 import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
 import "FakeUpdatedColony.sol";
-import "EternalStorage.sol";
 
 contract FakeNewColonyFactory is IColonyFactory {
 
@@ -44,18 +43,18 @@ contract FakeNewColonyFactory is IColonyFactory {
   }
 
   /// @notice creates a Colony
-  function createColony(bytes32 key_, address tokenLedger_)
+  function createColony(bytes32 key_, address tokenLedger_, address eternalStorage_)
   throwIfIsEmptyBytes32(key_)
   throwIfAddressIsInvalid(tokenLedger_)
   onlyRootColony
   {
     if(colonies.catalog[key_]._exists) throw;
-    var extStorage = new EternalStorage();
-
+    
     var colonyIndex = colonies.data.length++;
-    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, 0x0, extStorage);
+    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, 0x0, eternalStorage_);
 
     Ownable(tokenLedger_).changeOwner(colony);
+    Ownable(eternalStorage_).changeOwner(colony);
 
     colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
     colonies.data[colonyIndex] = colony;
@@ -93,9 +92,9 @@ contract FakeNewColonyFactory is IColonyFactory {
     if(!FakeUpdatedColony(colonyAddress).getUserInfo(tx.origin)) throw;
 
     address tokenLedger = FakeUpdatedColony(colonyAddress).tokenLedger();
-    address extStorage = FakeUpdatedColony(colonyAddress).eternalStorage();
+    address eStorage = FakeUpdatedColony(colonyAddress).eternalStorage();
 
-    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger, colonyAddress, extStorage);
+    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger, colonyAddress, eStorage);
     IUpgradable(colonyAddress).upgrade(colonyNew);
 
     colonies.data[colonyIndex] = colonyNew;
