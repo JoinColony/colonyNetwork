@@ -2,6 +2,8 @@
 // These globals are added by Truffle:
 /* globals contract, Colony, EternalStorage, ColonyFactory, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert,  */
 var testHelper = require('../helpers/test-helper.js');
+import solSha3 from '../../app/client/imports/lib/crypto';
+
 contract('Colony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var _MAIN_ACCOUNT_ = accounts[0];
@@ -233,23 +235,23 @@ contract('Colony', function (accounts) {
     it('should allow admins to make task', function (done) {
       colony.makeTask('name', 'summary')
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (_name) {
         assert.equal(_name, 'name', 'Wrong task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function(_summary){
         assert.equal(_summary, 'summary', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function(accepted){
         assert.equal(accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       })
       .then(function(eth){
         assert.equal(eth.toNumber(), 0, 'Wrong task ether value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function(_tokensWei){
         assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
@@ -264,26 +266,26 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summaryedit');
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (_name) {
         assert.equal(_name, 'nameedit', 'Wrong task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function(summary){
         assert.equal(summary, 'summaryedit', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
-      .then(function(task_accepted){
-        assert.equal(task_accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+      .then(function(taskaccepted){
+        assert.equal(taskaccepted, false, 'Wrong accepted value');
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       })
-      .then(function(_eth){
-        assert.equal(_eth.toNumber(), 0, 'Wrong task ether value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
+      .then(function(eth){
+        assert.equal(eth.toNumber(), 0, 'Wrong task ether value');
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
-      .then(function(_tokensWei){
-        assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
+      .then(function(tokensWei){
+        assert.equal(tokensWei.toNumber(), 0, 'Wrong tokens wei value');
       })
       .then(done)
       .catch(done);
@@ -337,23 +339,23 @@ contract('Colony', function (accounts) {
         });
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (name) {
         assert.equal(name, 'nameedit', 'Wrong task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function(_summary){
         assert.equal(_summary, 'summaryedit', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
-      .then(function(_accepted){
-        assert.equal(_accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+      .then(function(a){
+        assert.equal(a, false, 'Wrong accepted value');
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       })
       .then(function(_eth){
         assert.equal(_eth.toNumber(), 10000, 'Wrong task ether value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function(_tokensWei){
         assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
@@ -430,23 +432,23 @@ contract('Colony', function (accounts) {
         return colony.contributeTokensToTask(1, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 1));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 1));
       })
       .then(function (_name) {
         assert.equal(_name, 'name2', 'Wrong task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 1));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 1));
       })
       .then(function(_summary){
         assert.equal(_summary, 'summary2', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 1));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 1));
       })
       .then(function(_accepted){
         assert.equal(_accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 1));
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 1));
       })
       .then(function(_eth){
         assert.equal(_eth.toNumber(), 0, 'Wrong task ether value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 1));
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 1));
       })
       .then(function(_tokensWei){
         assert.equal(_tokensWei.toNumber(), 95000000000000000000, 'Wrong tokens wei value');
@@ -540,15 +542,15 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (task_name) {
         assert.equal(task_name, 'nameedit', 'Wrong task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function(summary){
         assert.equal(summary, 'summary', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function(_accepted){
         assert.equal(_accepted, false, 'Wrong accepted value');
@@ -573,23 +575,23 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (n) {
         assert.equal(n, 'nameedit', 'Wrong task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function(s){
         assert.equal(s, 'summary', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function(_accepted){
         assert.equal(_accepted, true, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       })
       .then(function(eth){
         assert.equal(eth.toNumber(), 10000, 'Wrong task ether value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function(_tokensWei){
         assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');

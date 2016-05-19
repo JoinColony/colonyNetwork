@@ -1,7 +1,9 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, ColonyTokenLedger, RootColonyResolver, web3, ColonyFactory, assert */
+/* globals contract, RootColony, Colony, ColonyTokenLedger, RootColonyResolver, EternalStorage, web3, ColonyFactory, assert */
 var testHelper = require('../../helpers/test-helper.js');
+import solSha3 from '../../../app/client/imports/lib/crypto';
+
 contract('RootColony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var _MAIN_ACCOUNT_ = accounts[0];
@@ -9,7 +11,6 @@ contract('RootColony', function (accounts) {
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
-  var eternalStorage;
 
   before(function(done)
   {
@@ -35,6 +36,7 @@ contract('RootColony', function (accounts) {
     it('should carry colony dependencies to the new colony', function(done) {
       var oldColonyAddress;
       var tokenLedger;
+      var eternalStorage;
       rootColony.createColony(_COLONY_KEY_)
       .then(function(){
         return rootColony.getColony.call(_COLONY_KEY_);
@@ -75,42 +77,42 @@ contract('RootColony', function (accounts) {
         eternalStorage = EternalStorage.at(etStorageAddress);
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (name) {
         assert.equal(name, 'name', 'Incorrect task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function(_summary){
         assert.equal(_summary, 'summary', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function(_accepted){
         assert.equal(_accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       })
       .then(function(_eth){
         assert.equal(_eth.toNumber(), 100, 'Wrong task ether value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_tokensWei', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function(_tokensWei){
         assert.equal(_tokensWei.toNumber(), 20 * 1e18, 'Wrong tokens wei value');
         return colony.updateTask(0, 'nameedit', 'summaryedit');
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (name) {
         assert.equal(name, 'nameedit', 'Incorrect task name');
-        return eternalStorage.getStringValue.call(testHelper.solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function(_summary){
         assert.equal(_summary, 'summaryedit', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(testHelper.solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function(_accepted){
         assert.equal(_accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(testHelper.solSha3('task_eth', 0));
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       })
       .then(function(_eth){
         assert.equal(_eth.toNumber(), 100, 'Wrong task ether value');
