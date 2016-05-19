@@ -503,7 +503,7 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_});
+        return colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.makeTask('name', 'summary');
