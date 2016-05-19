@@ -38,21 +38,21 @@ library TaskLibrary {
     string _summary
   )
   {
-    var idx = count(_storageContract);
+    var idx = getTaskCount(_storageContract);
     EternalStorage(_storageContract).setStringValue(sha3("task_name", idx), _name);
     EternalStorage(_storageContract).setStringValue(sha3("task_summary", idx), _summary);
     EternalStorage(_storageContract).setBooleanValue(sha3("task_accepted", idx), false);
     EternalStorage(_storageContract).setUIntValue(sha3("task_eth", idx), 0);
     EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", idx), 0);
-    EternalStorage(_storageContract).setUIntValue(sha3("tasks_count"), count(_storageContract) + 1);
-		TaskAdded(sha3("task_name", idx), count(_storageContract), now);
+    EternalStorage(_storageContract).setUIntValue(sha3("tasks_count"), getTaskCount(_storageContract) + 1);
+		TaskAdded(sha3("task_name", idx), getTaskCount(_storageContract), now);
   }
 
   /// @notice this task is useful when we need to know if a task exists
   /// @param _id the task id
   /// @return true - if the task if is valid, false - if the task id is invalid.
   function hasTask(address _storageContract, uint256 _id) constant returns(bool) {
-    return (_id < count(_storageContract));
+    return (_id < getTaskCount(_storageContract));
   }
 
   /// @notice this function returns if a task was accepted
