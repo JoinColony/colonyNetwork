@@ -24,7 +24,7 @@ library TaskLibrary {
 
 	/// @notice this function returns the number of tasks in the DB
 	/// @return the number of tasks in DB
-	function count(address _storageContract) constant returns(uint256) {
+	function getTaskCount(address _storageContract) constant returns(uint256) {
 		return EternalStorage(_storageContract).getUIntValue(sha3("tasks_count"));
 	}
 

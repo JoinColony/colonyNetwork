@@ -144,7 +144,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
   function getTaskCount() constant returns (uint256)
   {
-    return eternalStorage.count();
+    return eternalStorage.getTaskCount();
   }
 
   /// @notice this function adds a task to the task DB.
