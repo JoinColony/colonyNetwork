@@ -44,7 +44,7 @@ contract('RootColony', function (accounts) {
       .then(function (_address){
         oldColonyAddress = _address;
         colony = Colony.at(_address);
-        return colony.generateColonyTokens(100);
+        return colony.generateColonyTokensWei(100);
       })
       .then(function(){
         return colony.makeTask('name', 'summary');
@@ -53,7 +53,7 @@ contract('RootColony', function (accounts) {
         return colony.contributeEthToTask(0, {from: _MAIN_ACCOUNT_, value: 100});
       })
       .then(function(){
-        return colony.contributeTokensFromPool(0, 20, {from: _MAIN_ACCOUNT_});
+        return colony.contributeTokensWeiFromPool(0, 20, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         var colonyBalance = web3.eth.getBalance(colony.address);
@@ -96,7 +96,7 @@ contract('RootColony', function (accounts) {
         return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function(_tokensWei){
-        assert.equal(_tokensWei.toNumber(), 20 * 1e18, 'Wrong tokens wei value');
+        assert.equal(_tokensWei.toNumber(), 20, 'Wrong tokens wei value');
         return colony.updateTask(0, 'nameedit', 'summaryedit');
       })
       .then(function () {
@@ -119,7 +119,7 @@ contract('RootColony', function (accounts) {
         return colony.reservedTokensWei();
       })
       .then(function(tokens){
-        assert.equal(tokens.toNumber(),20e18,'Incorrect amount of reserved tokens');
+        assert.equal(tokens.toNumber(),20,'Incorrect amount of reserved tokens');
         //TODO: This logic only passed as the overall test exit code was incorrect.
         // This will be fixed in PR 115.
       //  return colony.getUserInfo('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778');
@@ -133,7 +133,7 @@ contract('RootColony', function (accounts) {
         return tokenLedger.balanceOf.call(colony.address);
       })
       .then(function(colonyTokenBalance){
-        assert.equal(colonyTokenBalance.toNumber(), 100000000000000000000, 'Colony token balance is incorrect');
+        assert.equal(colonyTokenBalance.toNumber(), 100, 'Colony token balance is incorrect');
 
         var colonyBalance = web3.eth.getBalance(colony.address);
         assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');

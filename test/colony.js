@@ -204,13 +204,13 @@ contract('Colony', function (accounts) {
       colony.tokenLedger.call()
       .then(function(tokenLedgerAddress) {
         tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-        return colony.generateColonyTokens(100);
+        return colony.generateColonyTokensWei(100);
       })
       .then(function(){
         return tokenLedger.balanceOf.call(colony.address);
       })
       .then(function(totalSupplyTokens){
-        assert.equal(totalSupplyTokens.toNumber(), 100 * 1e18);
+        assert.equal(totalSupplyTokens.toNumber(), 100);
       })
       .then(done)
       .catch(done);
@@ -386,7 +386,7 @@ contract('Colony', function (accounts) {
 
     it('should allow admins to contribute tokens to task', function (done) {
       var tokenLedger;
-      colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
+      colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -406,14 +406,14 @@ contract('Colony', function (accounts) {
         return tokenLedger.balanceOf.call(colony.address);
       })
       .then(function(colonyBalance){
-        assert.equal(colonyBalance.toNumber(), 100 * 1e18 , 'Colony address balance should be 100 tokens.');
-        return colony.contributeTokensFromPool(0, 100, {from: _MAIN_ACCOUNT_});
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
+        return colony.contributeTokensWeiFromPool(0, 100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.reservedTokensWei.call();
       })
       .then(function(reservedTokensWei){
-        assert.equal(100 * 1e18, reservedTokensWei, 'Colony tokens were not reserved for task');
+        assert.equal(100, reservedTokensWei, 'Colony tokens were not reserved for task');
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
@@ -422,14 +422,14 @@ contract('Colony', function (accounts) {
         return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
       })
       .then(function(otherAccountTokenBalance){
-        assert.equal(otherAccountTokenBalance.toNumber(), 95 * 1e18, '_OTHER_ACCOUNT_ balance should be 95 tokens.');
-        return tokenLedger.approve(colony.address, 95 * 1e18, {from: _OTHER_ACCOUNT_});
+        assert.equal(otherAccountTokenBalance.toNumber(), 95, '_OTHER_ACCOUNT_ balance should be 95 tokens.');
+        return tokenLedger.approve(colony.address, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function(){
         return colony.addAdmin(_OTHER_ACCOUNT_);
       })
       .then(function(){
-        return colony.contributeTokensToTask(1, 95, {from: _OTHER_ACCOUNT_});
+        return colony.contributeTokensWeiToTask(1, 95, {from: _OTHER_ACCOUNT_});
       })
       .then(function () {
         return eternalStorage.getStringValue.call(solSha3('task_name', 1));
@@ -451,7 +451,7 @@ contract('Colony', function (accounts) {
         return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 1));
       })
       .then(function(_tokensWei){
-        assert.equal(_tokensWei.toNumber(), 95000000000000000000, 'Wrong tokens wei value');
+        assert.equal(_tokensWei.toNumber(), 95, 'Wrong tokens wei value');
       })
       .then(done)
       .catch(done);
@@ -459,20 +459,20 @@ contract('Colony', function (accounts) {
 
     it('should allow colonies to assign tokens to tasks', function (done) {
       var prevBalance;
-      colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
+      colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
       .then(function(){
-        return colony.contributeTokensFromPool(0, 70, {from:_MAIN_ACCOUNT_});
+        return colony.contributeTokensWeiFromPool(0, 70, {from:_MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.reservedTokensWei.call();
       })
       .then(function(reservedTokensWei){
-        assert.equal(reservedTokensWei.toNumber(), 70 * 1e18, 'Has not reserved the right amount of colony tokens.');
+        assert.equal(reservedTokensWei.toNumber(), 70, 'Has not reserved the right amount of colony tokens.');
         prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colony.contributeTokensToTask(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:_GAS_TO_SPEND_});
+        return colony.contributeTokensWeiToTask(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:_GAS_TO_SPEND_});
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
@@ -486,7 +486,7 @@ contract('Colony', function (accounts) {
 
     it('should not allow colonies to assign more tokens to tasks than they have', function (done) {
       var prevBalance;
-      colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_})
+      colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -497,13 +497,13 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function(){
-        return colony.contributeTokensFromPool(0, 100, {from: _MAIN_ACCOUNT_});
+        return colony.contributeTokensWeiFromPool(0, 100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        return colony.generateColonyTokens(100, {from: _MAIN_ACCOUNT_});
+        return colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.makeTask('name', 'summary');
@@ -513,7 +513,7 @@ contract('Colony', function (accounts) {
       })
       .then(function(){
         //More than the pool, less than totalsupply
-        return colony.contributeTokensFromPool(1, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:_GAS_TO_SPEND_});
+        return colony.contributeTokensWeiFromPool(1, 150, {from:_MAIN_ACCOUNT_, gasPrice:_GAS_PRICE_, gas:_GAS_TO_SPEND_});
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function(){
@@ -603,7 +603,7 @@ contract('Colony', function (accounts) {
 
     it('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
       var tokenLedger;
-      colony.generateColonyTokens(100)
+      colony.generateColonyTokensWei(100)
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -611,7 +611,7 @@ contract('Colony', function (accounts) {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
       .then(function () {
-        return colony.contributeTokensFromPool(0, 100);
+        return colony.contributeTokensWeiFromPool(0, 100);
       })
       .then(function () {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
@@ -626,11 +626,11 @@ contract('Colony', function (accounts) {
         return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
       })
       .then(function(otherAccountTokenBalance){
-        assert.strictEqual(otherAccountTokenBalance.toNumber(), 95 * 1e18, 'Token balance is not 95% of task token value');
+        assert.strictEqual(otherAccountTokenBalance.toNumber(), 95, 'Token balance is not 95% of task token value');
         return tokenLedger.balanceOf.call(rootColony.address);
       })
       .then(function(rootColonyTokenBalance){
-        assert.strictEqual(rootColonyTokenBalance.toNumber(), 5 * 1e18, 'RootColony token balance is not 5% of task token value');
+        assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'RootColony token balance is not 5% of task token value');
       })
       .then(done)
       .catch(done);
@@ -638,13 +638,13 @@ contract('Colony', function (accounts) {
 
     it('should fail if non-admins try to contribute with tokens from the pool', function (done) {
       var prevBalance;
-      colony.generateColonyTokens(100)
+      colony.generateColonyTokensWei(100)
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
         prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-        return colony.contributeTokensToTask(0, 100, {
+        return colony.contributeTokensWeiToTask(0, 100, {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
           gas: _GAS_TO_SPEND_
@@ -660,13 +660,13 @@ contract('Colony', function (accounts) {
 
     it('should fail if non-admins try to contribute with tokens', function (done) {
       var prevBalance;
-      colony.generateColonyTokens(100)
+      colony.generateColonyTokensWei(100)
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
         prevBalance = web3.eth.getBalance(_OTHER_ACCOUNT_);
-        return colony.contributeTokensFromPool(0, 100, {
+        return colony.contributeTokensWeiFromPool(0, 100, {
           from: _OTHER_ACCOUNT_,
           gasPrice : _GAS_PRICE_,
           gas: _GAS_TO_SPEND_

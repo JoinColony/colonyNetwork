@@ -66,14 +66,14 @@ contract('all', function (accounts) {
       })
       .then(function(cost){
         console.log('acceptTask : ', cost);
-        return colony.generateColonyTokens(100, { from: _MAIN_ACCOUNT_ });
+        return colony.generateColonyTokensWei(100, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(){
       // When working with tokens
-        return colony.generateColonyTokens.estimateGas(100, { from: _MAIN_ACCOUNT_ });
+        return colony.generateColonyTokensWei.estimateGas(100, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(cost){
-        console.log('generateColonyTokens : ', cost);
+        console.log('generateColonyTokensWei : ', cost);
         return colony.contributeEthToTask.estimateGas(0, { value: 50 });
       })
       .then(function(cost){
@@ -81,11 +81,11 @@ contract('all', function (accounts) {
         return colony.contributeEthToTask(0, { value: 50 });
       })
       .then(function(){
-        return colony.contributeTokensFromPool.estimateGas(0, 50, { from:_MAIN_ACCOUNT_ });
+        return colony.contributeTokensWeiFromPool.estimateGas(0, 50, { from:_MAIN_ACCOUNT_ });
       })
       .then(function(cost){
-        console.log('contributeTokensFromPool : ', cost);
-        return colony.contributeTokensFromPool(0, 50, { from:_MAIN_ACCOUNT_ });
+        console.log('contributeTokensWeiFromPool : ', cost);
+        return colony.contributeTokensWeiFromPool(0, 50, { from:_MAIN_ACCOUNT_ });
       })
       .then(function(){
         return colony.completeAndPayTask.estimateGas(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });

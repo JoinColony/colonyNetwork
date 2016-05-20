@@ -362,16 +362,16 @@ contract('TaskLibrary', function (accounts) {
     it('should "tokens" prop be raised by the amount of tokens I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.generateColonyTokens(100);
+        return colony.generateColonyTokensWei(100);
       })
       .then(function(){
-        return colony.contributeTokensFromPool(0, 10);
+        return colony.contributeTokensWeiFromPool(0, 10);
       })
       .then(function () {
         return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function(tokensWei){
-        assert.equal(tokensWei.toNumber(), 10*1e18, '"tokens" value is incorrect');
+        assert.equal(tokensWei.toNumber(), 10, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);
@@ -395,13 +395,13 @@ contract('TaskLibrary', function (accounts) {
     it('should "ETH" and "tokens" props be raised by the amount of ETH and tokens I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.generateColonyTokens(100);
+        return colony.generateColonyTokensWei(100);
       })
       .then(function(){
         return colony.contributeEthToTask(0, {value: 10});
       })
       .then(function(){
-        return colony.contributeTokensFromPool(0, 100);
+        return colony.contributeTokensWeiFromPool(0, 100);
       })
       .then(function () {
         return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
@@ -411,7 +411,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function(_tokensWei){
-        assert.equal(_tokensWei.toNumber(), 100*1e18, '"tokens" value is incorrect');
+        assert.equal(_tokensWei.toNumber(), 100, '"tokens" value is incorrect');
       })
       .then(done)
       .catch(done);

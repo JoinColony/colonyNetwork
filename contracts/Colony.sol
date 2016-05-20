@@ -99,43 +99,41 @@ contract Colony is Modifiable, IUpgradable  {
 
   /// @notice contribute tokens from an admin to fund a task
   /// @param taskId the task ID
-  /// @param tokens the amount of tokens to fund the task
-  function contributeTokensToTask(uint256 taskId, uint256 tokens)
+  /// @param tokensWei the amount of tokens wei to fund the task
+  function contributeTokensWeiToTask(uint256 taskId, uint256 tokensWei)
   onlyAdmins
   {
-    var tokensInWei = tokens * 1000000000000000000;
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-    tokenLedger.transferFrom(msg.sender, this, tokensInWei);
-    reserved_tokens[taskId] += tokensInWei;
-    reservedTokensWei += tokensInWei;
+    tokenLedger.transferFrom(msg.sender, this, tokensWei);
+    reserved_tokens[taskId] += tokensWei;
+    reservedTokensWei += tokensWei;
 
-    eternalStorage.contributeTokensWeiToTask(taskId, tokensInWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
   /// @param taskId the task ID
-  /// @param tokens the amount of tokens to fund the task
-  function contributeTokensFromPool(uint256 taskId, uint256 tokens)
+  /// @param tokensWei the amount of tokens wei to fund the task
+  function contributeTokensWeiFromPool(uint256 taskId, uint256 tokensWei)
   onlyAdmins
   {
     //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
     //assigned.
-    var tokensInWei = tokens * 1000000000000000000;
-    if (reservedTokensWei + tokensInWei > tokenLedger.balanceOf(this))
+    if (reservedTokensWei + tokensWei > tokenLedger.balanceOf(this))
       throw;
-    reserved_tokens[taskId] += tokensInWei;
-    reservedTokensWei += tokensInWei;
+    reserved_tokens[taskId] += tokensWei;
+    reservedTokensWei += tokensWei;
 
-    eternalStorage.contributeTokensWeiToTask(taskId, tokensInWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
   }
 
   /// @notice this function is used to generate Colony tokens
-  /// @param _amount The amount of tokens to be generated
-  function generateColonyTokens(uint256 _amount)
+  /// @param tokensWei The amount of tokens wei to be generated
+  function generateColonyTokensWei(uint256 tokensWei)
   onlyAdmins
   refundEtherSentByAccident
   {
-    tokenLedger.generateTokensWei(_amount * 1000000000000000000);
+    tokenLedger.generateTokensWei(tokensWei);
   }
 
   function getTaskCount() constant returns (uint256)
