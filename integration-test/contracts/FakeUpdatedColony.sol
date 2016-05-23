@@ -45,16 +45,12 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
   function FakeUpdatedColony(
     address rootColonyResolverAddress_,
     address _tokenLedgerAddress,
-    address _oldColonyAddress,
     address _eternalStorage)
   {
     users[tx.origin] = User({admin: true, _exists: true});
     adminsCount = 1;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
-    if (_oldColonyAddress!=0x0){ //i.e. if it was supplied.
-      reservedTokensWei = FakeUpdatedColony(_oldColonyAddress).reservedTokensWei();
-    }
 
     eternalStorage = _eternalStorage;
   }

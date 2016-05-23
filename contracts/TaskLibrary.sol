@@ -3,6 +3,7 @@ import "EternalStorage.sol";
 library TaskLibrary {
   event TaskAdded(bytes32 key, uint256 count, uint256 when);
   event TaskUpdated(bytes32 key, uint256 when);
+
   struct Task
 	{
 		string name; //Short name
@@ -25,8 +26,23 @@ library TaskLibrary {
 	/// @notice this function returns the number of tasks in the DB
 	/// @return the number of tasks in DB
 	function getTaskCount(address _storageContract) constant returns(uint256) {
-		return EternalStorage(_storageContract).getUIntValue(sha3("tasks_count"));
+		return EternalStorage(_storageContract).getUIntValue(sha3("TasksCount"));
 	}
+
+  /// @notice gets the reserved colony tokens for funding tasks.
+  /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
+  function getReservedTokensWei(address _storageContract) constant returns(uint256)
+  {
+    return EternalStorage(_storageContract).getUIntValue(sha3("ReservedTokensWei"));
+  }
+
+  /// @notice gets the reserved colony tokens for funding tasks.
+  /// @param tokensWei the token wei to set the value to.
+  /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
+  function setReservedTokensWei(address _storageContract, uint256 tokensWei)
+  {
+    EternalStorage(_storageContract).setUIntValue(sha3("ReservedTokensWei"), tokensWei);
+  }
 
   /// @notice this function adds a task to the task DB. Any ETH sent will be
   /// considered as a contribution to the task
@@ -44,7 +60,7 @@ library TaskLibrary {
     EternalStorage(_storageContract).setBooleanValue(sha3("task_accepted", idx), false);
     EternalStorage(_storageContract).setUIntValue(sha3("task_eth", idx), 0);
     EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", idx), 0);
-    EternalStorage(_storageContract).setUIntValue(sha3("tasks_count"), getTaskCount(_storageContract) + 1);
+    EternalStorage(_storageContract).setUIntValue(sha3("TasksCount"), getTaskCount(_storageContract) + 1);
 		TaskAdded(sha3("task_name", idx), getTaskCount(_storageContract), now);
   }
 

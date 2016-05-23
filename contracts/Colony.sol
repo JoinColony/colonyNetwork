@@ -36,22 +36,16 @@ contract Colony is Modifiable, IUpgradable  {
   uint public adminsCount;
   // keeping track of how many tokens are assigned to tasks by the colony itself (i.e. self-funding tasks).
   mapping(uint256 => uint256) reserved_tokens;
-  uint256 public reservedTokensWei = 0;
 
   function Colony(
     address rootColonyResolverAddress_,
     address _tokenLedgerAddress,
-    address _oldColonyAddress,
     address _eternalStorage)
   {
     users[tx.origin] = User({admin: true, _exists: true});
     adminsCount = 1;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
-    if (_oldColonyAddress!=0x0){ //i.e. if it was supplied.
-      reservedTokensWei = Colony(_oldColonyAddress).reservedTokensWei();
-    }
-
     eternalStorage = _eternalStorage;
   }
 
@@ -89,6 +83,14 @@ contract Colony is Modifiable, IUpgradable  {
     adminsCount -= 1;
   }
 
+  /// @notice gets the reserved colony tokens for funding tasks
+  /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
+  /// @return a uint value indicating if the amount of reserved colony tokens
+  function reservedTokensWei() constant returns (uint256)
+  {
+    return eternalStorage.getReservedTokensWei();
+  }
+
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
   function contributeEthToTask(uint256 taskId)
@@ -106,9 +108,11 @@ contract Colony is Modifiable, IUpgradable  {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     tokenLedger.transferFrom(msg.sender, this, tokensWei);
     reserved_tokens[taskId] += tokensWei;
-    reservedTokensWei += tokensWei;
-
     eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
+
+    // Update the reserved tokens
+    var reservedTokensWei = eternalStorage.getReservedTokensWei();
+    eternalStorage.setReservedTokensWei(reservedTokensWei + tokensWei);
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
@@ -119,12 +123,14 @@ contract Colony is Modifiable, IUpgradable  {
   {
     //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
     //assigned.
+    var reservedTokensWei = eternalStorage.getReservedTokensWei();
+
     if (reservedTokensWei + tokensWei > tokenLedger.balanceOf(this))
       throw;
     reserved_tokens[taskId] += tokensWei;
-    reservedTokensWei += tokensWei;
 
     eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
+    eternalStorage.setReservedTokensWei(reservedTokensWei + tokensWei);
   }
 
   /// @notice this function is used to generate Colony tokens
@@ -214,7 +220,7 @@ contract Colony is Modifiable, IUpgradable  {
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0)
     {
-      //ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+    //  ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
 
       // Pay the task Ether and Tokens value -5% to task completor
       var payoutEth = (taskEth * 95)/100;
@@ -232,8 +238,10 @@ contract Colony is Modifiable, IUpgradable  {
       tokenLedger.transfer(paymentAddress, payout);
       tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee);
 
-      reserved_tokens[taskId] -= taskTokens;
-      reservedTokensWei -= taskTokens;
+      delete reserved_tokens[taskId];
+
+      var reservedTokensWei = eternalStorage.getReservedTokensWei();
+      eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
     }
   }
 

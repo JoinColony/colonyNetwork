@@ -51,7 +51,7 @@ contract ColonyFactory is IColonyFactory {
     if(colonies.catalog[key_]._exists) throw;
 
     var colonyIndex = colonies.data.length++;
-    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, 0x0, eternalStorage);
+    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, eternalStorage);
 
     Ownable(tokenLedger_).changeOwner(colony);
     Ownable(eternalStorage).changeOwner(colony);
@@ -94,7 +94,7 @@ contract ColonyFactory is IColonyFactory {
     address tokenLedger = Colony(colonyAddress).tokenLedger();
     address eternalStorage = Colony(colonyAddress).eternalStorage();
 
-    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, colonyAddress, eternalStorage);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, eternalStorage);
     IUpgradable(colonyAddress).upgrade(colonyNew);
 
     colonies.data[colonyIndex] = colonyNew;

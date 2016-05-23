@@ -28,7 +28,7 @@ contract FakeNewRootColony is Destructible, Modifiable {
     tokenLedger.changeOwner(colonyFactory);
 
     var eternalStorage = new EternalStorage();
-    eternalStorage.setUIntValue(sha3('tasks_count'), 0);
+    eternalStorage.setUIntValue(sha3('TasksCount'), 0);
     eternalStorage.changeOwner(colonyFactory);
 
     colonyFactory.createColony(key_, tokenLedger, eternalStorage);
