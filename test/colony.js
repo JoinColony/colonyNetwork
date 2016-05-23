@@ -32,12 +32,14 @@ contract('Colony', function (accounts) {
 
     rootColonyResolver.registerRootColony(rootColony.address)
     .then(function(){
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function(){
-      rootColony.registerColonyFactory(colonyFactory.address);
+      return rootColony.registerColonyFactory(colonyFactory.address);
     })
-    .then(done)
+    .then(function(){
+      done();
+    })
     .catch(done);
   });
 
