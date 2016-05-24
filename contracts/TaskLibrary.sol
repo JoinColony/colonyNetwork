@@ -44,6 +44,11 @@ library TaskLibrary {
     EternalStorage(_storageContract).setUIntValue(sha3("ReservedTokensWei"), tokensWei);
   }
 
+  function addTokensWeiToTask(address _storageContract, uint256 tokensWei)
+  {
+    //EternalStorage(_storageContract).setUIntValue(sha3("task_tokens"))
+  }
+
   /// @notice this function adds a task to the task DB. Any ETH sent will be
   /// considered as a contribution to the task
   /// @param _name the task name
@@ -149,12 +154,38 @@ library TaskLibrary {
   function contributeTokensWeiToTask(
     address _storageContract,
     uint256 _id,
-    uint256 _amount)
+    uint256 _amount,
+    bool isColonySelfFunded)
 	ifTasksExists(_storageContract, _id)
 	ifTasksNotAccepted(_storageContract, _id)
   {
     var tokensWei = EternalStorage(_storageContract).getUIntValue(sha3("task_tokensWei", _id));
     if(tokensWei + _amount <= tokensWei) throw;
+
     EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", _id), tokensWei + _amount);
+
+    // Logic to cater for funding tasks by the parent Colony itself (i.e. self-funding tasks).
+    if (isColonySelfFunded)
+    {
+      var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(sha3("task_tokensWeiReserved", _id));
+      var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(sha3("ReservedTokensWei"));
+
+      var updatedTokensWei = _amount;
+      if (tokensWeiReserved > 0)
+      {
+        updatedTokensWei += tokensWeiReserved;
+      }
+
+      EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWeiReserved", _id), updatedTokensWei);
+      EternalStorage(_storageContract).setUIntValue(sha3("ReservedTokensWei"), tokensWeiReservedTotal + _amount);
+    }
+  }
+
+  function removeReservedTokensWeiForTask(
+    address _storageContract,
+    uint256 _id)
+	ifTasksExists(_storageContract, _id)
+  {
+    EternalStorage(_storageContract).deleteUIntValue(sha3("task_tokensWeiReserved", _id));
   }
 }

@@ -34,8 +34,6 @@ contract Colony is Modifiable, IUpgradable  {
   // stores a `User` struct for each possible address.
   mapping(address => User) users;
   uint public adminsCount;
-  // keeping track of how many tokens are assigned to tasks by the colony itself (i.e. self-funding tasks).
-  mapping(uint256 => uint256) reserved_tokens;
 
   function Colony(
     address rootColonyResolverAddress_,
@@ -107,12 +105,7 @@ contract Colony is Modifiable, IUpgradable  {
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     tokenLedger.transferFrom(msg.sender, this, tokensWei);
-    reserved_tokens[taskId] += tokensWei;
-    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
-
-    // Update the reserved tokens
-    var reservedTokensWei = eternalStorage.getReservedTokensWei();
-    eternalStorage.setReservedTokensWei(reservedTokensWei + tokensWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
@@ -127,10 +120,8 @@ contract Colony is Modifiable, IUpgradable  {
 
     if (reservedTokensWei + tokensWei > tokenLedger.balanceOf(this))
       throw;
-    reserved_tokens[taskId] += tokensWei;
 
-    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
-    eternalStorage.setReservedTokensWei(reservedTokensWei + tokensWei);
+    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
   }
 
   /// @notice this function is used to generate Colony tokens
@@ -238,10 +229,9 @@ contract Colony is Modifiable, IUpgradable  {
       tokenLedger.transfer(paymentAddress, payout);
       tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee);
 
-      delete reserved_tokens[taskId];
-
       var reservedTokensWei = eternalStorage.getReservedTokensWei();
       eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
+      eternalStorage.removeReservedTokensWeiForTask(taskId);
     }
   }
 

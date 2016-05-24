@@ -398,6 +398,12 @@ contract('Colony', function (accounts) {
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summary');
       })
+      .then(function(){
+        return colony.reservedTokensWei.call();
+      })
+      .then(function(reservedTokensWei){
+        assert.equal(0, reservedTokensWei.toNumber(), 'Colony reserved tokens should be set to initially 0 count.');
+      })
       .then(function () {
         return colony.tokenLedger.call();
       })
@@ -415,7 +421,7 @@ contract('Colony', function (accounts) {
         return colony.reservedTokensWei.call();
       })
       .then(function(reservedTokensWei){
-        assert.equal(100, reservedTokensWei, 'Colony tokens were not reserved for task');
+        assert.equal(100, reservedTokensWei.toNumber(), 'Colony tokens were not reserved for task');
       })
       .then(function(){
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
