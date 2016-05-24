@@ -4,6 +4,7 @@ import "TaskLibrary.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
 import "Ownable.sol";
+import "ColonyPaymentProvider.sol";
 
 contract Colony is Modifiable, IUpgradable  {
 
@@ -211,15 +212,7 @@ contract Colony is Modifiable, IUpgradable  {
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0)
     {
-    //  ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
-
-      // Pay the task Ether and Tokens value -5% to task completor
-      var payoutEth = (taskEth * 95)/100;
-      var feeEth = taskEth - payoutEth;
-      paymentAddress.send(payoutEth);
-      // Pay root colony 5% fee
-      var rootColony = rootColonyResolver.rootColonyAddress();
-      rootColony.send(feeEth);
+      ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
     }
 
     if (taskTokens > 0)
