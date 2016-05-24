@@ -22,6 +22,12 @@ contract EternalStorage is Ownable{
         UIntStorage[record] = value;
     }
 
+    function deleteUIntValue(bytes32 record)
+    onlyOwner
+    {
+      delete UIntStorage[record];
+    }
+
     ////////////
     //Strings
     ////////////
@@ -36,6 +42,12 @@ contract EternalStorage is Ownable{
     onlyOwner
     {
         StringStorage[record] = value;
+    }
+
+    function deleteStringValue(bytes32 record)
+    onlyOwner
+    {
+      delete StringStorage[record];
     }
 
     ////////////
@@ -54,6 +66,12 @@ contract EternalStorage is Ownable{
         AddressStorage[record] = value;
     }
 
+    function deleteAddressValue(bytes32 record)
+    onlyOwner
+    {
+      delete AddressStorage[record];
+    }
+
     ////////////
     //Bytes
     ////////////
@@ -68,6 +86,12 @@ contract EternalStorage is Ownable{
     onlyOwner
     {
         BytesStorage[record] = value;
+    }
+
+    function deleteBytesValue(bytes32 record)
+    onlyOwner
+    {
+      delete BytesStorage[record];
     }
 
     ////////////
@@ -86,6 +110,12 @@ contract EternalStorage is Ownable{
         BooleanStorage[record] = value;
     }
 
+    function deleteBooleanValue(bytes32 record)
+    onlyOwner
+    {
+      delete BooleanStorage[record];
+    }
+
     ////////////
     //Int
     ////////////
@@ -99,6 +129,12 @@ contract EternalStorage is Ownable{
     onlyOwner
     {
         IntStorage[record] = value;
+    }
+
+    function deleteIntValue(bytes32 record)
+    onlyOwner
+    {
+      delete IntStorage[record];
     }
 
 }
