@@ -4,15 +4,6 @@ library TaskLibrary {
   event TaskAdded(bytes32 key, uint256 count, uint256 when);
   event TaskUpdated(bytes32 key, uint256 when);
 
-  struct Task
-	{
-		string name; //Short name
-		string summary; //IPFS hash of the brief
-		bool accepted; //Whether the work has been accepted
-		uint256 eth; //Amount of ETH contributed to the task
-		uint256 tokensWei; //Amount of tokens wei contributed to the task
-	}
-
 	modifier ifTasksExists(address _storageContract, uint256 _id) {
     if(!hasTask(_storageContract, _id)) throw;
 	    _
@@ -44,11 +35,6 @@ library TaskLibrary {
     EternalStorage(_storageContract).setUIntValue(sha3("ReservedTokensWei"), tokensWei);
   }
 
-  function addTokensWeiToTask(address _storageContract, uint256 tokensWei)
-  {
-    //EternalStorage(_storageContract).setUIntValue(sha3("task_tokens"))
-  }
-
   /// @notice this function adds a task to the task DB. Any ETH sent will be
   /// considered as a contribution to the task
   /// @param _name the task name
@@ -60,13 +46,20 @@ library TaskLibrary {
   )
   {
     var idx = getTaskCount(_storageContract);
+    //Short name for task
     EternalStorage(_storageContract).setStringValue(sha3("task_name", idx), _name);
+    //IPFS hash of the brief
     EternalStorage(_storageContract).setStringValue(sha3("task_summary", idx), _summary);
+    //Whether the work has been accepted
     EternalStorage(_storageContract).setBooleanValue(sha3("task_accepted", idx), false);
+    //Amount of ETH contributed to the task
     EternalStorage(_storageContract).setUIntValue(sha3("task_eth", idx), 0);
+    //Amount of tokens wei contributed to the task
     EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", idx), 0);
+    //Total number of tasks
     EternalStorage(_storageContract).setUIntValue(sha3("TasksCount"), getTaskCount(_storageContract) + 1);
-		TaskAdded(sha3("task_name", idx), getTaskCount(_storageContract), now);
+
+    TaskAdded(sha3("task_name", idx), getTaskCount(_storageContract), now);
   }
 
   /// @notice this task is useful when we need to know if a task exists
