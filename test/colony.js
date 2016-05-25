@@ -69,7 +69,7 @@ contract('Colony', function (accounts) {
   describe('when created', function () {
 
     it('should take deploying user as an admin', function (done) {
-      colony.getUserInfo.call(_MAIN_ACCOUNT_)
+      colony.isUserAdmin.call(_MAIN_ACCOUNT_)
       .then(function (admin) {
         assert.equal(admin, true, 'First user isn\'t an admin');
       })
@@ -78,7 +78,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should other users not be an admin until I add s/he', function (done) {
-      colony.getUserInfo.call(_OTHER_ACCOUNT_)
+      colony.isUserAdmin.call(_OTHER_ACCOUNT_)
       .then(function (admin) {
         assert.equal(admin, false, 'Other user is an admin');
       })
@@ -131,7 +131,7 @@ contract('Colony', function (accounts) {
         return colony.addAdmin(_OTHER_ACCOUNT_);
       })
       .then(function(){
-        return colony.getUserInfo.call(_OTHER_ACCOUNT_);
+        return colony.isUserAdmin.call(_OTHER_ACCOUNT_);
       })
       .then(function(_isAdmin){
         assert.isTrue(_isAdmin, 'previously revoked admins cannot be promoted to admin again');

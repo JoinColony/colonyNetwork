@@ -10,12 +10,12 @@ import "SecurityLibrary.sol";
 contract Colony is Modifiable, IUpgradable  {
 
   modifier onlyAdminsOrigin {
-    if (!this.getUserInfo(tx.origin)) throw;
+    if (!this.isUserAdmin(tx.origin)) throw;
     _
   }
 
   modifier onlyAdmins {
-    if (!this.getUserInfo(msg.sender)) throw;
+    if (!this.isUserAdmin(msg.sender)) throw;
     _
   }
 
@@ -72,10 +72,10 @@ contract Colony is Modifiable, IUpgradable  {
   /// @notice returns user info based in a given address
   /// @param _user the address to be verified
   /// @return a boolean value indicating if the user is an admin
-  function getUserInfo(address _user)
+  function isUserAdmin(address _user)
   constant returns (bool)
   {
-    return eternalStorage.isAdmin(_user);
+    return eternalStorage.isUserAdmin(_user);
   }
 
   /// @notice gets the reserved colony tokens for funding tasks

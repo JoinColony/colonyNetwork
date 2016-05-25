@@ -88,7 +88,7 @@ contract FakeNewColonyFactory is IColonyFactory {
     uint256 colonyIndex = colonies.catalog[key_].index;
     address colonyAddress = colonies.data[colonyIndex];
 
-    if(!FakeUpdatedColony(colonyAddress).getUserInfo(tx.origin)) throw;
+    if(!FakeUpdatedColony(colonyAddress).isUserAdmin(tx.origin)) throw;
 
     address tokenLedger = FakeUpdatedColony(colonyAddress).tokenLedger();
     address eStorage = FakeUpdatedColony(colonyAddress).eternalStorage();

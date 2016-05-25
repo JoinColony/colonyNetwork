@@ -50,7 +50,7 @@ library SecurityLibrary
     AdminRemoved(_user);
   }
 
-  function isAdmin(address _storageContract, address _user)
+  function isUserAdmin(address _storageContract, address _user)
   constant returns (bool)
   {
     return EternalStorage(_storageContract).getBooleanValue(sha3('admin:', _user));

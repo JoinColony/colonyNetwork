@@ -13,12 +13,12 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     }
 
     modifier onlyAdminsOrigin {
-      if (!this.getUserInfo(tx.origin)) throw;
+      if (!this.isUserAdmin(tx.origin)) throw;
       _
     }
 
     modifier onlyAdmins {
-      if (!this.getUserInfo(msg.sender)) throw;
+      if (!this.isUserAdmin(msg.sender)) throw;
       _
     }
 
@@ -200,7 +200,7 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     /// @notice returns user info based in a given address
     /// @param userAddress the address to be verified
     /// @return a boolean value indicating if the user is an admin
-    function getUserInfo(address userAddress)
+    function isUserAdmin(address userAddress)
     constant returns (bool admin)
     {
       return users[userAddress].admin;

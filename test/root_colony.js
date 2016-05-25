@@ -38,7 +38,7 @@ contract('RootColony', function (accounts) {
       })
       .then(function (_address){
         colony = Colony.at(_address);
-        return colony.getUserInfo.call(_MAIN_ACCOUNT_);
+        return colony.isUserAdmin.call(_MAIN_ACCOUNT_);
       })
       .then(function(_isAdmin){
         assert.isTrue(_isAdmin, 'creator user is an admin');

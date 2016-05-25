@@ -120,12 +120,10 @@ contract('RootColony', function (accounts) {
       })
       .then(function(tokens){
         assert.equal(tokens.toNumber(),20,'Incorrect amount of reserved tokens');
-        //TODO: This logic only passed as the overall test exit code was incorrect.
-        // This will be fixed in PR 115.
-      //  return colony.getUserInfo('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778');
-    //  })
-    //  .then(function(userInfo){
-    //    assert.equal(userInfo, true, 'User added as admin is no longer admin');
+        return colony.isUserAdmin('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778');
+      })
+      .then(function(userInfo){
+        assert.equal(userInfo, true, 'User added as admin is no longer admin');
         return colony.tokenLedger.call();
       })
       .then(function(tokenLedgerAddress){
