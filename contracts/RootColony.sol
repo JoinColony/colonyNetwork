@@ -30,10 +30,9 @@ contract RootColony is Destructible, Modifiable {
 
     // Initialise eternal storage and required initial values
     var eternalStorage = new EternalStorage();
-    eternalStorage.setUIntValue(sha3('TasksCount'), 0);
-    eternalStorage.setUIntValue(sha3('ReservedTokensWei'), 0);
+    // Note: we are assuming that the default values for 'TasksCount' and 'ReservedTokensWei' is returned as 0
     // Set the calling user as the first colony admin
-    eternalStorage.setBooleanValue(sha3(msg.sender), true);
+    eternalStorage.setBooleanValue(sha3('admin:', msg.sender), true);
     eternalStorage.setUIntValue(sha3("AdminsCount"), 1);
 
     eternalStorage.changeOwner(colonyFactory);
