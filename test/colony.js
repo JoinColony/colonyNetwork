@@ -54,6 +54,7 @@ contract('Colony', function (accounts) {
     })
     .then(function(colony_){
       colony = Colony.at(colony_);
+      return;
     })
     .then(function(){
       return colony.eternalStorage.call();
@@ -88,7 +89,7 @@ contract('Colony', function (accounts) {
     it('should keep a count of the number of admins', function (done) {
       colony.adminsCount.call()
       .then(function (_adminsCount) {
-        assert.equal(_adminsCount, 1, 'Admin count is different from 1');
+        assert.equal(_adminsCount.toNumber(), 1, 'Admin count is different from 1');
       })
       .then(done)
       .catch(done);
@@ -100,7 +101,7 @@ contract('Colony', function (accounts) {
         return colony.adminsCount.call();
       })
       .then(function (_adminsCount) {
-        assert.equal(_adminsCount, 2, 'Admin count is incorrect');
+        assert.equal(_adminsCount.toNumber(), 2, 'Admin count is incorrect');
       })
       .then(done)
       .catch(done);
@@ -115,7 +116,7 @@ contract('Colony', function (accounts) {
         return colony.adminsCount.call();
       })
       .then(function (_adminsCount) {
-        assert.equal(_adminsCount, 1, 'Admin count is incorrect');
+        assert.equal(_adminsCount.toNumber(), 1, 'Admin count is incorrect');
       })
       .then(done)
       .catch(done);

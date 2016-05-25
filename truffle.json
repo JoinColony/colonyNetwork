@@ -7,7 +7,8 @@
   ],
   "libraries": [
     "ColonyPaymentProvider",
-    "TaskLibrary"
+    "TaskLibrary",
+    "SecurityLibrary"
   ],
   "rpc": {
     // Default RPC configuration.

@@ -52,7 +52,7 @@ contract ColonyFactory is IColonyFactory {
 
     var colonyIndex = colonies.data.length++;
     var colony = new Colony(rootColonyResolverAddress, tokenLedger_, eternalStorage);
-
+        
     Ownable(tokenLedger_).changeOwner(colony);
     Ownable(eternalStorage).changeOwner(colony);
 

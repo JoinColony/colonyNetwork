@@ -1,10 +1,11 @@
 import "Modifiable.sol";
 import "IUpgradable.sol";
-import "TaskLibrary.sol";
 import "IRootColonyResolver.sol";
 import "ITokenLedger.sol";
 import "Ownable.sol";
 import "ColonyPaymentProvider.sol";
+import "TaskLibrary.sol";
+import "SecurityLibrary.sol";
 
 contract Colony is Modifiable, IUpgradable  {
 
@@ -18,31 +19,19 @@ contract Colony is Modifiable, IUpgradable  {
     _
   }
 
-  struct User
-  {
-    bool admin;  // if true, that person is an admin
-    bool _exists;
-  }
-
   IRootColonyResolver public rootColonyResolver;
   ITokenLedger public tokenLedger;
 
-  // EternalStorage address passed to TaskLibrary library for management of tasks
+  // Link libraries containing business logic to EternalStorage.
   using TaskLibrary for address;
+  using SecurityLibrary for address;
   address public eternalStorage;
-
-  // This declares a state variable that
-  // stores a `User` struct for each possible address.
-  mapping(address => User) users;
-  uint public adminsCount;
 
   function Colony(
     address rootColonyResolverAddress_,
     address _tokenLedgerAddress,
     address _eternalStorage)
   {
-    users[tx.origin] = User({admin: true, _exists: true});
-    adminsCount = 1;
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     tokenLedger = ITokenLedger(_tokenLedgerAddress);
     eternalStorage = _eternalStorage;
@@ -57,29 +46,36 @@ contract Colony is Modifiable, IUpgradable  {
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
   }
 
+  /// @notice returns the number of admins for this colony
+  function adminsCount()
+  constant returns(uint256)
+  {
+    return eternalStorage.getAdminsCount();
+  }
+
   /// @notice adds a new admin user to the colony
-  /// @param newAdminAddress the address of the new admin user
-  function addAdmin(address newAdminAddress)
+  /// @param _user the address of the new admin user
+  function addAdmin(address _user)
   onlyAdmins
   {
-    if(users[newAdminAddress]._exists && users[newAdminAddress].admin)
-      throw;
-
-    users[newAdminAddress] = User({admin: true, _exists: true});
-    adminsCount += 1;
+    eternalStorage.addAdmin(_user);
   }
 
   /// @notice removes an admin from the colony
-  /// @param adminAddress the address of the admin to be removed
-  function removeAdmin(address adminAddress)
+  /// @param _user the address of the admin to be removed
+  function removeAdmin(address _user)
   onlyAdmins
   {
-    if(!users[adminAddress]._exists) throw;
-    if(users[adminAddress]._exists && !users[adminAddress].admin) throw;
-    if(adminsCount == 1) throw;
+    eternalStorage.removeAdmin(_user);
+  }
 
-    users[adminAddress].admin = false;
-    adminsCount -= 1;
+  /// @notice returns user info based in a given address
+  /// @param _user the address to be verified
+  /// @return a boolean value indicating if the user is an admin
+  function getUserInfo(address _user)
+  constant returns (bool)
+  {
+    return eternalStorage.isAdmin(_user);
   }
 
   /// @notice gets the reserved colony tokens for funding tasks
@@ -191,15 +187,6 @@ contract Colony is Modifiable, IUpgradable  {
   onlyAdmins
   {
     tokenLedger.setTokensTitle(title_);
-  }
-
-  /// @notice returns user info based in a given address
-  /// @param userAddress the address to be verified
-  /// @return a boolean value indicating if the user is an admin
-  function getUserInfo(address userAddress)
-  constant returns (bool admin)
-  {
-    return users[userAddress].admin;
   }
 
   /// @notice mark a task as completed, pay the user who completed it and root colony fee

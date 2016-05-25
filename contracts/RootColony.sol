@@ -28,10 +28,14 @@ contract RootColony is Destructible, Modifiable {
     var tokenLedger = new ColonyTokenLedger();
     tokenLedger.changeOwner(colonyFactory);
 
-    // Initialise eternal storage and required initial values.
+    // Initialise eternal storage and required initial values
     var eternalStorage = new EternalStorage();
     eternalStorage.setUIntValue(sha3('TasksCount'), 0);
     eternalStorage.setUIntValue(sha3('ReservedTokensWei'), 0);
+    // Set the calling user as the first colony admin
+    eternalStorage.setBooleanValue(sha3(msg.sender), true);
+    eternalStorage.setUIntValue(sha3("AdminsCount"), 1);
+
     eternalStorage.changeOwner(colonyFactory);
 
     colonyFactory.createColony(key_, tokenLedger, eternalStorage);
