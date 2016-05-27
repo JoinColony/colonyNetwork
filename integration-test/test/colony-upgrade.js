@@ -4,13 +4,14 @@
 var testHelper = require('../../helpers/test-helper.js');
 import solSha3 from '../../../app/client/imports/lib/crypto';
 
-contract('RootColony', function (accounts) {
+contract('Colony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
   var _MAIN_ACCOUNT_ = accounts[0];
   var colony;
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
+  var eternalStorageRoot;
 
   before(function(done)
   {
@@ -28,9 +29,21 @@ contract('RootColony', function (accounts) {
     });
   });
 
-  afterEach(function(done){
-    testHelper.waitAll([rootColony.removeColony(_COLONY_KEY_)], done);
+  beforeEach(function(done){
+    EternalStorage.new()
+    .then(function(contract){
+      eternalStorageRoot = contract;
+      return eternalStorageRoot.changeOwner(colonyFactory.address);
+    })
+    .then(function(){
+      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(function(){
+      done();
+    })
+    .catch(done);
   });
+
 
   describe('when upgrading a colony', function(){
     it('should carry colony dependencies to the new colony', function(done) {

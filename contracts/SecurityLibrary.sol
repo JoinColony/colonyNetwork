@@ -24,9 +24,7 @@ library SecurityLibrary
 
     // Increment the admins count in storage
     var adminsCount = EternalStorage(_storageContract).getUIntValue(sha3("AdminsCount"));
-    adminsCount+=1;
-
-    EternalStorage(_storageContract).setUIntValue(sha3("AdminsCount"), adminsCount);
+    EternalStorage(_storageContract).setUIntValue(sha3("AdminsCount"), adminsCount + 1);
 
     AdminAdded(_user);
   }

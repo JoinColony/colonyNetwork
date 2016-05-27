@@ -13,6 +13,7 @@ contract('all', function (accounts) {
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
+  var eternalStorageRoot;
 
   before(function(done)
   {
@@ -27,6 +28,20 @@ contract('all', function (accounts) {
     ], done);
   });
 
+  beforeEach(function(done){
+    EternalStorage.new()
+    .then(function(contract){
+      eternalStorageRoot = contract;
+      return eternalStorageRoot.changeOwner(colonyFactory.address);
+    })
+    .then(function(){
+      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(function(){
+      done();
+    })
+    .catch(done);
+  });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe('Get gas costs ', function(){

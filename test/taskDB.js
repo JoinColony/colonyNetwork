@@ -16,6 +16,7 @@ contract('TaskLibrary', function (accounts) {
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
+  var eternalStorageRoot;
   var eternalStorage;
 
   before(function(done)
@@ -24,36 +25,44 @@ contract('TaskLibrary', function (accounts) {
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
 
-    rootColonyResolver.registerRootColony(rootColony.address)
-    .then(function(){
-      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+    EternalStorage.new()
+    .then(function(contract){
+      eternalStorageRoot = contract;
+      console.log('EternalStorage for ColonyFactory created at : ', eternalStorageRoot.address);
+      return;
     })
     .then(function(){
-      return rootColony.registerColonyFactory(colonyFactory.address);
+      return eternalStorageRoot.changeOwner(colonyFactory.address);
     })
     .then(function(){
-      done();
-    })
-    .catch(done);
-  });
-
-  afterEach(function(done){
-    testHelper.waitAll([rootColony.removeColony(_COLONY_KEY_)], done);
+      testHelper.waitAll([
+        rootColonyResolver.registerRootColony(rootColony.address),
+        rootColony.registerColonyFactory(colonyFactory.address),
+        colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
+        colonyFactory.registerEternalStorage(eternalStorageRoot.address)
+      ], done);
+    });
   });
 
   beforeEach(function(done){
-    rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
+    _COLONY_KEY_ = testHelper.getRandomString(7);
+
+    eternalStorageRoot.owner.call()
+    .then(function(o){
+      return rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
+    })
     .then(function(){
       return rootColony.getColony.call(_COLONY_KEY_);
     })
-    .then(function(colonyAddress){
-      colony = Colony.at(colonyAddress);
+    .then(function(colony_){
+      colony = Colony.at(colony_);
+      return;
     })
     .then(function(){
       return colony.eternalStorage.call();
     })
-    .then(function(etStorageAddress){
-      eternalStorage = EternalStorage.at(etStorageAddress);
+    .then(function(extStorageAddress){
+      eternalStorage = EternalStorage.at(extStorageAddress);
     })
     .then(done)
     .catch(done);

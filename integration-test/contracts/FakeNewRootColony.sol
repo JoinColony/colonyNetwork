@@ -7,7 +7,6 @@ import "EternalStorage.sol";
 contract FakeNewRootColony is Destructible, Modifiable {
 
   IColonyFactory public colonyFactory;
-  uint coloniesNum;
 
   /// @notice registers a colony factory using an address
   /// @param _colonyFactoryAddress address used to locate the colony factory contract
@@ -16,6 +15,13 @@ contract FakeNewRootColony is Destructible, Modifiable {
   onlyOwner
   {
     colonyFactory = IColonyFactory(_colonyFactoryAddress);
+  }
+
+  function moveColonyFactoryStorage(address newColonyFactory)
+  refundEtherSentByAccident
+  onlyOwner
+  {
+    colonyFactory.moveStorage(newColonyFactory);
   }
 
   /// @notice creates a Colony
@@ -27,20 +33,15 @@ contract FakeNewRootColony is Destructible, Modifiable {
     var tokenLedger = new ColonyTokenLedger();
     tokenLedger.changeOwner(colonyFactory);
 
+    // Initialise eternal storage and required initial values
     var eternalStorage = new EternalStorage();
-    eternalStorage.setUIntValue(sha3('TasksCount'), 0);
+    // Note: we are assuming that the default values for 'TasksCount' and 'ReservedTokensWei' is returned as 0
+    // Set the calling user as the first colony admin
+    eternalStorage.setBooleanValue(sha3('admin:', msg.sender), true);
+    eternalStorage.setUIntValue(sha3("AdminsCount"), 1);
     eternalStorage.changeOwner(colonyFactory);
 
     colonyFactory.createColony(key_, tokenLedger, eternalStorage);
-    coloniesNum++;
-  }
-
-  function removeColony(bytes32 key_)
-  refundEtherSentByAccident
-  throwIfIsEmptyBytes32(key_)
-  {
-    colonyFactory.removeColony(key_);
-    coloniesNum --;
   }
 
   /// @notice this function can be used to fetch the address of a Colony by a key.
@@ -74,8 +75,8 @@ contract FakeNewRootColony is Destructible, Modifiable {
   /// @notice this function returns the amount of colonies created
   /// @return the amount of colonies created
   function countColonies()
-  constant returns (uint)
+  constant returns (uint256)
   {
-    return coloniesNum;
+    return colonyFactory.countColonies();
   }
 }

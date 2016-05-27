@@ -1,18 +1,17 @@
-
 import "Destructible.sol";
 import "Modifiable.sol";
+import "ColonyLibrary.sol";
 
 contract IColonyFactory is Destructible, Modifiable {
 
   address public rootColonyResolverAddress;
 
+  using ColonyLibrary for address;
+  address public eternalStorageRoot;
+
   /// @notice creates a Colony
   /// @param key_ the key to be used to keep track of the Colony
   function createColony(bytes32 key_, address tokenLedger_, address eternalStorage_);
-
-  /// @notice removes a colony from the colonies mapping
-  /// @param key_ the key of the colony to be removed
-  function removeColony(bytes32 key_);
 
   /// @notice get the address of a colony by key
   /// @param key_ the key of the colony
@@ -30,4 +29,14 @@ contract IColonyFactory is Destructible, Modifiable {
   /// @notice this function registers the address of the RootColonyResolver
   /// @param rootColonyResolverAddress_ the default root colony resolver address
   function registerRootColonyResolver(address rootColonyResolverAddress_);
+
+  /// @notice registers the address of EternalStorage
+  function registerEternalStorage(address eternalStorage_);
+
+  /// @notice this function moves ownership of EternalStorage to another factory contract
+  /// @param newColonyFactory_ the new factory contract
+  function moveStorage(address newColonyFactory_);
+
+  /// @notice this function returns the number of colonies in storage
+  function countColonies() constant returns (uint256);
 }

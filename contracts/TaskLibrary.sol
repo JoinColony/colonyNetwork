@@ -57,7 +57,7 @@ library TaskLibrary {
     //Amount of tokens wei contributed to the task
     EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", idx), 0);
     //Total number of tasks
-    EternalStorage(_storageContract).setUIntValue(sha3("TasksCount"), getTaskCount(_storageContract) + 1);
+    EternalStorage(_storageContract).setUIntValue(sha3("TasksCount"), idx + 1);
 
     TaskAdded(sha3("task_name", idx), getTaskCount(_storageContract), now);
   }

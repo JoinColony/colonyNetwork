@@ -3,12 +3,14 @@
     // Names of contracts that should be deployed to the network.
     "RootColony",
     "RootColonyResolver",
-    "ColonyFactory"
+    "ColonyFactory",
+    "EternalStorage"
   ],
   "libraries": [
     "ColonyPaymentProvider",
     "TaskLibrary",
-    "SecurityLibrary"
+    "SecurityLibrary",
+    "ColonyLibrary"
   ],
   "rpc": {
     // Default RPC configuration.

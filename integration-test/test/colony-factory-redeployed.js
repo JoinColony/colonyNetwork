@@ -1,134 +1,96 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, FakeUpdatedColony, RootColonyResolver,
-  ColonyFactory, ColonyTokenLedger, FakeNewColonyFactory, assert
-*/
+/* globals contract, RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, assert */
 
-contract('ColonyFactory', function () {
+contract('ColonyFactory', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
+  var _NEW_COLONY_KEY_ = 'NEW_COLONY_TEST';
   var colonyFactory;
+  var colonyFactoryNew;
   var rootColony;
   var rootColonyResolver;
+  var eternalStorageRoot;
+  var _MAIN_ACCOUNT_ = accounts[0];
 
   before(function(done){
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
+    colonyFactory = ColonyFactory.deployed();
 
     rootColonyResolver.registerRootColony(rootColony.address)
+    .then(function(){
+      return rootColony.registerColonyFactory(colonyFactory.address);
+    })
+    .then(function(){
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+    })
+    .then(function(){
+      return EternalStorage.new();
+    })
+    .then(function(contract){
+      eternalStorageRoot = contract;
+      return eternalStorageRoot.changeOwner(colonyFactory.address);
+    })
+    .then(function(){
+      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(function(){
+      return rootColony.createColony(_COLONY_KEY_);
+    })
+    .then(function(){
+      return rootColony.countColonies.call();
+    })
+    .then(function(count){
+      assert.equal(1, count.toNumber(), 'There should be 1 colony in the network.');
+    })
+    .then(done)
+    .catch(done);
+  });
+
+  beforeEach(function(done){
+    // Create the new Colony Factory and upgrade all references
+    FakeNewColonyFactory.new({gas: 4e6, gasPrice: 20e9})
+    .then(function(contract){
+      colonyFactoryNew = contract;
+      return colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address);
+    })
+    .then(function(){
+      return rootColony.registerColonyFactory(colonyFactoryNew.address);
+    })
+    .then(function(){
+      return colonyFactoryNew.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(function(){
+      return rootColony.moveColonyFactoryStorage(colonyFactoryNew.address, {from: _MAIN_ACCOUNT_});
+    })
     .then(function(){
       done();
     })
     .catch(done);
   });
 
-  describe('when redeploying colony contract and colony factory', function () {
-    it('should be replaced at RootColony', function (done) {
-
-      var colony;
-      colonyFactory = ColonyFactory.deployed();
-
-      console.log('\r\n');
-      console.log('\tColonyFactory address: [ ', colonyFactory.address, ' ]');
-      console.log('\tRegistering RootColonyResolver...');
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address)
-      .then(function(){
-        console.log('\tRegistering RootColony\'s ColonyFactory...');
-        return rootColony.registerColonyFactory(colonyFactory.address);
+  describe('when redeploying colony factory contract', function () {
+    it('should adopt the existing EternalStorage', function (done) {
+      rootColony.colonyFactory.call()
+      .then(function(colonyFactoryAddress){
+        assert.equal(colonyFactoryAddress, colonyFactoryNew.address, 'ColonyFactoryAddress on RootColony is not updated.')
       })
       .then(function(){
-        return rootColony.colonyFactory.call();
+        return colonyFactoryNew.eternalStorageRoot.call();
       })
-      .then(function(_colonyFactoryAddress){
-        console.log('\tRootColony\'s colony factory address: [ ', _colonyFactoryAddress, ' ]');
-        console.log('\tCreating Colony...');
-        return rootColony.createColony(_COLONY_KEY_);
+      .then(function(_eternalStorageAddress){
+        assert.equal(_eternalStorageAddress, eternalStorageRoot.address, 'ColonyFactory.eternalStorage address is incorrect');
+        return eternalStorage.owner.call();
       })
-      .then(function(){
-        return rootColony.getColony.call(_COLONY_KEY_);
-      })
-      .then(function (_address) {
-        console.log('\tColony address: [ ', _address, ' ]');
-        colony = Colony.at(_address);
-
-        console.log('\t"isUpdated" function NOT available in old ColonyFactory colonies: [ ', !!colony.isUpdated, ' ]');
-        assert.isUndefined(colony.isUpdated, 'function exists on the old contract version');
-
-        return colony.setTokensSymbol('CNY');
+      .then(function(owner){
+        assert.equal(owner, colonyFactoryNew.address, 'EternalStorage owner not updated to new ColonyFactory');
+        return rootColony.createColony(_NEW_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        return colony.tokenLedger.call();
+        return rootColony.countColonies.call();
       })
-      .then(function(_tokenLedgerAddress){
-        var tokenLedger = ColonyTokenLedger.at(_tokenLedgerAddress);
-        return tokenLedger.symbol.call();
-      })
-      .then(function(symbol_){
-        console.log('\tColony symbol is: [ ', symbol_, ' ]');
-        return colony.rootColonyResolver.call();
-      })
-      .then(function(_rootColonyResolverAddress){
-        return RootColonyResolver.at(_rootColonyResolverAddress).rootColonyAddress.call();
-      })
-      .then(function(rootColonyAddress_){
-        console.log('\tColony RootColony address: [ ', rootColonyAddress_, ' ]');
-        console.log('\tCreating FakeNewColonyFactory...');
-        return FakeNewColonyFactory.new({gas: 4e6, gasPrice: 20e9});
-      })
-      .then(function(colonyFactory_){
-        colonyFactory = colonyFactory_;
-        console.log('\tFakeNewColonyFactory address: [ ', colonyFactory.address, ' ]');
-        console.log('\tUpdating RootColonyResolver...');
-        return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
-      })
-      .then(function() {
-        console.log('\tRegistering ColonyFactory at new RootColony...');
-        return rootColony.registerColonyFactory(colonyFactory.address);
-      })
-      .then(function(){
-        return rootColony.colonyFactory.call();
-      })
-      .then(function(_newColonyFactoryAddress){
-        console.log('\tRootColony current colony factory address: [ ', _newColonyFactoryAddress, ' ]');
-        assert.equal(colonyFactory.address, _newColonyFactoryAddress, 'RootColony factory was not updated');
-
-        console.log('\tCreating FakeUpdatedColony...');
-        return rootColony.createColony(_COLONY_KEY_);
-      })
-      .then(function(){
-        return rootColony.getColony.call(_COLONY_KEY_);
-      })
-      .then(function (_address) {
-        console.log('\tFakeUpdatedColony address: [ ', _address, ' ]');
-        colony = FakeUpdatedColony.at(_address);
-        return colony.setTokensSymbol('UPD');
-      })
-      .then(function(){
-        return colony.tokenLedger.call();
-      })
-      .then(function(_tokenLedgerAddress){
-        var colonyTokenLedger = ColonyTokenLedger.at(_tokenLedgerAddress);
-        return colonyTokenLedger.symbol.call();
-      })
-      .then(function(symbol_){
-        console.log('\tFakeUpdatedColony symbol is: [ ', symbol_, ' ]');
-        console.log('\t"isUpdated" function available in FakeNewColonyFactory colonies: [ ', !!colony.isUpdated, ' ]');
-        assert.isDefined(colony.isUpdated, 'function doesnt exists on the new contract version');
-
-        return colony.isUpdated.call();
-      })
-      .then(function(_result){
-        console.log('\t"isUpdated" function returns: [ ', _result, ' ]');
-        assert.isTrue(_result, 'colony implementation was not updated');
-      })
-      .then(function(){
-        return colony.rootColonyResolver.call();
-      })
-      .then(function(_rootColonyResolverAddress){
-        return RootColonyResolver.at(_rootColonyResolverAddress).rootColonyAddress.call();
-      })
-      .then(function(rootColonyAddress_){
-        console.log('\tFakeUpdatedColony RootColony address: [ ', rootColonyAddress_, ' ]');
-        assert.equal(rootColonyAddress_, rootColony.address, 'root colony address is incorrect');
+      .then(function(count){
+        assert.equal(count.toNumber(), 2, 'There should be 2 colonies.');
       })
       .then(done)
       .catch(done);

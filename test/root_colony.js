@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, assert */
+/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, EternalStorage, assert */
 
 var testHelper = require('../helpers/test-helper.js');
 contract('RootColony', function (accounts) {
@@ -12,6 +12,8 @@ contract('RootColony', function (accounts) {
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
+  var eternalStorageRoot;
+  var eternalStorage;
 
   before(function(done)
   {
@@ -26,18 +28,37 @@ contract('RootColony', function (accounts) {
     ], done);
   });
 
-  afterEach(function(done){
-    testHelper.waitAll([rootColony.removeColony(_COLONY_KEY_)], done);
+  beforeEach(function(done){
+    EternalStorage.new()
+    .then(function(contract){
+      eternalStorageRoot = contract;
+      return eternalStorageRoot.changeOwner(colonyFactory.address);
+    })
+    .then(function(){
+      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(function(){
+      done();
+    })
+    .catch(done);
   });
 
   describe('when spawning new colonies', function(){
-    it('should allow users to create new colonies', function (done) {
-      rootColony.createColony(_COLONY_KEY_)
+  /*  it('should allow users to create new colonies', function (done) {
+      rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
       .then(function(){
-        return rootColony.getColony.call(_COLONY_KEY_);
+        return rootColony.getColony(_COLONY_KEY_);
       })
       .then(function (_address){
         colony = Colony.at(_address);
+        return colony.eternalStorage.call();
+      })
+      .then(function(etStorageAddress){
+        eternalStorage = EternalStorage.at(etStorageAddress);
+        return colony.adminsCount.call();
+      })
+      .then(function(count){
+        assert.equal(count.toNumber(), 1, 'Admin count should be 1');
         return colony.isUserAdmin.call(_MAIN_ACCOUNT_);
       })
       .then(function(_isAdmin){
@@ -49,6 +70,12 @@ contract('RootColony', function (accounts) {
       })
       .then(function (_rootColonyAddress) {
         assert.equal(rootColony.address, _rootColonyAddress, 'root colony address is incorrect');
+      })
+      .then(function(){
+        return eternalStorageRoot.owner.call();
+      })
+      .then(function(owner){
+        assert.equal(colonyFactory.address, owner, 'EternalStorage for Factory does not have the ColonyFactory as its owner');
       })
       .then(done)
       .catch(done);
@@ -68,7 +95,7 @@ contract('RootColony', function (accounts) {
         return rootColony.countColonies.call();
       })
       .then(function(_coloniesCount){
-        assert.equal(_coloniesCount, 7, '# of colonies created is incorrect');
+        assert.equal(_coloniesCount.toNumber(), 7, '# of colonies created is incorrect');
       })
       .then(done)
       .catch(done);
@@ -77,7 +104,7 @@ contract('RootColony', function (accounts) {
     it('should return an empty address if there is no colony for the key provided', function (done) {
       rootColony.getColony.call('DOESNT-EXIST')
       .then(function(_address){
-        assert.equal(testHelper.hexToUtf8(_address), '', 'address returned is incorrect');
+        assert.equal(_address, '0x0000000000000000000000000000000000000000', 'address returned is incorrect');
       })
       .then(done)
       .catch(done);
@@ -167,6 +194,24 @@ contract('RootColony', function (accounts) {
       })
       .then(function(upgradedColonyAddress){
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
+      })
+      .then(done)
+      .catch(done);
+    });
+*/
+    it('should be able to move EternalStorage to another ColonyFactory', function(done){
+      // Just picking any known address for this test.
+      // In reality the address who owns the Storage will be that of a ColonyFactory
+      rootColony.moveColonyFactoryStorage(_OTHER_ACCOUNT_)
+      .then(function(){
+        return colonyFactory.eternalStorage.call();
+      })
+      .then(function(storageAddress){
+        var eternalStorage = Ownable.at(storageAddress);
+        return eternalStorage.owner.call();
+      })
+      .then(function(owner){
+        assert.equal(owner, _OTHER_ACCOUNT_, 'Was not able to change the owner of the EternalStorage in ColonyFactory');
       })
       .then(done)
       .catch(done);

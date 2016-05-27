@@ -1,4 +1,3 @@
-
 import "IColonyFactory.sol";
 import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
@@ -7,7 +6,6 @@ import "FakeUpdatedColony.sol";
 contract FakeNewColonyFactory is IColonyFactory {
 
   event ColonyCreated(bytes32 colonyKey, address colonyAddress, address colonyOwner, uint now);
-  event ColonyDeleted(bytes32 colonyKey, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
 
   modifier onlyRootColony(){
@@ -15,22 +13,9 @@ contract FakeNewColonyFactory is IColonyFactory {
     _
   }
 
-  struct ColonyRecord {
-    uint index;
-    bool _exists;
-  }
-
-  struct ColonyMapping {
-    mapping(bytes32 => ColonyRecord) catalog;
-    address [] data;
-  }
-
-  ColonyMapping colonies;
-
   function FakeNewColonyFactory()
   refundEtherSentByAccident
   {
-
   }
 
   /// @notice this function registers the address of the RootColonyResolver
@@ -42,62 +27,53 @@ contract FakeNewColonyFactory is IColonyFactory {
     rootColonyResolverAddress = rootColonyResolverAddress_;
   }
 
-  function createColony(bytes32 key_, address tokenLedger_, address eternalStorage_)
+  function registerEternalStorage(address eternalStorage_)
+  refundEtherSentByAccident
+  onlyOwner
+  {
+    eternalStorageRoot = eternalStorage_;
+  }
+
+  function moveStorage(address _newColonyFactory)
+  refundEtherSentByAccident
+  onlyRootColony
+  {
+    Ownable(eternalStorageRoot).changeOwner(_newColonyFactory);
+  }
+
+  function createColony(bytes32 key_, address tokenLedger_, address eternalStorage)
   throwIfIsEmptyBytes32(key_)
   throwIfAddressIsInvalid(tokenLedger_)
   onlyRootColony
   {
-    if(colonies.catalog[key_]._exists) throw;
-
-    var colonyIndex = colonies.data.length++;
-    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, eternalStorage_);
+    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, eternalStorage);
 
     Ownable(tokenLedger_).changeOwner(colony);
-    Ownable(eternalStorage_).changeOwner(colony);
-
-    colonies.catalog[key_] = ColonyRecord({index: colonyIndex, _exists: true});
-    colonies.data[colonyIndex] = colony;
+    Ownable(eternalStorage).changeOwner(colony);
+    eternalStorageRoot.addColony(key_, colony);
 
     ColonyCreated(key_, colony, tx.origin, now);
   }
 
-  function removeColony(bytes32 key_)
-  refundEtherSentByAccident
-  throwIfIsEmptyBytes32(key_)
-  onlyRootColony
-  {
-    colonies.catalog[key_]._exists = false;
-    ColonyDeleted(key_, tx.origin, now);
-  }
-
   function getColony(bytes32 key_) constant returns(address)
   {
-    if(!colonies.catalog[key_]._exists) return address(0x0);
-
-    var colonyIndex = colonies.catalog[key_].index;
-    return colonies.data[colonyIndex];
+    return eternalStorageRoot.getColony(key_);
   }
 
   function getColonyAt(uint256 idx_) constant returns(address)
   {
-    return colonies.data[idx_];
+    return eternalStorageRoot.getColonyAt(idx_);
   }
 
   function upgradeColony(bytes32 key_)
+  onlyRootColony
   {
-    uint256 colonyIndex = colonies.catalog[key_].index;
-    address colonyAddress = colonies.data[colonyIndex];
 
-    if(!FakeUpdatedColony(colonyAddress).isUserAdmin(tx.origin)) throw;
+  }
 
-    address tokenLedger = FakeUpdatedColony(colonyAddress).tokenLedger();
-    address eStorage = FakeUpdatedColony(colonyAddress).eternalStorage();
-
-    FakeUpdatedColony colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger, eStorage);
-    IUpgradable(colonyAddress).upgrade(colonyNew);
-
-    colonies.data[colonyIndex] = colonyNew;
-    ColonyUpgraded(colonyNew, tx.origin, now);
+  function countColonies() constant returns (uint256)
+  {
+    return eternalStorageRoot.coloniesCount();
   }
 
   function () {

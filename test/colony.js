@@ -1,11 +1,11 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, EternalStorage, ColonyFactory, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert,  */
+/* globals contract, Colony, EternalStorage, ColonyFactory, Ownable, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert,  */
 var testHelper = require('../helpers/test-helper.js');
 import solSha3 from '../../app/client/imports/lib/crypto';
 
 contract('Colony', function (accounts) {
-  var _COLONY_KEY_ = 'COLONY_TEST';
+  var _COLONY_KEY_;
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var _GAS_PRICE_ = 20e9;
@@ -19,10 +19,11 @@ contract('Colony', function (accounts) {
   };
 
   var colony;
-  var eternalStorage;
   var colonyFactory;
-  var rootColony;
   var rootColonyResolver;
+  var eternalStorage;
+  var rootColony;
+  var eternalStorageRoot;
 
   before(function(done)
   {
@@ -30,25 +31,32 @@ contract('Colony', function (accounts) {
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
 
-    rootColonyResolver.registerRootColony(rootColony.address)
-    .then(function(){
-      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+    EternalStorage.new()
+    .then(function(contract){
+      eternalStorageRoot = contract;
+      console.log('EternalStorage for ColonyFactory created at : ', eternalStorageRoot.address);
+      return;
     })
     .then(function(){
-      return rootColony.registerColonyFactory(colonyFactory.address);
+      return eternalStorageRoot.changeOwner(colonyFactory.address);
     })
     .then(function(){
-      done();
-    })
-    .catch(done);
-  });
-
-  afterEach(function(done){
-    rootColony.removeColony(_COLONY_KEY_).then(function(){ done(); }).catch(done);
+      testHelper.waitAll([
+        rootColonyResolver.registerRootColony(rootColony.address),
+        rootColony.registerColonyFactory(colonyFactory.address),
+        colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
+        colonyFactory.registerEternalStorage(eternalStorageRoot.address)
+      ], done);
+    });
   });
 
   beforeEach(function(done){
-    rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
+    _COLONY_KEY_ = testHelper.getRandomString(7);
+
+    eternalStorageRoot.owner.call()
+    .then(function(o){
+      return rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
+    })
     .then(function(){
       return rootColony.getColony.call(_COLONY_KEY_);
     })
