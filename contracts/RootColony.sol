@@ -14,6 +14,7 @@ contract RootColony is Destructible, Modifiable {
   /// @param _colonyFactoryAddress address used to locate the colony factory contract
   function registerColonyFactory(address _colonyFactoryAddress)
   refundEtherSentByAccident
+  throwIfAddressIsInvalid(_colonyFactoryAddress)
   onlyOwner
   {
     colonyFactory = IColonyFactory(_colonyFactoryAddress);
@@ -21,9 +22,10 @@ contract RootColony is Destructible, Modifiable {
 
   function moveColonyFactoryStorage(address newColonyFactory)
   refundEtherSentByAccident
+  throwIfAddressIsInvalid(newColonyFactory)
   onlyOwner
   {
-    colonyFactory.moveStorage(newColonyFactory);
+    colonyFactory.changeEternalStorageOwner(newColonyFactory);
   }
 
   /// @notice creates a Colony

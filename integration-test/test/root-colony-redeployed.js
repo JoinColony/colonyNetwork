@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, assert
+/* globals contract, FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, assert, EternalStorage
 */
 
 contract('RootColony', function () {
@@ -9,7 +9,6 @@ contract('RootColony', function () {
   var colonyFactory;
   var rootColony;
   var rootColonyNew;
-  var colony;
   var rootColonyResolver;
   var eternalStorageRoot;
 
@@ -42,17 +41,8 @@ contract('RootColony', function () {
       return rootColony.createColony(_COLONY_KEY_);
     })
     .then(function(){
-      return rootColony.getColony.call(_COLONY_KEY_);
+      done();
     })
-    .then(function (address_) {
-      colony = Colony.at(address_);
-      return colony.rootColonyResolver.call();
-    })
-    .then(function(_rootColonyResolverAddress){
-      var rootColonyResolver = RootColonyResolver.at(_rootColonyResolverAddress);
-      return;
-    })
-    .then(done)
     .catch(done);
   });
 

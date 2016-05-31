@@ -2,11 +2,15 @@ import "IColonyFactory.sol";
 import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
 import "FakeUpdatedColony.sol";
+import "Ownable.sol";
+import "ColonyLibrary.sol";
 
 contract FakeNewColonyFactory is IColonyFactory {
 
   event ColonyCreated(bytes32 colonyKey, address colonyAddress, address colonyOwner, uint now);
   event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
+
+  using ColonyLibrary for address;
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) throw;
@@ -34,7 +38,7 @@ contract FakeNewColonyFactory is IColonyFactory {
     eternalStorageRoot = eternalStorage_;
   }
 
-  function moveStorage(address _newColonyFactory)
+  function changeEternalStorageOwner(address _newColonyFactory)
   refundEtherSentByAccident
   onlyRootColony
   {

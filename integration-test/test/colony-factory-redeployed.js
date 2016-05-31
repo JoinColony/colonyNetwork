@@ -1,6 +1,7 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, assert */
+/* globals contract, RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, FakeUpdatedColony, EternalStorage, Ownable, assert */
+var testHelper = require('../../helpers/test-helper.js');
 
 contract('ColonyFactory', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
@@ -27,8 +28,8 @@ contract('ColonyFactory', function (accounts) {
     .then(function(){
       return EternalStorage.new();
     })
-    .then(function(contract){
-      eternalStorageRoot = contract;
+    .then(function(eternalStorageRoot_){
+      eternalStorageRoot = eternalStorageRoot_;
       return eternalStorageRoot.changeOwner(colonyFactory.address);
     })
     .then(function(){
@@ -42,55 +43,55 @@ contract('ColonyFactory', function (accounts) {
     })
     .then(function(count){
       assert.equal(1, count.toNumber(), 'There should be 1 colony in the network.');
+      return FakeNewColonyFactory.new({gas: 4e6, gasPrice: 20e9});
+    })
+    .then(function(contract){
+      colonyFactoryNew = contract;
     })
     .then(done)
     .catch(done);
   });
 
   beforeEach(function(done){
-    // Create the new Colony Factory and upgrade all references
-    FakeNewColonyFactory.new({gas: 4e6, gasPrice: 20e9})
-    .then(function(contract){
-      colonyFactoryNew = contract;
-      return colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address);
-    })
-    .then(function(){
-      return rootColony.registerColonyFactory(colonyFactoryNew.address);
-    })
-    .then(function(){
-      return colonyFactoryNew.registerEternalStorage(eternalStorageRoot.address);
-    })
-    .then(function(){
-      return rootColony.moveColonyFactoryStorage(colonyFactoryNew.address, {from: _MAIN_ACCOUNT_});
-    })
-    .then(function(){
-      done();
-    })
-    .catch(done);
+    testHelper.waitAll([
+      colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address),
+      colonyFactoryNew.registerEternalStorage(eternalStorageRoot.address),
+      rootColony.registerColonyFactory(colonyFactoryNew.address),
+      rootColony.moveColonyFactoryStorage(colonyFactoryNew.address)
+    ], done);
   });
 
-  describe('when redeploying colony factory contract', function () {
-    it('should adopt the existing EternalStorage', function (done) {
+  describe('when redeploying colony factory and colony contracts', function () {
+    it('should adopt the existing EternalStorage and use upgraded Colony contract', function (done) {
       rootColony.colonyFactory.call()
       .then(function(colonyFactoryAddress){
-        assert.equal(colonyFactoryAddress, colonyFactoryNew.address, 'ColonyFactoryAddress on RootColony is not updated.')
+        assert.equal(colonyFactoryAddress, colonyFactoryNew.address, 'ColonyFactoryAddress on RootColony is not updated.');
       })
       .then(function(){
         return colonyFactoryNew.eternalStorageRoot.call();
       })
       .then(function(_eternalStorageAddress){
         assert.equal(_eternalStorageAddress, eternalStorageRoot.address, 'ColonyFactory.eternalStorage address is incorrect');
-        return eternalStorage.owner.call();
-      })
-      .then(function(owner){
-        assert.equal(owner, colonyFactoryNew.address, 'EternalStorage owner not updated to new ColonyFactory');
         return rootColony.createColony(_NEW_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        return rootColony.countColonies.call();
+        return colonyFactoryNew.eternalStorageRoot.call();
       })
-      .then(function(count){
-        assert.equal(count.toNumber(), 2, 'There should be 2 colonies.');
+      .then(function(_eternalStorageAddress){
+        var eternalStorage = Ownable.at(_eternalStorageAddress);
+        return eternalStorage.owner.call();
+      })
+      .then(function(owner){
+        console.log('Old ColonyFactory address : ', colonyFactory.address);
+        assert.equal(owner, colonyFactoryNew.address, 'Was not able to change the owner of the EternalStorage in ColonyFactory');
+        return rootColony.getColony.call(_NEW_COLONY_KEY_);
+      })
+      .then(function(colonyAddress){
+        var colony = FakeUpdatedColony.at(colonyAddress);
+        return colony.isUpdated.call();
+      })
+      .then(function(isUpdated){
+        assert.equal(true, isUpdated, 'Colony was not updated together with ColonyFactory update');
       })
       .then(done)
       .catch(done);

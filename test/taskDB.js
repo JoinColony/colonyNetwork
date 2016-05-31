@@ -48,7 +48,7 @@ contract('TaskLibrary', function (accounts) {
     _COLONY_KEY_ = testHelper.getRandomString(7);
 
     eternalStorageRoot.owner.call()
-    .then(function(o){
+    .then(function(){
       return rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
     })
     .then(function(){

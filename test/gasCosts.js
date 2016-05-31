@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, before, describe, it, web3, RootColony, Colony, RootColonyResolver, ColonyFactory */
+/* globals contract, before, describe, it, web3, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage */
 
 var testHelper = require('../helpers/test-helper.js');
 
@@ -13,7 +13,7 @@ contract('all', function (accounts) {
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
-  var eternalStorageRoot;
+  var eternalStorage;
 
   before(function(done)
   {
@@ -31,11 +31,11 @@ contract('all', function (accounts) {
   beforeEach(function(done){
     EternalStorage.new()
     .then(function(contract){
-      eternalStorageRoot = contract;
-      return eternalStorageRoot.changeOwner(colonyFactory.address);
+      eternalStorage = contract;
+      return eternalStorage.changeOwner(colonyFactory.address);
     })
     .then(function(){
-      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+      return colonyFactory.registerEternalStorage(eternalStorage.address);
     })
     .then(function(){
       done();

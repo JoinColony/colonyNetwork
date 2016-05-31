@@ -3,10 +3,12 @@ import "Destructible.sol";
 import "Modifiable.sol";
 import "ColonyTokenLedger.sol";
 import "EternalStorage.sol";
+import "SecurityLibrary.sol";
 
 contract FakeNewRootColony is Destructible, Modifiable {
 
   IColonyFactory public colonyFactory;
+  using SecurityLibrary for EternalStorage;
 
   /// @notice registers a colony factory using an address
   /// @param _colonyFactoryAddress address used to locate the colony factory contract
@@ -21,7 +23,7 @@ contract FakeNewRootColony is Destructible, Modifiable {
   refundEtherSentByAccident
   onlyOwner
   {
-    colonyFactory.moveStorage(newColonyFactory);
+    colonyFactory.changeEternalStorageOwner(newColonyFactory);
   }
 
   /// @notice creates a Colony

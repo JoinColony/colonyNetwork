@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, EternalStorage, ColonyFactory, Ownable, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert,  */
+/* globals contract, Colony, EternalStorage, ColonyFactory, ColonyTokenLedger, RootColony, RootColonyResolver, web3, assert,  */
 var testHelper = require('../helpers/test-helper.js');
 import solSha3 from '../../app/client/imports/lib/crypto';
 
@@ -54,7 +54,7 @@ contract('Colony', function (accounts) {
     _COLONY_KEY_ = testHelper.getRandomString(7);
 
     eternalStorageRoot.owner.call()
-    .then(function(o){
+    .then(function(){
       return rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_});
     })
     .then(function(){

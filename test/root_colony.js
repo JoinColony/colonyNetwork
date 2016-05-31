@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, EternalStorage, assert */
+/* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, EternalStorage, Ownable, assert */
 
 var testHelper = require('../helpers/test-helper.js');
 contract('RootColony', function (accounts) {
@@ -13,7 +13,6 @@ contract('RootColony', function (accounts) {
   var rootColony;
   var rootColonyResolver;
   var eternalStorageRoot;
-  var eternalStorage;
 
   before(function(done)
   {
@@ -44,17 +43,13 @@ contract('RootColony', function (accounts) {
   });
 
   describe('when spawning new colonies', function(){
-  /*  it('should allow users to create new colonies', function (done) {
+   it('should allow users to create new colonies', function (done) {
       rootColony.createColony(_COLONY_KEY_, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return rootColony.getColony(_COLONY_KEY_);
       })
       .then(function (_address){
         colony = Colony.at(_address);
-        return colony.eternalStorage.call();
-      })
-      .then(function(etStorageAddress){
-        eternalStorage = EternalStorage.at(etStorageAddress);
         return colony.adminsCount.call();
       })
       .then(function(count){
@@ -198,13 +193,13 @@ contract('RootColony', function (accounts) {
       .then(done)
       .catch(done);
     });
-*/
+
     it('should be able to move EternalStorage to another ColonyFactory', function(done){
       // Just picking any known address for this test.
       // In reality the address who owns the Storage will be that of a ColonyFactory
       rootColony.moveColonyFactoryStorage(_OTHER_ACCOUNT_)
       .then(function(){
-        return colonyFactory.eternalStorage.call();
+        return colonyFactory.eternalStorageRoot.call();
       })
       .then(function(storageAddress){
         var eternalStorage = Ownable.at(storageAddress);
