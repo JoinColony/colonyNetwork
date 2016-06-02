@@ -51,11 +51,11 @@ library TaskLibrary {
     //IPFS hash of the brief
     EternalStorage(_storageContract).setStringValue(sha3("task_summary", idx), _summary);
     //Whether the work has been accepted
-    EternalStorage(_storageContract).setBooleanValue(sha3("task_accepted", idx), false);
+    //EternalStorage(_storageContract).setBooleanValue(sha3("task_accepted", idx), false);
     //Amount of ETH contributed to the task
-    EternalStorage(_storageContract).setUIntValue(sha3("task_eth", idx), 0);
+    //EternalStorage(_storageContract).setUIntValue(sha3("task_eth", idx), 0);
     //Amount of tokens wei contributed to the task
-    EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", idx), 0);
+    //EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", idx), 0);
     //Total number of tasks
     EternalStorage(_storageContract).setUIntValue(sha3("TasksCount"), idx + 1);
 

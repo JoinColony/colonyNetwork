@@ -22,24 +22,24 @@ library ColonyLibrary {
 		var newId = count + 1;
 
 		EternalStorage(_storageContract).setUIntValue(sha3(_key), newId);
-		EternalStorage(_storageContract).setAddressValue(sha3(newId), colony);
+		EternalStorage(_storageContract).setAddressValue(sha3('colony:', newId), colony);
 		EternalStorage(_storageContract).setUIntValue(sha3("ColoniesCount"), newId);
 	}
 
 	function getColony(address _storageContract, bytes32 _key) constant returns(address)
 	{
 		var idx = EternalStorage(_storageContract).getUIntValue(sha3(_key));
-		return EternalStorage(_storageContract).getAddressValue(sha3(idx));
+		return EternalStorage(_storageContract).getAddressValue(sha3('colony:', idx));
 	}
 
 	function getColonyAt(address _storageContract, uint256 _idx) constant returns(address)
 	{
-		return EternalStorage(_storageContract).getAddressValue(sha3(_idx));
+		return EternalStorage(_storageContract).getAddressValue(sha3('colony:', _idx));
 	}
 
 	function upgradeColony(address _storageContract, bytes32 _key, address colonyNew)
 	{
 		var idx = EternalStorage(_storageContract).getUIntValue(sha3(_key));
-		EternalStorage(_storageContract).setAddressValue(sha3(idx), colonyNew);
+		EternalStorage(_storageContract).setAddressValue(sha3('colony:', idx), colonyNew);
 	}
 }
