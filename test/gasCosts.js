@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, before, describe, it, web3, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage */
+/* globals contract, before, describe, it, web3, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage, ColonyTokenLedger */
 
 var testHelper = require('../helpers/test-helper.js');
 
@@ -10,6 +10,7 @@ contract('all', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var colony;
+  var tokenLedger;
   var colonyFactory;
   var rootColony;
   var rootColonyResolver;
@@ -81,11 +82,11 @@ contract('all', function (accounts) {
       })
       .then(function(cost){
         console.log('acceptTask : ', cost);
-        return colony.generateColonyTokensWei(100, { from: _MAIN_ACCOUNT_ });
+        return colony.generateColonyTokensWei(200, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(){
       // When working with tokens
-        return colony.generateColonyTokensWei.estimateGas(100, { from: _MAIN_ACCOUNT_ });
+        return colony.generateColonyTokensWei.estimateGas(200, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(cost){
         console.log('generateColonyTokensWei : ', cost);
@@ -107,6 +108,21 @@ contract('all', function (accounts) {
       })
       .then(function(cost){
         console.log('completeAndPayTask : ', cost);
+        return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
+      })
+      .then(function(){
+        return colony.tokenLedger.call();
+      })
+      .then(function(ledgerAddress){
+        tokenLedger = ColonyTokenLedger.at(ledgerAddress);
+        console.log(ledgerAddress);
+        return tokenLedger;
+      })
+      .then(function(){
+        return tokenLedger.transfer.estimateGas(_MAIN_ACCOUNT_, 1, { from: _OTHER_ACCOUNT_ });
+      })
+      .then(function(cost){
+        console.log('ColonyTokenLedger.transfer 1 token : ', cost);
       })
       .then(done)
       .catch(done);
