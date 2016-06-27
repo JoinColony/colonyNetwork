@@ -68,6 +68,17 @@ contract RootColony is Destructible, Modifiable {
     return colonyFactory.getColonyAt(_idx);
   }
 
+  /// @notice this function can be used to get the index of a Colony by a key.
+  /// @param _key the key of the Colony created
+  /// @return the index for the given colony key.
+  function getColonyIndex(bytes32 _key)
+  refundEtherSentByAccident
+  throwIfIsEmptyBytes32(_key)
+  constant returns (uint256)
+  {
+    return colonyFactory.getColonyIndex(_key);
+  }
+
   function upgradeColony(bytes32 _key)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)

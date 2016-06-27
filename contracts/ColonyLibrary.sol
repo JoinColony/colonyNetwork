@@ -37,6 +37,11 @@ library ColonyLibrary {
 		return EternalStorage(_storageContract).getAddressValue(sha3('colony:', _idx));
 	}
 
+	function getColonyIndex(address _storageContract, bytes32 _key) constant returns(uint256)
+	{
+			return EternalStorage(_storageContract).getUIntValue(sha3(_key));
+	}
+
 	function upgradeColony(address _storageContract, bytes32 _key, address colonyNew)
 	{
 		var idx = EternalStorage(_storageContract).getUIntValue(sha3(_key));

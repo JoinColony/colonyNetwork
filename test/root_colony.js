@@ -96,6 +96,35 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
+    it('should allow users to get the index of a colony by its key', function (done) {
+      testHelper.Promise.all([
+        rootColony.createColony('Colony1'),
+        rootColony.createColony('Colony2'),
+        rootColony.createColony('Colony3')
+      ])
+      .then(function() {
+        return rootColony.createColony('Colony4');
+      })
+      .then(function() {
+        return rootColony.createColony('Colony5');
+      })
+      .then(function() {
+        return rootColony.createColony('Colony6');
+      })
+      .then(function(){
+        return rootColony.getColonyIndex.call('Colony4');
+      })
+      .then(function(_colonyIdx){
+        assert.equal(_colonyIdx.toNumber(), 4, 'Colony index is incorrect');
+        return rootColony.getColonyIndex.call('Colony5');
+      })
+      .then(function(_colonyIdx){
+        assert.equal(_colonyIdx.toNumber(), 5, 'Colony index is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should return an empty address if there is no colony for the key provided', function (done) {
       rootColony.getColony.call('DOESNT-EXIST')
       .then(function(_address){

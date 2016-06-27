@@ -69,6 +69,11 @@ contract FakeNewColonyFactory is IColonyFactory {
     return eternalStorageRoot.getColonyAt(idx_);
   }
 
+  function getColonyIndex(bytes32 key_) constant returns(uint256)
+  {
+    return eternalStorageRoot.getColonyIndex(key_);
+  }
+
   function upgradeColony(bytes32 key_)
   onlyRootColony
   {

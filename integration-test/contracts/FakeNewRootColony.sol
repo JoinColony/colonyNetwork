@@ -67,6 +67,14 @@ contract FakeNewRootColony is Destructible, Modifiable {
     return colonyFactory.getColonyAt(_idx);
   }
 
+  function getColonyIndex(bytes32 _key)
+  refundEtherSentByAccident
+  throwIfIsEmptyBytes32(_key)
+  constant returns (uint256)
+  {
+    return colonyFactory.getColonyIndex(_key);
+  }
+
   function upgradeColony(bytes32 _key)
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
