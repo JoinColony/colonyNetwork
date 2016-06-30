@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, before, describe, it, web3, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage, ColonyTokenLedger */
+/* globals contract, before, describe, it, web3, assert, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage, ColonyTokenLedger */
 
 var testHelper = require('../helpers/test-helper.js');
 
@@ -15,6 +15,14 @@ contract('all', function (accounts) {
   var rootColony;
   var rootColonyResolver;
   var eternalStorage;
+
+  var makeTaskCost;
+  var updateTaskCost;
+  var acceptTaskCost;
+  var generateColonyTokensCost;
+  var contributeEthToTaskCost;
+  var contributeTokensToTaskCost;
+  var completeAndPayTaskCost;
 
   before(function(done)
   {
@@ -39,13 +47,26 @@ contract('all', function (accounts) {
       return colonyFactory.registerEternalStorage(eternalStorage.address);
     })
     .then(function(){
-      done();
+      return rootColony.createColony('Antz', {from: _MAIN_ACCOUNT_});
     })
+    .then(function(){
+      return rootColony.getColony.call('Antz');
+    })
+    .then(function(colony_){
+      colony = Colony.at(colony_);
+      return colony.tokenLedger.call();
+    })
+    .then(function(ledgerAddress){
+      console.log('tokenLedger address : ', ledgerAddress);
+      tokenLedger = ColonyTokenLedger.at(ledgerAddress);
+      return;
+    })
+    .then(done)
     .catch(done);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
-  describe('Get gas costs ', function(){
+  describe('Gas costs ', function(){
     it('when working with a Colony', function (done) {
 
       // Cost of creating a colony
@@ -57,19 +78,10 @@ contract('all', function (accounts) {
         });
       console.log('RootColony.createColony(bytes32) : ', gasCostCreateColony);
 
-      rootColony.createColony('Antz', {from: _MAIN_ACCOUNT_})
-      .then(function(){
-        return rootColony.getColony.call('Antz');
-      })
-      .then(function(colony_){
-        colony = Colony.at(colony_);
-        return;
-      })
-      .then(function(){
-        // When working with tasks
-        return colony.makeTask.estimateGas('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { });
-      })
+      // When working with tasks
+      colony.makeTask.estimateGas('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { })
       .then(function(cost){
+        makeTaskCost = cost;
         console.log('makeTask : ', cost);
         return colony.makeTask('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { from: _MAIN_ACCOUNT_ });
       })
@@ -77,10 +89,12 @@ contract('all', function (accounts) {
         return colony.updateTask.estimateGas(0, 'My updated task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC02', { from: _MAIN_ACCOUNT_ });
       })
       .then(function(cost){
+        updateTaskCost = cost;
         console.log('updateTask : ', cost);
         return colony.acceptTask.estimateGas(0, { });
       })
       .then(function(cost){
+        acceptTaskCost = cost;
         console.log('acceptTask : ', cost);
         return colony.generateColonyTokensWei(200, { from: _MAIN_ACCOUNT_ });
       })
@@ -89,10 +103,12 @@ contract('all', function (accounts) {
         return colony.generateColonyTokensWei.estimateGas(200, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(cost){
+        generateColonyTokensCost = cost;
         console.log('generateColonyTokensWei : ', cost);
         return colony.contributeEthToTask.estimateGas(0, { value: 50 });
       })
       .then(function(cost){
+        contributeEthToTaskCost = cost;
         console.log('contributeEthToTask : ', cost);
         return colony.contributeEthToTask(0, { value: 50 });
       })
@@ -100,6 +116,7 @@ contract('all', function (accounts) {
         return colony.contributeTokensWeiFromPool.estimateGas(0, 50, { from:_MAIN_ACCOUNT_ });
       })
       .then(function(cost){
+        contributeTokensToTaskCost = cost;
         console.log('contributeTokensWeiFromPool : ', cost);
         return colony.contributeTokensWeiFromPool(0, 50, { from:_MAIN_ACCOUNT_ });
       })
@@ -107,25 +124,37 @@ contract('all', function (accounts) {
         return colony.completeAndPayTask.estimateGas(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(cost){
+        completeAndPayTaskCost = cost;
         console.log('completeAndPayTask : ', cost);
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
-      })
-      .then(function(){
-        return colony.tokenLedger.call();
-      })
-      .then(function(ledgerAddress){
-        tokenLedger = ColonyTokenLedger.at(ledgerAddress);
-        console.log(ledgerAddress);
-        return tokenLedger;
       })
       .then(function(){
         return tokenLedger.transfer.estimateGas(_MAIN_ACCOUNT_, 1, { from: _OTHER_ACCOUNT_ });
       })
       .then(function(cost){
         console.log('ColonyTokenLedger.transfer 1 token : ', cost);
+        done();
       })
-      .then(done)
       .catch(done);
+    });
+
+    it('Average gas costs for customers should not exceed 0.77 ETH per month', function(done){
+      var totalGasCost = makeTaskCost * 50 // assume 100 tasks per month are created
+      + updateTaskCost * 200 // assume each task is updated 5 times
+      + acceptTaskCost * 50 // all 100 opened tasks are accepted
+      + contributeEthToTaskCost * 50 // only colony admins are allowed to contribute eth adn tokens
+      + contributeTokensToTaskCost * 50
+      + completeAndPayTaskCost * 50 // all tasks are closed and paid out
+      + generateColonyTokensCost * 1; // only once per month are new colony tokens generated
+
+      var totalEtherCost = web3.fromWei(totalGasCost * _GAS_PRICE_, 'ether');
+      console.log('Average monthly cost per customer is : ');
+      console.log(' Gas : ', totalGasCost);
+      console.log(' Ether : ', totalEtherCost);
+
+      assert.isBelow(totalEtherCost, 0.77, 'Monthly average costs exceed target');
+
+      done();
     });
   });
 });
