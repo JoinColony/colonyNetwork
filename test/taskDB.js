@@ -3,7 +3,7 @@
 /* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, EternalStorage, web3, assert */
 
 var testHelper = require('../helpers/test-helper.js');
-import solSha3 from '../../app/client/imports/lib/crypto';
+import { solSha3 } from 'colony-utils';
 
 contract('TaskLibrary', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';

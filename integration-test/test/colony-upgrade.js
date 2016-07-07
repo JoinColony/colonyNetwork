@@ -2,7 +2,7 @@
 // These globals are added by Truffle:
 /* globals contract, RootColony, Colony, ColonyTokenLedger, RootColonyResolver, EternalStorage, web3, ColonyFactory, assert */
 var testHelper = require('../../helpers/test-helper.js');
-import solSha3 from '../../../app/client/imports/lib/crypto';
+import { solSha3 } from 'colony-utils';
 
 contract('Colony', function (accounts) {
   var _COLONY_KEY_ = 'COLONY_TEST';
