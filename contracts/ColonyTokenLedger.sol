@@ -88,7 +88,7 @@ contract ColonyTokenLedger is ITokenLedger {
   function approve(address _spender, uint256 _value)
   refundEtherSentByAccident
   {
-    if(_value > total_supply) throw;
+    if(_value > totalSupply) throw;
 
     allowed[msg.sender][_spender] = _value;
     Approval(msg.sender, _spender, _value);
@@ -113,26 +113,18 @@ contract ColonyTokenLedger is ITokenLedger {
     return balances[_owner];
   }
 
-  /// @notice this function is used to increase the amount of tokens available limited by `total_supply`
+  /// @notice this function is used to increase the amount of tokens available limited by `totalSupply`
   /// and assign it to the contract owner.
-  /// @param _amount The amount to be increased in the upper bound total_supply in token wei
+  /// @param _amount The amount to be increased in the upper bound totalSupply in token wei
   function generateTokensWei(uint256 _amount)
   onlyOwner
   refundEtherSentByAccident
   {
       if(_amount == 0) throw;
-      if (total_supply + _amount < _amount) throw;
+      if (totalSupply + _amount < _amount) throw;
 
-      total_supply += _amount;
+      totalSupply += _amount;
       balances[owner] += _amount;
-  }
-
-  /// @return total amount of tokens wei
-  function totalSupply()
-  refundEtherSentByAccident
-  constant returns (uint256 _total)
-  {
-    return total_supply;
   }
 
 	function () {

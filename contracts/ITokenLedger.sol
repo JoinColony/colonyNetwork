@@ -2,7 +2,7 @@ import "Modifiable.sol";
 import "Destructible.sol";
 contract ITokenLedger is Destructible, Modifiable {
 
-    uint256 total_supply;
+    uint256 public totalSupply;
     bytes32 public title;
     bytes4 public symbol;
 
@@ -19,9 +19,6 @@ contract ITokenLedger is Destructible, Modifiable {
     /// @notice set the token ledger title
     /// @param _title the title of the Colony Token
     function setTokensTitle(bytes32 _title);
-
-    /// @return total amount of tokens wei
-    function totalSupply() constant returns (uint256 supply) {}
 
     /// @param _owner The address from which the balance will be retrieved
     /// @return The balance

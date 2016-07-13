@@ -20,8 +20,8 @@ contract('ColonyTokenLedger', function (accounts) {
   describe('when created', function () {
     it('should have an initial supply of zero tokens', function (done) {
       colonyToken.totalSupply.call()
-      .then(function (total_supply) {
-        assert.equal(total_supply, 0, 'initial supply is different from  1000');
+      .then(function (totalSupply) {
+        assert.equal(totalSupply, 0, 'initial supply is different from  1000');
         done();
       })
       .catch(done);
@@ -415,8 +415,8 @@ contract('ColonyTokenLedger', function (accounts) {
       .then(function(){
         return colonyToken.totalSupply.call();
       })
-      .then(function (total_supply) {
-        previousSupply = total_supply.toNumber();
+      .then(function (totalSupply) {
+        previousSupply = totalSupply.toNumber();
         return colonyToken.generateTokensWei(100);
       })
       .then(function () {
