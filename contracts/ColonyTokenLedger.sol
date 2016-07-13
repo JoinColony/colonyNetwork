@@ -15,13 +15,13 @@ contract ColonyTokenLedger is ITokenLedger {
   /// @notice verifies if the sender has enough balance, otherwise, raises an error
   /// @param _from sender of value
   /// @param _value The amount of token wei to be transferred
-  modifier hasEnoughBalance(address _from, uint256 _value)
-  {
-    if(_value == 0) throw;
-    if(balances[_from] < _value) throw;
-    if(balances[_from] + _value < balances[_from]) throw;
-    _
-  }
+    modifier hasEnoughBalance(address _from, uint256 _value)
+    {
+      if(_value == 0) throw;
+      if(balances[_from] < _value) throw;
+      if(balances[_from] + _value < balances[_from]) throw;
+      _
+    }
 
   /// @notice verifies if the address msg.sender has enough balance approved from `_from` address
   /// @param _from approver of the transference
@@ -55,14 +55,21 @@ contract ColonyTokenLedger is ITokenLedger {
   /// @notice send `_value` token wei to `_to` from `msg.sender`
   /// @param _to The address of the recipient
   /// @param _value The amount of token wei to be transferred
+  /// @return Whether the transfer was successful or not
   function transfer(address _to, uint256 _value)
   refundEtherSentByAccident
-  hasEnoughBalance(msg.sender, _value)
+  returns (bool success)
   {
+    //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
+    if (balances[msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
       balances[msg.sender] -= _value;
       balances[_to] += _value;
-
       Transfer(msg.sender, _to, _value);
+      return true;
+    }
+    else {
+      return false;
+    }
   }
 
   /// @notice send `_value` token/s  wei to `_to` from `_from` on the condition it is approved by `_from`
@@ -71,7 +78,6 @@ contract ColonyTokenLedger is ITokenLedger {
   /// @param _value The amount of token wei to be transferred
   function transferFrom(address _from, address _to, uint256 _value)
   refundEtherSentByAccident
-  hasEnoughBalance(_from, _value)
   hasEnoughAllowedBalance(_from, _value)
   {
       balances[_from] -= _value;

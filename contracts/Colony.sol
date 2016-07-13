@@ -101,8 +101,9 @@ contract Colony is Modifiable, IUpgradable  {
   onlyAdmins
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-    tokenLedger.transferFrom(msg.sender, this, tokensWei);
-    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
+    if (tokenLedger.transferFrom(msg.sender, this, tokensWei)) {
+      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
+    }
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
@@ -206,12 +207,11 @@ contract Colony is Modifiable, IUpgradable  {
     {
       var payout = ((taskTokens * 95)/100);
       var fee = taskTokens - payout;
-      tokenLedger.transfer(paymentAddress, payout);
-      tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee);
-
-      var reservedTokensWei = eternalStorage.getReservedTokensWei();
-      eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
-      eternalStorage.removeReservedTokensWeiForTask(taskId);
+      if (tokenLedger.transfer(paymentAddress, payout) && tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee)) {
+        var reservedTokensWei = eternalStorage.getReservedTokensWei();
+        eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
+        eternalStorage.removeReservedTokensWeiForTask(taskId);
+      }
     }
   }
 
@@ -222,7 +222,10 @@ contract Colony is Modifiable, IUpgradable  {
   {
     var tokensBalance = tokenLedger.balanceOf(this);
     if(tokensBalance > 0){
-      tokenLedger.transfer(newColonyAddress_, tokensBalance);
+      if (!tokenLedger.transfer(newColonyAddress_, tokensBalance))
+      {
+        return;
+      }
     }
 
     tokenLedger.changeOwner(newColonyAddress_);

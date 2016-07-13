@@ -338,8 +338,8 @@ contract('Colony', function (accounts) {
     });
   });
 
-  describe('when contributing to tasks', function(){
-    it('should allow admins to contribute ETH to task', function (done) {
+  describe('when funding tasks', function(){
+    it('should allow admins to fund task with ETH', function (done) {
       colony.makeTask('name', 'summary')
       .then(function() {
         return colony.updateTask(0, 'nameedit', 'summaryedit');
@@ -375,7 +375,7 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should fail if non-admins try to contribute ETH to task', function (done) {
+    it('should fail if non-admins fund task with ETH', function (done) {
       var prevBalance;
       colony.makeTask('name', 'summary')
       .then(function () {
@@ -395,7 +395,7 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow admins to contribute tokens to task', function (done) {
+    it('should allow admins to fund task with own tokens', function (done) {
       var tokenLedger;
       colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
@@ -474,7 +474,7 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow colonies to assign tokens to tasks', function (done) {
+    it('should reserve the correct number of tokens when admins fund tasks with pool tokens', function (done) {
       var prevBalance;
       colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
@@ -488,12 +488,6 @@ contract('Colony', function (accounts) {
       })
       .then(function(reservedTokensWei){
         assert.equal(reservedTokensWei.toNumber(), 70, 'Has not reserved the right amount of colony tokens.');
-        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-        return colony.contributeTokensWeiToTask(0, 100, {from:_MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_, gas:_GAS_TO_SPEND_});
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function(){
-        testHelper.checkAllGasSpent(_GAS_TO_SPEND_, _GAS_PRICE_, _MAIN_ACCOUNT_, prevBalance);
       })
       .then(function(){
         done();
@@ -501,7 +495,7 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should not allow colonies to assign more tokens to tasks than they have', function (done) {
+    it('should fail if admins fund tasks with more pool tokens than they have available', function (done) {
       var prevBalance;
       colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
