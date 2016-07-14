@@ -62,7 +62,7 @@ contract ColonyTokenLedger is ITokenLedger {
     if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
       balances[_from] -= _value;
       balances[_to] += _value;
-      
+
       allowed[_from][msg.sender] -= _value;
 
       Transfer(_from, _to, _value);
@@ -78,11 +78,13 @@ contract ColonyTokenLedger is ITokenLedger {
   /// @param _value The amount of wei to be approved for transfer
   function approve(address _spender, uint256 _value)
   refundEtherSentByAccident
+  returns (bool success)
   {
     if(_value > totalSupply) throw;
 
     allowed[msg.sender][_spender] = _value;
     Approval(msg.sender, _spender, _value);
+    return true;
   }
 
   /// @param _owner The address of the account owning tokens wei

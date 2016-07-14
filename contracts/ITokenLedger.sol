@@ -40,7 +40,8 @@ contract ITokenLedger is Destructible, Modifiable {
     /// @notice `msg.sender` approves `_addr` to spend `_value` tokens
     /// @param _spender The address of the account able to transfer the tokens
     /// @param _value The amount of wei to be approved for transfer
-    function approve(address _spender, uint256 _value);
+    /// @return Whether the approval was successful or not
+    function approve(address _spender, uint256 _value) returns (bool success);
 
     /// @param _owner The address of the account owning tokens
     /// @param _spender The address of the account able to transfer the tokens
