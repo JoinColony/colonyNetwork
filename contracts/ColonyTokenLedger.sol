@@ -12,28 +12,6 @@ contract ColonyTokenLedger is ITokenLedger {
 
   }
 
-  /// @notice verifies if the sender has enough balance, otherwise, raises an error
-  /// @param _from sender of value
-  /// @param _value The amount of token wei to be transferred
-    modifier hasEnoughBalance(address _from, uint256 _value)
-    {
-      if(_value == 0) throw;
-      if(balances[_from] < _value) throw;
-      if(balances[_from] + _value < balances[_from]) throw;
-      _
-    }
-
-  /// @notice verifies if the address msg.sender has enough balance approved from `_from` address
-  /// @param _from approver of the transference
-  /// @param _value The amount of token wei to be transferred
-  modifier hasEnoughAllowedBalance(address _from, uint256 _value)
-  {
-    if(_value == 0) throw;
-    if(allowed[_from][msg.sender] < _value) throw;
-    if(allowed[_from][msg.sender] + _value < allowed[_from][msg.sender]) throw;
-    _
-  }
-
   /// @notice set the ColonyTokenLedger symbol
   /// @param _symbol the symbol of the Colony Token
   function setTokensSymbol(bytes4 _symbol)
@@ -78,14 +56,21 @@ contract ColonyTokenLedger is ITokenLedger {
   /// @param _value The amount of token wei to be transferred
   function transferFrom(address _from, address _to, uint256 _value)
   refundEtherSentByAccident
-  hasEnoughAllowedBalance(_from, _value)
+  returns (bool success)
   {
+    //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
+    if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && balances[_to] + _value > balances[_to]) {
       balances[_from] -= _value;
       balances[_to] += _value;
-
+      
       allowed[_from][msg.sender] -= _value;
 
       Transfer(_from, _to, _value);
+      return true;
+    }
+    else {
+      return false;
+    }
   }
 
   /// @notice `msg.sender` approves `_spender` to spend `_value` tokens wei
