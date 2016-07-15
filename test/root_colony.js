@@ -1,6 +1,7 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
 /* globals contract, RootColony, Colony, RootColonyResolver, web3, ColonyFactory, EternalStorage, Ownable, assert */
+import { solSha3 } from 'colony-utils';
 
 var testHelper = require('../helpers/test-helper.js');
 contract('RootColony', function (accounts) {
@@ -177,6 +178,9 @@ contract('RootColony', function (accounts) {
 
     it('should pay root colony 5% fee of a completed task value', function (done) {
       var startingBalance = web3.eth.getBalance(rootColony.address);
+      var startingBalanceUser = web3.eth.getBalance(_OTHER_ACCOUNT_);
+      var eternalStorage;
+
       rootColony.createColony(_COLONY_KEY_)
       .then(function(){
         return rootColony.getColony.call(_COLONY_KEY_);
@@ -192,11 +196,25 @@ contract('RootColony', function (accounts) {
         return colony.contributeEthToTask(0, {from: _MAIN_ACCOUNT_, value: 1000});
       })
       .then(function () {
+        return colony.eternalStorage.call();
+      })
+      .then(function(extStorageAddress){
+        eternalStorage = EternalStorage.at(extStorageAddress);
+      })
+      .then(function(){
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
+      })
+      .then(function (balance) {
+        assert.equal(balance, 1000, 'Task ether balance is incorrect');
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {
         var currentBalance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
-        assert.equal(currentBalance, 50, 'balance is incorrect or has a unexpected value');
+        assert.equal(currentBalance, 50, 'RootColony balance is incorrect');
+      })
+      .then(function(){
+        var currentBalanceUser = web3.eth.getBalance(_OTHER_ACCOUNT_).minus(startingBalanceUser).toNumber();
+        assert.equal(currentBalanceUser, 950, 'User balance is incorrect');
       })
       .then(done)
       .catch(done);

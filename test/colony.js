@@ -475,7 +475,6 @@ contract('Colony', function (accounts) {
     });
 
     it('should reserve the correct number of tokens when admins fund tasks with pool tokens', function (done) {
-      var prevBalance;
       colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
