@@ -38,6 +38,7 @@ contract('all', function (accounts) {
   });
 
   beforeEach(function(done){
+    var prevBalance;
     EternalStorage.new()
     .then(function(contract){
       eternalStorage = contract;
@@ -47,7 +48,13 @@ contract('all', function (accounts) {
       return colonyFactory.registerEternalStorage(eternalStorage.address);
     })
     .then(function(){
+      prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
       return rootColony.createColony('Antz', {from: _MAIN_ACCOUNT_});
+    })
+    .then(function(){
+      var currentBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      // Cost of creating a colony
+      console.log('RootColony.createColony(bytes32) : ', prevBalance.minus(currentBalance).toNumber());
     })
     .then(function(){
       return rootColony.getColony.call('Antz');
@@ -68,16 +75,6 @@ contract('all', function (accounts) {
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe('Gas costs ', function(){
     it('when working with a Colony', function (done) {
-
-      // Cost of creating a colony
-      var gasCostCreateColony = web3.eth.estimateGas({
-          from: _MAIN_ACCOUNT_,
-          to: rootColony.address,
-          gasPrice : _GAS_PRICE_,
-          data: web3.sha3('createColony(bytes32)')
-        });
-      console.log('RootColony.createColony(bytes32) : ', gasCostCreateColony);
-
       // When working with tasks
       colony.makeTask.estimateGas('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { })
       .then(function(cost){
