@@ -104,6 +104,9 @@ contract Colony is Modifiable, IUpgradable  {
     if (tokenLedger.transferFrom(msg.sender, this, tokensWei)) {
       eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
     }
+    else{
+      throw;
+    }
   }
 
   /// @notice contribute tokens from the colony pool to fund a task
@@ -112,14 +115,15 @@ contract Colony is Modifiable, IUpgradable  {
   function contributeTokensWeiFromPool(uint256 taskId, uint256 tokensWei)
   onlyAdmins
   {
-    //When tasks are funded from the pool of unassigned tokens, no transfer takes place - we just mark them as
-    //assigned.
+    // When tasks are funded from the pool of unassigned tokens,
+    // no transfer takes place - we just mark them as assigned.
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
-
-    if (reservedTokensWei + tokensWei > tokenLedger.balanceOf(this))
+    if ((reservedTokensWei + tokensWei) <= tokenLedger.balanceOf(this)) {
+      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
+    }
+    else {
       throw;
-
-    eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
+    }
   }
 
   /// @notice this function is used to generate Colony tokens
@@ -212,6 +216,9 @@ contract Colony is Modifiable, IUpgradable  {
         eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
         eternalStorage.removeReservedTokensWeiForTask(taskId);
       }
+      else{
+        throw;
+      }
     }
   }
 
@@ -221,11 +228,8 @@ contract Colony is Modifiable, IUpgradable  {
   onlyAdminsOrigin
   {
     var tokensBalance = tokenLedger.balanceOf(this);
-    if(tokensBalance > 0){
-      if (!tokenLedger.transfer(newColonyAddress_, tokensBalance))
-      {
-        return;
-      }
+    if(tokensBalance > 0 && !tokenLedger.transfer(newColonyAddress_, tokensBalance)) {
+      throw;
     }
 
     tokenLedger.changeOwner(newColonyAddress_);

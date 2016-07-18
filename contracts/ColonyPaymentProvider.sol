@@ -5,11 +5,8 @@ library ColonyPaymentProvider
     // Pay the task Ether value -5% to task completor and 5% to rootColony
     var payout = (taskValueEth * 95)/100;
     var fee = taskValueEth - payout;
-    // Check if send fails revert the transaction
-    if (!taskCompletor.send(payout)){
-      throw;
-    }
-    if(!rootColony.send(fee)){
+    // If any of the two send transactions fail, throw
+    if (!taskCompletor.send(payout) || !rootColony.send(fee)){
       throw;
     }
   }
