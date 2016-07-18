@@ -49,12 +49,14 @@ contract('all', function (accounts) {
     })
     .then(function(){
       prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
-      return rootColony.createColony('Antz', {from: _MAIN_ACCOUNT_});
+      return rootColony.createColony('Antz', {from: _MAIN_ACCOUNT_, gasPrice: _GAS_PRICE_});
     })
     .then(function(){
       var currentBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
       // Cost of creating a colony
-      console.log('RootColony.createColony(bytes32) : ', prevBalance.minus(currentBalance).toNumber());
+      var costInWei = prevBalance.minus(currentBalance).toNumber();
+      var costInGas = costInWei / _GAS_PRICE_;
+      console.log('RootColony.createColony(bytes32) : ', costInGas);
     })
     .then(function(){
       return rootColony.getColony.call('Antz');
