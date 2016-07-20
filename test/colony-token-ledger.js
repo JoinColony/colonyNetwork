@@ -13,8 +13,10 @@ contract('ColonyTokenLedger', function (accounts) {
     ColonyTokenLedger.new()
     .then(function (contract) {
       colonyToken = contract;
-      done();
-    });
+      return;
+    })
+    .then(done)
+    .catch(done);
   });
 
   describe('when created', function () {
