@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, RootColony, Colony, RootColonyResolver, EternalStorage, web3, ColonyFactory, assert */
+/* globals contract, ColonyTokenLedger, RootColony, Colony, RootColonyResolver, EternalStorage, web3, ColonyFactory, assert */
 var testHelper = require('../../helpers/test-helper.js');
 import { solSha3 } from 'colony-utils';
 
