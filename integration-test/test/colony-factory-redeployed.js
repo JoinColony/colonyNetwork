@@ -56,9 +56,13 @@ contract('ColonyFactory', function (accounts) {
     testHelper.waitAll([
       colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address),
       colonyFactoryNew.registerEternalStorage(eternalStorageRoot.address),
-      rootColony.registerColonyFactory(colonyFactoryNew.address),
       rootColony.moveColonyFactoryStorage(colonyFactoryNew.address)
-    ], done);
+    ], function(){
+      rootColony.registerColonyFactory(colonyFactoryNew.address)
+      .then(function(){
+        done();
+      }).catch(done);
+    });
   });
 
   describe('when redeploying colony factory and colony contracts', function () {
