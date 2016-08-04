@@ -23,7 +23,7 @@ contract('ColonyTokenLedger', function (accounts) {
     it('should have an initial supply of zero tokens', function (done) {
       colonyToken.totalSupply.call()
       .then(function (totalSupply) {
-        assert.equal(totalSupply, 0, 'initial supply is different from  1000');
+        assert.equal(totalSupply, 0, 'initial supply is different from 0');
         done();
       })
       .catch(done);
