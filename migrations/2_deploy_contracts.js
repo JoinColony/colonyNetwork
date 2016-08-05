@@ -1,4 +1,4 @@
-/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage, FakeNewRootColony, FakeNewColonyFactory, FakeUpdatedColony */
+/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
 module.exports = function(deployer) {
   deployer.deploy([
     // Deploy libraries first
