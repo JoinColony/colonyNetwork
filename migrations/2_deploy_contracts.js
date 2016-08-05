@@ -7,16 +7,12 @@ module.exports = function(deployer) {
     SecurityLibrary,
     ColonyLibrary
   ]);
+  deployer.autolink();
   deployer.deploy([
     // Deploy colony network contracts
     RootColony,
     RootColonyResolver,
     ColonyFactory,
     EternalStorage
-  ]);
-  deployer.autolink([
-    FakeNewRootColony,
-    FakeNewColonyFactory,
-    FakeUpdatedColony
   ]);
 };
