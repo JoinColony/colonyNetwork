@@ -1,4 +1,4 @@
-/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
+/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage, FakeNewRootColony, FakeNewColonyFactory, FakeUpdatedColony */
 module.exports = function(deployer) {
   deployer.deploy([
     // Deploy libraries first
@@ -16,6 +16,7 @@ module.exports = function(deployer) {
   ]);
   deployer.autolink([
     FakeNewRootColony,
-    FakeNewColonyFactory
+    FakeNewColonyFactory,
+    FakeUpdatedColony
   ]);
 };
