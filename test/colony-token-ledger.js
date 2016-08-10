@@ -9,6 +9,11 @@ contract('ColonyTokenLedger', function (accounts) {
   var _TOTAL_SUPPLY_ = 1000;
   var colonyToken;
 
+  before(function (done){
+    testHelper.setDefaultGas();
+    done();
+  });
+
   beforeEach(function (done) {
     ColonyTokenLedger.new()
     .then(function (contract) {
