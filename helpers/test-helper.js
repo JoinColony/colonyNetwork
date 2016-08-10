@@ -1,5 +1,9 @@
 /* eslint-env node */
 /* globals web3, assert, module */
+// These globals represent contracts and are added by Truffle:
+/* globals FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage
+*/
+
 var Promise = require('bluebird');
 var _ = require('lodash');
 module.exports = {
@@ -42,5 +46,15 @@ module.exports = {
   Promise : Promise,
   hexToUtf8 : function (text) {
     return web3.toAscii(text).replace(/\u0000/g, '');
+  },
+  setDefaultGas : function(){
+    var _GAS_PRICE_ = 20e9;
+    var _GAS_TO_SPEND_ = 4e6;
+    RootColony.defaults({gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_});
+    FakeNewRootColony.defaults({gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_});
+    ColonyFactory.defaults({gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_});
+    EternalStorage.defaults({gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_});
+    RootColonyResolver.defaults({gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_});
+    Colony.defaults({gasPrice: _GAS_PRICE_, gas: _GAS_TO_SPEND_});
   }
 };

@@ -2,6 +2,7 @@
 // These globals are added by Truffle:
 /* globals contract, FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, assert, EternalStorage
 */
+var testHelper = require('../../helpers/test-helper.js');
 
 contract('RootColony', function () {
   var _COLONY_KEY_ = 'COLONY_TEST';
@@ -13,6 +14,7 @@ contract('RootColony', function () {
   var eternalStorageRoot;
 
   before(function(done){
+    testHelper.setDefaultGas();
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
     colonyFactory = ColonyFactory.deployed();
