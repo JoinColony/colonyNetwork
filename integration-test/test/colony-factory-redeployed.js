@@ -14,7 +14,6 @@ contract('ColonyFactory', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
 
   before(function(done){
-    testHelper.setDefaultGas();
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
     colonyFactory = ColonyFactory.deployed();

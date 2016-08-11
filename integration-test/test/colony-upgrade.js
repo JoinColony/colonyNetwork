@@ -14,7 +14,6 @@ contract('Colony', function (accounts) {
   var eternalStorageRoot;
 
   before(function(done){
-    testHelper.setDefaultGas();
     colonyFactory = ColonyFactory.deployed();
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
