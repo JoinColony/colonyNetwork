@@ -12,19 +12,13 @@ contract('RootColony', function (accounts) {
   var colony;
   var colonyFactory;
   var rootColony;
-  var rootColonyResolver;
   var eternalStorageRoot;
 
   before(function(done)
   {
-    colonyFactory = ColonyFactory.deployed();
-    rootColony = RootColony.deployed();
-    rootColonyResolver = RootColonyResolver.deployed();
-
     testHelper.waitAll([
-      rootColonyResolver.registerRootColony(rootColony.address),
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
-      rootColony.registerColonyFactory(colonyFactory.address)
+      colonyFactory = ColonyFactory.deployed(),
+      rootColony = RootColony.deployed()
     ], done);
   });
 

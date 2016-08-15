@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, before, describe, it, web3, assert, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage, ColonyTokenLedger */
+/* globals contract, before, describe, it, web3, assert, RootColony, Colony, ColonyFactory, EternalStorage, ColonyTokenLedger */
 
 var testHelper = require('../helpers/test-helper.js');
 
@@ -13,7 +13,6 @@ contract('all', function (accounts) {
   var tokenLedger;
   var colonyFactory;
   var rootColony;
-  var rootColonyResolver;
   var eternalStorage;
 
   var makeTaskCost;
@@ -26,14 +25,9 @@ contract('all', function (accounts) {
 
   before(function(done)
   {
-    rootColony = RootColony.deployed();
-    colonyFactory = ColonyFactory.deployed();
-    rootColonyResolver = RootColonyResolver.deployed();
-
     testHelper.waitAll([
-      rootColony.registerColonyFactory(colonyFactory.address),
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
-      rootColonyResolver.registerRootColony(rootColony.address)
+      colonyFactory = ColonyFactory.deployed(),
+      rootColony = RootColony.deployed()
     ], done);
   });
 

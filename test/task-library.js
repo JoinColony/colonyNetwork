@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, ColonyFactory, RootColony, RootColonyResolver, EternalStorage, web3, assert */
+/* globals contract, Colony, RootColony, EternalStorage, web3, assert */
 
 var testHelper = require('../helpers/test-helper.js');
 import { solSha3 } from 'colony-utils';
@@ -13,35 +13,15 @@ contract('TaskLibrary', function (accounts) {
   var _MAIN_ACCOUNT_ = accounts[0];
   var _OTHER_ACCOUNT_ = accounts[1];
   var colony;
-  var colonyFactory;
   var rootColony;
-  var rootColonyResolver;
-  var eternalStorageRoot;
   var eternalStorage;
+  var eternalStorageRoot;
 
-  before(function(done)
-  {
-    colonyFactory = ColonyFactory.deployed();
-    rootColony = RootColony.deployed();
-    rootColonyResolver = RootColonyResolver.deployed();
-
-    EternalStorage.new()
-    .then(function(contract){
-      eternalStorageRoot = contract;
-      console.log('EternalStorage for ColonyFactory created at : ', eternalStorageRoot.address);
-      return;
-    })
-    .then(function(){
-      return eternalStorageRoot.changeOwner(colonyFactory.address);
-    })
-    .then(function(){
-      testHelper.waitAll([
-        rootColonyResolver.registerRootColony(rootColony.address),
-        rootColony.registerColonyFactory(colonyFactory.address),
-        colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
-        colonyFactory.registerEternalStorage(eternalStorageRoot.address)
-      ], done);
-    });
+  before(function(done) {
+    testHelper.waitAll([
+      rootColony = RootColony.deployed(),
+      eternalStorageRoot = EternalStorage.deployed()
+    ], done);
   });
 
   beforeEach(function(done){
@@ -63,6 +43,7 @@ contract('TaskLibrary', function (accounts) {
     })
     .then(function(extStorageAddress){
       eternalStorage = EternalStorage.at(extStorageAddress);
+      return;
     })
     .then(done)
     .catch(done);

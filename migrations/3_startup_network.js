@@ -7,7 +7,10 @@ module.exports = function(done) {
   var colonyFactoryDeployed = ColonyFactory.deployed();
   var eternalStorageRootDeployed = EternalStorage.deployed();
 
-  rootColonyResolverDeployed.registerRootColony(rootColonyDeployed.address)
+  eternalStorageRootDeployed.changeOwner(colonyFactoryDeployed.address)
+  .then(function(){
+    return rootColonyResolverDeployed.registerRootColony(rootColonyDeployed.address);
+  })
   .then(function(){
     return colonyFactoryDeployed.registerRootColonyResolver(rootColonyResolverDeployed.address);
   })
@@ -15,19 +18,12 @@ module.exports = function(done) {
     return rootColonyDeployed.registerColonyFactory(colonyFactoryDeployed.address);
   })
   .then(function(){
-    return eternalStorageRootDeployed.changeOwner(colonyFactoryDeployed.address);
-  })
-  .then(function(){
     return colonyFactoryDeployed.registerEternalStorage(eternalStorageRootDeployed.address);
   })
   .then(function(){
     console.log('### Network contracts registered successfully ###');
-    process.exit(0);
+    return;
   })
   .then(done)
-  .catch(function(err){
-    console.error('An error occurred while trying to register network contracts');
-    console.error('Error: ', err);
-    process.exit(1);
-  });
+  .catch(done);
 };
