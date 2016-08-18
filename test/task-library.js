@@ -354,7 +354,7 @@ contract('TaskLibrary', function (accounts) {
     it('should "tokens" prop be raised by the amount of tokens I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.generateColonyTokensWei(100);
+        return colony.generateTokensWei(100);
       })
       .then(function(){
         return colony.contributeTokensWeiFromPool(0, 10);
@@ -387,7 +387,7 @@ contract('TaskLibrary', function (accounts) {
     it('should "ETH" and "tokens" props be raised by the amount of ETH and tokens I send', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function(){
-        return colony.generateColonyTokensWei(100);
+        return colony.generateTokensWei(100);
       })
       .then(function(){
         return colony.contributeEthToTask(0, {value: 10});

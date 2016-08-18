@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, Colony, EternalStorage, ColonyTokenLedger, RootColony, web3, assert,  */
+/* globals contract, Colony, EternalStorage, RootColony, web3, assert */
 var testHelper = require('../helpers/test-helper.js');
 import { solSha3 } from 'colony-utils';
 
@@ -10,7 +10,7 @@ contract('Colony', function (accounts) {
   var _OTHER_ACCOUNT_ = accounts[1];
   var _GAS_PRICE_ = 20e9;
   //this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
-  var _GAS_TO_SPEND_ = 4e6;
+  var _GAS_TO_SPEND_ = 4700000;
 
   var optionsToSpotTransactionFailure = {
     from: _MAIN_ACCOUNT_,
@@ -191,31 +191,16 @@ contract('Colony', function (accounts) {
     });
 
     it('should generate tokens and assign it to the colony', function(done){
-      var tokenLedger;
-      colony.tokenLedger.call()
-      .then(function(tokenLedgerAddress) {
-        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-        return colony.generateColonyTokensWei(100);
-      })
+      colony.generateTokensWei(100, {from:_MAIN_ACCOUNT_})
       .then(function(){
-        return tokenLedger.balanceOf.call(colony.address);
+        return colony.totalSupply.call();
       })
-      .then(function(totalSupplyTokens){
-        assert.equal(totalSupplyTokens.toNumber(), 100);
+      .then(function(_totalSupply){
+        assert.equal(_totalSupply.toNumber(), 100, 'Token total is incorrect');
+        return colony.balanceOf.call(colony.address);
       })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should set colony as the token ledger owner', function (done) {
-      var tokenLedger;
-      colony.tokenLedger.call()
-      .then(function(tokenLedgerAddress){
-        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-        return tokenLedger.owner.call();
-      })
-      .then(function(_tokenLedgerOwner){
-        assert.equal(_tokenLedgerOwner, colony.address, 'Colony admin should be set as the owner of its Token Ledger.');
+      .then(function(colonyBalance){
+        assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
       })
       .then(done)
       .catch(done);
@@ -376,8 +361,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow admins to fund task with own tokens', function (done) {
-      var tokenLedger;
-      colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
+      colony.generateTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -392,15 +376,7 @@ contract('Colony', function (accounts) {
       })
       .then(function(reservedTokensWei){
         assert.equal(0, reservedTokensWei.toNumber(), 'Colony reserved tokens should be set to initially 0 count.');
-      })
-      .then(function () {
-        return colony.tokenLedger.call();
-      })
-      .then(function(tokenLedgerAddress){
-        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-      })
-      .then(function(){
-        return tokenLedger.balanceOf.call(colony.address);
+        return colony.balanceOf.call(colony.address);
       })
       .then(function(colonyBalance){
         assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
@@ -416,13 +392,10 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
+        return colony.balanceOf.call(_OTHER_ACCOUNT_);
       })
       .then(function(otherAccountTokenBalance){
         assert.equal(otherAccountTokenBalance.toNumber(), 95, '_OTHER_ACCOUNT_ balance should be 95 tokens.');
-        return tokenLedger.approve(colony.address, 95, {from: _OTHER_ACCOUNT_});
-      })
-      .then(function(){
         return colony.addAdmin(_OTHER_ACCOUNT_);
       })
       .then(function(){
@@ -455,7 +428,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should reserve the correct number of tokens when admins fund tasks with pool tokens', function (done) {
-      colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
+      colony.generateTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -476,7 +449,7 @@ contract('Colony', function (accounts) {
 
     it('should fail if admins fund tasks with more pool tokens than they have available', function (done) {
       var prevBalance;
-      colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_})
+      colony.generateTokensWei(100, {from: _MAIN_ACCOUNT_})
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -493,7 +466,7 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
-        return colony.generateColonyTokensWei(100, {from: _MAIN_ACCOUNT_});
+        return colony.generateTokensWei(100, {from: _MAIN_ACCOUNT_});
       })
       .then(function(){
         return colony.makeTask('name', 'summary');
@@ -592,8 +565,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
-      var tokenLedger;
-      colony.generateColonyTokensWei(100)
+      colony.generateTokensWei(100)
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -607,17 +579,11 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, _OTHER_ACCOUNT_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function(){
-        return colony.tokenLedger.call();
-      })
-      .then(function(tokenLedgerAddress){
-        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-      })
-      .then(function(){
-        return tokenLedger.balanceOf.call(_OTHER_ACCOUNT_);
+        return colony.balanceOf.call(_OTHER_ACCOUNT_);
       })
       .then(function(otherAccountTokenBalance){
         assert.strictEqual(otherAccountTokenBalance.toNumber(), 95, 'Token balance is not 95% of task token value');
-        return tokenLedger.balanceOf.call(rootColony.address);
+        return colony.balanceOf.call(rootColony.address);
       })
       .then(function(rootColonyTokenBalance){
         assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'RootColony token balance is not 5% of task token value');
@@ -628,7 +594,7 @@ contract('Colony', function (accounts) {
 
     it('should fail if non-admins try to contribute with tokens from the pool', function (done) {
       var prevBalance;
-      colony.generateColonyTokensWei(100)
+      colony.generateTokensWei(100)
       .then(function(){
         return colony.makeTask('name', 'summary');
       })
@@ -650,7 +616,7 @@ contract('Colony', function (accounts) {
 
     it('should fail if non-admins try to contribute with tokens', function (done) {
       var prevBalance;
-      colony.generateColonyTokensWei(100)
+      colony.generateTokensWei(100)
       .then(function(){
         return colony.makeTask('name', 'summary');
       })

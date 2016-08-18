@@ -45,14 +45,13 @@ contract FakeNewColonyFactory is IColonyFactory {
     Ownable(eternalStorageRoot).changeOwner(_newColonyFactory);
   }
 
-  function createColony(bytes32 key_, address tokenLedger_, address eternalStorage)
+  function createColony(bytes32 key_, address eternalStorage)
   throwIfIsEmptyBytes32(key_)
-  throwIfAddressIsInvalid(tokenLedger_)
+  throwIfAddressIsInvalid(eternalStorage)
   onlyRootColony
   {
-    var colony = new FakeUpdatedColony(rootColonyResolverAddress, tokenLedger_, eternalStorage);
+    var colony = new FakeUpdatedColony(rootColonyResolverAddress, eternalStorage);
 
-    Ownable(tokenLedger_).changeOwner(colony);
     Ownable(eternalStorage).changeOwner(colony);
     eternalStorageRoot.addColony(key_, colony);
 

@@ -1,7 +1,7 @@
 import "Modifiable.sol";
 import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
-import "ITokenLedger.sol";
+import "ColonyTokenLedger.sol";
 import "Ownable.sol";
 import "ColonyPaymentProvider.sol";
 import "TaskLibrary.sol";
@@ -20,20 +20,16 @@ contract Colony is Modifiable, IUpgradable  {
   }
 
   IRootColonyResolver public rootColonyResolver;
-  ITokenLedger public tokenLedger;
 
   // Link libraries containing business logic to EternalStorage.
   using TaskLibrary for address;
   using SecurityLibrary for address;
+  using ColonyTokenLedger for address;
   address public eternalStorage;
 
-  function Colony(
-    address rootColonyResolverAddress_,
-    address _tokenLedgerAddress,
-    address _eternalStorage)
+  function Colony(address rootColonyResolverAddress_, address _eternalStorage)
   {
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
-    tokenLedger = ITokenLedger(_tokenLedgerAddress);
     eternalStorage = _eternalStorage;
   }
 
@@ -101,7 +97,7 @@ contract Colony is Modifiable, IUpgradable  {
   onlyAdmins
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-    if (tokenLedger.transferFrom(msg.sender, this, tokensWei)) {
+    if (eternalStorage.transfer(this, tokensWei)) {
       eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
     }
     else{
@@ -118,21 +114,12 @@ contract Colony is Modifiable, IUpgradable  {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
-    if ((reservedTokensWei + tokensWei) <= tokenLedger.balanceOf(this)) {
+    if ((reservedTokensWei + tokensWei) <= eternalStorage.balanceOf(this)) {
       eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
     }
     else {
       throw;
     }
-  }
-
-  /// @notice this function is used to generate Colony tokens
-  /// @param tokensWei The amount of tokens wei to be generated
-  function generateColonyTokensWei(uint256 tokensWei)
-  onlyAdmins
-  refundEtherSentByAccident
-  {
-    tokenLedger.generateTokensWei(tokensWei);
   }
 
   function getTaskCount() constant returns (uint256)
@@ -178,20 +165,20 @@ contract Colony is Modifiable, IUpgradable  {
 
   /// @notice set the colony tokens symbol
   /// @param symbol_ the symbol of the colony tokens
-  function setTokensSymbol(bytes4 symbol_)
+  function setTokensSymbol(bytes symbol_)
   refundEtherSentByAccident
   onlyAdmins
   {
-    tokenLedger.setTokensSymbol(symbol_);
+    eternalStorage.setTokensSymbol(symbol_);
   }
 
   /// @notice set the colony tokens title
   /// @param title_ the title of the colony tokens
-  function setTokensTitle(bytes32 title_)
+  function setTokensTitle(bytes title_)
   refundEtherSentByAccident
   onlyAdmins
   {
-    tokenLedger.setTokensTitle(title_);
+    eternalStorage.setTokensTitle(title_);
   }
 
   /// @notice mark a task as completed, pay the user who completed it and root colony fee
@@ -201,6 +188,7 @@ contract Colony is Modifiable, IUpgradable  {
   onlyAdmins
   {
     eternalStorage.acceptTask(taskId);
+
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0)
     {
@@ -211,7 +199,7 @@ contract Colony is Modifiable, IUpgradable  {
     {
       var payout = ((taskTokens * 95)/100);
       var fee = taskTokens - payout;
-      if (tokenLedger.transfer(paymentAddress, payout) && tokenLedger.transfer(rootColonyResolver.rootColonyAddress(), fee)) {
+      if (eternalStorage.transferFromColony(paymentAddress, payout) && eternalStorage.transferFromColony(rootColonyResolver.rootColonyAddress(), fee)) {
         var reservedTokensWei = eternalStorage.getReservedTokensWei();
         eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
         eternalStorage.removeReservedTokensWeiForTask(taskId);
@@ -222,19 +210,64 @@ contract Colony is Modifiable, IUpgradable  {
     }
   }
 
+  function transfer(address _to, uint256 _value)
+  refundEtherSentByAccident
+  returns (bool success)
+  {
+    return eternalStorage.transfer(_to, _value);
+  }
+
+   function transferFrom(address _from, address _to, uint256 _value)
+   refundEtherSentByAccident
+   returns (bool success)
+   {
+     return eternalStorage.transferFrom(_from, _to, _value);
+   }
+
+   function balanceOf(address _account) constant returns (uint256 balance)
+   {
+     return eternalStorage.balanceOf(_account);
+   }
+
+   function allowance(address _owner, address _spender) constant returns (uint256)
+   {
+     return eternalStorage.allowance(_owner, _spender);
+   }
+
+   function approve(address _spender, uint256 _value)
+   refundEtherSentByAccident
+   returns (bool)
+   {
+     return eternalStorage.approve(_spender, _value);
+   }
+
+  /// @notice this function is used to generate Colony tokens
+  /// @param _tokensWei The amount of tokens wei to be generated
+  function generateTokensWei(uint256 _tokensWei)
+  onlyAdmins
+  refundEtherSentByAccident
+  {
+    eternalStorage.generateTokensWei(_tokensWei);
+  }
+
+  function totalSupply()
+  onlyAdmins
+  constant returns (uint256)
+  {
+    return eternalStorage.totalSupply();
+  }
+
   /// @notice upgrade the colony migrating its data to another colony instance
   /// @param newColonyAddress_ the address of the new colony instance
   function upgrade(address newColonyAddress_)
   onlyAdminsOrigin
   {
-    var tokensBalance = tokenLedger.balanceOf(this);
-    if(tokensBalance > 0 && !tokenLedger.transfer(newColonyAddress_, tokensBalance)) {
+    var tokensBalance = eternalStorage.balanceOf(this);
+    if(tokensBalance > 0 && !eternalStorage.transferFromColony(newColonyAddress_, tokensBalance)) {
       throw;
     }
 
-    tokenLedger.changeOwner(newColonyAddress_);
     Ownable(eternalStorage).changeOwner(newColonyAddress_);
-
     selfdestruct(newColonyAddress_);
   }
 }

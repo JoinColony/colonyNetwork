@@ -7,19 +7,11 @@ import "ColonyLibrary.sol";
 
 contract ColonyFactory is IColonyFactory {
 
-  event ColonyCreated(bytes32 colonyKey, address colonyAddress, address colonyOwner, uint now);
-  event ColonyUpgraded(address colonyAddress, address colonyOwner, uint now);
-
   using ColonyLibrary for address;
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) throw;
     _
-  }
-
-  function ColonyFactory()
-  refundEtherSentByAccident
-  {
   }
 
   /// @notice this function registers the address of the RootColonyResolver
@@ -45,18 +37,14 @@ contract ColonyFactory is IColonyFactory {
     Ownable(eternalStorageRoot).changeOwner(_newColonyFactory);
   }
 
-  function createColony(bytes32 key_, address tokenLedger_, address eternalStorage)
+  function createColony(bytes32 key_, address eternalStorage)
   throwIfIsEmptyBytes32(key_)
-  throwIfAddressIsInvalid(tokenLedger_)
   onlyRootColony
   {
-    var colony = new Colony(rootColonyResolverAddress, tokenLedger_, eternalStorage);
+    var colony = new Colony(rootColonyResolverAddress, eternalStorage);
 
-    Ownable(tokenLedger_).changeOwner(colony);
     Ownable(eternalStorage).changeOwner(colony);
     eternalStorageRoot.addColony(key_, colony);
-
-    ColonyCreated(key_, colony, tx.origin, now);
   }
 
   function getColony(bytes32 key_) constant returns(address)
@@ -79,16 +67,12 @@ contract ColonyFactory is IColonyFactory {
   {
     address colonyAddress = eternalStorageRoot.getColony(key_);
     if(!Colony(colonyAddress).isUserAdmin(tx.origin)) throw;
-
-    address tokenLedger = Colony(colonyAddress).tokenLedger();
     address eternalStorage = Colony(colonyAddress).eternalStorage();
 
-    Colony colonyNew = new Colony(rootColonyResolverAddress, tokenLedger, eternalStorage);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, eternalStorage);
     IUpgradable(colonyAddress).upgrade(colonyNew);
 
     eternalStorageRoot.upgradeColony(key_, colonyNew);
-
-    ColonyUpgraded(colonyNew, tx.origin, now);
   }
 
   function countColonies() constant returns (uint256)

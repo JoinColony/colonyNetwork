@@ -1,7 +1,6 @@
 import "IColonyFactory.sol";
 import "Destructible.sol";
 import "Modifiable.sol";
-import "ColonyTokenLedger.sol";
 import "EternalStorage.sol";
 import "SecurityLibrary.sol";
 
@@ -34,9 +33,6 @@ contract RootColony is Destructible, Modifiable {
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(key_)
   {
-    var tokenLedger = new ColonyTokenLedger();
-    tokenLedger.changeOwner(colonyFactory);
-
     // Initialise eternal storage and required initial values
     var eternalStorage = new EternalStorage();
     // Note: we are assuming that the default values for 'TasksCount' and 'ReservedTokensWei' is returned as 0
@@ -44,7 +40,7 @@ contract RootColony is Destructible, Modifiable {
     eternalStorage.addAdmin(msg.sender);
     eternalStorage.changeOwner(colonyFactory);
 
-    colonyFactory.createColony(key_, tokenLedger, eternalStorage);
+    colonyFactory.createColony(key_, eternalStorage);
   }
 
   /// @notice this function can be used to fetch the address of a Colony by a key.

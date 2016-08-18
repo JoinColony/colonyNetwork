@@ -5,7 +5,8 @@ module.exports = function(deployer) {
     ColonyPaymentProvider,
     TaskLibrary,
     SecurityLibrary,
-    ColonyLibrary
+    ColonyLibrary,
+    ColonyTokenLedger
   ]);
   deployer.autolink();
   deployer.deploy([

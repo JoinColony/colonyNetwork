@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, ColonyTokenLedger, RootColony, Colony, RootColonyResolver, EternalStorage, web3, ColonyFactory, assert */
+/* globals contract, RootColony, Colony, RootColonyResolver, EternalStorage, web3, ColonyFactory, assert */
 import testHelper from '../../helpers/test-helper.js';
 import { solSha3 } from 'colony-utils';
 
@@ -56,7 +56,7 @@ contract('Colony', function (accounts) {
       .then(function (_address){
         oldColonyAddress = _address;
         colony = Colony.at(_address);
-        return colony.generateColonyTokensWei(100);
+        return colony.generateTokensWei(100);
       })
       .then(function(){
         return colony.makeTask('name', 'summary');
@@ -136,11 +136,7 @@ contract('Colony', function (accounts) {
       })
       .then(function(userInfo){
         assert.equal(userInfo, true, 'User added as admin is no longer admin');
-        return colony.tokenLedger.call();
-      })
-      .then(function(tokenLedgerAddress){
-        tokenLedger = ColonyTokenLedger.at(tokenLedgerAddress);
-        return tokenLedger.balanceOf.call(colony.address);
+        return colony.balanceOf.call(colony.address);
       })
       .then(function(colonyTokenBalance){
         assert.equal(colonyTokenBalance.toNumber(), 100, 'Colony token balance is incorrect');
