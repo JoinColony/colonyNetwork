@@ -1,7 +1,6 @@
 import "Destructible.sol";
-import "Modifiable.sol";
 
-contract IColonyFactory is Destructible, Modifiable {
+contract IColonyFactory is Destructible {
 
   address public rootColonyResolverAddress;
   address public eternalStorageRoot;
@@ -25,7 +24,8 @@ contract IColonyFactory is Destructible, Modifiable {
 
   /// @notice upgrade a colony by key and template address
   /// @param key_ the key of the colony to be upgraded
-  function upgradeColony(bytes32 key_);
+  /// @param colonyAddress_ the address of the colony to be upgraded
+  function upgradeColony(bytes32 key_, address colonyAddress_);
 
   /// @notice this function registers the address of the RootColonyResolver
   /// @param rootColonyResolverAddress_ the default root colony resolver address

@@ -6,7 +6,6 @@ import "Ownable.sol";
 import "ColonyLibrary.sol";
 
 contract ColonyFactory is IColonyFactory {
-
   using ColonyLibrary for address;
 
   modifier onlyRootColony(){
@@ -17,28 +16,24 @@ contract ColonyFactory is IColonyFactory {
   /// @notice this function registers the address of the RootColonyResolver
   /// @param rootColonyResolverAddress_ the default root colony resolver address
   function registerRootColonyResolver(address rootColonyResolverAddress_)
-  refundEtherSentByAccident
   onlyOwner
   {
     rootColonyResolverAddress = rootColonyResolverAddress_;
   }
 
   function registerEternalStorage(address eternalStorage_)
-  refundEtherSentByAccident
   onlyOwner
   {
     eternalStorageRoot = eternalStorage_;
   }
 
   function changeEternalStorageOwner(address _newColonyFactory)
-  refundEtherSentByAccident
   onlyRootColony
   {
     Ownable(eternalStorageRoot).changeOwner(_newColonyFactory);
   }
 
   function createColony(bytes32 key_, address eternalStorage)
-  throwIfIsEmptyBytes32(key_)
   onlyRootColony
   {
     var colony = new Colony(rootColonyResolverAddress, eternalStorage);
@@ -62,16 +57,13 @@ contract ColonyFactory is IColonyFactory {
     return eternalStorageRoot.getColonyIndex(key_);
   }
 
-  function upgradeColony(bytes32 key_)
+  function upgradeColony(bytes32 key_, address colonyAddress)
   onlyRootColony
   {
-    address colonyAddress = eternalStorageRoot.getColony(key_);
     if(!Colony(colonyAddress).isUserAdmin(tx.origin)) throw;
-    address eternalStorage = Colony(colonyAddress).eternalStorage();
 
-    Colony colonyNew = new Colony(rootColonyResolverAddress, eternalStorage);
+    Colony colonyNew = new Colony(rootColonyResolverAddress, Colony(colonyAddress).eternalStorage());
     IUpgradable(colonyAddress).upgrade(colonyNew);
-
     eternalStorageRoot.upgradeColony(key_, colonyNew);
   }
 
@@ -81,12 +73,12 @@ contract ColonyFactory is IColonyFactory {
   }
 
   function () {
-    // This function gets executed if a
-    // transaction with invalid data is sent to
-    // the contract or just ether without data.
-    // We revert the send so that no-one
-    // accidentally loses money when using the
-    // contract.
-    throw;
+   // This function gets executed if a
+   // transaction with invalid data is sent to
+   // the contract or just ether without data.
+   // We revert the send so that no-one
+   // accidentally loses money when using the
+   // contract.
+   throw;
   }
 }

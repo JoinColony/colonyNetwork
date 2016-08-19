@@ -75,7 +75,8 @@ contract FakeNewRootColony is Destructible, Modifiable {
   refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   {
-    return colonyFactory.upgradeColony(_key);
+    address colonyAddress = this.getColony(_key);
+    return colonyFactory.upgradeColony(_key, colonyAddress);
   }
 
   /// @notice this function returns the amount of colonies created
