@@ -103,7 +103,7 @@ library ColonyTokenLedger {
   /// @param _spender The address of the account able to transfer the tokens wei
   /// @param _value The amount of wei to be approved for transfer
   function approve(address _storageContract, address _spender, uint256 _value)
-  returns (bool)
+  returns (bool success)
   {
     if(_value > totalSupply(_storageContract))
     return false;

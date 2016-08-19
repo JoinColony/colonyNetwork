@@ -381,14 +381,15 @@ contract('ColonyTokenLedger', function (accounts) {
     });
 
     it('should fail if the value is bigger than upper limit', function (done) {
-      var prevBalance;
       colony.generateTokensWei(_TOTAL_SUPPLY_)
       .then(function(){
-        prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
         return colony.approve(_OTHER_ACCOUNT_, _TOTAL_SUPPLY_ + 1);
       })
-      .then(function(approveResult){
-        assert.equal(false, approveResult, 'approve of too many tokens succeeded when it should have failed');
+      .then(function(){
+        return colony.allowance(_MAIN_ACCOUNT_, _OTHER_ACCOUNT_);
+      })
+      .then(function(allowance){
+        assert.equal(0, allowance, 'approve of too many tokens succeeded when it should have failed');
       })
       .then(done)
       .catch(done);

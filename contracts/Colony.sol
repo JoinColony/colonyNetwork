@@ -236,7 +236,7 @@ contract Colony is Modifiable, IUpgradable  {
 
    function approve(address _spender, uint256 _value)
    refundEtherSentByAccident
-   returns (bool)
+   returns (bool success)
    {
      return eternalStorage.approve(_spender, _value);
    }
