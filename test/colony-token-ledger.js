@@ -60,7 +60,6 @@ contract('ColonyTokenLedger', function (accounts) {
   describe('when transferring funds directly to other parties', function () {
     it('should decrease the sender balance and increase the receiver balance by the same amount',
       function (done) {
-        var previousBalance;
         colony.generateTokensWei(_TOTAL_SUPPLY_)
         .then(function(){
           return colony.makeTask('name2', 'summary2');

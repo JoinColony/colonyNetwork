@@ -47,7 +47,6 @@ contract('Colony', function (accounts) {
   describe('when upgrading a colony', function(){
     it('should carry colony dependencies to the new colony', function(done) {
       var oldColonyAddress;
-      var tokenLedger;
       var eternalStorage;
       rootColony.createColony(_COLONY_KEY_)
       .then(function(){
