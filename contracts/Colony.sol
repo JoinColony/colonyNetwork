@@ -1,7 +1,7 @@
 import "Modifiable.sol";
 import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
-import "ColonyTokenLedger.sol";
+import "TokenLibrary.sol";
 import "Ownable.sol";
 import "ColonyPaymentProvider.sol";
 import "TaskLibrary.sol";
@@ -24,7 +24,7 @@ contract Colony is Modifiable, IUpgradable  {
   // Link libraries containing business logic to EternalStorage.
   using TaskLibrary for address;
   using SecurityLibrary for address;
-  using ColonyTokenLedger for address;
+  using TokenLibrary for address;
   address public eternalStorage;
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)

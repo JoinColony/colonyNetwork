@@ -3,7 +3,7 @@
 */
 import "EternalStorage.sol";
 
-library ColonyTokenLedger {
+library TokenLibrary {
 
   // Manages records for colony tokens stored in the format:
   // sha3('balance:', address) -> uint256 tokenBalance , e.g. balance:0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> 340
@@ -12,14 +12,14 @@ library ColonyTokenLedger {
   // sha3("TokenTitle") -> bytes symbol e.g. 'Colony Token title'
   // sha3("TokensTotalSupply") -> uint256 totalSupplyTokens
 
-  /// @notice set the ColonyTokenLedger symbol
+  /// @notice set the Token symbol
   /// @param _symbol the symbol of the Colony Token
   function setTokensSymbol(address _storageContract, bytes _symbol)
   {
     EternalStorage(_storageContract).setBytesValue(sha3("TokenSymbol"), _symbol);
   }
 
-  /// @notice set the ColonyTokenLedger title
+  /// @notice set the Token title
   /// @param _title the title of the Colony Token
   function setTokensTitle(address _storageContract, bytes _title)
   {

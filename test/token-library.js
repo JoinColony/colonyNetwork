@@ -4,7 +4,7 @@
 var testHelper = require('../helpers/test-helper.js');
 import { solSha3 } from 'colony-utils';
 
-contract('ColonyTokenLedger', function (accounts) {
+contract('TokenLibrary', function (accounts) {
   var _COLONY_KEY_;
   var _GAS_PRICE_ = 20e9;
   var _MAIN_ACCOUNT_ = accounts[0];

@@ -1,4 +1,4 @@
-/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary, ColonyTokenLedger, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
+/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary, TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
 module.exports = function(deployer) {
   deployer.deploy([
     // Deploy libraries first
@@ -6,7 +6,7 @@ module.exports = function(deployer) {
     TaskLibrary,
     SecurityLibrary,
     ColonyLibrary,
-    ColonyTokenLedger
+    TokenLibrary
   ]);
   deployer.autolink();
   deployer.deploy([
