@@ -2,8 +2,6 @@
 // These globals are added by Truffle:
 /* globals contract, before, describe, it, web3, assert, RootColony, Colony, ColonyFactory, EternalStorage */
 
-var testHelper = require('../helpers/test-helper.js');
-
 contract('all', function (accounts) {
   var _GAS_PRICE_ = 20e9;
   //var _GAS_TO_SPEND_ = 1e6;
@@ -24,10 +22,20 @@ contract('all', function (accounts) {
 
   before(function(done)
   {
-    testHelper.waitAll([
-      colonyFactory = ColonyFactory.deployed(),
-      rootColony = RootColony.deployed()
-    ], done);
+    colonyFactory = ColonyFactory.deployed();
+    rootColony = RootColony.deployed();
+
+    var prevBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+    ColonyFactory.new({gasPrice: _GAS_PRICE_})
+    .then(function(){
+      var currentBalance = web3.eth.getBalance(_MAIN_ACCOUNT_);
+      // Cost of creating a colony
+      var costInWei = prevBalance.minus(currentBalance).toNumber();
+      var costInGas = costInWei / _GAS_PRICE_;
+      console.log('ColonyFactory cost : ', costInGas);
+    })
+    .then(done)
+    .catch(done);
   });
 
   beforeEach(function(done){
