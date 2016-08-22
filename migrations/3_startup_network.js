@@ -1,13 +1,16 @@
 /* eslint-env node */
 /* globals RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
-module.exports = function(done) {
+module.exports = function(deployer) {
 
   var rootColonyDeployed = RootColony.deployed();
   var rootColonyResolverDeployed = RootColonyResolver.deployed();
   var colonyFactoryDeployed = ColonyFactory.deployed();
   var eternalStorageRootDeployed = EternalStorage.deployed();
 
-  eternalStorageRootDeployed.changeOwner(colonyFactoryDeployed.address)
+  deployer
+  .then(function(){
+    return eternalStorageRootDeployed.changeOwner(colonyFactoryDeployed.address);
+  })
   .then(function(){
     return rootColonyResolverDeployed.registerRootColony(rootColonyDeployed.address);
   })
@@ -23,7 +26,5 @@ module.exports = function(done) {
   .then(function(){
     console.log('### Network contracts registered successfully ###');
     return;
-  })
-  .then(done)
-  .catch(done);
+  });
 };
