@@ -16,10 +16,9 @@ contract('RootColony', function (accounts) {
 
   before(function(done)
   {
-    testHelper.waitAll([
-      colonyFactory = ColonyFactory.deployed(),
-      rootColony = RootColony.deployed()
-    ], done);
+    colonyFactory = ColonyFactory.deployed();
+    rootColony = RootColony.deployed();
+    done();
   });
 
   beforeEach(function(done){

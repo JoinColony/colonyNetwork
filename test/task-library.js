@@ -18,10 +18,9 @@ contract('TaskLibrary', function (accounts) {
   var eternalStorageRoot;
 
   before(function(done) {
-    testHelper.waitAll([
-      rootColony = RootColony.deployed(),
-      eternalStorageRoot = EternalStorage.deployed()
-    ], done);
+    rootColony = RootColony.deployed();
+    eternalStorageRoot = EternalStorage.deployed();
+    done();
   });
 
   beforeEach(function(done){
