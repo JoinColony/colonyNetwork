@@ -9,7 +9,7 @@ contract Modifiable {
   /// @notice throw if an address is invalid
   /// @param _target the address to check
   modifier throwIfAddressIsInvalid(address _target) {
-    if(_target == 0x0) { throw; }
+    if(_target == "0x0") { throw; }
     _
   }
 

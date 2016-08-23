@@ -4,7 +4,7 @@ import "EternalStorage.sol";
 library SecurityLibrary
 {
   event AdminAdded(address _user);
-  
+
   event AdminRemoved(address _user);
 
   // Manages records for admins stored in the format:
@@ -18,10 +18,10 @@ library SecurityLibrary
 
   function addAdmin(address _storageContract, address _user)
   {
-    var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3('admin:', _user));
+    var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3("admin:', _user));
     if(userIsAdmin) { throw; }
 
-    EternalStorage(_storageContract).setBooleanValue(sha3('admin:', _user), true);
+    EternalStorage(_storageContract).setBooleanValue(sha3("admin:", _user), true);
 
     // Increment the admins count in storage
     var adminsCount = EternalStorage(_storageContract).getUIntValue(sha3("AdminsCount"));
@@ -32,13 +32,13 @@ library SecurityLibrary
 
   function removeAdmin(address _storageContract, address _user)
   {
-    var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3('admin:', _user));
+    var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3("admin:", _user));
     if(!userIsAdmin) { throw; }
 
     var adminsCount = EternalStorage(_storageContract).getUIntValue(sha3("AdminsCount"));
     if (adminsCount == 1) { throw; }
 
-    EternalStorage(_storageContract).deleteBooleanValue(sha3('admin:', _user));
+    EternalStorage(_storageContract).deleteBooleanValue(sha3("admin:", _user));
 
     // Decrement the admins count in storage
     adminsCount -= 1;
@@ -50,6 +50,6 @@ library SecurityLibrary
   function isUserAdmin(address _storageContract, address _user)
   constant returns (bool)
   {
-    return EternalStorage(_storageContract).getBooleanValue(sha3('admin:', _user));
+    return EternalStorage(_storageContract).getBooleanValue(sha3("admin:", _user));
   }
 }
