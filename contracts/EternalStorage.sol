@@ -11,131 +11,131 @@ contract EternalStorage is Ownable{
     //UInt
     ////////////
 
-    mapping(bytes32 => uint) UIntStorage;
+    mapping(bytes32 => uint) uIntStorage;
 
     function getUIntValue(bytes32 record) constant returns (uint){
-        return UIntStorage[record];
+        return uIntStorage[record];
     }
 
     function setUIntValue(bytes32 record, uint value)
     onlyOwner
     {
-        UIntStorage[record] = value;
+        uIntStorage[record] = value;
     }
 
     function deleteUIntValue(bytes32 record)
     onlyOwner
     {
-      delete UIntStorage[record];
+      delete uIntStorage[record];
     }
 
     ////////////
     //Strings
     ////////////
 
-    mapping(bytes32 => string) StringStorage;
+    mapping(bytes32 => string) stringStorage;
 
     function getStringValue(bytes32 record) constant returns (string){
-        return StringStorage[record];
+        return stringStorage[record];
     }
 
     function setStringValue(bytes32 record, string value)
     onlyOwner
     {
-        StringStorage[record] = value;
+        stringStorage[record] = value;
     }
 
     function deleteStringValue(bytes32 record)
     onlyOwner
     {
-      delete StringStorage[record];
+      delete stringStorage[record];
     }
 
     ////////////
     //Address
     ////////////
 
-    mapping(bytes32 => address) AddressStorage;
+    mapping(bytes32 => address) addressStorage;
 
     function getAddressValue(bytes32 record) constant returns (address){
-        return AddressStorage[record];
+        return addressStorage[record];
     }
 
     function setAddressValue(bytes32 record, address value)
     onlyOwner
     {
-        AddressStorage[record] = value;
+        addressStorage[record] = value;
     }
 
     function deleteAddressValue(bytes32 record)
     onlyOwner
     {
-      delete AddressStorage[record];
+      delete addressStorage[record];
     }
 
     ////////////
     //Bytes
     ////////////
 
-    mapping(bytes32 => bytes) BytesStorage;
+    mapping(bytes32 => bytes) bytesStorage;
 
     function getBytesValue(bytes32 record) constant returns (bytes){
-        return BytesStorage[record];
+        return bytesStorage[record];
     }
 
     function setBytesValue(bytes32 record, bytes value)
     onlyOwner
     {
-        BytesStorage[record] = value;
+        bytesStorage[record] = value;
     }
 
     function deleteBytesValue(bytes32 record)
     onlyOwner
     {
-      delete BytesStorage[record];
+      delete bytesStorage[record];
     }
 
     ////////////
     //Boolean
     ////////////
 
-    mapping(bytes32 => bool) BooleanStorage;
+    mapping(bytes32 => bool) booleanStorage;
 
     function getBooleanValue(bytes32 record) constant returns (bool){
-        return BooleanStorage[record];
+        return booleanStorage[record];
     }
 
     function setBooleanValue(bytes32 record, bool value)
     onlyOwner
     {
-        BooleanStorage[record] = value;
+        booleanStorage[record] = value;
     }
 
     function deleteBooleanValue(bytes32 record)
     onlyOwner
     {
-      delete BooleanStorage[record];
+      delete booleanStorage[record];
     }
 
     ////////////
     //Int
     ////////////
-    mapping(bytes32 => int) IntStorage;
+    mapping(bytes32 => int) intStorage;
 
     function getIntValue(bytes32 record) constant returns (int){
-        return IntStorage[record];
+        return intStorage[record];
     }
 
     function setIntValue(bytes32 record, int value)
     onlyOwner
     {
-        IntStorage[record] = value;
+        intStorage[record] = value;
     }
 
     function deleteIntValue(bytes32 record)
     onlyOwner
     {
-      delete IntStorage[record];
+      delete intStorage[record];
     }
 
 }

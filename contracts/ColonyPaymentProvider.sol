@@ -1,6 +1,6 @@
 library ColonyPaymentProvider
 {
-  function SettleTaskFees(uint256 taskValueEth, address taskCompletor, address rootColony)
+  function settleTaskFees(uint256 taskValueEth, address taskCompletor, address rootColony)
   {
     // Pay the task Ether value -5% to task completor and 5% to rootColony
     var payout = (taskValueEth * 95) / 100;

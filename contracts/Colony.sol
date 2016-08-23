@@ -192,7 +192,7 @@ contract Colony is Modifiable, IUpgradable  {
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0)
     {
-      ColonyPaymentProvider.SettleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+      ColonyPaymentProvider.settleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
     }
 
     if (taskTokens > 0)
