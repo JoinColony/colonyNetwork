@@ -6,12 +6,12 @@ library TaskLibrary {
   event TaskUpdated(bytes32 key, uint256 when);
 
 	modifier ifTasksExists(address _storageContract, uint256 _id) {
-    if(!hasTask(_storageContract, _id)) throw;
+    if(!hasTask(_storageContract, _id)) { throw; }
 	    _
 	}
 
 	modifier ifTasksNotAccepted(address _storageContract, uint256 _id) {
-		if(isTaskAccepted(_storageContract, _id)) throw;
+		if(isTaskAccepted(_storageContract, _id)) { throw; }
 			_
 	}
 
@@ -138,7 +138,7 @@ library TaskLibrary {
 	ifTasksNotAccepted(_storageContract, _id)
   {
     var eth = EternalStorage(_storageContract).getUIntValue(sha3("task_eth", _id));
-    if(eth + _amount <= eth) throw;
+    if(eth + _amount <= eth) { throw; }
     EternalStorage(_storageContract).setUIntValue(sha3("task_eth", _id), eth+_amount);
   }
 
@@ -154,19 +154,17 @@ library TaskLibrary {
 	ifTasksNotAccepted(_storageContract, _id)
   {
     var tokensWei = EternalStorage(_storageContract).getUIntValue(sha3("task_tokensWei", _id));
-    if(tokensWei + _amount <= tokensWei) throw;
+    if(tokensWei + _amount <= tokensWei) { throw; }
 
     EternalStorage(_storageContract).setUIntValue(sha3("task_tokensWei", _id), tokensWei + _amount);
 
     // Logic to cater for funding tasks by the parent Colony itself (i.e. self-funding tasks).
-    if (isColonySelfFunded)
-    {
+    if (isColonySelfFunded) {
       var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(sha3("task_tokensWeiReserved", _id));
       var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(sha3("ReservedTokensWei"));
 
       var updatedTokensWei = _amount;
-      if (tokensWeiReserved > 0)
-      {
+      if (tokensWeiReserved > 0) {
         updatedTokensWei += tokensWeiReserved;
       }
 

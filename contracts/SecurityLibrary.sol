@@ -18,8 +18,7 @@ library SecurityLibrary
   function addAdmin(address _storageContract, address _user)
   {
     var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3('admin:', _user));
-    if(userIsAdmin)
-      throw;
+    if(userIsAdmin) { throw; }
 
     EternalStorage(_storageContract).setBooleanValue(sha3('admin:', _user), true);
 
@@ -33,12 +32,10 @@ library SecurityLibrary
   function removeAdmin(address _storageContract, address _user)
   {
     var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3('admin:', _user));
-    if(!userIsAdmin)
-      throw;
+    if(!userIsAdmin) { throw; }
 
     var adminsCount = EternalStorage(_storageContract).getUIntValue(sha3("AdminsCount"));
-    if (adminsCount == 1)
-      throw;
+    if (adminsCount == 1) { throw; }
 
     EternalStorage(_storageContract).deleteBooleanValue(sha3('admin:', _user));
 

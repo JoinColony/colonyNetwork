@@ -43,8 +43,7 @@ library TokenLibrary {
     var balanceRecipient = balanceOf(_storageContract, _to);
 
     //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
-    if (balanceSender >= _value && balanceRecipient + _value > balanceRecipient)
-    {
+    if (balanceSender >= _value && balanceRecipient + _value > balanceRecipient) {
       balanceSet(_storageContract, msg.sender, balanceSender - _value);
       balanceSet(_storageContract, _to, balanceRecipient + _value);
 
@@ -56,14 +55,12 @@ library TokenLibrary {
   }
 
   function transferFromColony(address _storageContract, address _to, uint256 _value)
-  returns (bool success)
-  {
+  returns (bool success) {
     var balanceSender = balanceOf(_storageContract, this);
     var balanceRecipient = balanceOf(_storageContract, _to);
 
     //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
-    if (balanceSender >= _value && balanceRecipient + _value > balanceRecipient)
-    {
+    if (balanceSender >= _value && balanceRecipient + _value > balanceRecipient) {
       balanceSet(_storageContract, this, balanceSender - _value);
       balanceSet(_storageContract, _to, balanceRecipient + _value);
 
@@ -86,8 +83,7 @@ library TokenLibrary {
     var allowedValue = allowance(_storageContract, _from, msg.sender);
 
     //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
-    if (balanceSender >= _value && allowedValue >= _value && (balanceRecipient + _value) > balanceRecipient)
-    {
+    if (balanceSender >= _value && allowedValue >= _value && (balanceRecipient + _value) > balanceRecipient) {
       balanceSet(_storageContract, _from, balanceSender - _value);
       balanceSet(_storageContract, _to, balanceRecipient + _value);
       allowanceSet(_storageContract, _from, msg.sender, allowedValue - _value);
@@ -105,8 +101,9 @@ library TokenLibrary {
   function approve(address _storageContract, address _spender, uint256 _value)
   returns (bool success)
   {
-    if(_value > totalSupply(_storageContract))
-    return false;
+    if(_value > totalSupply(_storageContract)) {
+      return false;
+    }
 
     allowanceSet(_storageContract, msg.sender, _spender, _value);
     return true;
@@ -144,10 +141,10 @@ library TokenLibrary {
   /// @param _amount The amount to be increased in the upper bound totalSupply in token wei
   function generateTokensWei(address _storageContract, uint256 _amount)
   {
-    if(_amount == 0) throw;
+    if(_amount == 0) { throw; }
 
     var _totalSupply = totalSupply(_storageContract);
-    if (_totalSupply + _amount < _amount) throw;
+    if (_totalSupply + _amount < _amount) { throw; }
     _totalSupply+=_amount;
 
     var _colonyBalance = balanceOf(_storageContract, this);
