@@ -26,7 +26,7 @@ contract IColonyFactory is Destructible {
   /// @notice upgrade a colony by key and template address
   /// @param key the key of the colony to be upgraded
   /// @param colonyAddress the address of the colony to be upgraded
-  function upgradeColony(bytes32 key_ address colonyAddress);
+  function upgradeColony(bytes32 key, address colonyAddress);
 
   /// @notice this function registers the address of the RootColonyResolver
   /// @param rootColonyResolverAddress the default root colony resolver address

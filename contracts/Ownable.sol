@@ -12,7 +12,7 @@ contract Ownable {
   function changeOwner(address _newOwner)
   onlyOwner
   {
-    if(_newOwner == "0x0") { throw; }
+    if(_newOwner == 0x0) { throw; }
 
     owner = _newOwner;
   }
