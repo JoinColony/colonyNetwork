@@ -18,7 +18,7 @@ library SecurityLibrary
 
   function addAdmin(address _storageContract, address _user)
   {
-    var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3("admin:', _user));
+    var userIsAdmin = EternalStorage(_storageContract).getBooleanValue(sha3("admin:", _user));
     if(userIsAdmin) { throw; }
 
     EternalStorage(_storageContract).setBooleanValue(sha3("admin:", _user), true);
