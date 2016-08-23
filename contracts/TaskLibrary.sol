@@ -3,6 +3,7 @@ import "EternalStorage.sol";
 
 library TaskLibrary {
   event TaskAdded(bytes32 key, uint256 count, uint256 when);
+  
   event TaskUpdated(bytes32 key, uint256 when);
 
 	modifier ifTasksExists(address _storageContract, uint256 _id) {
@@ -139,7 +140,7 @@ library TaskLibrary {
   {
     var eth = EternalStorage(_storageContract).getUIntValue(sha3("task_eth", _id));
     if(eth + _amount <= eth) { throw; }
-    EternalStorage(_storageContract).setUIntValue(sha3("task_eth", _id), eth+_amount);
+    EternalStorage(_storageContract).setUIntValue(sha3("task_eth", _id), eth + _amount);
   }
 
   /// @notice this function takes an amount of tokens and add it to the task funds.

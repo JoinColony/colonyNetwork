@@ -3,6 +3,7 @@ import "Destructible.sol";
 
 contract IColonyFactory is Destructible {
   address public rootColonyResolverAddress;
+  
   address public eternalStorageRoot;
 
   /// @notice creates a Colony

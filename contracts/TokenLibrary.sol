@@ -3,6 +3,7 @@
 */
 import "EternalStorage.sol";
 
+
 library TokenLibrary {
 
   // Manages records for colony tokens stored in the format:
@@ -145,10 +146,10 @@ library TokenLibrary {
 
     var _totalSupply = totalSupply(_storageContract);
     if (_totalSupply + _amount < _amount) { throw; }
-    _totalSupply+=_amount;
+    _totalSupply += _amount;
 
     var _colonyBalance = balanceOf(_storageContract, this);
-    _colonyBalance+=_amount;
+    _colonyBalance += _amount;
 
     balanceSet(_storageContract, this, _colonyBalance);
     EternalStorage(_storageContract).setUIntValue(sha3("TokensTotalSupply"), _totalSupply);

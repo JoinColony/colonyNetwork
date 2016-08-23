@@ -4,6 +4,7 @@ import "EternalStorage.sol";
 library SecurityLibrary
 {
   event AdminAdded(address _user);
+  
   event AdminRemoved(address _user);
 
   // Manages records for admins stored in the format:
@@ -40,7 +41,7 @@ library SecurityLibrary
     EternalStorage(_storageContract).deleteBooleanValue(sha3('admin:', _user));
 
     // Decrement the admins count in storage
-    adminsCount-=1;
+    adminsCount -= 1;
     EternalStorage(_storageContract).setUIntValue(sha3("AdminsCount"), adminsCount);
 
     AdminRemoved(_user);
