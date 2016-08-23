@@ -1,5 +1,7 @@
 import "Modifiable.sol";
 import "Destructible.sol";
+
+
 contract IRootColonyResolver is Destructible, Modifiable {
 
   address public rootColonyAddress;

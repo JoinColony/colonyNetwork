@@ -1,5 +1,6 @@
 import "EternalStorage.sol";
 
+
 library ColonyLibrary {
 
 	// Manages records for colonies stored in the format:

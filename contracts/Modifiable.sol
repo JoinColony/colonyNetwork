@@ -1,4 +1,3 @@
-
 contract Modifiable {
 
   /// @notice throws if ether was sent accidentally

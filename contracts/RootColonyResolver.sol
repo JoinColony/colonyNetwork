@@ -1,5 +1,6 @@
-
 import 'IRootColonyResolver.sol';
+
+
 contract RootColonyResolver is IRootColonyResolver {
 
   function RootColonyResolver()

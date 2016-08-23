@@ -1,5 +1,6 @@
 import "EternalStorage.sol";
 
+
 library SecurityLibrary
 {
   event AdminAdded(address _user);

@@ -4,6 +4,7 @@ import "Modifiable.sol";
 import "EternalStorage.sol";
 import "SecurityLibrary.sol";
 
+
 contract RootColony is Destructible, Modifiable {
 
   IColonyFactory public colonyFactory;

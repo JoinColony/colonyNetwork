@@ -1,5 +1,6 @@
 import "EternalStorage.sol";
 
+
 library TaskLibrary {
   event TaskAdded(bytes32 key, uint256 count, uint256 when);
   event TaskUpdated(bytes32 key, uint256 when);

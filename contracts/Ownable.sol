@@ -1,4 +1,3 @@
-
 contract Ownable {
   address public owner = msg.sender;
 

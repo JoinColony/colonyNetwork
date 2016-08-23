@@ -5,6 +5,7 @@ import "Colony.sol";
 import "Ownable.sol";
 import "ColonyLibrary.sol";
 
+
 contract ColonyFactory is IColonyFactory {
   using ColonyLibrary for address;
 

@@ -1,7 +1,7 @@
 import "Destructible.sol";
 
-contract IColonyFactory is Destructible {
 
+contract IColonyFactory is Destructible {
   address public rootColonyResolverAddress;
   address public eternalStorageRoot;
 

@@ -21,7 +21,7 @@ contract Colony is Modifiable, IUpgradable  {
 
   IRootColonyResolver public rootColonyResolver;
 
-  // Link libraries containing business logic to EternalStorage.
+  // Link libraries containing business logic to EternalStorage
   using TaskLibrary for address;
   using SecurityLibrary for address;
   using TokenLibrary for address;
