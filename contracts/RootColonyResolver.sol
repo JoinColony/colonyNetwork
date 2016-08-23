@@ -3,12 +3,6 @@ import 'IRootColonyResolver.sol';
 
 contract RootColonyResolver is IRootColonyResolver {
 
-  function RootColonyResolver()
-  refundEtherSentByAccident
-  {
-
-  }
-
   /// @notice this function takes an address (Supposedly, the RootColony address)
   /// @param _rootColonyAddress the RootColony address
   function registerRootColony(address _rootColonyAddress)

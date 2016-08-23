@@ -3,10 +3,6 @@ import "Ownable.sol";
 
 contract EternalStorage is Ownable{
 
-    function EternalStorage(){
-
-    }
-
     ////////////
     //UInt
     ////////////
