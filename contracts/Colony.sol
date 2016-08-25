@@ -6,6 +6,7 @@ import "TokenLibrary.sol";
 import "Ownable.sol";
 import "TaskLibrary.sol";
 import "SecurityLibrary.sol";
+import "VotingLibrary.sol";
 
 
 contract Colony is Modifiable {
@@ -31,6 +32,8 @@ contract Colony is Modifiable {
   using TaskLibrary for address;
   using SecurityLibrary for address;
   using TokenLibrary for address;
+  using VotingLibrary for address;
+  
   address public eternalStorage;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
