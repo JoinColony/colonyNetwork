@@ -33,7 +33,7 @@ contract Colony is Modifiable {
   using SecurityLibrary for address;
   using TokenLibrary for address;
   using VotingLibrary for address;
-  
+
   address public eternalStorage;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
@@ -271,6 +271,11 @@ contract Colony is Modifiable {
   constant returns (uint256)
   {
     return eternalStorage.totalSupply();
+  }
+
+  function setLock(address userAddress, uint256 pollLockTime, uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId)
+  {
+    eternalStorage.setLock(userAddress, pollLockTime, pollId, secret, prevTimestamp, prevPollId);
   }
 
   /// @notice upgrade the colony migrating its data to another colony instance

@@ -39,7 +39,7 @@ library VotingLibrary {
       }
       //Same for prevPollId
       if (prevPollId != 0){
-        var secretAtPrevPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret"));
+        var secretAtPrevPollId = EternalStorage(_storageContract).getBytes32Value(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret"));
         if (secretAtPrevPollId == "") { throw; }
       }
 
@@ -67,7 +67,7 @@ library VotingLibrary {
           EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "nextTimestamp"), claimedNextTimestamp);
           EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, claimedNextTimestamp, "prevTimestamp"), pollLockTime);
         }
-      };
+      }
 
       // Check we're inserting in the correct place in the secrets linked list
       var claimedNextPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"));
@@ -81,7 +81,7 @@ library VotingLibrary {
       EternalStorage(_storageContract).setBytes32Value(sha3("Lock", userAddress, pollLockTime, "secrets", pollId, "secret"), secret);
   }
 
-
+}
    // function removeLock(
    //  address userAddress,
    //  uint256 pollTimeStamp,
@@ -133,7 +133,5 @@ library VotingLibrary {
    //      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, nextTimestamp, "prevTimestamp"), prevTimestamp);
    //    }
    //    EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "nextTimestamp"), 0);
-
    //  }
-  }
-}
+//  }

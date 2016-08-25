@@ -46,7 +46,14 @@ contract('VotingLibrary', function (accounts) {
     .catch(done);
   });
 
-  describe('when instantiated', function () {
-    it('', function (done) {});
+  describe('when adding votes', function () {
+    it('should ', function (done) {
+      colony.setLock(_OTHER_ACCOUNT_, 1000, 2, solSha3("Yes"), 0, 0)
+      .then(function(){
+        // do some checks
+      })
+      .then(done)
+      .catch(done);
+    });
   });
 });
