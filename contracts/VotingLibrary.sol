@@ -20,47 +20,45 @@ library VotingLibrary {
     uint256 pollId,
     bytes32 secret,
     uint256 prevTimestamp,
-    uint256 prevPollId) {
+    uint256 prevPollId) returns (bool) {
 
       //IMPORTANT TO REMEMBER: User should only supply pollId, not timestamp.
       //Doesn't need to be done in this function - calling function should look up and enforce.
 
       // Validate user wants to insert new records at the correct position in the doubly linked lists
-      if (prevTimestamp > pollLockTime) { throw; }
-      if (prevPollId > pollId) { throw; }
+      if (prevTimestamp > pollLockTime) { return false; }
+      if (prevPollId > pollId) { return false; }
 
       //Check that prevTimestamp is either 0 (and we're inserting at the start of the list) or exists in the list.
       if (prevTimestamp != 0){
         var firstUnrevealedPollIdAtPreviousTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "secrets",0,"nextPollId"));
-        if (firstUnrevealedPollIdAtPreviousTimestamp == 0) { throw; }
+        if (firstUnrevealedPollIdAtPreviousTimestamp == 0) { return false; }
       }
       //Same for prevPollId
       if (prevPollId != 0){
         var secretAtPrevPollId = EternalStorage(_storageContract).getBytes32Value(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "secret"));
-        if (secretAtPrevPollId == "") { throw; }
+        if (secretAtPrevPollId == "") { return false; }
       }
 
       var pollLockTimeAlreadyExists = (EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets",0,"nextPollId"))==0);
 
-      if(pollLockTimeAlreadyExists) {
-        // Adding to existing pollLockTime
-      }
-      else {
+      // Check we're inserting in the correct place in the secrets linked list
+      var claimedNextPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"));
+      if ( claimedNextPollId != 0 && claimedNextPollId <= pollId) { return false; }
+
+      if(!pollLockTimeAlreadyExists) {
         // Inserting a new pollLockTime, so we need to check list would still be ordered
         var claimedNextTimestamp = EternalStorage(_storageContract).getUIntValue( sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"));
-        if ( claimedNextTimestamp != 0 && claimedNextTimestamp <= pollLockTime ) { throw; }
+        if ( claimedNextTimestamp != 0 && claimedNextTimestamp <= pollLockTime ) { return false; }
         // If x is 0, we're inserting at the end of the existing list
         // Otherwise, throw if the list wouldn't be ordered after insertion.
 
+        //Insert into the linked lists
         EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"), pollLockTime);
         EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "prevTimestamp"), prevTimestamp);
         EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "nextTimestamp"), claimedNextTimestamp);
         EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, claimedNextTimestamp, "prevTimestamp"), pollLockTime);
       }
-
-      // Check we're inserting in the correct place in the secrets linked list
-      var claimedNextPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"));
-      if ( claimedNextPollId != 0 && claimedNextPollId <= pollId) { throw; }
 
       EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"), pollId);
       EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId"), prevPollId);
@@ -69,6 +67,7 @@ library VotingLibrary {
 
       //Enter secret
       EternalStorage(_storageContract).setBytes32Value(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret"), secret);
+      return true;
   }
 
 }

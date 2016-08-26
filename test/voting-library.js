@@ -56,7 +56,7 @@ contract('VotingLibrary', function (accounts) {
       .catch(done);
   });
 
-  describe('when adding a vote entry' function () {
+  describe('when adding a vote entry', function () {
 
     it('to the start of a list of existing votes at a pollLockTime that already exists, the linked list works as expected', async function(done){
       try {
@@ -205,28 +205,28 @@ contract('VotingLibrary', function (accounts) {
 
     });
 
-    it.only('if the supplied previous locktime does not exist, it should fail', async function(done){
+    it('if the supplied previous locktime does not exist, it should fail', async function(done){
       try {
-        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_1_, solSha3("Yes"), 0, 0);
-        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_2_, solSha3("Yes"), 0, _POLL_ID_1_);
-        var y = await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_3_, solSha3("Yes"), 0, _POLL_ID_2_);
-        console.log(y);
-        var x = await colony.setLock(_OTHER_ACCOUNT_, pollLockTime+2, _POLL_ID_4_, solSha3("Yes"), pollLockTime+1, 0);
-        console.log(x);
-        done();
-      }catch(err){
+        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime+2, _POLL_ID_4_, solSha3("Yes"), pollLockTime, 0);
         //Check nothing changed
-
         // Check the vote secret is correct
-        var secret = await eternalStorage.getBytes32Value(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "secret"));
-        assert.equal(secret, "");
+        var secret = await eternalStorage.getBytes32Value.call(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "secret"));
+        assert.equal(secret, "0x0000000000000000000000000000000000000000000000000000000000000000");
+
+        // Check the '0' timestamp still points to nothing
+        var zeroEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, 0, "nextTimestamp"));
+        var zeroEntryNextKey = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, 0, "prevTimestamp"));
+        assert.equal(zeroEntryPrevKey.toNumber(), 0);
+        assert.equal(zeroEntryNextKey.toNumber(), 0);
 
         // Check the '0' poll id still points to nothing
-        var zeroEntryPrevKey = await eternalStorage.getUIntValue(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", 0, "prevPollId"));
-        var zeroEntryNextKey = await eternalStorage.getUIntValue(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", 0, "nextPollId"));
+        var zeroEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", 0, "prevPollId"));
+        var zeroEntryNextKey = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", 0, "nextPollId"));
         assert.equal(zeroEntryPrevKey.toNumber(), 0);
         assert.equal(zeroEntryNextKey.toNumber(), 0);
         done();
+      }catch(err){
+        return done(err);
       }
 
     });
