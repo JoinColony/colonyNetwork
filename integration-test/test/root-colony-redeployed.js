@@ -1,7 +1,5 @@
-/* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, assert, EternalStorage
-*/
+/* globals FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage */
 contract('RootColony', function () {
   const COLONY_KEY = 'COLONY_TEST';
   const NEW_COLONY_KEY = 'NEW_COLONY_TEST';

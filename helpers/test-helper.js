@@ -1,8 +1,5 @@
-/* eslint-env node */
-/* globals web3, assert, module */
 // These globals represent contracts and are added by Truffle:
-/* globals FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage
-*/
+/* globals FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage*/
 
 import Promise from 'bluebird';
 import _ from 'lodash';

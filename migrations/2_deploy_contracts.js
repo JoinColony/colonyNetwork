@@ -1,6 +1,6 @@
-/* eslint-env node */
+// These globals are added by Truffle:
 /* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary,
-  TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
+ TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
 
 module.exports = function (deployer) {
   deployer.deploy([

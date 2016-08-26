@@ -1,33 +1,14 @@
 {
-  "extends": ["airbnb"],
-  "plugins": ["mocha"],
-  "parser": "babel-eslint",
-  "env":{
-    "meteor": true,
-    "es6": true,
-    "commonjs": true
+  "env": {
+    "node": true,
+    "mocha": true
   },
-  "parserOptions": {
-    "ecmaVersion": 6,
-    "sourceType": "module"
+  "globals": {
+    "web3": true,
+    "assert": true,
+    "contract": true
   },
   "rules": {
-    /* General  */
-    "consistent-return": [0],
-    "eol-last": [0],
-    "jsx-quotes": [2, "prefer-double"],
-    "no-param-reassign": [0],
-    "no-use-before-define" : ["error", { "functions": false }],
-    "no-native-reassign": [0],
-    "no-console": [0],
-    "no-mixed-requires": [0],
-    "prefer-template": [0],
-    "quotes": [2, "single"],
-    "radix": [0],
-    "semi": [2, "always"],
-    "require-yield": [0],
-    /* General */
-
     /* Test-only */
     "no-global-assign": [0],
     "no-unused-expressions": [0],
@@ -38,21 +19,7 @@
     "prefer-arrow-callback": [0],
     "new-cap": [0],
     "import/no-unresolved": [0],
-    /* Test-only */
-
-    "eqeqeq": ["error", "smart"],
-    "generator-star-spacing": [0],
-    "max-len": ["error", 150, 2],
-    "no-undefined": ["error"],
-    "object-curly-spacing": ["error", "always", {
-      "objectsInObjects": false,
-      "arraysInObjects": false
-    }],
-
     "import/no-extraneous-dependencies": [0]
-  },
-  "settings": {
-    "import/core-modules": ["meteor"],
-    "import/resolver": "meteor"
+    /* Test-only */
   }
 }

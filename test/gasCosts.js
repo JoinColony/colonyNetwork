@@ -1,7 +1,5 @@
-/* eslint-env node, mocha */
 // These globals are added by Truffle:
-/* globals contract, before, describe, it, web3, assert, RootColony, Colony, ColonyFactory, EternalStorage */
-
+/* globals RootColony, Colony, ColonyFactory, EternalStorage */
 contract('all', function (accounts) {
   const GAS_PRICE = 20e9;
   // const _GAS_TO_SPEND_ = 1e6;
