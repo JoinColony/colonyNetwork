@@ -84,7 +84,7 @@ contract('VotingLibrary', function (accounts) {
         assert.equal(newEntryPrevKey, _POLL_ID_2_);
         var newEntryNextKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, lockTime, 'secrets', _POLL_ID_3_, 'nextPollId'));
         assert.equal(newEntryNextKey, 0);
-
+        done();
 
       } catch (err) {
         return done(err);
@@ -92,7 +92,17 @@ contract('VotingLibrary', function (accounts) {
     });
 
 
-    it.skip('votes at different timestamps should be added to linked list correctly', async function(done){
+    it.skip('if the supplied previous locktime does not exist, it should fail', async function(done));
+    it.skip('if the supplied previous locktime implies a next locktime that is too small, it should fail', async function(done));
+    it.skip('if the supplied previous locktime is too large, it should fail', async function(done));
+    it.skip('if the new lock is proposed to be at the start, but that is wrong, it should fail', async function(done));
+
+    it.skip('if the supplied previous pollId does not exist, it should fail', async function(done));
+    it.skip('if the supplied previous pollId implies a next pollId that is too small, it should fail', async function(done));
+    it.skip('if the supplied previous pollId is too large, it should fail', async function(done));
+    it.skip('if the new secret is proposed to be at the start, but that is wrong, it should fail', async function(done));
+
+    it.skip('if the new vote timestamp is first, should be added to linked list correctly', async function(done){
         // var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, lockTime, "unrevealedVotesCount"));
         // assert.equal(nUnrevealedVotes.toNumber(), 2);
 
@@ -110,5 +120,8 @@ contract('VotingLibrary', function (accounts) {
         // assert.equal(nUnrevealedVotes.toNumber(), 1);
         // done();
     });
+    it.skip('if the new vote timestamp is last, should be added to linked list correctly', async function(done));
+    it.skip('if the new vote timestamp is in the middle, should be added to linked list correctly', async function(done));
+
   });
 });
