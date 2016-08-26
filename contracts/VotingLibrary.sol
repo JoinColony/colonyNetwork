@@ -14,6 +14,8 @@ library VotingLibrary {
   // sha3("Voting", userAddress, pollLockTime, "prevTimestamp") => uint256 pollLockTime
   // sha3("Voting", userAddress, pollLockTime, "nextTimestamp") => uint256 pollLockTime
 
+  //todo: remove explicip passing of the userAddress and use msg.sender instead
+  //todo: remove throws and return boolean instead
   function setLock(
     address _storageContract,
     address userAddress,
