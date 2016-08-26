@@ -3,14 +3,11 @@ import "EternalStorage.sol";
 
 library VotingLibrary {
   // Manages records for colony polls and votes stored in the format:
-  // sha3("Voting", "FirstLock", userAddress) => int timeStamp
 
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret") => bytes32 secret
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId") => uint pollId
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId") => uint pollId
 
-  // sha3("Voting", userAddress, pollLockTime, "unrevealedVotesCount") => uint256 unrevealedVotesCount
-  // sha3("Voting", userAddress, pollLockTime, "firstUnrevealedVote") => uint256 pollId
   // sha3("Voting", userAddress, pollLockTime, "prevTimestamp") => uint256 pollLockTime
   // sha3("Voting", userAddress, pollLockTime, "nextTimestamp") => uint256 pollLockTime
 
@@ -32,12 +29,10 @@ library VotingLibrary {
       if (prevTimestamp > pollLockTime) { throw; }
       if (prevPollId > pollId) { throw; }
 
-      var userFirstLock = EternalStorage(_storageContract).getUIntValue(sha3("Voting", "FirstLock", userAddress));
-
       //Check that prevTimestamp is either 0 (and we're inserting at the start of the list) or exists in the list.
       if (prevTimestamp != 0){
-        var unrevealedVotesCountAtPrevTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "unrevealedVotesCount"));
-        if (unrevealedVotesCountAtPrevTimestamp == 0) { throw; }
+        var firstUnrevealedPollIdAtPreviousTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "secrets",0,"nextPollId"));
+        if (firstUnrevealedPollIdAtPreviousTimestamp == 0) { throw; }
       }
       //Same for prevPollId
       if (prevPollId != 0){
@@ -45,9 +40,9 @@ library VotingLibrary {
         if (secretAtPrevPollId == "") { throw; }
       }
 
-      var unrevealedVotesCountAtTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "unrevealedVotesCount"));
+      var pollLockTimeAlreadyExists = (EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets",0,"nextPollId"))==0);
 
-      if(unrevealedVotesCountAtTimestamp > 0) {
+      if(pollLockTimeAlreadyExists) {
         // Adding to existing pollLockTime
       }
       else {
@@ -57,37 +52,23 @@ library VotingLibrary {
         // If x is 0, we're inserting at the end of the existing list
         // Otherwise, throw if the list wouldn't be ordered after insertion.
 
-        if (prevTimestamp!=0){
-          EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"), pollLockTime);
-          EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "prevTimestamp"), prevTimestamp);
-        }else{
-          //We're inserting at the start of the list
-          EternalStorage(_storageContract).setUIntValue(sha3("Voting", "FirstLock", userAddress), pollLockTime);
-
-        }
-
-        if (claimedNextTimestamp!=0){
-          EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "nextTimestamp"), claimedNextTimestamp);
-          EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, claimedNextTimestamp, "prevTimestamp"), pollLockTime);
-        }
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"), pollLockTime);
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "prevTimestamp"), prevTimestamp);
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "nextTimestamp"), claimedNextTimestamp);
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, claimedNextTimestamp, "prevTimestamp"), pollLockTime);
       }
 
       // Check we're inserting in the correct place in the secrets linked list
       var claimedNextPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"));
       if ( claimedNextPollId != 0 && claimedNextPollId <= pollId) { throw; }
 
-      if (prevPollId!=0){
-        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"), pollId);
-        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId"), prevPollId);
-      }
-      if (claimedNextPollId!=0){
-        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId"), claimedNextPollId);
-        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", claimedNextPollId, "prevPollId"), pollId);
-      }
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"), pollId);
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId"), prevPollId);
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId"), claimedNextPollId);
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", claimedNextPollId, "prevPollId"), pollId);
 
-      //Enter secret, increment counter
+      //Enter secret
       EternalStorage(_storageContract).setBytes32Value(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret"), secret);
-      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "unrevealedVotesCount"), unrevealedVotesCountAtTimestamp+1);
   }
 
 }
