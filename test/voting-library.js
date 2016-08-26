@@ -15,9 +15,19 @@ contract('VotingLibrary', function (accounts) {
   var eternalStorage;
   var eternalStorageRoot;
 
-  before(function (done) {
+  var pollLockTime;
+  var _POLL_ID_1_ = 1;
+  var _POLL_ID_2_ = 2;
+  var _POLL_ID_3_ = 3;
+  var _POLL_ID_4_ = 4;
+
+  before(async function (done) {
     rootColony = RootColony.deployed();
     eternalStorageRoot = EternalStorage.deployed();
+
+    var lastBlock = await web3.eth.getBlock('latest');
+    var timestamp = lastBlock.timestamp;
+    pollLockTime = timestamp + 2 * 7 * 24 * 3600;
     done();
   });
 
@@ -58,31 +68,24 @@ contract('VotingLibrary', function (accounts) {
 
     it('to the end of list of existing votes at a lockTime, the linked list works as expected', async function (done) {
       try {
-        var lastBlock = await web3.eth.getBlock('latest');
-        var timestamp = lastBlock.timestamp;
-        var lockTime = timestamp + 2 * 7 * 24 * 3600;
-        var _POLL_ID_2_ = 2;
-        var _POLL_ID_3_ = 3;
-        var _POLL_ID_4_ = 4;
+        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_2_, solSha3("Yes"), 0, 0);
 
-        await colony.setLock(_OTHER_ACCOUNT_, lockTime, _POLL_ID_2_, solSha3("Yes"), 0, 0);
-
-        var storedSecret = await eternalStorage.getBytes32Value.call(solSha3('Voting', _OTHER_ACCOUNT_, lockTime, 'secrets', _POLL_ID_2_, 'secret'));
+        var storedSecret = await eternalStorage.getBytes32Value.call(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_2_, 'secret'));
         assert.equal(storedSecret, solSha3("Yes"));
-        var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, lockTime, "unrevealedVotesCount"));
+        var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "unrevealedVotesCount"));
         assert.equal(nUnrevealedVotes.toNumber(), 1);
 
         //Add another one at the same timestamp
-        await colony.setLock(_OTHER_ACCOUNT_, lockTime, _POLL_ID_3_, solSha3('Yes'), 0, 2);
+        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_3_, solSha3('Yes'), 0, 2);
         //Check it's been inserted correctly afterwards into the linked list
-        var firstEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, lockTime, 'secrets', _POLL_ID_2_, 'prevPollId'));
+        var firstEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_2_, 'prevPollId'));
         assert.equal(firstEntryPrevKey, 0);
-        var firstEntryNextKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, lockTime, 'secrets', _POLL_ID_2_, 'nextPollId'));
+        var firstEntryNextKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_2_, 'nextPollId'));
         assert.equal(firstEntryNextKey, _POLL_ID_3_);
 
-        var newEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, lockTime, 'secrets', _POLL_ID_3_, 'prevPollId'));
+        var newEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_3_, 'prevPollId'));
         assert.equal(newEntryPrevKey, _POLL_ID_2_);
-        var newEntryNextKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, lockTime, 'secrets', _POLL_ID_3_, 'nextPollId'));
+        var newEntryNextKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_3_, 'nextPollId'));
         assert.equal(newEntryNextKey, 0);
         done();
 
@@ -91,37 +94,78 @@ contract('VotingLibrary', function (accounts) {
       }
     });
 
+    it.skip('if the supplied previous locktime does not exist, it should fail', async function(done){});
+    it.skip('if the supplied previous locktime implies a next locktime that is too small, it should fail', async function(done){});
+    it.skip('if the supplied previous locktime is too large, it should fail', async function(done){});
+    it.skip('if the new lock is proposed to be at the start, but that is wrong, it should fail', async function(done){});
 
-    it.skip('if the supplied previous locktime does not exist, it should fail', async function(done));
-    it.skip('if the supplied previous locktime implies a next locktime that is too small, it should fail', async function(done));
-    it.skip('if the supplied previous locktime is too large, it should fail', async function(done));
-    it.skip('if the new lock is proposed to be at the start, but that is wrong, it should fail', async function(done));
+    it('if the new (vote) secret is first for that pollId, should be added to linked list correctly', async function(done){
+      try {
+        var _VOTE_SECRET = testHelper.getRandomString(5);
 
-    it.skip('if the supplied previous pollId does not exist, it should fail', async function(done));
-    it.skip('if the supplied previous pollId implies a next pollId that is too small, it should fail', async function(done));
-    it.skip('if the supplied previous pollId is too large, it should fail', async function(done));
-    it.skip('if the new secret is proposed to be at the start, but that is wrong, it should fail', async function(done));
+        // We're adding the first secret vote to a Poll id 1
+        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_1_, solSha3(_VOTE_SECRET), 0, 0);
 
-    it.skip('if the new vote timestamp is first, should be added to linked list correctly', async function(done){
-        // var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, lockTime, "unrevealedVotesCount"));
-        // assert.equal(nUnrevealedVotes.toNumber(), 2);
+        // Check it's been inserted with the correct previous and next pollId values, which for the first vote (secret) is zero.
+        var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "prevPollId"));
+        var newEntryNextKey = await eternalStorage.getUIntValue(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "nextPollId"));
+        assert.equal(newEntryPrevKey, 0);
+        assert.equal(newEntryNextKey, 0);
 
-        // //Add another one at a later timestamp
+        // Check the vote secret is correct
+        var secret = await eternalStorage.getBytes32Value(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "secret"));
+        assert.equal(secret, solSha3(_VOTE_SECRET));
 
-        // await colony.setLock(_OTHER_ACCOUNT_, lockTime+1, _POLL_ID_4_, solSha3('Yes'), lockTime, 0);
-        // //Check it's been inserted correctly afterwards
-        // var nextTimestamp = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, lockTime, 'nextTimestamp'));
-        // assert.equal(nextTimestamp, lockTime+1);
-
-
-        // var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, lockTime, "unrevealedVotesCount"));
-        // assert.equal(nUnrevealedVotes.toNumber(), 2);
-        // var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, lockTime+1, "unrevealedVotesCount"));
-        // assert.equal(nUnrevealedVotes.toNumber(), 1);
-        // done();
+        // Check the vote count is correct
+        var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "unrevealedVotesCount"));
+        assert.equal(nUnrevealedVotes.toNumber(), 1);
+        done();
+      }
+      catch (err) {
+        return done(err);
+      }
     });
-    it.skip('if the new vote timestamp is last, should be added to linked list correctly', async function(done));
-    it.skip('if the new vote timestamp is in the middle, should be added to linked list correctly', async function(done));
+    
+    it.skip('if the new (vote) secret timestamp is in the middle, should be added to linked list correctly', async function(done){
+      try {
+        var _VOTE_SECRET_1 = testHelper.getRandomString(5);
+        var _VOTE_SECRET_2 = testHelper.getRandomString(5);
+        var _VOTE_SECRET_3 = testHelper.getRandomString(5);
+
+        // Add 2 votes to the same pollId (and pollLockTime) first
+        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_1_, solSha3(_VOTE_SECRET_1), 0, 0);
+        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_2_, solSha3(_VOTE_SECRET_2), pollLockTime, _POLL_ID_1_);
+        // Add a new vote secret to the same poll as above
+        await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_1_, solSha3(_VOTE_SECRET_1), 0, 0);
+
+        // Check it's been inserted with the correct previous and next pollId values, which for the first vote (secret) is zero.
+        var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "prevPollId"));
+        var newEntryNextKey = await eternalStorage.getUIntValue(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "nextPollId"));
+        assert.equal(newEntryPrevKey, 0);
+        assert.equal(newEntryNextKey, 0);
+
+        // Check the vote secret is correct
+        var secret = await eternalStorage.getBytes32Value(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "secrets", _POLL_ID_1_, "secret"));
+        assert.equal(secret, solSha3(_VOTE_SECRET));
+
+        // Check the vote count is correct
+        var nUnrevealedVotes = await eternalStorage.getUIntValue.call(solSha3("Voting", _OTHER_ACCOUNT_, pollLockTime, "unrevealedVotesCount"));
+        assert.equal(nUnrevealedVotes.toNumber(), 1);
+        done();
+      }
+      catch (err) {
+        return done(err);
+      }
+    });
+
+    it.skip('if the new (vote) secret timestamp is last, should be added to linked list correctly', async function(done) {
+
+    });
+
+    it.skip('if the supplied previous pollId does not exist, it should fail', async function(done){});
+    it.skip('if the supplied previous pollId implies a next pollId that is too small, it should fail', async function(done){});
+    it.skip('if the supplied previous pollId is too large, it should fail', async function(done){});
+    it.skip('if the new secret is proposed to be at the start, but that is wrong, it should fail', async function(done){});
 
   });
 });
