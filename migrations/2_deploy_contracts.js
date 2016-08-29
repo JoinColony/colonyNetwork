@@ -1,12 +1,15 @@
-/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary, TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
-module.exports = function(deployer) {
+/* eslint-env node */
+/* globals ColonyPaymentProvider, TaskLibrary, SecurityLibrary, ColonyLibrary,
+  TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
+
+module.exports = function (deployer) {
   deployer.deploy([
     // Deploy libraries first
     ColonyPaymentProvider,
     TaskLibrary,
     SecurityLibrary,
     ColonyLibrary,
-    TokenLibrary
+    TokenLibrary,
   ]);
   deployer.autolink();
   deployer.deploy([
@@ -14,6 +17,6 @@ module.exports = function(deployer) {
     RootColony,
     RootColonyResolver,
     ColonyFactory,
-    EternalStorage
+    EternalStorage,
   ]);
 };

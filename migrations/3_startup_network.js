@@ -1,29 +1,29 @@
 /* eslint-env node */
 /* globals RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
-module.exports = function(deployer) {
 
-  var rootColonyDeployed = RootColony.deployed();
-  var rootColonyResolverDeployed = RootColonyResolver.deployed();
-  var colonyFactoryDeployed = ColonyFactory.deployed();
-  var eternalStorageRootDeployed = EternalStorage.deployed();
+module.exports = function (deployer) {
+  const rootColonyDeployed = RootColony.deployed();
+  const rootColonyResolverDeployed = RootColonyResolver.deployed();
+  const colonyFactoryDeployed = ColonyFactory.deployed();
+  const eternalStorageRootDeployed = EternalStorage.deployed();
 
   deployer
-  .then(function(){
+  .then(function () {
     return eternalStorageRootDeployed.changeOwner(colonyFactoryDeployed.address);
   })
-  .then(function(){
+  .then(function () {
     return rootColonyResolverDeployed.registerRootColony(rootColonyDeployed.address);
   })
-  .then(function(){
+  .then(function () {
     return colonyFactoryDeployed.registerRootColonyResolver(rootColonyResolverDeployed.address);
   })
-  .then(function(){
+  .then(function () {
     return rootColonyDeployed.registerColonyFactory(colonyFactoryDeployed.address);
   })
-  .then(function(){
+  .then(function () {
     return colonyFactoryDeployed.registerEternalStorage(eternalStorageRootDeployed.address);
   })
-  .then(function(){
+  .then(function () {
     console.log('### Network contracts registered successfully ###');
     return;
   });
