@@ -3,8 +3,7 @@ import "EternalStorage.sol";
 
 library VotingLibrary {
   event outputEvent(uint key);
-  event addStorageEntry(uint a, uint b, uint c);
-  event problematic(uint firstUnrevealedPollIdAtPreviousTimestamp);
+
   // Manages records for colony polls and votes stored in the format:
 
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret") => bytes32 secret
@@ -14,8 +13,7 @@ library VotingLibrary {
   // sha3("Voting", userAddress, pollLockTime, "prevTimestamp") => uint256 prevTimestam
   // sha3("Voting", userAddress, pollLockTime, "nextTimestamp") => uint256 nextTimestamp
 
-  //todo: remove explicip passing of the userAddress and use msg.sender instead
-  //todo: remove throws and return boolean instead
+  //todo: remove explicit passing of the userAddress and use msg.sender instead
   function setLock(
     address _storageContract,
     address userAddress,
@@ -24,6 +22,9 @@ library VotingLibrary {
     bytes32 secret,
     uint256 prevTimestamp,
     uint256 prevPollId) returns (bool) {
+
+      // IMPORTANT: If you directly pass a zero into sha3 function the output is incorrect. We have to declare a zero-value uint and pass this in instead.
+      uint256 zeroUint = 0;
 
       //IMPORTANT TO REMEMBER: User should only supply pollId, not timestamp.
       //Doesn't need to be done in this function - calling function should look up and enforce.
@@ -34,19 +35,16 @@ library VotingLibrary {
 
       //Check that prevTimestamp is either 0 (and we're inserting at the start of the list) or exists in the list.
       if (prevTimestamp != 0){
-        var firstUnrevealedPollIdAtPreviousTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "secrets", 0, "nextPollId"));
-        problematic(firstUnrevealedPollIdAtPreviousTimestamp);
-        //TODO: Sanity check with Alex: Why does this always return '0' even if in tests I see it has a non zero value?
-        // if (firstUnrevealedPollIdAtPreviousTimestamp == 0) { outputEvent(3); return false; }
+        var firstUnrevealedPollIdAtPrevTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "secrets", zeroUint, "nextPollId"));
+        if (firstUnrevealedPollIdAtPrevTimestamp == 0) { outputEvent(3); return false; }
       }
       //Same for prevPollId
       if (prevPollId != 0){
         var secretAtPrevPollId = EternalStorage(_storageContract).getBytes32Value(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "secret"));
-        //TODO: Sanity check with Alex: Why does this always return '0' even if in tests I see it has a non zero value?
-        //if (secretAtPrevPollId == "") { outputEvent(4); return false; }
+        if (secretAtPrevPollId == "") { outputEvent(4); return false; }
       }
 
-      var pollLockTimeDoesNotExist = (EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", 0, "prevPollId")) == 0);
+      var pollLockTimeDoesNotExist = (EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", zeroUint, "prevPollId")) == 0);
       if(pollLockTimeDoesNotExist) {
         outputEvent(11);
         // Inserting a new pollLockTime, so we need to check list would still be ordered
@@ -74,7 +72,6 @@ library VotingLibrary {
 
       outputEvent(14);
       EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"), pollId);
-      addStorageEntry(pollLockTime, prevPollId, pollId);
       EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId"), prevPollId);
       EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId"), claimedNextPollId);
       EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", claimedNextPollId, "prevPollId"), pollId);

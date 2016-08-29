@@ -213,9 +213,6 @@ contract('VotingLibrary', function (accounts) {
         var _VOTE_SECRET_2_ = testHelper.getRandomString(5);
 
         await colony.setLock(_OTHER_ACCOUNT_, pollLockTime, _POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0);
-        var firstUnrevealedPollIdAtPreviousTimestamp = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', 0, 'nextPollId'));
-        console.log('pollLockTime, secrets, 0, nextPollId', firstUnrevealedPollIdAtPreviousTimestamp.toNumber());
-
         await colony.setLock(_OTHER_ACCOUNT_, pollLockTime + 1, _POLL_ID_2_, solSha3(_VOTE_SECRET_2_), pollLockTime, 0);
 
         var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime + 1, 'prevTimestamp'));
@@ -235,8 +232,7 @@ contract('VotingLibrary', function (accounts) {
       }
     });
 
-    //TODO: This test fails because the check for existing prevTimestamp are not working :(
-    it.skip('if the supplied previous locktime does not exist, it should fail', async function(done){
+    it('if the supplied previous locktime does not exist, it should fail', async function(done){
       try {
         var _VOTE_SECRET_1_ = testHelper.getRandomString(5);
         var _VOTE_SECRET_2_ = testHelper.getRandomString(5);
