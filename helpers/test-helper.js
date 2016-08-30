@@ -63,4 +63,22 @@ module.exports = {
     RootColonyResolver.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
     Colony.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
   },
+  forwardTime(seconds) {
+    console.log("Forwarding time with " + seconds + "s ...");
+    return new Promise(function(resolve, reject){
+      web3.currentProvider.sendAsync({
+        jsonrpc: "2.0",
+        method: "evm_increaseTime",
+        params: [seconds],
+        id: new Date().getTime()
+      }, function(err,res){
+        if (err){
+          reject(err);
+        }else{
+          resolve(res);
+        }
+      });
+    });
+
+  }
 };

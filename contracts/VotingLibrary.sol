@@ -21,6 +21,7 @@ library VotingLibrary {
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId") => uint pollId
 
   // pollDuration = hours from now that poll remains open
+  //todo: how to get back a poll? can't quite rely on pollCount
   function createPoll(address _storageContract, uint256 pollDuration, string description){
     // Infer the next pollId form incrementing the current Poll count
     uint256 pollCount = EternalStorage(_storageContract).getUIntValue(sha3("PollCount"));
@@ -45,7 +46,7 @@ library VotingLibrary {
     uint256 prevPollId){
 
         uint256 pollLockTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "lockTime"));
-        if(pollLockTime > now) {throw;}
+        if(pollLockTime < now) {throw;}
 
         setLock(_storageContract, msg.sender, pollLockTime, pollId, secret, prevTimestamp, prevPollId);
   }
