@@ -6,12 +6,51 @@ library VotingLibrary {
 
   // Manages records for colony polls and votes stored in the format:
 
+  // sha3("Poll", pollId, "lockTime") => pollLockTime;
+  // sha3("Poll", pollId, "description") => string/ipfsHash?
+  // sha3("Poll", pollId, "option", idx) => string
+
+  // sha3("Poll", pollId, "option", idx, "resolution") => bytes
+  //address.call(0)(eternalStorage.getBytes32Value(sha3("Poll", pollId, "option", idx, "resolution")))
+
+  // sha3("Voting", userAddress, pollLockTime, "prevTimestamp") => uint256 prevTimestam
+  // sha3("Voting", userAddress, pollLockTime, "nextTimestamp") => uint256 nextTimestamp
+
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret") => bytes32 secret
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId") => uint pollId
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId") => uint pollId
 
-  // sha3("Voting", userAddress, pollLockTime, "prevTimestamp") => uint256 prevTimestam
-  // sha3("Voting", userAddress, pollLockTime, "nextTimestamp") => uint256 nextTimestamp
+  // pollDuration = hours from now that poll remains open
+  function createPoll(address _storageContract, uint256 pollDuration, string description){
+    // Infer the next pollId form incrementing the current Poll count
+    uint256 pollCount = EternalStorage(_storageContract).getUIntValue(sha3("PollCount"));
+    uint256 pollId = pollCount + 1;
+
+    EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "lockTime"), now + pollDuration * 1 hours);
+    EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "description"), description);
+    //todo: do we maintain vote options as strings or can we allow users to vote on option ids?
+    EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "option", uint256(1)), "Yes");
+    EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "option", uint256(2)), "No");
+
+    EternalStorage(_storageContract).setUIntValue(sha3("PollCount"), pollCount + 1);
+  }
+
+  function resolvePoll(){}
+
+  function submitVote(
+    address _storageContract,
+    uint256 pollId,
+    bytes32 secret,
+    uint256 prevTimestamp,
+    uint256 prevPollId){
+
+        uint256 pollLockTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "lockTime"));
+        if(pollLockTime > now) {throw;}
+
+        setLock(_storageContract, msg.sender, pollLockTime, pollId, secret, prevTimestamp, prevPollId);
+  }
+
+  function revealVote(){}
 
   //todo: remove explicit passing of the userAddress and use msg.sender instead
   function setLock(
@@ -21,7 +60,7 @@ library VotingLibrary {
     uint256 pollId,
     bytes32 secret,
     uint256 prevTimestamp,
-    uint256 prevPollId) returns (bool) {
+    uint256 prevPollId) private returns (bool) {
 
       // IMPORTANT: If you directly pass a zero into sha3 function the output is incorrect. We have to declare a zero-value uint and pass this in instead.
       uint256 zeroUint = 0;
@@ -52,9 +91,8 @@ library VotingLibrary {
         //TODO: Sanity check with Alex: do we need the '=' check if we are inserting a new pollLocktime. claimedNextTimestamp = pollLockTime essentially means that the pollLocktime already exists in the list, right?
         if ( claimedNextTimestamp != 0 && claimedNextTimestamp <= pollLockTime ) { outputEvent(5); return false; }
 
-        // If x is 0, we're inserting at the end of the existing list
+        //If x is 0, we're inserting at the end of the existing list
         // Otherwise, throw if the list wouldn't be ordered after insertion.
-        //TODO: Check with Alex: Do we not need validations for when we are inserting at the end of the list? Like for example that the  (prevTimestamp, "prevTimestamp") < pollLockTime?
         //Insert into the linked lists
         EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"), pollLockTime);
         EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "prevTimestamp"), prevTimestamp);

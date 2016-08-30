@@ -278,6 +278,16 @@ contract Colony is Modifiable {
     eternalStorage.setLock(userAddress, pollLockTime, pollId, secret, prevTimestamp, prevPollId);
   }
 
+  //creates a poll with yes/no vote options
+  function createPoll(uint256 pollDuration, string description){
+    eternalStorage.createPoll(pollDuration, description);
+  }
+
+  function submitVote(uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId)
+  {
+    eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
+  }
+
   /// @notice upgrade the colony migrating its data to another colony instance
   /// @param newColonyAddress_ the address of the new colony instance
   function upgrade(address newColonyAddress_)
@@ -298,5 +308,5 @@ contract Colony is Modifiable {
       // Contracts that want to receive Ether with a plain "send" have to implement
       // a fallback function with the payable modifier. Contracts now throw if no payable
       // fallback function is defined and no function matches the signature.
+    }
   }
-}
