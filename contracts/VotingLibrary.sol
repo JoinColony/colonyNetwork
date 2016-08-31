@@ -3,6 +3,14 @@ import "EternalStorage.sol";
 
 library VotingLibrary {
   event outputEvent(uint key);
+
+  // Poll status flows one way from '0' (created but not opened) -> '1' (open for voting) -> '2' (resolved)
+  modifier ensurePollStatus(address _storageContract, uint256 pollId, uint8 pollStatus){
+    var currentStatus = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "status"));
+    if (pollStatus != currentStatus) { throw; }
+    _
+  }
+
   //todo: implement permissions
   // Manages records for colony polls and votes stored in the format:
 
@@ -24,7 +32,9 @@ library VotingLibrary {
   // sha3("Voting", userAddress, pollCloseTime, "secrets", pollId, "nextPollId") => uint pollId
 
   // pollDuration = hours from now that poll remains open
-  //todo: how to get back a poll? can't quite rely on pollCount
+  /// @notice Creates a new Poll with a preset duration
+  /// @param pollDuration The poll duration in hours
+  /// @param description The poll description or question to vote on  
   function createPoll(address _storageContract, uint256 pollDuration, string description){
     // Infer the next pollId form incrementing the current Poll count
     uint256 pollCount = EternalStorage(_storageContract).getUIntValue(sha3("PollCount"));
@@ -37,21 +47,24 @@ library VotingLibrary {
     EternalStorage(_storageContract).setUIntValue(sha3("PollCount"), pollCount + 1);
   }
 
-  function addPollOption(address _storageContract, uint256 pollId, string pollOptionDescription){
-
+  function addPollOption(address _storageContract, uint256 pollId, string pollOptionDescription)
+  ensurePollStatus(_storageContract, pollId, 0)
+  {
     var pollOptionCount = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "OptionsCount"));
     if (pollOptionCount>4) { throw; } //TODO: Pick a non-random number
     EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "option", pollOptionCount + 1), pollOptionDescription);
     EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "OptionsCount"), pollOptionCount + 1);
   }
 
-  function openPoll(address _storageContract, uint256 pollId){
+  function openPoll(address _storageContract, uint256 pollId)
+  ensurePollStatus(_storageContract, pollId, 0)
+  {
     EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "status"), uint8(1));
   }
 
-
-  function resolvePoll(address _storageContract, uint256 pollId){
-
+  function resolvePoll(address _storageContract, uint256 pollId)
+  ensurePollStatus(_storageContract, pollId, 1)
+  {
     var startTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "startTime"));
     var endTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "closeTime"));
     var resolutionTime = endTime + (endTime - startTime); //TODO: Think about this time period.
@@ -66,11 +79,12 @@ library VotingLibrary {
     uint256 pollId,
     bytes32 secret,
     uint256 prevTimestamp,
-    uint256 prevPollId){
-
-        //todo: check if the poll is open
+    uint256 prevPollId)
+    ensurePollStatus(_storageContract, pollId, 1)
+    {
+        // Check the poll is not yet closed/locked for voting
         uint256 pollCloseTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "closeTime"));
-        if(pollCloseTime < now) {throw;}
+        if(pollCloseTime < now) { throw; }
 
         addVoteSecret(_storageContract, msg.sender, pollCloseTime, pollId, secret, prevTimestamp, prevPollId);
   }
@@ -80,7 +94,6 @@ library VotingLibrary {
     uint256 pollId,
     uint256 idx,
     uint256 voteWeight){
-      //TODO: This should only be able to be called by the contract using this library
 
       uint256 pollCloseTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "closeTime"));
       if (pollCloseTime == 0) { throw; }
