@@ -34,10 +34,10 @@ contract('VotingLibrary', function (accounts) {
   });
 
   beforeEach(function (done) {
-    _VOTE_SECRET_1_ = testHelper.getRandomString(5);
-    _VOTE_SECRET_2_ = testHelper.getRandomString(5);
-    _VOTE_SECRET_3_ = testHelper.getRandomString(5);
-    _VOTE_SECRET_4_ = testHelper.getRandomString(5);
+    _VOTE_SECRET_1_ = solSha3(testHelper.getRandomString(5));
+    _VOTE_SECRET_2_ = solSha3(testHelper.getRandomString(5));
+    _VOTE_SECRET_3_ = solSha3(testHelper.getRandomString(5));
+    _VOTE_SECRET_4_ = solSha3(testHelper.getRandomString(5));
 
     _COLONY_KEY_ = testHelper.getRandomString(7);
 
@@ -344,12 +344,35 @@ contract('VotingLibrary', function (accounts) {
       }
     });
 
-    // todo: test when a user tries to update their vote secret
+    it('if the new secret is for the same poll as an existing vote (voting twice for same poll), it should fail', async function(done){
+      try {
+        await colony.createPoll(24, 'poll 1');
+
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+        //try voting again for the same poll
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_2_, 0, 0, {from: _OTHER_ACCOUNT_});
+
+        var pollLockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'lockTime'));
+        pollLockTime = pollLockTime.toNumber();
+
+        //Check the new item hasn't been inserted
+        var poll1Secret = await eternalStorage.getBytes32Value(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_1_, 'secret'));
+        assert.equal(_VOTE_SECRET_1_, poll1Secret);
+        var firstEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_1_, 'prevPollId'));
+        assert.equal(firstEntryPrevKey.toNumber(), 0);
+        var firstEntryNextKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_1_, 'nextPollId'));
+        assert.equal(firstEntryNextKey.toNumber(), 0);
+        done();
+
+      } catch (err) {
+        return done(err);
+      }
+    });
 
     it('for a poll at a pollLockTime and its secret, as the first items in the 2 linked lists, should be added to linked lists correctly', async function(done){
       try {
         await colony.createPoll(24, 'poll 1');
-        await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
 
         var pollLockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'lockTime'));
         pollLockTime = pollLockTime.toNumber();
@@ -366,7 +389,7 @@ contract('VotingLibrary', function (accounts) {
         assert.equal(newPollEntryPrevKey, 0);
         assert.equal(newPollEntryNextKey, 0);
         var poll1Secret = await eternalStorage.getBytes32Value(solSha3('Voting', _OTHER_ACCOUNT_, pollLockTime, 'secrets', _POLL_ID_1_, 'secret'));
-        assert.equal(solSha3(_VOTE_SECRET_1_), poll1Secret);
+        assert.equal(_VOTE_SECRET_1_, poll1Secret);
 
         // Check the '0' pollLockTime points to this pollLockTime correctly
         var zeroEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, 0, 'prevTimestamp'));
@@ -385,8 +408,8 @@ contract('VotingLibrary', function (accounts) {
         await colony.createPoll(24, 'poll 1');
         await colony.createPoll(23, 'poll 2');
 
-        await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_2_, solSha3(_VOTE_SECRET_2_), 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, 0, {from: _OTHER_ACCOUNT_});
 
         var poll1LockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'lockTime'));
         poll1LockTime = poll1LockTime.toNumber();
@@ -423,9 +446,9 @@ contract('VotingLibrary', function (accounts) {
       var poll4LockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_4_, 'lockTime'));
       poll4LockTime = poll4LockTime.toNumber();
 
-      await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
-      await colony.submitVote(_POLL_ID_4_, solSha3(_VOTE_SECRET_4_), poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
-      await colony.submitVote(_POLL_ID_3_, solSha3(_VOTE_SECRET_3_), poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
+      await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+      await colony.submitVote(_POLL_ID_4_, _VOTE_SECRET_4_, poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
+      await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
 
       var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll3LockTime, 'prevTimestamp'));
       var newEntryNextKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll3LockTime, 'nextTimestamp'));
@@ -450,8 +473,8 @@ contract('VotingLibrary', function (accounts) {
         var poll2LockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_2_, 'lockTime'));
         poll2LockTime = poll2LockTime.toNumber();
 
-        await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_2_, solSha3(_VOTE_SECRET_2_), poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
 
         var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll2LockTime, 'prevTimestamp'));
         var newEntryNextKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll2LockTime, 'nextTimestamp'));
@@ -478,8 +501,8 @@ contract('VotingLibrary', function (accounts) {
         var poll1LockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'lockTime'));
         poll1LockTime = poll1LockTime.toNumber();
 
-        await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_2_, solSha3(_VOTE_SECRET_2_), poll1LockTime - 10, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, poll1LockTime - 10, 0, {from: _OTHER_ACCOUNT_});
 
         var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'prevTimestamp'));
         var newEntryNextKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'nextTimestamp'));
@@ -506,8 +529,8 @@ contract('VotingLibrary', function (accounts) {
         var poll1LockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'lockTime'));
         poll1LockTime = poll1LockTime.toNumber();
 
-        await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_2_, solSha3(_VOTE_SECRET_2_), 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, 0, {from: _OTHER_ACCOUNT_});
 
         var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'prevTimestamp'));
         var newEntryNextKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'nextTimestamp'));
@@ -540,12 +563,12 @@ contract('VotingLibrary', function (accounts) {
         var poll4LockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_4_, 'lockTime'));
         poll4LockTime = poll4LockTime.toNumber();
 
-        await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_2_, solSha3(_VOTE_SECRET_2_), poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_4_, solSha3(_VOTE_SECRET_4_), poll2LockTime, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_4_, _VOTE_SECRET_4_, poll2LockTime, 0, {from: _OTHER_ACCOUNT_});
 
         // Try inserting pollLockTime at a position lower than the correct one
-        await colony.submitVote(_POLL_ID_3_, solSha3(_VOTE_SECRET_3_), poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
 
         var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'prevTimestamp'));
         var newEntryNextKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'nextTimestamp'));
@@ -583,12 +606,12 @@ contract('VotingLibrary', function (accounts) {
         var poll4LockTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_4_, 'lockTime'));
         poll4LockTime = poll4LockTime.toNumber();
 
-        await colony.submitVote(_POLL_ID_1_, solSha3(_VOTE_SECRET_1_), 0, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_2_, solSha3(_VOTE_SECRET_2_), poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
-        await colony.submitVote(_POLL_ID_4_, solSha3(_VOTE_SECRET_4_), poll2LockTime, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, poll1LockTime, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_4_, _VOTE_SECRET_4_, poll2LockTime, 0, {from: _OTHER_ACCOUNT_});
 
         // Try inserting pollLockTime at a position higher than the correct one
-        await colony.submitVote(_POLL_ID_3_, solSha3(_VOTE_SECRET_3_), poll2LockTime, 0, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, poll2LockTime, 0, {from: _OTHER_ACCOUNT_});
 
         var newEntryPrevKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'prevTimestamp'));
         var newEntryNextKey = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, poll1LockTime, 'nextTimestamp'));

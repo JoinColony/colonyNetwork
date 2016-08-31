@@ -53,7 +53,6 @@ library VotingLibrary {
 
   function revealVote(){}
 
-  //todo: remove explicit passing of the userAddress and use msg.sender instead
   function setLock(
     address _storageContract,
     address userAddress,
@@ -89,8 +88,7 @@ library VotingLibrary {
         outputEvent(11);
         // Inserting a new pollLockTime, so we need to check list would still be ordered
         var claimedNextTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"));
-        //TODO: Sanity check with Alex: do we need the '=' check if we are inserting a new pollLocktime. claimedNextTimestamp = pollLockTime essentially means that the pollLocktime already exists in the list, right?
-        if ( claimedNextTimestamp != 0 && claimedNextTimestamp <= pollLockTime ) { outputEvent(5); return false; }
+        if ( claimedNextTimestamp != 0 && claimedNextTimestamp < pollLockTime ) { outputEvent(5); return false; }
 
         //If x is 0, we're inserting at the end of the existing list
         // Otherwise, throw if the list wouldn't be ordered after insertion.
@@ -102,8 +100,8 @@ library VotingLibrary {
         outputEvent(12);
       }
       else{
-        //TODO: Sanity check with Alex: We should do this check after we know we have an axisting pollLockTime and list of secrets to insert in, otherwise we are inserting at 0
         // Check we're inserting in the correct place in the secrets linked list
+        // claimedNextPollId = pollId prevents double voting
         var claimedNextPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"));
         if ( claimedNextPollId != 0 && claimedNextPollId <= pollId) { outputEvent(6); return false; }
         outputEvent(13);
