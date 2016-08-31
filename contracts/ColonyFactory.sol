@@ -10,7 +10,7 @@ contract ColonyFactory is IColonyFactory {
   using ColonyLibrary for address;
 
   modifier onlyRootColony(){
-    if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) throw;
+    if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) { throw; }
     _
   }
 
@@ -61,7 +61,7 @@ contract ColonyFactory is IColonyFactory {
   function upgradeColony(bytes32 key_, address colonyAddress)
   onlyRootColony
   {
-    if(!Colony(colonyAddress).isUserAdmin(tx.origin)) throw;
+    if(!Colony(colonyAddress).isUserAdmin(tx.origin)) { throw; }
 
     Colony colonyNew = new Colony(rootColonyResolverAddress, Colony(colonyAddress).eternalStorage());
     IUpgradable(colonyAddress).upgrade(colonyNew);

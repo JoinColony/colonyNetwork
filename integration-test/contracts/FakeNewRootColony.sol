@@ -35,7 +35,7 @@ contract FakeNewRootColony is Destructible, Modifiable {
     var eternalStorage = new EternalStorage();
     // Note: we are assuming that the default values for 'TasksCount' and 'ReservedTokensWei' is returned as 0
     // Set the calling user as the first colony admin
-    eternalStorage.setBooleanValue(sha3('admin:', msg.sender), true);
+    eternalStorage.setBooleanValue(sha3("admin:", msg.sender), true);
     eternalStorage.setUIntValue(sha3("AdminsCount"), 1);
     eternalStorage.changeOwner(colonyFactory);
 

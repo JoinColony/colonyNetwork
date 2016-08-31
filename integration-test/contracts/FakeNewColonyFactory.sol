@@ -10,7 +10,7 @@ contract FakeNewColonyFactory is IColonyFactory {
   using ColonyLibrary for address;
 
   modifier onlyRootColony(){
-    if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) throw;
+    if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) { throw; }
     _
   }
 
@@ -61,7 +61,7 @@ contract FakeNewColonyFactory is IColonyFactory {
   function upgradeColony(bytes32 key_, address colonyAddress)
   onlyRootColony
   {
-
+    eternalStorageRoot.getColony(key_);
   }
 
   function countColonies() constant returns (uint256)

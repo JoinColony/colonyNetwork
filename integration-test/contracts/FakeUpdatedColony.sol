@@ -10,12 +10,12 @@ import "SecurityLibrary.sol";
 contract FakeUpdatedColony is Modifiable, IUpgradable  {
 
   modifier onlyAdminsOrigin {
-    if (!this.isUserAdmin(tx.origin)) throw;
+    if (!this.isUserAdmin(tx.origin)) { throw; }
     _
   }
 
   modifier onlyAdmins {
-    if (!this.isUserAdmin(msg.sender)) throw;
+    if (!this.isUserAdmin(msg.sender)) { throw; }
     _
   }
 
@@ -196,13 +196,11 @@ contract FakeUpdatedColony is Modifiable, IUpgradable  {
     eternalStorage.acceptTask(taskId);
 
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
-    if (taskEth > 0)
-    {
+    if (taskEth > 0) {
       ColonyPaymentProvider.settleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
     }
 
-    if (taskTokens > 0)
-    {
+    if (taskTokens > 0) {
       var payout = ((taskTokens * 95)/100);
       var fee = taskTokens - payout;
       if (eternalStorage.transferFromColony(paymentAddress, payout) && eternalStorage.transferFromColony(rootColonyResolver.rootColonyAddress(), fee)) {
