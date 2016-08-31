@@ -3,15 +3,18 @@ import "EternalStorage.sol";
 
 library VotingLibrary {
   event outputEvent(uint key);
-
+  //todo: implement permissions
   // Manages records for colony polls and votes stored in the format:
 
   // sha3("Poll", pollId, "lockTime") => pollLockTime;
   // sha3("Poll", pollId, "description") => string/ipfsHash?
-  // sha3("Poll", pollId, "option", idx) => string
+  // sha3("Poll", pollId, "OptionsCount") => uint256
+  // sha3("Poll", pollId, "option", idx, nextId) => string
+  // sha3("Poll", pollId, "option", idx, "count") => uint256
+  // sha3("Poll", pollId, "status") => uint8 open=1/resolved=2
 
   // sha3("Poll", pollId, "option", idx, "resolution") => bytes
-  //address.call(0)(eternalStorage.getBytes32Value(sha3("Poll", pollId, "option", idx, "resolution")))
+  // address.call(0)(eternalStorage.getBytes32Value(sha3("Poll", pollId, "option", idx, "resolution")))
 
   // sha3("Voting", userAddress, pollLockTime, "prevTimestamp") => uint256 prevTimestam
   // sha3("Voting", userAddress, pollLockTime, "nextTimestamp") => uint256 nextTimestamp
@@ -20,6 +23,7 @@ library VotingLibrary {
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId") => uint pollId
   // sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId") => uint pollId
 
+//todo; change pollLockTime to pollCloseTime
   // pollDuration = hours from now that poll remains open
   //todo: how to get back a poll? can't quite rely on pollCount
   function createPoll(address _storageContract, uint256 pollDuration, string description){
@@ -27,16 +31,36 @@ library VotingLibrary {
     uint256 pollCount = EternalStorage(_storageContract).getUIntValue(sha3("PollCount"));
     uint256 pollId = pollCount + 1;
 
+    EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "startTime"), now);
     EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "lockTime"), now + pollDuration * 1 hours);
     EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "description"), description);
-    //todo: do we maintain vote options as strings or can we allow users to vote on option ids?
-    EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "option", uint256(1)), "Yes");
-    EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "option", uint256(2)), "No");
 
     EternalStorage(_storageContract).setUIntValue(sha3("PollCount"), pollCount + 1);
   }
 
-  function resolvePoll(){}
+  function addPollOption(address _storageContract, uint256 pollId, string pollOptionDescription){
+
+    var pollOptionCount = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "OptionsCount"));
+    if (pollOptionCount>4) { throw; } //TODO: Pick a non-random number
+    EternalStorage(_storageContract).setStringValue(sha3("Poll", pollId, "option", pollOptionCount + 1), pollOptionDescription);
+    EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "OptionsCount"), pollOptionCount + 1);
+  }
+
+  function openPoll(address _storageContract, uint256 pollId){
+    EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "status"), uint8(1));
+  }
+
+
+  function resolvePoll(address _storageContract, uint256 pollId){
+
+    var startTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "startTime"));
+    var endTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "lockTime"));
+    var resolutionTime = endTime + (endTime - startTime); //TODO: Think about this time period.
+
+    if (now < resolutionTime) { throw; }
+
+    EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "status"), uint8(2));
+  }
 
   function submitVote(
     address _storageContract,
@@ -45,15 +69,34 @@ library VotingLibrary {
     uint256 prevTimestamp,
     uint256 prevPollId){
 
+        //todo: check if the poll is open
         uint256 pollLockTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "lockTime"));
         if(pollLockTime < now) {throw;}
 
-        setLock(_storageContract, msg.sender, pollLockTime, pollId, secret, prevTimestamp, prevPollId);
+        addVoteSecret(_storageContract, msg.sender, pollLockTime, pollId, secret, prevTimestamp, prevPollId);
   }
 
-  function revealVote(){}
+  function revealVote(
+    address _storageContract,
+    uint256 pollId,
+    uint256 idx,
+    uint256 voteWeight){
+      //TODO: This should only be able to be called by the contract using this library
 
-  function setLock(
+      uint256 pollLockTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "lockTime"));
+      if (pollLockTime == 0) { throw; }
+      // The poll should be locked before we can reveal our vote
+      if(pollLockTime > now) { throw; }
+
+      //TODO: Do we do the validation of the secret, or does the contract using us do that?
+      removeVoteSecret(_storageContract, msg.sender, pollLockTime, pollId);
+
+      // Increment total vote count // todo: only add to total votes if the poll is *not* resolved
+      var voteCount = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "option", idx, "count"));
+      EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "option", idx, "count"), voteCount * voteWeight);
+  }
+
+  function addVoteSecret(
     address _storageContract,
     address userAddress,
     uint256 pollLockTime,
@@ -90,7 +133,7 @@ library VotingLibrary {
         var claimedNextTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"));
         if ( claimedNextTimestamp != 0 && claimedNextTimestamp < pollLockTime ) { outputEvent(5); return false; }
 
-        //If x is 0, we're inserting at the end of the existing list
+        //If claimedNextTimestamp is 0, we're inserting at the end of the existing list
         // Otherwise, throw if the list wouldn't be ordered after insertion.
         //Insert into the linked lists
         EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"), pollLockTime);
@@ -119,57 +162,38 @@ library VotingLibrary {
       return true;
   }
 
+  function removeVoteSecret(
+    address _storageContract,
+    address userAddress,
+    uint256 pollLockTime,
+    uint256 pollId) private returns(bool) {
+
+      var prevPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId"));
+      var nextPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId"));
+
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", prevPollId, "nextPollId"), nextPollId);
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "prevPollId"), 0);
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "nextPollId"), 0);
+      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "secrets", nextPollId, "prevPollId"), prevPollId);
+
+      //Clear secret
+      //TODO: check default value for bytes32 in JS
+      EternalStorage(_storageContract).setBytes32Value(sha3("Voting", userAddress, pollLockTime, "secrets", pollId, "secret"), "");
+
+      if (prevPollId == 0 && nextPollId == 0) {
+        var prevTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "prevTimestamp"));
+        var nextTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollLockTime, "nextTimestamp"));
+
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"), nextTimestamp);
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "prevTimestamp"), 0);
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollLockTime, "nextTimestamp"), 0);
+        EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, nextTimestamp, "prevTimestamp"), prevTimestamp);
+      }
+
+      return true;
+  }
+
+  function generateVoteSecret(bytes){
+
+  }
 }
-   // function removeLock(
-   //  address userAddress,
-   //  uint256 pollTimeStamp,
-   //  uint256 pollId){
-   //  //Again, remember user should not be supplying both the id and the timestamp of the poll.
-   //  //TODO: Do we do the validation of the secret, or does the contract using us do that?
-
-   //  var prevPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollTimeStamp, "secrets", pollId, "prevPollId"));
-   //  var nextPollId = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollTimeStamp, "secrets", pollId, "nextPollId"));
-
-   //  if (prevPollId!=0){
-   //      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "secrets", prevPollId, "nextPollId"), nextPollId);
-   //  }
-   //  EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "secrets", pollId, "prevPollId"), 0);
-
-   //  if (nextPollId!=0){
-   //      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "secrets", nextPollId, "prevPollId"), prevPollId);
-   //  }
-   //  EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "secrets", pollId, "nextPollId"), 0);
-
-   //  //Remove secret
-   //  EternalStorage(_storageContract).setBytes32Value(sha3("Voting", userAddress, pollTimeStamp, "secrets", pollId, "secret"), 0x0);
-
-
-   //  //decrement nunrevealedvotes
-   //  var unrevealedVotesCountAtTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, pollTimeStamp, "unrevealedVotesCount"));
-   //  EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "unrevealedVotesCount"), unrevealedVotesCountAtTimestamp-1);
-
-   //  if (unrevealedVotesCountAtTimestamp-1==0){//Could be if prevPollId==0 and nextPollId==0
-   //    //i.e. we just deleted the last unrevealed vote at this timeStamp
-   //    //So we need to remove this timestamp from the timestamp list.
-   //    //This looks a lot like the code above.
-   //    var prevTimestamp = EternalStorage(_storageContract).getUIntValue( sha3("Voting", userAddress, pollTimeStamp, "prevTimestamp"));
-   //    var nextTimestamp = EternalStorage(_storageContract).getUIntValue( sha3("Voting", userAddress, pollTimeStamp, "nextTimestamp"));
-
-   //    if (prevTimestamp!=0){
-   //    //Update the previous item
-   //      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"), nextTimestamp);
-   //    }else{
-   //      //we just deleted the first item, so we need to update the pointer to the first entry in the list
-   //      //This might be setting it zero if we've remove the last thing they've voted on in the list, and that's okay.
-   //      //That just represents the user has no locks.
-   //      EternalStorage(_storageContract).setUIntValue(sha3("Voting", "FirstLock", userAddress), nextTimestamp);
-   //    }
-   //    EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "prevTimestamp"), 0);
-
-   //    if (nextTimestamp!=0){
-   //      //Update the next item
-   //      EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, nextTimestamp, "prevTimestamp"), prevTimestamp);
-   //    }
-   //    EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollTimeStamp, "nextTimestamp"), 0);
-   //  }
-//  }
