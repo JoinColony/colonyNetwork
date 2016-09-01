@@ -59,24 +59,20 @@ contract('VotingLibrary', function (accounts) {
       .catch(done);
   });
 
-  describe('when adding a poll entry', function(){
-    it('as the first poll, it should be added correctly', async function(done){
+  describe('when creating a poll', function(){
+    it('it should be added correctly', async function(done){
       try{
-        var lastBlock = await web3.eth.getBlock('latest');
-        await colony.createPoll(24, 'simple yes/no vote');
+        await colony.createPoll('simple yes/no vote');
 
         //Check it's been inserted correctly
-        var pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'closeTime'));
-        var lastBlock = await web3.eth.getBlock('latest');
-        assert.equal(pollCloseTime.toNumber(), lastBlock.timestamp + 24 * 3600);
-
         var pollDescription = await eternalStorage.getStringValue.call(solSha3('Poll', 1, 'description'));
         assert.equal(pollDescription, 'simple yes/no vote');
 
-        var pollOption1 = await eternalStorage.getStringValue.call(solSha3('Poll', 1, 'option', 1));
-        var pollOption2 = await eternalStorage.getStringValue.call(solSha3('Poll', 1, 'option', 2));
-        assert.equal(pollOption1, 'Yes');
-        assert.equal(pollOption2, 'No');
+        var pollStatus = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'status'));
+        assert.equal(0, pollStatus.toNumber());
+
+        var pollOptionsCount = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'OptionsCount'));
+        assert.equal(0, pollOptionsCount.toNumber());
 
         var pollCount = await eternalStorage.getUIntValue.call(solSha3('PollCount'));
         assert.equal(pollCount.toNumber(), 1);
@@ -87,7 +83,7 @@ contract('VotingLibrary', function (accounts) {
       }
     });
 
-    it('when adding a new poll, should update the poll count correctly', async function(done){
+    it('should update the poll count correctly', async function(done){
       try{
         await colony.createPoll(24, 'poll 1');
         await colony.createPoll(48, 'poll 2');
@@ -106,12 +102,71 @@ contract('VotingLibrary', function (accounts) {
     });
   });
 
-  describe('when adding a vote entry', function () {
+  describe('when adding poll options to a poll', function(){
+    it('they should be added correctly', async function(done){
+      try {
+        await colony.createPoll('simple yes/no vote');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+
+        var pollOption1 = await eternalStorage.getStringValue.call(solSha3('Poll', 1, 'option', 1));
+        var pollOption2 = await eternalStorage.getStringValue.call(solSha3('Poll', 1, 'option', 2));
+        assert.equal(pollOption1, 'Yes');
+        assert.equal(pollOption2, 'No');
+
+        var pollOptionsCount = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'OptionsCount'));
+        assert.equal(pollOptionsCount.toNumber(), 2);
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
+    it.skip('and more than the allowed 4 are added, should fail', async function(done){});
+    it.skip('and poll is open, should fail', async function(done){});
+  });
+
+  describe.skip('when opening a poll', function(){
+    it.skip('should set the correct poll start and close times', async function(done){
+      var lastBlock = await web3.eth.getBlock('latest');
+      var pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'closeTime'));
+      var lastBlock = await web3.eth.getBlock('latest');
+      assert.equal(pollCloseTime.toNumber(), lastBlock.timestamp + 24 * 3600);
+    });
+    it.skip('should update the status to \'open\'', async function(done){});
+    it.skip('with less than 2 available vote options, should fail', async function(done){});
+    it.skip('and the poll status is not \'created\' , i.e. already \'open\' or \'resolved\', should fail', async function(done){});
+  });
+
+  describe.skip('when poll has closed', function(){
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+  });
+
+  describe.skip('when resolving a poll', function(){
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+  });
+
+  describe('when submitting a vote', function () {
     it('to the start of a list of existing votes at a pollCloseTime that already exists, the linked list works as expected', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(25, 'poll 2');
-        await colony.createPoll(25, 'poll 3');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.createPoll('poll 3');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 25);
+        await colony.openPoll(3, 25);
 
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
@@ -137,9 +192,18 @@ contract('VotingLibrary', function (accounts) {
 
     it('in the middle of a list of existing votes at a pollCloseTime that already exists, the linked list works as expected', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(24, 'poll 2');
-        await colony.createPoll(24, 'poll 3');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.createPoll('poll 3');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 24);
+        await colony.openPoll(3, 24);
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
@@ -173,8 +237,14 @@ contract('VotingLibrary', function (accounts) {
 
     it('to the end of list of existing votes at a pollCloseTime that already exists, the linked list works as expected', async function (done) {
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(24, 'poll 2');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 24);
 
         var pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
 
@@ -202,9 +272,18 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous pollId does not exist, it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(24, 'poll 2');
-        await colony.createPoll(24, 'poll 3');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.createPoll('poll 3');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 24);
+        await colony.openPoll(3, 24);
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_1_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
@@ -234,10 +313,22 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous pollId implies a next pollId that is too small, it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(24, 'poll 2');
-        await colony.createPoll(24, 'poll 3');
-        await colony.createPoll(24, 'poll 4');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.createPoll('poll 3');
+        await colony.createPoll('poll 4');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.addPollOption(4, 'Yes');
+        await colony.addPollOption(4, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 24);
+        await colony.openPoll(3, 24);
+        await colony.openPoll(4, 24);
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_1_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
@@ -267,10 +358,22 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous pollId is too large, it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(24, 'poll 2');
-        await colony.createPoll(24, 'poll 3');
-        await colony.createPoll(24, 'poll 4');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.createPoll('poll 3');
+        await colony.createPoll('poll 4');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.addPollOption(4, 'Yes');
+        await colony.addPollOption(4, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 24);
+        await colony.openPoll(3, 24);
+        await colony.openPoll(4, 24);
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
@@ -306,9 +409,18 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the new secret is proposed to be at the start, but that is wrong, it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(24, 'poll 2');
-        await colony.createPoll(24, 'poll 3');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.createPoll('poll 3');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 24);
+        await colony.openPoll(3, 24);
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_1_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
@@ -338,7 +450,10 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the new secret is for the same poll as an existing vote (voting twice for same poll), it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
+        await colony.createPoll('poll 1');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.openPoll(1, 24);
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         //try voting again for the same poll
@@ -363,7 +478,11 @@ contract('VotingLibrary', function (accounts) {
 
     it('for a poll at a pollCloseTime and its secret, as the first items in the 2 linked lists, should be added to linked lists correctly', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
+        await colony.createPoll('poll 1');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.openPoll(1, 24);
+
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
 
         var pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
@@ -397,8 +516,14 @@ contract('VotingLibrary', function (accounts) {
 
     it('for a poll at a new pollCloseTime at the start of that list, should be added to linked list correctly', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(23, 'poll 2');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 23);
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, 0, {from: _OTHER_ACCOUNT_});
@@ -426,10 +551,22 @@ contract('VotingLibrary', function (accounts) {
     });
 
     it('for a poll at a new pollCloseTime in the middle of that list, should be added to linked list correctly', async function(done){
-      await colony.createPoll(24, 'poll 1');
-      await colony.createPoll(24, 'poll 2');
-      await colony.createPoll(25, 'poll 3');
-      await colony.createPoll(26, 'poll 4');
+      await colony.createPoll('poll 1');
+      await colony.createPoll('poll 2');
+      await colony.createPoll('poll 3');
+      await colony.createPoll('poll 4');
+      await colony.addPollOption(1, 'Yes');
+      await colony.addPollOption(1, 'No');
+      await colony.addPollOption(2, 'Yes');
+      await colony.addPollOption(2, 'No');
+      await colony.addPollOption(3, 'Yes');
+      await colony.addPollOption(3, 'No');
+      await colony.addPollOption(4, 'Yes');
+      await colony.addPollOption(4, 'No');
+      await colony.openPoll(1, 24);
+      await colony.openPoll(2, 24);
+      await colony.openPoll(3, 25);
+      await colony.openPoll(4, 26);
 
       var poll1CloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
       poll1CloseTime = poll1CloseTime.toNumber();
@@ -457,8 +594,14 @@ contract('VotingLibrary', function (accounts) {
 
     it('for a poll at a new pollCloseTime at the end of that list, should be added to linked list correctly', async function(done) {
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(25, 'poll 2');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 25);
 
         var poll1CloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
         poll1CloseTime = poll1CloseTime.toNumber();
@@ -487,8 +630,14 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous closeTime does not exist, it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(25, 'poll 2');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 25);
 
         var poll1CloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
         poll1CloseTime = poll1CloseTime.toNumber();
@@ -515,8 +664,14 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the new lock is proposed to be at the start, but that is wrong, it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(25, 'poll 2');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 25);
 
         var poll1CloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
         poll1CloseTime = poll1CloseTime.toNumber();
@@ -543,10 +698,22 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous closeTime implies a next closeTime that is too small, it should fail', async function(done){
       try {
-        await colony.createPoll(24, 'poll 1');
-        await colony.createPoll(26, 'poll 2');
-        await colony.createPoll(27, 'poll 3');
-        await colony.createPoll(28, 'poll 4');
+        await colony.createPoll('poll 1');
+        await colony.createPoll('poll 2');
+        await colony.createPoll('poll 3');
+        await colony.createPoll('poll 4');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.addPollOption(4, 'Yes');
+        await colony.addPollOption(4, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 26);
+        await colony.openPoll(3, 27);
+        await colony.openPoll(4, 28);
 
         var poll1CloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
         poll1CloseTime = poll1CloseTime.toNumber();
@@ -590,6 +757,18 @@ contract('VotingLibrary', function (accounts) {
         await colony.createPoll(26, 'poll 2');
         await colony.createPoll(25, 'poll 3');
         await colony.createPoll(28, 'poll 4');
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.addPollOption(2, 'Yes');
+        await colony.addPollOption(2, 'No');
+        await colony.addPollOption(3, 'Yes');
+        await colony.addPollOption(3, 'No');
+        await colony.addPollOption(4, 'Yes');
+        await colony.addPollOption(4, 'No');
+        await colony.openPoll(1, 24);
+        await colony.openPoll(2, 26);
+        await colony.openPoll(3, 25);
+        await colony.openPoll(4, 28);
 
         var poll1CloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
         poll1CloseTime = poll1CloseTime.toNumber();
@@ -626,5 +805,12 @@ contract('VotingLibrary', function (accounts) {
         return done(err);
       }
     });
+  });
+
+  describe.skip('when resolving a vote', function(){
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
+    it.skip('', async function(done){});
   });
 });

@@ -302,11 +302,36 @@ contract Colony is Modifiable {
     selfdestruct(newColonyAddress_);
   }
 
+  function createPoll(string description){
+    eternalStorage.createPoll(description);
+  }
+
+  function addPollOption(uint256 pollId, string pollOptionDescription) {
+    eternalStorage.addPollOption(pollId, pollOptionDescription);
+  }
+
+  function openPoll(uint256 pollId, uint256 pollDuration) {
+    eternalStorage.openPoll(pollId, pollDuration);
+  }
+
+  function resolvePoll(uint256 pollId) {
+    eternalStorage.resolvePoll(pollId);
+  }
+
+  function submitVote(uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId) {
+    eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
+  }
+
+  function revealVote(uint256 pollId, uint256 idx) {
+    uint256 voteWeight = eternalStorage.balanceOf(msg.sender);
+    eternalStorage.revealVote(pollId, idx, voteWeight);
+  }
+
   function ()
   payable
   {
       // Contracts that want to receive Ether with a plain "send" have to implement
       // a fallback function with the payable modifier. Contracts now throw if no payable
       // fallback function is defined and no function matches the signature.
-    }
   }
+}
