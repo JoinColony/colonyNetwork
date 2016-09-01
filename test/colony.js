@@ -1,6 +1,8 @@
 // These globals are added by Truffle:
 /* globals Colony, EternalStorage, RootColony */
 import { solSha3 } from 'colony-utils';
+import _ from 'lodash';
+
 import testHelper from '../helpers/test-helper';
 
 contract('Colony', function (accounts) {
@@ -227,6 +229,23 @@ contract('Colony', function (accounts) {
       })
       .then(function (_tokensWei) {
         assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should allow admins to make task with a 160 chars long title', function (done) {
+      const bigTitle = _.times(160, () => 'A').join('');
+      colony.makeTask(bigTitle, 'summary', {
+        from: MAIN_ACCOUNT,
+        gasPrice: GAS_PRICE,
+        gas: 314159,
+      })
+      .then(function () {
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
+      })
+      .then(function (_name) {
+        assert.equal(_name, bigTitle, 'Wrong task name');
       })
       .then(done)
       .catch(done);
