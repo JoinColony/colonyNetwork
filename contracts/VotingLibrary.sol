@@ -19,6 +19,7 @@ library VotingLibrary {
   // sha3("Poll", pollId, "OptionsCount") => uint256
   // sha3("Poll", pollId, "option", idx, nextId) => string
   // sha3("Poll", pollId, "option", idx, "count") => uint256
+  // sha3("Poll", pollId, "startTime") => pollStartTime;
   // sha3("Poll", pollId, "closeTime") => pollCloseTime;
   // sha3("Poll", pollId, "status") => uint8 open=1/resolved=2
 
