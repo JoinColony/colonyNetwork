@@ -302,29 +302,35 @@ contract Colony is Modifiable {
     selfdestruct(newColonyAddress_);
   }
 
-  function createPoll(string description){
-    eternalStorage.createPoll(description);
+  function createPoll(string description)
+  returns (bool){
+    return eternalStorage.createPoll(description);
   }
 
-  function addPollOption(uint256 pollId, string pollOptionDescription) {
-    eternalStorage.addPollOption(pollId, pollOptionDescription);
+  function addPollOption(uint256 pollId, string pollOptionDescription)
+  returns (bool){
+    return eternalStorage.addPollOption(pollId, pollOptionDescription);
   }
 
-  function openPoll(uint256 pollId, uint256 pollDuration) {
-    eternalStorage.openPoll(pollId, pollDuration);
+  function openPoll(uint256 pollId, uint256 pollDuration)
+  returns (bool){
+    return eternalStorage.openPoll(pollId, pollDuration);
   }
 
-  function resolvePoll(uint256 pollId) {
-    eternalStorage.resolvePoll(pollId);
+  function resolvePoll(uint256 pollId)
+  returns (bool){
+    return eternalStorage.resolvePoll(pollId);
   }
 
-  function submitVote(uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId) {
-    eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
+  function submitVote(uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId)
+  returns (bool){
+    return eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
   }
 
-  function revealVote(uint256 pollId, uint256 idx) {
+  function revealVote(uint256 pollId, uint256 idx)
+  returns (bool){
     uint256 voteWeight = eternalStorage.balanceOf(msg.sender);
-    eternalStorage.revealVote(pollId, idx, voteWeight);
+    return eternalStorage.revealVote(pollId, idx, voteWeight);
   }
 
   function ()
