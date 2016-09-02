@@ -368,7 +368,7 @@ contract('VotingLibrary', function (accounts) {
       }
     });
 
-    it.only('if the supplied previous pollId does not exist, it should fail', async function(done){
+    it('if the supplied previous pollId does not exist, it should fail', async function(done){
       try {
         await createAndOpenSimplePoll('poll 1', 24);
         await createAndOpenSimplePoll('poll 2', 24);
@@ -821,10 +821,91 @@ contract('VotingLibrary', function (accounts) {
   });
 
   describe.skip('when revealing a vote', function(){
-    it.skip('before the poll has closed, should fail', async function(done){});
-    it.skip('and the poll is resolved, should not count the vote towards final results', async function(done){});
+    it.skip('before the poll has closed, should fail', async function(done){
+      try{
+      } catch (err) {
+        return done(err);
+      }
+    });
+    it.skip('and the poll is resolved, should not count the vote towards final results', async function(done){
+      try{
+      } catch (err) {
+        return done(err);
+      }
+    });
     it.skip('with invalid secret, should fail', async function(done){});
-    it.skip('should update the total count for that vote option', async function(done){});
-    it.skip('should remove the vote secret from the doubly linked list', async function(done){});
+    it.skip('should update the total count for that vote option', async function(done){
+      try{
+      } catch (err) {
+        return done(err);
+      }
+    });
+    it.skip('should remove the vote secret from the doubly linked list', async function(done){
+      try{
+      } catch (err) {
+        return done(err);
+      }
+    });
+  });
+
+  describe('colony admins should be allowed to manage polls', function(){
+    it('and if non-admin tries to create a poll, should fail', async function(done){
+      try{
+        await colony.createPoll('my unauthorised poll', {from: _OTHER_ACCOUNT_}).catch(testHelper.ifUsingTestRPC);
+        testHelper.mineTransaction();
+        var pollCount = await eternalStorage.getUIntValue.call(solSha3('PollCount'));
+        assert.equal(0, pollCount);
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
+    it('and if non-admin tries to add options to a poll, should fail', async function(done){
+      try{
+        await colony.createPoll('simple question');
+        testHelper.mineTransaction();
+        await colony.addPollOption(1, 'Yes', {from: _OTHER_ACCOUNT_}).catch(testHelper.ifUsingTestRPC);
+
+        var pollStatus = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'OptionsCount'));
+        assert.equal(0, pollStatus.toNumber());
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
+    it('and if non-admin tries to open a poll, should fail', async function(done){
+      try{
+        await colony.createPoll('simple question');
+        testHelper.mineTransaction();
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.openPoll(1, 24, {from: _OTHER_ACCOUNT_}).catch(testHelper.ifUsingTestRPC);
+
+        var pollStatus = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'status'));
+        assert.equal(0, pollStatus.toNumber());
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
+    it('and if non-admin tries to resolve a poll, should fail', async function(done){
+      try{
+        await colony.createPoll('simple question');
+        testHelper.mineTransaction();
+        await colony.addPollOption(1, 'Yes');
+        await colony.addPollOption(1, 'No');
+        await colony.openPoll(1, 24);
+        testHelper.forwardTime(24 * 3600 * 2 + 1000);
+        await colony.resolvePoll(1, {from: _OTHER_ACCOUNT_}).catch(testHelper.ifUsingTestRPC);
+        var pollStatus = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'status'));
+        assert.equal(1, pollStatus.toNumber());
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
   });
 });

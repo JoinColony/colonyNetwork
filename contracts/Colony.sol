@@ -303,21 +303,25 @@ contract Colony is Modifiable {
   }
 
   function createPoll(string description)
+  onlyAdmins
   returns (bool){
     return eternalStorage.createPoll(description);
   }
 
   function addPollOption(uint256 pollId, string pollOptionDescription)
+  onlyAdmins
   returns (bool){
     return eternalStorage.addPollOption(pollId, pollOptionDescription);
   }
 
   function openPoll(uint256 pollId, uint256 pollDuration)
+  onlyAdmins
   returns (bool){
     return eternalStorage.openPoll(pollId, pollDuration);
   }
 
   function resolvePoll(uint256 pollId)
+  onlyAdmins
   returns (bool){
     return eternalStorage.resolvePoll(pollId);
   }

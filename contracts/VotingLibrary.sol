@@ -11,7 +11,6 @@ library VotingLibrary {
     _
   }
 
-  //todo: implement permissions
   // Manages records for colony polls and votes stored in the format:
 
   // sha3("PollCount") => total number of polls
@@ -214,7 +213,6 @@ library VotingLibrary {
       EternalStorage(_storageContract).setUIntValue(sha3("Voting", userAddress, pollCloseTime, "secrets", nextPollId, "prevPollId"), prevPollId);
 
       //Clear secret
-      //TODO: check default value for bytes32 in JS
       EternalStorage(_storageContract).setBytes32Value(sha3("Voting", userAddress, pollCloseTime, "secrets", pollId, "secret"), "");
 
       if (prevPollId == 0 && nextPollId == 0) {
