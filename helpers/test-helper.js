@@ -65,20 +65,12 @@ module.exports = {
   },
   forwardTime(seconds) {
     console.log("Forwarding time with " + seconds + "s ...");
-    return new Promise(function(resolve, reject){
-      web3.currentProvider.sendAsync({
+    return web3.currentProvider.send({
         jsonrpc: "2.0",
         method: "evm_increaseTime",
         params: [seconds],
         id: new Date().getTime()
-      }, function(err,res){
-        if (err){
-          reject(err);
-        }else{
-          resolve(res);
-        }
       });
-    });
   },
   mineTransaction(){
     return web3.currentProvider.send({
