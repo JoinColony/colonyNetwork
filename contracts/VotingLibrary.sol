@@ -233,7 +233,8 @@ library VotingLibrary {
   }
 
   /// @notice Checks if an address is 'locked' due to any present unresolved votes
-  function isAddressLocked(address _storageContract, address userAddress){
+  function isAddressLocked(address _storageContract, address userAddress)
+  constant returns (bool){
     var zeroPollCloseTimeNext = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, 0, "nextTimestamp"));
 
     // The list is empty, no unrevealed votes for this address
@@ -247,8 +248,6 @@ library VotingLibrary {
     }
     // The poll is closed for voting and is in the reveal period, during which all votes' tokens are locked until reveal
     // Note: even after the poll is resolved, tokens remain locked until reveal
-    else {
-      return false;
-    }
+    return false;
   }
 }
