@@ -220,6 +220,9 @@ contract Colony is Modifiable {
     }
 
     if (taskTokens > 0) {
+      if (eternalStorage.isAddressLocked(paymentAddress)) {
+        //todo: implement a waiting list for incoming (only?) token transfers
+      }
       if (eternalStorage.transferFromColony(paymentAddress, taskTokens)) {
         eternalStorage.removeReservedTokensWeiForTask(taskId);
       } else {
@@ -227,6 +230,7 @@ contract Colony is Modifiable {
       }
     }
   }
+
 
   function transfer(address _to, uint256 _value)
   returns (bool success)
