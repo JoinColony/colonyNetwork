@@ -12,6 +12,8 @@ library TokenLibrary {
   // keccak256("TokenTitle") -> bytes symbol e.g. 'Colony Token title'
   // keccak256("TokensTotalSupply") -> uint256 totalSupplyTokens
 
+  // sha3("onhold:", address) -> uint256 tokens , e.g. onhold:0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> 340
+
   /// @notice set the Token symbol
   /// @param _symbol the symbol of the Colony Token
   function setTokensSymbol(address _storageContract, bytes _symbol) {
@@ -145,5 +147,13 @@ library TokenLibrary {
 
     balanceSet(_storageContract, this, _colonyBalance);
     EternalStorage(_storageContract).setUIntValue(keccak256("TokensTotalSupply"), _totalSupply);
+  }
+
+  function holdTokens(address _storageContract, address userAddress, uint256 amount){
+    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", address), amount);
+  }
+
+  function releaseTokens(address _storageContract, address userAddress){
+    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", address), 0);
   }
 }
