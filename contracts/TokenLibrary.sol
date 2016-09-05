@@ -150,10 +150,10 @@ library TokenLibrary {
   }
 
   function holdTokens(address _storageContract, address userAddress, uint256 amount){
-    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", address), amount);
+    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", userAddress), amount);
   }
 
   function releaseTokens(address _storageContract, address userAddress){
-    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", address), 0);
+    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", userAddress), 0);
   }
 }

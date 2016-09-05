@@ -4,6 +4,7 @@ import "Modifiable.sol";
 import "IRootColonyResolver.sol";
 import "TokenLibrary.sol";
 import "Ownable.sol";
+import "ColonyPaymentProvider.sol";
 import "TaskLibrary.sol";
 import "SecurityLibrary.sol";
 import "VotingLibrary.sol";
@@ -21,7 +22,7 @@ contract Colony is Modifiable {
     _;
   }
 
-  modifier onlyOwner {
+  modifier onlyColonyOwners {
     if (!this.userIsInRole(msg.sender, 0)) { throw; }
     _;
   }
@@ -35,9 +36,6 @@ contract Colony is Modifiable {
   using VotingLibrary for address;
 
   address public eternalStorage;
-  // This property, exactly as defined, is used in build scripts. Take care when updating.
-  // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  uint256 public version = 3;
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)
   payable
@@ -107,7 +105,7 @@ contract Colony is Modifiable {
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     if (eternalStorage.transfer(this, tokensWei)) {
-      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
+      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
     } else {
       throw;
     }
@@ -116,25 +114,17 @@ contract Colony is Modifiable {
   /// @notice contribute tokens from the colony pool to fund a task
   /// @param taskId the task ID
   /// @param tokensWei the amount of tokens wei to fund the task
-  function setReservedTokensWeiForTask(uint256 taskId, uint256 tokensWei)
+  function contributeTokensWeiFromPool(uint256 taskId, uint256 tokensWei)
   onlyAdminOrOwner
   {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
     if ((reservedTokensWei + tokensWei) <= eternalStorage.balanceOf(this)) {
-      eternalStorage.setReservedTokensWeiForTask(taskId, tokensWei);
+      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
     } else {
       throw;
     }
-  }
-
-  /// @notice allows refunding of reserved tokens back into the colony pool for closed tasks
-  /// @param taskId the task ID
-  function removeReservedTokensWeiForTask(uint256 taskId)
-  onlyAdminOrOwner
-  {
-    return eternalStorage.removeReservedTokensWeiForTask(taskId);
   }
 
   function getTaskCount()
@@ -164,24 +154,19 @@ contract Colony is Modifiable {
     eternalStorage.acceptTask(_id);
   }
 
-  /// @notice this function is used to update task title.
+  /// @notice this function is used to update task data.
   /// @param _id the task id
   /// @param _name the task name
-  function updateTaskTitle(uint256 _id, string _name)
+  /// @param _summary an IPFS hash
+  function updateTask(
+    uint256 _id,
+    string _name,
+    string _summary
+  )
   onlyAdminOrOwner
   throwIfIsEmptyString(_name)
   {
-    eternalStorage.updateTaskTitle(_id, _name);
-  }
-
-  /// @notice this function is used to update task summary.
-  /// @param _id the task id
-  /// @param _summary an IPFS hash
-  function updateTaskSummary(uint256 _id, string _summary)
-  onlyAdminOrOwner
-  throwIfIsEmptyString(_summary)
-  {
-    eternalStorage.updateTaskSummary(_id, _summary);
+    eternalStorage.updateTask(_id, _name, _summary);
   }
 
   /// @notice set the colony tokens symbol
@@ -207,7 +192,6 @@ contract Colony is Modifiable {
   onlyAdminOrOwner
   {
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
-
     // Check token balance is sufficient to pay the worker
     if (eternalStorage.balanceOf(this) < taskTokens) { return; }
 
@@ -220,8 +204,9 @@ contract Colony is Modifiable {
     }
 
     if (taskTokens > 0) {
+      // If the recipient's account is locked, hold the tokens
       if (eternalStorage.isAddressLocked(paymentAddress)) {
-        //todo: implement a waiting list for incoming (only?) token transfers
+        eternalStorage.holdTokens(paymentAddress, taskTokens);
       }
       if (eternalStorage.transferFromColony(paymentAddress, taskTokens)) {
         eternalStorage.removeReservedTokensWeiForTask(taskId);
@@ -231,17 +216,28 @@ contract Colony is Modifiable {
     }
   }
 
-
   function transfer(address _to, uint256 _value)
   returns (bool success)
   {
-    return eternalStorage.transfer(_to, _value);
+    if(eternalStorage.isAddressLocked(msg.sender)) { return false; }
+
+    if(eternalStorage.transfer(_to, _value)){
+      if(eternalStorage.isAddressLocked(_to)) {
+        eternalStorage.holdTokens(_to, _value);
+      }
+    }
   }
 
    function transferFrom(address _from, address _to, uint256 _value)
    returns (bool success)
    {
-     return eternalStorage.transferFrom(_from, _to, _value);
+     if(eternalStorage.isAddressLocked(_from)) { return false; }
+     if(eternalStorage.isAddressLocked(_to)) {
+       eternalStorage.holdTokens(_to, _value);
+     }
+     else{
+       return eternalStorage.transferFrom(_from, _to, _value);
+     }
    }
 
    function balanceOf(address _account)
@@ -265,7 +261,7 @@ contract Colony is Modifiable {
   /// @notice this function is used to generate Colony tokens
   /// @param _tokensWei The amount of tokens wei to be generated
   function generateTokensWei(uint256 _tokensWei)
-  onlyOwner
+  onlyAdminOrOwner
   {
     eternalStorage.generateTokensWei(_tokensWei);
   }
@@ -332,13 +328,17 @@ contract Colony is Modifiable {
 
   function submitVote(uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId)
   returns (bool){
+    //todo: check msg.sender balance is >0
     return eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
   }
 
   function revealVote(uint256 pollId, uint256 idx)
-  returns (bool){
+  {
     uint256 voteWeight = eternalStorage.balanceOf(msg.sender);
-    return eternalStorage.revealVote(pollId, idx, voteWeight);
+    if (eternalStorage.revealVote(pollId, idx, voteWeight) && !eternalStorage.isAddressLocked(msg.sender)){
+      // Release 'on hold' tokens,  if there are no more locks
+      eternalStorage.releaseTokens(msg.sender);
+    }
   }
 
   function ()

@@ -70,6 +70,7 @@ library VotingLibrary {
 
     EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "startTime"), now);
     EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "closeTime"), now + pollDuration * 1 hours);
+    outputEvent(now + pollDuration * 1 hours);
 
     EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "status"), 1);
     return true;
@@ -194,6 +195,7 @@ library VotingLibrary {
       outputEvent(15);
       //Enter secret
       EternalStorage(_storageContract).setBytes32Value(sha3("Voting", userAddress, pollCloseTime, "secrets", pollId, "secret"), secret);
+
       outputEvent(16);
       return true;
   }
@@ -231,23 +233,31 @@ library VotingLibrary {
   function generateVoteSecret(bytes){
 
   }
-
+  event outputAddress(address user);
+  event outputBytes32(bytes32 sha3Value);
   /// @notice Checks if an address is 'locked' due to any present unresolved votes
   function isAddressLocked(address _storageContract, address userAddress)
   constant returns (bool){
-    var zeroPollCloseTimeNext = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, 0, "nextTimestamp"));
-
+    var zeroPollCloseTimeNext = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, uint256(0), "nextTimestamp"));
+    outputAddress(userAddress);
+    outputEvent(zeroPollCloseTimeNext);
+    outputEvent(now);
     // The list is empty, no unrevealed votes for this address
     if (zeroPollCloseTimeNext == 0){
+      outputEvent(21);
       return false;
     }
 
     // The poll is still open for voting and tokens transfer
     if (now < zeroPollCloseTimeNext){
+      outputEvent(22);
+      return false;
+    }
+    else {
+      // The poll is closed for voting and is in the reveal period, during which all votes' tokens are locked until reveal
+      // Note: even after the poll is resolved, tokens remain locked until reveal
+      outputEvent(23);
       return true;
     }
-    // The poll is closed for voting and is in the reveal period, during which all votes' tokens are locked until reveal
-    // Note: even after the poll is resolved, tokens remain locked until reveal
-    return false;
   }
 }
