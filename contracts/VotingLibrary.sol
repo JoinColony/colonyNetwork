@@ -105,8 +105,7 @@ library VotingLibrary {
         uint256 pollCloseTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "closeTime"));
         if(pollCloseTime < now) { return false; }
 
-        addVoteSecret(_storageContract, msg.sender, pollCloseTime, pollId, secret, prevTimestamp, prevPollId);
-        return true;
+        return addVoteSecret(_storageContract, msg.sender, pollCloseTime, pollId, secret, prevTimestamp, prevPollId);
   }
 
   function revealVote(
