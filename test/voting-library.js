@@ -23,6 +23,20 @@ contract('VotingLibrary', function (accounts) {
   var _VOTE_SECRET_3_;
   var _VOTE_SECRET_4_;
 
+  var queueCreateAndOpenSimplePoll = async function(description, pollCount, duration){
+    var tx;
+    var gasEstimate = await colony.createPoll.estimateGas(description);
+    tx = await colony.createPoll.sendTransaction(description, {gas:Math.floor(gasEstimate*1.1)});
+    console.log('createPoll tx id ', tx);
+    tx = await colony.addPollOption.sendTransaction(pollCount, 'Yes',  {gas:150000});
+    console.log('addPollOption tx id ', tx);
+    tx = await colony.addPollOption.sendTransaction(pollCount, 'No',  {gas:150000});
+    console.log('addPollOption tx id ', tx);
+    tx = await colony.openPoll.sendTransaction(pollCount, duration,  {gas:300000});
+    console.log('openPoll tx id ', tx);
+    return tx
+  };
+
   var createAndOpenSimplePoll = async function(description, duration){
     var tx;
     tx = await colony.createPoll(description);
@@ -42,6 +56,11 @@ contract('VotingLibrary', function (accounts) {
     done();
   });
 
+  afterEach(async function (done){
+    await testHelper.startMining();
+    done();
+  });
+
   beforeEach(function (done) {
     _VOTE_SECRET_1_ = solSha3(testHelper.getRandomString(5));
     _VOTE_SECRET_2_ = solSha3(testHelper.getRandomString(5));
@@ -49,11 +68,9 @@ contract('VotingLibrary', function (accounts) {
     _VOTE_SECRET_4_ = solSha3(testHelper.getRandomString(5));
 
     _COLONY_KEY_ = testHelper.getRandomString(7);
-
     eternalStorageRoot.owner.call()
       .then(function () {
-        rootColony.createColony(_COLONY_KEY_, { from: _MAIN_ACCOUNT_ });
-        testHelper.mineTransaction();
+        return rootColony.createColony(_COLONY_KEY_, { from: _MAIN_ACCOUNT_ });
       })
       .then(function () {
         return rootColony.getColony.call(_COLONY_KEY_);
@@ -170,7 +187,12 @@ contract('VotingLibrary', function (accounts) {
         // Should fail here
         colony.addPollOption(1, 'Maybe')
         .catch(testHelper.ifUsingTestRPC)
-        .then(done)
+        .then(async function(){
+          //Check it didn't get added - optionsCount for poll should still be 2
+          var optionsCount = await eternalStorage.getUIntValue.call(solSha3("Poll", 1, "OptionsCount"));
+          assert.equal(optionsCount.toNumber(), 2);
+          done();
+        })
         .catch(done);
     });
   });
@@ -178,10 +200,15 @@ contract('VotingLibrary', function (accounts) {
   describe('when opening a poll', function(){
     it('should set the correct poll start and close times', async function(done){
       try{
-        await createAndOpenSimplePoll('poll 1',24);
+        testHelper.stopMining();
+        var txid = await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 24);
+        testHelper.startMining();
+        var receipt = await testHelper.waitForTxToBeMined(txid);
+        var blockNumber  = receipt.blockNumber;
         var pollStartTime = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'startTime'));
         var pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'closeTime'));
-        var lastBlock = await web3.eth.getBlock('latest');
+        //TODO : if this parseint isn't present, fails on geth. Either a geth bug, or a web3 bug (that testrpc happens to handle)
+        var lastBlock = await web3.eth.getBlock(parseInt(blockNumber,16));
         assert.equal(pollStartTime.toNumber(), lastBlock.timestamp);
         assert.equal(pollCloseTime.toNumber(), lastBlock.timestamp + 24 * 3600);
         done();
@@ -274,10 +301,14 @@ contract('VotingLibrary', function (accounts) {
   describe('when submitting a vote', function () {
     it('to the start of a list of existing votes at a pollCloseTime that already exists, the linked list works as expected', async function(done){
       try {
-        await createAndOpenSimplePoll('poll 1', 24);
-        await createAndOpenSimplePoll('poll 2', 25);
-        await createAndOpenSimplePoll('poll 3', 25);
-        testHelper.mineTransaction();
+        await testHelper.stopMining();
+
+        var pollCount = await eternalStorage.getUIntValue.call(solSha3('PollCount'));
+        pollCount = pollCount.toNumber();
+        await queueCreateAndOpenSimplePoll('poll 1', pollCount +1, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', pollCount +2, 25);
+        await queueCreateAndOpenSimplePoll('poll 3', pollCount +3, 25);
+        testHelper.startMining();
 
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
@@ -303,14 +334,18 @@ contract('VotingLibrary', function (accounts) {
 
     it('in the middle of a list of existing votes at a pollCloseTime that already exists, the linked list works as expected', async function(done){
       try {
-        await createAndOpenSimplePoll('poll 1', 24);
-        await createAndOpenSimplePoll('poll 2', 24);
-        await createAndOpenSimplePoll('poll 3', 24);
-        testHelper.mineTransaction();
+        await testHelper.stopMining();
 
+        var pollCount = await eternalStorage.getUIntValue.call(solSha3('PollCount'));
+        pollCount = pollCount.toNumber();
+
+        await queueCreateAndOpenSimplePoll('poll 1', pollCount +1, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', pollCount +2, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', pollCount +3, 24);
+
+        await testHelper.startMining();
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
-
         //Add another one at the same timestamp in the middle of the votes list
         await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
 
@@ -340,18 +375,19 @@ contract('VotingLibrary', function (accounts) {
 
     it('to the end of list of existing votes at a pollCloseTime that already exists, the linked list works as expected', async function (done) {
       try {
-        await createAndOpenSimplePoll('poll 1', 24);
-        await createAndOpenSimplePoll('poll 2', 24);
-        testHelper.mineTransaction();
+        await testHelper.stopMining();
 
-        var pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+        await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', _POLL_ID_2_, 24);
+        await testHelper.startMining();
 
-        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_2_, 0, 0, {from: _OTHER_ACCOUNT_});
-
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         //Add another one at the same timestamp
-        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
 
         //Check it's been inserted correctly afterwards into the linked list
+        var pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+
         var firstEntryPrevKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'prevPollId'));
         assert.equal(firstEntryPrevKey.toNumber(), 0);
         var firstEntryNextKey = await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'nextPollId'));
@@ -370,10 +406,15 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous pollId does not exist, it should fail', async function(done){
       try {
-        await createAndOpenSimplePoll('poll 1', 24);
-        await createAndOpenSimplePoll('poll 2', 24);
-        await createAndOpenSimplePoll('poll 3', 24);
-        testHelper.mineTransaction();
+        await testHelper.stopMining();
+
+        var pollCount = await eternalStorage.getUIntValue.call(solSha3('PollCount'));
+        pollCount = pollCount.toNumber();
+
+        await queueCreateAndOpenSimplePoll('poll 1', pollCount+1, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', pollCount+2, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', pollCount+3, 24);
+        await testHelper.startMining();
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         testHelper.mineTransaction();
@@ -413,11 +454,16 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous pollId implies a next pollId that is too small, it should fail', async function(done){
       try {
-        await createAndOpenSimplePoll('poll 1', 24);
-        await createAndOpenSimplePoll('poll 2', 24);
-        await createAndOpenSimplePoll('poll 3', 24);
-        await createAndOpenSimplePoll('poll 4', 24);
-        testHelper.mineTransaction();
+        await testHelper.stopMining();
+
+        var pollCount = await eternalStorage.getUIntValue.call(solSha3('PollCount'));
+        pollCount = pollCount.toNumber();
+
+        await queueCreateAndOpenSimplePoll('poll 1',pollCount+1, 24);
+        await queueCreateAndOpenSimplePoll('poll 2',pollCount+2, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', pollCount+3, 24);
+        await queueCreateAndOpenSimplePoll('poll 4', pollCount+4, 24);
+        await testHelper.startMining();
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_1_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
@@ -447,11 +493,13 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the supplied previous pollId is too large, it should fail', async function(done){
       try {
-        await createAndOpenSimplePoll('poll 1', 24);
-        await createAndOpenSimplePoll('poll 2', 24);
-        await createAndOpenSimplePoll('poll 3', 24);
-        await createAndOpenSimplePoll('poll 4', 24);
-        testHelper.mineTransaction();
+        await testHelper.stopMining();
+
+        await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', _POLL_ID_2_, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', _POLL_ID_3_, 24);
+        await queueCreateAndOpenSimplePoll('poll 4', _POLL_ID_4_, 24);
+        await testHelper.startMining();
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});
@@ -487,10 +535,11 @@ contract('VotingLibrary', function (accounts) {
 
     it('if the new secret is proposed to be at the start, but that is wrong, it should fail', async function(done){
       try {
-        await createAndOpenSimplePoll('poll 1', 24);
-        await createAndOpenSimplePoll('poll 2', 24);
-        await createAndOpenSimplePoll('poll 3', 24);
-        testHelper.mineTransaction();
+        await testHelper.stopMining();
+        await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', _POLL_ID_2_, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', _POLL_ID_3_, 24);
+        await testHelper.startMining();
 
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
         await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_1_, 0, _POLL_ID_1_, {from: _OTHER_ACCOUNT_});

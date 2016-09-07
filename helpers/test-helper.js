@@ -77,5 +77,35 @@ module.exports = {
       jsonrpc: "2.0",
       method: "evm_mine"
     });
+  },
+  startMining(){
+    return web3.currentProvider.send({
+      jsonrpc: "2.0",
+      method: "miner_start",
+      params: [1],
+      id: new Date().getTime()
+    });
+  },
+  stopMining(){
+    return web3.currentProvider.send({
+      jsonrpc: "2.0",
+      method: "miner_stop",
+      id: new Date().getTime()
+    });
+  },
+  async waitForTxToBeMined(txid){
+    var receipt = null;
+    while (receipt ===null){
+      var response = await web3.currentProvider.send({
+        jsonrpc: "2.0",
+        method: "eth_getTransactionReceipt",
+        params: [txid],
+        id: new Date().getTime()
+      })
+      receipt = response.result;
+      console.log('got receipt', receipt);
+    }
+    return receipt;
+
   }
 };
