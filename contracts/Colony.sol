@@ -103,8 +103,9 @@ contract Colony is Modifiable {
   function contributeTokensWeiToTask(uint256 taskId, uint256 tokensWei)
   onlyAdminOrOwner
   {
+    var isAddressLocked = eternalStorage.isAddressLocked(msg.sender);
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-    if (eternalStorage.transfer(this, tokensWei)) {
+    if (eternalStorage.transfer(this, tokensWei, isAddressLocked)) {
       eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
     } else {
       throw;
@@ -204,11 +205,8 @@ contract Colony is Modifiable {
     }
 
     if (taskTokens > 0) {
-      // If the recipient's account is locked, hold the tokens
-      if (eternalStorage.isAddressLocked(paymentAddress)) {
-        eternalStorage.holdTokens(paymentAddress, taskTokens);
-      }
-      if (eternalStorage.transferFromColony(paymentAddress, taskTokens)) {
+      var isRecipientAddressLocked = eternalStorage.isAddressLocked(paymentAddress);
+      if (eternalStorage.transferFromColony(paymentAddress, taskTokens, isRecipientAddressLocked)) {
         eternalStorage.removeReservedTokensWeiForTask(taskId);
       } else {
         throw;
@@ -221,23 +219,17 @@ contract Colony is Modifiable {
   {
     if(eternalStorage.isAddressLocked(msg.sender)) { return false; }
 
-    if(eternalStorage.transfer(_to, _value)){
-      if(eternalStorage.isAddressLocked(_to)) {
-        eternalStorage.holdTokens(_to, _value);
-      }
-    }
+    var isRecipientAddressLocked = eternalStorage.isAddressLocked(_to);
+    return eternalStorage.transfer(_to, _value, isRecipientAddressLocked);
   }
 
    function transferFrom(address _from, address _to, uint256 _value)
    returns (bool success)
    {
      if(eternalStorage.isAddressLocked(_from)) { return false; }
-     if(eternalStorage.isAddressLocked(_to)) {
-       eternalStorage.holdTokens(_to, _value);
-     }
-     else{
-       return eternalStorage.transferFrom(_from, _to, _value);
-     }
+
+     var isRecipientAddressLocked = eternalStorage.isAddressLocked(_to);
+     return eternalStorage.transferFrom(_from, _to, _value, isRecipientAddressLocked);
    }
 
    function balanceOf(address _account)
@@ -294,7 +286,7 @@ contract Colony is Modifiable {
   onlyRootColony
   {
     var tokensBalance = eternalStorage.balanceOf(this);
-    if(tokensBalance > 0 && !eternalStorage.transferFromColony(newColonyAddress_, tokensBalance)) {
+    if(tokensBalance > 0 && !eternalStorage.transferFromColony(newColonyAddress_, tokensBalance, false)) {
       throw;
     }
 
@@ -332,12 +324,18 @@ contract Colony is Modifiable {
     return eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
   }
 
+  event uintEvent(uint x);
   function revealVote(uint256 pollId, uint256 idx)
+  returns (bool)
   {
     uint256 voteWeight = eternalStorage.balanceOf(msg.sender);
     if (eternalStorage.revealVote(pollId, idx, voteWeight) && !eternalStorage.isAddressLocked(msg.sender)){
-      // Release 'on hold' tokens,  if there are no more locks
+      // Release 'on hold' tokens, if there are no more locks
       eternalStorage.releaseTokens(msg.sender);
+      return true;
+    }
+    else{
+      return false;
     }
   }
 

@@ -261,43 +261,6 @@ contract('VotingLibrary', function (accounts) {
     });
   });
 
-  describe('when resolving a poll', function(){
-    it('should update the poll status correctly', async function(done){
-      try {
-        await createAndOpenSimplePoll('poll 1',1);
-        testHelper.forwardTime(3600*2 + 1000);
-        await colony.resolvePoll(1);
-        var pollStatus = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'status'));
-        assert.equal(2, pollStatus.toNumber());
-        done();
-      } catch (err) {
-        return done(err);
-      }
-    });
-
-    it('before the minimum needed time to have passed, it should fail', async function(done){
-      await createAndOpenSimplePoll('poll 1',1);
-      await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, {from: _OTHER_ACCOUNT_});
-      testHelper.forwardTime(3600 + 1000); // fast forward in time to get past the poll close time of 1 hour
-      // Try to resolve the poll early
-      await colony.resolvePoll(1);
-      var pollStatus = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'status'));
-      assert.equal(1, pollStatus.toNumber());
-      done();
-    });
-
-    it('which has already been resolved, it should fail', async function(done){
-      await createAndOpenSimplePoll('poll 1',1);
-      testHelper.forwardTime(3600*2 + 1000);
-      await colony.resolvePoll(1);
-      var pollStatus = await eternalStorage.getUIntValue.call(solSha3('Poll', 1, 'status'));
-      assert.equal(2, pollStatus.toNumber());
-      // Try to resolve the poll again
-      await colony.resolvePoll(1).catch(testHelper.ifUsingTestRPC);
-      done();
-    });
-  });
-
   describe('when submitting a vote', function () {
     it('to the start of a list of existing votes at a pollCloseTime that already exists, the linked list works as expected', async function(done){
       try {
@@ -864,34 +827,6 @@ contract('VotingLibrary', function (accounts) {
         done();
       }
       catch (err) {
-        return done(err);
-      }
-    });
-  });
-
-  describe.skip('when revealing a vote', function(){
-    it.skip('before the poll has closed, should fail', async function(done){
-      try{
-      } catch (err) {
-        return done(err);
-      }
-    });
-    it.skip('and the poll is resolved, should not count the vote towards final results', async function(done){
-      try{
-      } catch (err) {
-        return done(err);
-      }
-    });
-    it.skip('with invalid secret, should fail', async function(done){});
-    it.skip('should update the total count for that vote option', async function(done){
-      try{
-      } catch (err) {
-        return done(err);
-      }
-    });
-    it.skip('should remove the vote secret from the doubly linked list', async function(done){
-      try{
-      } catch (err) {
         return done(err);
       }
     });

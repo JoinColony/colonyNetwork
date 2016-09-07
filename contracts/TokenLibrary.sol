@@ -36,37 +36,66 @@ library TokenLibrary {
   /// @param _to The address of the recipient
   /// @param _value The amount of token wei to be transferred
   /// @return Whether the transfer was successful or not
-  function transfer(address _storageContract, address _to, uint256 _value)
+  function transfer(address _storageContract, address _to, uint256 _value, bool _isRecipientLocked)
   returns (bool success)
   {
     var balanceSender = balanceOf(_storageContract, msg.sender);
     var balanceRecipient = balanceOf(_storageContract, _to);
 
-    //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
-    if (balanceSender >= _value && balanceRecipient + _value > balanceRecipient) {
-      balanceSet(_storageContract, msg.sender, balanceSender - _value);
-      balanceSet(_storageContract, _to, balanceRecipient + _value);
-
-      return true;
-    } else {
-      return false;
+    if(_isRecipientLocked){
+      var onHoldBalance = onHoldBalanceOf(_storageContract, _to);
+      if (balanceSender < _value
+        || onHoldBalance + _value <= onHoldBalance
+        || balanceRecipient + _value + onHoldBalance <= balanceRecipient){
+        return false;
+      }
+      else{
+        balanceSet(_storageContract, msg.sender, balanceSender - _value);
+        onHoldBalanceSet(_storageContract, _to, onHoldBalance + _value);
+        return true;
+      }
+    }
+    else{
+      //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
+      if (balanceSender < _value || balanceRecipient + _value <= balanceRecipient) {
+        return false;
+      }
+      else{
+        balanceSet(_storageContract, msg.sender, balanceSender - _value);
+        balanceSet(_storageContract, _to, balanceRecipient + _value);
+        return true;
+      }
     }
   }
 
-  function transferFromColony(address _storageContract, address _to, uint256 _value)
-  returns (bool success)
-  {
+  function transferFromColony(address _storageContract, address _to, uint256 _value, bool _isRecipientLocked)
+  returns (bool success) {
     var balanceSender = balanceOf(_storageContract, this);
     var balanceRecipient = balanceOf(_storageContract, _to);
 
-    //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
-    if (balanceSender >= _value && balanceRecipient + _value > balanceRecipient) {
-      balanceSet(_storageContract, this, balanceSender - _value);
-      balanceSet(_storageContract, _to, balanceRecipient + _value);
-
-      return true;
-    } else {
-      return false;
+    if(_isRecipientLocked){
+      var onHoldBalance = onHoldBalanceOf(_storageContract, _to);
+      if (balanceSender < _value
+        || onHoldBalance + _value <= onHoldBalance
+        || balanceRecipient + _value + onHoldBalance <= balanceRecipient) {
+        return false;
+      }
+      else{
+        balanceSet(_storageContract, this, balanceSender - _value);
+        onHoldBalanceSet(_storageContract, _to, onHoldBalance + _value);
+        return true;
+      }
+    }
+    else{
+      //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
+      if (balanceSender < _value || balanceRecipient + _value <= balanceRecipient) {
+        return false;
+      }
+      else{
+        balanceSet(_storageContract, this, balanceSender - _value);
+        balanceSet(_storageContract, _to, balanceRecipient + _value);
+        return true;
+      }
     }
   }
 
@@ -74,22 +103,41 @@ library TokenLibrary {
   /// @param _from The address of the sender
   /// @param _to The address of the recipient
   /// @param _value The amount of token wei to be transferred
-  function transferFrom(address _storageContract, address _from, address _to, uint256 _value)
+  function transferFrom(address _storageContract, address _from, address _to, uint256 _value, bool _isRecipientLocked)
   returns (bool success)
   {
     var balanceSender = balanceOf(_storageContract, _from);
     var balanceRecipient = balanceOf(_storageContract, _to);
     var allowedValue = allowance(_storageContract, _from, msg.sender);
 
-    //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
-    if (balanceSender >= _value && allowedValue >= _value && (balanceRecipient + _value) > balanceRecipient) {
-      balanceSet(_storageContract, _from, balanceSender - _value);
-      balanceSet(_storageContract, _to, balanceRecipient + _value);
-      allowanceSet(_storageContract, _from, msg.sender, allowedValue - _value);
-
-      return true;
-    } else {
-      return false;
+    if(_isRecipientLocked){
+      var onHoldBalance = onHoldBalanceOf(_storageContract, _to);
+      if (balanceSender < _value
+        || allowedValue < _value
+        || onHoldBalance + _value <= onHoldBalance
+        || balanceRecipient + _value + onHoldBalance <= balanceRecipient) {
+        return false;
+      }
+      else{
+        balanceSet(_storageContract, _from, balanceSender - _value);
+        onHoldBalanceSet(_storageContract, _to, onHoldBalance + _value);
+        allowanceSet(_storageContract, _from, msg.sender, allowedValue - _value);
+        return true;
+      }
+    }
+    else{
+      //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
+      if (balanceSender < _value
+        || allowedValue < _value
+        || balanceRecipient + _value <= balanceRecipient) {
+        return false;
+      }
+      else{
+        balanceSet(_storageContract, _from, balanceSender - _value);
+        balanceSet(_storageContract, _to, balanceRecipient + _value);
+        allowanceSet(_storageContract, _from, msg.sender, allowedValue - _value);
+        return true;
+      }
     }
   }
 
@@ -132,6 +180,23 @@ library TokenLibrary {
     EternalStorage(_storageContract).setUIntValue(keccak256("balance:", _account), _balance);
   }
 
+  function onHoldBalanceOf(address _storageContract, address _account)
+  constant returns (uint256 balance)
+  {
+    return EternalStorage(_storageContract).getUIntValue(sha3("onhold:", _account));
+  }
+
+  function onHoldBalanceSet(address _storageContract, address _account, uint256 _balance)
+  {
+    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), _balance);
+  }
+
+  function releaseTokens(address _storageContract, address _account){
+    var onHoldBalance = onHoldBalanceOf(_storageContract, _account);
+    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), 0);
+    EternalStorage(_storageContract).setUIntValue(sha3("balance:", _account), onHoldBalance);
+  }
+
   /// @notice this function is used to increase the amount of tokens available limited by `totalSupply`
   /// and assign it to the contract owner.
   /// @param _amount The amount to be increased in the upper bound totalSupply in token wei
@@ -147,13 +212,5 @@ library TokenLibrary {
 
     balanceSet(_storageContract, this, _colonyBalance);
     EternalStorage(_storageContract).setUIntValue(keccak256("TokensTotalSupply"), _totalSupply);
-  }
-
-  function holdTokens(address _storageContract, address userAddress, uint256 amount){
-    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", userAddress), amount);
-  }
-
-  function releaseTokens(address _storageContract, address userAddress){
-    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", userAddress), 0);
   }
 }
