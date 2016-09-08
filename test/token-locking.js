@@ -16,22 +16,13 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
 
   const _POLL_ID_1_ = 1;
   const _POLL_ID_2_ = 2;
+  const _POLL_ID_3_ = 3;
   let _VOTE_SECRET_1_;
   let _VOTE_SALT_1_;
-
-  const queueCreateAndOpenSimplePoll = async function(description, pollCount, duration) {
-    let tx;
-    const gasEstimate = await colony.createPoll.estimateGas(description);
-    tx = await colony.createPoll.sendTransaction(description, { gas: Math.floor(gasEstimate * 1.1) });
-    console.log('createPoll tx id ', tx);
-    tx = await colony.addPollOption.sendTransaction(pollCount, 'Yes', { gas: 150000 });
-    console.log('addPollOption tx id ', tx);
-    tx = await colony.addPollOption.sendTransaction(pollCount, 'No', { gas: 150000 });
-    console.log('addPollOption tx id ', tx);
-    tx = await colony.openPoll.sendTransaction(pollCount, duration, { gas: 300000 });
-    console.log('openPoll tx id ', tx);
-    return tx;
-  };
+  let _VOTE_SECRET_2_;
+  let _VOTE_SALT_2_;
+  let _VOTE_SECRET_3_;
+  let _VOTE_SALT_3_;
 
   const createAndOpenSimplePoll = async function(description, duration) {
     await colony.createPoll(description);
@@ -50,6 +41,16 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
     await colony.completeAndPayTask(0, account);
   };
 
+  const queueCreateAndOpenSimplePoll = async function(description, pollCount, duration) {
+    let tx;
+    const gasEstimate = await colony.createPoll.estimateGas(description);
+    tx = await colony.createPoll.sendTransaction(description, { gas: Math.floor(gasEstimate * 1.1) });
+    tx = await colony.addPollOption.sendTransaction(pollCount, 'Yes', { gas: 150000 });
+    tx = await colony.addPollOption.sendTransaction(pollCount, 'No', { gas: 150000 });
+    tx = await colony.openPoll.sendTransaction(pollCount, duration, { gas: 300000 });
+    return tx;
+  };
+
   before(async function (done) {
     rootColony = RootColony.deployed();
     eternalStorageRoot = EternalStorage.deployed();
@@ -59,6 +60,10 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
   beforeEach(function (done) {
     _VOTE_SALT_1_ = solSha3('SALT1');
     _VOTE_SECRET_1_ = solSha3(_VOTE_SALT_1_, 1); // i.e. we're always voting for option1
+    _VOTE_SALT_2_ = solSha3('SALT2');
+    _VOTE_SECRET_2_ = solSha3(_VOTE_SALT_2_, 1);
+    _VOTE_SALT_3_ = solSha3('SALT3');
+    _VOTE_SECRET_3_ = solSha3(_VOTE_SALT_3_, 1);
 
     _COLONY_KEY_ = testHelper.getRandomString(7);
 
@@ -155,6 +160,141 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
       }
     });
 
+    it('At the start of a list of votes at a pollCloseTime, the linked list works as expected', async function(done) {
+      try {
+        await testHelper.stopMining();
+
+        await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', _POLL_ID_2_, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', _POLL_ID_3_, 24);
+
+        await testHelper.startMining();
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, _POLL_ID_1_, { from: _OTHER_ACCOUNT_ });
+
+        testHelper.forwardTime((24 * 3600) + 100);
+        await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
+
+        const pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+
+        // Check it's been inserted correctly afterwards into the linked list
+        const firstEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'prevPollId'));
+        assert.equal(firstEntryPrevKey.toNumber(), 0);
+        const firstEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'nextPollId'));
+        assert.equal(firstEntryNextKey.toNumber(), 0);
+
+        const newEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_2_, 'prevPollId'));
+        assert.equal(newEntryPrevKey.toNumber(), 0);
+        const newEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_2_, 'nextPollId'));
+        assert.equal(newEntryNextKey.toNumber(), _POLL_ID_3_);
+
+        const lastEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_3_, 'prevPollId'));
+        assert.equal(lastEntryPrevKey.toNumber(), _POLL_ID_2_);
+        const lastEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_3_, 'nextPollId'));
+        assert.equal(lastEntryNextKey.toNumber(), 0);
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
+    it('in the middle of a list of votes at a pollCloseTime, the linked list works as expected', async function(done) {
+      try {
+        await testHelper.stopMining();
+
+        await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', _POLL_ID_2_, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', _POLL_ID_3_, 24);
+
+        await testHelper.startMining();
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, _POLL_ID_1_, { from: _OTHER_ACCOUNT_ });
+
+        testHelper.forwardTime((24 * 3600) + 100);
+        await colony.revealVote(_POLL_ID_2_, 1, _VOTE_SALT_2_, { from: _OTHER_ACCOUNT_ });
+
+        const pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+
+        // Check it's been inserted correctly afterwards into the linked list
+        const firstEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'prevPollId'));
+        assert.equal(firstEntryPrevKey.toNumber(), 0);
+        const firstEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'nextPollId'));
+        assert.equal(firstEntryNextKey.toNumber(), _POLL_ID_3_);
+
+        const newEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_2_, 'prevPollId'));
+        assert.equal(newEntryPrevKey.toNumber(), 0);
+        const newEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_2_, 'nextPollId'));
+        assert.equal(newEntryNextKey.toNumber(), 0);
+
+        const lastEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_3_, 'prevPollId'));
+        assert.equal(lastEntryPrevKey.toNumber(), _POLL_ID_1_);
+        const lastEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_3_, 'nextPollId'));
+        assert.equal(lastEntryNextKey.toNumber(), 0);
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
+    it('At the end of a list of votes at a pollCloseTime, the linked list works as expected', async function(done) {
+      try {
+        await testHelper.stopMining();
+
+        await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', _POLL_ID_2_, 24);
+        await queueCreateAndOpenSimplePoll('poll 3', _POLL_ID_3_, 24);
+
+        await testHelper.startMining();
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_3_, _VOTE_SECRET_3_, 0, _POLL_ID_1_, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_2_, 0, _POLL_ID_1_, { from: _OTHER_ACCOUNT_ });
+
+        testHelper.forwardTime((24 * 3600) + 100);
+        await colony.revealVote(_POLL_ID_3_, 1, _VOTE_SALT_3_, { from: _OTHER_ACCOUNT_ });
+
+        const pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+
+        // Check it's been deleted correctly afterwards from the linked list
+        const firstEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'prevPollId'));
+        assert.equal(firstEntryPrevKey.toNumber(), 0);
+        const firstEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_1_, 'nextPollId'));
+        assert.equal(firstEntryNextKey.toNumber(), _POLL_ID_2_);
+
+        const newEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_2_, 'prevPollId'));
+        assert.equal(newEntryPrevKey.toNumber(), _POLL_ID_1_);
+        const newEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_2_, 'nextPollId'));
+        assert.equal(newEntryNextKey.toNumber(), 0);
+
+        const lastEntryPrevKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_3_, 'prevPollId'));
+        assert.equal(lastEntryPrevKey.toNumber(), 0);
+        const lastEntryNextKey =
+        await eternalStorage.getUIntValue.call(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime.toNumber(), 'secrets', _POLL_ID_3_, 'nextPollId'));
+        assert.equal(lastEntryNextKey.toNumber(), 0);
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
     it('before the poll has closed, should fail', async function(done) {
       try {
         await createAndOpenSimplePoll('poll 1', 24);
@@ -163,6 +303,13 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
 
         const result = await colony.revealVote.call(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
         assert.isFalse(result);
+        await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
+
+        let pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+        pollCloseTime = pollCloseTime.toNumber();
+        const secret = await eternalStorage.getBytes32Value(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime, 'secrets', _POLL_ID_1_, 'secret'));
+        assert.notEqual('0x0000000000000000000000000000000000000000000000000000000000000000', secret);
+
         done();
       } catch (err) {
         return done(err);
@@ -175,6 +322,13 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         testHelper.mineTransaction();
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
         testHelper.forwardTime((24 * 3600 * 2) + 100);
+
+        // Earn some tokens, so our vote would have weight if we revealed it in time
+        await colony.generateTokensWei(100);
+        await colony.makeTask('name2', 'summary2');
+        await colony.contributeTokensWeiFromPool(0, 100);
+        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+
         await colony.resolvePoll(1);
         await colony.revealVote(1, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
 
@@ -187,9 +341,46 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
       }
     });
 
-    it.skip('with invalid secret, should fail', async function(done) {
+    it('with invalid salt, should fail', async function(done) {
       try {
-        // todo
+        await createAndOpenSimplePoll('poll 1', 24);
+        testHelper.mineTransaction();
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        testHelper.forwardTime((24 * 3600 * 2) + 100);
+        // Check return
+        const result = await colony.revealVote.call(1, 1, solSha3('WRONG SALT'), { from: _OTHER_ACCOUNT_ });
+        assert.isFalse(result);
+        // Now do it for real
+        await colony.revealVote.call(1, 1, solSha3('WRONG SALT'), { from: _OTHER_ACCOUNT_ });
+
+        let pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+        pollCloseTime = pollCloseTime.toNumber();
+        const secret = await eternalStorage.getBytes32Value(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime, 'secrets', _POLL_ID_1_, 'secret'));
+        // Check secret wasn't removed;
+        assert.notEqual('0x0000000000000000000000000000000000000000000000000000000000000000', secret);
+        done();
+      } catch (err) {
+        return done(err);
+      }
+    });
+
+    it('with invalid optionid, should fail', async function(done) {
+      try {
+        await createAndOpenSimplePoll('poll 1', 24);
+        testHelper.mineTransaction();
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        testHelper.forwardTime((24 * 3600 * 2) + 100);
+        // Check return
+        const result = await colony.revealVote.call(1, 1, solSha3('WRONG SALT'), { from: _OTHER_ACCOUNT_ });
+        assert.isFalse(result);
+        // Now do it for real
+        await colony.revealVote.call(1, 2, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
+
+        let pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
+        pollCloseTime = pollCloseTime.toNumber();
+        const secret = await eternalStorage.getBytes32Value(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime, 'secrets', _POLL_ID_1_, 'secret'));
+        // Check secret wasn't removed;
+        assert.notEqual('0x0000000000000000000000000000000000000000000000000000000000000000', secret);
         done();
       } catch (err) {
         return done(err);
@@ -209,7 +400,6 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         await colony.revealVote(1, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
 
         const poll1Option1Count = await eternalStorage.getUIntValue(solSha3('Poll', _POLL_ID_1_, 'option', 1, 'count'));
-        console.log(solSha3('Poll', _POLL_ID_1_, 'option', 1, 'count'));
         assert.equal(95, poll1Option1Count.toNumber());
         done();
       } catch (err) {
@@ -339,7 +529,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
     });
   });
 
-  describe.only('after having voted in a poll, when receiving tokens', function () {
+  describe('after having voted in a poll, when receiving tokens', function () {
     it('while the poll is still open, should succeed', async function(done) {
       try {
         await createAndOpenSimplePoll('poll 1', 24);
