@@ -139,9 +139,11 @@ library VotingLibrary {
         outputEvent(3);
         var voteCount = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "option", idx, "count"));
         // Check if the vote count overflows
-        if (voteCount + voteWeight <= voteCount) { return false; }
-        // Increment total vote count
-        EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "option", idx, "count"), voteCount + voteWeight);
+        if (voteCount + voteWeight < voteCount) { return false; }
+        // Increment total vote count if needed
+        if (voteWeight > 0){
+          EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "option", idx, "count"), voteCount + voteWeight);
+        }
       }
       outputEvent(4);
       return true;

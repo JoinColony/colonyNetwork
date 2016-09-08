@@ -17,6 +17,8 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
   const _POLL_ID_1_ = 1;
   const _POLL_ID_2_ = 2;
   let _VOTE_SECRET_1_;
+  let _VOTE_SALT_1_;
+
 
   const createAndOpenSimplePoll = async function(description, duration) {
     await colony.createPoll(description);
@@ -33,7 +35,8 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
   });
 
   beforeEach(function (done) {
-    _VOTE_SECRET_1_ = solSha3(testHelper.getRandomString(5));
+    _VOTE_SALT_1_ = solSha3('SALT1');
+    _VOTE_SECRET_1_ = solSha3(_VOTE_SALT_1_, 1); // i.e. we're always voting for option1
 
     _COLONY_KEY_ = testHelper.getRandomString(7);
 
@@ -101,8 +104,6 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
     it('when it is the last one in the list, should remove it correctly', async function (done) {
       try {
         await createAndOpenSimplePoll('poll 1', 24);
-        testHelper.mineTransaction();
-
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
         testHelper.forwardTime((24 * 3600) + 100);
 
@@ -110,7 +111,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         let pollCloseTime = await eternalStorage.getUIntValue.call(solSha3('Poll', _POLL_ID_1_, 'closeTime'));
         pollCloseTime = pollCloseTime.toNumber();
 
-        await colony.revealVote(_POLL_ID_1_, 1, { from: _OTHER_ACCOUNT_ });
+        await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
 
         const prevPollIdNextPollId = await eternalStorage.getUIntValue(solSha3('Voting', _OTHER_ACCOUNT_, pollCloseTime, 'secrets', 0, 'nextPollId'));
         assert.equal(0, prevPollIdNextPollId);
