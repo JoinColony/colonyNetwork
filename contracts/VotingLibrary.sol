@@ -116,13 +116,21 @@ library VotingLibrary {
     address _storageContract,
     uint256 pollId,
     uint256 idx,
+    bytes32 salt,
     uint256 voteWeight)
     returns (bool){
       uint256 pollCloseTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "closeTime"));
       // The poll should be locked before we can reveal our vote
       if(pollCloseTime > now) { outputEvent(1); return false; }
 
-      //TODO: Do we do the validation of the secret, or does the contract using us do that?
+      //Compare the secret they supplied with what they're claiming
+      //Suggestion: salt should be sha3 of the result of eth_sign being called, supplied with something like {"colonyId":colonyId,"pollId":pollId}
+      // In truth, it can be anything the user wants, so long as they remember it.
+      var claimedRevealCorrespondingSecret = generateVoteSecret(salt, idx);
+      var storedSecret = EternalStorage(_storageContract).getBytes32Value(sha3("Voting", msg.sender, pollCloseTime, "secrets", pollId, "secret"));
+      if (claimedRevealCorrespondingSecret != storedSecret ){ return false; }
+
+      //Then they're revealing a vote that matched the secret they submitted.
       removeVoteSecret(_storageContract, msg.sender, pollCloseTime, pollId);
       outputEvent(2);
       // Only count this vote if the poll isn't resolved and still open
@@ -231,8 +239,8 @@ library VotingLibrary {
       return true;
   }
 
-  function generateVoteSecret(bytes){
-
+  function generateVoteSecret(bytes32 salt, uint256 optionId) returns (bytes32){
+    return sha3(salt, optionId);
   }
 
   /// @notice Checks if an address is 'locked' due to any present unresolved votes

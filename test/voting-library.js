@@ -63,10 +63,14 @@ contract('VotingLibrary', function (accounts) {
   });
 
   beforeEach(function (done) {
-    _VOTE_SECRET_1_ = solSha3(testHelper.getRandomString(5));
-    _VOTE_SECRET_2_ = solSha3(testHelper.getRandomString(5));
-    _VOTE_SECRET_3_ = solSha3(testHelper.getRandomString(5));
-    _VOTE_SECRET_4_ = solSha3(testHelper.getRandomString(5));
+    _VOTE_SALT_1_ = solSha3("SALT1");
+    _VOTE_SALT_2_ = solSha3("SALT2");
+    _VOTE_SALT_3_ = solSha3("SALT3");
+    _VOTE_SALT_4_ = solSha3("SALT4");
+    _VOTE_SECRET_1_ = solSha3(_VOTE_SALT_1_,1);
+    _VOTE_SECRET_2_ = solSha3(_VOTE_SALT_2_,2);
+    _VOTE_SECRET_3_ = solSha3(_VOTE_SALT_3_,3);
+    _VOTE_SECRET_4_ = solSha3(_VOTE_SALT_4_,4);
 
     _COLONY_KEY_ = testHelper.getRandomString(7);
     eternalStorageRoot.owner.call()
