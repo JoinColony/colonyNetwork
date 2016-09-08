@@ -320,7 +320,6 @@ contract Colony is Modifiable {
 
   function submitVote(uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId)
   returns (bool){
-    //todo: check msg.sender balance is >0
     return eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
   }
 
