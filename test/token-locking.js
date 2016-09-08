@@ -42,6 +42,15 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
     await colony.openPoll(pollCount.toNumber(), duration);
   };
 
+  const earnTokens = async function(account, amountToEarn) {
+    // Earn some tokens
+    const amount = amountToEarn / 0.95;
+    await colony.generateTokensWei(amount);
+    await colony.makeTask('name2', 'summary2');
+    await colony.contributeTokensWeiFromPool(0, amount);
+    await colony.completeAndPayTask(0, account);
+  };
+
   before(async function (done) {
     rootColony = RootColony.deployed();
     eternalStorageRoot = EternalStorage.deployed();
@@ -153,7 +162,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         testHelper.mineTransaction();
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
 
-        const result = await colony.revealVote.call(_POLL_ID_1_, 1, { from: _OTHER_ACCOUNT_ });
+        const result = await colony.revealVote.call(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
         assert.isFalse(result);
         done();
       } catch (err) {
@@ -168,7 +177,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
         testHelper.forwardTime((24 * 3600 * 2) + 100);
         await colony.resolvePoll(1);
-        await colony.revealVote(1, 1, { from: _OTHER_ACCOUNT_ });
+        await colony.revealVote(1, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
 
         const poll1Option1Count = await eternalStorage.getUIntValue(solSha3('Poll', _POLL_ID_1_, 'option', 1, 'count'));
         assert.equal(0, poll1Option1Count);
@@ -195,13 +204,10 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
 
         // Earn some tokens!
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
 
         testHelper.forwardTime((24 * 3600 * 2) + 100);
-        await colony.revealVote(1, 1, { from: _OTHER_ACCOUNT_ });
+        await colony.revealVote(1, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
 
         const poll1Option1Count = await eternalStorage.getUIntValue(solSha3('Poll', _POLL_ID_1_, 'option', 1, 'count'));
         console.log(solSha3('Poll', _POLL_ID_1_, 'option', 1, 'count'));
@@ -223,10 +229,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
 
         // Earn some tokens!
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
 
         // Spend some tokens
         await colony.transfer(_MAIN_ACCOUNT_, 50, { from: _OTHER_ACCOUNT_ });
@@ -251,10 +254,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
 
         // Earn some tokens!
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
 
         testHelper.forwardTime(3600 + 10);
         // Transfer should fail as the account is locked
@@ -287,14 +287,11 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
 
         // Earn some tokens!
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
 
         testHelper.forwardTime((3 * 3600) + 10);
 
-        await colony.revealVote(1, 1, { from: _OTHER_ACCOUNT_ });
+        await colony.revealVote(1, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
 
         const result = await colony.transfer.call(_MAIN_ACCOUNT_, 50, { from: _OTHER_ACCOUNT_ });
         assert.isFalse(result);
@@ -327,7 +324,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
 
         testHelper.forwardTime(3600 + 10);
 
-        await colony.revealVote(1, 1, { from: _OTHER_ACCOUNT_ });
+        await colony.revealVote(1, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
 
         // Transfer should succeed as the account is unlocked when vote is revealed
         await colony.transfer(_MAIN_ACCOUNT_, 50, { from: _OTHER_ACCOUNT_ });
@@ -343,7 +340,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
     });
   });
 
-  describe.skip('after having voted in a poll, when receiving tokens', function () {
+  describe('after having voted in a poll, when receiving tokens', function () {
     it('while the poll is still open, should succeed', async function(done) {
       try {
         done();
@@ -383,10 +380,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         await createAndOpenSimplePoll('poll 1', 24);
         await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
         // Earn some tokens
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
 
         const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
         assert.equal(95, balance.toNumber());
@@ -405,10 +399,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         // Poll closes
         testHelper.forwardTime((24 * 3600) + 10);
         // Earn some tokens
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
         // Token balance is 0
         const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
         assert.equal(0, balance.toNumber());
@@ -441,10 +432,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         // Reveal one vote
         await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
         // Earn some tokens
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
         // Token balance is 0
         const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
         assert.equal(0, balance.toNumber());
@@ -467,10 +455,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         // Reveal one vote
         await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
         // Earn some tokens
-        await colony.generateTokensWei(100);
-        await colony.makeTask('name2', 'summary2');
-        await colony.contributeTokensWeiFromPool(0, 100);
-        await colony.completeAndPayTask(0, _OTHER_ACCOUNT_);
+        await earnTokens(_OTHER_ACCOUNT_, 95);
         // Token balance is 0
         const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
         assert.equal(95, balance.toNumber());
