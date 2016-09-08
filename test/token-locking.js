@@ -19,7 +19,6 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
   let _VOTE_SECRET_1_;
   let _VOTE_SALT_1_;
 
-
   const queueCreateAndOpenSimplePoll = async function(description, pollCount, duration) {
     let tx;
     const gasEstimate = await colony.createPoll.estimateGas(description);
@@ -340,9 +339,18 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
     });
   });
 
-  describe('after having voted in a poll, when receiving tokens', function () {
+  describe.only('after having voted in a poll, when receiving tokens', function () {
     it('while the poll is still open, should succeed', async function(done) {
       try {
+        await createAndOpenSimplePoll('poll 1', 24);
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        // Earn some tokens
+        await earnTokens(_MAIN_ACCOUNT_, 95);
+        // Transfer tokens
+        await colony.transfer(_OTHER_ACCOUNT_, 95);
+
+        const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
+        assert.equal(95, balance.toNumber());
         done();
       } catch (err) {
         return done(err);
@@ -351,6 +359,21 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
 
     it('after the poll closes before the vote is revealed, tokens should be in my held balance', async function(done) {
       try {
+        await createAndOpenSimplePoll('poll 1', 24);
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+
+        // Poll closes
+        testHelper.forwardTime((24 * 3600) + 10);
+        // Earn some tokens
+        await earnTokens(_MAIN_ACCOUNT_, 95);
+        // Transfer tokens to a locked recipient
+        await colony.transfer(_OTHER_ACCOUNT_, 95);
+        // Token balance is 0
+        const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
+        assert.equal(0, balance.toNumber());
+        // Held balance
+        const heldTokens = await eternalStorage.getUIntValue.call(solSha3('onhold:', _OTHER_ACCOUNT_));
+        assert.equal(95, heldTokens.toNumber());
         done();
       } catch (err) {
         return done(err);
@@ -359,6 +382,33 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
 
     it('after the poll closes and my vote is revealed, but another unrevealed vote remains, should keep my tokens on hold', async function(done) {
       try {
+        // Start two polls at the same pollCloseTime
+        await testHelper.stopMining();
+        let pollCount = await eternalStorage.getUIntValue.call(solSha3('PollCount'));
+        pollCount = pollCount.toNumber();
+        await queueCreateAndOpenSimplePoll('poll 1', pollCount + 1, 24);
+        await queueCreateAndOpenSimplePoll('poll 2', pollCount + 2, 24);
+        testHelper.startMining();
+        // Start another poll at a different poll close time
+        testHelper.forwardTime(200);
+        await createAndOpenSimplePoll('poll 3', 24);
+        // Vote in both polls
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_1_, 0, _POLL_ID_1_, { from: _OTHER_ACCOUNT_ });
+        // All 3 polls close
+        testHelper.forwardTime(25 * 3600);
+        // Reveal one vote
+        await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
+        // Earn some tokens
+        await earnTokens(_MAIN_ACCOUNT_, 95);
+        // Transfer tokens to a locked recipient
+        await colony.transfer(_OTHER_ACCOUNT_, 95);
+        // Token balance is 0
+        const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
+        assert.equal(0, balance.toNumber());
+        // Held balance
+        const heldTokens = await eternalStorage.getUIntValue.call(solSha3('onhold:', _OTHER_ACCOUNT_));
+        assert.equal(95, heldTokens.toNumber());
         done();
       } catch (err) {
         return done(err);
@@ -367,6 +417,23 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
 
     it('after the poll closes and after my vote is revealed, should be in my normal balance', async function(done) {
       try {
+        await createAndOpenSimplePoll('poll 3', 24);
+        // Vote in both polls
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        // All 3 polls close
+        testHelper.forwardTime(25 * 3600);
+        // Reveal one vote
+        await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
+        // Earn some tokens
+        await earnTokens(_MAIN_ACCOUNT_, 95);
+        // Transfer tokens
+        await colony.transfer(_OTHER_ACCOUNT_, 95);
+        // Token balance is 0
+        const balance = await colony.balanceOf.call(_OTHER_ACCOUNT_);
+        assert.equal(95, balance.toNumber());
+        // Held balance
+        const heldTokens = await eternalStorage.getUIntValue.call(solSha3('onhold:', _OTHER_ACCOUNT_));
+        assert.equal(0, heldTokens.toNumber());
         done();
       } catch (err) {
         return done(err);
