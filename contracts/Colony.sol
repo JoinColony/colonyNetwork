@@ -215,16 +215,18 @@ contract Colony is Modifiable {
   }
 
   function transfer(address _to, uint256 _value)
-  returns (bool success)
+  returns (bool)
   {
-    if(eternalStorage.isAddressLocked(msg.sender)) { return false; }
+    if(eternalStorage.isAddressLocked(msg.sender)) {
+      return false;
+    }
 
     var isRecipientAddressLocked = eternalStorage.isAddressLocked(_to);
     return eternalStorage.transfer(_to, _value, isRecipientAddressLocked);
   }
 
    function transferFrom(address _from, address _to, uint256 _value)
-   returns (bool success)
+   returns (bool)
    {
      if(eternalStorage.isAddressLocked(_from)) { return false; }
 
@@ -245,7 +247,7 @@ contract Colony is Modifiable {
    }
 
    function approve(address _spender, uint256 _value)
-   returns (bool success)
+   returns (bool)
    {
      return eternalStorage.approve(_spender, _value);
    }
