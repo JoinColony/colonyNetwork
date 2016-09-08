@@ -1,6 +1,6 @@
 // These globals are added by Truffle:
 /* globals TaskLibrary, SecurityLibrary, ColonyLibrary,
- ColonyPaymentProvider, TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
+ ColonyPaymentProvider, TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage, VotingLibrary */
 
 module.exports = function (deployer) {
   // Deploy libraries first
@@ -9,6 +9,7 @@ module.exports = function (deployer) {
   deployer.deploy([SecurityLibrary]);
   deployer.deploy([ColonyLibrary]);
   deployer.deploy([TokenLibrary]);
+  deployer.deploy([VotingLibrary]);
   deployer.autolink();
   // Deploy colony network contracts
   deployer.deploy([RootColony]);
