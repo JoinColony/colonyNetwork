@@ -188,13 +188,18 @@ library TokenLibrary {
 
   function onHoldBalanceSet(address _storageContract, address _account, uint256 _balance)
   {
-    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), _balance);
+    var onHoldBalance = EternalStorage(_storageContract).getUIntValue(sha3("onhold:", _account));
+    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), onHoldBalance + _balance);
   }
 
   function releaseTokens(address _storageContract, address _account){
     var onHoldBalance = onHoldBalanceOf(_storageContract, _account);
-    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), 0);
-    EternalStorage(_storageContract).setUIntValue(sha3("balance:", _account), onHoldBalance);
+    if (onHoldBalance > 0) {
+      EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), 0);
+
+      var balance = balanceOf(_storageContract, _account);
+      EternalStorage(_storageContract).setUIntValue(sha3("balance:", _account), balance + onHoldBalance);
+    }
   }
 
   /// @notice this function is used to increase the amount of tokens available limited by `totalSupply`

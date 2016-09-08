@@ -408,7 +408,7 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
     });
   });
 
-  describe.only('after having voted in a poll, when sending tokens', function () {
+  describe('after having voted in a poll, when sending tokens', function () {
     it('while the poll is still open, should succeed', async function(done) {
       try {
         await createAndOpenSimplePoll('poll 1', 1);
@@ -454,24 +454,25 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
 
     it('after the poll closes and the vote is revealed but another unrevealed vote remains, should fail', async function(done) {
       try {
-        await createAndOpenSimplePoll('My poll 1', 1);
-        await createAndOpenSimplePoll('My poll 2', 3);
+        await testHelper.stopMining();
+        await queueCreateAndOpenSimplePoll('poll 1', _POLL_ID_1_, 1);
+        await queueCreateAndOpenSimplePoll('poll 2', _POLL_ID_2_, 1);
+        await testHelper.startMining();
         // Vote in 2 polls
-        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
         await colony.submitVote(_POLL_ID_2_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
+        await colony.submitVote(_POLL_ID_1_, _VOTE_SECRET_1_, 0, 0, { from: _OTHER_ACCOUNT_ });
         // Earn some tokens!
         await earnTokens(_OTHER_ACCOUNT_, 95);
         // Close both polls
-        testHelper.forwardTime((3 * 3600) + 10);
-
-        await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
+        testHelper.forwardTime(3600 + 100);
+        // Reveal one of the votes
+        await colony.revealVote(_POLL_ID_2_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
         // Transfer should fail as the account is still locked since one more unrevealed vote remains
         await colony.transfer(_MAIN_ACCOUNT_, 50, { from: _OTHER_ACCOUNT_ });
-
         const balanceSender = await colony.balanceOf.call(_OTHER_ACCOUNT_);
         assert.equal(95, balanceSender.toNumber());
         const balanceRecipient = await colony.balanceOf.call(_MAIN_ACCOUNT_);
-        assert.equal(10, balanceRecipient);
+        assert.equal(0, balanceRecipient);
         done();
       } catch (err) {
         return done(err);
@@ -486,9 +487,9 @@ contract('TokenLibrary, VotingLibrary and Colony', function (accounts) {
         // Earn some tokens!
         await earnTokens(_OTHER_ACCOUNT_, 95);
         // Close poll
-        testHelper.forwardTime(3600 + 10);
+        testHelper.forwardTime(3600 + 100);
         // Reveal vote
-        await colony.revealVote(1, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
+        await colony.revealVote(_POLL_ID_1_, 1, _VOTE_SALT_1_, { from: _OTHER_ACCOUNT_ });
         // Transfer should succeed as the account is unlocked when vote is revealed
         await colony.transfer(_MAIN_ACCOUNT_, 50, { from: _OTHER_ACCOUNT_ });
 

@@ -2,9 +2,6 @@ import "EternalStorage.sol";
 
 
 library VotingLibrary {
-  event outputEvent(uint key);
-  event bytes32Event(bytes32 sha3Key);
-  event uintEvent(uint256 u);
 
   // Poll status flows one way from '0' (created but not opened) -> '1' (open for voting) -> '2' (resolved)
   modifier ensurePollStatus(address _storageContract, uint256 pollId, uint256 pollStatus){
@@ -121,7 +118,7 @@ library VotingLibrary {
     returns (bool){
       uint256 pollCloseTime = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "closeTime"));
       // The poll should be locked before we can reveal our vote
-      if(pollCloseTime > now) { outputEvent(1); return false; }
+      if(pollCloseTime > now) { return false; }
 
       //Compare the secret they supplied with what they're claiming
       //Suggestion: salt should be sha3 of the result of eth_sign being called, supplied with something like {"colonyId":colonyId,"pollId":pollId}
@@ -132,11 +129,9 @@ library VotingLibrary {
 
       //Then they're revealing a vote that matched the secret they submitted.
       removeVoteSecret(_storageContract, msg.sender, pollCloseTime, pollId);
-      outputEvent(2);
       // Only count this vote if the poll isn't resolved and still open
       var currentStatus = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "status"));
       if (currentStatus == 1){
-        outputEvent(3);
         var voteCount = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "option", idx, "count"));
         // Check if the vote count overflows
         if (voteCount + voteWeight < voteCount) { return false; }
@@ -145,7 +140,6 @@ library VotingLibrary {
           EternalStorage(_storageContract).setUIntValue(sha3("Poll", pollId, "option", idx, "count"), voteCount + voteWeight);
         }
       }
-      outputEvent(4);
       return true;
   }
 
@@ -183,7 +177,7 @@ library VotingLibrary {
       if(pollCloseTimeDoesNotExist) {
         // Inserting a new pollCloseTime, so we need to check list would still be ordered
         var claimedNextTimestamp = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, prevTimestamp, "nextTimestamp"));
-        if ( claimedNextTimestamp != 0 && claimedNextTimestamp < pollCloseTime ) { outputEvent(5); return false; }
+        if ( claimedNextTimestamp != 0 && claimedNextTimestamp < pollCloseTime ) { return false; }
 
         //If claimedNextTimestamp is 0, we're inserting at the end of the existing list
         // Otherwise, throw if the list wouldn't be ordered after insertion.
@@ -251,19 +245,16 @@ library VotingLibrary {
     var zeroPollCloseTimeNext = EternalStorage(_storageContract).getUIntValue(sha3("Voting", userAddress, uint256(0), "nextTimestamp"));
     // The list is empty, no unrevealed votes for this address
     if (zeroPollCloseTimeNext == 0){
-      outputEvent(21);
       return false;
     }
 
     // The poll is still open for voting and tokens transfer
     if (now < zeroPollCloseTimeNext){
-      outputEvent(22);
       return false;
     }
     else {
       // The poll is closed for voting and is in the reveal period, during which all votes' tokens are locked until reveal
       // Note: even after the poll is resolved, tokens remain locked until reveal
-      outputEvent(23);
       return true;
     }
   }

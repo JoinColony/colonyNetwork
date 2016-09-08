@@ -325,19 +325,17 @@ contract Colony is Modifiable {
     return eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
   }
 
-  event uintEvent(uint x);
   function revealVote(uint256 pollId, uint256 idx,  bytes32 salt)
   returns (bool)
   {
     uint256 voteWeight = eternalStorage.balanceOf(msg.sender);
-    if (eternalStorage.revealVote(pollId, idx, salt, voteWeight) && !eternalStorage.isAddressLocked(msg.sender)){
+    bool revealVote = eternalStorage.revealVote(pollId, idx, salt, voteWeight);
+    if (revealVote && !eternalStorage.isAddressLocked(msg.sender)){
       // Release 'on hold' tokens, if there are no more locks
       eternalStorage.releaseTokens(msg.sender);
-      return true;
     }
-    else{
-      return false;
-    }
+
+    return revealVote;
   }
 
   function ()
