@@ -13,14 +13,18 @@ contract('RootColony', function () {
     rootColony = RootColony.deployed();
     rootColonyResolver = RootColonyResolver.deployed();
     colonyFactory = ColonyFactory.deployed();
+    done();
+  });
 
+  // Instantiate and register the new RootColony contract
+  beforeEach(function (done) {
     EternalStorage.new()
     .then(function (contract) {
       eternalStorageRoot = contract;
       return;
     })
     .then(function () {
-      return eternalStorageRoot.changeOwner(colonyFactory.address);
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function () {
       return rootColonyResolver.registerRootColony(rootColony.address);
@@ -29,29 +33,29 @@ contract('RootColony', function () {
       return rootColony.registerColonyFactory(colonyFactory.address);
     })
     .then(function () {
-      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+      return eternalStorageRoot.changeOwner(rootColony.address);
     })
     .then(function () {
-      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+      return rootColony.registerEternalStorage(eternalStorageRoot.address);
     })
     .then(function () {
       return rootColony.createColony(COLONY_KEY);
     })
     .then(function () {
-      done();
+      return FakeNewRootColony.new();
     })
-    .catch(done);
-  });
-
-  // Instantiate and register the new RootColony contract
-  beforeEach(function (done) {
-    FakeNewRootColony.new({ gas: 4e6, gasPrice: 20e9 })
     .then(function (newRootContract) {
       rootColonyNew = newRootContract;
       return rootColonyResolver.registerRootColony(rootColonyNew.address);
     })
     .then(function () {
       return rootColonyNew.registerColonyFactory(colonyFactory.address);
+    })
+    .then(function () {
+      return rootColony.changeEternalStorageOwner(rootColonyNew.address);
+    })
+    .then(function () {
+      return rootColonyNew.registerEternalStorage(eternalStorageRoot.address);
     })
     .then(function () {
       done();

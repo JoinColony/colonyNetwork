@@ -9,7 +9,7 @@ module.exports = function (deployer) {
 
   deployer
   .then(function () {
-    return eternalStorageRootDeployed.changeOwner(colonyFactoryDeployed.address);
+    return eternalStorageRootDeployed.changeOwner(rootColonyDeployed.address);
   })
   .then(function () {
     return rootColonyResolverDeployed.registerRootColony(rootColonyDeployed.address);
@@ -21,7 +21,7 @@ module.exports = function (deployer) {
     return rootColonyDeployed.registerColonyFactory(colonyFactoryDeployed.address);
   })
   .then(function () {
-    return colonyFactoryDeployed.registerEternalStorage(eternalStorageRootDeployed.address);
+    return rootColonyDeployed.registerEternalStorage(eternalStorageRootDeployed.address);
   })
   .then(function () {
     console.log('### Network contracts registered successfully ###');

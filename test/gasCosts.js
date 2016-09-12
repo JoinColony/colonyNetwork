@@ -7,7 +7,6 @@ contract('all', function (accounts) {
   const OTHER_ACCOUNT = accounts[1];
 
   let colony;
-  let colonyFactory;
   let rootColony;
   let eternalStorage;
 
@@ -20,7 +19,6 @@ contract('all', function (accounts) {
   let completeAndPayTaskCost;
 
   before(function (done) {
-    colonyFactory = ColonyFactory.deployed();
     rootColony = RootColony.deployed();
 
     const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
@@ -41,10 +39,10 @@ contract('all', function (accounts) {
     EternalStorage.new()
     .then(function (contract) {
       eternalStorage = contract;
-      return eternalStorage.changeOwner(colonyFactory.address);
+      return eternalStorage.changeOwner(rootColony.address);
     })
     .then(function () {
-      return colonyFactory.registerEternalStorage(eternalStorage.address);
+      return rootColony.registerEternalStorage(eternalStorage.address);
     })
     .then(function () {
       prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);

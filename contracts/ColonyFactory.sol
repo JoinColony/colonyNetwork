@@ -7,7 +7,6 @@ import "ColonyLibrary.sol";
 
 
 contract ColonyFactory is IColonyFactory {
-  using ColonyLibrary for address;
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) { throw; }
@@ -22,55 +21,24 @@ contract ColonyFactory is IColonyFactory {
     rootColonyResolverAddress = rootColonyResolverAddress_;
   }
 
-  function registerEternalStorage(address eternalStorage_)
-  onlyOwner
-  {
-    eternalStorageRoot = eternalStorage_;
-  }
-
-  function changeEternalStorageOwner(address _newColonyFactory)
-  onlyRootColony
-  {
-    Ownable(eternalStorageRoot).changeOwner(_newColonyFactory);
-  }
-
   function createColony(bytes32 key_, address eternalStorage)
   onlyRootColony
+  returns(address)
   {
-    var colony = new Colony(rootColonyResolverAddress, eternalStorage);
-
-    Ownable(eternalStorage).changeOwner(colony);
-    eternalStorageRoot.addColony(key_, colony);
-  }
-
-  function getColony(bytes32 key_) constant returns(address)
-  {
-    return eternalStorageRoot.getColony(key_);
-  }
-
-  function getColonyAt(uint256 idx_) constant returns(address)
-  {
-    return eternalStorageRoot.getColonyAt(idx_);
-  }
-
-  function getColonyIndex(bytes32 key_) constant returns(uint256)
-  {
-    return eternalStorageRoot.getColonyIndex(key_);
+    return new Colony(rootColonyResolverAddress, eternalStorage);
   }
 
   function upgradeColony(bytes32 key_, address colonyAddress)
   onlyRootColony
+  returns(address)
   {
-    if(!Colony(colonyAddress).isUserAdmin(tx.origin)) { throw; }
+    if(!Colony(colonyAddress).isUserAdmin(tx.origin)) {
+      throw;
+    }
 
     Colony colonyNew = new Colony(rootColonyResolverAddress, Colony(colonyAddress).eternalStorage());
     IUpgradable(colonyAddress).upgrade(colonyNew);
-    eternalStorageRoot.upgradeColony(key_, colonyNew);
-  }
-
-  function countColonies() constant returns (uint256)
-  {
-    return eternalStorageRoot.coloniesCount();
+    return colonyNew;
   }
 
   function () {

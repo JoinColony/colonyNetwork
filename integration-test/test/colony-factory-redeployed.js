@@ -29,10 +29,10 @@ contract('ColonyFactory', function (accounts) {
     })
     .then(function (eternalStorageRoot_) {
       eternalStorageRoot = eternalStorageRoot_;
-      return eternalStorageRoot.changeOwner(colonyFactory.address);
+      return eternalStorageRoot.changeOwner(rootColony.address);
     })
     .then(function () {
-      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+      return rootColony.registerEternalStorage(eternalStorageRoot.address);
     })
     .then(function () {
       return rootColony.createColony(COLONY_KEY);
@@ -42,7 +42,7 @@ contract('ColonyFactory', function (accounts) {
     })
     .then(function (count) {
       assert.equal(1, count.toNumber(), 'There should be 1 colony in the network.');
-      return FakeNewColonyFactory.new({ gas: 4e6, gasPrice: 20e9 });
+      return FakeNewColonyFactory.new();
     })
     .then(function (contract) {
       colonyFactoryNew = contract;
@@ -53,11 +53,10 @@ contract('ColonyFactory', function (accounts) {
 
   beforeEach(function (done) {
     testHelper.waitAll([
-      colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address),
-      colonyFactoryNew.registerEternalStorage(eternalStorageRoot.address),
-      rootColony.moveColonyFactoryStorage(colonyFactoryNew.address),
+      rootColony.registerColonyFactory(colonyFactoryNew.address),
+      rootColony.registerEternalStorage(eternalStorageRoot.address),
     ], function () {
-      rootColony.registerColonyFactory(colonyFactoryNew.address)
+      colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address)
       .then(function () {
         done();
       }).catch(done);
@@ -69,24 +68,9 @@ contract('ColonyFactory', function (accounts) {
       rootColony.colonyFactory.call()
       .then(function (colonyFactoryAddress) {
         assert.equal(colonyFactoryAddress, colonyFactoryNew.address, 'ColonyFactoryAddress on RootColony is not updated.');
-      })
-      .then(function () {
-        return colonyFactoryNew.eternalStorageRoot.call();
-      })
-      .then(function (_eternalStorageAddress) {
-        assert.equal(_eternalStorageAddress, eternalStorageRoot.address, 'ColonyFactory.eternalStorage address is incorrect');
         return rootColony.createColony(NEW_COLONY_KEY, { from: MAIN_ACCOUNT });
       })
       .then(function () {
-        return colonyFactoryNew.eternalStorageRoot.call();
-      })
-      .then(function (_eternalStorageAddress) {
-        const eternalStorage = Ownable.at(_eternalStorageAddress);
-        return eternalStorage.owner.call();
-      })
-      .then(function (owner) {
-        console.log('Old ColonyFactory address : ', colonyFactory.address);
-        assert.equal(owner, colonyFactoryNew.address, 'Was not able to change the owner of the EternalStorage in ColonyFactory');
         return rootColony.getColony.call(NEW_COLONY_KEY);
       })
       .then(function (colonyAddress) {

@@ -5,9 +5,8 @@ import "FakeUpdatedColony.sol";
 import "Ownable.sol";
 import "ColonyLibrary.sol";
 
-contract FakeNewColonyFactory is IColonyFactory {
 
-  using ColonyLibrary for address;
+contract FakeNewColonyFactory is IColonyFactory {
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) { throw; }
@@ -22,60 +21,33 @@ contract FakeNewColonyFactory is IColonyFactory {
     rootColonyResolverAddress = rootColonyResolverAddress_;
   }
 
-  function registerEternalStorage(address eternalStorage_)
-  onlyOwner
-  {
-    eternalStorageRoot = eternalStorage_;
-  }
-
-  function changeEternalStorageOwner(address _newColonyFactory)
-  onlyRootColony
-  {
-    Ownable(eternalStorageRoot).changeOwner(_newColonyFactory);
-  }
-
   function createColony(bytes32 key_, address eternalStorage)
   onlyRootColony
+  returns(address)
   {
-    var colony = new FakeUpdatedColony(rootColonyResolverAddress, eternalStorage);
-
-    Ownable(eternalStorage).changeOwner(colony);
-    eternalStorageRoot.addColony(key_, colony);
-  }
-
-  function getColony(bytes32 key_) constant returns(address)
-  {
-    return eternalStorageRoot.getColony(key_);
-  }
-
-  function getColonyAt(uint256 idx_) constant returns(address)
-  {
-    return eternalStorageRoot.getColonyAt(idx_);
-  }
-
-  function getColonyIndex(bytes32 key_) constant returns(uint256)
-  {
-    return eternalStorageRoot.getColonyIndex(key_);
+    return new FakeUpdatedColony(rootColonyResolverAddress, eternalStorage);
   }
 
   function upgradeColony(bytes32 key_, address colonyAddress)
   onlyRootColony
+  returns(address)
   {
-    eternalStorageRoot.getColony(key_);
-  }
+    if(!FakeUpdatedColony(colonyAddress).isUserAdmin(tx.origin)) {
+      throw;
+    }
 
-  function countColonies() constant returns (uint256)
-  {
-    return eternalStorageRoot.coloniesCount();
+    var colonyNew = new FakeUpdatedColony(rootColonyResolverAddress, FakeUpdatedColony(colonyAddress).eternalStorage());
+    IUpgradable(colonyAddress).upgrade(colonyNew);
+    return colonyNew;
   }
 
   function () {
-    // This function gets executed if a
-    // transaction with invalid data is sent to
-    // the contract or just ether without data.
-    // We revert the send so that no-one
-    // accidentally loses money when using the
-    // contract.
-    throw;
+   // This function gets executed if a
+   // transaction with invalid data is sent to
+   // the contract or just ether without data.
+   // We revert the send so that no-one
+   // accidentally loses money when using the
+   // contract.
+   throw;
   }
 }

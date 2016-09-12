@@ -9,12 +9,10 @@ contract('RootColony', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   let colony;
-  let colonyFactory;
   let rootColony;
   let eternalStorageRoot;
 
   before(function (done) {
-    colonyFactory = ColonyFactory.deployed();
     rootColony = RootColony.deployed();
     done();
   });
@@ -23,10 +21,10 @@ contract('RootColony', function (accounts) {
     EternalStorage.new()
     .then(function (contract) {
       eternalStorageRoot = contract;
-      return eternalStorageRoot.changeOwner(colonyFactory.address);
+      return eternalStorageRoot.changeOwner(rootColony.address);
     })
     .then(function () {
-      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+      return rootColony.registerEternalStorage(eternalStorageRoot.address);
     })
     .then(function () {
       done();
@@ -62,7 +60,7 @@ contract('RootColony', function (accounts) {
         return eternalStorageRoot.owner.call();
       })
       .then(function (owner) {
-        assert.equal(colonyFactory.address, owner, 'EternalStorage for Factory does not have the ColonyFactory as its owner');
+        assert.equal(rootColony.address, owner, 'EternalStorage for Factory does not have the ColonyFactory as its owner');
       })
       .then(done)
       .catch(done);
@@ -224,24 +222,6 @@ contract('RootColony', function (accounts) {
       })
       .then(function (upgradedColonyAddress) {
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
-      })
-      .then(done)
-      .catch(done);
-    });
-
-    it('should be able to move EternalStorage to another ColonyFactory', function (done) {
-      // Just picking any known address for this test.
-      // In reality the address who owns the Storage will be that of a ColonyFactory
-      rootColony.moveColonyFactoryStorage(OTHER_ACCOUNT)
-      .then(function () {
-        return colonyFactory.eternalStorageRoot.call();
-      })
-      .then(function (storageAddress) {
-        const eternalStorage = Ownable.at(storageAddress);
-        return eternalStorage.owner.call();
-      })
-      .then(function (owner) {
-        assert.equal(owner, OTHER_ACCOUNT, 'Was not able to change the owner of the EternalStorage in ColonyFactory');
       })
       .then(done)
       .catch(done);

@@ -30,10 +30,10 @@ contract('Colony', function (accounts) {
     EternalStorage.new()
     .then(function (contract) {
       eternalStorageRoot = contract;
-      return eternalStorageRoot.changeOwner(colonyFactory.address);
+      return eternalStorageRoot.changeOwner(rootColony.address);
     })
     .then(function () {
-      return colonyFactory.registerEternalStorage(eternalStorageRoot.address);
+      return rootColony.registerEternalStorage(eternalStorageRoot.address);
     })
     .then(function () {
       done();
