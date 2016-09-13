@@ -5,7 +5,7 @@ import "Ownable.sol";
 import "EternalStorage.sol";
 import "SecurityLibrary.sol";
 import "ColonyLibrary.sol";
-
+import "IColony.sol";
 
 contract RootColony is Destructible, Modifiable {
 
@@ -94,7 +94,13 @@ contract RootColony is Destructible, Modifiable {
   throwIfIsEmptyBytes32(_key)
   {
     address colonyAddress = this.getColony(_key);
-    var upgradedColonyAddress = colonyFactory.upgradeColony(_key, colonyAddress);
+    if(!IColony(colonyAddress).isUserAdmin(msg.sender)) {
+      throw;
+    }
+
+    var upgradedColonyAddress = colonyFactory.createColony(_key, IColony(colonyAddress).eternalStorage());
+
+    IColony(colonyAddress).upgrade(upgradedColonyAddress);
     return eternalStorageRoot.upgradeColony(_key, upgradedColonyAddress);
   }
 

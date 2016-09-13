@@ -6,6 +6,9 @@ import testHelper from '../../helpers/test-helper';
 contract('Colony', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
   const MAIN_ACCOUNT = accounts[0];
+  const GAS_PRICE = 20e9;
+  // this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
+  const GAS_TO_SPEND = 4700000;
   let colony;
   let colonyFactory;
   let rootColony;
@@ -42,6 +45,25 @@ contract('Colony', function (accounts) {
   });
 
   describe('when upgrading a colony', function () {
+    it('should not allow admins to call upgrade on their colony directly', function (done) {
+      let prevBalance;
+      rootColony.createColony(COLONY_KEY)
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        colony = Colony.at(_address);
+        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+        return colony.upgrade(accounts[1], { gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function () {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should carry colony dependencies to the new colony', function (done) {
       let oldColonyAddress;
       let eternalStorage;

@@ -9,8 +9,8 @@ import "SecurityLibrary.sol";
 
 contract Colony is Modifiable, IUpgradable  {
 
-  modifier onlyAdminsOrigin {
-    if (!this.isUserAdmin(tx.origin)) { throw; }
+  modifier onlyRootColony(){
+    if(msg.sender != IRootColonyResolver(rootColonyResolver).rootColonyAddress()) { throw; }
     _
   }
 
@@ -258,7 +258,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @notice upgrade the colony migrating its data to another colony instance
   /// @param newColonyAddress_ the address of the new colony instance
   function upgrade(address newColonyAddress_)
-  onlyAdminsOrigin
+  onlyRootColony
   {
     var tokensBalance = eternalStorage.balanceOf(this);
     if(tokensBalance > 0 && !eternalStorage.transferFromColony(newColonyAddress_, tokensBalance)) {

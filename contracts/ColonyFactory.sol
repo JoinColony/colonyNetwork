@@ -28,19 +28,6 @@ contract ColonyFactory is IColonyFactory {
     return new Colony(rootColonyResolverAddress, eternalStorage);
   }
 
-  function upgradeColony(bytes32 key_, address colonyAddress)
-  onlyRootColony
-  returns(address)
-  {
-    if(!Colony(colonyAddress).isUserAdmin(tx.origin)) {
-      throw;
-    }
-
-    Colony colonyNew = new Colony(rootColonyResolverAddress, Colony(colonyAddress).eternalStorage());
-    IUpgradable(colonyAddress).upgrade(colonyNew);
-    return colonyNew;
-  }
-
   function () {
    // This function gets executed if a
    // transaction with invalid data is sent to
