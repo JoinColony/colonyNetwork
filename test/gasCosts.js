@@ -21,14 +21,29 @@ contract('all', function (accounts) {
   before(function (done) {
     rootColony = RootColony.deployed();
 
-    const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+    let prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+    let currentBalance;
+    let costInWei;
+    let costInGas;
+
     ColonyFactory.new({ gasPrice: GAS_PRICE })
     .then(function () {
-      const currentBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+      currentBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       // Cost of creating a colony
-      const costInWei = prevBalance.minus(currentBalance).toNumber();
-      const costInGas = costInWei / GAS_PRICE;
+      costInWei = prevBalance.minus(currentBalance).toNumber();
+      costInGas = costInWei / GAS_PRICE;
       console.log('ColonyFactory cost : ', costInGas);
+      prevBalance = currentBalance;
+    })
+    .then(function () {
+      return RootColony.new({ gasPrice: GAS_PRICE });
+    })
+    .then(function () {
+      currentBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+      costInWei = prevBalance.minus(currentBalance).toNumber();
+      costInGas = costInWei / GAS_PRICE;
+      console.log('RootColony cost : ', costInGas);
+
     })
     .then(done)
     .catch(done);
