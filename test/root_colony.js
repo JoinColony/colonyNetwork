@@ -242,5 +242,23 @@ contract('RootColony', function (accounts) {
       .then(done)
       .catch(done);
     });
+
+    it('should be able to move EternalStorage to another RootColony', function (done) {
+     // Just picking any known address for this test.
+     // In reality the address who owns the Storage will be that of a RootColony
+      rootColony.changeEternalStorageOwner(OTHER_ACCOUNT)
+      .then(function () {
+        return rootColony.eternalStorageRoot.call();
+      })
+      .then(function (storageAddress) {
+        const eternalStorage = Ownable.at(storageAddress);
+        return eternalStorage.owner.call();
+      })
+      .then(function (owner) {
+        assert.equal(owner, OTHER_ACCOUNT, 'Was not able to change the owner of the EternalStorage in RootColony');
+      })
+      .then(done)
+      .catch(done);
+    });
   });
 });

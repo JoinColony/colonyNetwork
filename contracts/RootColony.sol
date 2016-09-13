@@ -23,12 +23,12 @@ contract RootColony is Destructible, Modifiable {
     eternalStorageRoot = eternalStorage_;
   }
 
-  function changeEternalStorageOwner(address newOnerAddress_)
+  function changeEternalStorageOwner(address newOwnerAddress_)
   refundEtherSentByAccident
-  throwIfAddressIsInvalid(newOnerAddress_)
+  throwIfAddressIsInvalid(newOwnerAddress_)
   onlyOwner
   {
-    Ownable(eternalStorageRoot).changeOwner(newOnerAddress_);
+    Ownable(eternalStorageRoot).changeOwner(newOwnerAddress_);
   }
 
   /// @notice registers a colony factory using an address
