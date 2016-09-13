@@ -52,7 +52,7 @@ contract RootColony is Destructible, Modifiable {
     eternalStorage.addAdmin(msg.sender);
     // Note: we are assuming that the default values for 'TasksCount' and 'ReservedTokensWei' is returned as 0
     // Set the calling user as the first colony admin
-    var colonyAddress = colonyFactory.createColony(_key, eternalStorage);
+    var colonyAddress = colonyFactory.createColony(eternalStorage);
     Ownable(eternalStorage).changeOwner(colonyAddress);
     eternalStorageRoot.addColony(_key, colonyAddress);
   }
@@ -98,7 +98,7 @@ contract RootColony is Destructible, Modifiable {
       throw;
     }
 
-    var upgradedColonyAddress = colonyFactory.createColony(_key, IColony(colonyAddress).eternalStorage());
+    var upgradedColonyAddress = colonyFactory.createColony(IColony(colonyAddress).eternalStorage());
 
     IColony(colonyAddress).upgrade(upgradedColonyAddress);
     return eternalStorageRoot.upgradeColony(_key, upgradedColonyAddress);

@@ -21,7 +21,7 @@ contract ColonyFactory is IColonyFactory {
     rootColonyResolverAddress = rootColonyResolverAddress_;
   }
 
-  function createColony(bytes32 key_, address eternalStorage)
+  function createColony(address eternalStorage)
   onlyRootColony
   returns(address)
   {
