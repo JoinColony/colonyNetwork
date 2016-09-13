@@ -15,11 +15,11 @@ library VotingLibrary {
   // sha3("PollCount") => total number of polls
   // sha3("Poll", pollId, "description") => string/ipfsHash?
   // sha3("Poll", pollId, "OptionsCount") => uint256
-  // sha3("Poll", pollId, "option", idx, nextId) => string
+  // sha3("Poll", pollId, "option", idx) => string
   // sha3("Poll", pollId, "option", idx, "count") => uint256
   // sha3("Poll", pollId, "startTime") => pollStartTime;
   // sha3("Poll", pollId, "closeTime") => pollCloseTime;
-  // sha3("Poll", pollId, "status") => uint8 open=1/resolved=2
+  // sha3("Poll", pollId, "status") => uint256 open=1/resolved=2
 
   // Doubly linked list holding polls closeTime
   // sha3("Voting", userAddress, pollCloseTime, "prevTimestamp") => uint256 prevTimestam
