@@ -43,7 +43,6 @@ contract('all', function (accounts) {
       costInWei = prevBalance.minus(currentBalance).toNumber();
       costInGas = costInWei / GAS_PRICE;
       console.log('RootColony cost : ', costInGas);
-
     })
     .then(done)
     .catch(done);
