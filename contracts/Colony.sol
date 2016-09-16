@@ -33,15 +33,6 @@ contract Colony is Modifiable, IUpgradable  {
     eternalStorage = _eternalStorage;
   }
 
-  /// @notice registers a new RootColonyResolver contract used to keep the reference of the RootColony.
-  /// @param rootColonyResolverAddress_ the RootColonyResolver address
-  function registerRootColonyResolver(address rootColonyResolverAddress_)
-  onlyAdmins
-  throwIfAddressIsInvalid(rootColonyResolverAddress_)
-  {
-    rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
-  }
-
   /// @notice returns the number of admins for this colony
   function adminsCount()
   constant returns(uint256)
