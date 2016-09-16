@@ -1,9 +1,6 @@
 import "IColonyFactory.sol";
-import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
 import "Colony.sol";
-import "Ownable.sol";
-import "ColonyLibrary.sol";
 
 
 contract ColonyFactory is IColonyFactory {

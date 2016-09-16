@@ -49,7 +49,7 @@ contract RootColony is Destructible, Modifiable {
   {
     // Initialise eternal storage and required initial values
     var eternalStorage = new EternalStorage();
-    eternalStorage.addAdmin(msg.sender);
+    eternalStorage.addUserToRole(msg.sender, 0);
     // Note: we are assuming that the default values for 'TasksCount' and 'ReservedTokensWei' is returned as 0
     // Set the calling user as the first colony admin
     var colonyAddress = colonyFactory.createColony(eternalStorage);
@@ -94,7 +94,7 @@ contract RootColony is Destructible, Modifiable {
   throwIfIsEmptyBytes32(_key)
   {
     address colonyAddress = this.getColony(_key);
-    if(!IColony(colonyAddress).isUserAdmin(msg.sender)) {
+    if(!IColony(colonyAddress).userIsInRole(msg.sender, 0)) {
       throw;
     }
 

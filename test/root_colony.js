@@ -40,14 +40,14 @@ contract('RootColony', function (accounts) {
       })
       .then(function (_address) {
         colony = Colony.at(_address);
-        return colony.adminsCount.call();
+        return colony.countUsersInRole.call(0);
       })
       .then(function (count) {
-        assert.equal(count.toNumber(), 1, 'Admin count should be 1');
-        return colony.isUserAdmin.call(MAIN_ACCOUNT);
+        assert.equal(count.toNumber(), 1, 'Owners count should be 1');
+        return colony.userIsInRole.call(MAIN_ACCOUNT, 0);
       })
-      .then(function (_isAdmin) {
-        assert.isTrue(_isAdmin, 'creator user is an admin');
+      .then(function (_isUserOwner) {
+        assert.isTrue(_isUserOwner, 'creator user is not an owner');
         return colony.rootColonyResolver.call();
       })
       .then(function (_rootColonyResolverAddress) {

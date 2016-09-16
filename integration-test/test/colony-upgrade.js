@@ -9,6 +9,7 @@ contract('Colony', function (accounts) {
   const GAS_PRICE = 20e9;
   // this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
+
   let colony;
   let colonyFactory;
   let rootColony;
@@ -90,7 +91,7 @@ contract('Colony', function (accounts) {
         assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
       })
       .then(function () {
-        return colony.addAdmin('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778', { from: MAIN_ACCOUNT });
+        return colony.addUserToRole('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778', 0, { from: MAIN_ACCOUNT });
       })
       .then(function () {
         return rootColony.upgradeColony(COLONY_KEY);
@@ -150,7 +151,7 @@ contract('Colony', function (accounts) {
       })
       .then(function (tokens) {
         assert.equal(tokens.toNumber(), 20, 'Incorrect amount of reserved tokens');
-        return colony.isUserAdmin('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778');
+        return colony.userIsInRole.call('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778', 0);
       })
       .then(function (userInfo) {
         assert.equal(userInfo, true, 'User added as admin is no longer admin');

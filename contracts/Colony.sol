@@ -1,5 +1,4 @@
 import "Modifiable.sol";
-import "IUpgradable.sol";
 import "IRootColonyResolver.sol";
 import "TokenLibrary.sol";
 import "Ownable.sol";
@@ -7,15 +6,21 @@ import "ColonyPaymentProvider.sol";
 import "TaskLibrary.sol";
 import "SecurityLibrary.sol";
 
-contract Colony is Modifiable, IUpgradable  {
+
+contract Colony is Modifiable  {
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolver).rootColonyAddress()) { throw; }
     _
   }
 
-  modifier onlyAdmins {
-    if (!this.isUserAdmin(msg.sender)) { throw; }
+  modifier onlyAdminOrOwner {
+    if (!(this.userIsInRole(msg.sender, 0) || this.userIsInRole(msg.sender, 1))) { throw; }
+    _
+  }
+
+  modifier onlyColonyOwners {
+    if (!this.userIsInRole(msg.sender, 0)) { throw; }
     _
   }
 
@@ -33,36 +38,39 @@ contract Colony is Modifiable, IUpgradable  {
     eternalStorage = _eternalStorage;
   }
 
-  /// @notice returns the number of admins for this colony
-  function adminsCount()
+  /// @notice returns the number of users in a given role for this colony
+  function countUsersInRole(uint _role)
   constant returns(uint256)
   {
-    return eternalStorage.getAdminsCount();
-  }
-
-  /// @notice adds a new admin user to the colony
-  /// @param _user the address of the new admin user
-  function addAdmin(address _user)
-  onlyAdmins
-  {
-    eternalStorage.addAdmin(_user);
-  }
-
-  /// @notice removes an admin from the colony
-  /// @param _user the address of the admin to be removed
-  function removeAdmin(address _user)
-  onlyAdmins
-  {
-    eternalStorage.removeAdmin(_user);
+    return eternalStorage.countUsersInRole(_role);
   }
 
   /// @notice returns user info based in a given address
   /// @param _user the address to be verified
-  /// @return a boolean value indicating if the user is an admin
-  function isUserAdmin(address _user)
+  /// @param _role the role to be verified
+  /// @return a boolean value indicating if the user is in this role or not
+  function userIsInRole(address _user, uint _role)
   constant returns (bool)
   {
-    return eternalStorage.isUserAdmin(_user);
+    return eternalStorage.userIsInRole(_user, _role);
+  }
+
+  /// @notice adds a new user to a given role in this colony
+  /// @param _user the address of the user
+  /// @param _role the user role
+  function addUserToRole(address _user, uint _role)
+  onlyColonyOwners
+  {
+    eternalStorage.addUserToRole(_user, _role);
+  }
+
+  /// @notice removes an admin from the colony
+  /// @param _user the address of the owner to be removed
+  /// @param _role the role of the user to be removed
+  function removeUserFromRole(address _user, uint _role)
+  onlyAdminOrOwner
+  {
+    eternalStorage.removeUserFromRole(_user, _role);
   }
 
   /// @notice gets the reserved colony tokens for funding tasks
@@ -76,7 +84,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
   function contributeEthToTask(uint256 taskId)
-  onlyAdmins
+  onlyAdminOrOwner
   {
     eternalStorage.contributeEthToTask(taskId, msg.value);
   }
@@ -85,7 +93,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @param taskId the task ID
   /// @param tokensWei the amount of tokens wei to fund the task
   function contributeTokensWeiToTask(uint256 taskId, uint256 tokensWei)
-  onlyAdmins
+  onlyAdminOrOwner
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     if (eternalStorage.transfer(this, tokensWei)) {
@@ -100,7 +108,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @param taskId the task ID
   /// @param tokensWei the amount of tokens wei to fund the task
   function contributeTokensWeiFromPool(uint256 taskId, uint256 tokensWei)
-  onlyAdmins
+  onlyAdminOrOwner
   {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
@@ -125,7 +133,7 @@ contract Colony is Modifiable, IUpgradable  {
     string _name,
     string _summary
   )
-  onlyAdmins
+  onlyAdminOrOwner
   throwIfIsEmptyString(_name)
   {
       eternalStorage.makeTask(_name, _summary);
@@ -134,7 +142,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @notice this function updates the 'accepted' flag in the task
   /// @param _id the task id
   function acceptTask(uint256 _id)
-  onlyAdmins
+  onlyAdminOrOwner
   {
     eternalStorage.acceptTask(_id);
   }
@@ -148,7 +156,7 @@ contract Colony is Modifiable, IUpgradable  {
     string _name,
     string _summary
   )
-  onlyAdmins
+  onlyAdminOrOwner
   throwIfIsEmptyString(_name)
   {
     eternalStorage.updateTask(_id, _name, _summary);
@@ -158,7 +166,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @param symbol_ the symbol of the colony tokens
   function setTokensSymbol(bytes symbol_)
   refundEtherSentByAccident
-  onlyAdmins
+  onlyAdminOrOwner
   {
     eternalStorage.setTokensSymbol(symbol_);
   }
@@ -167,7 +175,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @param title_ the title of the colony tokens
   function setTokensTitle(bytes title_)
   refundEtherSentByAccident
-  onlyAdmins
+  onlyAdminOrOwner
   {
     eternalStorage.setTokensTitle(title_);
   }
@@ -176,7 +184,7 @@ contract Colony is Modifiable, IUpgradable  {
   /// @param taskId the task ID to be completed and paid
   /// @param paymentAddress the address of the user to be paid
   function completeAndPayTask(uint256 taskId, address paymentAddress)
-  onlyAdmins
+  onlyAdminOrOwner
   {
     eternalStorage.acceptTask(taskId);
 
@@ -233,14 +241,14 @@ contract Colony is Modifiable, IUpgradable  {
   /// @notice this function is used to generate Colony tokens
   /// @param _tokensWei The amount of tokens wei to be generated
   function generateTokensWei(uint256 _tokensWei)
-  onlyAdmins
+  onlyAdminOrOwner
   refundEtherSentByAccident
   {
     eternalStorage.generateTokensWei(_tokensWei);
   }
 
   function totalSupply()
-  onlyAdmins
+  onlyAdminOrOwner
   constant returns (uint256)
   {
     return eternalStorage.totalSupply();

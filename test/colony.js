@@ -55,17 +55,17 @@ contract('Colony', function (accounts) {
   });
 
   describe('when created', function () {
-    it('should take deploying user as an admin', function (done) {
-      colony.isUserAdmin.call(MAIN_ACCOUNT)
-      .then(function (admin) {
-        assert.equal(admin, true, 'First user isn\'t an admin');
+    it('should take deploying user as an owner', function (done) {
+      colony.userIsInRole.call(MAIN_ACCOUNT, 0)
+      .then(function (owner) {
+        assert.equal(owner, true, 'First user isn\'t an owner');
       })
       .then(done)
       .catch(done);
     });
 
-    it('should other users not be an admin until I add s/he', function (done) {
-      colony.isUserAdmin.call(OTHER_ACCOUNT)
+    it('should users not be an admin until I add s/he', function (done) {
+      colony.userIsInRole.call(OTHER_ACCOUNT, 1)
       .then(function (admin) {
         assert.equal(admin, false, 'Other user is an admin');
       })
@@ -73,8 +73,20 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should other users not be an owner until I add s/he', function (done) {
+      colony.userIsInRole.call(OTHER_ACCOUNT, 0)
+      .then(function (owner) {
+        assert.equal(owner, false, 'Other user is an owner');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should keep a count of the number of admins', function (done) {
-      colony.adminsCount.call()
+      colony.addUserToRole(OTHER_ACCOUNT, 1)
+      .then(function () {
+        return colony.countUsersInRole.call(0);
+      })
       .then(function (_adminsCount) {
         assert.equal(_adminsCount.toNumber(), 1, 'Admin count is different from 1');
       })
@@ -82,25 +94,46 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should increase admin count by the number of admins added', function (done) {
-      colony.addAdmin(OTHER_ACCOUNT)
-      .then(function () {
-        return colony.adminsCount.call();
-      })
-      .then(function (_adminsCount) {
-        assert.equal(_adminsCount.toNumber(), 2, 'Admin count is incorrect');
+    it('should keep a count of the number of owners', function (done) {
+      colony.countUsersInRole.call(0)
+      .then(function (_ownersCount) {
+        assert.equal(_ownersCount.toNumber(), 1, 'Owners count is different from 1');
       })
       .then(done)
       .catch(done);
     });
 
-    it('should decrease admin count by the number of admins removed', function (done) {
-      colony.addAdmin(OTHER_ACCOUNT)
+    it('should increase owner count by the number of owners added', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 0)
       .then(function () {
-        return colony.removeAdmin(OTHER_ACCOUNT);
+        return colony.countUsersInRole.call(0);
+      })
+      .then(function (_ownersCount) {
+        assert.equal(_ownersCount.toNumber(), 2, 'Owners count is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should decrease owner count by the number of owners removed', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 0)
+      .then(function () {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 0);
       })
       .then(function () {
-        return colony.adminsCount.call();
+        return colony.countUsersInRole.call(0);
+      })
+      .then(function (_ownersCount) {
+        assert.equal(_ownersCount.toNumber(), 1, 'Owners count is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should increase admin count by the number of admins added', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 1)
+      .then(function () {
+        return colony.countUsersInRole.call(1);
       })
       .then(function (_adminsCount) {
         assert.equal(_adminsCount.toNumber(), 1, 'Admin count is incorrect');
@@ -109,33 +142,87 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow a revoked admin to be promoted to an admin again', function (done) {
-      colony.addAdmin(OTHER_ACCOUNT)
+    it('should decrease admin count by the number of admins removed', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 1)
       .then(function () {
-        return colony.removeAdmin(OTHER_ACCOUNT);
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 1);
       })
       .then(function () {
-        return colony.addAdmin(OTHER_ACCOUNT);
-      })
-      .then(function () {
-        return colony.isUserAdmin.call(OTHER_ACCOUNT);
-      })
-      .then(function (_isAdmin) {
-        assert.isTrue(_isAdmin, 'previously revoked admins cannot be promoted to admin again');
-      })
-      .then(function () {
-        return colony.adminsCount.call();
+        return colony.countUsersInRole.call(1);
       })
       .then(function (_adminsCount) {
-        assert.equal(_adminsCount.toNumber(), 2, 'admins count is incorrect');
+        assert.equal(_adminsCount.toNumber(), 0, 'Admin count is incorrect');
       })
       .then(done)
       .catch(done);
     });
 
-    it('should fail to remove the last admin', function (done) {
+    it('should allow admins to leave the colony at their own will', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 1)
+      .then(function () {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 1, { from: OTHER_ACCOUNT });
+      })
+      .then(function () {
+        return colony.userIsInRole.call(OTHER_ACCOUNT, 1);
+      })
+      .then(function (_adminsCount) {
+        assert.equal(_adminsCount, false, 'Admins cannot leave at their own will');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should allow a revoked owner to be set as an owner again', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 0)
+      .then(function () {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 0);
+      })
+      .then(function () {
+        return colony.addUserToRole(OTHER_ACCOUNT, 0);
+      })
+      .then(function () {
+        return colony.userIsInRole.call(OTHER_ACCOUNT, 0);
+      })
+      .then(function (_isOwner) {
+        assert.isTrue(_isOwner, 'previously revoked owners cannot be set as owners again');
+      })
+      .then(function () {
+        return colony.countUsersInRole.call(0);
+      })
+      .then(function (_ownersCount) {
+        assert.equal(_ownersCount.toNumber(), 2, 'owners count is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should allow a revoked admin to be promoted to admin again', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 1)
+      .then(function () {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 1);
+      })
+      .then(function () {
+        return colony.addUserToRole(OTHER_ACCOUNT, 1);
+      })
+      .then(function () {
+        return colony.userIsInRole.call(OTHER_ACCOUNT, 1);
+      })
+      .then(function (_isAdmin) {
+        assert.isTrue(_isAdmin, 'previously revoked admins cannot be promoted to admin again');
+      })
+      .then(function () {
+        return colony.countUsersInRole.call(0);
+      })
+      .then(function (_adminsCount) {
+        assert.equal(_adminsCount.toNumber(), 1, 'admins count is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove the last owner', function (done) {
       const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-      colony.removeAdmin(MAIN_ACCOUNT, optionsToSpotTransactionFailure)
+      colony.removeUserFromRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
@@ -144,9 +231,24 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should fail to add the same address multiple times', function (done) {
+    it('should fail to add the same owner address multiple times', function (done) {
       const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-      colony.addAdmin(MAIN_ACCOUNT, optionsToSpotTransactionFailure)
+      colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function () {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to add the same admin address multiple times', function (done) {
+      let prevBalance;
+      colony.addUserToRole(MAIN_ACCOUNT, 1, optionsToSpotTransactionFailure)
+      .then(function () {
+        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+        return colony.addUserToRole(MAIN_ACCOUNT, 1, optionsToSpotTransactionFailure);
+      })
       .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
@@ -157,13 +259,13 @@ contract('Colony', function (accounts) {
 
     it('should fail to remove an address that is currently not an admin', function (done) {
       let prevBalance;
-      colony.addAdmin(OTHER_ACCOUNT)
+      colony.addUserToRole(OTHER_ACCOUNT, 1)
       .then(function () {
-        return colony.removeAdmin(OTHER_ACCOUNT);
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 1);
       })
       .then(function () {
         prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-        return colony.removeAdmin(OTHER_ACCOUNT, {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 1, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
@@ -179,7 +281,51 @@ contract('Colony', function (accounts) {
 
     it('should fail to remove an address that was never an admin', function (done) {
       const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-      colony.removeAdmin(OTHER_ACCOUNT, optionsToSpotTransactionFailure)
+      colony.removeUserFromRole(OTHER_ACCOUNT, 1, optionsToSpotTransactionFailure)
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function () {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to add the same owner address multiple times', function (done) {
+      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+      colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function () {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove an address that is currently not an owner', function (done) {
+      let prevBalance;
+      colony.addUserToRole(OTHER_ACCOUNT, 0)
+      .then(function () {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 0);
+      })
+      .then(function () {
+        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 0, {
+          from: MAIN_ACCOUNT,
+          gasPrice: GAS_PRICE,
+          gas: GAS_TO_SPEND,
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function () {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove an address that was never an owner', function (done) {
+      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+      colony.removeUserFromRole(OTHER_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function () {
         testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
@@ -409,7 +555,7 @@ contract('Colony', function (accounts) {
       })
       .then(function (otherAccountTokenBalance) {
         assert.equal(otherAccountTokenBalance.toNumber(), 95, 'OTHER_ACCOUNT balance should be 95 tokens.');
-        return colony.addAdmin(OTHER_ACCOUNT);
+        return colony.addUserToRole(OTHER_ACCOUNT, 1);
       })
       .then(function () {
         return colony.contributeTokensWeiToTask(1, 95, { from: OTHER_ACCOUNT });
