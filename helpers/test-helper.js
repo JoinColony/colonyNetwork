@@ -3,6 +3,7 @@
 
 import Promise from 'bluebird';
 import _ from 'lodash';
+import shortid from 'shortid';
 
 module.exports = {
   ifUsingTestRPC() {
@@ -31,7 +32,11 @@ module.exports = {
   },
   getRandomString(_length) {
     const length = _length || 7;
-    return Math.random().toString(36).substring(length);
+    let randString = '';
+    while (randString.length < length) {
+      randString += shortid.generate();
+    }
+    return randString.slice(0, length);
   },
   waitAll(promises, callback) {
     return Promise.all(promises)
