@@ -1,5 +1,5 @@
 // These globals are added by Truffle:
-/* globals RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, FakeUpdatedColony, EternalStorage, Ownable */
+/* globals RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, FakeUpdatedColony, EternalStorage */
 import testHelper from '../../helpers/test-helper';
 
 contract('ColonyFactory', function (accounts) {

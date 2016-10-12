@@ -1,5 +1,5 @@
 // These globals are added by Truffle:
-/* globals RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage, Ownable */
+/* globals RootColony, Colony, RootColonyResolver, EternalStorage, Ownable */
 import { solSha3 } from 'colony-utils';
 import testHelper from '../helpers/test-helper';
 
