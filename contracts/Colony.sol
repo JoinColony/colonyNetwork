@@ -13,17 +13,17 @@ contract Colony is Modifiable  {
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolver).rootColonyAddress()) { throw; }
-    _
+    _;
   }
 
   modifier onlyAdminOrOwner {
     if (!(this.userIsInRole(msg.sender, 0) || this.userIsInRole(msg.sender, 1))) { throw; }
-    _
+    _;
   }
 
   modifier onlyColonyOwners {
     if (!this.userIsInRole(msg.sender, 0)) { throw; }
-    _
+    _;
   }
 
   IRootColonyResolver public rootColonyResolver;

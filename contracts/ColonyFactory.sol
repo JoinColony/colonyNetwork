@@ -9,7 +9,7 @@ contract ColonyFactory is IColonyFactory {
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolverAddress).rootColonyAddress()) { throw; }
-    _
+    _;
   }
 
   /// @notice this function registers the address of the RootColonyResolver

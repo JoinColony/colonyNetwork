@@ -6,7 +6,7 @@ contract Ownable {
   /// @notice check if the msg.sender is the owner of the contract
 	modifier onlyOwner {
 		if (msg.sender != owner) { throw; }
-		_
+		_;
 	}
 
   /// @notice redefine the owner of the contract.

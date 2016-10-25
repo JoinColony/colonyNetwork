@@ -10,12 +10,12 @@ library TaskLibrary {
 
 	modifier ifTasksExists(address _storageContract, uint256 _id) {
     if(!hasTask(_storageContract, _id)) { throw; }
-	    _
+	    _;
 	}
 
 	modifier ifTasksNotAccepted(address _storageContract, uint256 _id) {
 		if(isTaskAccepted(_storageContract, _id)) { throw; }
-			_
+			_;
 	}
 
 	/// @notice this function returns the number of tasks in the DB
