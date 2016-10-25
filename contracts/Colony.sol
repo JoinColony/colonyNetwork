@@ -87,6 +87,7 @@ contract Colony is Modifiable  {
   /// @param taskId the task ID
   function contributeEthToTask(uint256 taskId)
   onlyAdminOrOwner
+  payable
   {
     eternalStorage.contributeEthToTask(taskId, msg.value);
   }
@@ -167,7 +168,6 @@ contract Colony is Modifiable  {
   /// @notice set the colony tokens symbol
   /// @param symbol_ the symbol of the colony tokens
   function setTokensSymbol(bytes symbol_)
-  refundEtherSentByAccident
   onlyAdminOrOwner
   {
     eternalStorage.setTokensSymbol(symbol_);
@@ -176,7 +176,6 @@ contract Colony is Modifiable  {
   /// @notice set the colony tokens title
   /// @param title_ the title of the colony tokens
   function setTokensTitle(bytes title_)
-  refundEtherSentByAccident
   onlyAdminOrOwner
   {
     eternalStorage.setTokensTitle(title_);
@@ -210,14 +209,12 @@ contract Colony is Modifiable  {
   }
 
   function transfer(address _to, uint256 _value)
-  refundEtherSentByAccident
   returns (bool success)
   {
     return eternalStorage.transfer(_to, _value);
   }
 
    function transferFrom(address _from, address _to, uint256 _value)
-   refundEtherSentByAccident
    returns (bool success)
    {
      return eternalStorage.transferFrom(_from, _to, _value);
@@ -234,7 +231,6 @@ contract Colony is Modifiable  {
    }
 
    function approve(address _spender, uint256 _value)
-   refundEtherSentByAccident
    returns (bool success)
    {
      return eternalStorage.approve(_spender, _value);
@@ -244,7 +240,6 @@ contract Colony is Modifiable  {
   /// @param _tokensWei The amount of tokens wei to be generated
   function generateTokensWei(uint256 _tokensWei)
   onlyAdminOrOwner
-  refundEtherSentByAccident
   {
     eternalStorage.generateTokensWei(_tokensWei);
   }

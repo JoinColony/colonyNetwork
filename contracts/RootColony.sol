@@ -26,7 +26,6 @@ contract RootColony is Destructible, Modifiable {
   }
 
   function changeEternalStorageOwner(address newOwnerAddress_)
-  refundEtherSentByAccident
   throwIfAddressIsInvalid(newOwnerAddress_)
   onlyOwner
   {
@@ -36,7 +35,6 @@ contract RootColony is Destructible, Modifiable {
   /// @notice registers a colony factory using an address
   /// @param _colonyFactoryAddress address used to locate the colony factory contract
   function registerColonyFactory(address _colonyFactoryAddress)
-  refundEtherSentByAccident
   throwIfAddressIsInvalid(_colonyFactoryAddress)
   onlyOwner
   {
@@ -46,7 +44,6 @@ contract RootColony is Destructible, Modifiable {
   /// @notice creates a Colony
   /// @param _key the key to be used to keep track of the Colony
   function createColony(bytes32 _key)
-  refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   {
     // Initialise eternal storage and required initial values
@@ -63,7 +60,6 @@ contract RootColony is Destructible, Modifiable {
   /// @param _key the key of the Colony created
   /// @return the address for the given key.
   function getColony(bytes32 _key)
-  refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   constant returns (address)
   {
@@ -74,7 +70,6 @@ contract RootColony is Destructible, Modifiable {
   /// @param _idx the index of the Colony created
   /// @return the address for the given key.
   function getColonyAt(uint _idx)
-  refundEtherSentByAccident
   constant returns (address)
   {
     return eternalStorageRoot.getColonyAt(_idx);
@@ -84,7 +79,6 @@ contract RootColony is Destructible, Modifiable {
   /// @param _key the key of the Colony created
   /// @return the index for the given colony key.
   function getColonyIndex(bytes32 _key)
-  refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   constant returns (uint256)
   {
@@ -92,7 +86,6 @@ contract RootColony is Destructible, Modifiable {
   }
 
   function upgradeColony(bytes32 _key)
-  refundEtherSentByAccident
   throwIfIsEmptyBytes32(_key)
   {
     address colonyAddress = this.getColony(_key);

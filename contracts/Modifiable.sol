@@ -2,12 +2,6 @@ pragma solidity ^0.4.0;
 
 contract Modifiable {
 
-  /// @notice throws if ether was sent accidentally
-  modifier refundEtherSentByAccident() {
-    if(msg.value > 0) { throw; }
-    _;
-  }
-
   /// @notice throw if an address is invalid
   /// @param _target the address to check
   modifier throwIfAddressIsInvalid(address _target) {
