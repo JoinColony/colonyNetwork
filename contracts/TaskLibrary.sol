@@ -1,9 +1,11 @@
+pragma solidity ^0.4.0;
+
 import "EternalStorage.sol";
 
 
 library TaskLibrary {
   event TaskAdded(bytes32 key, uint256 count, uint256 when);
-  
+
   event TaskUpdated(bytes32 key, uint256 when);
 
 	modifier ifTasksExists(address _storageContract, uint256 _id) {

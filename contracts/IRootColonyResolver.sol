@@ -1,3 +1,5 @@
+pragma solidity ^0.4.0;
+
 import "Modifiable.sol";
 import "Destructible.sol";
 

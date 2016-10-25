@@ -1,3 +1,5 @@
+pragma solidity ^0.4.0;
+
 import "IColonyFactory.sol";
 import "IRootColonyResolver.sol";
 import "Colony.sol";

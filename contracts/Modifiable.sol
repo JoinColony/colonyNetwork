@@ -1,3 +1,5 @@
+pragma solidity ^0.4.0;
+
 contract Modifiable {
 
   /// @notice throws if ether was sent accidentally

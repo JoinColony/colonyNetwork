@@ -1,3 +1,5 @@
+pragma solidity ^0.4.0;
+
 library ColonyPaymentProvider
 {
   function settleTaskFees(uint256 taskValueEth, address taskCompletor, address rootColony)
