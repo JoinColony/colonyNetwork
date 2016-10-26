@@ -35,6 +35,7 @@ contract Colony is Modifiable  {
   address public eternalStorage;
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)
+  payable
   {
     rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
     eternalStorage = _eternalStorage;
@@ -263,5 +264,12 @@ contract Colony is Modifiable  {
 
     Ownable(eternalStorage).changeOwner(newColonyAddress_);
     selfdestruct(newColonyAddress_);
+  }
+
+  function ()
+  payable {
+      // Contracts that want to receive Ether with a plain "send" have to implement
+      // a fallback function with the payable modifier. Contracts now throw if no payable
+      // fallback function is defined and no function matches the signature.
   }
 }
