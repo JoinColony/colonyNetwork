@@ -6,7 +6,7 @@ import "EternalStorage.sol";
 library SecurityLibrary
 {
   // Manages records for admins and owners stored in the format:
-  // sha3('admin:', address) -> bool isUserAdmin , e.g. 0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> true
+  // keccak256('admin:', address) -> bool isUserAdmin , e.g. 0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> true
 
   enum UserRole { Owner, Admin }
 
@@ -22,14 +22,14 @@ library SecurityLibrary
   constant returns(uint256)
   {
     bytes32 roleCount = _role == uint(UserRole.Owner) ? ownersCount : adminsCount;
-    return EternalStorage(_storageContract).getUIntValue(sha3(roleCount));
+    return EternalStorage(_storageContract).getUIntValue(keccak256(roleCount));
   }
 
   function userIsInRole(address _storageContract, address _user, uint _role)
   constant returns (bool)
   {
     bytes32 role = _role == uint(UserRole.Owner) ? owner : admin;
-    return EternalStorage(_storageContract).getBooleanValue(sha3(role, _user));
+    return EternalStorage(_storageContract).getBooleanValue(keccak256(role, _user));
   }
 
   function addUserToRole(address _storageContract, address _user, uint _role)
@@ -38,15 +38,15 @@ library SecurityLibrary
     bytes32 roleCount = _role == uint(UserRole.Owner) ? ownersCount : adminsCount;
 
       // if user is part of this role already
-    var userIsInRole = EternalStorage(_storageContract).getBooleanValue(sha3(role, _user));
+    var userIsInRole = EternalStorage(_storageContract).getBooleanValue(keccak256(role, _user));
     if (userIsInRole) { throw; }
 
-    EternalStorage(_storageContract).setBooleanValue(sha3(role, _user), true);
+    EternalStorage(_storageContract).setBooleanValue(keccak256(role, _user), true);
 
     // Increment the counting in storage for this role
-    var usersCount = EternalStorage(_storageContract).getUIntValue(sha3(roleCount));
+    var usersCount = EternalStorage(_storageContract).getUIntValue(keccak256(roleCount));
     usersCount += 1;
-    EternalStorage(_storageContract).setUIntValue(sha3(roleCount), usersCount);
+    EternalStorage(_storageContract).setUIntValue(keccak256(roleCount), usersCount);
 
     PermissionAdded(_user, _role);
   }
@@ -57,16 +57,16 @@ library SecurityLibrary
     bytes32 roleCount = _role == uint(UserRole.Owner) ? ownersCount : adminsCount;
 
     // if user is doesnt belong to this role
-    var userIsInRole = EternalStorage(_storageContract).getBooleanValue(sha3(role, _user));
+    var userIsInRole = EternalStorage(_storageContract).getBooleanValue(keccak256(role, _user));
     if (!userIsInRole) { throw; }
 
     // if there is only one owner, keep her/him :p
     // if they want to leave, they can kill the colony
-    var isUserOwner = EternalStorage(_storageContract).getBooleanValue(sha3(owner, msg.sender));
+    var isUserOwner = EternalStorage(_storageContract).getBooleanValue(keccak256(owner, msg.sender));
     if (_role == uint(UserRole.Owner)) {
       if (!isUserOwner) { throw; }
 
-      var countOwners = EternalStorage(_storageContract).getUIntValue(sha3(roleCount));
+      var countOwners = EternalStorage(_storageContract).getUIntValue(keccak256(roleCount));
       if (countOwners == 1) { throw; }
 
     } else if (_role == uint(UserRole.Admin)) {
@@ -77,12 +77,12 @@ library SecurityLibrary
       }
     }
 
-    EternalStorage(_storageContract).deleteBooleanValue(sha3(role, _user));
+    EternalStorage(_storageContract).deleteBooleanValue(keccak256(role, _user));
 
     // Decrement the counting in storage for this role
-    var usersCount = EternalStorage(_storageContract).getUIntValue(sha3(roleCount));
+    var usersCount = EternalStorage(_storageContract).getUIntValue(keccak256(roleCount));
     usersCount -= 1;
-    EternalStorage(_storageContract).setUIntValue(sha3(roleCount), usersCount);
+    EternalStorage(_storageContract).setUIntValue(keccak256(roleCount), usersCount);
 
     PermissionRemoved(_user, _role);
   }

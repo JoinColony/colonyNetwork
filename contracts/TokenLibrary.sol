@@ -9,30 +9,30 @@ import "EternalStorage.sol";
 library TokenLibrary {
 
   // Manages records for colony tokens stored in the format:
-  // sha3('balance:', address) -> uint256 tokenBalance , e.g. balance:0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> 340
-  // sha3('allowance:', ownerAddress, spenderAddress) -> uint256 allowedAmount , e.g. allowed:0xd91cf6dac0..,0xdedbb26661 -> 20
-  // sha3("TokenSymbol") -> bytes title e.g. 'CNY'
-  // sha3("TokenTitle") -> bytes symbol e.g. 'Colony Token title'
-  // sha3("TokensTotalSupply") -> uint256 totalSupplyTokens
+  // keccak256('balance:', address) -> uint256 tokenBalance , e.g. balance:0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> 340
+  // keccak256('allowance:', ownerAddress, spenderAddress) -> uint256 allowedAmount , e.g. allowed:0xd91cf6dac0..,0xdedbb26661 -> 20
+  // keccak256("TokenSymbol") -> bytes title e.g. 'CNY'
+  // keccak256("TokenTitle") -> bytes symbol e.g. 'Colony Token title'
+  // keccak256("TokensTotalSupply") -> uint256 totalSupplyTokens
 
   /// @notice set the Token symbol
   /// @param _symbol the symbol of the Colony Token
   function setTokensSymbol(address _storageContract, bytes _symbol)
   {
-    EternalStorage(_storageContract).setBytesValue(sha3("TokenSymbol"), _symbol);
+    EternalStorage(_storageContract).setBytesValue(keccak256("TokenSymbol"), _symbol);
   }
 
   /// @notice set the Token title
   /// @param _title the title of the Colony Token
   function setTokensTitle(address _storageContract, bytes _title)
   {
-    EternalStorage(_storageContract).setBytesValue(sha3("TokenTitle"), _title);
+    EternalStorage(_storageContract).setBytesValue(keccak256("TokenTitle"), _title);
   }
 
   function totalSupply(address _storageContract)
   constant returns (uint256)
   {
-    return EternalStorage(_storageContract).getUIntValue(sha3("TokensTotalSupply"));
+    return EternalStorage(_storageContract).getUIntValue(keccak256("TokensTotalSupply"));
   }
 
   /// @notice send `_value` token wei to `_to` from `msg.sender`
@@ -118,12 +118,12 @@ library TokenLibrary {
   function allowance(address _storageContract, address _owner, address _spender)
   constant returns (uint256 remaining)
   {
-    return EternalStorage(_storageContract).getUIntValue(sha3("allowance:", _owner, _spender));
+    return EternalStorage(_storageContract).getUIntValue(keccak256("allowance:", _owner, _spender));
   }
 
   function allowanceSet(address _storageContract, address _owner, address _spender, uint256 _amount)
   {
-    EternalStorage(_storageContract).setUIntValue(sha3("allowance:", _owner, _spender), _amount);
+    EternalStorage(_storageContract).setUIntValue(keccak256("allowance:", _owner, _spender), _amount);
   }
 
   /// @param _account The address from which the balance will be retrieved
@@ -131,12 +131,12 @@ library TokenLibrary {
   function balanceOf(address _storageContract, address _account)
   constant returns (uint256 balance)
   {
-    return EternalStorage(_storageContract).getUIntValue(sha3("balance:", _account));
+    return EternalStorage(_storageContract).getUIntValue(keccak256("balance:", _account));
   }
 
   function balanceSet(address _storageContract, address _account, uint256 _balance)
   {
-    EternalStorage(_storageContract).setUIntValue(sha3("balance:", _account), _balance);
+    EternalStorage(_storageContract).setUIntValue(keccak256("balance:", _account), _balance);
   }
 
   /// @notice this function is used to increase the amount of tokens available limited by `totalSupply`
@@ -154,6 +154,6 @@ library TokenLibrary {
     _colonyBalance += _amount;
 
     balanceSet(_storageContract, this, _colonyBalance);
-    EternalStorage(_storageContract).setUIntValue(sha3("TokensTotalSupply"), _totalSupply);
+    EternalStorage(_storageContract).setUIntValue(keccak256("TokensTotalSupply"), _totalSupply);
   }
 }
