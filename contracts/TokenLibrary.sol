@@ -1,8 +1,5 @@
 pragma solidity ^0.4.0;
 
-/*
-  IMPLEMENTING TOKEN STANDARD BASED ON: https://github.com/ConsenSys/Tokens
-*/
 import "EternalStorage.sol";
 
 

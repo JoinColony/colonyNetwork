@@ -2,6 +2,7 @@ pragma solidity ^0.4.0;
 
 import "IUpgradable.sol";
 
+
 contract IColony is IUpgradable {
   address public rootColonyResolverAddress;
   address public eternalStorage;

@@ -9,6 +9,7 @@ import "SecurityLibrary.sol";
 import "ColonyLibrary.sol";
 import "IColony.sol";
 
+
 contract RootColony is Destructible, Modifiable {
 
   IColonyFactory public colonyFactory;

@@ -1,5 +1,6 @@
 pragma solidity ^0.4.0;
 
+
 contract Modifiable {
 
   /// @notice throw if an address is invalid
