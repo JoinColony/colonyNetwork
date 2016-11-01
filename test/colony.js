@@ -221,50 +221,44 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail to remove the last owner', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.removeUserFromRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail to add the same owner address multiple times', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail to add the same admin address multiple times', function (done) {
-      let prevBalance;
       colony.addUserToRole(MAIN_ACCOUNT, 1, optionsToSpotTransactionFailure)
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.addUserToRole(MAIN_ACCOUNT, 1, optionsToSpotTransactionFailure);
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail to remove an address that is currently not an admin', function (done) {
-      let prevBalance;
       colony.addUserToRole(OTHER_ACCOUNT, 1)
       .then(function () {
         return colony.removeUserFromRole(OTHER_ACCOUNT, 1);
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.removeUserFromRole(OTHER_ACCOUNT, 1, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -272,43 +266,39 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail to remove an address that was never an admin', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.removeUserFromRole(OTHER_ACCOUNT, 1, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail to add the same owner address multiple times', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail to remove an address that is currently not an owner', function (done) {
-      let prevBalance;
       colony.addUserToRole(OTHER_ACCOUNT, 0)
       .then(function () {
         return colony.removeUserFromRole(OTHER_ACCOUNT, 0);
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.removeUserFromRole(OTHER_ACCOUNT, 0, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -316,19 +306,18 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail to remove an address that was never an owner', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.removeUserFromRole(OTHER_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
@@ -429,9 +418,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if other users non-admins try to edit a task', function (done) {
-      let prevBalance;
       colony.makeTask('name', 'summary').then(function () {
-        prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
         return colony.updateTask(0, 'nameedit', 'summary', {
           from: OTHER_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -439,23 +426,22 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if other users non-admins try to make a task', function (done) {
-      const prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
       colony.makeTask('name', 'summary', {
         from: OTHER_ACCOUNT,
         gasPrice: GAS_PRICE,
         gas: GAS_TO_SPEND,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
@@ -500,10 +486,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if non-admins fund task with ETH', function (done) {
-      let prevBalance;
       colony.makeTask('name', 'summary')
       .then(function () {
-        prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
         return colony.contributeEthToTask(0, {
           value: 10000,
           from: OTHER_ACCOUNT,
@@ -512,8 +496,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
@@ -607,7 +591,6 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if admins fund tasks with more pool tokens than they have available', function (done) {
-      let prevBalance;
       colony.generateTokensWei(100, { from: MAIN_ACCOUNT })
       .then(function () {
         return colony.makeTask('name', 'summary');
@@ -631,9 +614,6 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-      })
-      .then(function () {
         // More than the pool, less than totalsupply
         return colony.contributeTokensWeiFromPool(1, 150, {
           from: MAIN_ACCOUNT,
@@ -642,8 +622,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(function () {
         done();
@@ -652,7 +632,6 @@ contract('Colony', function (accounts) {
     });
 
     it('should not allow non-admin to close task', function (done) {
-      let prevBalance;
       colony.makeTask('name', 'summary')
       .then(function () {
         return colony.updateTask(0, 'nameedit', 'summary');
@@ -663,11 +642,11 @@ contract('Colony', function (accounts) {
         });
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
-        return colony.completeAndPayTask(0, OTHER_ACCOUNT, { from: OTHER_ACCOUNT });
+        return colony.completeAndPayTask(0, OTHER_ACCOUNT, { from: OTHER_ACCOUNT, gas: 3e6 });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(3e6, txid);
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (taskName) {
@@ -680,7 +659,6 @@ contract('Colony', function (accounts) {
       })
       .then(function (_accepted) {
         assert.equal(_accepted, false, 'Wrong accepted value');
-        assert.equal(web3.eth.getBalance(OTHER_ACCOUNT).lessThan(prevBalance), true);
       })
       .then(done)
       .catch(done);
@@ -756,13 +734,11 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if non-admins try to contribute with tokens from the pool', function (done) {
-      let prevBalance;
       colony.generateTokensWei(100)
       .then(function () {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
         return colony.contributeTokensWeiToTask(0, 100, {
           from: OTHER_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -770,21 +746,19 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if non-admins try to contribute with tokens', function (done) {
-      let prevBalance;
       colony.generateTokensWei(100)
       .then(function () {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
         return colony.contributeTokensWeiFromPool(0, 100, {
           from: OTHER_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -792,8 +766,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);

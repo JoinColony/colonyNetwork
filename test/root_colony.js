@@ -125,29 +125,26 @@ contract('RootColony', function (accounts) {
     });
 
     it('should fail if the key provided is empty', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       rootColony.createColony('', {
         from: MAIN_ACCOUNT,
         gasPrice: GAS_PRICE,
         gas: 3e6,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(3e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(3e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if the key provided is already in use', function (done) {
-      let prevBalance;
       rootColony.createColony(COLONY_KEY, {
         from: MAIN_ACCOUNT,
         gasPrice: GAS_PRICE,
         gas: 3e6,
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return rootColony.createColony(COLONY_KEY, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -155,8 +152,8 @@ contract('RootColony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(3e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(3e6, txid);
       })
       .then(done)
       .catch(done);
@@ -228,7 +225,6 @@ contract('RootColony', function (accounts) {
     });
 
     it('should fail if ETH is sent', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       rootColony.createColony(COLONY_KEY, {
         from: MAIN_ACCOUNT,
         gasPrice: GAS_PRICE,
@@ -236,8 +232,8 @@ contract('RootColony', function (accounts) {
         value: 1,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(3e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(3e6, txid);
       })
       .then(done)
       .catch(done);

@@ -6,7 +6,7 @@ import _ from 'lodash';
 import shortid from 'shortid';
 
 module.exports = {
-  ifUsingTestRPC() {
+  ifUsingTestRPC(err) {
     // Okay, so, there is a discrepancy between how testrpc handles
     // OOG errors (throwing an exception all the way up to these tests) and
     // how geth handles them (still making a valid transaction and returning
@@ -22,13 +22,14 @@ module.exports = {
     // the best thing to do, or it should log it even though it's expected, in
     // case we get an error that is unexpected...
     // console.log('Error:',err)
-    return;
+    const block = web3.eth.getBlock('latest', true);
+    return block.transactions[0].hash;
   },
-  checkAllGasSpent(gasAmount, gasPrice, account, prevBalance) {
-    const newBalance = web3.eth.getBalance(account);
+  checkAllGasSpent(gasAmount, txid) {
+    const receipt = web3.eth.getTransactionReceipt(txid);
     // When a transaction throws, all the gas sent is spent. So let's check that
     // we spent all the gas that we sent.
-    assert.equal(prevBalance.minus(newBalance).toNumber(), gasAmount * gasPrice, 'didnt fail - didn\'t throw and use all gas');
+    assert.equal(gasAmount, receipt.gasUsed, 'didnt fail - didn\'t throw and use all gas');
   },
   getRandomString(_length) {
     const length = _length || 7;

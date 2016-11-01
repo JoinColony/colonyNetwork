@@ -360,10 +360,8 @@ contract('TokenLibrary', function (accounts) {
     });
 
     it('should fail if ETHER is sent', function (done) {
-      let prevBalance;
       colony.generateTokensWei(TOTAL_SUPPLY)
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.approve(OTHER_ACCOUNT, 100, {
           value: 1,
           gas: 1e6,
@@ -371,8 +369,8 @@ contract('TokenLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
@@ -458,47 +456,43 @@ contract('TokenLibrary', function (accounts) {
     });
 
     it('should fail if ETHER is sent', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.generateTokensWei(OTHER_ACCOUNT, 100, {
         value: 1,
         gas: 1e6,
         gasPrice: GAS_PRICE,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if the value is equal to zero', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.generateTokensWei(0, {
         gas: 1e6,
         gasPrice: GAS_PRICE,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if the value causes uint to wrap', function (done) {
-      let prevBalance;
       colony.generateTokensWei(TOTAL_SUPPLY)
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.generateTokensWei(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
           gas: 1e6,
           gasPrice: GAS_PRICE,
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);

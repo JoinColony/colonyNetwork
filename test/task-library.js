@@ -59,30 +59,28 @@ contract('TaskLibrary', function (accounts) {
     });
 
     it('should fail if another user (not the owner) tries to add a new task', function (done) {
-      const prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
       colony.makeTask('', 'INTERESTING TASK SUMMARY', {
         from: OTHER_ACCOUNT,
         gasPrice: GAS_PRICE,
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if I give it an invalid title', function (done) {
-      const prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
       colony.makeTask('', 'INTERESTING TASK SUMMARY', {
         from: MAIN_ACCOUNT,
         gasPrice: GAS_PRICE,
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
@@ -157,7 +155,6 @@ contract('TaskLibrary', function (accounts) {
     });
 
     it('should fail if the task was already accepted', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return colony.acceptTask(0);
@@ -167,7 +164,6 @@ contract('TaskLibrary', function (accounts) {
       })
       .then(function (_accepted) {
         assert.isTrue(_accepted, 'Wrong accepted value');
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY', {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -175,18 +171,16 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if I give it an invalid title', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.updateTask(0, '', 'INTERESTING TASK SUMMARY', {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -194,18 +188,16 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if I try to update a task when i\'m not the owner', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
         return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY', {
           from: OTHER_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -213,18 +205,16 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if I try to update a task using an invalid id', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.updateTask(10, '', 'INTERESTING TASK SUMMARY', {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -232,8 +222,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
@@ -279,10 +269,8 @@ contract('TaskLibrary', function (accounts) {
     });
 
     it('should fail if I try to accept a task when i\'m not the owner', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
         return colony.acceptTask(0, {
           from: OTHER_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -290,21 +278,19 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, OTHER_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if I try to accept a task was accepted before', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return colony.acceptTask(0);
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.acceptTask(0, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -312,18 +298,16 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if I try to accept a task using an invalid id', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.acceptTask(10, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -331,8 +315,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
@@ -399,13 +383,11 @@ contract('TaskLibrary', function (accounts) {
     });
 
     it('should fail if I try to contribute to an accepted task', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return colony.acceptTask(0);
       })
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.contributeEthToTask(0, 10, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -413,18 +395,16 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
     });
 
     it('should fail if I try to contribute to a nonexistent task', function (done) {
-      let prevBalance;
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.contributeEthToTask(10, 10, {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
@@ -432,8 +412,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(1e6, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(1e6, txid);
       })
       .then(done)
       .catch(done);
