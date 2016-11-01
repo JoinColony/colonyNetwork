@@ -47,19 +47,17 @@ contract('Colony', function (accounts) {
 
   describe('when upgrading a colony', function () {
     it('should not allow admins to call upgrade on their colony directly', function (done) {
-      let prevBalance;
       rootColony.createColony(COLONY_KEY)
       .then(function () {
         return rootColony.getColony.call(COLONY_KEY);
       })
       .then(function (_address) {
         colony = Colony.at(_address);
-        prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
         return colony.upgrade(accounts[1], { gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, GAS_PRICE, MAIN_ACCOUNT, prevBalance);
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
       })
       .then(done)
       .catch(done);
