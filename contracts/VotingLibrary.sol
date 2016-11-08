@@ -1,3 +1,5 @@
+pragma solidity ^0.4.0;
+
 import "EternalStorage.sol";
 
 
@@ -7,7 +9,7 @@ library VotingLibrary {
   modifier ensurePollStatus(address _storageContract, uint256 pollId, uint256 pollStatus){
     var currentStatus = EternalStorage(_storageContract).getUIntValue(sha3("Poll", pollId, "status"));
     if (pollStatus != currentStatus) { throw; }
-    _
+    _;
   }
 
   // Manages records for colony polls and votes stored in the format:
