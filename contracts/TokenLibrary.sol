@@ -12,7 +12,7 @@ library TokenLibrary {
   // keccak256("TokenTitle") -> bytes symbol e.g. 'Colony Token title'
   // keccak256("TokensTotalSupply") -> uint256 totalSupplyTokens
 
-  // sha3("onhold:", address) -> uint256 tokens , e.g. onhold:0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> 340
+  // keccak256("onhold:", address) -> uint256 tokens , e.g. onhold:0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> 340
 
   /// @notice set the Token symbol
   /// @param _symbol the symbol of the Colony Token
@@ -183,22 +183,22 @@ library TokenLibrary {
   function onHoldBalanceOf(address _storageContract, address _account)
   constant returns (uint256 balance)
   {
-    return EternalStorage(_storageContract).getUIntValue(sha3("onhold:", _account));
+    return EternalStorage(_storageContract).getUIntValue(keccak256("onhold:", _account));
   }
 
   function onHoldBalanceSet(address _storageContract, address _account, uint256 _balance)
   {
-    var onHoldBalance = EternalStorage(_storageContract).getUIntValue(sha3("onhold:", _account));
-    EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), onHoldBalance + _balance);
+    var onHoldBalance = EternalStorage(_storageContract).getUIntValue(keccak256("onhold:", _account));
+    EternalStorage(_storageContract).setUIntValue(keccak256("onhold:", _account), onHoldBalance + _balance);
   }
 
   function releaseTokens(address _storageContract, address _account){
     var onHoldBalance = onHoldBalanceOf(_storageContract, _account);
     if (onHoldBalance > 0) {
-      EternalStorage(_storageContract).setUIntValue(sha3("onhold:", _account), 0);
+      EternalStorage(_storageContract).setUIntValue(keccak256("onhold:", _account), 0);
 
       var balance = balanceOf(_storageContract, _account);
-      EternalStorage(_storageContract).setUIntValue(sha3("balance:", _account), balance + onHoldBalance);
+      EternalStorage(_storageContract).setUIntValue(keccak256("balance:", _account), balance + onHoldBalance);
     }
   }
 
