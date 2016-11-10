@@ -3,7 +3,7 @@
 /* globals contract, RootColony, Colony, EternalStorage, assert, web3*/
 
 import { solSha3 } from 'colony-utils';
-import testHelper from '../helpers/test-helper';
+import testHelper from '../../helpers/test-helper';
 
 contract('VotingLibrary', function (accounts) {
   let _COLONY_KEY_;
