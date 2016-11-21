@@ -37,7 +37,7 @@ module.exports = {
     const length = _length || 7;
     let randString = '';
     while (randString.length < length) {
-      randString += shortid.generate();
+      randString += shortid.generate().replace(/_/g, '').toLowerCase();
     }
     return randString.slice(0, length);
   },
