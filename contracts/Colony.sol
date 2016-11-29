@@ -62,7 +62,7 @@ contract Colony is Modifiable  {
   /// @param _user the address of the user
   /// @param _role the user role
   function addUserToRole(address _user, uint _role)
-  onlyColonyOwners
+  onlyAdminOrOwner
   {
     eternalStorage.addUserToRole(_user, _role);
   }
