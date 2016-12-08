@@ -242,7 +242,7 @@ contract Colony is Modifiable {
   /// @notice this function is used to generate Colony tokens
   /// @param _tokensWei The amount of tokens wei to be generated
   function generateTokensWei(uint256 _tokensWei)
-  onlyAdminOrOwner
+  onlyOwner
   {
     eternalStorage.generateTokensWei(_tokensWei);
   }
