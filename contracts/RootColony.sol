@@ -109,7 +109,8 @@ contract RootColony is Destructible, Modifiable {
   }
 
   function ()
-  payable {
+  payable
+  {
       // Contracts that want to receive Ether with a plain "send" have to implement
       // a fallback function with the payable modifier. Contracts now throw if no payable
       // fallback function is defined and no function matches the signature.

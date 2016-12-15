@@ -26,16 +26,14 @@ library TaskLibrary {
 
   /// @notice gets the reserved colony tokens for funding tasks.
   /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
-  function getReservedTokensWei(address _storageContract) constant returns(uint256)
-  {
+  function getReservedTokensWei(address _storageContract) constant returns(uint256) {
     return EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
   }
 
   /// @notice gets the reserved colony tokens for funding tasks.
   /// @param tokensWei the token wei to set the value to.
   /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
-  function setReservedTokensWei(address _storageContract, uint256 tokensWei)
-  {
+  function setReservedTokensWei(address _storageContract, uint256 tokensWei) {
     EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWei);
   }
 
@@ -43,12 +41,7 @@ library TaskLibrary {
   /// considered as a contribution to the task
   /// @param _name the task name
   /// @param _summary an IPFS hash
-  function makeTask(
-    address _storageContract,
-    string _name,
-    string _summary
-  )
-  {
+  function makeTask(address _storageContract, string _name, string _summary) {
     var idx = getTaskCount(_storageContract);
     //Short name for task
     EternalStorage(_storageContract).setStringValue(keccak256("task_name", idx), _name);

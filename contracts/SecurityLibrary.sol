@@ -3,8 +3,7 @@ pragma solidity ^0.4.0;
 import "EternalStorage.sol";
 
 
-library SecurityLibrary
-{
+library SecurityLibrary {
   // Manages records for admins and owners stored in the format:
   // keccak256('security:owner:', address) -> bool isUserOwner , e.g. 0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> true
   // keccak256('security:admin:', address) -> bool isUserAdmin , e.g. 0xd91cf6dac04d456edc5fcb6659dd8ddedbb26661 -> true
@@ -35,8 +34,7 @@ library SecurityLibrary
     return EternalStorage(_storageContract).getBooleanValue(keccak256(role, _user));
   }
 
-  function addUserToRole(address _storageContract, address _user, uint _role)
-  {
+  function addUserToRole(address _storageContract, address _user, uint _role) {
     bytes32 role = _role == uint(UserRole.Owner) ? OWNER : ADMIN;
     bytes32 roleCount = _role == uint(UserRole.Owner) ? OWNERS_COUNT : ADMINS_COUNT;
 
@@ -54,8 +52,7 @@ library SecurityLibrary
     PermissionAdded(_user, _role);
   }
 
-  function removeUserFromRole(address _storageContract, address _user, uint _role)
-  {
+  function removeUserFromRole(address _storageContract, address _user, uint _role) {
     bytes32 role = _role == uint(UserRole.Owner) ? OWNER : ADMIN;
     bytes32 roleCount = _role == uint(UserRole.Owner) ? OWNERS_COUNT : ADMINS_COUNT;
 

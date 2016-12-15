@@ -9,7 +9,7 @@ import "TaskLibrary.sol";
 import "SecurityLibrary.sol";
 
 
-contract Colony is Modifiable  {
+contract Colony is Modifiable {
 
   modifier onlyRootColony(){
     if(msg.sender != IRootColonyResolver(rootColonyResolver).rootColonyAddress()) { throw; }
@@ -79,7 +79,8 @@ contract Colony is Modifiable  {
   /// @notice gets the reserved colony tokens for funding tasks
   /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
   /// @return a uint value indicating if the amount of reserved colony tokens
-  function reservedTokensWei() constant returns (uint256)
+  function reservedTokensWei()
+  constant returns (uint256)
   {
     return eternalStorage.getReservedTokensWei();
   }
@@ -102,8 +103,7 @@ contract Colony is Modifiable  {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     if (eternalStorage.transfer(this, tokensWei)) {
       eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
-    }
-    else{
+    } else {
       throw;
     }
   }
@@ -119,13 +119,13 @@ contract Colony is Modifiable  {
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
     if ((reservedTokensWei + tokensWei) <= eternalStorage.balanceOf(this)) {
       eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
-    }
-    else {
+    } else {
       throw;
     }
   }
 
-  function getTaskCount() constant returns (uint256)
+  function getTaskCount()
+  constant returns (uint256)
   {
     return eternalStorage.getTaskCount();
   }
@@ -202,8 +202,7 @@ contract Colony is Modifiable  {
         var reservedTokensWei = eternalStorage.getReservedTokensWei();
         eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
         eternalStorage.removeReservedTokensWeiForTask(taskId);
-      }
-      else{
+      } else {
         throw;
       }
     }
@@ -221,12 +220,14 @@ contract Colony is Modifiable  {
      return eternalStorage.transferFrom(_from, _to, _value);
    }
 
-   function balanceOf(address _account) constant returns (uint256 balance)
+   function balanceOf(address _account)
+   constant returns (uint256 balance)
    {
      return eternalStorage.balanceOf(_account);
    }
 
-   function allowance(address _owner, address _spender) constant returns (uint256)
+   function allowance(address _owner, address _spender)
+   constant returns (uint256)
    {
      return eternalStorage.allowance(_owner, _spender);
    }
@@ -267,7 +268,8 @@ contract Colony is Modifiable  {
   }
 
   function ()
-  payable {
+  payable
+  {
       // Contracts that want to receive Ether with a plain "send" have to implement
       // a fallback function with the payable modifier. Contracts now throw if no payable
       // fallback function is defined and no function matches the signature.

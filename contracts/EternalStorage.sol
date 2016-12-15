@@ -3,7 +3,7 @@ pragma solidity ^0.4.0;
 import "Ownable.sol";
 
 
-contract EternalStorage is Ownable{
+contract EternalStorage is Ownable {
 
     ////////////
     //UInt
@@ -11,7 +11,9 @@ contract EternalStorage is Ownable{
 
     mapping(bytes32 => uint) uIntStorage;
 
-    function getUIntValue(bytes32 record) constant returns (uint){
+    function getUIntValue(bytes32 record)
+    constant returns (uint)
+    {
         return uIntStorage[record];
     }
 
@@ -33,7 +35,9 @@ contract EternalStorage is Ownable{
 
     mapping(bytes32 => string) stringStorage;
 
-    function getStringValue(bytes32 record) constant returns (string){
+    function getStringValue(bytes32 record)
+    constant returns (string)
+    {
         return stringStorage[record];
     }
 
@@ -55,7 +59,9 @@ contract EternalStorage is Ownable{
 
     mapping(bytes32 => address) addressStorage;
 
-    function getAddressValue(bytes32 record) constant returns (address){
+    function getAddressValue(bytes32 record)
+    constant returns (address)
+    {
         return addressStorage[record];
     }
 
@@ -77,7 +83,9 @@ contract EternalStorage is Ownable{
 
     mapping(bytes32 => bytes) bytesStorage;
 
-    function getBytesValue(bytes32 record) constant returns (bytes){
+    function getBytesValue(bytes32 record)
+    constant returns (bytes)
+    {
         return bytesStorage[record];
     }
 
@@ -99,7 +107,9 @@ contract EternalStorage is Ownable{
 
     mapping(bytes32 => bool) booleanStorage;
 
-    function getBooleanValue(bytes32 record) constant returns (bool){
+    function getBooleanValue(bytes32 record)
+    constant returns (bool)
+    {
         return booleanStorage[record];
     }
 
@@ -120,7 +130,9 @@ contract EternalStorage is Ownable{
     ////////////
     mapping(bytes32 => int) intStorage;
 
-    function getIntValue(bytes32 record) constant returns (int){
+    function getIntValue(bytes32 record)
+    constant returns (int)
+    {
         return intStorage[record];
     }
 

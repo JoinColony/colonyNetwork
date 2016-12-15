@@ -14,15 +14,13 @@ library TokenLibrary {
 
   /// @notice set the Token symbol
   /// @param _symbol the symbol of the Colony Token
-  function setTokensSymbol(address _storageContract, bytes _symbol)
-  {
+  function setTokensSymbol(address _storageContract, bytes _symbol) {
     EternalStorage(_storageContract).setBytesValue(keccak256("TokenSymbol"), _symbol);
   }
 
   /// @notice set the Token title
   /// @param _title the title of the Colony Token
-  function setTokensTitle(address _storageContract, bytes _title)
-  {
+  function setTokensTitle(address _storageContract, bytes _title) {
     EternalStorage(_storageContract).setBytesValue(keccak256("TokenTitle"), _title);
   }
 
@@ -48,14 +46,14 @@ library TokenLibrary {
       balanceSet(_storageContract, _to, balanceRecipient + _value);
 
       return true;
-    }
-    else {
+    } else {
       return false;
     }
   }
 
   function transferFromColony(address _storageContract, address _to, uint256 _value)
-  returns (bool success) {
+  returns (bool success)
+  {
     var balanceSender = balanceOf(_storageContract, this);
     var balanceRecipient = balanceOf(_storageContract, _to);
 
@@ -65,8 +63,7 @@ library TokenLibrary {
       balanceSet(_storageContract, _to, balanceRecipient + _value);
 
       return true;
-    }
-    else {
+    } else {
       return false;
     }
   }
@@ -89,8 +86,7 @@ library TokenLibrary {
       allowanceSet(_storageContract, _from, msg.sender, allowedValue - _value);
 
       return true;
-    }
-    else {
+    } else {
       return false;
     }
   }
@@ -118,8 +114,7 @@ library TokenLibrary {
     return EternalStorage(_storageContract).getUIntValue(keccak256("allowance:", _owner, _spender));
   }
 
-  function allowanceSet(address _storageContract, address _owner, address _spender, uint256 _amount)
-  {
+  function allowanceSet(address _storageContract, address _owner, address _spender, uint256 _amount) {
     EternalStorage(_storageContract).setUIntValue(keccak256("allowance:", _owner, _spender), _amount);
   }
 
@@ -131,16 +126,14 @@ library TokenLibrary {
     return EternalStorage(_storageContract).getUIntValue(keccak256("balance:", _account));
   }
 
-  function balanceSet(address _storageContract, address _account, uint256 _balance)
-  {
+  function balanceSet(address _storageContract, address _account, uint256 _balance) {
     EternalStorage(_storageContract).setUIntValue(keccak256("balance:", _account), _balance);
   }
 
   /// @notice this function is used to increase the amount of tokens available limited by `totalSupply`
   /// and assign it to the contract owner.
   /// @param _amount The amount to be increased in the upper bound totalSupply in token wei
-  function generateTokensWei(address _storageContract, uint256 _amount)
-  {
+  function generateTokensWei(address _storageContract, uint256 _amount) {
     if(_amount == 0) { throw; }
 
     var _totalSupply = totalSupply(_storageContract);
