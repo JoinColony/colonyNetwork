@@ -283,30 +283,35 @@ contract Colony is Modifiable {
 
   function createPoll(string description)
   onlyAdminOrOwner
-  returns (bool){
+  returns (bool)
+  {
     return eternalStorage.createPoll(description);
   }
 
   function addPollOption(uint256 pollId, string pollOptionDescription)
   onlyAdminOrOwner
-  returns (bool){
+  returns (bool)
+  {
     return eternalStorage.addPollOption(pollId, pollOptionDescription);
   }
 
   function openPoll(uint256 pollId, uint256 pollDuration)
   onlyAdminOrOwner
-  returns (bool){
+  returns (bool)
+  {
     return eternalStorage.openPoll(pollId, pollDuration);
   }
 
   function resolvePoll(uint256 pollId)
   onlyAdminOrOwner
-  returns (bool){
+  returns (bool)
+  {
     return eternalStorage.resolvePoll(pollId);
   }
 
   function submitVote(uint256 pollId, bytes32 secret, uint256 prevTimestamp, uint256 prevPollId)
-  returns (bool){
+  returns (bool)
+  {
     return eternalStorage.submitVote(pollId, secret, prevTimestamp, prevPollId);
   }
 
@@ -315,7 +320,7 @@ contract Colony is Modifiable {
   {
     uint256 voteWeight = eternalStorage.balanceOf(msg.sender);
     bool revealVote = eternalStorage.revealVote(pollId, idx, salt, voteWeight);
-    if (revealVote && !eternalStorage.isAddressLocked(msg.sender)){
+    if (revealVote && !eternalStorage.isAddressLocked(msg.sender)) {
       // Release 'on hold' tokens, if there are no more locks
       eternalStorage.releaseTokens(msg.sender);
     }

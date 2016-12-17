@@ -42,25 +42,20 @@ library TokenLibrary {
     var balanceSender = balanceOf(_storageContract, msg.sender);
     var balanceRecipient = balanceOf(_storageContract, _to);
 
-    if(_isRecipientLocked){
+    if(_isRecipientLocked) {
       var onHoldBalance = onHoldBalanceOf(_storageContract, _to);
-      if (balanceSender < _value
-        || onHoldBalance + _value <= onHoldBalance
-        || balanceRecipient + _value + onHoldBalance <= balanceRecipient){
+      if (balanceSender < _value || onHoldBalance + _value <= onHoldBalance || balanceRecipient + _value + onHoldBalance <= balanceRecipient) {
         return false;
-      }
-      else{
+      } else {
         balanceSet(_storageContract, msg.sender, balanceSender - _value);
         onHoldBalanceSet(_storageContract, _to, onHoldBalance + _value);
         return true;
       }
-    }
-    else{
+    } else {
       //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
       if (balanceSender < _value || balanceRecipient + _value <= balanceRecipient) {
         return false;
-      }
-      else{
+      } else {
         balanceSet(_storageContract, msg.sender, balanceSender - _value);
         balanceSet(_storageContract, _to, balanceRecipient + _value);
         return true;
@@ -69,29 +64,25 @@ library TokenLibrary {
   }
 
   function transferFromColony(address _storageContract, address _to, uint256 _value, bool _isRecipientLocked)
-  returns (bool success) {
+  returns (bool success)
+  {
     var balanceSender = balanceOf(_storageContract, this);
     var balanceRecipient = balanceOf(_storageContract, _to);
 
-    if(_isRecipientLocked){
+    if(_isRecipientLocked) {
       var onHoldBalance = onHoldBalanceOf(_storageContract, _to);
-      if (balanceSender < _value
-        || onHoldBalance + _value <= onHoldBalance
-        || balanceRecipient + _value + onHoldBalance <= balanceRecipient) {
+      if (balanceSender < _value || onHoldBalance + _value <= onHoldBalance || balanceRecipient + _value + onHoldBalance <= balanceRecipient) {
         return false;
-      }
-      else{
+      } else {
         balanceSet(_storageContract, this, balanceSender - _value);
         onHoldBalanceSet(_storageContract, _to, onHoldBalance + _value);
         return true;
       }
-    }
-    else{
+    } else {
       //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
       if (balanceSender < _value || balanceRecipient + _value <= balanceRecipient) {
         return false;
-      }
-      else{
+      } else {
         balanceSet(_storageContract, this, balanceSender - _value);
         balanceSet(_storageContract, _to, balanceRecipient + _value);
         return true;
@@ -110,29 +101,21 @@ library TokenLibrary {
     var balanceRecipient = balanceOf(_storageContract, _to);
     var allowedValue = allowance(_storageContract, _from, msg.sender);
 
-    if(_isRecipientLocked){
+    if(_isRecipientLocked) {
       var onHoldBalance = onHoldBalanceOf(_storageContract, _to);
-      if (balanceSender < _value
-        || allowedValue < _value
-        || onHoldBalance + _value <= onHoldBalance
-        || balanceRecipient + _value + onHoldBalance <= balanceRecipient) {
+      if (balanceSender < _value || allowedValue < _value || onHoldBalance + _value <= onHoldBalance || balanceRecipient + _value + onHoldBalance <= balanceRecipient) {
         return false;
-      }
-      else{
+      } else {
         balanceSet(_storageContract, _from, balanceSender - _value);
         onHoldBalanceSet(_storageContract, _to, onHoldBalance + _value);
         allowanceSet(_storageContract, _from, msg.sender, allowedValue - _value);
         return true;
       }
-    }
-    else{
+    } else {
       //Check if sender has enough balance and the recipient balance doesn't wrap over max (2^256 - 1)
-      if (balanceSender < _value
-        || allowedValue < _value
-        || balanceRecipient + _value <= balanceRecipient) {
+      if (balanceSender < _value || allowedValue < _value || balanceRecipient + _value <= balanceRecipient) {
         return false;
-      }
-      else{
+      } else {
         balanceSet(_storageContract, _from, balanceSender - _value);
         balanceSet(_storageContract, _to, balanceRecipient + _value);
         allowanceSet(_storageContract, _from, msg.sender, allowedValue - _value);
@@ -186,13 +169,12 @@ library TokenLibrary {
     return EternalStorage(_storageContract).getUIntValue(keccak256("onhold:", _account));
   }
 
-  function onHoldBalanceSet(address _storageContract, address _account, uint256 _balance)
-  {
+  function onHoldBalanceSet(address _storageContract, address _account, uint256 _balance) {
     var onHoldBalance = EternalStorage(_storageContract).getUIntValue(keccak256("onhold:", _account));
     EternalStorage(_storageContract).setUIntValue(keccak256("onhold:", _account), onHoldBalance + _balance);
   }
 
-  function releaseTokens(address _storageContract, address _account){
+  function releaseTokens(address _storageContract, address _account) {
     var onHoldBalance = onHoldBalanceOf(_storageContract, _account);
     if (onHoldBalance > 0) {
       EternalStorage(_storageContract).setUIntValue(keccak256("onhold:", _account), 0);

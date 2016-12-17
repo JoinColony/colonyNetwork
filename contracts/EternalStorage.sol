@@ -107,7 +107,9 @@ contract EternalStorage is Ownable {
 
     mapping(bytes32 => bytes32) bytes32Storage;
 
-    function getBytes32Value(bytes32 record) constant returns (bytes32){
+    function getBytes32Value(bytes32 record)
+    constant returns (bytes32)
+    {
         return bytes32Storage[record];
     }
 
