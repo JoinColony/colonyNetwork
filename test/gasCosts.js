@@ -143,7 +143,7 @@ contract('all', function (accounts) {
       .catch(done);
     });
 
-    it('Average gas costs for customers should not exceed 0.77 ETH per month', function (done) {
+    it('Average gas costs for customers should not exceed 1 ETH per month', function (done) {
       const totalGasCost = (makeTaskCost * 50) // assume 100 tasks per month are created
       + (updateTaskCost * 200) // assume each task is updated 5 times
       + (acceptTaskCost * 50) // all 100 opened tasks are accepted
