@@ -4,7 +4,6 @@ import "Modifiable.sol";
 import "IRootColonyResolver.sol";
 import "TokenLibrary.sol";
 import "Ownable.sol";
-import "ColonyPaymentProvider.sol";
 import "TaskLibrary.sol";
 import "SecurityLibrary.sol";
 
@@ -193,13 +192,20 @@ contract Colony is Modifiable {
 
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0) {
-      ColonyPaymentProvider.settleTaskFees(taskEth, paymentAddress, rootColonyResolver.rootColonyAddress());
+      // Pay the task Ether value -5% to task completor and 5% to rootColony
+      var payoutEth = (taskEth * 95) / 100;
+      var feeEth = taskEth - payoutEth;
+      // If any of the two send transactions fail, throw
+      var rootColony = rootColonyResolver.rootColonyAddress();
+      if (!paymentAddress.send(payoutEth) || !rootColony.send(feeEth)) {
+        throw;
+      }
     }
 
     if (taskTokens > 0) {
-      var payout = ((taskTokens * 95)/100);
-      var fee = taskTokens - payout;
-      if (eternalStorage.transferFromColony(paymentAddress, payout) && eternalStorage.transferFromColony(rootColonyResolver.rootColonyAddress(), fee)) {
+      var payoutTokens = ((taskTokens * 95)/100);
+      var feeTokens = taskTokens - payoutTokens;
+      if (eternalStorage.transferFromColony(paymentAddress, payoutTokens) && eternalStorage.transferFromColony(rootColonyResolver.rootColonyAddress(), feeTokens)) {
         var reservedTokensWei = eternalStorage.getReservedTokensWei();
         eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
         eternalStorage.removeReservedTokensWeiForTask(taskId);
