@@ -160,7 +160,7 @@ contract('all', function (accounts) {
       // Only do this assert if we're using testrpc. There's discrepancy between TestRPC estimategas
       // and geth estimateGas; the former is too high.
       if (web3.version.node.indexOf('TestRPC') === -1) {
-        assert.isBelow(totalEtherCost, 0.77, 'Monthly average costs exceed target');
+        assert.isBelow(totalEtherCost, 1, 'Monthly average costs exceed target');
       } else {
         console.log('IGNORING THE RESULT DUE TO TESTRPC INACCURICIES IN ESTIMATEGAS');
       }
