@@ -73,14 +73,14 @@ contract('TokenLibrary', function (accounts) {
           return colony.balanceOf.call(MAIN_ACCOUNT);
         })
         .then(function (balance) {
-          assert.equal(balance.toNumber(), 95, 'sender balance is incorrect');
+          assert.equal(balance.toNumber(), 100, 'sender balance is incorrect');
           return colony.transfer(OTHER_ACCOUNT, 80, { from: MAIN_ACCOUNT });
         })
         .then(function () {
           return colony.balanceOf.call(MAIN_ACCOUNT);
         })
         .then(function (balance) {
-          assert.equal(balance.toNumber(), 15, 'sender balance is incorrect');
+          assert.equal(balance.toNumber(), 20, 'sender balance is incorrect');
           return colony.balanceOf.call(OTHER_ACCOUNT);
         })
         .then(function (receiverBalance) {
@@ -181,7 +181,7 @@ contract('TokenLibrary', function (accounts) {
       })
       .then(function (prevBalance) {
         previousBalance = prevBalance;
-        assert.equal(prevBalance.toNumber(), 95, 'Main account balance is incorrect');
+        assert.equal(prevBalance.toNumber(), 100, 'Main account balance is incorrect');
         return colony.balanceOf.call(OTHER_ACCOUNT);
       })
       .then(function (prevBalance) {

@@ -538,7 +538,7 @@ contract('Colony', function (accounts) {
         return colony.balanceOf.call(OTHER_ACCOUNT);
       })
       .then(function (otherAccountTokenBalance) {
-        assert.equal(otherAccountTokenBalance.toNumber(), 95, 'OTHER_ACCOUNT balance should be 95 tokens.');
+        assert.equal(otherAccountTokenBalance.toNumber(), 100, 'OTHER_ACCOUNT balance should be 100 tokens.');
         return colony.addUserToRole(OTHER_ACCOUNT, 1);
       })
       .then(function () {
@@ -699,13 +699,13 @@ contract('Colony', function (accounts) {
       })
       .then(function (_tokensWei) {
         assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
-        assert.equal(web3.eth.getBalance(OTHER_ACCOUNT).minus(prevBalance).toNumber(), 9500);
+        assert.equal(web3.eth.getBalance(OTHER_ACCOUNT).minus(prevBalance).toNumber(), 10000);
       })
       .then(done)
       .catch(done);
     });
 
-    it('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
+    it.skip('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
       colony.generateTokensWei(100)
       .then(function () {
         return colony.makeTask('name', 'summary');

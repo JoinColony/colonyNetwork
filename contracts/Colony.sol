@@ -192,20 +192,13 @@ contract Colony is Modifiable {
 
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0) {
-      // Pay the task Ether value -5% to task completor and 5% to rootColony
-      var payoutEth = (taskEth * 95) / 100;
-      var feeEth = taskEth - payoutEth;
-      // If any of the two send transactions fail, throw
-      var rootColony = rootColonyResolver.rootColonyAddress();
-      if (!paymentAddress.send(payoutEth) || !rootColony.send(feeEth)) {
+      if (!paymentAddress.send(taskEth)) {
         throw;
       }
     }
 
     if (taskTokens > 0) {
-      var payoutTokens = ((taskTokens * 95)/100);
-      var feeTokens = taskTokens - payoutTokens;
-      if (eternalStorage.transferFromColony(paymentAddress, payoutTokens) && eternalStorage.transferFromColony(rootColonyResolver.rootColonyAddress(), feeTokens)) {
+      if (eternalStorage.transferFromColony(paymentAddress, taskTokens)) {
         var reservedTokensWei = eternalStorage.getReservedTokensWei();
         eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
         eternalStorage.removeReservedTokensWeiForTask(taskId);
