@@ -166,6 +166,26 @@ contract('all', function (accounts) {
       .then(function () {
         balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
         console.log('transfer actual cost :', balanceBefore.minus(balanceAfter).dividedBy(GAS_PRICE).toNumber());
+        return colony.addUserToRole.estimateGas(OTHER_ACCOUNT, 1, { from: MAIN_ACCOUNT });
+      })
+      .then(function (cost) {
+        console.log('addUserToRole estimate : ', cost);
+        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+        return colony.addUserToRole(OTHER_ACCOUNT, 1, { from: MAIN_ACCOUNT });
+      })
+      .then(function () {
+        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
+        console.log('addUserToRole actual cost :', balanceBefore.minus(balanceAfter).dividedBy(GAS_PRICE).toNumber());
+        return colony.removeUserFromRole.estimateGas(OTHER_ACCOUNT, 1, { from: MAIN_ACCOUNT });
+      })
+      .then(function (cost) {
+        console.log('removeUserFromRole estimate : ', cost);
+        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 1, { from: MAIN_ACCOUNT });
+      })
+      .then(function () {
+        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
+        console.log('removeUserFromRole actual cost :', balanceBefore.minus(balanceAfter).dividedBy(GAS_PRICE).toNumber());
         done();
       })
       .catch(done);
