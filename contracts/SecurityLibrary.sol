@@ -60,23 +60,14 @@ library SecurityLibrary {
     var userIsInRole = EternalStorage(_storageContract).getBooleanValue(keccak256(role, _user));
     if (!userIsInRole) { throw; }
 
-    // if there is only one owner, keep her/him :p
-    // if they want to leave, they can kill the colony
+    // Ensure this is NOT the last owner leaving the colony
     var isUserOwner = EternalStorage(_storageContract).getBooleanValue(keccak256(OWNER, msg.sender));
     if (_role == uint(UserRole.Owner)) {
       if (!isUserOwner) { throw; }
 
       var countOwners = EternalStorage(_storageContract).getUIntValue(keccak256(roleCount));
       if (countOwners == 1) { throw; }
-
-    } else if (_role == uint(UserRole.Admin)) {
-
-      // Admins can leave the colony at their own will but they cannot remove other admins
-      if(msg.sender != _user && !isUserOwner) {
-        throw;
-      }
     }
-
     EternalStorage(_storageContract).deleteBooleanValue(keccak256(role, _user));
 
     // Decrement the counting in storage for this role
