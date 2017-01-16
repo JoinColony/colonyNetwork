@@ -3,19 +3,15 @@
  TokenLibrary, RootColony, RootColonyResolver, ColonyFactory, EternalStorage */
 
 module.exports = function (deployer) {
-  deployer.deploy([
-    // Deploy libraries first
-    TaskLibrary,
-    SecurityLibrary,
-    ColonyLibrary,
-    TokenLibrary,
-  ]);
+  // Deploy libraries first
+  deployer.deploy([TaskLibrary]);
+  deployer.deploy([SecurityLibrary]);
+  deployer.deploy([ColonyLibrary]);
+  deployer.deploy([TokenLibrary]);
   deployer.autolink();
-  deployer.deploy([
-    // Deploy colony network contracts
-    RootColony,
-    RootColonyResolver,
-    ColonyFactory,
-    EternalStorage,
-  ]);
+  // Deploy colony network contracts
+  deployer.deploy([RootColony]);
+  deployer.deploy([RootColonyResolver]);
+  deployer.deploy([ColonyFactory]);
+  deployer.deploy([EternalStorage]);
 };
