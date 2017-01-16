@@ -4,7 +4,6 @@ import "Modifiable.sol";
 import "IRootColonyResolver.sol";
 import "TokenLibrary.sol";
 import "Ownable.sol";
-import "ColonyPaymentProvider.sol";
 import "TaskLibrary.sol";
 import "SecurityLibrary.sol";
 import "VotingLibrary.sol";
@@ -36,6 +35,9 @@ contract Colony is Modifiable {
   using VotingLibrary for address;
 
   address public eternalStorage;
+  // This property, exactly as defined, is used in build scripts. Take care when updating.
+  // Version number should be upped with every change in Colony or its dependency contracts or libraries.
+  uint256 public version = 3; 
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)
   payable
@@ -106,7 +108,7 @@ contract Colony is Modifiable {
     var isAddressLocked = eternalStorage.isAddressLocked(msg.sender);
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     if (eternalStorage.transfer(this, tokensWei, isAddressLocked)) {
-      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
+      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
     } else {
       throw;
     }
@@ -115,17 +117,25 @@ contract Colony is Modifiable {
   /// @notice contribute tokens from the colony pool to fund a task
   /// @param taskId the task ID
   /// @param tokensWei the amount of tokens wei to fund the task
-  function contributeTokensWeiFromPool(uint256 taskId, uint256 tokensWei)
+  function setReservedTokensWeiForTask(uint256 taskId, uint256 tokensWei)
   onlyAdminOrOwner
   {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
     if ((reservedTokensWei + tokensWei) <= eternalStorage.balanceOf(this)) {
-      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
+      eternalStorage.setReservedTokensWeiForTask(taskId, tokensWei);
     } else {
       throw;
     }
+  }
+
+  /// @notice allows refunding of reserved tokens back into the colony pool for closed tasks
+  /// @param taskId the task ID
+  function removeReservedTokensWeiForTask(uint256 taskId)
+  onlyAdminOrOwner
+  {
+    return eternalStorage.removeReservedTokensWeiForTask(taskId);
   }
 
   function getTaskCount()
@@ -155,19 +165,24 @@ contract Colony is Modifiable {
     eternalStorage.acceptTask(_id);
   }
 
-  /// @notice this function is used to update task data.
+  /// @notice this function is used to update task title.
   /// @param _id the task id
   /// @param _name the task name
-  /// @param _summary an IPFS hash
-  function updateTask(
-    uint256 _id,
-    string _name,
-    string _summary
-  )
+  function updateTaskTitle(uint256 _id, string _name)
   onlyAdminOrOwner
   throwIfIsEmptyString(_name)
   {
-    eternalStorage.updateTask(_id, _name, _summary);
+    eternalStorage.updateTaskTitle(_id, _name);
+  }
+
+  /// @notice this function is used to update task summary.
+  /// @param _id the task id
+  /// @param _summary an IPFS hash
+  function updateTaskSummary(uint256 _id, string _summary)
+  onlyAdminOrOwner
+  throwIfIsEmptyString(_summary)
+  {
+    eternalStorage.updateTaskSummary(_id, _summary);
   }
 
   /// @notice set the colony tokens symbol
@@ -186,7 +201,7 @@ contract Colony is Modifiable {
     eternalStorage.setTokensTitle(title_);
   }
 
-  /// @notice mark a task as completed, pay the user who completed it and root colony fee
+  /// @notice mark a task as completed, pay the user who completed it
   /// @param taskId the task ID to be completed and paid
   /// @param paymentAddress the address of the user to be paid
   function completeAndPayTask(uint256 taskId, address paymentAddress)
@@ -199,9 +214,9 @@ contract Colony is Modifiable {
     eternalStorage.acceptTask(taskId);
 
     if (taskEth > 0) {
-      if (!paymentAddress.send(taskEth)) {
-        throw;
-      }
+     if (!paymentAddress.send(taskEth)) {
+       throw;
+     }
     }
 
     if (taskTokens > 0) {
