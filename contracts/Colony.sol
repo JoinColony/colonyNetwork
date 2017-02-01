@@ -193,9 +193,13 @@ contract Colony is Modifiable {
   function completeAndPayTask(uint256 taskId, address paymentAddress)
   onlyAdminOrOwner
   {
+    var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
+
+    // Check token balance is sufficient to pay the worker
+    if (eternalStorage.balanceOf(this) < taskTokens) { return; }
+
     eternalStorage.acceptTask(taskId);
 
-    var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
     if (taskEth > 0) {
       if (!paymentAddress.send(taskEth)) {
         throw;
