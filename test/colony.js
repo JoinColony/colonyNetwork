@@ -386,16 +386,47 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should allow admins to edit task', function (done) {
+    it('should allow admins to edit task title', function (done) {
       colony.makeTask('name', 'summary')
       .then(function () {
-        return colony.updateTask(0, 'nameedit', 'summaryedit');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (_name) {
         assert.equal(_name, 'nameedit', 'Wrong task name');
+        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
+      })
+      .then(function (summary) {
+        assert.equal(summary, 'summary', 'Wrong task summary');
+        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
+      })
+      .then(function (taskaccepted) {
+        assert.equal(taskaccepted, false, 'Wrong accepted value');
+        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
+      })
+      .then(function (eth) {
+        assert.equal(eth.toNumber(), 0, 'Wrong task ether value');
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+      })
+      .then(function (tokensWei) {
+        assert.equal(tokensWei.toNumber(), 0, 'Wrong tokens wei value');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should allow admins to edit task summary', function (done) {
+      colony.makeTask('name', 'summary')
+      .then(function () {
+        return colony.updateTaskSummary(0, 'summaryedit');
+      })
+      .then(function () {
+        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
+      })
+      .then(function (_name) {
+        assert.equal(_name, 'name', 'Wrong task name');
         return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function (summary) {
@@ -417,9 +448,25 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
-    it('should fail if other users non-admins try to edit a task', function (done) {
+    it('should fail if other users non-admins try to edit a task title', function (done) {
       colony.makeTask('name', 'summary').then(function () {
-        return colony.updateTask(0, 'nameedit', 'summary', {
+        return colony.updateTaskTitle(0, 'nameedit', {
+          from: OTHER_ACCOUNT,
+          gasPrice: GAS_PRICE,
+          gas: GAS_TO_SPEND,
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (txid) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if other users non-admins try to edit a task summary', function (done) {
+      colony.makeTask('name', 'summary').then(function () {
+        return colony.updateTaskSummary(0, 'summary', {
           from: OTHER_ACCOUNT,
           gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
@@ -452,7 +499,7 @@ contract('Colony', function (accounts) {
     it('should allow admins to fund task with ETH', function (done) {
       colony.makeTask('name', 'summary')
       .then(function () {
-        return colony.updateTask(0, 'nameedit', 'summaryedit');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return colony.contributeEthToTask(0, {
@@ -467,7 +514,7 @@ contract('Colony', function (accounts) {
         return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function (_summary) {
-        assert.equal(_summary, 'summaryedit', 'Wrong task summary');
+        assert.equal(_summary, 'summary', 'Wrong task summary');
         return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function (a) {
@@ -512,7 +559,7 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name2', 'summary2');
       })
       .then(function () {
-        return colony.updateTask(0, 'nameedit', 'summary');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return colony.reservedTokensWei.call();
@@ -599,7 +646,7 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name2', 'summary2');
       })
       .then(function () {
-        return colony.updateTask(0, 'nameedit', 'summary');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return colony.contributeTokensWeiFromPool(0, 100, { from: MAIN_ACCOUNT });
@@ -634,7 +681,7 @@ contract('Colony', function (accounts) {
     it('should not allow non-admin to close task', function (done) {
       colony.makeTask('name', 'summary')
       .then(function () {
-        return colony.updateTask(0, 'nameedit', 'summary');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return colony.contributeEthToTask(0, {
@@ -668,7 +715,7 @@ contract('Colony', function (accounts) {
       const prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
       colony.makeTask('name', 'summary')
       .then(function () {
-        return colony.updateTask(0, 'nameedit', 'summary');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return colony.contributeEthToTask(0, {
@@ -711,7 +758,7 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        return colony.updateTask(0, 'nameedit', 'summary');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return colony.contributeTokensWeiFromPool(0, 100);

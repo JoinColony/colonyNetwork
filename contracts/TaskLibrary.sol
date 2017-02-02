@@ -104,22 +104,33 @@ library TaskLibrary {
     EternalStorage(_storageContract).setBooleanValue(keccak256("task_accepted", _id), true);
   }
 
-  /// @notice this function is used to update task data.
+  /// @notice this function is used to update task title.
   /// @param _id the task id
   /// @param _name the task name
-  /// @param _summary an IPFS hash
-  function updateTask(
+  function updateTaskTitle(
     address _storageContract,
     uint256 _id,
-    string _name,
-    string _summary
+    string _name
   )
   ifTasksExists(_storageContract, _id)
 	ifTasksNotAccepted(_storageContract, _id)
   {
     EternalStorage(_storageContract).setStringValue(keccak256("task_name", _id), _name);
-    EternalStorage(_storageContract).setStringValue(keccak256("task_summary", _id), _summary);
+    TaskUpdated(keccak256("task_name", _id), now);
+  }
 
+  /// @notice this function is used to update task summary.
+  /// @param _id the task id
+  /// @param _summary an IPFS hash
+  function updateTaskSummary(
+    address _storageContract,
+    uint256 _id,
+    string _summary
+  )
+  ifTasksExists(_storageContract, _id)
+  ifTasksNotAccepted(_storageContract, _id)
+  {
+    EternalStorage(_storageContract).setStringValue(keccak256("task_summary", _id), _summary);
     TaskUpdated(keccak256("task_name", _id), now);
   }
 

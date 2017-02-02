@@ -151,19 +151,24 @@ contract Colony is Modifiable {
     eternalStorage.acceptTask(_id);
   }
 
-  /// @notice this function is used to update task data.
+  /// @notice this function is used to update task title.
   /// @param _id the task id
   /// @param _name the task name
-  /// @param _summary an IPFS hash
-  function updateTask(
-    uint256 _id,
-    string _name,
-    string _summary
-  )
+  function updateTaskTitle(uint256 _id, string _name)
   onlyAdminOrOwner
   throwIfIsEmptyString(_name)
   {
-    eternalStorage.updateTask(_id, _name, _summary);
+    eternalStorage.updateTaskTitle(_id, _name);
+  }
+
+  /// @notice this function is used to update task summary.
+  /// @param _id the task id
+  /// @param _summary an IPFS hash
+  function updateTaskSummary(uint256 _id, string _summary)
+  onlyAdminOrOwner
+  throwIfIsEmptyString(_summary)
+  {
+    eternalStorage.updateTaskSummary(_id, _summary);
   }
 
   /// @notice set the colony tokens symbol

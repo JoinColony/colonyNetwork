@@ -91,7 +91,7 @@ contract('TaskLibrary', function (accounts) {
     it('should update data to tasks array', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
+        return colony.updateTaskTitle(0, 'TASK B');
       })
       .then(function () {
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
@@ -101,7 +101,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function (_summary) {
-        assert.equal(_summary, 'ANOTHER INTERESTING TASK SUMMARY', 'Wrong task summary');
+        assert.equal(_summary, 'INTERESTING TASK SUMMARY', 'Wrong task summary');
       })
       .then(done)
       .catch(done);
@@ -126,7 +126,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .then(function (_tokensWei) {
         prevTokensBalance = _tokensWei;
-        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY');
+        return colony.updateTaskTitle(0, 'TASK B');
       })
       .then(function () {
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
@@ -136,7 +136,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       })
       .then(function (_summary) {
-        assert.equal(_summary, 'ANOTHER INTERESTING TASK SUMMARY', 'Wrong task summary');
+        assert.equal(_summary, 'INTERESTING TASK SUMMARY', 'Wrong task summary');
         return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function (_accepted) {
@@ -164,7 +164,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .then(function (_accepted) {
         assert.isTrue(_accepted, 'Wrong accepted value');
-        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY', {
+        return colony.updateTaskTitle(0, 'TASK B', {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
           gas: 1e6,
@@ -181,7 +181,7 @@ contract('TaskLibrary', function (accounts) {
     it('should fail if I give it an invalid title', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        return colony.updateTask(0, '', 'INTERESTING TASK SUMMARY', {
+        return colony.updateTaskTitle(0, '', {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
           gas: 1e6,
@@ -198,7 +198,7 @@ contract('TaskLibrary', function (accounts) {
     it('should fail if I try to update a task when i\'m not the owner', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        return colony.updateTask(0, 'TASK B', 'ANOTHER INTERESTING TASK SUMMARY', {
+        return colony.updateTaskTitle(0, 'TASK B', {
           from: OTHER_ACCOUNT,
           gasPrice: GAS_PRICE,
           gas: 1e6,
@@ -215,7 +215,7 @@ contract('TaskLibrary', function (accounts) {
     it('should fail if I try to update a task using an invalid id', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        return colony.updateTask(10, '', 'INTERESTING TASK SUMMARY', {
+        return colony.updateTaskTitle(10, 'New title', {
           from: MAIN_ACCOUNT,
           gasPrice: GAS_PRICE,
           gas: 1e6,

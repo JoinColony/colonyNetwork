@@ -126,17 +126,13 @@ contract('Colony', function (accounts) {
       })
       .then(function (_tokensWei) {
         assert.equal(_tokensWei.toNumber(), 20, 'Wrong tokens wei value');
-        return colony.updateTask(0, 'nameedit', 'summaryedit');
+        return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (name) {
         assert.equal(name, 'nameedit', 'Incorrect task name');
-        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
-      })
-      .then(function (_summary) {
-        assert.equal(_summary, 'summaryedit', 'Wrong task summary');
         return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function (_accepted) {

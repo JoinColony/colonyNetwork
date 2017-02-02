@@ -101,17 +101,17 @@ contract('all', function (accounts) {
       .then(function () {
         balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
         console.log('makeTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(GAS_PRICE).toNumber());
-        return colony.updateTask.estimateGas(0, 'My updated task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC02', { from: MAIN_ACCOUNT });
+        return colony.updateTaskTitle.estimateGas(0, 'My updated task', { from: MAIN_ACCOUNT });
       })
       .then(function (cost) {
         updateTaskCost = cost;
-        console.log('updateTask estimate : ', cost);
+        console.log('updateTaskTitle estimate : ', cost);
         balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
-        return colony.updateTask(0, 'My updated task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC02', { from: MAIN_ACCOUNT });
+        return colony.updateTaskTitle(0, 'My updated task', { from: MAIN_ACCOUNT });
       })
       .then(function () {
         balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('updateTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(GAS_PRICE).toNumber());
+        console.log('updateTaskTitle actual cost :', balanceBefore.minus(balanceAfter).dividedBy(GAS_PRICE).toNumber());
         return colony.generateTokensWei.estimateGas(200, { from: MAIN_ACCOUNT });
       })
       .then(function (cost) {
