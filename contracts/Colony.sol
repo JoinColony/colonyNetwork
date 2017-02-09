@@ -208,13 +208,17 @@ contract Colony is Modifiable {
 
     if (taskTokens > 0) {
       if (eternalStorage.transferFromColony(paymentAddress, taskTokens)) {
-        var reservedTokensWei = eternalStorage.getReservedTokensWei();
-        eternalStorage.setReservedTokensWei(reservedTokensWei - taskTokens);
         eternalStorage.removeReservedTokensWeiForTask(taskId);
       } else {
         throw;
       }
     }
+  }
+
+  function removeReservedTokensWeiForTask(uint256 taskId)
+  onlyAdminOrOwner
+  {
+    return eternalStorage.removeReservedTokensWeiForTask(taskId);
   }
 
   function transfer(address _to, uint256 _value)

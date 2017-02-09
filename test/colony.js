@@ -752,6 +752,31 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should allow admin to refund task tokens', function (done) {
+      colony.generateTokensWei(100, { from: MAIN_ACCOUNT })
+      .then(function () {
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function () {
+        return colony.contributeTokensWeiFromPool(0, 80, { from: MAIN_ACCOUNT });
+      })
+      .then(function () {
+        return colony.reservedTokensWei.call();
+      })
+      .then(function (reservedTokensWei) {
+        assert.equal(reservedTokensWei.toNumber(), 80, 'Has not reserved the right amount of colony tokens.');
+        return colony.removeReservedTokensWeiForTask(0);
+      })
+      .then(function () {
+        return colony.reservedTokensWei.call();
+      })
+      .then(function (reservedTokensWei) {
+        assert.equal(reservedTokensWei.toNumber(), 0, 'Has not released the task colony tokens.');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it.skip('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
       colony.generateTokensWei(100)
       .then(function () {

@@ -185,6 +185,9 @@ library TaskLibrary {
     uint256 _id)
 	ifTasksExists(_storageContract, _id)
   {
+    var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
+    var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
+    EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWeiReservedTotal - tokensWeiReserved);
     EternalStorage(_storageContract).deleteUIntValue(keccak256("task_tokensWeiReserved", _id));
   }
 }
