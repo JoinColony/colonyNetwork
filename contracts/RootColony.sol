@@ -1,13 +1,13 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "IColonyFactory.sol";
-import "Destructible.sol";
-import "Modifiable.sol";
-import "Ownable.sol";
-import "EternalStorage.sol";
-import "SecurityLibrary.sol";
-import "ColonyLibrary.sol";
-import "IColony.sol";
+import "./IColonyFactory.sol";
+import "./Destructible.sol";
+import "./Modifiable.sol";
+import "./Ownable.sol";
+import "./EternalStorage.sol";
+import "./SecurityLibrary.sol";
+import "./ColonyLibrary.sol";
+import "./IColony.sol";
 
 
 contract RootColony is Destructible, Modifiable {

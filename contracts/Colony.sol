@@ -1,11 +1,11 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "Modifiable.sol";
-import "IRootColonyResolver.sol";
-import "TokenLibrary.sol";
-import "Ownable.sol";
-import "TaskLibrary.sol";
-import "SecurityLibrary.sol";
+import "./Modifiable.sol";
+import "./IRootColonyResolver.sol";
+import "./TokenLibrary.sol";
+import "./Ownable.sol";
+import "./TaskLibrary.sol";
+import "./SecurityLibrary.sol";
 
 
 contract Colony is Modifiable {

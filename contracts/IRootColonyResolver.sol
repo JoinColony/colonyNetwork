@@ -1,7 +1,7 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "Modifiable.sol";
-import "Destructible.sol";
+import "./Modifiable.sol";
+import "./Destructible.sol";
 
 
 contract IRootColonyResolver is Destructible, Modifiable {
