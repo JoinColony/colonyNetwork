@@ -82,7 +82,6 @@ contract Colony is Modifiable {
   /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
   /// @return a uint value indicating if the amount of reserved colony tokens
   function reservedTokensWei()
-  onlyAdminOrOwner
   constant returns (uint256)
   {
     return eternalStorage.getReservedTokensWei();
