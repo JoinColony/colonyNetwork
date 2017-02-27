@@ -32,6 +32,7 @@ contract Colony is Modifiable {
   using SecurityLibrary for address;
   using TokenLibrary for address;
   address public eternalStorage;
+  uint256 public version = 1;
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)
   payable
