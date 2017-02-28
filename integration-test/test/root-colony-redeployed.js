@@ -21,7 +21,6 @@ contract('RootColony', function () {
     EternalStorage.new()
     .then(function (contract) {
       eternalStorageRoot = contract;
-      return;
     })
     .then(function () {
       return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);

@@ -25,6 +25,5 @@ module.exports = function (deployer) {
   })
   .then(function () {
     console.log('### Network contracts registered successfully ###');
-    return;
   });
 };

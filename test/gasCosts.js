@@ -78,7 +78,6 @@ contract('all', function (accounts) {
     })
     .then(function (colony_) {
       colony = Colony.at(colony_);
-      return;
     })
     .then(done)
     .catch(done);

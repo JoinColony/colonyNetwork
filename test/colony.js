@@ -42,7 +42,6 @@ contract('Colony', function (accounts) {
     })
     .then(function (colony_) {
       colony = Colony.at(colony_);
-      return;
     })
     .then(function () {
       return colony.eternalStorage.call();
