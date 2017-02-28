@@ -220,6 +220,48 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
+    it('should be able to get the Colony version', function (done) {
+      let actualColonyVersion;
+      rootColony.createColony(COLONY_KEY)
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        colony = Colony.at(_address);
+        return colony.version.call();
+      })
+      .then(function (version) {
+        actualColonyVersion = version.toNumber();
+        return rootColony.getColonyVersion(colony.address);
+      })
+      .then(function (version) {
+        assert.equal(version.toNumber(), actualColonyVersion);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should be able to get the latest Colony version', function (done) {
+      let actualColonyVersion;
+      rootColony.createColony(COLONY_KEY)
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        colony = Colony.at(_address);
+        return colony.version.call();
+      })
+      .then(function (version) {
+        actualColonyVersion = version.toNumber();
+        return rootColony.getLatestColonyVersion();
+      })
+      .then(function (version) {
+        assert.equal(version.toNumber(), actualColonyVersion);
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should fail if ETH is sent', function (done) {
       rootColony.createColony(COLONY_KEY, {
         from: MAIN_ACCOUNT,
