@@ -764,6 +764,10 @@ contract('Colony', function (accounts) {
       })
       .then(function (reservedTokensWei) {
         assert.equal(reservedTokensWei.toNumber(), 80, 'Has not reserved the right amount of colony tokens.');
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+      })
+      .then(function (taskTokensWei) {
+        assert.equal(taskTokensWei.toNumber(), 80, 'Has not set the task token funds correctly');
         return colony.removeReservedTokensWeiForTask(0);
       })
       .then(function () {
@@ -771,6 +775,10 @@ contract('Colony', function (accounts) {
       })
       .then(function (reservedTokensWei) {
         assert.equal(reservedTokensWei.toNumber(), 0, 'Has not released the task colony tokens.');
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+      })
+      .then(function (taskTokensWei) {
+        assert.equal(taskTokensWei.toNumber(), 0, 'Has not cleared the task token funds correctly');
       })
       .then(done)
       .catch(done);

@@ -8,6 +8,8 @@ library TaskLibrary {
 
   event TaskUpdated(bytes32 key, uint256 when);
 
+  event TaskRemovedReservedTokens(bytes32 key, uint256 when);
+
 	modifier ifTasksExists(address _storageContract, uint256 _id) {
     if(!hasTask(_storageContract, _id)) { throw; }
 	    _;
@@ -185,9 +187,13 @@ library TaskLibrary {
     uint256 _id)
 	ifTasksExists(_storageContract, _id)
   {
+    var tokensWei = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWei", _id));
     var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
     var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
-    EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWeiReservedTotal - tokensWeiReserved);
+    EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWei", _id), tokensWei - tokensWeiReserved);
     EternalStorage(_storageContract).deleteUIntValue(keccak256("task_tokensWeiReserved", _id));
+    EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWeiReservedTotal - tokensWeiReserved);
+
+    TaskRemovedReservedTokens(keccak256("task_name", _id), now);
   }
 }
