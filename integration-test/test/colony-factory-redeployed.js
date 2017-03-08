@@ -82,5 +82,36 @@ contract('ColonyFactory', function () {
       .then(done)
       .catch(done);
     });
+
+    it('should report the correct updated version on Colony contract', function (done) {
+      let oldColonyVersion;
+      let updatedVersion;
+
+      rootColony.getColony.call(COLONY_KEY)
+      .then(function (_address) {
+        return rootColony.getColonyVersion(_address);
+      })
+      .then(function (_version) {
+        oldColonyVersion = _version.toNumber();
+        return rootColony.upgradeColony(COLONY_KEY);
+      })
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        return rootColony.getColonyVersion(_address);
+      })
+      .then(function (_version) {
+        updatedVersion = _version.toNumber();
+        return rootColony.getLatestColonyVersion.call();
+      })
+      .then(function (latestVersion) {
+        latestVersion = latestVersion.toNumber();
+        assert.notEqual(oldColonyVersion, latestVersion);
+        assert.equal(latestVersion, updatedVersion);
+      })
+      .then(done)
+      .catch(done);
+    });
   });
 });
