@@ -54,7 +54,7 @@ module.exports = {
     return web3.toAscii(text).replace(/\u0000/g, '');
   },
   setDefaultGas() {
-    const GAS_PRICE = 20e9;
+    const GAS_PRICE = 0;
     const GAS_TO_SPEND = 4e6;
     RootColony.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
     FakeNewRootColony.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });

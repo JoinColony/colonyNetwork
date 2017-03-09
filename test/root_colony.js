@@ -5,7 +5,6 @@ import testHelper from '../helpers/test-helper';
 
 contract('RootColony', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
-  const GAS_PRICE = 20e9;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   let colony;
@@ -127,7 +126,6 @@ contract('RootColony', function (accounts) {
     it('should fail if the key provided is empty', function (done) {
       rootColony.createColony('', {
         from: MAIN_ACCOUNT,
-        gasPrice: GAS_PRICE,
         gas: 3e6,
       })
       .catch(testHelper.ifUsingTestRPC)
@@ -141,13 +139,11 @@ contract('RootColony', function (accounts) {
     it('should fail if the key provided is already in use', function (done) {
       rootColony.createColony(COLONY_KEY, {
         from: MAIN_ACCOUNT,
-        gasPrice: GAS_PRICE,
         gas: 3e6,
       })
       .then(function () {
         return rootColony.createColony(COLONY_KEY, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 3e6,
         });
       })
@@ -227,7 +223,6 @@ contract('RootColony', function (accounts) {
     it('should fail if ETH is sent', function (done) {
       rootColony.createColony(COLONY_KEY, {
         from: MAIN_ACCOUNT,
-        gasPrice: GAS_PRICE,
         gas: 3e6,
         value: 1,
       })

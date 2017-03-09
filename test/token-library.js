@@ -4,7 +4,6 @@ import { solSha3 } from 'colony-utils';
 import testHelper from '../helpers/test-helper';
 
 contract('TokenLibrary', function (accounts) {
-  const GAS_PRICE = 20e9;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const TOTAL_SUPPLY = 1000;
@@ -99,7 +98,6 @@ contract('TokenLibrary', function (accounts) {
         return colony.transfer(OTHER_ACCOUNT, 1, {
           value: 1,
           gas: 1e6,
-          gasPrice: GAS_PRICE,
         });
       })
       .catch(testHelper.ifUsingTestRPC)
@@ -363,7 +361,6 @@ contract('TokenLibrary', function (accounts) {
         return colony.approve(OTHER_ACCOUNT, 100, {
           value: 1,
           gas: 1e6,
-          gasPrice: GAS_PRICE,
         });
       })
       .catch(testHelper.ifUsingTestRPC)
@@ -457,7 +454,6 @@ contract('TokenLibrary', function (accounts) {
       colony.generateTokensWei(OTHER_ACCOUNT, 100, {
         value: 1,
         gas: 1e6,
-        gasPrice: GAS_PRICE,
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (txid) {
@@ -470,7 +466,6 @@ contract('TokenLibrary', function (accounts) {
     it('should fail if the value is equal to zero', function (done) {
       colony.generateTokensWei(0, {
         gas: 1e6,
-        gasPrice: GAS_PRICE,
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (txid) {
@@ -485,7 +480,6 @@ contract('TokenLibrary', function (accounts) {
       .then(function () {
         return colony.generateTokensWei(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
           gas: 1e6,
-          gasPrice: GAS_PRICE,
         });
       })
       .catch(testHelper.ifUsingTestRPC)

@@ -9,13 +9,11 @@ contract('Colony', function (accounts) {
   let COLONY_KEY;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
-  const GAS_PRICE = 20e9;
   // this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
 
   const optionsToSpotTransactionFailure = {
     from: MAIN_ACCOUNT,
-    gasPrice: GAS_PRICE,
     gas: GAS_TO_SPEND,
   };
 
@@ -260,7 +258,6 @@ contract('Colony', function (accounts) {
       .then(function () {
         return colony.removeUserFromRole(OTHER_ACCOUNT, 1, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })
@@ -300,7 +297,6 @@ contract('Colony', function (accounts) {
       .then(function () {
         return colony.removeUserFromRole(OTHER_ACCOUNT, 0, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })
@@ -372,7 +368,6 @@ contract('Colony', function (accounts) {
       const bigTitle = _.times(160, () => 'A').join('');
       colony.makeTask(bigTitle, 'summary', {
         from: MAIN_ACCOUNT,
-        gasPrice: GAS_PRICE,
         gas: 314159,
       })
       .then(function () {
@@ -451,7 +446,6 @@ contract('Colony', function (accounts) {
       colony.makeTask('name', 'summary').then(function () {
         return colony.updateTaskTitle(0, 'nameedit', {
           from: OTHER_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })
@@ -467,7 +461,6 @@ contract('Colony', function (accounts) {
       colony.makeTask('name', 'summary').then(function () {
         return colony.updateTaskSummary(0, 'summary', {
           from: OTHER_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })
@@ -482,7 +475,6 @@ contract('Colony', function (accounts) {
     it('should fail if other users non-admins try to make a task', function (done) {
       colony.makeTask('name', 'summary', {
         from: OTHER_ACCOUNT,
-        gasPrice: GAS_PRICE,
         gas: GAS_TO_SPEND,
       })
       .catch(testHelper.ifUsingTestRPC)
@@ -537,7 +529,6 @@ contract('Colony', function (accounts) {
         return colony.contributeEthToTask(0, {
           value: 10000,
           from: OTHER_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })
@@ -663,7 +654,6 @@ contract('Colony', function (accounts) {
         // More than the pool, less than totalsupply
         return colony.contributeTokensWeiFromPool(1, 150, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })
@@ -820,7 +810,6 @@ contract('Colony', function (accounts) {
       .then(function () {
         return colony.contributeTokensWeiToTask(0, 100, {
           from: OTHER_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })
@@ -840,7 +829,6 @@ contract('Colony', function (accounts) {
       .then(function () {
         return colony.contributeTokensWeiFromPool(0, 100, {
           from: OTHER_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: GAS_TO_SPEND,
         });
       })

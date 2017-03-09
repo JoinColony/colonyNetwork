@@ -7,7 +7,6 @@ contract('TaskLibrary', function (accounts) {
   let COLONY_KEY = 'COLONY_TEST';
   const BIGGER_TASK_SUMMARY = 'Lorem ipsum dolor sit amet, consectetur adipiscing el';
   const BIGGER_TASK_TITLE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit';
-  const GAS_PRICE = 20e9;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   let colony;
@@ -59,7 +58,6 @@ contract('TaskLibrary', function (accounts) {
     it('should fail if another user (not the owner) tries to add a new task', function (done) {
       colony.makeTask('', 'INTERESTING TASK SUMMARY', {
         from: OTHER_ACCOUNT,
-        gasPrice: GAS_PRICE,
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
@@ -73,7 +71,6 @@ contract('TaskLibrary', function (accounts) {
     it('should fail if I give it an invalid title', function (done) {
       colony.makeTask('', 'INTERESTING TASK SUMMARY', {
         from: MAIN_ACCOUNT,
-        gasPrice: GAS_PRICE,
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
@@ -164,7 +161,6 @@ contract('TaskLibrary', function (accounts) {
         assert.isTrue(_accepted, 'Wrong accepted value');
         return colony.updateTaskTitle(0, 'TASK B', {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -181,7 +177,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.updateTaskTitle(0, '', {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -198,7 +193,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.updateTaskTitle(0, 'TASK B', {
           from: OTHER_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -215,7 +209,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.updateTaskTitle(10, 'New title', {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -271,7 +264,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.acceptTask(0, {
           from: OTHER_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -291,7 +283,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.acceptTask(0, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -308,7 +299,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.acceptTask(10, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -388,7 +378,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.contributeEthToTask(0, 10, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
@@ -405,7 +394,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function () {
         return colony.contributeEthToTask(10, 10, {
           from: MAIN_ACCOUNT,
-          gasPrice: GAS_PRICE,
           gas: 1e6,
         });
       })
