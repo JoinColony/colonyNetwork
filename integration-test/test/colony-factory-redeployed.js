@@ -2,8 +2,7 @@
 /* globals RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, FakeUpdatedColony, EternalStorage */
 import testHelper from '../../helpers/test-helper';
 
-contract('ColonyFactory', function (accounts) {
-  const MAIN_ACCOUNT = accounts[0];
+contract('ColonyFactory', function () {
   const COLONY_KEY = 'COLONY_TEST';
   const NEW_COLONY_KEY = 'NEW_COLONY_TEST';
   let colonyFactory;
@@ -68,7 +67,7 @@ contract('ColonyFactory', function (accounts) {
       rootColony.colonyFactory.call()
       .then(function (colonyFactoryAddress) {
         assert.equal(colonyFactoryAddress, colonyFactoryNew.address, 'ColonyFactoryAddress on RootColony is not updated.');
-        return rootColony.createColony(NEW_COLONY_KEY, { from: MAIN_ACCOUNT });
+        return rootColony.createColony(NEW_COLONY_KEY);
       })
       .then(function () {
         return rootColony.getColony.call(NEW_COLONY_KEY);

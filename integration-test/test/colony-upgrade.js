@@ -5,9 +5,6 @@ import testHelper from '../../helpers/test-helper';
 
 contract('Colony', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
-  const MAIN_ACCOUNT = accounts[0];
-  const GAS_PRICE = 20e9;
-  // this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
 
   let colony;
@@ -53,7 +50,7 @@ contract('Colony', function (accounts) {
       })
       .then(function (_address) {
         colony = Colony.at(_address);
-        return colony.upgrade(accounts[1], { gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
+        return colony.upgrade(accounts[1], { gas: GAS_TO_SPEND });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (txid) {
@@ -79,17 +76,17 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        return colony.contributeEthToTask(0, { from: MAIN_ACCOUNT, value: 100 });
+        return colony.contributeEthToTask(0, { value: 100 });
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 20, { from: MAIN_ACCOUNT });
+        return colony.contributeTokensWeiFromPool(0, 20);
       })
       .then(function () {
         const colonyBalance = web3.eth.getBalance(colony.address);
         assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
       })
       .then(function () {
-        return colony.addUserToRole('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778', 0, { from: MAIN_ACCOUNT });
+        return colony.addUserToRole('0x3cb0256160e49638e9aaa6c9df7f7c87d547c778', 0);
       })
       .then(function () {
         return rootColony.upgradeColony(COLONY_KEY);
