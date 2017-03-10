@@ -1,7 +1,7 @@
 // These globals are added by Truffle:
 /* globals RootColony, Colony, ColonyFactory, EternalStorage */
 contract('all', function (accounts) {
-  const gasPrice = web3.eth.gasPrice;
+  const gasPrice = 20e9;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
 
