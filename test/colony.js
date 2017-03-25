@@ -707,6 +707,12 @@ contract('Colony', function (accounts) {
         return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
+        return colony.generateTokensWei(100);
+      })
+      .then(function () {
+        return colony.setReservedTokensWeiForTask(0, 80);
+      })
+      .then(function () {
         return colony.contributeEthToTask(0, {
           value: 10000,
         });
@@ -734,7 +740,7 @@ contract('Colony', function (accounts) {
         return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function (_tokensWei) {
-        assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
+        assert.equal(_tokensWei.toNumber(), 80, 'Wrong tokens wei value');
         assert.equal(web3.eth.getBalance(OTHER_ACCOUNT).minus(prevBalance).toNumber(), 10000);
       })
       .then(done)
@@ -758,6 +764,9 @@ contract('Colony', function (accounts) {
       })
       .then(function (taskTokensWei) {
         assert.equal(taskTokensWei.toNumber(), 80, 'Has not set the task token funds correctly');
+        return colony.acceptTask(0);
+      })
+      .then(function () {
         return colony.removeReservedTokensWeiForTask(0);
       })
       .then(function () {
@@ -768,7 +777,7 @@ contract('Colony', function (accounts) {
         return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       })
       .then(function (taskTokensWei) {
-        assert.equal(taskTokensWei.toNumber(), 0, 'Has not cleared the task token funds correctly');
+        assert.equal(taskTokensWei.toNumber(), 80, 'Has not cleared the task token funds correctly');
       })
       .then(done)
       .catch(done);

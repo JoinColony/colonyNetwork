@@ -19,6 +19,11 @@ library TaskLibrary {
 			_;
 	}
 
+  modifier ifTaskAccepted(address _storageContract, uint256 _id) {
+    if(!isTaskAccepted(_storageContract, _id)) { throw; }
+      _;
+  }
+
 	/// @notice this function returns the number of tasks in the DB
 	/// @return the number of tasks in DB
 	function getTaskCount(address _storageContract) constant returns(uint256) {
@@ -174,6 +179,7 @@ library TaskLibrary {
     uint256 _id,
     uint256 _amount)
 	ifTasksExists(_storageContract, _id)
+  ifTasksNotAccepted(_storageContract, _id)
   {
     var tokensWei = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWei", _id));
     // Get the current reserved tokens for task and in total
@@ -203,11 +209,10 @@ library TaskLibrary {
     address _storageContract,
     uint256 _id)
 	ifTasksExists(_storageContract, _id)
+  ifTaskAccepted(_storageContract, _id)
   {
-    var tokensWei = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWei", _id));
     var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
     var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
-    EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWei", _id), tokensWei - tokensWeiReserved);
     EternalStorage(_storageContract).deleteUIntValue(keccak256("task_tokensWeiReserved", _id));
     EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWeiReservedTotal - tokensWeiReserved);
 

@@ -34,7 +34,7 @@ contract Colony is Modifiable {
   address public eternalStorage;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  uint256 public version = 1;
+  uint256 public version = 2;
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)
   payable
@@ -126,6 +126,8 @@ contract Colony is Modifiable {
     }
   }
 
+  /// @notice allows refunding of reserved tokens back into the colony pool for closed tasks
+  /// @param taskId the task ID
   function removeReservedTokensWeiForTask(uint256 taskId)
   onlyAdminOrOwner
   {
