@@ -104,7 +104,7 @@ contract Colony is Modifiable {
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     if (eternalStorage.transfer(this, tokensWei)) {
-      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, false);
+      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
     } else {
       throw;
     }
@@ -113,17 +113,23 @@ contract Colony is Modifiable {
   /// @notice contribute tokens from the colony pool to fund a task
   /// @param taskId the task ID
   /// @param tokensWei the amount of tokens wei to fund the task
-  function contributeTokensWeiFromPool(uint256 taskId, uint256 tokensWei)
+  function setReservedTokensWeiForTask(uint256 taskId, uint256 tokensWei)
   onlyAdminOrOwner
   {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
     if ((reservedTokensWei + tokensWei) <= eternalStorage.balanceOf(this)) {
-      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei, true);
+      eternalStorage.setReservedTokensWeiForTask(taskId, tokensWei);
     } else {
       throw;
     }
+  }
+
+  function removeReservedTokensWeiForTask(uint256 taskId)
+  onlyAdminOrOwner
+  {
+    return eternalStorage.removeReservedTokensWeiForTask(taskId);
   }
 
   function getTaskCount()
@@ -215,12 +221,6 @@ contract Colony is Modifiable {
         throw;
       }
     }
-  }
-
-  function removeReservedTokensWeiForTask(uint256 taskId)
-  onlyAdminOrOwner
-  {
-    return eternalStorage.removeReservedTokensWeiForTask(taskId);
   }
 
   function transfer(address _to, uint256 _value)

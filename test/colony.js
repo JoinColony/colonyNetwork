@@ -560,7 +560,7 @@ contract('Colony', function (accounts) {
       })
       .then(function (colonyBalance) {
         assert.equal(colonyBalance.toNumber(), 100, 'Colony address balance should be 100 tokens.');
-        return colony.contributeTokensWeiFromPool(0, 100, { from: MAIN_ACCOUNT });
+        return colony.setReservedTokensWeiForTask(0, 100, { from: MAIN_ACCOUNT });
       })
       .then(function () {
         return colony.reservedTokensWei.call();
@@ -613,7 +613,7 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 70, { from: MAIN_ACCOUNT });
+        return colony.setReservedTokensWeiForTask(0, 70, { from: MAIN_ACCOUNT });
       })
       .then(function () {
         return colony.reservedTokensWei.call();
@@ -639,7 +639,7 @@ contract('Colony', function (accounts) {
         return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 100, { from: MAIN_ACCOUNT });
+        return colony.setReservedTokensWeiForTask(0, 100, { from: MAIN_ACCOUNT });
       })
       .then(function () {
         return colony.completeAndPayTask(0, OTHER_ACCOUNT, { from: MAIN_ACCOUNT });
@@ -652,7 +652,7 @@ contract('Colony', function (accounts) {
       })
       .then(function () {
         // More than the pool, less than totalsupply
-        return colony.contributeTokensWeiFromPool(1, 150, {
+        return colony.setReservedTokensWeiForTask(1, 150, {
           from: MAIN_ACCOUNT,
           gas: GAS_TO_SPEND,
         });
@@ -747,7 +747,7 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 80, { from: MAIN_ACCOUNT });
+        return colony.setReservedTokensWeiForTask(0, 80, { from: MAIN_ACCOUNT });
       })
       .then(function () {
         return colony.reservedTokensWei.call();
@@ -783,7 +783,7 @@ contract('Colony', function (accounts) {
         return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 100);
+        return colony.setReservedTokensWeiForTask(0, 100);
       })
       .then(function () {
         return colony.completeAndPayTask(0, OTHER_ACCOUNT, { from: MAIN_ACCOUNT });
@@ -827,7 +827,7 @@ contract('Colony', function (accounts) {
         return colony.makeTask('name', 'summary');
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 100, {
+        return colony.setReservedTokensWeiForTask(0, 100, {
           from: OTHER_ACCOUNT,
           gas: GAS_TO_SPEND,
         });

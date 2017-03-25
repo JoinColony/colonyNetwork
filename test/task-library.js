@@ -318,7 +318,7 @@ contract('TaskLibrary', function (accounts) {
         return colony.generateTokensWei(100);
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 10);
+        return colony.setReservedTokensWeiForTask(0, 10);
       })
       .then(function () {
         return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
@@ -354,7 +354,7 @@ contract('TaskLibrary', function (accounts) {
         return colony.contributeEthToTask(0, { value: 10 });
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 100);
+        return colony.setReservedTokensWeiForTask(0, 100);
       })
       .then(function () {
         return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));

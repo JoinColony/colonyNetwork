@@ -132,17 +132,17 @@ contract('all', function (accounts) {
       .then(function () {
         balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
         console.log('contributeEthToTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
-        return colony.contributeTokensWeiFromPool.estimateGas(0, 50);
+        return colony.setReservedTokensWeiForTask.estimateGas(0, 50);
       })
       .then(function (cost) {
         contributeTokensToTaskCost = cost;
-        console.log('contributeTokensWeiFromPool estimate : ', cost);
+        console.log('setReservedTokensWeiForTask estimate : ', cost);
         balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
-        return colony.contributeTokensWeiFromPool(0, 50, { gasPrice });
+        return colony.setReservedTokensWeiForTask(0, 50, { gasPrice });
       })
       .then(function () {
         balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('contributeTokensWeiFromPool actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+        console.log('setReservedTokensWeiForTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
         return colony.completeAndPayTask.estimateGas(0, OTHER_ACCOUNT);
       })
       .then(function (cost) {

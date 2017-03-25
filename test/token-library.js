@@ -61,7 +61,7 @@ contract('TokenLibrary', function (accounts) {
           return colony.makeTask('name2', 'summary2');
         })
         .then(function () {
-          return colony.contributeTokensWeiFromPool(0, 100, { from: MAIN_ACCOUNT });
+          return colony.setReservedTokensWeiForTask(0, 100, { from: MAIN_ACCOUNT });
         })
         .then(function () {
           return colony.completeAndPayTask(0, MAIN_ACCOUNT, { from: MAIN_ACCOUNT });
@@ -164,7 +164,7 @@ contract('TokenLibrary', function (accounts) {
         return colony.makeTask('name2', 'summary2');
       })
       .then(function () {
-        return colony.contributeTokensWeiFromPool(0, 100, { from: MAIN_ACCOUNT });
+        return colony.setReservedTokensWeiForTask(0, 100, { from: MAIN_ACCOUNT });
       })
       .then(function () {
         return colony.completeAndPayTask(0, MAIN_ACCOUNT, { from: MAIN_ACCOUNT });

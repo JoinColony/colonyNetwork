@@ -5,9 +5,8 @@ import "EternalStorage.sol";
 
 library TaskLibrary {
   event TaskAdded(bytes32 key, uint256 count, uint256 when);
-
   event TaskUpdated(bytes32 key, uint256 when);
-
+  event TaskSetReservedTokens(bytes32 key, uint256 amount, uint256 when);
   event TaskRemovedReservedTokens(bytes32 key, uint256 when);
 
 	modifier ifTasksExists(address _storageContract, uint256 _id) {
@@ -157,8 +156,7 @@ library TaskLibrary {
   function contributeTokensWeiToTask(
     address _storageContract,
     uint256 _id,
-    uint256 _amount,
-    bool isColonySelfFunded)
+    uint256 _amount)
 	ifTasksExists(_storageContract, _id)
 	ifTasksNotAccepted(_storageContract, _id)
   {
@@ -166,20 +164,39 @@ library TaskLibrary {
     if(tokensWei + _amount <= tokensWei) { throw; }
 
     EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWei", _id), tokensWei + _amount);
+  }
 
-    // Logic to cater for funding tasks by the parent Colony itself (i.e. self-funding tasks).
-    if (isColonySelfFunded) {
-      var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
-      var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
+  /// @notice Fund a task by the parent Colony itself (i.e. self-funding tasks).
+  /// @param _id the task id
+  /// @param _amount the amount of tokens wei to reserve from the colony token pool
+  function setReservedTokensWeiForTask(
+    address _storageContract,
+    uint256 _id,
+    uint256 _amount)
+	ifTasksExists(_storageContract, _id)
+  {
+    var tokensWei = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWei", _id));
+    // Get the current reserved tokens for task and in total
+    var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
+    var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
 
-      var updatedTokensWei = _amount;
-      if (tokensWeiReserved > 0) {
-        updatedTokensWei += tokensWeiReserved;
-      }
+    // Overflow checks
+    if(tokensWei + _amount <= tokensWei) { throw; }
 
-      EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWeiReserved", _id), updatedTokensWei);
-      EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWeiReservedTotal + _amount);
+    var tokensWeiUpdated = tokensWei;
+    var tokensWeiReservedTotalUpdated = tokensWeiReservedTotal;
+
+    // If there are reserved tokens for task, clear them from the task tokens and the running total.
+    if (tokensWeiReserved > 0) {
+      tokensWeiUpdated -= tokensWeiReserved;
+      tokensWeiReservedTotalUpdated -= tokensWeiReserved;
     }
+
+    EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWei", _id), tokensWeiUpdated + _amount);
+    EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWeiReserved", _id), _amount);
+    EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWeiReservedTotalUpdated + _amount);
+
+    TaskSetReservedTokens(keccak256("task_name", _id), _amount, now);
   }
 
   function removeReservedTokensWeiForTask(
