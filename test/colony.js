@@ -359,6 +359,10 @@ contract('Colony', function (accounts) {
       })
       .then(function (_tokensWei) {
         assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
+        return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
+      })
+      .then(function (_budgetSet) {
+        assert.equal(_budgetSet, false, 'Wrong initial budgetSet value');
       })
       .then(done)
       .catch(done);
@@ -518,6 +522,10 @@ contract('Colony', function (accounts) {
       })
       .then(function (_tokensWei) {
         assert.equal(_tokensWei.toNumber(), 0, 'Wrong tokens wei value');
+        return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
+      })
+      .then(function (_budgetSet) {
+        assert.equal(_budgetSet, true, 'Wrong tokens wei value');
       })
       .then(done)
       .catch(done);
@@ -567,8 +575,10 @@ contract('Colony', function (accounts) {
       })
       .then(function (reservedTokensWei) {
         assert.equal(100, reservedTokensWei.toNumber(), 'Colony tokens were not reserved for task');
+        return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
       })
-      .then(function () {
+      .then(function (_budgetSet) {
+        assert.equal(_budgetSet, true, 'Wrong tokens wei value');
         return colony.completeAndPayTask(0, OTHER_ACCOUNT, { from: MAIN_ACCOUNT });
       })
       .then(function () {
@@ -620,6 +630,10 @@ contract('Colony', function (accounts) {
       })
       .then(function (reservedTokensWei) {
         assert.equal(reservedTokensWei.toNumber(), 70, 'Has not reserved the right amount of colony tokens.');
+        return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
+      })
+      .then(function (_budgetSet) {
+        assert.equal(_budgetSet, true, 'Wrong tokens wei value');
       })
       .then(function () {
         done();

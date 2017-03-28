@@ -34,7 +34,7 @@ contract Colony is Modifiable {
   address public eternalStorage;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  uint256 public version = 2;
+  uint256 public version = 3;
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)
   payable

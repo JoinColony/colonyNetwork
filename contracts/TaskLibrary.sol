@@ -59,6 +59,8 @@ library TaskLibrary {
     //EternalStorage(_storageContract).setUIntValue(keccak256("task_eth", idx), 0);
     //Amount of tokens wei contributed to the task
     //EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWei", idx), 0);
+    //Set to false to allow distinguishing when the budget is set (this can be 0 for free tasks)
+    //EternalStorage(_storageContract).setBooleanValue(keccak256("task_funded", idx), false);
     //Total number of tasks
     EternalStorage(_storageContract).setUIntValue(keccak256("TasksCount"), idx + 1);
 
@@ -153,6 +155,7 @@ library TaskLibrary {
     var eth = EternalStorage(_storageContract).getUIntValue(keccak256("task_eth", _id));
     if(eth + _amount <= eth) { throw; }
     EternalStorage(_storageContract).setUIntValue(keccak256("task_eth", _id), eth + _amount);
+    EternalStorage(_storageContract).setBooleanValue(keccak256("task_funded", _id), true);
   }
 
   /// @notice this function takes an amount of tokens and add it to the task funds.
@@ -169,6 +172,7 @@ library TaskLibrary {
     if(tokensWei + _amount <= tokensWei) { throw; }
 
     EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWei", _id), tokensWei + _amount);
+    EternalStorage(_storageContract).setBooleanValue(keccak256("task_funded", _id), true);
   }
 
   /// @notice Fund a task by the parent Colony itself (i.e. self-funding tasks).
@@ -201,6 +205,7 @@ library TaskLibrary {
     EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWei", _id), tokensWeiUpdated + _amount);
     EternalStorage(_storageContract).setUIntValue(keccak256("task_tokensWeiReserved", _id), _amount);
     EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWeiReservedTotalUpdated + _amount);
+    EternalStorage(_storageContract).setBooleanValue(keccak256("task_funded", _id), true);
 
     TaskSetReservedTokens(keccak256("task_name", _id), _amount, now);
   }
