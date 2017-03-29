@@ -33,6 +33,9 @@ module.exports = {
     // we spent all the gas that we sent.
     assert.equal(gasAmount, receipt.gasUsed, 'didnt fail - didn\'t throw and use all gas');
   },
+  checkErrorNonPayableFunction(tx) {
+    assert.equal(tx, 'Error: Cannot send value to non-payable function');
+  },
   getRandomString(_length) {
     const length = _length || 7;
     let randString = '';
