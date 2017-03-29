@@ -1,9 +1,11 @@
-// These globals are added by Truffle:
-/* globals Colony, EternalStorage, RootColony */
+/* globals artifacts */
 import { solSha3 } from 'colony-utils';
 import _ from 'lodash';
-
 import testHelper from '../helpers/test-helper';
+
+const RootColony = artifacts.require('RootColony');
+const Colony = artifacts.require('Colony');
+const EternalStorage = artifacts.require('EternalStorage');
 
 contract('Colony', function (accounts) {
   let COLONY_KEY;
@@ -19,24 +21,32 @@ contract('Colony', function (accounts) {
 
   let colony;
   let eternalStorage;
-  let rootColony;
   let eternalStorageRoot;
+  let rootColony;
 
   before(function (done) {
-    rootColony = RootColony.deployed();
-    eternalStorageRoot = EternalStorage.deployed();
-    done();
+    RootColony.deployed()
+    .then(function (instance) {
+      rootColony = instance;
+    });
+
+    EternalStorage.new()
+    .then(function (contract) {
+      eternalStorageRoot = contract;
+      eternalStorageRoot.changeOwner(rootColony.address);
+    })
+    .then(function () {
+      rootColony.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(done);
   });
 
   beforeEach(function (done) {
     COLONY_KEY = testHelper.getRandomString(7);
 
-    eternalStorageRoot.owner.call()
+    rootColony.createColony(COLONY_KEY, { from: MAIN_ACCOUNT })
     .then(function () {
-      return rootColony.createColony(COLONY_KEY, { from: MAIN_ACCOUNT });
-    })
-    .then(function () {
-      return rootColony.getColony.call(COLONY_KEY);
+      return rootColony.getColony(COLONY_KEY);
     })
     .then(function (colony_) {
       colony = Colony.at(colony_);
@@ -220,8 +230,8 @@ contract('Colony', function (accounts) {
     it('should fail to remove the last owner', function (done) {
       colony.removeUserFromRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -230,8 +240,8 @@ contract('Colony', function (accounts) {
     it('should fail to add the same owner address multiple times', function (done) {
       colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -243,8 +253,8 @@ contract('Colony', function (accounts) {
         return colony.addUserToRole(MAIN_ACCOUNT, 1, optionsToSpotTransactionFailure);
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -262,8 +272,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -272,8 +282,8 @@ contract('Colony', function (accounts) {
     it('should fail to remove an address that was never an admin', function (done) {
       colony.removeUserFromRole(OTHER_ACCOUNT, 1, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -282,8 +292,8 @@ contract('Colony', function (accounts) {
     it('should fail to add the same owner address multiple times', function (done) {
       colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -301,8 +311,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -311,8 +321,8 @@ contract('Colony', function (accounts) {
     it('should fail to remove an address that was never an owner', function (done) {
       colony.removeUserFromRole(OTHER_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -454,8 +464,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -469,8 +479,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -482,8 +492,8 @@ contract('Colony', function (accounts) {
         gas: GAS_TO_SPEND,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -541,8 +551,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -672,8 +682,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(function () {
         done();
@@ -695,8 +705,8 @@ contract('Colony', function (accounts) {
         return colony.completeAndPayTask(0, OTHER_ACCOUNT, { from: OTHER_ACCOUNT, gas: 3e6 });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(3e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(3e6, tx);
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (taskName) {
@@ -837,8 +847,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -856,8 +866,8 @@ contract('Colony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
