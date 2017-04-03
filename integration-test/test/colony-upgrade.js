@@ -1,7 +1,12 @@
-// These globals are added by Truffle:
-/* globals RootColony, Colony, RootColonyResolver, EternalStorage, ColonyFactory */
+/* globals artifacts */
 import { solSha3 } from 'colony-utils';
 import testHelper from '../../helpers/test-helper';
+
+const RootColony = artifacts.require('RootColony');
+const RootColonyResolver = artifacts.require('RootColonyResolver');
+const ColonyFactory = artifacts.require('ColonyFactory');
+const EternalStorage = artifacts.require('EternalStorage');
+const Colony = artifacts.require('Colony');
 
 contract('Colony', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
@@ -14,17 +19,26 @@ contract('Colony', function (accounts) {
   let eternalStorageRoot;
 
   before(function (done) {
-    colonyFactory = ColonyFactory.deployed();
-    rootColony = RootColony.deployed();
-    rootColonyResolver = RootColonyResolver.deployed();
-
-    testHelper.waitAll([
-      rootColonyResolver.registerRootColony(rootColony.address),
-      colonyFactory.registerRootColonyResolver(rootColonyResolver.address),
-      rootColony.registerColonyFactory(colonyFactory.address),
-    ], function () {
-      done();
-    });
+    RootColony.deployed()
+    .then(function (_rootColony) {
+      rootColony = _rootColony;
+      return RootColonyResolver.deployed();
+    })
+    .then(function (_rootColonyResolver) {
+      rootColonyResolver = _rootColonyResolver;
+      return rootColonyResolver.registerRootColony(rootColony.address);
+    })
+    .then(function () {
+      return ColonyFactory.deployed();
+    })
+    .then(function (_colonyFactory) {
+      colonyFactory = _colonyFactory;
+      return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
+    })
+    .then(function () {
+      rootColony.registerColonyFactory(colonyFactory.address);
+    })
+    .then(done);
   });
 
   beforeEach(function (done) {

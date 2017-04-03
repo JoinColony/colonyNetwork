@@ -99,7 +99,7 @@ gulp.task('test:contracts', ['deploy:contracts', 'lint:contracts', 'versionColon
 });
 
 gulp.task('test:contracts:integration', ['deploy:contracts', 'generate:contracts:integration'], () => {
-  const cmd = makeCmd(`truffle test ./integration-test/test/*`);
+  const cmd = makeCmd(`truffle test ./integration-test/test/* --network integration`);
   return execute(cmd).then(cleanIntegrationFakeContracts);
 });
 

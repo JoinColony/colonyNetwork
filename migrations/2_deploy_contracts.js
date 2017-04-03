@@ -9,7 +9,8 @@ const RootColonyResolver = artifacts.require('./RootColonyResolver.sol');
 const ColonyFactory = artifacts.require('./ColonyFactory.sol');
 const EternalStorage = artifacts.require('./EternalStorage.sol');
 
-module.exports = function (deployer) {
+module.exports = function (deployer, network) {
+  console.log(`## ${network} network ##`);
   // Deploy libraries first
   deployer.deploy([TaskLibrary]);
   deployer.deploy([SecurityLibrary]);
@@ -25,4 +26,18 @@ module.exports = function (deployer) {
   deployer.link(TokenLibrary, ColonyFactory);
   deployer.deploy([ColonyFactory]);
   deployer.deploy([EternalStorage]);
+
+  // Add demo data if we're not deploying to the live network.
+  if (network === 'integration') {
+    const FakeNewRootColony = artifacts.require('./FakeNewRootColony.sol');
+    const FakeNewColonyFactory = artifacts.require('./FakeNewColonyFactory.sol');
+    // Link and deploy contracts
+    deployer.link(ColonyLibrary, FakeNewRootColony);
+    deployer.link(SecurityLibrary, FakeNewRootColony);
+    deployer.deploy([FakeNewRootColony]);
+    deployer.link(SecurityLibrary, FakeNewColonyFactory);
+    deployer.link(TaskLibrary, FakeNewColonyFactory);
+    deployer.link(TokenLibrary, FakeNewColonyFactory);
+    deployer.deploy([FakeNewColonyFactory]);
+  }
 };
