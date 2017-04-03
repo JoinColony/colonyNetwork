@@ -21,22 +21,12 @@ contract('Colony', function (accounts) {
 
   let colony;
   let eternalStorage;
-  let eternalStorageRoot;
   let rootColony;
 
   before(function (done) {
     RootColony.deployed()
     .then(function (instance) {
       rootColony = instance;
-    });
-
-    EternalStorage.new()
-    .then(function (contract) {
-      eternalStorageRoot = contract;
-      eternalStorageRoot.changeOwner(rootColony.address);
-    })
-    .then(function () {
-      rootColony.registerEternalStorage(eternalStorageRoot.address);
     })
     .then(done);
   });
