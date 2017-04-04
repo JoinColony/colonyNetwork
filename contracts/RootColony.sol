@@ -100,13 +100,6 @@ contract RootColony is Destructible, Modifiable {
     return eternalStorageRoot.upgradeColony(_key, upgradedColonyAddress);
   }
 
-  function getColonyVersion(address colonyAddress)
-  throwIfAddressIsInvalid(colonyAddress)
-  constant returns (uint256)
-  {
-    return IColony(colonyAddress).version();
-  }
-
   function getLatestColonyVersion()
   constant returns (uint256)
   {

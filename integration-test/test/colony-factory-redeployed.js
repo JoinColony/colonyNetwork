@@ -1,5 +1,5 @@
 // These globals are added by Truffle:
-/* globals RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, FakeUpdatedColony, EternalStorage */
+/* globals RootColony, RootColonyResolver, ColonyFactory, FakeNewColonyFactory, FakeUpdatedColony, EternalStorage, IColony */
 import testHelper from '../../helpers/test-helper';
 
 contract('ColonyFactory', function () {
@@ -89,7 +89,7 @@ contract('ColonyFactory', function () {
 
       rootColony.getColony.call(COLONY_KEY)
       .then(function (_address) {
-        return rootColony.getColonyVersion(_address);
+        return IColony.at(_address).version();
       })
       .then(function (_version) {
         oldColonyVersion = _version.toNumber();
@@ -99,7 +99,7 @@ contract('ColonyFactory', function () {
         return rootColony.getColony.call(COLONY_KEY);
       })
       .then(function (_address) {
-        return rootColony.getColonyVersion(_address);
+        return IColony.at(_address).version();
       })
       .then(function (_version) {
         updatedVersion = _version.toNumber();

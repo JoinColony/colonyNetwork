@@ -1,5 +1,5 @@
 // These globals are added by Truffle:
-/* globals RootColony, Colony, RootColonyResolver, EternalStorage, Ownable */
+/* globals RootColony, Colony, RootColonyResolver, EternalStorage, Ownable, IColony */
 import { solSha3 } from 'colony-utils';
 import testHelper from '../helpers/test-helper';
 
@@ -232,7 +232,7 @@ contract('RootColony', function (accounts) {
       })
       .then(function (version) {
         actualColonyVersion = version.toNumber();
-        return rootColony.getColonyVersion(colony.address);
+        return IColony.at(colony.address).version();
       })
       .then(function (version) {
         assert.equal(version.toNumber(), actualColonyVersion);
