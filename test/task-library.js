@@ -403,6 +403,24 @@ contract('TaskLibrary', function (accounts) {
       .catch(done);
     });
 
+    it('should set the "setBudget" to "true" when the task is funded with 0 tokens', function (done) {
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
+      .then(function () {
+        return colony.generateTokensWei(100);
+      })
+      .then(function () {
+        return colony.setReservedTokensWeiForTask(0, 0);
+      })
+      .then(function () {
+        return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
+      })
+      .then(function (_setBudget) {
+        assert.equal(_setBudget, true, '"setBudget" task property should be "true"');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should fail if I try to contribute to an accepted task', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {

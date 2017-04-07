@@ -190,8 +190,8 @@ library TaskLibrary {
     var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
     var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
 
-    // Overflow checks
-    if(tokensWei + _amount <= tokensWei) { throw; }
+    // Overflow check
+    if(tokensWei + _amount < tokensWei) { throw; }
 
     var tokensWeiUpdated = tokensWei;
     var tokensWeiReservedTotalUpdated = tokensWeiReservedTotal;
