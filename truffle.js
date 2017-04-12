@@ -16,8 +16,8 @@ module.exports = {
       gasPrice: 0,
       network_id: '*',
     },
-    mocha: {
-      reporter: 'spec',
-    },
+  },
+  mocha: {
+    reporter: 'mocha-circleci-reporter',
   },
 };
