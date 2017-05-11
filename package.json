@@ -23,6 +23,7 @@
     "grunt": "^1.0.1",
     "grunt-shell-spawn": "^0.3.10",
     "grunt-wait-async": "^0.1.1",
+    "request": "^2.81.0",
     "solium": "^0.2.2"
   }
 }
