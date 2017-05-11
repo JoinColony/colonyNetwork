@@ -21,6 +21,8 @@
   "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
   "devDependencies": {
     "grunt": "^1.0.1",
+    "grunt-shell-spawn": "^0.3.10",
+    "grunt-wait-async": "^0.1.1",
     "solium": "^0.2.2"
   }
 }

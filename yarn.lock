@@ -481,9 +481,9 @@ glob@3.2.11:
     inherits "2"
     minimatch "0.3"
 
-glob@^7.0.5:
-  version "7.1.1"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-7.1.1.tgz#805211df04faaf1c63a3600306cdf5ade50b2ec8"
+glob@^7.0.5, glob@~7.0.0:
+  version "7.0.6"
+  resolved "https://registry.yarnpkg.com/glob/-/glob-7.0.6.tgz#211bafaf49e525b8cd93260d14ab136152b3f57a"
   dependencies:
     fs.realpath "^1.0.0"
     inflight "^1.0.4"
@@ -499,17 +499,6 @@ glob@~5.0.0:
     inflight "^1.0.4"
     inherits "2"
     minimatch "2 || 3"
-    once "^1.3.0"
-    path-is-absolute "^1.0.0"
-
-glob@~7.0.0:
-  version "7.0.6"
-  resolved "https://registry.yarnpkg.com/glob/-/glob-7.0.6.tgz#211bafaf49e525b8cd93260d14ab136152b3f57a"
-  dependencies:
-    fs.realpath "^1.0.0"
-    inflight "^1.0.4"
-    inherits "2"
-    minimatch "^3.0.2"
     once "^1.3.0"
     path-is-absolute "^1.0.0"
 
@@ -567,7 +556,18 @@ grunt-legacy-util@~1.0.0:
     underscore.string "~3.2.3"
     which "~1.2.1"
 
-grunt@^1.0.1:
+grunt-shell-spawn@^0.3.10:
+  version "0.3.10"
+  resolved "https://registry.yarnpkg.com/grunt-shell-spawn/-/grunt-shell-spawn-0.3.10.tgz#81bb8d457ec47d3182a87d6308ef845ddfb9488f"
+  dependencies:
+    grunt ">=0.4.x"
+    sync-exec "~0.6.2"
+
+grunt-wait-async@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/grunt-wait-async/-/grunt-wait-async-0.1.1.tgz#ddeda5861383f76fd7dd5eb4c973415ad32ca3dd"
+
+grunt@>=0.4.x, grunt@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/grunt/-/grunt-1.0.1.tgz#e8778764e944b18f32bb0f10b9078475c9dfb56b"
   dependencies:
@@ -1414,6 +1414,10 @@ supports-color@1.2.0:
 supports-color@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-2.0.0.tgz#535d045ce6b6363fa40117084629995e9df324c7"
+
+sync-exec@~0.6.2:
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/sync-exec/-/sync-exec-0.6.2.tgz#717d22cc53f0ce1def5594362f3a89a2ebb91105"
 
 tar-pack@^3.4.0:
   version "3.4.0"
