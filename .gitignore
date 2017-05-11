@@ -1,0 +1,5 @@
+node_modules
+parity-genesis.json
+contracts/Fake*
+keys/*
+test-results.xml
