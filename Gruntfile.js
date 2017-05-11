@@ -35,7 +35,7 @@ module.exports = function (grunt) {
     shell: {
       startParity: {
         command() {
-            let command = 'parity --chain ./truffle/parity-genesis.json '
+            let command = 'parity --chain ./parity-genesis.json '
             command += '--author $(parity --keys-path ./keys account list | sed "s/\\\[//g" | sed "s/\\\]//g" | awk "{split(\\$0, a, \\\", \\\"); print a[3]}") '
             command += '--unlock $(parity --keys-path ./keys account list | sed "s/\\\[//g" | sed "s/\\\]//g" | awk "{split(\\$0, a, \\\", \\\"); print a[1]}"),'
             command += '$(parity --keys-path ./keys account list | sed "s/\\\[//g" | sed "s/\\\]//g" | awk "{split(\\$0, a, \\\", \\\"); print a[2]}"),'
@@ -54,7 +54,7 @@ module.exports = function (grunt) {
         command: 'PSID=0; PSID=$( ps aux | grep parity | grep -v \'grep\' | awk {\'print $2\'}); if [ $PSID > 0 ] ; then kill $PSID; else echo \'No Parity running\'; fi',
       },
       initGeth: {
-        command: 'geth init ./truffle/genesis.json',
+        command: 'geth init ./genesis.json',
         options: {
           async: false,
           stdout: false,
@@ -81,34 +81,34 @@ module.exports = function (grunt) {
         },
       },
       truffleTest: {
-        command: 'cd ./truffle && truffle test && cd ..',
+        command: 'truffle test',
       },
       contractLinting: {
         command: './node_modules/.bin/solium --dir . || true',
       },
       truffleDeploy: {
-        command: 'cd ./truffle && truffle migrate --reset && cd ..',
+        command: 'truffle migrate --reset',
       },
       truffleCompile: {
-        command: 'cd ./truffle && truffle compile && cd ..',
+        command: 'truffle compile',
       },
       truffleClean: {
-        command: 'cd ./truffle && rm -rf build/contracts/* && cd ..',
+        command: 'rm -rf build/contracts/*',
       },
       truffleTestContract: {
-        command: 'cd ./truffle && truffle test && cd ..',
+        command: 'truffle test',
       },
       truffleIntegrationTest: {
-        command: 'cd ./truffle&& truffle test ./integration-test/test/* && cd ..',
+        command: 'truffle test ./integration-test/test/*',
       },
       cleanIntegrationTestsContracts: {
-        command: 'rm ./truffle/contracts/Fake*.sol',
+        command: 'rm ./contracts/Fake*.sol',
       },
       generateIntegrationTestsContracts: {
-        command: 'bash ./truffle/makeFakeContracts.sh',
+        command: 'bash ./makeFakeContracts.sh',
       },
       versionColonyContract: {
-        command: 'bash ./truffle/versionColonyContract.sh',
+        command: 'bash ./versionColonyContract.sh',
       },
     },
   });
