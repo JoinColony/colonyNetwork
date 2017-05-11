@@ -1,0 +1,25 @@
+{
+  "name": "colony-network",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoinColony/colonyNetwork.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JoinColony/colonyNetwork/issues"
+  },
+  "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
+  "devDependencies": {
+    "solium": "^0.2.2"
+  }
+}

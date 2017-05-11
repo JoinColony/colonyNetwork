@@ -1,0 +1,39 @@
+machine:
+  node:
+    version: 4.6.1
+
+dependencies:
+  cache_directories:
+    - "node_modules"
+    - "~/.yarn-cache"
+
+  override:
+    - npm i -g yarn@0.21.3 #install yarn
+    - yarn
+    - yarn global add mocha@3.1.2
+    - npm install -g mocha-circleci-reporter@0.0.2
+    - npm install -g truffle@2.1.2
+    - yarn global add grunt-cli@1.2.0
+
+    # Set up parity
+    - wget http://d1h4xl4cr1h0mo.cloudfront.net/v1.3.15/x86_64-unknown-ubuntu_14_04-gnu/parity_1.3.15_amd64.deb
+    - sudo dpkg -i parity_1.3.15_amd64.deb
+    - touch password
+    - echo "password" > parityPassword
+    - cp ./parity-genesis.template.json ./parity-genesis.json
+    - parity --keys-path ./keys --password ./parityPassword account new
+    - parity --keys-path ./keys --password ./parityPassword account new
+    - parity --keys-path ./keys --password ./parityPassword account new
+    # Update our parity genesis file
+    - sed -i "s/xxxxx/$(parity --keys-path ./keys account list | sed 's/\[//g' | sed 's/\]//g' | awk '{split($0, a, ", "); print a[1]}')/g" ./parity-genesis.json
+    - sed -i "s/yyyyy/$(parity --keys-path ./keys account list | sed 's/\[//g' | sed 's/\]//g' | awk '{split($0, a, ", "); print a[2]}')/g" ./parity-genesis.json
+    - sed -i "s/zzzzz/$(parity --keys-path ./keys account list | sed 's/\[//g' | sed 's/\]//g' | awk '{split($0, a, ", "); print a[3]}')/g" ./parity-genesis.json
+
+test:
+  pre:
+    - 'sed -i "s/spec/mocha-circleci-reporter/g" ./truffle.js' #Replace mocha spec reporter in truffle with mocha-junit-reporter
+  override:
+    - grunt testContracts
+    - grunt testContractsIntegration
+  post:
+    - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
