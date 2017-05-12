@@ -1,4 +1,4 @@
-cd ./truffle/contracts/
+cd ./contracts/
 cp ColonyFactory.sol FakeNewColonyFactory.sol
 sed -ie'' s/'new Colony'/'new FakeUpdatedColony'/g FakeNewColonyFactory.sol
 sed -ie'' s/'Colony.sol'/'FakeUpdatedColony.sol'/g FakeNewColonyFactory.sol

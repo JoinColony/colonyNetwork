@@ -1,0 +1,19 @@
+{
+  "custom-rules-filename": null,
+  "rules": {
+    "imports-on-top": true,
+    "variable-declarations": true,
+    "array-declarations": true,
+    "operator-whitespace": true,
+    "lbrace": true,
+    "mixedcase": true,
+    "camelcase": false,
+    "uppercase": true,
+    "no-with": true,
+    "no-empty-blocks": true,
+    "no-unused-vars": false,
+    "double-quotes": true,
+    "blank-lines": true,
+    "indentation": false
+  }
+}

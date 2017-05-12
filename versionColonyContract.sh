@@ -1,4 +1,4 @@
-cd ./truffle/contracts
+cd ./contracts
 
 COLONY_VERSION=$(grep 'uint256 public version = ' ./Colony.sol | sed 's/.*version = //' | sed 's/;//')
 cd ../build/contracts
