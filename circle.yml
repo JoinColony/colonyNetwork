@@ -18,7 +18,7 @@ dependencies:
     # Set up parity
     - wget http://d1h4xl4cr1h0mo.cloudfront.net/v1.3.15/x86_64-unknown-ubuntu_14_04-gnu/parity_1.3.15_amd64.deb
     - sudo dpkg -i parity_1.3.15_amd64.deb
-    - cp ./truffle/parity-genesis.template.json ./truffle/parity-genesis.json
+    - cp ./parity-genesis.template.json ./parity-genesis.json
     - parity --keys-path ./keys --password ./parityPassword account new
     - parity --keys-path ./keys --password ./parityPassword account new
     - parity --keys-path ./keys --password ./parityPassword account new
