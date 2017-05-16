@@ -5,3 +5,4 @@ keys/*
 test-results.xml
 0
 parityPassword
+**/build/*
