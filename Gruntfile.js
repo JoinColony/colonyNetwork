@@ -107,9 +107,6 @@ module.exports = function (grunt) {
       generateIntegrationTestsContracts: {
         command: 'bash ./makeFakeContracts.sh',
       },
-      versionColonyContract: {
-        command: 'bash ./versionColonyContract.sh',
-      },
     },
   });
 
@@ -118,12 +115,10 @@ module.exports = function (grunt) {
 
   grunt.registerTask('deployContracts', [
     'shell:truffleDeploy',
-    'shell:versionColonyContract',
   ]);
 
   grunt.registerTask('compileContracts', [
     'shell:truffleCompile',
-    'shell:versionColonyContract',
   ]);
 
   grunt.registerTask('testContracts', () => {
