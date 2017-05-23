@@ -40,8 +40,10 @@ module.exports = function (grunt) {
             command += '--unlock $(parity --keys-path ./keys account list | sed "s/\\\[//g" | sed "s/\\\]//g" | awk "{split(\\$0, a, \\\", \\\"); print a[1]}"),'
             command += '$(parity --keys-path ./keys account list | sed "s/\\\[//g" | sed "s/\\\]//g" | awk "{split(\\$0, a, \\\", \\\"); print a[2]}"),'
             command += '$(parity --keys-path ./keys account list | sed "s/\\\[//g" | sed "s/\\\]//g" | awk "{split(\\$0, a, \\\", \\\"); print a[3]}") '
-            command += '--password ./parityPassword --reseal-on-txs all --tx-gas-limit 0x47E7C4 --gasprice 0x0 --gas-floor-target 0x47E7C4 --force-sealing --jsonrpc-interface all --jsonrpc-hosts all '
-            command += '--reseal-min-period 0 --no-dapps --no-network --keys-path ./keys --no-import-keys --geth --rpccorsdomain="http://localhost:3000"'
+            command += '--password ./parityPassword --no-dapps --keys-path ./keys --geth '
+            command += '--tx-gas-limit 0x47E7C4 --gasprice 0x0 --gas-floor-target 0x47E7C4 '
+            command += '--reseal-on-txs all --reseal-min-period 0 '
+            command += '--jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000"'
             return command
         },
         options: {
