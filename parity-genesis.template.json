@@ -1,7 +1,7 @@
 {
-    "name": "LocalTestChain",
+    "name": "ethereum",
     "engine": {
-        "InstantSeal":null
+        "instantSeal": { "params": {} }
     },
     "params": {
         "accountStartNonce": "0x0100000",
