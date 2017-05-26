@@ -10,9 +10,8 @@ dependencies:
   override:
     - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.24.6
     - yarn
-    - yarn global add mocha@3.1.2
-    - npm install -g mocha-circleci-reporter@0.0.2
-    - npm install -g truffle@2.1.2
+    - yarn global add gulp@3.9.1
+    - yarn global add truffle@2.1.2 --ignore-engines
     - yarn global add grunt-cli@1.2.0
 
     # Set up parity
