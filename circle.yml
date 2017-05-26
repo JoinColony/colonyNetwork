@@ -12,7 +12,6 @@ dependencies:
     - yarn
     - yarn global add gulp@3.9.1
     - yarn global add truffle@2.1.2 --ignore-engines
-    - yarn global add grunt-cli@1.2.0
 
     # Set up parity
     - wget http://d1h4xl4cr1h0mo.cloudfront.net/v1.5.12/x86_64-unknown-linux-gnu/parity_1.5.12_amd64.deb
@@ -31,7 +30,7 @@ test:
   pre:
     - 'sed -i "s/spec/mocha-circleci-reporter/g" ./truffle.js' #Replace mocha spec reporter in truffle with mocha-junit-reporter
   override:
-    - grunt testContracts
-    - grunt testContractsIntegration
+    - gulp test:contracts
+    - gulp test:contracts:integration
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
