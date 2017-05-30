@@ -1,13 +1,23 @@
+require('babel-register');
+
 module.exports = {
-  rpc: {
-    host: 'localhost',
-    port: 8545,
-    // Gas limit used for deploys. Default is 4712388
-    gas: 3500000,
-    // Gas price used for deploys. Default is 100000000000
-    gasPrice: 0,
+  networks: {
+    development: {
+      host: 'localhost',
+      port: 8545,
+      gas: 3500000,
+      gasPrice: 0,
+      network_id: '*',
+    },
+    integration: {
+      host: 'localhost',
+      port: 8545,
+      gas: 3500000,
+      gasPrice: 0,
+      network_id: '*',
+    },
   },
   mocha: {
-    reporter: 'spec',
+    reporter: 'mocha-circleci-reporter',
   },
 };

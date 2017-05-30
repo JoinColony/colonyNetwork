@@ -1,5 +1,6 @@
-// These globals are added by Truffle:
-/* globals Migrations */
+/* eslint-disable no-undef */
+const Migrations = artifacts.require('./Migrations.sol');
+
 module.exports = function (deployer) {
   deployer.deploy(Migrations);
 };
