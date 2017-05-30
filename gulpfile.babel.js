@@ -33,7 +33,7 @@ gulp.task('versionColonyContract', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
   console.log('Current Colony contract version is', VERSION);
 
-  return execute(`mv Colony.sol.js Colony_${VERSION}.sol.js`, { cwd: './build/contracts' });
+  return execute(`mv Colony.json Colony_${VERSION}.json`, { cwd: './build/contracts' });
 });
 
 gulp.task('lint:contracts', () => {
