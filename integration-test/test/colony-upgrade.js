@@ -36,9 +36,11 @@ contract('Colony', function (accounts) {
       return colonyFactory.registerRootColonyResolver(rootColonyResolver.address);
     })
     .then(function () {
-      rootColony.registerColonyFactory(colonyFactory.address);
+      return rootColony.registerColonyFactory(colonyFactory.address);
     })
-    .then(done);
+    .then(function() {
+      done();
+    });
   });
 
   beforeEach(function (done) {
