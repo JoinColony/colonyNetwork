@@ -33,7 +33,8 @@
     "pshell": "^1.1.0",
     "request": "^2.81.0",
     "rimraf": "^2.6.1",
-    "solium": "^0.2.2"
+    "solium": "^0.2.2",
+    "truffle": "^3.2.4"
   },
   "dependencies": {
     "colony-utils": "github:JoinColony/colony-utils#v1.1.0",
