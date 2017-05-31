@@ -93,12 +93,12 @@ gulp.task('geth', () => {
   return waitForPort('8545');
 });
 
-gulp.task('test:contracts', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
+gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
   const cmd = makeCmd(`truffle test`);
   return execute(cmd);
 });
 
-gulp.task('test:contracts:integration', ['deploy:contracts', 'generate:contracts:integration'], () => {
+gulp.task('test:contracts:integration', 'Run contract integration tests', ['deploy:contracts', 'generate:contracts:integration'], () => {
   const cmd = makeCmd(`truffle test ./integration-test/test/* --network integration`);
   return execute(cmd).then(cleanIntegrationFakeContracts);
 });
