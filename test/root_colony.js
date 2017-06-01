@@ -1,7 +1,13 @@
-// These globals are added by Truffle:
-/* globals RootColony, Colony, RootColonyResolver, EternalStorage, Ownable, IColony */
+/* globals artifacts */
 import { solSha3 } from 'colony-utils';
 import testHelper from '../helpers/test-helper';
+
+const RootColony = artifacts.require('RootColony');
+const Colony = artifacts.require('Colony');
+const IColony = artifacts.require('IColony');
+const RootColonyResolver = artifacts.require('RootColonyResolver');
+const EternalStorage = artifacts.require('EternalStorage');
+const Ownable = artifacts.require('Ownable');
 
 contract('RootColony', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
@@ -12,8 +18,11 @@ contract('RootColony', function (accounts) {
   let eternalStorageRoot;
 
   before(function (done) {
-    rootColony = RootColony.deployed();
-    done();
+    RootColony.deployed()
+    .then(function (instance) {
+      rootColony = instance;
+    })
+    .then(done);
   });
 
   beforeEach(function (done) {
@@ -129,8 +138,8 @@ contract('RootColony', function (accounts) {
         gas: 3e6,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(3e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(3e6, tx);
       })
       .then(done)
       .catch(done);
@@ -148,8 +157,8 @@ contract('RootColony', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(3e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(3e6, tx);
       })
       .then(done)
       .catch(done);
@@ -268,9 +277,8 @@ contract('RootColony', function (accounts) {
         gas: 3e6,
         value: 1,
       })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(3e6, txid);
+      .catch(function (tx) {
+        testHelper.checkErrorNonPayableFunction(tx);
       })
       .then(done)
       .catch(done);

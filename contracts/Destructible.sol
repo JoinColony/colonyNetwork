@@ -1,6 +1,6 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "Ownable.sol";
+import "./Ownable.sol";
 
 
 contract Destructible is Ownable {

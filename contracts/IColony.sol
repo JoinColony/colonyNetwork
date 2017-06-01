@@ -1,6 +1,6 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "IUpgradable.sol";
+import "./IUpgradable.sol";
 
 
 contract IColony is IUpgradable {

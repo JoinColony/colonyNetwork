@@ -1,45 +1,60 @@
-// These globals are added by Truffle:
-/* globals RootColony, Colony, EternalStorage */
+/* globals artifacts */
 import { solSha3 } from 'colony-utils';
 import testHelper from '../helpers/test-helper';
+
+const RootColony = artifacts.require('RootColony');
+const Colony = artifacts.require('Colony');
+const EternalStorage = artifacts.require('EternalStorage');
 
 contract('TokenLibrary', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const TOTAL_SUPPLY = 1000;
   let COLONY_KEY;
-  let rootColony;
   let colony;
   let eternalStorage;
-  let eternalStorageRoot;
-
-  before(function (done) {
-    rootColony = RootColony.deployed();
-    eternalStorageRoot = EternalStorage.deployed();
-    done();
-  });
 
   beforeEach(function (done) {
-    COLONY_KEY = testHelper.getRandomString(7);
+    let rootColony;
+    let eternalStorageRoot;
 
-    eternalStorageRoot.owner.call()
+    RootColony.deployed()
+    .then(function (_rootColony) {
+      rootColony = _rootColony;
+      return EternalStorage.new();
+    })
+    .then(function (contract) {
+      eternalStorageRoot = contract;
+      return eternalStorageRoot.changeOwner(rootColony.address);
+    })
     .then(function () {
-      return rootColony.createColony(COLONY_KEY, { from: MAIN_ACCOUNT });
+      return rootColony.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(function () {
+      return eternalStorageRoot.owner.call();
+    })
+    .then(function (eternalStorageRootOwner) {
+      assert.equal(eternalStorageRootOwner, rootColony.address);
+      return testHelper.getRandomString(7);
+    })
+    .then(function (colonyKey) {
+      COLONY_KEY = colonyKey;
+      return rootColony.createColony(COLONY_KEY);
     })
     .then(function () {
       return rootColony.getColony.call(COLONY_KEY);
     })
     .then(function (colony_) {
-      colony = Colony.at(colony_);
+      return Colony.at(colony_);
     })
-    .then(function () {
+    .then(function (_colony) {
+      colony = _colony;
       return colony.eternalStorage.call();
     })
     .then(function (extStorageAddress) {
       eternalStorage = EternalStorage.at(extStorageAddress);
     })
-    .then(done)
-    .catch(done);
+    .then(done);
   });
 
   describe('when instantiated', function () {
@@ -100,7 +115,9 @@ contract('TokenLibrary', function (accounts) {
           gas: 1e6,
         });
       })
-      .catch(testHelper.ifUsingTestRPC)
+      .catch(function (tx) {
+        testHelper.checkErrorNonPayableFunction(tx);
+      })
       .then(function () {
         return colony.balanceOf.call(MAIN_ACCOUNT);
       })
@@ -226,7 +243,9 @@ contract('TokenLibrary', function (accounts) {
           value: 1,
         });
       })
-      .catch(testHelper.ifUsingTestRPC)
+      .catch(function (tx) {
+        testHelper.checkErrorNonPayableFunction(tx);
+      })
       .then(function () {
         return colony.balanceOf.call(MAIN_ACCOUNT);
       })
@@ -363,9 +382,8 @@ contract('TokenLibrary', function (accounts) {
           gas: 1e6,
         });
       })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .catch(function (tx) {
+        testHelper.checkErrorNonPayableFunction(tx);
       })
       .then(done)
       .catch(done);
@@ -455,9 +473,8 @@ contract('TokenLibrary', function (accounts) {
         value: 1,
         gas: 1e6,
       })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .catch(function (tx) {
+        testHelper.checkErrorNonPayableFunction(tx);
       })
       .then(done)
       .catch(done);

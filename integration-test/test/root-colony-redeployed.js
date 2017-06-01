@@ -1,5 +1,12 @@
-// These globals are added by Truffle:
-/* globals FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage */
+/* globals artifacts */
+
+const RootColony = artifacts.require('RootColony');
+const RootColonyResolver = artifacts.require('RootColonyResolver');
+const ColonyFactory = artifacts.require('ColonyFactory');
+const EternalStorage = artifacts.require('EternalStorage');
+const Colony = artifacts.require('Colony');
+const FakeNewRootColony = artifacts.require('FakeNewRootColony');
+
 contract('RootColony', function () {
   const COLONY_KEY = 'COLONY_TEST';
   const NEW_COLONY_KEY = 'NEW_COLONY_TEST';
@@ -10,10 +17,19 @@ contract('RootColony', function () {
   let eternalStorageRoot;
 
   before(function (done) {
-    rootColony = RootColony.deployed();
-    rootColonyResolver = RootColonyResolver.deployed();
-    colonyFactory = ColonyFactory.deployed();
-    done();
+    RootColony.deployed()
+    .then(function (_rootColony) {
+      rootColony = _rootColony;
+      return RootColonyResolver.deployed();
+    })
+    .then(function (_rootColonyResolver) {
+      rootColonyResolver = _rootColonyResolver;
+      return ColonyFactory.deployed();
+    })
+    .then(function (_colonyFactory) {
+      colonyFactory = _colonyFactory;
+    })
+    .then(done);
   });
 
   // Instantiate and register the new RootColony contract

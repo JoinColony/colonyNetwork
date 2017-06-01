@@ -1,7 +1,10 @@
-// These globals are added by Truffle:
-/* globals Colony, RootColony, EternalStorage */
+/* globals artifacts */
 import { solSha3 } from 'colony-utils';
 import testHelper from '../helpers/test-helper';
+
+const RootColony = artifacts.require('RootColony');
+const Colony = artifacts.require('Colony');
+const EternalStorage = artifacts.require('EternalStorage');
 
 contract('TaskLibrary', function (accounts) {
   let COLONY_KEY = 'COLONY_TEST';
@@ -10,36 +13,50 @@ contract('TaskLibrary', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   let colony;
-  let rootColony;
   let eternalStorage;
-  let eternalStorageRoot;
 
-  before(function (done) {
-    rootColony = RootColony.deployed();
-    eternalStorageRoot = EternalStorage.deployed();
-    done();
-  });
-
+  // We have to setup anew the RootColony and its EternalStorage due to truffle bug https://github.com/trufflesuite/truffle/issues/386
   beforeEach(function (done) {
-    COLONY_KEY = testHelper.getRandomString(7);
-    eternalStorageRoot.owner.call()
+    let rootColony;
+    let eternalStorageRoot;
+
+    RootColony.deployed()
+    .then(function (_rootColony) {
+      rootColony = _rootColony;
+      return EternalStorage.new();
+    })
+    .then(function (contract) {
+      eternalStorageRoot = contract;
+      return eternalStorageRoot.changeOwner(rootColony.address);
+    })
     .then(function () {
-      return rootColony.createColony(COLONY_KEY, { from: MAIN_ACCOUNT });
+      return rootColony.registerEternalStorage(eternalStorageRoot.address);
+    })
+    .then(function () {
+      return eternalStorageRoot.owner.call();
+    })
+    .then(function (eternalStorageRootOwner) {
+      assert.equal(eternalStorageRootOwner, rootColony.address);
+      return testHelper.getRandomString(7);
+    })
+    .then(function (colonyKey) {
+      COLONY_KEY = colonyKey;
+      return rootColony.createColony(COLONY_KEY);
     })
     .then(function () {
       return rootColony.getColony.call(COLONY_KEY);
     })
     .then(function (colony_) {
-      colony = Colony.at(colony_);
+      return Colony.at(colony_);
     })
-    .then(function () {
+    .then(function (_colony) {
+      colony = _colony;
       return colony.eternalStorage.call();
     })
     .then(function (extStorageAddress) {
       eternalStorage = EternalStorage.at(extStorageAddress);
     })
-    .then(done)
-    .catch(done);
+    .then(done);
   });
 
   describe('when adding tasks', function () {

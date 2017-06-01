@@ -1,8 +1,8 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "IColonyFactory.sol";
-import "IRootColonyResolver.sol";
-import "Colony.sol";
+import "./IColonyFactory.sol";
+import "./IRootColonyResolver.sol";
+import "./Colony.sol";
 
 
 contract ColonyFactory is IColonyFactory {

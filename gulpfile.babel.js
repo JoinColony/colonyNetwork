@@ -33,7 +33,7 @@ gulp.task('versionColonyContract', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
   console.log('Current Colony contract version is', VERSION);
 
-  return execute(`mv Colony.sol.js Colony_${VERSION}.sol.js`, { cwd: './build/contracts' });
+  return execute(`mv Colony.json Colony_${VERSION}.json`, { cwd: './build/contracts' });
 });
 
 gulp.task('lint:contracts', () => {
@@ -44,22 +44,19 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
   const UPDATED_VERSION=VERSION+1;
 
-  execute(`cp ColonyFactory.sol FakeNewColonyFactory.sol`, { cwd: './contracts' });
-  execute(`cp RootColony.sol FakeNewRootColony.sol`, { cwd: './contracts' });
-  execute(`cp Colony.sol FakeUpdatedColony.sol`, { cwd: './contracts' });
-
-  execute(`sed -ie'' s/'new Colony'/'new FakeUpdatedColony'/g FakeNewColonyFactory.sol`, { cwd: './contracts' });
-  execute(`sed -ie'' s/'Colony.sol'/'FakeUpdatedColony.sol'/g FakeNewColonyFactory.sol`, { cwd: './contracts' });
-  execute(`sed -ie'' s/'contract ColonyFactory'/'contract FakeNewColonyFactory'/g FakeNewColonyFactory.sol`, { cwd: './contracts' });
-  execute(`sed -ie'' s/'Colony(colonyAddress'/'FakeUpdatedColony(colonyAddress'/g FakeNewColonyFactory.sol`, { cwd: './contracts' });
-  execute(`sed -ie'' s/'Colony colonyNew'/'FakeUpdatedColony colonyNew'/g FakeNewColonyFactory.sol`, { cwd: './contracts' });
-
-  execute(`sed -ie'' s/'contract RootColony'/'contract FakeNewRootColony'/g FakeNewRootColony.sol`, { cwd: './contracts' });
-
-  execute(`sed -ie'' s/'contract Colony'/'contract FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' });
-  execute(`sed -ie'' s/'function Colony'/'function FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' });
-  execute(`sed -ie'' s/'uint256 public version = ${VERSION}'/'uint256 public version = ${UPDATED_VERSION}'/g FakeUpdatedColony.sol`, { cwd: './contracts' });
-  return execute(`sed -ie'' s/'address public eternalStorage;'/'address public eternalStorage;function isUpdated() constant returns(bool) {return true;}'/g FakeUpdatedColony.sol`, { cwd: './contracts' });
+  return execute(`cp ColonyFactory.sol FakeNewColonyFactory.sol`, { cwd: './contracts' })
+  .then(execute(`cp RootColony.sol FakeNewRootColony.sol`, { cwd: './contracts' }))
+  .then(execute(`cp Colony.sol FakeUpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'new Colony'/'new FakeUpdatedColony'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'Colony.sol'/'FakeUpdatedColony.sol'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract ColonyFactory'/'contract FakeNewColonyFactory'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'Colony(colonyAddress'/'FakeUpdatedColony(colonyAddress'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'Colony colonyNew'/'FakeUpdatedColony colonyNew'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract RootColony'/'contract FakeNewRootColony'/g FakeNewRootColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract Colony'/'contract FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'function Colony'/'function FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'uint256 public version = ${VERSION}'/'uint256 public version = ${UPDATED_VERSION}'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'address public eternalStorage;'/'address public eternalStorage;function isUpdated() constant returns(bool) {return true;}'/g FakeUpdatedColony.sol`, { cwd: './contracts' }));
 });
 
 gulp.task('parity', async () => {
@@ -93,13 +90,13 @@ gulp.task('geth', () => {
   return waitForPort('8545');
 });
 
-gulp.task('test:contracts', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
+gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
   const cmd = makeCmd(`truffle test`);
   return execute(cmd);
 });
 
-gulp.task('test:contracts:integration', ['deploy:contracts', 'generate:contracts:integration'], () => {
-  const cmd = makeCmd(`truffle test ./integration-test/test/*`);
+gulp.task('test:contracts:integration', 'Run contract integration tests', ['deploy:contracts', 'generate:contracts:integration'], () => {
+  const cmd = makeCmd(`truffle test ./integration-test/test/* --network integration`);
   return execute(cmd).then(cleanIntegrationFakeContracts);
 });
 

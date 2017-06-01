@@ -1,5 +1,8 @@
-// These globals are added by Truffle:
-/* globals RootColony, Colony, ColonyFactory, EternalStorage */
+/* globals artifacts */
+const RootColony = artifacts.require('RootColony');
+const Colony = artifacts.require('Colony');
+const EternalStorage = artifacts.require('EternalStorage');
+
 contract('all', function (accounts) {
   const gasPrice = 20e9;
   const MAIN_ACCOUNT = accounts[0];
@@ -17,37 +20,16 @@ contract('all', function (accounts) {
   let completeAndPayTaskCost;
 
   before(function (done) {
-    rootColony = RootColony.deployed();
-    let prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-    let currentBalance;
-    let costInWei;
-    let costInGas;
-
-    ColonyFactory.new({ gasPrice })
-    .then(function () {
+    RootColony.deployed()
+    .then(function (instance) {
+      rootColony = instance;
       console.log('Gas price : ', gasPrice);
-      currentBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-      // Cost of creating a colony
-      costInWei = prevBalance.minus(currentBalance).toNumber();
-      costInGas = costInWei / gasPrice;
-      console.log('ColonyFactory actual cost : ', costInGas);
-      prevBalance = currentBalance;
-    })
-    .then(function () {
-      return RootColony.new({ gasPrice });
-    })
-    .then(function () {
-      currentBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-      costInWei = prevBalance.minus(currentBalance).toNumber();
-      costInGas = costInWei / gasPrice;
-      console.log('RootColony actual cost : ', costInGas);
     })
     .then(done)
     .catch(done);
   });
 
   beforeEach(function (done) {
-    let prevBalance;
     EternalStorage.new({ gasPrice })
     .then(function (contract) {
       eternalStorage = contract;
@@ -59,19 +41,12 @@ contract('all', function (accounts) {
     .then(function () {
       return rootColony.createColony.estimateGas('Antz');
     })
-    .then(function (cost) {
-      console.log('createColony estimate : ', cost);
-      prevBalance = web3.eth.getBalance(MAIN_ACCOUNT);
+    .then(function (estimate) {
+      console.log('createColony estimate : ', estimate);
       return rootColony.createColony('Antz', { gasPrice });
     })
-    .then(function () {
-      const currentBalance = web3.eth.getBalance(MAIN_ACCOUNT);
-      // Cost of creating a colony
-      const costInWei = prevBalance.minus(currentBalance).toNumber();
-      const costInGas = costInWei / gasPrice;
-      console.log('createColony actual cost : ', costInGas);
-    })
-    .then(function () {
+    .then(function (tx) {
+      console.log('createColony actual cost : ', tx.receipt.gasUsed);
       return rootColony.getColony.call('Antz');
     })
     .then(function (colony_) {
@@ -85,105 +60,84 @@ contract('all', function (accounts) {
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe('Gas costs ', function () {
     it('when working with a Colony', function (done) {
-      let balanceBefore = 0;
-      let balanceAfter = 0;
-
       // When working with tasks
-      colony.makeTask.estimateGas('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { })
-      .then(function (cost) {
-        makeTaskCost = cost;
-        console.log('makeTask estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
-        return colony.makeTask('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { gasPrice: 20e9 });
+      colony.makeTask.estimateGas('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01')
+      .then(function (estimate) {
+        console.log('makeTask estimate : ', estimate);
+        return colony.makeTask('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('makeTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        makeTaskCost = tx.receipt.gasUsed;
+        console.log('makeTask actual cost :', makeTaskCost);
         return colony.updateTaskTitle.estimateGas(0, 'My updated task');
       })
-      .then(function (cost) {
-        updateTaskCost = cost;
-        console.log('updateTaskTitle estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('updateTaskTitle estimate : ', estimate);
         return colony.updateTaskTitle(0, 'My updated task', { gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('updateTaskTitle actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        updateTaskCost = tx.receipt.gasUsed;
+        console.log('updateTaskTitle actual cost :', updateTaskCost);
         return colony.generateTokensWei.estimateGas(200);
       })
-      .then(function (cost) {
-        generateColonyTokensCost = cost;
-        console.log('generateTokensWei estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('generateTokensWei estimate : ', estimate);
         return colony.generateTokensWei(200, { gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('generateTokensWei actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        generateColonyTokensCost = tx.receipt.gasUsed;
+        console.log('generateTokensWei actual cost :', generateColonyTokensCost);
         return colony.contributeEthToTask.estimateGas(0, { value: 50 });
       })
-      .then(function (cost) {
-        contributeEthToTaskCost = cost;
-        console.log('contributeEthToTask estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('contributeEthToTask estimate : ', estimate);
         return colony.contributeEthToTask(0, { value: 50, gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('contributeEthToTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        contributeEthToTaskCost = tx.receipt.gasUsed;
+        console.log('contributeEthToTask actual cost :', contributeEthToTaskCost);
         return colony.setReservedTokensWeiForTask.estimateGas(0, 50);
       })
-      .then(function (cost) {
-        contributeTokensToTaskCost = cost;
-        console.log('setReservedTokensWeiForTask estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('setReservedTokensWeiForTask estimate : ', estimate);
         return colony.setReservedTokensWeiForTask(0, 50, { gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('setReservedTokensWeiForTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        contributeTokensToTaskCost = tx.receipt.gasUsed;
+        console.log('setReservedTokensWeiForTask actual cost :', contributeTokensToTaskCost);
         return colony.completeAndPayTask.estimateGas(0, OTHER_ACCOUNT);
       })
-      .then(function (cost) {
-        completeAndPayTaskCost = cost;
-        console.log('completeAndPayTask estimate: ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('completeAndPayTask estimate: ', estimate);
         return colony.completeAndPayTask(0, OTHER_ACCOUNT, { gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('completeAndPayTask actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        completeAndPayTaskCost = tx.receipt.gasUsed;
+        console.log('completeAndPayTask actual cost :', completeAndPayTaskCost);
         return colony.transfer.estimateGas(MAIN_ACCOUNT, 1, { from: OTHER_ACCOUNT });
       })
-      .then(function (cost) {
-        console.log('transfer estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('transfer estimate : ', estimate);
         return colony.transfer(MAIN_ACCOUNT, 1, { from: OTHER_ACCOUNT, gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('transfer actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        console.log('transfer actual cost :', tx.receipt.gasUsed);
         return colony.addUserToRole.estimateGas(OTHER_ACCOUNT, 1);
       })
-      .then(function (cost) {
-        console.log('addUserToRole estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('addUserToRole estimate : ', estimate);
         return colony.addUserToRole(OTHER_ACCOUNT, 1, { gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('addUserToRole actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        console.log('addUserToRole actual cost :', tx.receipt.gasUsed);
         return colony.removeUserFromRole.estimateGas(OTHER_ACCOUNT, 1);
       })
-      .then(function (cost) {
-        console.log('removeUserFromRole estimate : ', cost);
-        balanceBefore = web3.eth.getBalance(MAIN_ACCOUNT);
+      .then(function (estimate) {
+        console.log('removeUserFromRole estimate : ', estimate);
         return colony.removeUserFromRole(OTHER_ACCOUNT, 1, { gasPrice });
       })
-      .then(function () {
-        balanceAfter = web3.eth.getBalance(MAIN_ACCOUNT);
-        console.log('removeUserFromRole actual cost :', balanceBefore.minus(balanceAfter).dividedBy(gasPrice).toNumber());
+      .then(function (tx) {
+        console.log('removeUserFromRole actual cost :', tx.receipt.gasUsed);
         done();
       })
       .catch(done);

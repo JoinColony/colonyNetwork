@@ -1,6 +1,6 @@
-pragma solidity ^0.4.0;
+pragma solidity ^0.4.8;
 
-import "Destructible.sol";
+import "./Destructible.sol";
 
 
 contract IColonyFactory is Destructible {
