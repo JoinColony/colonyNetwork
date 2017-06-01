@@ -9,7 +9,8 @@ dependencies:
 
   override:
     - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.24.6
-    - yarn --ignore-engines --pure-lockfile #truffle-contract replies on ethjs-abi which requires node>v6.5
+    - mkdir -p ~/.yarn-cache
+    - yarn --ignore-engines --pure-lockfile --cache-folder ~/.yarn-cache #truffle-contract replies on ethjs-abi which requires node>v6.5
     - yarn global add gulp@3.9.1
 
     # Set up parity
