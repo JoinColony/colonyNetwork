@@ -9006,9 +9006,9 @@ solidity-sha3@^0.4.1:
     left-pad "^1.1.1"
     web3 "^0.16.0"
 
-solium@^0.2.2:
-  version "0.2.2"
-  resolved "https://registry.yarnpkg.com/solium/-/solium-0.2.2.tgz#9a434d8cbb9c86d89bde959f3f3f0cecf420d628"
+solium@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/solium/-/solium-0.4.0.tgz#42557b3ed4cc800eaccec5058e2925a91b9bad6f"
   dependencies:
     chokidar "^1.6.0"
     colors "^1.1.2"
