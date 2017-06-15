@@ -144,11 +144,10 @@ contract('all', function (accounts) {
     });
 
     it('Average gas costs for customers should not exceed 1 ETH per month', function (done) {
-      const totalGasCost = (makeTaskCost * 50) // assume 100 tasks per month are created
-      + (updateTaskCost * 200) // assume each task is updated 5 times
-      + (contributeEthToTaskCost * 50) // only colony admins are allowed to contribute eth and tokens
-      + (contributeTokensToTaskCost * 50)
-      + (completeAndPayTaskCost * 50) // all tasks are closed and paid out
+      const totalGasCost = (makeTaskCost * 100) // assume 100 tasks per month are created
+      + (updateTaskCost * 20) // assume 20% of all tasks are updated once
+      + (contributeTokensToTaskCost * 100) // assume all new tasks have their budget set once
+      + (completeAndPayTaskCost * 25) // quarter of all tasks are closed and paid out
       + (generateColonyTokensCost * 1); // only once per month are new colony tokens generated
 
       const totalEtherCost = web3.fromWei(totalGasCost * gasPrice, 'ether');
