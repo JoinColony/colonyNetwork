@@ -7,7 +7,7 @@
     "operator-whitespace": true,
     "lbrace": true,
     "mixedcase": true,
-    "camelcase": false,
+    "camelcase": true,
     "uppercase": true,
     "no-with": true,
     "no-empty-blocks": true,
