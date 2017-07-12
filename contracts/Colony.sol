@@ -34,7 +34,7 @@ contract Colony is Modifiable {
   address public eternalStorage;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  uint256 public version = 3;
+  uint256 public version = 4;
 
   function Colony(address rootColonyResolverAddress_, address _eternalStorage)
   payable
@@ -119,7 +119,10 @@ contract Colony is Modifiable {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
-    if ((reservedTokensWei + tokensWei) <= eternalStorage.balanceOf(this)) {
+    var tokenBalanceWei = eternalStorage.balanceOf(this);
+    var availableTokensWei = tokenBalanceWei - reservedTokensWei;
+    var (, taskReservedTokensWei) = eternalStorage.getTaskBalance(taskId);
+    if (tokensWei <= (taskReservedTokensWei + availableTokensWei)) {
       eternalStorage.setReservedTokensWeiForTask(taskId, tokensWei);
     } else {
       throw;

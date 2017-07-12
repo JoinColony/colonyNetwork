@@ -636,6 +636,27 @@ contract('Colony', function (accounts) {
         assert.equal(_budgetSet, true, 'Wrong tokens wei value');
       })
       .then(function () {
+        return colony.setReservedTokensWeiForTask(0, 100, { from: MAIN_ACCOUNT });
+      })
+      .then(function () {
+        return colony.reservedTokensWei.call();
+      })
+      .then(function (reservedTokensWei) {
+        assert.equal(reservedTokensWei.toNumber(), 100, 'Has not reserved the right amount of colony tokens.');
+        return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
+      })
+      .then(function (_budgetSet) {
+        assert.equal(_budgetSet, true, 'Wrong tokens wei value');
+        return colony.setReservedTokensWeiForTask(0, 150, {
+          from: MAIN_ACCOUNT,
+          gas: GAS_TO_SPEND,
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      })
+      .then(function () {
         done();
       })
       .catch(done);
