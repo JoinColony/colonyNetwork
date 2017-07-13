@@ -216,6 +216,7 @@ library TaskLibrary {
 	ifTasksExists(_storageContract, _id)
   ifTaskAccepted(_storageContract, _id)
   {
+    // Intentioanlly not removing the `task_tokensWei` value because of tracking history for tasks
     var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
     var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
     EternalStorage(_storageContract).deleteUIntValue(keccak256("task_tokensWeiReserved", _id));
