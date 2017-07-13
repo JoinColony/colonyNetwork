@@ -121,7 +121,7 @@ contract Colony is Modifiable {
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
     var tokenBalanceWei = eternalStorage.balanceOf(this);
     var availableTokensWei = tokenBalanceWei - reservedTokensWei;
-    var (, taskReservedTokensWei) = eternalStorage.getTaskBalance(taskId);
+    var taskReservedTokensWei = eternalStorage.getReservedTokensWeiForTask(taskId);
     if (tokensWei <= (taskReservedTokensWei + availableTokensWei)) {
       eternalStorage.setReservedTokensWeiForTask(taskId, tokensWei);
     } else {
