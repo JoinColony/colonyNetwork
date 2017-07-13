@@ -36,6 +36,11 @@ library TaskLibrary {
     return EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
   }
 
+  /// @notice gets the reserved colony tokens for a given task.
+  function getReservedTokensWeiForTask(address _storageContract, uint256 _id) constant returns(uint256) {
+    return EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
+  }
+
   /// @notice gets the reserved colony tokens for funding tasks.
   /// @param tokensWei the token wei to set the value to.
   /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
@@ -216,6 +221,7 @@ library TaskLibrary {
 	ifTasksExists(_storageContract, _id)
   ifTaskAccepted(_storageContract, _id)
   {
+    // Intentioanlly not removing the `task_tokensWei` value because of tracking history for tasks
     var tokensWeiReserved = EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
     var tokensWeiReservedTotal = EternalStorage(_storageContract).getUIntValue(keccak256("ReservedTokensWei"));
     EternalStorage(_storageContract).deleteUIntValue(keccak256("task_tokensWeiReserved", _id));
