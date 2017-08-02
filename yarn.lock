@@ -9070,9 +9070,9 @@ solidity-sha3@^0.4.1:
     left-pad "^1.1.1"
     web3 "^0.16.0"
 
-solium@^0.5.3:
-  version "0.5.3"
-  resolved "https://registry.yarnpkg.com/solium/-/solium-0.5.3.tgz#5736723dde08fe0e96a151d5bca7538d21f1f624"
+solium@^0.5.4:
+  version "0.5.4"
+  resolved "https://registry.yarnpkg.com/solium/-/solium-0.5.4.tgz#3ef9031b6043e944512e048848067c58beb36e62"
   dependencies:
     chokidar "^1.6.0"
     colors "^1.1.2"
@@ -9080,11 +9080,11 @@ solium@^0.5.3:
     lodash "^4.14.2"
     sol-digger "0.0.2"
     sol-explore "^1.6.1"
-    solparse "^1.2.0"
+    solparse "^1.2.1"
 
-solparse@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/solparse/-/solparse-1.2.0.tgz#678304a86b0bb997eb172d00c0a35a9872b9d2ac"
+solparse@^1.2.1:
+  version "1.2.1"
+  resolved "https://registry.yarnpkg.com/solparse/-/solparse-1.2.1.tgz#d04fe840cbbeb83f7cf81e280bbba160f921239a"
   dependencies:
     mocha "^2.4.5"
     pegjs "^0.10.0"

@@ -11,7 +11,7 @@
     "uppercase": true,
     "no-with": true,
     "no-empty-blocks": true,
-    "no-unused-vars": false,
+    "no-unused-vars": true,
     "double-quotes": true,
     "blank-lines": true,
     "indentation": false
