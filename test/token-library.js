@@ -469,9 +469,10 @@ contract('TokenLibrary', function (accounts) {
     });
 
     it('should fail if ETHER is sent', function (done) {
-      colony.generateTokensWei(OTHER_ACCOUNT, 100, {
+      colony.generateTokensWei(OTHER_ACCOUNT, {
         value: 1,
         gas: 1e6,
+        value: 0xA // 10 in hex
       })
       .catch(function (tx) {
         testHelper.checkErrorNonPayableFunction(tx);
@@ -485,8 +486,8 @@ contract('TokenLibrary', function (accounts) {
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx.tx);
       })
       .then(done)
       .catch(done);
@@ -500,8 +501,8 @@ contract('TokenLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx.tx);
       })
       .then(done)
       .catch(done);

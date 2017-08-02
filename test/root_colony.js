@@ -139,7 +139,7 @@ contract('RootColony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx);
+        testHelper.checkAllGasSpent(3e6, tx.tx);
       })
       .then(done)
       .catch(done);
@@ -158,7 +158,7 @@ contract('RootColony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx);
+        testHelper.checkAllGasSpent(3e6, tx.tx);
       })
       .then(done)
       .catch(done);

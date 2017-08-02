@@ -69,8 +69,8 @@ contract('Colony', function (accounts) {
         return colony.upgrade(accounts[1], { gas: GAS_TO_SPEND });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
       })
       .then(done)
       .catch(done);

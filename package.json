@@ -34,7 +34,7 @@
     "request": "^2.81.0",
     "rimraf": "^2.6.1",
     "solium": "^0.5.4",
-    "truffle": "3.2.5"
+    "truffle": "3.4.7"
   },
   "dependencies": {
     "colony-utils": "github:JoinColony/colony-utils#v1.1.0",
