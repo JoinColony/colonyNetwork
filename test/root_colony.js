@@ -302,5 +302,18 @@ contract('RootColony', function (accounts) {
       .then(done)
       .catch(done);
     });
+
+    it('should NOT be able to move EternalStorage to another RootColony if called with invalid address', function (done) {
+     rootColony.changeEternalStorageOwner(0x0, {
+       from: MAIN_ACCOUNT,
+       gas: 3e6,
+     })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(3e6, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
   });
 });
