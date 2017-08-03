@@ -6,6 +6,7 @@ import testHelper from '../helpers/test-helper';
 const RootColony = artifacts.require('RootColony');
 const Colony = artifacts.require('Colony');
 const EternalStorage = artifacts.require('EternalStorage');
+const Ownable = artifacts.require('Ownable');
 
 contract('Colony', function (accounts) {
   let COLONY_KEY;
@@ -53,6 +54,36 @@ contract('Colony', function (accounts) {
   });
 
   describe('when created', function () {
+    it('should not be able to change owner of colony\'s EthernalStorage', async function () {
+      const eternalStorageAddress = await colony.eternalStorage.call();
+      const ownableStorage = await Ownable.at(eternalStorageAddress);
+      let ownerBefore = await ownableStorage.owner.call();
+      assert.equal(ownerBefore, colony.address);
+
+      let tx;
+      try {
+        tx = await ownableStorage.changeOwner(THIRD_ACCOUNT);
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+
+      let ownerAfter = await ownableStorage.owner.call();
+      assert.equal(ownerAfter, colony.address);
+    });
+
+    it('should throw if colony tries to change EternalStorage owner with invalid address', async function () {
+      const ownableContract = await Ownable.new();
+      let tx;
+      try {
+        tx = await ownableContract.changeOwner('0x0');
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+
+      const owner = await ownableContract.owner.call();
+      assert.equal(owner, MAIN_ACCOUNT);
+    });
+
     it('should take deploying user as an owner', function (done) {
       colony.userIsInRole.call(MAIN_ACCOUNT, 0)
       .then(function (owner) {
