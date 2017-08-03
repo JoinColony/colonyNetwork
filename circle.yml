@@ -32,5 +32,6 @@ test:
   override:
     - gulp test:contracts
     - gulp test:contracts:integration
+    - gulp test:contracts:gasCosts
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml

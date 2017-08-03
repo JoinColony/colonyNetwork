@@ -79,7 +79,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -92,7 +92,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -183,7 +183,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -199,7 +199,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -215,7 +215,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -231,7 +231,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -286,7 +286,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -305,7 +305,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -321,7 +321,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -452,7 +452,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -469,7 +469,7 @@ contract('TaskLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);

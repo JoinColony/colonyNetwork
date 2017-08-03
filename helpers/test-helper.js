@@ -31,7 +31,8 @@ module.exports = {
     const block = web3.eth.getBlock('latest', true);
     return block.transactions[0].hash;
   },
-  checkAllGasSpent(gasAmount, txid) {
+  checkAllGasSpent(gasAmount, tx) {
+    const txid = !tx.tx ? tx : tx.tx;
     const receipt = web3.eth.getTransactionReceipt(txid);
     // When a transaction throws, all the gas sent is spent. So let's check that
     // we spent all the gas that we sent.

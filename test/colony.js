@@ -221,7 +221,7 @@ contract('Colony', function (accounts) {
       colony.removeUserFromRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -231,7 +231,7 @@ contract('Colony', function (accounts) {
       colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -244,7 +244,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -263,7 +263,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -273,7 +273,7 @@ contract('Colony', function (accounts) {
       colony.removeUserFromRole(OTHER_ACCOUNT, 1, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -283,7 +283,7 @@ contract('Colony', function (accounts) {
       colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -302,7 +302,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -312,7 +312,7 @@ contract('Colony', function (accounts) {
       colony.removeUserFromRole(OTHER_ACCOUNT, 0, optionsToSpotTransactionFailure)
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -455,7 +455,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -470,7 +470,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -483,7 +483,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -542,7 +542,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -662,7 +662,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(function () {
         done();
@@ -702,7 +702,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(function () {
         done();
@@ -772,7 +772,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx.tx);
+        testHelper.checkAllGasSpent(3e6, tx);
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
       .then(function (taskName) {
@@ -914,7 +914,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -933,7 +933,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);

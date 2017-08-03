@@ -70,7 +70,7 @@ contract('Colony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx.tx);
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);

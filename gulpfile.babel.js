@@ -96,7 +96,7 @@ gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:con
 });
 
 gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'], () => {
-  const cmd = makeCmd(`truffle test test/gasCosts.js`);
+  const cmd = makeCmd(`truffle test gasCosts/gasCosts.js`);
   return execute(cmd);
 });
 

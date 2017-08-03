@@ -139,7 +139,7 @@ contract('RootColony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx.tx);
+        testHelper.checkAllGasSpent(3e6, tx);
       })
       .then(done)
       .catch(done);
@@ -158,7 +158,7 @@ contract('RootColony', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx.tx);
+        testHelper.checkAllGasSpent(3e6, tx);
       })
       .then(done)
       .catch(done);
@@ -250,7 +250,8 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
-    it('should be able to get the latest Colony version', function (done) {
+    // TODO: Skipped because of https://github.com/ethereumjs/testrpc/issues/149
+    it.skip('should be able to get the latest Colony version', function (done) {
       let actualColonyVersion;
       rootColony.createColony(COLONY_KEY)
       .then(function () {

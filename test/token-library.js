@@ -487,7 +487,7 @@ contract('TokenLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -502,7 +502,7 @@ contract('TokenLibrary', function (accounts) {
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx.tx);
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
