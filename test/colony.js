@@ -11,6 +11,7 @@ contract('Colony', function (accounts) {
   let COLONY_KEY;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
+  const THIRD_ACCOUNT = accounts[2];
   // this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
 
@@ -224,6 +225,28 @@ contract('Colony', function (accounts) {
         testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove owner if not an owner themself', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 0)
+      .then(function () {
+        return colony.addUserToRole(THIRD_ACCOUNT, 1)
+      })
+      .then(function () {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 0, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      })
+      .then(function () {
+        return colony.userIsInRole.call(OTHER_ACCOUNT, 0);
+      })
+      .then(function (_isOwner) {
+        assert.isTrue(_isOwner);
+        done();
+      })
       .catch(done);
     });
 
