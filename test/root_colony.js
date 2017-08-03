@@ -94,6 +94,30 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
+    it('should allow users to get the index of a colony by its index', function (done) {
+      let colony3Address;
+
+      rootColony.createColony('Colony1')
+      .then(function() {
+        return rootColony.createColony('Colony2')
+      })
+      .then(function() {
+        return rootColony.createColony('Colony3')
+      })
+      .then(function() {
+        return rootColony.getColony.call('Colony3');
+      })
+      .then(function (_colony3Address) {
+        colony3Address = _colony3Address;
+        return rootColony.getColonyAt.call(3);
+      })
+      .then(function (_colonyAddress) {
+        assert.equal(_colonyAddress, colony3Address, 'Colony address is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should allow users to get the index of a colony by its key', function (done) {
       testHelper.Promise.all([
         rootColony.createColony('Colony1'),
