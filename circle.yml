@@ -33,5 +33,6 @@ test:
     - gulp test:contracts
     - gulp test:contracts:integration
     - gulp test:contracts:gasCosts
+    - gulp test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml

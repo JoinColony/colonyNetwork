@@ -28,6 +28,7 @@
     "gulp": "^3.9.1",
     "gulp-help": "^1.6.1",
     "gulp-util": "^3.0.8",
+    "istanbul": "^0.4.5",
     "mocha": "^3.5.0",
     "mocha-circleci-reporter": "^0.0.2",
     "pshell": "^1.1.0",
