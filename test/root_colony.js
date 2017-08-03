@@ -233,7 +233,7 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
-    it('should be able to upgrade colonies', function (done) {
+    it('should be able to upgrade colonies, if colony owner', function (done) {
       let oldColonyAddress;
       rootColony.createColony(COLONY_KEY)
       .then(function () {
@@ -249,6 +249,24 @@ contract('RootColony', function (accounts) {
       })
       .then(function (upgradedColonyAddress) {
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should NOT be able to upgrade colonies if not colony owner', function (done) {
+      let oldColonyAddress;
+      rootColony.createColony(COLONY_KEY)
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        oldColonyAddress = _address;
+        return rootColony.upgradeColony(COLONY_KEY, { from: OTHER_ACCOUNT, gas: 4e6 });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(4e6, tx);
       })
       .then(done)
       .catch(done);
