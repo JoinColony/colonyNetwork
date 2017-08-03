@@ -8,6 +8,7 @@ const IColony = artifacts.require('IColony');
 const RootColonyResolver = artifacts.require('RootColonyResolver');
 const EternalStorage = artifacts.require('EternalStorage');
 const Ownable = artifacts.require('Ownable');
+const ColonyFactory = artifacts.require('ColonyFactory');
 
 contract('RootColony', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
@@ -335,6 +336,29 @@ contract('RootColony', function (accounts) {
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
         testHelper.checkAllGasSpent(3e6, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should NOT allow anyone but RootColony to create new colonies', function (done) {
+      let colonyFactory;
+      rootColony.colonyFactory.call()
+      .then(function (colonyFactoryAddress) {
+        colonyFactory = ColonyFactory.at(colonyFactoryAddress);
+      })
+      .then(function () {
+        return EternalStorage.new();
+      })
+      .then(function (_eternalStorage) {
+        return colonyFactory.createColony(_eternalStorage.address, {
+          from: OTHER_ACCOUNT,
+          gas: 4e6,
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(4e6, tx);
       })
       .then(done)
       .catch(done);
