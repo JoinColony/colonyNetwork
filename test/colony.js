@@ -54,6 +54,12 @@ contract('Colony', function (accounts) {
   });
 
   describe('when created', function () {
+    it('should accept ether', async function () {
+      await colony.send(1, { from: MAIN_ACCOUNT });
+      let colonyBalance = web3.eth.getBalance(colony.address);
+      assert.equal(colonyBalance.toNumber(), 1);
+    });
+
     it('should not be able to change owner of colony\'s EthernalStorage', async function () {
       const eternalStorageAddress = await colony.eternalStorage.call();
       const ownableStorage = await Ownable.at(eternalStorageAddress);
@@ -992,6 +998,16 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should fail if non-admins try to generate tokens', function (done) {
+      colony.generateTokensWei(100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should fail if non-admins try to contribute with tokens from the pool', function (done) {
       colony.generateTokensWei(100)
       .then(function () {
@@ -1019,6 +1035,25 @@ contract('Colony', function (accounts) {
       .then(function () {
         return colony.setReservedTokensWeiForTask(0, 100, {
           from: OTHER_ACCOUNT,
+          gas: GAS_TO_SPEND,
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to fund task with tokens if there are no sufficient tokens in colony', function (done) {
+      colony.generateTokensWei(100)
+      .then(function () {
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function () {
+        return colony.setReservedTokensWeiForTask(0, 200, {
+          from: MAIN_ACCOUNT,
           gas: GAS_TO_SPEND,
         });
       })
