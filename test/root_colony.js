@@ -171,21 +171,21 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
-    it.only('should fail if the key provided is already in use', function (done) {
+    it('should fail if the key provided is already in use', function (done) {
       rootColony.createColony(COLONY_KEY)
       .then(function () {
-        return rootColony.createColony(COLONY_KEY, { gas: 3e6 });
+        return rootColony.createColony(COLONY_KEY, { gas: 4e6 });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(4e6, tx);
       })
       .then(function () {
         return rootColony.countColonies.call();
       })
       .then(function (count) {
-        console.log(count);
+        assert.equal(count.toNumber(), 1);
       })
-      //.catch(testHelper.ifUsingTestRPC)
-      //.then(function (tx) {
-      //  testHelper.checkAllGasSpent(3e6, tx);
-      //})
       .then(done)
       .catch(done);
     });
@@ -264,6 +264,30 @@ contract('RootColony', function (accounts) {
       .then(function (_address) {
         oldColonyAddress = _address;
         return rootColony.upgradeColony(COLONY_KEY, { from: OTHER_ACCOUNT, gas: 4e6 });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(4e6, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should NOT be able to upgrade colonies if not called via root colony', function (done) {
+      let colony;
+      rootColony.createColony(COLONY_KEY)
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        return Colony.at(_address);
+      })
+      .then(function (_colony) {
+        colony = _colony;
+        return Ownable.new();
+      })
+      .then(function(_ownable) {
+        return colony.upgrade(_ownable.address, { from: MAIN_ACCOUNT, gas: 4e6 });
       })
       .catch(testHelper.ifUsingTestRPC)
       .then(function (tx) {
