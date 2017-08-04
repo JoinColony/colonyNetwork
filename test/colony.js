@@ -927,6 +927,43 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should NOT allow admin to refund task tokens if task not accepted', function (done) {
+      colony.generateTokensWei(100, { from: MAIN_ACCOUNT })
+      .then(function () {
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function () {
+        return colony.setReservedTokensWeiForTask(0, 80, { from: MAIN_ACCOUNT });
+      })
+      .then(function () {
+        return colony.reservedTokensWei.call();
+      })
+      .then(function (reservedTokensWei) {
+        assert.equal(reservedTokensWei.toNumber(), 80, 'Has not reserved the right amount of colony tokens.');
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+      })
+      .then(function (taskTokensWei) {
+        assert.equal(taskTokensWei.toNumber(), 80, 'Has not set the task token funds correctly');
+        return colony.removeReservedTokensWeiForTask(0, { gas: 3e6 });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(3e6, tx);
+      })
+      .then(function () {
+        return colony.reservedTokensWei.call();
+      })
+      .then(function (reservedTokensWei) {
+        assert.equal(reservedTokensWei.toNumber(), 80);
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+      })
+      .then(function (taskTokensWei) {
+        assert.equal(taskTokensWei.toNumber(), 80);
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it.skip('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
       colony.generateTokensWei(100)
       .then(function () {
