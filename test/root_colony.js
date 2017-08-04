@@ -171,23 +171,21 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
-    it('should fail if the key provided is already in use', function (done) {
-      rootColony.createColony(COLONY_KEY)
-      .then(function () {
-        return rootColony.createColony(COLONY_KEY, { gas: 4e6 });
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(4e6, tx);
-      })
-      .then(function () {
-        return rootColony.countColonies.call();
-      })
-      .then(function (count) {
-        assert.equal(count.toNumber(), 1);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the key provided is already in use', async function () {
+      const createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
+
+      await rootColony.createColony(COLONY_KEY);
+
+      let tx;
+      try {
+        await rootColony.createColony(COLONY_KEY, { gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+        testHelper.checkAllGasSpent(createColonyGas, tx);
+      }
+
+      let count = await rootColony.countColonies.call();
+      assert.equal(count.toNumber(), 1);
     });
 
     it.skip('should pay root colony 5% fee of a completed task value', function (done) {

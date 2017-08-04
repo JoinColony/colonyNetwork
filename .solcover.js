@@ -4,5 +4,5 @@ module.exports = {
       'Migrations.sol',
     ],
     testCommand: './node_modules/.bin/truffle test --network coverage',
-    testrpcOptions: `--port 8555`
+    testrpcOptions: `--port 8555 -i coverage`
 };
