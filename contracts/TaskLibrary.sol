@@ -41,13 +41,6 @@ library TaskLibrary {
     return EternalStorage(_storageContract).getUIntValue(keccak256("task_tokensWeiReserved", _id));
   }
 
-  /// @notice gets the reserved colony tokens for funding tasks.
-  /// @param tokensWei the token wei to set the value to.
-  /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
-  function setReservedTokensWei(address _storageContract, uint256 tokensWei) {
-    EternalStorage(_storageContract).setUIntValue(keccak256("ReservedTokensWei"), tokensWei);
-  }
-
   /// @notice this function adds a task to the task DB. Any ETH sent will be
   /// considered as a contribution to the task
   /// @param _name the task name

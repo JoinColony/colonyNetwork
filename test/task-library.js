@@ -78,8 +78,8 @@ contract('TaskLibrary', function (accounts) {
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -91,8 +91,8 @@ contract('TaskLibrary', function (accounts) {
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -182,8 +182,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -198,8 +198,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -214,8 +214,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -230,8 +230,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -285,8 +285,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -304,8 +304,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -320,8 +320,8 @@ contract('TaskLibrary', function (accounts) {
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -444,14 +444,15 @@ contract('TaskLibrary', function (accounts) {
         return colony.acceptTask(0);
       })
       .then(function () {
-        return colony.contributeEthToTask(0, 10, {
+        return colony.contributeEthToTask(0, {
           from: MAIN_ACCOUNT,
           gas: 1e6,
+          value: 10
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);
@@ -460,14 +461,15 @@ contract('TaskLibrary', function (accounts) {
     it('should fail if I try to contribute to a nonexistent task', function (done) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
-        return colony.contributeEthToTask(10, 10, {
+        return colony.contributeEthToTask(100000, {
           from: MAIN_ACCOUNT,
           gas: 1e6,
+          value: 10
         });
       })
       .catch(testHelper.ifUsingTestRPC)
-      .then(function (txid) {
-        testHelper.checkAllGasSpent(1e6, txid);
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(1e6, tx);
       })
       .then(done)
       .catch(done);

@@ -8,7 +8,11 @@ import shortid from 'shortid';
 module.exports = {
   ifUsingTestRPC(err) {
     // Make sure this is a throw we expect.
-    assert.oneOf(err.message, ['VM Exception while processing transaction: out of gas', 'VM Exception while processing transaction: invalid JUMP']);
+    if (err.message.indexOf('VM Exception while processing transaction: out of gas') == 0
+  && err.message.indexOf('VM Exception while processing transaction: invalid JUMP') == 0
+  && err.message.indexOf('VM Exception while processing transaction: invalid opcode') == 0) {
+    throw err;
+  }
     // Okay, so, there is a discrepancy between how testrpc handles
     // OOG errors (throwing an exception all the way up to these tests) and
     // how geth handles them (still making a valid transaction and returning
@@ -28,7 +32,8 @@ module.exports = {
     return block.transactions[0].hash;
   },
   checkAllGasSpent(gasAmount, tx) {
-    const receipt = tx.receipt;
+    const txid = !tx.tx ? tx : tx.tx;
+    const receipt = web3.eth.getTransactionReceipt(txid);
     // When a transaction throws, all the gas sent is spent. So let's check that
     // we spent all the gas that we sent.
     assert.equal(gasAmount, receipt.gasUsed, 'didnt fail - didn\'t throw and use all gas');

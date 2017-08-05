@@ -28,13 +28,15 @@
     "gulp": "^3.9.1",
     "gulp-help": "^1.6.1",
     "gulp-util": "^3.0.8",
-    "mocha": "^3.4.2",
+    "istanbul": "^0.4.5",
+    "mocha": "^3.5.0",
     "mocha-circleci-reporter": "^0.0.2",
     "pshell": "^1.1.0",
     "request": "^2.81.0",
     "rimraf": "^2.6.1",
-    "solium": "^0.5.3",
-    "truffle": "3.2.5"
+    "solidity-coverage": "^0.2.1",
+    "solium": "^0.5.4",
+    "truffle": "3.4.7"
   },
   "dependencies": {
     "colony-utils": "github:JoinColony/colony-utils#v1.1.0",

@@ -8,6 +8,8 @@ const IColony = artifacts.require('IColony');
 const RootColonyResolver = artifacts.require('RootColonyResolver');
 const EternalStorage = artifacts.require('EternalStorage');
 const Ownable = artifacts.require('Ownable');
+const ColonyFactory = artifacts.require('ColonyFactory');
+const Destructible = artifacts.require('Destructible');
 
 contract('RootColony', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
@@ -94,6 +96,30 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
+    it('should allow users to get the index of a colony by its index', function (done) {
+      let colony3Address;
+
+      rootColony.createColony('Colony1')
+      .then(function() {
+        return rootColony.createColony('Colony2')
+      })
+      .then(function() {
+        return rootColony.createColony('Colony3')
+      })
+      .then(function() {
+        return rootColony.getColony.call('Colony3');
+      })
+      .then(function (_colony3Address) {
+        colony3Address = _colony3Address;
+        return rootColony.getColonyAt.call(3);
+      })
+      .then(function (_colonyAddress) {
+        assert.equal(_colonyAddress, colony3Address, 'Colony address is incorrect');
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it('should allow users to get the index of a colony by its key', function (done) {
       testHelper.Promise.all([
         rootColony.createColony('Colony1'),
@@ -145,23 +171,21 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
-    it('should fail if the key provided is already in use', function (done) {
-      rootColony.createColony(COLONY_KEY, {
-        from: MAIN_ACCOUNT,
-        gas: 3e6,
-      })
-      .then(function () {
-        return rootColony.createColony(COLONY_KEY, {
-          from: MAIN_ACCOUNT,
-          gas: 3e6,
-        });
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the key provided is already in use', async function () {
+      const createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
+
+      await rootColony.createColony(COLONY_KEY);
+
+      let tx;
+      try {
+        await rootColony.createColony(COLONY_KEY, { gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+        testHelper.checkAllGasSpent(createColonyGas, tx);
+      }
+
+      let count = await rootColony.countColonies.call();
+      assert.equal(count.toNumber(), 1);
     });
 
     it.skip('should pay root colony 5% fee of a completed task value', function (done) {
@@ -208,7 +232,7 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
-    it('should be able to upgrade colonies', function (done) {
+    it('should be able to upgrade colonies, if colony owner', function (done) {
       let oldColonyAddress;
       rootColony.createColony(COLONY_KEY)
       .then(function () {
@@ -224,6 +248,48 @@ contract('RootColony', function (accounts) {
       })
       .then(function (upgradedColonyAddress) {
         assert.notEqual(oldColonyAddress, upgradedColonyAddress);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should NOT be able to upgrade colonies if not colony owner', function (done) {
+      let oldColonyAddress;
+      rootColony.createColony(COLONY_KEY)
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        oldColonyAddress = _address;
+        return rootColony.upgradeColony(COLONY_KEY, { from: OTHER_ACCOUNT, gas: 4e6 });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(4e6, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should NOT be able to upgrade colonies if not called via root colony', function (done) {
+      let colony;
+      rootColony.createColony(COLONY_KEY)
+      .then(function () {
+        return rootColony.getColony.call(COLONY_KEY);
+      })
+      .then(function (_address) {
+        return Colony.at(_address);
+      })
+      .then(function (_colony) {
+        colony = _colony;
+        return Ownable.new();
+      })
+      .then(function(_ownable) {
+        return colony.upgrade(_ownable.address, { from: MAIN_ACCOUNT, gas: 4e6 });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(4e6, tx);
       })
       .then(done)
       .catch(done);
@@ -250,7 +316,8 @@ contract('RootColony', function (accounts) {
       .catch(done);
     });
 
-    it('should be able to get the latest Colony version', function (done) {
+    // TODO: Skipped because of https://github.com/ethereumjs/testrpc/issues/149
+    it.skip('should be able to get the latest Colony version', function (done) {
       let actualColonyVersion;
       rootColony.createColony(COLONY_KEY)
       .then(function () {
@@ -300,6 +367,52 @@ contract('RootColony', function (accounts) {
       })
       .then(done)
       .catch(done);
+    });
+
+    it('should NOT be able to move EternalStorage to another RootColony if called with invalid address', function (done) {
+     rootColony.changeEternalStorageOwner(0x0, {
+       from: MAIN_ACCOUNT,
+       gas: 3e6,
+     })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(3e6, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should NOT allow anyone but RootColony to create new colonies', function (done) {
+      let colonyFactory;
+      rootColony.colonyFactory.call()
+      .then(function (colonyFactoryAddress) {
+        colonyFactory = ColonyFactory.at(colonyFactoryAddress);
+      })
+      .then(function () {
+        return EternalStorage.new();
+      })
+      .then(function (_eternalStorage) {
+        return colonyFactory.createColony(_eternalStorage.address, {
+          from: OTHER_ACCOUNT,
+          gas: 4e6,
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(4e6, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+  });
+
+  describe('when working with Destructible', function () {
+    it('should allow it to be killed in favour of a replacement contract', async function () {
+      let destructible = await Destructible.new();
+      await destructible.kill(OTHER_ACCOUNT)
+
+      let contractCode = web3.eth.getCode(destructible.address);
+      assert.isTrue(contractCode == '0x0' || contractCode == '0x');
     });
   });
 });

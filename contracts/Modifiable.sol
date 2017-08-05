@@ -17,13 +17,6 @@ contract Modifiable {
     _;
   }
 
-  /// @notice throw if the uint is equal to zero
-  /// @param _id the ID to validate
-  modifier throwIfEqualToZero(uint _id) {
-    if(_id == 0) { throw; }
-    _;
-  }
-
   /// @notice throw if the id is invalid
   /// @param _id the ID to validate
   modifier throwIfIsEmptyBytes32(bytes32 _id) {

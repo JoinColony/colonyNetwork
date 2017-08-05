@@ -36,9 +36,13 @@ gulp.task('versionColonyContract', ['deploy:contracts'], async () => {
   return execute(`mv Colony.json Colony_${VERSION}.json`, { cwd: './build/contracts' });
 });
 
-gulp.task('lint:contracts', () => {
+gulp.task('lint:contracts', 'Lint contracts', () => {
   return execute('solium --dir . || true');
 });
+
+const checkCoverageAgainstThreshold = () => {
+  return execute('istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94');
+};
 
 gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
@@ -96,13 +100,18 @@ gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:con
 });
 
 gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'], () => {
-  const cmd = makeCmd(`truffle test test/gasCosts.js`);
+  const cmd = makeCmd(`truffle test gasCosts/gasCosts.js`);
   return execute(cmd);
 });
 
 gulp.task('test:contracts:integration', 'Run contract integration tests', ['deploy:contracts', 'generate:contracts:integration'], () => {
   const cmd = makeCmd(`truffle test ./integration-test/test/* --network integration`);
   return execute(cmd).then(cleanIntegrationFakeContracts);
+});
+
+gulp.task('test:contracts:coverage', 'Run contract test coverage using solidity-coverage', () => {
+  const cmd = makeCmd(`solidity-coverage`);
+  return execute(cmd).then(checkCoverageAgainstThreshold);
 });
 
 const waitForPort = port => {

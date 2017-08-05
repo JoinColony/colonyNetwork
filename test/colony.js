@@ -6,11 +6,13 @@ import testHelper from '../helpers/test-helper';
 const RootColony = artifacts.require('RootColony');
 const Colony = artifacts.require('Colony');
 const EternalStorage = artifacts.require('EternalStorage');
+const Ownable = artifacts.require('Ownable');
 
 contract('Colony', function (accounts) {
   let COLONY_KEY;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
+  const THIRD_ACCOUNT = accounts[2];
   // this value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
 
@@ -52,6 +54,42 @@ contract('Colony', function (accounts) {
   });
 
   describe('when created', function () {
+    it('should accept ether', async function () {
+      await colony.send(1, { from: MAIN_ACCOUNT });
+      let colonyBalance = web3.eth.getBalance(colony.address);
+      assert.equal(colonyBalance.toNumber(), 1);
+    });
+
+    it('should not be able to change owner of colony\'s EthernalStorage', async function () {
+      const eternalStorageAddress = await colony.eternalStorage.call();
+      const ownableStorage = await Ownable.at(eternalStorageAddress);
+      let ownerBefore = await ownableStorage.owner.call();
+      assert.equal(ownerBefore, colony.address);
+
+      let tx;
+      try {
+        tx = await ownableStorage.changeOwner(THIRD_ACCOUNT);
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+
+      let ownerAfter = await ownableStorage.owner.call();
+      assert.equal(ownerAfter, colony.address);
+    });
+
+    it('should throw if colony tries to change EternalStorage owner with invalid address', async function () {
+      const ownableContract = await Ownable.new();
+      let tx;
+      try {
+        tx = await ownableContract.changeOwner('0x0');
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+
+      const owner = await ownableContract.owner.call();
+      assert.equal(owner, MAIN_ACCOUNT);
+    });
+
     it('should take deploying user as an owner', function (done) {
       colony.userIsInRole.call(MAIN_ACCOUNT, 0)
       .then(function (owner) {
@@ -224,6 +262,28 @@ contract('Colony', function (accounts) {
         testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
+      .catch(done);
+    });
+
+    it('should fail to remove owner if not an owner themself', function (done) {
+      colony.addUserToRole(OTHER_ACCOUNT, 0)
+      .then(function () {
+        return colony.addUserToRole(THIRD_ACCOUNT, 1)
+      })
+      .then(function () {
+        return colony.removeUserFromRole(OTHER_ACCOUNT, 0, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      })
+      .then(function () {
+        return colony.userIsInRole.call(OTHER_ACCOUNT, 0);
+      })
+      .then(function (_isOwner) {
+        assert.isTrue(_isOwner);
+        done();
+      })
       .catch(done);
     });
 
@@ -873,6 +933,43 @@ contract('Colony', function (accounts) {
       .catch(done);
     });
 
+    it('should NOT allow admin to refund task tokens if task not accepted', function (done) {
+      colony.generateTokensWei(100, { from: MAIN_ACCOUNT })
+      .then(function () {
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function () {
+        return colony.setReservedTokensWeiForTask(0, 80, { from: MAIN_ACCOUNT });
+      })
+      .then(function () {
+        return colony.reservedTokensWei.call();
+      })
+      .then(function (reservedTokensWei) {
+        assert.equal(reservedTokensWei.toNumber(), 80, 'Has not reserved the right amount of colony tokens.');
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+      })
+      .then(function (taskTokensWei) {
+        assert.equal(taskTokensWei.toNumber(), 80, 'Has not set the task token funds correctly');
+        return colony.removeReservedTokensWeiForTask(0, { gas: 3e6 });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(3e6, tx);
+      })
+      .then(function () {
+        return colony.reservedTokensWei.call();
+      })
+      .then(function (reservedTokensWei) {
+        assert.equal(reservedTokensWei.toNumber(), 80);
+        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+      })
+      .then(function (taskTokensWei) {
+        assert.equal(taskTokensWei.toNumber(), 80);
+      })
+      .then(done)
+      .catch(done);
+    });
+
     it.skip('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', function (done) {
       colony.generateTokensWei(100)
       .then(function () {
@@ -896,6 +993,16 @@ contract('Colony', function (accounts) {
       })
       .then(function (rootColonyTokenBalance) {
         assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'RootColony token balance is not 5% of task token value');
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail if non-admins try to generate tokens', function (done) {
+      colony.generateTokensWei(100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       })
       .then(done)
       .catch(done);
@@ -928,6 +1035,25 @@ contract('Colony', function (accounts) {
       .then(function () {
         return colony.setReservedTokensWeiForTask(0, 100, {
           from: OTHER_ACCOUNT,
+          gas: GAS_TO_SPEND,
+        });
+      })
+      .catch(testHelper.ifUsingTestRPC)
+      .then(function (tx) {
+        testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      })
+      .then(done)
+      .catch(done);
+    });
+
+    it('should fail to fund task with tokens if there are no sufficient tokens in colony', function (done) {
+      colony.generateTokensWei(100)
+      .then(function () {
+        return colony.makeTask('name', 'summary');
+      })
+      .then(function () {
+        return colony.setReservedTokensWeiForTask(0, 200, {
+          from: MAIN_ACCOUNT,
           gas: GAS_TO_SPEND,
         });
       })
