@@ -23,8 +23,9 @@
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
-    "babel-register": "^6.24.1",
+    "babel-register": "^6.26.0",
     "bluebird": "^3.5.0",
+    "ethereumjs-testrpc": "^4.1.0",
     "gulp": "^3.9.1",
     "gulp-help": "^1.6.1",
     "gulp-util": "^3.0.8",
@@ -34,9 +35,9 @@
     "pshell": "^1.1.0",
     "request": "^2.81.0",
     "rimraf": "^2.6.1",
-    "solidity-coverage": "^0.2.1",
-    "solium": "^0.5.4",
-    "truffle": "3.4.7"
+    "solidity-coverage": "^0.2.2",
+    "solium": "^0.5.5",
+    "truffle": "^3.4.9"
   },
   "dependencies": {
     "colony-utils": "github:JoinColony/colony-utils#v1.1.0",

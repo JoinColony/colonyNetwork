@@ -15,7 +15,7 @@ const gulp = gulpHelp(originalGulp, {
 });
 const options = minimist(process.argv.slice(2));
 
-const gethClient = options.geth ? 'geth' : 'parity';
+const gethClient = options.parity ? 'parity' : 'testrpc';
 
 gulp.task('deploy:contracts', [gethClient, 'clean:contracts'], () => {
   return execute(`truffle migrate --reset`);
@@ -63,6 +63,17 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   .then(execute(`sed -ie'' s/'address public eternalStorage;'/'address public eternalStorage;function isUpdated() constant returns(bool) {return true;}'/g FakeUpdatedColony.sol`, { cwd: './contracts' }));
 });
 
+gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
+  const cmd = makeCmd(`truffle test`);
+  return execute(cmd);
+});
+
+gulp.task('testrpc', async () => {
+  const cmd = makeCmd(`testrpc`);
+  executeDetached(cmd);
+  return waitForPort('8545');
+});
+
 gulp.task('parity', async () => {
   const out = await executeWithOutput('parity --keys-path ./keys account list');
   const addresses = out.replace(/(\[|\]|\n)/g, '').split(', ');
@@ -78,25 +89,9 @@ gulp.task('parity', async () => {
     --tx-gas-limit 0x47E7C4 --gasprice 0x0 --gas-floor-target 0x47E7C4
     --reseal-on-txs all --reseal-min-period 0
     --jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000"
-  `);
+    `);
   executeDetached(cmd);
   return waitForPort('8545');
-});
-
-gulp.task('geth', () => {
-  const cmd = makeCmd(`
-    geth init ./truffle/genesis.json &&
-    geth --networkid 19191919191 --rpc --password ./password
-    --unlock "0,1,2" --rpccorsdomain "*" --rpcaddr "127.0.0.1"
-    --rpcport "8545" --mine --etherbase "2"
-  `);
-  executeDetached(cmd);
-  return waitForPort('8545');
-});
-
-gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
-  const cmd = makeCmd(`truffle test`);
-  return execute(cmd);
 });
 
 gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'], () => {

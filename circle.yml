@@ -31,8 +31,8 @@ test:
     - 'sed -i "s/spec/mocha-circleci-reporter/g" ./truffle.js' #Replace mocha spec reporter in truffle with mocha-junit-reporter
   override:
     - gulp test:contracts
-    - gulp test:contracts:integration
-    - gulp test:contracts:gasCosts
+    - gulp test:contracts:integration --parity
+    - gulp test:contracts:gasCosts --parity
     - gulp test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
