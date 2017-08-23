@@ -15,7 +15,7 @@ const gulp = gulpHelp(originalGulp, {
 });
 const options = minimist(process.argv.slice(2));
 
-const gethClient = 'testrpc';
+const gethClient = options.parity ? 'parity' : 'testrpc';
 
 gulp.task('deploy:contracts', [gethClient, 'clean:contracts'], () => {
   return execute(`truffle migrate --reset`);
@@ -70,6 +70,26 @@ gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:con
 
 gulp.task('testrpc', async () => {
   const cmd = makeCmd(`testrpc`);
+  executeDetached(cmd);
+  return waitForPort('8545');
+});
+
+gulp.task('parity', async () => {
+  const out = await executeWithOutput('parity --keys-path ./keys account list');
+  const addresses = out.replace(/(\[|\]|\n)/g, '').split(', ');
+
+  if (!addresses.length) {
+    throw new Error('No parity addresses found. Did you initialise it correctly?');
+  }
+  const cmd = makeCmd(`
+    parity --chain ./parity-genesis.json
+    --author ${addresses[2]}
+    --unlock ${addresses[0]},${addresses[1]},${addresses[2]}
+    --password ./parityPassword --keys-path ./keys --geth --no-dapps
+    --tx-gas-limit 0x47E7C4 --gasprice 0x0 --gas-floor-target 0x47E7C4
+    --reseal-on-txs all --reseal-min-period 0
+    --jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000"
+    `);
   executeDetached(cmd);
   return waitForPort('8545');
 });
