@@ -34,7 +34,7 @@
     "pshell": "^1.1.0",
     "request": "^2.81.0",
     "rimraf": "^2.6.1",
-    "solidity-coverage": "^0.2.1",
+    "solidity-coverage": "^0.2.2",
     "solium": "^0.5.5",
     "truffle": "3.4.7"
   },
