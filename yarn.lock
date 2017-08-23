@@ -1426,6 +1426,12 @@ ethereumjs-testrpc-sc@4.0.1:
   dependencies:
     webpack "^3.0.0"
 
+ethereumjs-testrpc@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc/-/ethereumjs-testrpc-4.1.0.tgz#c56f42d3bf716e7f09108ea4248b2f7848f6e0bb"
+  dependencies:
+    webpack "^3.0.0"
+
 event-emitter@~0.3.5:
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/event-emitter/-/event-emitter-0.3.5.tgz#df8c69eef1647923c7157b9ce83840610b02cc39"
