@@ -3410,9 +3410,9 @@ solidity-coverage@^0.2.1:
     pegjs "^0.10.0"
     yargs "^4.6.0"
 
-solium@^0.5.4:
-  version "0.5.4"
-  resolved "https://registry.yarnpkg.com/solium/-/solium-0.5.4.tgz#3ef9031b6043e944512e048848067c58beb36e62"
+solium@^0.5.5:
+  version "0.5.5"
+  resolved "https://registry.yarnpkg.com/solium/-/solium-0.5.5.tgz#420ae5c0709d00c19430158418bb8264bdac66aa"
   dependencies:
     chokidar "^1.6.0"
     colors "^1.1.2"
@@ -3420,11 +3420,11 @@ solium@^0.5.4:
     lodash "^4.14.2"
     sol-digger "0.0.2"
     sol-explore "^1.6.1"
-    solparse "^1.2.1"
+    solparse "^1.2.2"
 
-solparse@^1.2.1:
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/solparse/-/solparse-1.2.1.tgz#d04fe840cbbeb83f7cf81e280bbba160f921239a"
+solparse@^1.2.2:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/solparse/-/solparse-1.2.3.tgz#7817347079a7412cf3b752eda2103209cd2922fd"
   dependencies:
     mocha "^2.4.5"
     pegjs "^0.10.0"
