@@ -36,7 +36,7 @@
     "rimraf": "^2.6.1",
     "solidity-coverage": "^0.2.2",
     "solium": "^0.5.5",
-    "truffle": "3.4.7"
+    "truffle": "^3.4.9"
   },
   "dependencies": {
     "colony-utils": "github:JoinColony/colony-utils#v1.1.0",
