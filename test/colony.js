@@ -77,17 +77,17 @@ contract('Colony', function (accounts) {
 
     it('should take deploying user as an owner', async function () {
       const owner = await colony.userIsInRole.call(MAIN_ACCOUNT, 0);
-      assert.equal(owner, true, 'First user isn\'t an owner');
+      assert.isTrue(owner, 'First user isn\'t an owner');
     });
 
     it('should users not be an admin until I add s/he', async function () {
       const admin = await colony.userIsInRole.call(OTHER_ACCOUNT, 1);
-      assert.equal(admin, false, 'Other user is an admin');
+      assert.isFalse(admin, 'Other user is an admin');
     });
 
     it('should other users not be an owner until I add s/he', async function () {
       const owner = await colony.userIsInRole.call(OTHER_ACCOUNT, 0);
-      assert.equal(owner, false, 'Other user is an owner');
+      assert.isFalse(owner, 'Other user is an owner');
     });
 
     it('should keep a count of the number of admins', async function () {
@@ -131,7 +131,7 @@ contract('Colony', function (accounts) {
       await colony.addUserToRole(OTHER_ACCOUNT, 1);
       await colony.removeUserFromRole(OTHER_ACCOUNT, 1, { from: OTHER_ACCOUNT });
       const _adminsCount = await colony.userIsInRole.call(OTHER_ACCOUNT, 1);
-      assert.equal(_adminsCount, false, 'Admins cannot leave at their own will');
+      assert.isFalse(_adminsCount, 'Admins cannot leave at their own will');
     });
 
     it('should allow a revoked owner to be set as an owner again', async function () {
@@ -274,13 +274,13 @@ contract('Colony', function (accounts) {
       const summary = await eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       assert.equal(summary, 'summary', 'Wrong task summary');
       const accepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
-      assert.equal(accepted, false, 'Wrong accepted value');
+      assert.isFalse(accepted, 'Wrong accepted value');
       const eth = await eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       assert.equal(eth.toNumber(), 0, 'Wrong task ether value');
       const tokensWei = await eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       assert.equal(tokensWei.toNumber(), 0, 'Wrong tokens wei value');
       const budgetSet = await eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
-      assert.equal(budgetSet, false, 'Wrong initial budgetSet value');
+      assert.isFalse(budgetSet, 'Wrong initial budgetSet value');
     });
 
     it('should allow admins to make task with a 160 chars long title', async function () {
@@ -297,8 +297,8 @@ contract('Colony', function (accounts) {
       assert.equal(name, 'nameedit', 'Wrong task name');
       const summary = await eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       assert.equal(summary, 'summary', 'Wrong task summary');
-      const taskaccepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
-      assert.equal(taskaccepted, false, 'Wrong accepted value');
+      const accepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
+      assert.isFalse(accepted, 'Wrong accepted value');
       const eth = await eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       assert.equal(eth.toNumber(), 0, 'Wrong task ether value');
       const tokensWei = await eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
@@ -313,7 +313,7 @@ contract('Colony', function (accounts) {
       const summary = await eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       assert.equal(summary, 'summaryedit', 'Wrong task summary');
       const taskaccepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
-      assert.equal(taskaccepted, false, 'Wrong accepted value');
+      assert.isFalse(taskaccepted, 'Wrong accepted value');
       const eth = await eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       assert.equal(eth.toNumber(), 0, 'Wrong task ether value');
       const tokensWei = await eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
@@ -365,13 +365,13 @@ contract('Colony', function (accounts) {
       const summary = await eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       assert.equal(summary, 'summary', 'Wrong task summary');
       const accepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
-      assert.equal(accepted, false, 'Wrong accepted value');
+      assert.isFalse(accepted, 'Wrong accepted value');
       const eth = await eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       assert.equal(eth.toNumber(), 10000, 'Wrong task ether value');
       const tokensWei = await eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
       assert.equal(tokensWei.toNumber(), 0, 'Wrong tokens wei value');
       const budgetSet = await eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
-      assert.equal(budgetSet, true, 'Wrong tokens wei value');
+      assert.isTrue(budgetSet, 'Wrong tokens wei value');
     });
 
     it('should fail if non-admins fund task with ETH', async function () {
@@ -402,7 +402,7 @@ contract('Colony', function (accounts) {
       reservedTokensWei = await colony.reservedTokensWei.call();
       assert.equal(100, reservedTokensWei.toNumber(), 'Colony tokens were not reserved for task');
       const budgetSet = await eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
-      assert.equal(budgetSet, true, 'Wrong tokens wei value');
+      assert.isTrue(budgetSet, 'Wrong tokens wei value');
       await colony.completeAndPayTask(0, OTHER_ACCOUNT);
       const otherAccountTokenBalance = await colony.balanceOf.call(OTHER_ACCOUNT);
       assert.equal(otherAccountTokenBalance.toNumber(), 100, 'OTHER_ACCOUNT balance should be 100 tokens.');
@@ -413,7 +413,7 @@ contract('Colony', function (accounts) {
       const summary = await eternalStorage.getStringValue.call(solSha3('task_summary', 1));
       assert.equal(summary, 'summary2', 'Wrong task summary');
       const accepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 1));
-      assert.equal(accepted, false, 'Wrong accepted value');
+      assert.isFalse(accepted, 'Wrong accepted value');
       const eth = await eternalStorage.getUIntValue.call(solSha3('task_eth', 1));
       assert.equal(eth.toNumber(), 0, 'Wrong task ether value');
       const tokensWei = await eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 1));
@@ -431,12 +431,12 @@ contract('Colony', function (accounts) {
       let tokensWeiReserved = await eternalStorage.getUIntValue.call(solSha3('task_tokensWeiReserved', 0));
       assert.equal(tokensWeiReserved.toNumber(), 70, 'Wrong tokens wei reserved value');
       let budgetSet = await eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
-      assert.equal(budgetSet, true, 'Wrong budgetSet value');
+      assert.isTrue(budgetSet, 'Wrong budgetSet value');
       await colony.setReservedTokensWeiForTask(0, 100);
       reservedTokensWei = await colony.reservedTokensWei.call();
       assert.equal(reservedTokensWei.toNumber(), 100, 'Has not reserved the right amount of colony tokens.');
       budgetSet = await eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
-      assert.equal(budgetSet, true, 'Wrong tokens wei value');
+      assert.isTrue(budgetSet, 'Wrong tokens wei value');
 
       let tx;
       try {
@@ -503,7 +503,7 @@ contract('Colony', function (accounts) {
       const summary = await eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       assert.equal(summary, 'summary', 'Wrong task summary');
       const accepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
-      assert.equal(accepted, false, 'Wrong accepted value');
+      assert.isFalse(accepted, 'Wrong accepted value');
     });
 
     it('should allow admin to close task', async function () {
@@ -519,7 +519,7 @@ contract('Colony', function (accounts) {
       const summary = await eternalStorage.getStringValue.call(solSha3('task_summary', 0));
       assert.equal(summary, 'summary', 'Wrong task summary');
       const accepted = await eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
-      assert.equal(accepted, true, 'Wrong accepted value');
+      assert.isTrue(accepted, 'Wrong accepted value');
       const eth = await eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
       assert.equal(eth.toNumber(), 10000, 'Wrong task ether value');
       const tokensWei = await eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));

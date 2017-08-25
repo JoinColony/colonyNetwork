@@ -253,7 +253,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function (_accepted) {
-        assert.equal(_accepted, false, '"accepted" flag is "true" after creating a task');
+        assert.isFalse(_accepted, '"accepted" flag is "true" after creating a task');
       })
       .then(done)
       .catch(done);
@@ -270,7 +270,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
       })
       .then(function (accepted) {
-        assert.equal(accepted, true, '"accepted" flag is incorrect');
+        assert.isTrue(accepted, '"accepted" flag is incorrect');
       })
       .then(done)
       .catch(done);
@@ -396,7 +396,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
       })
       .then(function (_setBudget) {
-        assert.equal(_setBudget, true, '"setBudget" task property should be "true"');
+        assert.isTrue(_setBudget, '"setBudget" task property should be "true"');
       })
       .then(done)
       .catch(done);
@@ -414,7 +414,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
       })
       .then(function (_setBudget) {
-        assert.equal(_setBudget, true, '"setBudget" task property should be "true"');
+        assert.isTrue(_setBudget, '"setBudget" task property should be "true"');
       })
       .then(done)
       .catch(done);
@@ -432,7 +432,7 @@ contract('TaskLibrary', function (accounts) {
         return eternalStorage.getBooleanValue.call(solSha3('task_funded', 0));
       })
       .then(function (_setBudget) {
-        assert.equal(_setBudget, true, '"setBudget" task property should be "true"');
+        assert.isTrue(_setBudget, '"setBudget" task property should be "true"');
       })
       .then(done)
       .catch(done);
