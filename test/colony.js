@@ -1,6 +1,5 @@
 /* globals artifacts */
 import { solSha3 } from 'colony-utils';
-import _ from 'lodash';
 import testHelper from '../helpers/test-helper';
 
 const RootColony = artifacts.require('RootColony');
@@ -32,8 +31,8 @@ contract('Colony', function (accounts) {
   beforeEach(async function () {
     COLONY_KEY = testHelper.getRandomString(7);
     await rootColony.createColony(COLONY_KEY);
-    let colony_ = await rootColony.getColony(COLONY_KEY);
-    colony = await Colony.at(colony_);
+    let address = await rootColony.getColony(COLONY_KEY);
+    colony = await Colony.at(address);
     let extStorageAddress = await colony.eternalStorage.call();
     eternalStorage = await EternalStorage.at(extStorageAddress);
   });

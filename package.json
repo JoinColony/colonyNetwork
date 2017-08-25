@@ -24,7 +24,6 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
     "babel-register": "^6.26.0",
-    "bluebird": "^3.5.0",
     "ethereumjs-testrpc": "^4.1.0",
     "gulp": "^3.9.1",
     "gulp-help": "^1.6.1",
