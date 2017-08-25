@@ -61,7 +61,7 @@ contract('TaskLibrary', function (accounts) {
 
   describe('when adding tasks', function () {
     it('should add an entry to tasks array', function (done) {
-      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY', { from: MAIN_ACCOUNT })
+      colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return eternalStorage.getStringValue.call(solSha3('task_name', 0));
       })
@@ -87,7 +87,6 @@ contract('TaskLibrary', function (accounts) {
 
     it('should fail if I give it an invalid title', function (done) {
       colony.makeTask('', 'INTERESTING TASK SUMMARY', {
-        from: MAIN_ACCOUNT,
         gas: 1e6,
       })
       .catch(testHelper.ifUsingTestRPC)
@@ -177,7 +176,6 @@ contract('TaskLibrary', function (accounts) {
       .then(function (_accepted) {
         assert.isTrue(_accepted, 'Wrong accepted value');
         return colony.updateTaskTitle(0, 'TASK B', {
-          from: MAIN_ACCOUNT,
           gas: 1e6,
         });
       })
@@ -193,7 +191,6 @@ contract('TaskLibrary', function (accounts) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return colony.updateTaskTitle(0, '', {
-          from: MAIN_ACCOUNT,
           gas: 1e6,
         });
       })
@@ -225,7 +222,6 @@ contract('TaskLibrary', function (accounts) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return colony.updateTaskTitle(10, 'New title', {
-          from: MAIN_ACCOUNT,
           gas: 1e6,
         });
       })
@@ -299,7 +295,6 @@ contract('TaskLibrary', function (accounts) {
       })
       .then(function () {
         return colony.acceptTask(0, {
-          from: MAIN_ACCOUNT,
           gas: 1e6,
         });
       })
@@ -315,7 +310,6 @@ contract('TaskLibrary', function (accounts) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return colony.acceptTask(10, {
-          from: MAIN_ACCOUNT,
           gas: 1e6,
         });
       })
@@ -445,7 +439,6 @@ contract('TaskLibrary', function (accounts) {
       })
       .then(function () {
         return colony.contributeEthToTask(0, {
-          from: MAIN_ACCOUNT,
           gas: 1e6,
           value: 10
         });
@@ -462,7 +455,6 @@ contract('TaskLibrary', function (accounts) {
       colony.makeTask('TASK A', 'INTERESTING TASK SUMMARY')
       .then(function () {
         return colony.contributeEthToTask(100000, {
-          from: MAIN_ACCOUNT,
           gas: 1e6,
           value: 10
         });

@@ -76,17 +76,17 @@ contract('TokenLibrary', function (accounts) {
           return colony.makeTask('name2', 'summary2');
         })
         .then(function () {
-          return colony.setReservedTokensWeiForTask(0, 100, { from: MAIN_ACCOUNT });
+          return colony.setReservedTokensWeiForTask(0, 100);
         })
         .then(function () {
-          return colony.completeAndPayTask(0, MAIN_ACCOUNT, { from: MAIN_ACCOUNT });
+          return colony.completeAndPayTask(0, MAIN_ACCOUNT);
         })
         .then(function () {
           return colony.balanceOf.call(MAIN_ACCOUNT);
         })
         .then(function (balance) {
           assert.equal(balance.toNumber(), 100, 'sender balance is incorrect');
-          return colony.transfer(OTHER_ACCOUNT, 80, { from: MAIN_ACCOUNT });
+          return colony.transfer(OTHER_ACCOUNT, 80);
         })
         .then(function () {
           return colony.balanceOf.call(MAIN_ACCOUNT);
@@ -181,13 +181,13 @@ contract('TokenLibrary', function (accounts) {
         return colony.makeTask('name2', 'summary2');
       })
       .then(function () {
-        return colony.setReservedTokensWeiForTask(0, 100, { from: MAIN_ACCOUNT });
+        return colony.setReservedTokensWeiForTask(0, 100);
       })
       .then(function () {
-        return colony.completeAndPayTask(0, MAIN_ACCOUNT, { from: MAIN_ACCOUNT });
+        return colony.completeAndPayTask(0, MAIN_ACCOUNT);
       })
       .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 90, { from: MAIN_ACCOUNT });
+        return colony.approve(OTHER_ACCOUNT, 90);
       })
       .then(function () {
         return colony.balanceOf.call(MAIN_ACCOUNT);
