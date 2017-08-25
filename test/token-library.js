@@ -13,525 +13,269 @@ contract('TokenLibrary', function (accounts) {
   let COLONY_KEY;
   let colony;
   let eternalStorage;
+  const GAS_TO_SPEND = 4700000;
 
-  beforeEach(function (done) {
-    let rootColony;
-    let eternalStorageRoot;
-
-    RootColony.deployed()
-    .then(function (_rootColony) {
-      rootColony = _rootColony;
-      return EternalStorage.new();
-    })
-    .then(function (contract) {
-      eternalStorageRoot = contract;
-      return eternalStorageRoot.changeOwner(rootColony.address);
-    })
-    .then(function () {
-      return rootColony.registerEternalStorage(eternalStorageRoot.address);
-    })
-    .then(function () {
-      return eternalStorageRoot.owner.call();
-    })
-    .then(function (eternalStorageRootOwner) {
-      assert.equal(eternalStorageRootOwner, rootColony.address);
-      return testHelper.getRandomString(7);
-    })
-    .then(function (colonyKey) {
-      COLONY_KEY = colonyKey;
-      return rootColony.createColony(COLONY_KEY);
-    })
-    .then(function () {
-      return rootColony.getColony.call(COLONY_KEY);
-    })
-    .then(function (colony_) {
-      return Colony.at(colony_);
-    })
-    .then(function (_colony) {
-      colony = _colony;
-      return colony.eternalStorage.call();
-    })
-    .then(function (extStorageAddress) {
-      eternalStorage = EternalStorage.at(extStorageAddress);
-    })
-    .then(done);
+  beforeEach(async function () {
+    const rootColony = await RootColony.deployed();
+    const eternalStorageRoot = await EternalStorage.new();
+    await eternalStorageRoot.changeOwner(rootColony.address);
+    await rootColony.registerEternalStorage(eternalStorageRoot.address);
+    const eternalStorageRootOwner = await eternalStorageRoot.owner.call();
+    assert.equal(eternalStorageRootOwner, rootColony.address);
+    COLONY_KEY = testHelper.getRandomString(7);
+    await rootColony.createColony(COLONY_KEY);
+    const colonyAddress = await rootColony.getColony.call(COLONY_KEY);
+    colony = await Colony.at(colonyAddress);
+    const eternalStorageAddress = await colony.eternalStorage.call();
+    eternalStorage = await EternalStorage.at(eternalStorageAddress);
   });
 
-  describe('when instantiated', function () {
-    it('should have an initial supply of zero tokens', function (done) {
-      colony.totalSupply.call()
-      .then(function (totalSupply) {
-        assert.equal(totalSupply.toNumber(), 0, 'initial supply is different from 0');
-        done();
-      })
-      .catch(done);
+  describe('when instantiated', () => {
+    it('should have an initial supply of zero tokens', async function () {
+      const totalSupply = await colony.totalSupply.call();
+      assert.equal(totalSupply.toNumber(), 0, 'initial supply is different from 0');
     });
   });
 
-  describe('when transferring funds directly to other parties', function () {
-    it('should decrease the sender balance and increase the receiver balance by the same amount',
-      function (done) {
-        colony.generateTokensWei(TOTAL_SUPPLY)
-        .then(function () {
-          return colony.makeTask('name2', 'summary2');
-        })
-        .then(function () {
-          return colony.setReservedTokensWeiForTask(0, 100);
-        })
-        .then(function () {
-          return colony.completeAndPayTask(0, MAIN_ACCOUNT);
-        })
-        .then(function () {
-          return colony.balanceOf.call(MAIN_ACCOUNT);
-        })
-        .then(function (balance) {
-          assert.equal(balance.toNumber(), 100, 'sender balance is incorrect');
-          return colony.transfer(OTHER_ACCOUNT, 80);
-        })
-        .then(function () {
-          return colony.balanceOf.call(MAIN_ACCOUNT);
-        })
-        .then(function (balance) {
-          assert.equal(balance.toNumber(), 20, 'sender balance is incorrect');
-          return colony.balanceOf.call(OTHER_ACCOUNT);
-        })
-        .then(function (receiverBalance) {
-          assert.equal(receiverBalance.toNumber(), 80, 'receiver balance is incorrect');
-          done();
-        })
-        .catch(done);
+  describe('when transferring funds directly to other parties', () => {
+    it('should decrease the sender balance and increase the receiver balance by the same amount', async function () {
+        await colony.generateTokensWei(TOTAL_SUPPLY);
+        await colony.makeTask('name2', 'summary2');
+        await colony.setReservedTokensWeiForTask(0, 100);
+        await colony.completeAndPayTask(0, MAIN_ACCOUNT);
+        let balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+        assert.equal(balance.toNumber(), 100, 'sender balance is incorrect');
+        await colony.transfer(OTHER_ACCOUNT, 80);
+        balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+        assert.equal(balance.toNumber(), 20, 'sender balance is incorrect');
+        const receiverBalance = await colony.balanceOf.call(OTHER_ACCOUNT);
+        assert.equal(receiverBalance.toNumber(), 80, 'receiver balance is incorrect');
       });
 
-    it('should fail if ETHER is sent', function (done) {
-      let previousBalance;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transfer(OTHER_ACCOUNT, 1, {
-          value: 1,
-          gas: 1e6,
-        });
-      })
-      .catch(function (tx) {
-        testHelper.checkErrorNonPayableFunction(tx);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if ETHER is sent', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      try {
+        await colony.transfer(OTHER_ACCOUNT, 1, { value: 1, gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.checkErrorNonPayableFunction(err);
+      }
+
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance.toNumber(), balance.toNumber(), 'sender balance was modified.');
     });
 
-    it('should fail if the sender does not have funds', function (done) {
-      let previousBalance;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transfer(OTHER_ACCOUNT, previousBalance + 1);
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the sender does not have funds', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      let tx;
+      try {
+        tx = await colony.transfer(OTHER_ACCOUNT, previousBalance.add(1).toNumber(), { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance.toNumber(), balance.toNumber(), 'sender balance was modified.');
     });
 
-    it('should fail if the value is bigger than the upper limit', function (done) {
-      let previousBalance;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transfer(OTHER_ACCOUNT, TOTAL_SUPPLY + 1);
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the value is bigger than the upper limit', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      try {
+        await colony.transfer(OTHER_ACCOUNT, TOTAL_SUPPLY + 1, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.ifUsingTestRPC(err);
+      }
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
     });
   });
 
-  describe('when transferring funds from a party to another', function () {
-    it('should modify the balance and allowance', function (done) {
-      let previousBalance;
-      let otherAccountPreviousBalance;
-      let previousAllowance;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.makeTask('name2', 'summary2');
-      })
-      .then(function () {
-        return colony.setReservedTokensWeiForTask(0, 100);
-      })
-      .then(function () {
-        return colony.completeAndPayTask(0, MAIN_ACCOUNT);
-      })
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 90);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance;
-        assert.equal(prevBalance.toNumber(), 100, 'Main account balance is incorrect');
-        return colony.balanceOf.call(OTHER_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        otherAccountPreviousBalance = prevBalance;
-        return colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
-      })
-      .then(function (prevAllowance) {
-        previousAllowance = prevAllowance;
-        assert.equal(prevAllowance.toNumber(), 90, 'Allowance is incorrect');
-        return colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 80, {
-          from: OTHER_ACCOUNT,
-        });
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(balance.toNumber(), (previousBalance - 80), 'balance is incorrect');
-        return colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
-      })
-      .then(function (allowance) {
-        assert.equal(allowance.toNumber(), (previousAllowance - 80), 'allowance is incorrect');
-        return colony.balanceOf.call(OTHER_ACCOUNT);
-      })
-      .then(function (balanceAfterTransference) {
-        assert.equal(balanceAfterTransference.toNumber(), (otherAccountPreviousBalance + 80),
-          'transferred value does not match');
-      })
-      .then(done)
-      .catch(done);
+  describe('when transferring funds from a party to another', () => {
+    it('should modify the balance and allowance', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.makeTask('name2', 'summary2');
+      await colony.setReservedTokensWeiForTask(0, 100);
+      await colony.completeAndPayTask(0, MAIN_ACCOUNT);
+      await colony.approve(OTHER_ACCOUNT, 90);
+      const previousBalanceMainAccount = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalanceMainAccount.toNumber(), 100, 'Main account balance is incorrect');
+      const previousBalanceOtherAccount = await colony.balanceOf.call(OTHER_ACCOUNT);
+      const previousAllowance = await colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
+      assert.equal(previousAllowance.toNumber(), 90, 'Allowance is incorrect');
+
+      await colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 80, { from: OTHER_ACCOUNT });
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(balance.toNumber(), (previousBalanceMainAccount - 80), 'balance is incorrect');
+      const allowance = await colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
+      assert.equal(allowance.toNumber(), (previousAllowance - 80), 'allowance is incorrect');
+      const balanceAfterTransference = await colony.balanceOf.call(OTHER_ACCOUNT);
+      assert.equal(balanceAfterTransference.toNumber(), (previousBalanceOtherAccount + 80));
     });
 
-    it('should fail if ETHER is sent', function (done) {
-      let previousBalance;
+    it('should fail if ETHER is sent', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, 100);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
 
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 100, {
-          value: 1,
-        });
-      })
-      .catch(function (tx) {
-        testHelper.checkErrorNonPayableFunction(tx);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+      try {
+        await colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 100, { value: 1, gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.checkErrorNonPayableFunction(err);
+      }
+
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
     });
 
-    it('should fail if the sender does not have funds', function (done) {
-      let previousBalance;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, previousBalance + 1);
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the sender does not have funds', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, 100);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      try {
+        await colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, previousBalance + 1, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.ifUsingTestRPC(err);
+      }
+
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
     });
 
-    it('should fail if the value is equal to zero', function (done) {
-      let previousBalance;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 0);
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the value is equal to zero', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, 100);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      try {
+        await colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 0, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.ifUsingTestRPC(err);
+      }
+
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance.toNumber(), balance.toNumber(), 'sender balance was modified.');
     });
 
-    it('should fail if the value is bigger than the upper limit', function (done) {
-      let previousBalance;
+    it('should fail if the value is bigger than the upper limit', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, 100);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      try {
+        await colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, TOTAL_SUPPLY + 1, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.ifUsingTestRPC(err);
+      }
 
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, TOTAL_SUPPLY + 1);
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance.toNumber(), balance.toNumber(), 'sender balance was modified.');
     });
 
-    it('should fail if the sender does not have a high enough allowance', function (done) {
-      let previousBalance;
-
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100);
-      })
-      .then(function () {
-        return colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
-      })
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (prevBalance) {
-        previousBalance = prevBalance.toNumber();
-        return colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 500);
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function () {
-        return colony.balanceOf.call(MAIN_ACCOUNT);
-      })
-      .then(function (balance) {
-        assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the sender does not have a high enough allowance', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, 100);
+      const previousBalance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      try {
+        await colony.transferFrom(MAIN_ACCOUNT, OTHER_ACCOUNT, 500, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.ifUsingTestRPC(err);
+      }
+      const balance = await colony.balanceOf.call(MAIN_ACCOUNT);
+      assert.equal(previousBalance, balance.toNumber(), 'sender balance was modified.');
     });
   });
 
-  describe('when approving allowance to a third party', function () {
-    it('should set the allowed value to be equal to the approved value', function (done) {
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100);
-      })
-      .then(function () {
-        return colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
-      })
-      .then(function (allowed) {
-        assert.equal(allowed.toNumber(), 100, 'amount approved is incorrect.');
-        done();
-      })
-      .catch(done);
+  describe('when approving allowance to a third party', () => {
+    it('should set the allowed value to be equal to the approved value', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, 100);
+      const allowance = await colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
+      assert.equal(allowance.toNumber(), 100, 'amount approved is incorrect.');
     });
 
-    it('should fail if ETHER is sent', function (done) {
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100, {
-          value: 1,
-          gas: 1e6,
-        });
-      })
-      .catch(function (tx) {
-        testHelper.checkErrorNonPayableFunction(tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if ETHER is sent', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      try {
+        await colony.approve(OTHER_ACCOUNT, 100, { value: 1, gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.checkErrorNonPayableFunction(err);
+      }
     });
 
-    it('should fail if the value is bigger than upper limit', function (done) {
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, TOTAL_SUPPLY + 1);
-      })
-      .then(function () {
-        return colony.allowance(MAIN_ACCOUNT, OTHER_ACCOUNT);
-      })
-      .then(function (allowance) {
-        assert.equal(0, allowance, 'approve of too many tokens succeeded when it should have failed');
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the value is bigger than upper limit', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, TOTAL_SUPPLY + 1);
+      const allowance = await colony.allowance(MAIN_ACCOUNT, OTHER_ACCOUNT);
+      assert.equal(0, allowance, 'approve of too many tokens succeeded when it should have failed');
     });
 
-    it('should let a sender update the allowed value of another user', function (done) {
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.approve(OTHER_ACCOUNT, 100);
-      })
-      .then(function () {
-        return colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
-      })
-      .then(function (allowed) {
-        assert.equal(allowed.toNumber(), 100, 'amount approved is incorrect.');
-        return colony.approve(OTHER_ACCOUNT, 50);
-      })
-      .then(function () {
-        return colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
-      })
-      .then(function (allowed) {
-        assert.equal(allowed.toNumber(), 50, 'amount approved was not updated correctly.');
-        done();
-      })
-      .catch(done);
+    it('should let a sender update the allowed value of another user', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.approve(OTHER_ACCOUNT, 100);
+      let allowance = await colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
+      assert.equal(allowance.toNumber(), 100, 'amount approved is incorrect.');
+      await colony.approve(OTHER_ACCOUNT, 50);
+      allowance = await colony.allowance.call(MAIN_ACCOUNT, OTHER_ACCOUNT);
+      assert.equal(allowance.toNumber(), 50, 'amount approved was not updated correctly.');
     });
   });
 
-  describe('when generating tokens', function () {
-    it('should let the total supply be increased', function (done) {
-      let previousSupply = 0;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.totalSupply.call();
-      })
-      .then(function (totalSupply) {
-        previousSupply = totalSupply.toNumber();
-        return colony.generateTokensWei(100);
-      })
-      .then(function () {
-        return colony.totalSupply.call();
-      })
-      .then(function (_totalSupply) {
-        assert.equal(previousSupply + 100, _totalSupply.toNumber(), 'total supply is incorrect.');
-        done();
-      })
-      .catch(done);
+  describe('when generating tokens', () => {
+    it('should let the total supply be increased', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      await colony.generateTokensWei(100);
+      const totalSupply = await colony.totalSupply.call();
+      assert.equal(TOTAL_SUPPLY + 100, totalSupply.toNumber(), 'total supply is incorrect.');
     });
 
-    it('should increase the colony balance by the same amount of generated tokens', function (done) {
-      let previousBalance = 0;
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.balanceOf.call(colony.address);
-      })
-      .then(function (_prevBalance) {
-        previousBalance = _prevBalance.toNumber();
-        return colony.generateTokensWei(100);
-      })
-      .then(function () {
-        return colony.balanceOf.call(colony.address);
-      })
-      .then(function (_currentBalance) {
-        assert.equal(previousBalance + 100, _currentBalance.toNumber(), 'owners balance is incorrect.');
-        done();
-      })
-      .catch(done);
+    it('should increase the colony balance by the same amount of generated tokens', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      const previousBalance = await colony.balanceOf.call(colony.address);
+      await colony.generateTokensWei(100);
+      const balance = await colony.balanceOf.call(colony.address);
+      assert.equal(TOTAL_SUPPLY + 100, balance.toNumber(), 'owners balance is incorrect.');
     });
 
-    it('should fail if ETHER is sent', function (done) {
-      colony.generateTokensWei(OTHER_ACCOUNT, {
-        value: 1,
-        gas: 1e6,
-        value: 0xA // 10 in hex
-      })
-      .catch(function (tx) {
-        testHelper.checkErrorNonPayableFunction(tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if ETHER is sent', async function () {
+      try {
+        await colony.generateTokensWei(OTHER_ACCOUNT, { value: 1, gas: GAS_TO_SPEND });
+      } catch(err) {
+        testHelper.checkErrorNonPayableFunction(err);
+      }
     });
 
-    it('should fail if the value is equal to zero', function (done) {
-      colony.generateTokensWei(0, {
-        gas: 1e6,
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the value is equal to zero', async function () {
+      let tx;
+      try {
+        tx = await colony.generateTokensWei(0, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should fail if the value causes uint to wrap', function (done) {
-      colony.generateTokensWei(TOTAL_SUPPLY)
-      .then(function () {
-        return colony.generateTokensWei(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), {
-          gas: 1e6,
-        });
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(1e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the value causes uint to wrap', async function () {
+      await colony.generateTokensWei(TOTAL_SUPPLY);
+      let tx;
+      try {
+        tx = await colony.generateTokensWei(web3.toBigNumber('115792089237316195423570985008687907853269984665640564039457584007913129639935'), { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
-  describe('when setting default ledger attributes', function () {
-    it('should be able to define a symbol', function (done) {
-      colony.setTokensSymbol('CNY')
-      .then(function () {
-        return eternalStorage.getBytesValue.call(solSha3('TokenSymbol'));
-      })
-      .then(function (_symbol) {
-        assert.equal(testHelper.hexToUtf8(_symbol), 'CNY', 'tokens symbol is incorrect');
-      })
-      .then(done)
-      .catch(done);
+  describe('when setting default ledger attributes', () => {
+    it('should be able to define a symbol', async function () {
+      await colony.setTokensSymbol('CLNY');
+      const symbol = await eternalStorage.getBytesValue.call(solSha3('TokenSymbol'));
+      assert.equal(testHelper.hexToUtf8(symbol), 'CLNY', 'tokens symbol is incorrect');
     });
 
-    it('should be able to define a title', function (done) {
-      colony.setTokensTitle('COLONY')
-      .then(function () {
-        return eternalStorage.getBytesValue.call(solSha3('TokenTitle'));
-      })
-      .then(function (_title) {
-        assert.equal(testHelper.hexToUtf8(_title), 'COLONY', 'tokens title is incorrect');
-      })
-      .then(done)
-      .catch(done);
+    it('should be able to define a title', async function () {
+      await colony.setTokensTitle('Colony Network Token');
+      const title = await eternalStorage.getBytesValue.call(solSha3('TokenTitle'));
+      assert.equal(testHelper.hexToUtf8(title), 'Colony Network Token', 'tokens title is incorrect');
     });
   });
 });
