@@ -18,162 +18,85 @@ contract('RootColony', function (accounts) {
   let colony;
   let rootColony;
   let eternalStorageRoot;
+  let createColonyGas;
 
-  before(function (done) {
-    RootColony.deployed()
-    .then(function (instance) {
-      rootColony = instance;
-    })
-    .then(done);
+  before(async function () {
+    rootColony = await RootColony.deployed();
+    createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
   });
 
-  beforeEach(function (done) {
-    EternalStorage.new()
-    .then(function (contract) {
-      eternalStorageRoot = contract;
-      return eternalStorageRoot.changeOwner(rootColony.address);
-    })
-    .then(function () {
-      return rootColony.registerEternalStorage(eternalStorageRoot.address);
-    })
-    .then(function () {
-      done();
-    })
-    .catch(done);
+  beforeEach(async function () {
+    eternalStorageRoot = await EternalStorage.new();
+    await eternalStorageRoot.changeOwner(rootColony.address);
+    await rootColony.registerEternalStorage(eternalStorageRoot.address);
   });
 
-  describe('when spawning new colonies', function () {
-    it('should allow users to create new colonies', function (done) {
-      rootColony.createColony(COLONY_KEY, { from: MAIN_ACCOUNT })
-      .then(function () {
-        return rootColony.getColony(COLONY_KEY);
-      })
-      .then(function (_address) {
-        colony = Colony.at(_address);
-        return colony.countUsersInRole.call(0);
-      })
-      .then(function (count) {
-        assert.equal(count.toNumber(), 1, 'Owners count should be 1');
-        return colony.userIsInRole.call(MAIN_ACCOUNT, 0);
-      })
-      .then(function (_isUserOwner) {
-        assert.isTrue(_isUserOwner, 'creator user is not an owner');
-        return colony.rootColonyResolver.call();
-      })
-      .then(function (_rootColonyResolverAddress) {
-        return RootColonyResolver.at(_rootColonyResolverAddress).rootColonyAddress.call();
-      })
-      .then(function (_rootColonyAddress) {
-        assert.equal(rootColony.address, _rootColonyAddress, 'root colony address is incorrect');
-      })
-      .then(function () {
-        return eternalStorageRoot.owner.call();
-      })
-      .then(function (owner) {
-        assert.equal(rootColony.address, owner, 'EternalStorage for Factory does not have the ColonyFactory as its owner');
-      })
-      .then(done)
-      .catch(done);
+  describe('when spawning new colonies', () => {
+    it('should allow users to create new colonies', async function () {
+      await rootColony.createColony(COLONY_KEY);
+      const address = await rootColony.getColony(COLONY_KEY);
+      colony = await Colony.at(address);
+      const countColonies = await colony.countUsersInRole.call(0);
+      assert.equal(countColonies.toNumber(), 1, 'Owners count should be 1');
+      const isUserOwner = await colony.userIsInRole.call(MAIN_ACCOUNT, 0);
+      assert.isTrue(isUserOwner, 'creator user is not an owner');
+      const rootColonyResolverAddress = await colony.rootColonyResolver.call();
+      const rootColonyAddress = await RootColonyResolver.at(rootColonyResolverAddress).rootColonyAddress.call();
+      assert.equal(rootColony.address, rootColonyAddress, 'root colony address is incorrect');
+      const owner = await eternalStorageRoot.owner.call();
+      assert.equal(rootColony.address, owner, 'EternalStorage for Factory does not have the ColonyFactory as its owner');
     });
 
-    it('should allow users to iterate over colonies', function (done) {
-      testHelper.Promise.all([
-        rootColony.createColony(testHelper.getRandomString(7)),
-        rootColony.createColony(testHelper.getRandomString(7)),
-        rootColony.createColony(testHelper.getRandomString(7)),
-        rootColony.createColony(testHelper.getRandomString(7)),
-        rootColony.createColony(testHelper.getRandomString(7)),
-        rootColony.createColony(testHelper.getRandomString(7)),
-        rootColony.createColony(testHelper.getRandomString(7)),
-      ])
-      .then(function () {
-        return rootColony.countColonies.call();
-      })
-      .then(function (_coloniesCount) {
-        assert.equal(_coloniesCount.toNumber(), 7, '# of colonies created is incorrect');
-      })
-      .then(done)
-      .catch(done);
+    it('should allow users to iterate over colonies', async function () {
+      await rootColony.createColony(testHelper.getRandomString(7));
+      await rootColony.createColony(testHelper.getRandomString(7));
+      await rootColony.createColony(testHelper.getRandomString(7));
+      await rootColony.createColony(testHelper.getRandomString(7));
+      await rootColony.createColony(testHelper.getRandomString(7));
+      await rootColony.createColony(testHelper.getRandomString(7));
+      await rootColony.createColony(testHelper.getRandomString(7));
+      const countColonies = await rootColony.countColonies.call();
+      assert.equal(countColonies.toNumber(), 7, '# of colonies created is incorrect');
     });
 
-    it('should allow users to get the index of a colony by its index', function (done) {
-      let colony3Address;
-
-      rootColony.createColony('Colony1')
-      .then(function() {
-        return rootColony.createColony('Colony2')
-      })
-      .then(function() {
-        return rootColony.createColony('Colony3')
-      })
-      .then(function() {
-        return rootColony.getColony.call('Colony3');
-      })
-      .then(function (_colony3Address) {
-        colony3Address = _colony3Address;
-        return rootColony.getColonyAt.call(3);
-      })
-      .then(function (_colonyAddress) {
-        assert.equal(_colonyAddress, colony3Address, 'Colony address is incorrect');
-      })
-      .then(done)
-      .catch(done);
+    it('should allow users to get the address of a colony by its index', async function () {
+      await rootColony.createColony('Colony1');
+      await rootColony.createColony('Colony2');
+      await rootColony.createColony('Colony3');
+      const colony3AddressA = await rootColony.getColony.call('Colony3');
+      const colony3AddressB = await rootColony.getColonyAt.call(3);
+      assert.equal(colony3AddressA, colony3AddressB, 'Colony address is incorrect');
     });
 
-    it('should allow users to get the index of a colony by its key', function (done) {
-      testHelper.Promise.all([
-        rootColony.createColony('Colony1'),
-        rootColony.createColony('Colony2'),
-        rootColony.createColony('Colony3'),
-      ])
-      .then(function () {
-        return rootColony.createColony('Colony4');
-      })
-      .then(function () {
-        return rootColony.createColony('Colony5');
-      })
-      .then(function () {
-        return rootColony.createColony('Colony6');
-      })
-      .then(function () {
-        return rootColony.getColonyIndex.call('Colony4');
-      })
-      .then(function (_colonyIdx) {
-        assert.equal(_colonyIdx.toNumber(), 4, 'Colony index is incorrect');
-        return rootColony.getColonyIndex.call('Colony5');
-      })
-      .then(function (_colonyIdx) {
-        assert.equal(_colonyIdx.toNumber(), 5, 'Colony index is incorrect');
-      })
-      .then(done)
-      .catch(done);
+    it('should allow users to get the index of a colony by its key', async function () {
+      await rootColony.createColony('Colony1');
+      await rootColony.createColony('Colony2');
+      await rootColony.createColony('Colony3');
+      await rootColony.createColony('Colony4');
+      await rootColony.createColony('Colony5');
+      await rootColony.createColony('Colony6');
+      let colonyIdx = await rootColony.getColonyIndex.call('Colony4');
+      assert.equal(colonyIdx.toNumber(), 4, 'Colony index is incorrect');
+      colonyIdx = await rootColony.getColonyIndex.call('Colony5');
+      assert.equal(colonyIdx.toNumber(), 5, 'Colony index is incorrect');
     });
 
-    it('should return an empty address if there is no colony for the key provided', function (done) {
-      rootColony.getColony.call('DOESNT-EXIST')
-      .then(function (_address) {
-        assert.equal(_address, '0x0000000000000000000000000000000000000000', 'address returned is incorrect');
-      })
-      .then(done)
-      .catch(done);
+    it('should return an empty address if there is no colony for the key provided', async function () {
+      const address = await rootColony.getColony.call('DOESNT-EXIST');
+      assert.equal(address, '0x0000000000000000000000000000000000000000', 'address returned is incorrect');
     });
 
-    it('should fail if the key provided is empty', function (done) {
-      rootColony.createColony('', {
-        from: MAIN_ACCOUNT,
-        gas: 3e6,
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if the key provided is empty', async function () {
+      let tx;
+      try {
+        tx = await rootColony.createColony('', { gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+        testHelper.checkAllGasSpent(createColonyGas, tx);
+      }
     });
 
     it('should fail if the key provided is already in use', async function () {
-      const createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
-
       await rootColony.createColony(COLONY_KEY);
 
       let tx;
@@ -181,232 +104,133 @@ contract('RootColony', function (accounts) {
         await rootColony.createColony(COLONY_KEY, { gas: createColonyGas });
       } catch (err) {
         tx = testHelper.ifUsingTestRPC(err);
-        testHelper.checkAllGasSpent(createColonyGas, tx);
       }
+      testHelper.checkAllGasSpent(createColonyGas, tx);
 
       let count = await rootColony.countColonies.call();
       assert.equal(count.toNumber(), 1);
     });
 
-    it.skip('should pay root colony 5% fee of a completed task value', function (done) {
+    it.skip('should pay root colony 5% fee of a completed task value', async function () {
       const startingBalance = web3.eth.getBalance(rootColony.address);
       const startingBalanceUser = web3.eth.getBalance(OTHER_ACCOUNT);
-      let eternalStorage;
 
-      rootColony.createColony(COLONY_KEY)
-      .then(function () {
-        return rootColony.getColony.call(COLONY_KEY);
-      })
-      .then(function (_address) {
-        colony = Colony.at(_address);
-        return colony.makeTask('name', 'summary', { from: MAIN_ACCOUNT });
-      })
-      .then(function () {
-        return colony.updateTaskTitle(0, 'nameedit');
-      })
-      .then(function () {
-        return colony.contributeEthToTask(0, { from: MAIN_ACCOUNT, value: 1000 });
-      })
-      .then(function () {
-        return colony.eternalStorage.call();
-      })
-      .then(function (extStorageAddress) {
-        eternalStorage = EternalStorage.at(extStorageAddress);
-      })
-      .then(function () {
-        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
-      })
-      .then(function (balance) {
-        assert.equal(balance, 1000, 'Task ether balance is incorrect');
-        return colony.completeAndPayTask(0, OTHER_ACCOUNT, { from: MAIN_ACCOUNT });
-      })
-      .then(function () {
-        const currentBalance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
-        assert.equal(currentBalance, 50, 'RootColony balance is incorrect');
-      })
-      .then(function () {
-        const currentBalanceUser = web3.eth.getBalance(OTHER_ACCOUNT).minus(startingBalanceUser).toNumber();
-        assert.equal(currentBalanceUser, 950, 'User balance is incorrect');
-      })
-      .then(done)
-      .catch(done);
+      await rootColony.createColony(COLONY_KEY);
+      const address = await rootColony.getColony.call(COLONY_KEY);
+      colony = Colony.at(_address);
+      await colony.makeTask('name', 'summary');
+      await colony.updateTaskTitle(0, 'nameedit');
+      await colony.contributeEthToTask(0, { value: 1000 });
+      const extStorageAddress = await colony.eternalStorage.call();
+      let eternalStorage = EternalStorage.at(extStorageAddress);
+      const balance = await eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
+      assert.equal(balance, 1000, 'Task ether balance is incorrect');
+      await colony.completeAndPayTask(0, OTHER_ACCOUNT);
+      const currentBalance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
+      assert.equal(currentBalance, 50, 'RootColony balance is incorrect');
+      const currentBalanceUser = web3.eth.getBalance(OTHER_ACCOUNT).minus(startingBalanceUser).toNumber();
+      assert.equal(currentBalanceUser, 950, 'User balance is incorrect');
     });
 
-    it('should be able to upgrade colonies, if colony owner', function (done) {
-      let oldColonyAddress;
-      rootColony.createColony(COLONY_KEY)
-      .then(function () {
-        return rootColony.getColony.call(COLONY_KEY);
-      })
-      .then(function (_address) {
-        oldColonyAddress = _address;
-        colony = Colony.at(_address);
-        return rootColony.upgradeColony(COLONY_KEY);
-      })
-      .then(function () {
-        return rootColony.getColony.call(COLONY_KEY);
-      })
-      .then(function (upgradedColonyAddress) {
-        assert.notEqual(oldColonyAddress, upgradedColonyAddress);
-      })
-      .then(done)
-      .catch(done);
+    it('should be able to upgrade colonies, if colony owner', async function () {
+      await rootColony.createColony(COLONY_KEY);
+      let oldColonyAddress = await rootColony.getColony.call(COLONY_KEY);
+      colony = await Colony.at(oldColonyAddress);
+      await rootColony.upgradeColony(COLONY_KEY);
+      let upgradedColonyAddress = await rootColony.getColony.call(COLONY_KEY);
+      assert.notEqual(oldColonyAddress, upgradedColonyAddress);
     });
 
-    it('should NOT be able to upgrade colonies if not colony owner', function (done) {
-      let oldColonyAddress;
-      rootColony.createColony(COLONY_KEY)
-      .then(function () {
-        return rootColony.getColony.call(COLONY_KEY);
-      })
-      .then(function (_address) {
-        oldColonyAddress = _address;
-        return rootColony.upgradeColony(COLONY_KEY, { from: OTHER_ACCOUNT, gas: 4e6 });
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(4e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should NOT be able to upgrade colonies if not colony owner', async function () {
+      await rootColony.createColony(COLONY_KEY);
+      const oldColonyAddress = await rootColony.getColony.call(COLONY_KEY);
+
+      let tx;
+      try {
+        tx = await rootColony.upgradeColony(COLONY_KEY, { from: OTHER_ACCOUNT, gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(createColonyGas, tx);
     });
 
-    it('should NOT be able to upgrade colonies if not called via root colony', function (done) {
-      let colony;
-      rootColony.createColony(COLONY_KEY)
-      .then(function () {
-        return rootColony.getColony.call(COLONY_KEY);
-      })
-      .then(function (_address) {
-        return Colony.at(_address);
-      })
-      .then(function (_colony) {
-        colony = _colony;
-        return Ownable.new();
-      })
-      .then(function(_ownable) {
-        return colony.upgrade(_ownable.address, { from: MAIN_ACCOUNT, gas: 4e6 });
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(4e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should NOT be able to upgrade colonies if not called via root colony', async function () {
+      await rootColony.createColony(COLONY_KEY);
+      const colonyAddress = await rootColony.getColony.call(COLONY_KEY);
+      colony = await Colony.at(colonyAddress);
+      const ownable = await Ownable.new();
+
+      let tx;
+      try {
+        tx = await colony.upgrade(ownable.address, { gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(createColonyGas, tx);
     });
 
-    it('should be able to get the Colony version', function (done) {
-      let actualColonyVersion;
-      rootColony.createColony(COLONY_KEY)
-      .then(function () {
-        return rootColony.getColony.call(COLONY_KEY);
-      })
-      .then(function (_address) {
-        colony = Colony.at(_address);
-        return colony.version.call();
-      })
-      .then(function (version) {
-        actualColonyVersion = version.toNumber();
-        return IColony.at(colony.address).version();
-      })
-      .then(function (version) {
-        assert.equal(version.toNumber(), actualColonyVersion);
-      })
-      .then(done)
-      .catch(done);
+    it('should be able to get the Colony version', async function () {
+      await rootColony.createColony(COLONY_KEY);
+      const colonyAddress = await rootColony.getColony.call(COLONY_KEY);
+      colony = await Colony.at(colonyAddress);
+      const actualColonyVersion = await colony.version.call();
+      const version = await IColony.at(colony.address).version();
+      assert.equal(version.toNumber(), actualColonyVersion.toNumber());
     });
 
     // TODO: Skipped because of https://github.com/ethereumjs/testrpc/issues/149
-    it.skip('should be able to get the latest Colony version', function (done) {
-      let actualColonyVersion;
-      rootColony.createColony(COLONY_KEY)
-      .then(function () {
-        return rootColony.getColony.call(COLONY_KEY);
-      })
-      .then(function (_address) {
-        colony = Colony.at(_address);
-        return colony.version.call();
-      })
-      .then(function (version) {
-        actualColonyVersion = version.toNumber();
-        return rootColony.getLatestColonyVersion();
-      })
-      .then(function (version) {
-        assert.equal(version.toNumber(), actualColonyVersion);
-      })
-      .then(done)
-      .catch(done);
+    it.skip('should be able to get the latest Colony version', async function () {
+      await rootColony.createColony(COLONY_KEY)
+      const colonyAddress = await rootColony.getColony.call(COLONY_KEY);
+      colony = await Colony.at(colonyAddress);
+      const actualColonyVersion = await colony.version.call();
+      const version = await rootColony.getLatestColonyVersion();
+      assert.equal(version.toNumber(), actualColonyVersion.toNumber());
     });
 
-    it('should fail if ETH is sent', function (done) {
-      rootColony.createColony(COLONY_KEY, {
-        from: MAIN_ACCOUNT,
-        gas: 3e6,
-        value: 1,
-      })
-      .catch(function (tx) {
-        testHelper.checkErrorNonPayableFunction(tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should fail if ETH is sent', async function () {
+      try {
+        await rootColony.createColony(COLONY_KEY, { value: 1, gas: createColonyGas });
+      } catch (err) {
+        testHelper.checkErrorNonPayableFunction(err);
+      }
     });
 
-    it('should be able to move EternalStorage to another RootColony', function (done) {
+    it('should be able to move EternalStorage to another RootColony', async function () {
      // Just picking any known address for this test.
      // In reality the address who owns the Storage will be that of a RootColony
-      rootColony.changeEternalStorageOwner(OTHER_ACCOUNT)
-      .then(function () {
-        return rootColony.eternalStorageRoot.call();
-      })
-      .then(function (storageAddress) {
-        const eternalStorage = Ownable.at(storageAddress);
-        return eternalStorage.owner.call();
-      })
-      .then(function (owner) {
-        assert.equal(owner, OTHER_ACCOUNT, 'Was not able to change the owner of the EternalStorage in RootColony');
-      })
-      .then(done)
-      .catch(done);
+      await rootColony.changeEternalStorageOwner(OTHER_ACCOUNT)
+      const storageAddress = await rootColony.eternalStorageRoot.call();
+      const eternalStorage = await Ownable.at(storageAddress);
+      const owner = await eternalStorage.owner.call();
+      assert.equal(owner, OTHER_ACCOUNT, 'Was not able to change the owner of the EternalStorage in RootColony');
     });
 
-    it('should NOT be able to move EternalStorage to another RootColony if called with invalid address', function (done) {
-     rootColony.changeEternalStorageOwner(0x0, {
-       from: MAIN_ACCOUNT,
-       gas: 3e6,
-     })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(3e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should NOT be able to move EternalStorage to another RootColony if called with invalid address', async function () {
+      let tx;
+      try {
+        tx = await rootColony.changeEternalStorageOwner(0x0, { gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(createColonyGas, tx);
     });
 
-    it('should NOT allow anyone but RootColony to create new colonies', function (done) {
-      let colonyFactory;
-      rootColony.colonyFactory.call()
-      .then(function (colonyFactoryAddress) {
-        colonyFactory = ColonyFactory.at(colonyFactoryAddress);
-      })
-      .then(function () {
-        return EternalStorage.new();
-      })
-      .then(function (_eternalStorage) {
-        return colonyFactory.createColony(_eternalStorage.address, {
-          from: OTHER_ACCOUNT,
-          gas: 4e6,
-        });
-      })
-      .catch(testHelper.ifUsingTestRPC)
-      .then(function (tx) {
-        testHelper.checkAllGasSpent(4e6, tx);
-      })
-      .then(done)
-      .catch(done);
+    it('should NOT allow anyone but RootColony to create new colonies', async function () {
+      const colonyFactoryAddress = await rootColony.colonyFactory.call();
+      const colonyFactory = await ColonyFactory.at(colonyFactoryAddress);
+      const _eternalStorage = await EternalStorage.new();
+      let tx;
+      try {
+        tx = await colonyFactory.createColony(_eternalStorage.address, { from:OTHER_ACCOUNT, gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(createColonyGas, tx);
     });
   });
 
-  describe('when working with Destructible', function () {
+  describe('when working with Destructible', () => {
     it('should allow it to be killed in favour of a replacement contract', async function () {
       let destructible = await Destructible.new();
       await destructible.kill(OTHER_ACCOUNT)
