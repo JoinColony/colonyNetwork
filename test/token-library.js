@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { solSha3 } from 'colony-utils';
+import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 
 const RootColony = artifacts.require('RootColony');
@@ -263,13 +263,13 @@ contract('TokenLibrary', function (accounts) {
   describe('when setting default ledger attributes', () => {
     it('should be able to define a symbol', async function () {
       await colony.setTokensSymbol('CLNY');
-      const symbol = await eternalStorage.getBytesValue.call(solSha3('TokenSymbol'));
+      const symbol = await eternalStorage.getBytesValue.call(sha3('TokenSymbol'));
       assert.equal(testHelper.hexToUtf8(symbol), 'CLNY', 'tokens symbol is incorrect');
     });
 
     it('should be able to define a title', async function () {
       await colony.setTokensTitle('Colony Network Token');
-      const title = await eternalStorage.getBytesValue.call(solSha3('TokenTitle'));
+      const title = await eternalStorage.getBytesValue.call(sha3('TokenTitle'));
       assert.equal(testHelper.hexToUtf8(title), 'Colony Network Token', 'tokens title is incorrect');
     });
   });

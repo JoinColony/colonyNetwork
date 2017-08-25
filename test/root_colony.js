@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { solSha3 } from 'colony-utils';
+import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 
 const RootColony = artifacts.require('RootColony');
@@ -123,7 +123,7 @@ contract('RootColony', function (accounts) {
       await colony.contributeEthToTask(0, { value: 1000 });
       const extStorageAddress = await colony.eternalStorage.call();
       let eternalStorage = EternalStorage.at(extStorageAddress);
-      const balance = await eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
+      const balance = await eternalStorage.getUIntValue.call(sha3('task_eth', 0));
       assert.equal(balance, 1000, 'Task ether balance is incorrect');
       await colony.completeAndPayTask(0, OTHER_ACCOUNT);
       const currentBalance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
