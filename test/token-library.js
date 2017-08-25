@@ -17,11 +17,6 @@ contract('TokenLibrary', function (accounts) {
 
   beforeEach(async function () {
     const rootColony = await RootColony.deployed();
-    const eternalStorageRoot = await EternalStorage.new();
-    await eternalStorageRoot.changeOwner(rootColony.address);
-    await rootColony.registerEternalStorage(eternalStorageRoot.address);
-    const eternalStorageRootOwner = await eternalStorageRoot.owner.call();
-    assert.equal(eternalStorageRootOwner, rootColony.address);
     COLONY_KEY = testHelper.getRandomString(7);
     await rootColony.createColony(COLONY_KEY);
     const colonyAddress = await rootColony.getColony.call(COLONY_KEY);

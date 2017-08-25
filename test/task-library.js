@@ -16,14 +16,8 @@ contract('TaskLibrary', function (accounts) {
   let eternalStorage;
   const GAS_TO_SPEND = 4700000;
 
-  // We have to setup anew the RootColony and its EternalStorage due to truffle bug https://github.com/trufflesuite/truffle/issues/386
   beforeEach(async function () {
     const rootColony = await RootColony.deployed();
-    const eternalStorageRoot = await EternalStorage.new();
-    await eternalStorageRoot.changeOwner(rootColony.address);
-    await rootColony.registerEternalStorage(eternalStorageRoot.address);
-    const eternalStorageRootOwner = await eternalStorageRoot.owner.call();
-    assert.equal(eternalStorageRootOwner, rootColony.address);
     COLONY_KEY = testHelper.getRandomString(7);
     await rootColony.createColony(COLONY_KEY);
     const address = await rootColony.getColony.call(COLONY_KEY);
