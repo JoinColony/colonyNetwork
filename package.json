@@ -34,12 +34,11 @@
     "pshell": "^1.1.0",
     "request": "^2.81.0",
     "rimraf": "^2.6.1",
+    "shortid": "^2.2.8",
     "solidity-coverage": "^0.2.2",
     "solidity-sha3": "^0.4.1",
     "solium": "^0.5.5",
     "truffle": "^3.4.9"
   },
-  "dependencies": {
-    "shortid": "^2.2.8"
-  }
+  "dependencies": {}
 }
