@@ -1,8 +1,6 @@
 // These globals represent contracts and are added by Truffle:
 /* globals FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage*/
 
-import Promise from 'bluebird';
-import _ from 'lodash';
 import shortid from 'shortid';
 
 module.exports = {
@@ -49,26 +47,7 @@ module.exports = {
     }
     return randString.slice(0, length);
   },
-  waitAll(promises, callback) {
-    return Promise.all(promises)
-    .then(function () {
-      callback();
-    })
-    .catch(callback);
-  },
-  _,
-  Promise,
   hexToUtf8(text) {
     return web3.toAscii(text).replace(/\u0000/g, '');
-  },
-  setDefaultGas() {
-    const GAS_PRICE = 0;
-    const GAS_TO_SPEND = 4e6;
-    RootColony.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
-    FakeNewRootColony.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
-    ColonyFactory.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
-    EternalStorage.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
-    RootColonyResolver.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
-    Colony.defaults({ gasPrice: GAS_PRICE, gas: GAS_TO_SPEND });
   },
 };

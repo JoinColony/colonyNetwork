@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { solSha3 } from 'colony-utils';
+import sha3 from 'solidity-sha3';
 import testHelper from '../../helpers/test-helper';
 
 const RootColony = artifacts.require('RootColony');
@@ -119,38 +119,38 @@ contract('Colony', function (accounts) {
         eternalStorage = EternalStorage.at(etStorageAddress);
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(sha3('task_name', 0));
       })
       .then(function (name) {
         assert.equal(name, 'name', 'Incorrect task name');
-        return eternalStorage.getStringValue.call(solSha3('task_summary', 0));
+        return eternalStorage.getStringValue.call(sha3('task_summary', 0));
       })
       .then(function (_summary) {
         assert.equal(_summary, 'summary', 'Wrong task summary');
-        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(sha3('task_accepted', 0));
       })
       .then(function (_accepted) {
         assert.equal(_accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
+        return eternalStorage.getUIntValue.call(sha3('task_eth', 0));
       })
       .then(function (_eth) {
         assert.equal(_eth.toNumber(), 100, 'Wrong task ether value');
-        return eternalStorage.getUIntValue.call(solSha3('task_tokensWei', 0));
+        return eternalStorage.getUIntValue.call(sha3('task_tokensWei', 0));
       })
       .then(function (_tokensWei) {
         assert.equal(_tokensWei.toNumber(), 20, 'Wrong tokens wei value');
         return colony.updateTaskTitle(0, 'nameedit');
       })
       .then(function () {
-        return eternalStorage.getStringValue.call(solSha3('task_name', 0));
+        return eternalStorage.getStringValue.call(sha3('task_name', 0));
       })
       .then(function (name) {
         assert.equal(name, 'nameedit', 'Incorrect task name');
-        return eternalStorage.getBooleanValue.call(solSha3('task_accepted', 0));
+        return eternalStorage.getBooleanValue.call(sha3('task_accepted', 0));
       })
       .then(function (_accepted) {
         assert.equal(_accepted, false, 'Wrong accepted value');
-        return eternalStorage.getUIntValue.call(solSha3('task_eth', 0));
+        return eternalStorage.getUIntValue.call(sha3('task_eth', 0));
       })
       .then(function (_eth) {
         assert.equal(_eth.toNumber(), 100, 'Wrong task ether value');

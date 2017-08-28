@@ -1,6 +1,4 @@
 /* globals artifacts */
-import testHelper from '../../helpers/test-helper';
-
 const RootColony = artifacts.require('RootColony');
 const IColony = artifacts.require('IColony');
 const RootColonyResolver = artifacts.require('RootColonyResolver');
@@ -65,16 +63,10 @@ contract('ColonyFactory', function () {
     .catch(done);
   });
 
-  beforeEach(function (done) {
-    testHelper.waitAll([
-      rootColony.registerColonyFactory(colonyFactoryNew.address),
-      rootColony.registerEternalStorage(eternalStorageRoot.address),
-    ], function () {
-      colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address)
-      .then(function () {
-        done();
-      }).catch(done);
-    });
+  beforeEach(async function () {
+    await rootColony.registerColonyFactory(colonyFactoryNew.address);
+    await rootColony.registerEternalStorage(eternalStorageRoot.address);
+    await colonyFactoryNew.registerRootColonyResolver(rootColonyResolver.address);
   });
 
   describe('when redeploying colony factory and colony contracts', function () {
