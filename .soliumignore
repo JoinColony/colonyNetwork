@@ -3,3 +3,5 @@ helpers
 migrations
 test
 contracts/Migrations.sol
+installed_contracts
+lib
