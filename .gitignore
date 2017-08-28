@@ -8,4 +8,4 @@ parityPassword
 **/build/*
 coverage
 coverage.json
-lib/*
+lib/dappsys
