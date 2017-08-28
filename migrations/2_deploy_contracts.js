@@ -8,6 +8,8 @@ const RootColony = artifacts.require('./RootColony.sol');
 const RootColonyResolver = artifacts.require('./RootColonyResolver.sol');
 const ColonyFactory = artifacts.require('./ColonyFactory.sol');
 const EternalStorage = artifacts.require('./EternalStorage.sol');
+const EtherRouter = artifacts.require('./EtherRouter.sol');
+const Token = artifacts.require('./Token.sol');
 
 module.exports = function (deployer, network) {
   console.log(`## ${network} network ##`);
@@ -40,4 +42,8 @@ module.exports = function (deployer, network) {
     deployer.link(TokenLibrary, FakeNewColonyFactory);
     deployer.deploy([FakeNewColonyFactory]);
   }
+
+  // Deploy token and router
+  deployer.deploy(EtherRouter);
+  deployer.deploy(Token);
 };
