@@ -1,7 +1,7 @@
 /* eslint-disable no-undef, no-unused-vars-rest/no-unused-vars, no-var */
 const assert = require('assert');
 
-const RootColony = artifacts.require('./RootColony.sol');
+const ColonyNetwork = artifacts.require('./ColonyNetwork.sol');
 const RootColonyResolver = artifacts.require('./RootColonyResolver.sol');
 const ColonyFactory = artifacts.require('./ColonyFactory.sol');
 const EternalStorage = artifacts.require('./EternalStorage.sol');
@@ -13,7 +13,7 @@ module.exports = function (deployer) {
   var eternalStorageRootDeployed;
 
   deployer.then(function () {
-    return RootColony.deployed();
+    return ColonyNetwork.deployed();
   })
   .then(function (instance) {
     rootColonyDeployed = instance;

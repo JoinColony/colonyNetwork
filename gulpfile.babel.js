@@ -49,14 +49,14 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   const UPDATED_VERSION=VERSION+1;
 
   return execute(`cp ColonyFactory.sol FakeNewColonyFactory.sol`, { cwd: './contracts' })
-  .then(execute(`cp RootColony.sol FakeNewRootColony.sol`, { cwd: './contracts' }))
+  .then(execute(`cp ColonyNetwork.sol FakeNewRootColony.sol`, { cwd: './contracts' }))
   .then(execute(`cp Colony.sol FakeUpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'new Colony'/'new FakeUpdatedColony'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'Colony.sol'/'FakeUpdatedColony.sol'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract ColonyFactory'/'contract FakeNewColonyFactory'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'Colony(colonyAddress'/'FakeUpdatedColony(colonyAddress'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'Colony colonyNew'/'FakeUpdatedColony colonyNew'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract RootColony'/'contract FakeNewRootColony'/g FakeNewRootColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract FakeNewRootColony'/g FakeNewRootColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract Colony'/'contract FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'function Colony'/'function FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'uint256 public version = ${VERSION}'/'uint256 public version = ${UPDATED_VERSION}'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))

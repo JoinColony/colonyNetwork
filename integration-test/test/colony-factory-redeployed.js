@@ -1,5 +1,5 @@
 /* globals artifacts */
-const RootColony = artifacts.require('RootColony');
+const ColonyNetwork = artifacts.require('ColonyNetwork');
 const IColony = artifacts.require('IColony');
 const RootColonyResolver = artifacts.require('RootColonyResolver');
 const ColonyFactory = artifacts.require('ColonyFactory');
@@ -17,7 +17,7 @@ contract('ColonyFactory', function () {
   let eternalStorageRoot;
 
   before(function (done) {
-    RootColony.deployed()
+    ColonyNetwork.deployed()
     .then(function (_rootColony) {
       rootColony = _rootColony;
       return RootColonyResolver.deployed();
@@ -73,7 +73,7 @@ contract('ColonyFactory', function () {
     it('should adopt the existing EternalStorage and use upgraded Colony contract', function (done) {
       rootColony.colonyFactory.call()
       .then(function (colonyFactoryAddress) {
-        assert.equal(colonyFactoryAddress, colonyFactoryNew.address, 'ColonyFactoryAddress on RootColony is not updated.');
+        assert.equal(colonyFactoryAddress, colonyFactoryNew.address, 'ColonyFactoryAddress on ColonyNetwork is not updated.');
         return rootColony.createColony(NEW_COLONY_KEY);
       })
       .then(function () {

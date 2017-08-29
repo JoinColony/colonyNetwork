@@ -1,13 +1,13 @@
 /* globals artifacts */
 
-const RootColony = artifacts.require('RootColony');
+const ColonyNetwork = artifacts.require('ColonyNetwork');
 const RootColonyResolver = artifacts.require('RootColonyResolver');
 const ColonyFactory = artifacts.require('ColonyFactory');
 const EternalStorage = artifacts.require('EternalStorage');
 const Colony = artifacts.require('Colony');
 const FakeNewRootColony = artifacts.require('FakeNewRootColony');
 
-contract('RootColony', function () {
+contract('ColonyNetwork', function () {
   const COLONY_KEY = 'COLONY_TEST';
   const NEW_COLONY_KEY = 'NEW_COLONY_TEST';
   let colonyFactory;
@@ -17,7 +17,7 @@ contract('RootColony', function () {
   let eternalStorageRoot;
 
   before(function (done) {
-    RootColony.deployed()
+    ColonyNetwork.deployed()
     .then(function (_rootColony) {
       rootColony = _rootColony;
       return RootColonyResolver.deployed();
@@ -32,7 +32,7 @@ contract('RootColony', function () {
     .then(done);
   });
 
-  // Instantiate and register the new RootColony contract
+  // Instantiate and register the new ColonyNetwork contract
   beforeEach(function (done) {
     EternalStorage.new()
     .then(function (contract) {
@@ -79,7 +79,7 @@ contract('RootColony', function () {
   });
 
   describe('when redeploying root colony contract', function () {
-    it('should update RootColony address at RootColonyResolver', function (done) {
+    it('should update ColonyNetwork address at RootColonyResolver', function (done) {
       rootColonyNew.colonyFactory.call()
       .then(function (_newColonyFactoryAddress) {
         assert.equal(colonyFactory.address, _newColonyFactoryAddress, 'FakeNewRootColony factory was not updated');
@@ -102,7 +102,7 @@ contract('RootColony', function () {
       .catch(done);
     });
 
-    it('should be able to replace existing Colony\'s RootColony address at RootColonyResolver', function (done) {
+    it('should be able to replace existing Colony\'s ColonyNetwork address at RootColonyResolver', function (done) {
       rootColonyNew.getColony.call(COLONY_KEY)
       .then(function (colonyAddress) {
         const oldColony = Colony.at(colonyAddress);

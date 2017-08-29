@@ -2,7 +2,7 @@
 import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 
-const RootColony = artifacts.require('RootColony');
+const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const EternalStorage = artifacts.require('EternalStorage');
 
@@ -16,7 +16,7 @@ contract('TokenLibrary', function (accounts) {
   const GAS_TO_SPEND = 4700000;
 
   beforeEach(async function () {
-    const rootColony = await RootColony.deployed();
+    const rootColony = await ColonyNetwork.deployed();
     COLONY_KEY = testHelper.getRandomString(7);
     await rootColony.createColony(COLONY_KEY);
     const colonyAddress = await rootColony.getColony.call(COLONY_KEY);

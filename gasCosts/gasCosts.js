@@ -1,5 +1,5 @@
 /* globals artifacts */
-const RootColony = artifacts.require('RootColony');
+const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const EternalStorage = artifacts.require('EternalStorage');
 
@@ -20,7 +20,7 @@ contract('all', function (accounts) {
   let completeAndPayTaskCost;
 
   before(function (done) {
-    RootColony.deployed()
+    ColonyNetwork.deployed()
     .then(function (instance) {
       rootColony = instance;
       console.log('Gas price : ', gasPrice);

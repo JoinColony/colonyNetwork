@@ -2,7 +2,7 @@
 import sha3 from 'solidity-sha3';
 import testHelper from '../../helpers/test-helper';
 
-const RootColony = artifacts.require('RootColony');
+const ColonyNetwork = artifacts.require('ColonyNetwork');
 const RootColonyResolver = artifacts.require('RootColonyResolver');
 const ColonyFactory = artifacts.require('ColonyFactory');
 const EternalStorage = artifacts.require('EternalStorage');
@@ -19,7 +19,7 @@ contract('Colony', function (accounts) {
   let eternalStorageRoot;
 
   before(function (done) {
-    RootColony.deployed()
+    ColonyNetwork.deployed()
     .then(function (_rootColony) {
       rootColony = _rootColony;
       return RootColonyResolver.deployed();

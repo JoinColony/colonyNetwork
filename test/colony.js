@@ -2,7 +2,7 @@
 import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 
-const RootColony = artifacts.require('RootColony');
+const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const EternalStorage = artifacts.require('EternalStorage');
 const Ownable = artifacts.require('Ownable');
@@ -25,7 +25,7 @@ contract('Colony', function (accounts) {
   let rootColony;
 
   before(async function () {
-    rootColony = await RootColony.deployed();
+    rootColony = await ColonyNetwork.deployed();
   });
 
   beforeEach(async function () {
@@ -574,7 +574,7 @@ contract('Colony', function (accounts) {
       const otherAccountTokenBalance = await colony.balanceOf.call(OTHER_ACCOUNT);
       assert.strictEqual(otherAccountTokenBalance.toNumber(), 95, 'Token balance is not 95% of task token value');
       const rootColonyTokenBalance = await colony.balanceOf.call(rootColony.address);
-      assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'RootColony token balance is not 5% of task token value');
+      assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'ColonyNetwork token balance is not 5% of task token value');
     });
 
     it('should fail if non-admins try to generate tokens', async function () {
