@@ -2,7 +2,7 @@
 import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 
-const RootColony = artifacts.require('RootColony');
+const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
 const RootColonyResolver = artifacts.require('RootColonyResolver');
@@ -11,7 +11,7 @@ const Ownable = artifacts.require('Ownable');
 const ColonyFactory = artifacts.require('ColonyFactory');
 const Destructible = artifacts.require('Destructible');
 
-contract('RootColony', function (accounts) {
+contract('ColonyNetwork', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
@@ -21,7 +21,7 @@ contract('RootColony', function (accounts) {
   let createColonyGas;
 
   before(async function () {
-    rootColony = await RootColony.deployed();
+    rootColony = await ColonyNetwork.deployed();
     createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
   });
 
@@ -127,7 +127,7 @@ contract('RootColony', function (accounts) {
       assert.equal(balance, 1000, 'Task ether balance is incorrect');
       await colony.completeAndPayTask(0, OTHER_ACCOUNT);
       const currentBalance = web3.eth.getBalance(rootColony.address).minus(startingBalance).toNumber();
-      assert.equal(currentBalance, 50, 'RootColony balance is incorrect');
+      assert.equal(currentBalance, 50, 'ColonyNetwork balance is incorrect');
       const currentBalanceUser = web3.eth.getBalance(OTHER_ACCOUNT).minus(startingBalanceUser).toNumber();
       assert.equal(currentBalanceUser, 950, 'User balance is incorrect');
     });
@@ -196,17 +196,17 @@ contract('RootColony', function (accounts) {
       }
     });
 
-    it('should be able to move EternalStorage to another RootColony', async function () {
+    it('should be able to move EternalStorage to another ColonyNetwork', async function () {
      // Just picking any known address for this test.
-     // In reality the address who owns the Storage will be that of a RootColony
+     // In reality the address who owns the Storage will be that of a ColonyNetwork
       await rootColony.changeEternalStorageOwner(OTHER_ACCOUNT)
       const storageAddress = await rootColony.eternalStorageRoot.call();
       const eternalStorage = await Ownable.at(storageAddress);
       const owner = await eternalStorage.owner.call();
-      assert.equal(owner, OTHER_ACCOUNT, 'Was not able to change the owner of the EternalStorage in RootColony');
+      assert.equal(owner, OTHER_ACCOUNT, 'Was not able to change the owner of the EternalStorage in ColonyNetwork');
     });
 
-    it('should NOT be able to move EternalStorage to another RootColony if called with invalid address', async function () {
+    it('should NOT be able to move EternalStorage to another ColonyNetwork if called with invalid address', async function () {
       let tx;
       try {
         tx = await rootColony.changeEternalStorageOwner(0x0, { gas: createColonyGas });
@@ -216,7 +216,7 @@ contract('RootColony', function (accounts) {
       testHelper.checkAllGasSpent(createColonyGas, tx);
     });
 
-    it('should NOT allow anyone but RootColony to create new colonies', async function () {
+    it('should NOT allow anyone but ColonyNetwork to create new colonies', async function () {
       const colonyFactoryAddress = await rootColony.colonyFactory.call();
       const colonyFactory = await ColonyFactory.at(colonyFactoryAddress);
       const _eternalStorage = await EternalStorage.new();

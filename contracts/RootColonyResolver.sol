@@ -5,8 +5,8 @@ import './IRootColonyResolver.sol';
 
 contract RootColonyResolver is IRootColonyResolver {
 
-  /// @notice this function takes an address (Supposedly, the RootColony address)
-  /// @param _rootColonyAddress the RootColony address
+  /// @notice this function takes an address (Supposedly, the ColonyNetwork address)
+  /// @param _rootColonyAddress the ColonyNetwork address
   function registerRootColony(address _rootColonyAddress)
   onlyOwner
   {

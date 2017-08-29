@@ -1,11 +1,11 @@
 // These globals are added by Truffle:
-/* globals RootColony, RootColonyResolver, ColonyFactory, SecurityLibrary, ColonyLibrary,
+/* globals ColonyNetwork, RootColonyResolver, ColonyFactory, SecurityLibrary, ColonyLibrary,
  EternalStorage, assert */
 module.exports = function (deployer) {
   // Migration contract: 0xe615ff35ace036315f37c8c7d5dd9b82f37a201e
   // Check this migration contract is right, then edit the truffle artifact so it is
   // pointing at this contract.
-  const rootColonyOld = RootColony.at('');
+  const rootColonyOld = ColonyNetwork.at('');
   const rootColonyResolver = RootColonyResolver.at('');
   let colonyFactory;
   let rootColonyNew;
@@ -26,11 +26,11 @@ module.exports = function (deployer) {
     colonyFactory = ColonyFactory.at(colonyFactoryAddress);
   })
   .then(function () {
-    return RootColony.new();
+    return ColonyNetwork.new();
   })
   .then(function (_rootColonyNew) {
-    rootColonyNew = RootColony.at(_rootColonyNew.address);
-    console.log('New RootColony created at ', rootColonyNew.address);
+    rootColonyNew = ColonyNetwork.at(_rootColonyNew.address);
+    console.log('New ColonyNetwork created at ', rootColonyNew.address);
     // assert.notEqual(rootColonyNew.address, rootColonyOld.address);
     return rootColonyResolver.registerRootColony(rootColonyNew.address);
   })
@@ -66,7 +66,7 @@ module.exports = function (deployer) {
   //   assert.equal(storageRoot, eternalStorageRoot.address);
   // })
   .then(function () {
-    console.log('### RootColony upgraded!');
+    console.log('### ColonyNetwork upgraded!');
   })
   .catch(function (err) {
     console.log('An error occurred:');

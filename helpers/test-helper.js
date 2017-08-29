@@ -1,5 +1,5 @@
 // These globals represent contracts and are added by Truffle:
-/* globals FakeNewRootColony, RootColony, Colony, RootColonyResolver, ColonyFactory, EternalStorage*/
+/* globals FakeNewRootColony, ColonyNetwork, Colony, RootColonyResolver, ColonyFactory, EternalStorage*/
 
 import shortid from 'shortid';
 

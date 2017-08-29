@@ -1,12 +1,12 @@
 // These globals are added by Truffle:
-/* globals RootColony, RootColonyResolver, ColonyFactory, TaskLibrary, SecurityLibrary, ColonyLibrary,
+/* globals ColonyNetwork, RootColonyResolver, ColonyFactory, TaskLibrary, SecurityLibrary, ColonyLibrary,
  TokenLibrary*/
 
 module.exports = function (deployer) {
   // Migration contract: 0xe615ff35ace036315f37c8c7d5dd9b82f37a201e
   // Check this migration contract is right, then edit the truffle artifact so it is
   // pointing at this contract.
-  const rootColonyDeployed = RootColony.at('');
+  const rootColonyDeployed = ColonyNetwork.at('');
   const rootColonyResolver = RootColonyResolver.at('');
   let newColonyFactory;
   // I'm just redeploying all libraries here - we could only redeploy the libraries that have

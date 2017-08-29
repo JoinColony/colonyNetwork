@@ -10,7 +10,7 @@ import "./ColonyLibrary.sol";
 import "./IColony.sol";
 
 
-contract RootColony is Destructible, Modifiable {
+contract ColonyNetwork is Destructible, Modifiable {
 
   IColonyFactory public colonyFactory;
   address public eternalStorageRoot;

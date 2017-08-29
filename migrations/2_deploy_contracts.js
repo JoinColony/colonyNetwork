@@ -4,7 +4,7 @@ const TaskLibrary = artifacts.require('./TaskLibrary.sol');
 const SecurityLibrary = artifacts.require('./SecurityLibrary.sol');
 const ColonyLibrary = artifacts.require('./ColonyLibrary.sol');
 const TokenLibrary = artifacts.require('./TokenLibrary.sol');
-const RootColony = artifacts.require('./RootColony.sol');
+const ColonyNetwork = artifacts.require('./ColonyNetwork.sol');
 const RootColonyResolver = artifacts.require('./RootColonyResolver.sol');
 const ColonyFactory = artifacts.require('./ColonyFactory.sol');
 const EternalStorage = artifacts.require('./EternalStorage.sol');
@@ -19,9 +19,9 @@ module.exports = function (deployer, network) {
   deployer.deploy([ColonyLibrary]);
   deployer.deploy([TokenLibrary]);
   // Link and deploy contracts
-  deployer.link(ColonyLibrary, RootColony);
-  deployer.link(SecurityLibrary, RootColony);
-  deployer.deploy([RootColony]);
+  deployer.link(ColonyLibrary, ColonyNetwork);
+  deployer.link(SecurityLibrary, ColonyNetwork);
+  deployer.deploy([ColonyNetwork]);
   deployer.deploy([RootColonyResolver]);
   deployer.link(SecurityLibrary, ColonyFactory);
   deployer.link(TaskLibrary, ColonyFactory);
