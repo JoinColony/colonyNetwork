@@ -22,6 +22,14 @@ contract('ColonyNetwork', function (accounts) {
     colonyNetwork = await ColonyNetwork.new();
   });
 
+  describe('when initialised', () => {
+    it('should accept ether', async function () {
+      await colonyNetwork.send(1);
+      let colonyNetworkBalance = web3.eth.getBalance(colonyNetwork.address);
+      assert.equal(colonyNetworkBalance.toNumber(), 1);
+    });
+  });
+
   describe('when creating new colonies', () => {
     it('should allow users to create new colonies', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
