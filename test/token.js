@@ -6,7 +6,7 @@ const Token = artifacts.require('Token');
 
 import testHelper from '../helpers/test-helper';
 
-contract('CLNY Token', function (accounts) {
+contract('Token', function (accounts) {
   const COINBASE_ACCOUNT = accounts[0];
   const ACCOUNT_TWO = accounts[1];
   const ACCOUNT_THREE = accounts[2];

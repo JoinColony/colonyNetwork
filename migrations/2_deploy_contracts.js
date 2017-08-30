@@ -5,7 +5,6 @@ const EtherRouter = artifacts.require('./EtherRouter.sol');
 const ColonyNetwork = artifacts.require('./ColonyNetwork.sol');
 const SecurityLibrary = artifacts.require('./SecurityLibrary.sol');
 const TaskLibrary = artifacts.require('./TaskLibrary.sol');
-const TokenLibrary = artifacts.require('./TokenLibrary.sol');
 
 module.exports = function (deployer, network) {
   console.log(`## ${network} network ##`);
@@ -13,10 +12,8 @@ module.exports = function (deployer, network) {
   deployer.deploy([EtherRouter]);
   deployer.deploy([SecurityLibrary]);
   deployer.deploy([TaskLibrary]);
-  deployer.deploy([TokenLibrary]);
   deployer.link(SecurityLibrary, ColonyNetwork);
   deployer.link(TaskLibrary, ColonyNetwork);
-  deployer.link(TokenLibrary, ColonyNetwork);
   deployer.deploy([ColonyNetwork]);
 
   // Add demo data if we're not deploying to the live network.

@@ -2,6 +2,7 @@
 /* globals FakeNewRootColony, ColonyNetwork, Colony, RootColonyResolver, ColonyFactory, EternalStorage*/
 
 import shortid from 'shortid';
+const GAS_TO_SPEND = 3500000;
 
 module.exports = {
   ifUsingTestRPC(err) {
