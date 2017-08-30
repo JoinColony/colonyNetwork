@@ -1,9 +1,9 @@
 pragma solidity ^0.4.8;
 
-import "./TokenLibrary.sol";
 import "./TaskLibrary.sol";
 import "./SecurityLibrary.sol";
 import "./EternalStorage.sol";
+import "./Token.sol";
 
 
 contract Colony {
@@ -18,32 +18,18 @@ contract Colony {
     _;
   }
 
-  /// @notice throw if an address is invalid
-  /// @param _target the address to check
-  modifier throwIfAddressIsInvalid(address _target) {
-    if(_target == 0x0) { throw; }
-    _;
-  }
-
   /// @notice throw if the id is invalid
   /// @param _id the ID to validate
   modifier throwIfIsEmptyString(string _id) {
-    if(bytes(_id).length == 0) { throw; }
-    _;
-  }
-
-  /// @notice throw if the id is invalid
-  /// @param _id the ID to validate
-  modifier throwIfIsEmptyBytes32(bytes32 _id) {
-    if(_id == "") { throw; }
+    require(bytes(_id).length != 0);
     _;
   }
 
   // Link libraries containing business logic to EternalStorage
   using TaskLibrary for address;
   using SecurityLibrary for address;
-  using TokenLibrary for address;
   address public eternalStorage;
+  Token public token;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   uint256 public version = 4;
@@ -116,7 +102,7 @@ contract Colony {
   onlyAdminOrOwner
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-    if (eternalStorage.transfer(this, tokensWei)) {
+    if (token.transfer(this, tokensWei)) {
       eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
     } else {
       throw;
@@ -132,7 +118,7 @@ contract Colony {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
     var reservedTokensWei = eternalStorage.getReservedTokensWei();
-    var tokenBalanceWei = eternalStorage.balanceOf(this);
+    var tokenBalanceWei = token.balanceOf(this);
     var availableTokensWei = tokenBalanceWei - reservedTokensWei;
     var taskReservedTokensWei = eternalStorage.getReservedTokensWeiForTask(taskId);
     if (tokensWei <= (taskReservedTokensWei + availableTokensWei)) {
@@ -197,22 +183,6 @@ contract Colony {
     eternalStorage.updateTaskSummary(_id, _summary);
   }
 
-  /// @notice set the colony tokens symbol
-  /// @param symbol_ the symbol of the colony tokens
-  function setTokensSymbol(bytes symbol_)
-  onlyAdminOrOwner
-  {
-    eternalStorage.setTokensSymbol(symbol_);
-  }
-
-  /// @notice set the colony tokens title
-  /// @param title_ the title of the colony tokens
-  function setTokensTitle(bytes title_)
-  onlyAdminOrOwner
-  {
-    eternalStorage.setTokensTitle(title_);
-  }
-
   /// @notice mark a task as completed, pay the user who completed it and root colony fee
   /// @param taskId the task ID to be completed and paid
   /// @param paymentAddress the address of the user to be paid
@@ -222,7 +192,7 @@ contract Colony {
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
 
     // Check token balance is sufficient to pay the worker
-    if (eternalStorage.balanceOf(this) < taskTokens) { return; }
+    if (token.balanceOf(this) < taskTokens) { return; }
 
     eternalStorage.acceptTask(taskId);
 
@@ -233,7 +203,7 @@ contract Colony {
     }
 
     if (taskTokens > 0) {
-      if (eternalStorage.transferFromColony(paymentAddress, taskTokens)) {
+      if (token.transfer(paymentAddress, taskTokens)) {
         eternalStorage.removeReservedTokensWeiForTask(taskId);
       } else {
         throw;
@@ -241,59 +211,11 @@ contract Colony {
     }
   }
 
-  function transfer(address _to, uint256 _value)
-  returns (bool success)
-  {
-    return eternalStorage.transfer(_to, _value);
-  }
-
-   function transferFrom(address _from, address _to, uint256 _value)
-   returns (bool success)
-   {
-     return eternalStorage.transferFrom(_from, _to, _value);
-   }
-
-   function balanceOf(address _account)
-   constant returns (uint256 balance)
-   {
-     return eternalStorage.balanceOf(_account);
-   }
-
-   function allowance(address _owner, address _spender)
-   constant returns (uint256)
-   {
-     return eternalStorage.allowance(_owner, _spender);
-   }
-
-   function approve(address _spender, uint256 _value)
-   returns (bool success)
-   {
-     return eternalStorage.approve(_spender, _value);
-   }
-
-  /// @notice this function is used to generate Colony tokens
-  /// @param _tokensWei The amount of tokens wei to be generated
-  function generateTokensWei(uint256 _tokensWei)
-  onlyOwner
-  {
-    eternalStorage.generateTokensWei(_tokensWei);
-  }
-
-  function totalSupply()
-  onlyAdminOrOwner
-  constant returns (uint256)
-  {
-    return eternalStorage.totalSupply();
-  }
-
   /// @notice upgrade the colony migrating its data to another colony instance
   /// @param newColonyAddress_ the address of the new colony instance
   function upgrade(address newColonyAddress_) {
-    var tokensBalance = eternalStorage.balanceOf(this);
-    if(tokensBalance > 0 && !eternalStorage.transferFromColony(newColonyAddress_, tokensBalance)) {
-      throw;
-    }
-
+    var tokensBalance = token.balanceOf(this);
+    assert(tokensBalance > 0 && !token.transfer(newColonyAddress_, tokensBalance));
     selfdestruct(newColonyAddress_);
   }
 
