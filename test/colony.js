@@ -5,7 +5,6 @@ import testHelper from '../helpers/test-helper';
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const EternalStorage = artifacts.require('EternalStorage');
-const Ownable = artifacts.require('Ownable');
 
 contract('Colony', function (accounts) {
   let COLONY_KEY;
@@ -25,7 +24,7 @@ contract('Colony', function (accounts) {
   let rootColony;
 
   before(async function () {
-    rootColony = await ColonyNetwork.deployed();
+    rootColony = await ColonyNetwork.new();
   });
 
   beforeEach(async function () {

@@ -17,7 +17,7 @@ contract('TaskLibrary', function (accounts) {
   const GAS_TO_SPEND = 4700000;
 
   beforeEach(async function () {
-    const rootColony = await ColonyNetwork.deployed();
+    const rootColony = await ColonyNetwork.new();
     COLONY_KEY = testHelper.getRandomString(7);
     await rootColony.createColony(COLONY_KEY);
     const address = await rootColony.getColony.call(COLONY_KEY);

@@ -1,19 +1,12 @@
 pragma solidity ^0.4.8;
 
-import "./Modifiable.sol";
-import "./IRootColonyResolver.sol";
 import "./TokenLibrary.sol";
-import "./Ownable.sol";
 import "./TaskLibrary.sol";
 import "./SecurityLibrary.sol";
+import "./EternalStorage.sol";
 
 
-contract Colony is Modifiable {
-
-  modifier onlyRootColony(){
-    if(msg.sender != IRootColonyResolver(rootColonyResolver).rootColonyAddress()) { throw; }
-    _;
-  }
+contract Colony {
 
   modifier onlyAdminOrOwner {
     if (!(this.userIsInRole(msg.sender, 0) || this.userIsInRole(msg.sender, 1))) { throw; }
@@ -25,7 +18,26 @@ contract Colony is Modifiable {
     _;
   }
 
-  IRootColonyResolver public rootColonyResolver;
+  /// @notice throw if an address is invalid
+  /// @param _target the address to check
+  modifier throwIfAddressIsInvalid(address _target) {
+    if(_target == 0x0) { throw; }
+    _;
+  }
+
+  /// @notice throw if the id is invalid
+  /// @param _id the ID to validate
+  modifier throwIfIsEmptyString(string _id) {
+    if(bytes(_id).length == 0) { throw; }
+    _;
+  }
+
+  /// @notice throw if the id is invalid
+  /// @param _id the ID to validate
+  modifier throwIfIsEmptyBytes32(bytes32 _id) {
+    if(_id == "") { throw; }
+    _;
+  }
 
   // Link libraries containing business logic to EternalStorage
   using TaskLibrary for address;
@@ -35,12 +47,13 @@ contract Colony is Modifiable {
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   uint256 public version = 4;
+  bytes32 public name;
 
-  function Colony(address rootColonyResolverAddress_, address _eternalStorage)
+  function Colony(bytes32 _name)
   payable
   {
-    rootColonyResolver = IRootColonyResolver(rootColonyResolverAddress_);
-    eternalStorage = _eternalStorage;
+    name = _name;
+    eternalStorage = new EternalStorage();
   }
 
   /// @notice returns the number of users in a given role for this colony
@@ -275,15 +288,12 @@ contract Colony is Modifiable {
 
   /// @notice upgrade the colony migrating its data to another colony instance
   /// @param newColonyAddress_ the address of the new colony instance
-  function upgrade(address newColonyAddress_)
-  onlyRootColony
-  {
+  function upgrade(address newColonyAddress_) {
     var tokensBalance = eternalStorage.balanceOf(this);
     if(tokensBalance > 0 && !eternalStorage.transferFromColony(newColonyAddress_, tokensBalance)) {
       throw;
     }
 
-    Ownable(eternalStorage).changeOwner(newColonyAddress_);
     selfdestruct(newColonyAddress_);
   }
 
