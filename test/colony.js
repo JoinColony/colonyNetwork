@@ -21,16 +21,16 @@ contract('Colony', function (accounts) {
 
   let colony;
   let eternalStorage;
-  let rootColony;
+  let colonyNetwork;
 
   before(async function () {
-    rootColony = await ColonyNetwork.new();
+    colonyNetwork = await ColonyNetwork.new();
   });
 
   beforeEach(async function () {
     COLONY_KEY = testHelper.getRandomString(7);
-    await rootColony.createColony(COLONY_KEY);
-    let address = await rootColony.getColony(COLONY_KEY);
+    await colonyNetwork.createColony(COLONY_KEY);
+    let address = await colonyNetwork.getColony(COLONY_KEY);
     colony = await Colony.at(address);
     let extStorageAddress = await colony.eternalStorage.call();
     eternalStorage = await EternalStorage.at(extStorageAddress);
@@ -41,23 +41,6 @@ contract('Colony', function (accounts) {
       await colony.send(1);
       let colonyBalance = web3.eth.getBalance(colony.address);
       assert.equal(colonyBalance.toNumber(), 1);
-    });
-
-    it('should not be able to change owner of colony\'s EthernalStorage', async function () {
-      const eternalStorageAddress = await colony.eternalStorage.call();
-      const ownableStorage = await Ownable.at(eternalStorageAddress);
-      let ownerBefore = await ownableStorage.owner.call();
-      assert.equal(ownerBefore, colony.address);
-
-      let tx;
-      try {
-        tx = await ownableStorage.changeOwner(THIRD_ACCOUNT);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-
-      let ownerAfter = await ownableStorage.owner.call();
-      assert.equal(ownerAfter, colony.address);
     });
 
     it('should throw if colony tries to change EternalStorage owner with invalid address', async function () {
@@ -564,7 +547,7 @@ contract('Colony', function (accounts) {
       assert.equal(taskTokensWei.toNumber(), 80);
     });
 
-    it.skip('should transfer 95% of tokens to task completor and 5% to rootColony on completing a task', async function () {
+    it.skip('should transfer 95% of tokens to task completor and 5% to colonyNetwork on completing a task', async function () {
       await colony.generateTokensWei(100);
       await colony.makeTask('name', 'summary');
       await colony.updateTaskTitle(0, 'nameedit');
@@ -572,8 +555,8 @@ contract('Colony', function (accounts) {
       await colony.completeAndPayTask(0, OTHER_ACCOUNT);
       const otherAccountTokenBalance = await colony.balanceOf.call(OTHER_ACCOUNT);
       assert.strictEqual(otherAccountTokenBalance.toNumber(), 95, 'Token balance is not 95% of task token value');
-      const rootColonyTokenBalance = await colony.balanceOf.call(rootColony.address);
-      assert.strictEqual(rootColonyTokenBalance.toNumber(), 5, 'ColonyNetwork token balance is not 5% of task token value');
+      const colonyNetworkTokenBalance = await colony.balanceOf.call(colonyNetwork.address);
+      assert.strictEqual(colonyNetworkTokenBalance.toNumber(), 5, 'ColonyNetwork token balance is not 5% of task token value');
     });
 
     it('should fail if non-admins try to generate tokens', async function () {
