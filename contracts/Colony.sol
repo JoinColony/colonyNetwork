@@ -1,7 +1,6 @@
 pragma solidity ^0.4.15;
 
 import "../lib/dappsys/auth.sol";
-import "./Authority.sol";
 import "./TaskLibrary.sol";
 import "./EternalStorage.sol";
 import "./Token.sol";
@@ -29,8 +28,6 @@ contract Colony is DSAuth {
   {
     name = _name;
     eternalStorage = new EternalStorage();
-    var authority = new Authority();
-    setAuthority(authority);
   }
 
   /// @notice gets the reserved colony tokens for funding tasks

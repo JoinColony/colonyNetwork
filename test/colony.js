@@ -4,6 +4,7 @@ import testHelper from '../helpers/test-helper';
 
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
+const Authority = artifacts.require('Authority');
 const EternalStorage = artifacts.require('EternalStorage');
 
 contract('Colony', function (accounts) {
@@ -20,6 +21,7 @@ contract('Colony', function (accounts) {
   };
 
   let colony;
+  let authority;
   let eternalStorage;
   let colonyNetwork;
 
@@ -32,11 +34,13 @@ contract('Colony', function (accounts) {
     await colonyNetwork.createColony(COLONY_KEY);
     let address = await colonyNetwork.getColony(COLONY_KEY);
     colony = await Colony.at(address);
+    let authorityAddress = await colony.authority.call();
+    authority = await Authority.at(authorityAddress);
     let extStorageAddress = await colony.eternalStorage.call();
     eternalStorage = await EternalStorage.at(extStorageAddress);
   });
 
-  describe.only('when created', () => {
+  describe('when initialised', () => {
     it('should accept ether', async function () {
       await colony.send(1);
       let colonyBalance = web3.eth.getBalance(colony.address);
@@ -44,193 +48,36 @@ contract('Colony', function (accounts) {
     });
 
     it('should take deploying user as an owner', async function () {
-      const owner = await colony.userIsInRole.call(MAIN_ACCOUNT, 0);
-      assert.isTrue(owner, 'First user isn\'t an owner');
+      const owner = await colony.owner.call();
+      assert.equal(owner, MAIN_ACCOUNT);
+    });
+  });
+
+  describe('when working with permissions', () => {
+    it('should be able to add a colony owner', async function () {
+      await authority.setUserRole(OTHER_ACCOUNT, 0, true);
+      const owner = await authority.hasUserRole.call(OTHER_ACCOUNT, 0);
+      assert.isTrue(owner);
     });
 
-    it('should users not be an admin until I add s/he', async function () {
-      const admin = await colony.userIsInRole.call(OTHER_ACCOUNT, 1);
-      assert.isFalse(admin, 'Other user is an admin');
+    it('should be able to add a colony admin', async function () {
+      await authority.setUserRole(OTHER_ACCOUNT, 1, true);
+      const admin = await authority.hasUserRole.call(OTHER_ACCOUNT, 1);
+      assert.isTrue(admin);
     });
 
-    it('should other users not be an owner until I add s/he', async function () {
-      const owner = await colony.userIsInRole.call(OTHER_ACCOUNT, 0);
-      assert.isFalse(owner, 'Other user is an owner');
+    it('should be able to remove a colony owner', async function () {
+      await authority.setUserRole(OTHER_ACCOUNT, 0, true);
+      await authority.setUserRole(OTHER_ACCOUNT, 0, false);
+      const owner = await authority.hasUserRole.call(OTHER_ACCOUNT, 0);
+      assert.isFalse(owner);
     });
 
-    it('should keep a count of the number of admins', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 1);
-      const _adminsCount = await colony.countUsersInRole.call(0);
-      assert.equal(_adminsCount.toNumber(), 1, 'Admin count is different from 1');
-    });
-
-    it('should keep a count of the number of owners', async function () {
-      const _ownersCount = await colony.countUsersInRole.call(0);
-      assert.equal(_ownersCount.toNumber(), 1, 'Owners count is different from 1');
-    });
-
-    it('should increase owner count by the number of owners added', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 0);
-      const _ownersCount = await colony.countUsersInRole.call(0);
-      assert.equal(_ownersCount.toNumber(), 2, 'Owners count is incorrect');
-    });
-
-    it('should decrease owner count by the number of owners removed', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 0);
-      await colony.removeUserFromRole(OTHER_ACCOUNT, 0);
-      const _ownersCount = await colony.countUsersInRole.call(0);
-      assert.equal(_ownersCount.toNumber(), 1, 'Owners count is incorrect');
-    });
-
-    it('should increase admin count by the number of admins added', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 1);
-      const _adminsCount = await colony.countUsersInRole.call(1);
-      assert.equal(_adminsCount.toNumber(), 1, 'Admin count is incorrect');
-    });
-
-    it('should decrease admin count by the number of admins removed', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 1);
-      await colony.removeUserFromRole(OTHER_ACCOUNT, 1);
-      const _adminsCount = await colony.countUsersInRole.call(1);
-      assert.equal(_adminsCount.toNumber(), 0, 'Admin count is incorrect');
-    });
-
-    it('should allow admins to leave the colony at their own will', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 1);
-      await colony.removeUserFromRole(OTHER_ACCOUNT, 1, { from: OTHER_ACCOUNT });
-      const _adminsCount = await colony.userIsInRole.call(OTHER_ACCOUNT, 1);
-      assert.isFalse(_adminsCount, 'Admins cannot leave at their own will');
-    });
-
-    it('should allow a revoked owner to be set as an owner again', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 0);
-      await colony.removeUserFromRole(OTHER_ACCOUNT, 0);
-      await colony.addUserToRole(OTHER_ACCOUNT, 0);
-      const _isOwner = await colony.userIsInRole.call(OTHER_ACCOUNT, 0);
-      assert.isTrue(_isOwner, 'previously revoked owners cannot be set as owners again');
-      const _ownersCount = await colony.countUsersInRole.call(0);
-      assert.equal(_ownersCount.toNumber(), 2, 'owners count is incorrect');
-    });
-
-    it('should allow a revoked admin to be promoted to admin again', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 1);
-      await colony.removeUserFromRole(OTHER_ACCOUNT, 1);
-      await colony.addUserToRole(OTHER_ACCOUNT, 1);
-      const _isAdmin = await colony.userIsInRole.call(OTHER_ACCOUNT, 1);
-      assert.isTrue(_isAdmin, 'previously revoked admins cannot be promoted to admin again');
-      const _adminsCount = await colony.countUsersInRole.call(0);
-      assert.equal(_adminsCount.toNumber(), 1, 'admins count is incorrect');
-    });
-
-    it('should fail to remove the last owner', async function () {
-      let tx;
-      try {
-        tx = await colony.removeUserFromRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should fail to remove owner if not an owner themself', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 0);
-      await colony.addUserToRole(THIRD_ACCOUNT, 1);
-
-      let tx;
-      try {
-        tx = await colony.removeUserFromRole(OTHER_ACCOUNT, 0, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-      const _isOwner = await colony.userIsInRole.call(OTHER_ACCOUNT, 0);
-      assert.isTrue(_isOwner);
-    });
-
-    it('should fail to add the same owner address multiple times', async function () {
-      let tx;
-      try {
-        tx = await colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should fail to add the same admin address multiple times', async function () {
-      await colony.addUserToRole(MAIN_ACCOUNT, 1, optionsToSpotTransactionFailure);
-
-      let tx;
-      try {
-        tx = await colony.addUserToRole(MAIN_ACCOUNT, 1, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should fail to remove an address that is currently not an admin', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 1);
-      await colony.removeUserFromRole(OTHER_ACCOUNT, 1);
-
-      let tx;
-      try {
-        tx = await colony.removeUserFromRole(OTHER_ACCOUNT, 1, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should fail to remove an address that was never an admin', async function () {
-      let tx;
-      try {
-        tx = await colony.removeUserFromRole(OTHER_ACCOUNT, 1, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should fail to add the same owner address multiple times', async function () {
-      let tx;
-      try {
-        tx = await colony.addUserToRole(MAIN_ACCOUNT, 0, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should fail to remove an address that is currently not an owner', async function () {
-      await colony.addUserToRole(OTHER_ACCOUNT, 0);
-      await colony.removeUserFromRole(OTHER_ACCOUNT, 0);
-
-      let tx;
-      try {
-        tx = await colony.removeUserFromRole(OTHER_ACCOUNT, 0, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should fail to remove an address that was never an owner', async function () {
-      let tx;
-      try {
-        tx = await colony.removeUserFromRole(OTHER_ACCOUNT, 0, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it('should generate tokens and assign it to the colony', async function () {
-      await colony.generateTokensWei(100);
-      const _totalSupply = await colony.totalSupply.call();
-      assert.equal(_totalSupply.toNumber(), 100, 'Token total is incorrect');
-      const colonyBalance = await colony.balanceOf.call(colony.address);
-      assert.equal(colonyBalance.toNumber(), 100, 'Colony balance is incorrect');
+    it('should be able to remove a colony admin', async function () {
+      await authority.setUserRole(OTHER_ACCOUNT, 1, true);
+      await authority.setUserRole(OTHER_ACCOUNT, 1, false);
+      const admin = await authority.hasUserRole.call(OTHER_ACCOUNT, 1);
+      assert.isFalse(admin);
     });
   });
 
