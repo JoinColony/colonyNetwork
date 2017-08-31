@@ -1,6 +1,6 @@
 node_modules
 parity-genesis.json
-contracts/Fake*
+contracts/Updated*
 keys/*
 test-results.xml
 0
