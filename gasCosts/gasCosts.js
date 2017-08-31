@@ -96,15 +96,15 @@ contract('all', function (accounts) {
       .then(function (tx) {
         contributeEthToTaskCost = tx.receipt.gasUsed;
         console.log('contributeEthToTask actual cost :', contributeEthToTaskCost);
-        return colony.setReservedTokensWeiForTask.estimateGas(0, 50);
+        return colony.setReservedTokensForTask.estimateGas(0, 50);
       })
       .then(function (estimate) {
-        console.log('setReservedTokensWeiForTask estimate : ', estimate);
-        return colony.setReservedTokensWeiForTask(0, 50, { gasPrice });
+        console.log('setReservedTokensForTask estimate : ', estimate);
+        return colony.setReservedTokensForTask(0, 50, { gasPrice });
       })
       .then(function (tx) {
         contributeTokensToTaskCost = tx.receipt.gasUsed;
-        console.log('setReservedTokensWeiForTask actual cost :', contributeTokensToTaskCost);
+        console.log('setReservedTokensForTask actual cost :', contributeTokensToTaskCost);
         return colony.completeAndPayTask.estimateGas(0, OTHER_ACCOUNT);
       })
       .then(function (estimate) {

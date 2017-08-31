@@ -2,6 +2,7 @@ pragma solidity ^0.4.15;
 
 import "./Authority.sol";
 import "./Colony.sol";
+import "./Token.sol";
 
 
 contract ColonyNetwork {
@@ -10,12 +11,14 @@ contract ColonyNetwork {
   mapping (bytes32 => address) _colonies;
 
   function createColony(bytes32 name) {
-    var colony = new Colony(name);
-    var authority = new Authority();
+    var token = new Token();
+    var colony = new Colony(name, token);
+    var authority = new Authority(colony);
     colony.setAuthority(authority);
     // Transfer ownership to colony creator
     colony.setOwner(msg.sender);
     authority.setOwner(msg.sender);
+    token.setOwner(colony);
     _colonyCount += 1;
     _coloniesIndex[_colonyCount] = colony;
     _colonies[name] = colony;
@@ -37,7 +40,7 @@ contract ColonyNetwork {
   function getLatestColonyVersion()
   constant returns (uint256)
   {
-    var colony = new Colony("");
+    var colony = new Colony("", 0x0);
     return colony.version();
   }
 

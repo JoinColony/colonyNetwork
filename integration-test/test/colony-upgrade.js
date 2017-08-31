@@ -95,7 +95,7 @@ contract('Colony', function (accounts) {
         return colony.contributeEthToTask(0, { value: 100 });
       })
       .then(function () {
-        return colony.setReservedTokensWeiForTask(0, 20);
+        return colony.setReservedTokensForTask(0, 20);
       })
       .then(function () {
         const colonyBalance = web3.eth.getBalance(colony.address);

@@ -1,5 +1,5 @@
 // These globals represent contracts and are added by Truffle:
-/* globals FakeNewRootColony, ColonyNetwork, Colony, RootColonyResolver, ColonyFactory, EternalStorage*/
+/* globals FakeNewRootColony, ColonyNetwork, Colony*/
 
 import shortid from 'shortid';
 const GAS_TO_SPEND = 3500000;

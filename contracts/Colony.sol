@@ -1,171 +1,190 @@
 pragma solidity ^0.4.15;
 
 import "../lib/dappsys/auth.sol";
-import "./TaskLibrary.sol";
-import "./EternalStorage.sol";
+import "../lib/dappsys/math.sol";
 import "./Token.sol";
 
 
-contract Colony is DSAuth {
-  /// @notice throw if the id is invalid
-  /// @param _id the ID to validate
+contract Colony is DSAuth, DSMath {
   modifier throwIfIsEmptyString(string _id) {
     require(bytes(_id).length != 0);
     _;
   }
 
-  // Link libraries containing business logic to EternalStorage
-  using TaskLibrary for address;
-  address public eternalStorage;
   Token public token;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   uint256 public version = 4;
   bytes32 public name;
+  struct Task {
+    string name;
+    string description;
+    bool accepted;
+    uint eth;
+    uint tokens;
+    uint reservedTokens;
+    bool funded;
+  }
+  mapping (uint => Task) _tasks;
+  uint _taskCount;
+  uint _totalReservedTokens;
 
-  function Colony(bytes32 _name)
+  modifier tasksExists(uint256 _id) {
+    require(_id <= _taskCount);
+    _;
+  }
+
+  modifier tasksNotAccepted(uint256 _id) {
+    require(!_tasks[_id].accepted);
+    _;
+  }
+
+  modifier taskAccepted(uint256 _id) {
+    require(_tasks[_id].accepted);
+    _;
+  }
+
+  function Colony(bytes32 _name, address _token)
   payable
   {
     name = _name;
-    eternalStorage = new EternalStorage();
-  }
-
-  /// @notice gets the reserved colony tokens for funding tasks
-  /// This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
-  /// @return a uint value indicating if the amount of reserved colony tokens
-  function reservedTokensWei()
-  constant returns (uint256)
-  {
-    return eternalStorage.getReservedTokensWei();
-  }
-
-  /// @notice contribute ETH to a task
-  /// @param taskId the task ID
-  function contributeEthToTask(uint256 taskId)
-  auth
-  payable
-  {
-    eternalStorage.contributeEthToTask(taskId, msg.value);
-  }
-
-  /// @notice contribute tokens from an admin to fund a task
-  /// @param taskId the task ID
-  /// @param tokensWei the amount of tokens wei to fund the task
-  function contributeTokensWeiToTask(uint256 taskId, uint256 tokensWei)
-  auth
-  {
-    // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
-    if (token.transfer(this, tokensWei)) {
-      eternalStorage.contributeTokensWeiToTask(taskId, tokensWei);
-    } else {
-      throw;
-    }
-  }
-
-  /// @notice contribute tokens from the colony pool to fund a task
-  /// @param taskId the task ID
-  /// @param tokensWei the amount of tokens wei to fund the task
-  function setReservedTokensWeiForTask(uint256 taskId, uint256 tokensWei)
-  auth
-  {
-    // When tasks are funded from the pool of unassigned tokens,
-    // no transfer takes place - we just mark them as assigned.
-    var reservedTokensWei = eternalStorage.getReservedTokensWei();
-    var tokenBalanceWei = token.balanceOf(this);
-    var availableTokensWei = tokenBalanceWei - reservedTokensWei;
-    var taskReservedTokensWei = eternalStorage.getReservedTokensWeiForTask(taskId);
-    if (tokensWei <= (taskReservedTokensWei + availableTokensWei)) {
-      eternalStorage.setReservedTokensWeiForTask(taskId, tokensWei);
-    } else {
-      throw;
-    }
-  }
-
-  /// @notice allows refunding of reserved tokens back into the colony pool for closed tasks
-  /// @param taskId the task ID
-  function removeReservedTokensWeiForTask(uint256 taskId)
-  auth
-  {
-    return eternalStorage.removeReservedTokensWeiForTask(taskId);
+    token = Token(_token);
   }
 
   function getTaskCount()
   constant returns (uint256)
   {
-    return eternalStorage.getTaskCount();
+    return _taskCount;
   }
 
-  /// @notice this function adds a task to the task DB.
-  /// @param _name the task name
-  /// @param _summary an IPFS hash
-  function makeTask(
-    string _name,
-    string _summary
-  )
+  function getTask(uint256 _id)
+  constant returns (string, string, bool, uint, uint, uint, bool)
+  {
+    return (_tasks[_id].name,
+      _tasks[_id].description,
+      _tasks[_id].accepted,
+      _tasks[_id].eth,
+      _tasks[_id].tokens,
+      _tasks[_id].reservedTokens,
+      _tasks[_id].funded);
+  }
+
+  // Gets the reserved colony tokens for funding tasks.
+  // This is to understand the amount of 'unavailable' tokens due to them been promised to be paid once a task completes.
+  function reservedTokens()
+  constant returns (uint256)
+  {
+    return _totalReservedTokens;
+  }
+
+  function makeTask(string _name, string _summary)
   auth
   throwIfIsEmptyString(_name)
   {
-      eternalStorage.makeTask(_name, _summary);
+    _taskCount += 1;
+    _tasks[_taskCount] = Task(_name, _summary, false, 0, 0, 0, false);
   }
 
-  /// @notice this function updates the 'accepted' flag in the task
-  /// @param _id the task id
-  function acceptTask(uint256 _id)
-  auth
-  {
-    eternalStorage.acceptTask(_id);
-  }
-
-  /// @notice this function is used to update task title.
-  /// @param _id the task id
-  /// @param _name the task name
   function updateTaskTitle(uint256 _id, string _name)
   auth
   throwIfIsEmptyString(_name)
+  tasksExists(_id)
+  tasksNotAccepted(_id)
   {
-    eternalStorage.updateTaskTitle(_id, _name);
+    _tasks[_id].name = _name;
   }
 
-  /// @notice this function is used to update task summary.
-  /// @param _id the task id
-  /// @param _summary an IPFS hash
   function updateTaskSummary(uint256 _id, string _summary)
   auth
   throwIfIsEmptyString(_summary)
+  tasksExists(_id)
+  tasksNotAccepted(_id)
   {
-    eternalStorage.updateTaskSummary(_id, _summary);
+    _tasks[_id].description = _summary;
+  }
+
+  function acceptTask(uint256 _id)
+  auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    _tasks[_id].accepted = true;
+  }
+
+  function contributeEthToTask(uint256 _id)
+  auth
+  payable
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    _tasks[_id].eth = add(_tasks[_id].eth, msg.value);
+    _tasks[_id].funded = true;
+  }
+
+  function contributeTokensToTask(uint256 _id, uint256 _amount)
+  auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    _tasks[_id].tokens = add(_tasks[_id].tokens, _amount);
+    _tasks[_id].funded = true;
+  }
+
+  function setReservedTokensForTask(uint256 _id, uint256 _amount)
+  auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    // Ensure colony has sufficient tokens
+    var colonyTokenBalance = token.balanceOf(this);
+    var availableColonyTokens = add(sub(colonyTokenBalance, _totalReservedTokens), _tasks[_id].reservedTokens);
+    require(availableColonyTokens >= _amount);
+
+    _totalReservedTokens = add(sub(_totalReservedTokens, _tasks[_id].reservedTokens), _amount);
+    _tasks[_id].tokens = add(sub(_tasks[_id].tokens, _tasks[_id].reservedTokens), _amount);
+    _tasks[_id].reservedTokens = _amount;
+    _tasks[_id].funded = true;
+  }
+
+  function removeReservedTokensForTask(uint256 _id)
+  auth
+  tasksExists(_id)
+  taskAccepted(_id)
+  {
+    // Intentioanlly not removing the `task_tokensWei` value because of tracking history for tasks
+    _totalReservedTokens = sub(_totalReservedTokens, _tasks[_id].reservedTokens);
+    _tasks[_id].reservedTokens = 0;
   }
 
   /// @notice mark a task as completed, pay the user who completed it and root colony fee
-  /// @param taskId the task ID to be completed and paid
-  /// @param paymentAddress the address of the user to be paid
-  function completeAndPayTask(uint256 taskId, address paymentAddress)
+  /// @param _id the task ID to be completed and paid
+  /// @param _assignee the address of the user to be paid
+  function completeAndPayTask(uint256 _id, address _assignee)
   auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
   {
-    var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
+    require(token.balanceOf(this) >= _tasks[_id].tokens);
+    acceptTask(_id);
 
-    // Check token balance is sufficient to pay the worker
-    if (token.balanceOf(this) < taskTokens) { return; }
-
-    eternalStorage.acceptTask(taskId);
-
-    if (taskEth > 0) {
-      if (!paymentAddress.send(taskEth)) {
-        throw;
-      }
+    if (_tasks[_id].eth > 0) {
+      _assignee.transfer(_tasks[_id].eth);
     }
 
-    if (taskTokens > 0) {
-      if (token.transfer(paymentAddress, taskTokens)) {
-        eternalStorage.removeReservedTokensWeiForTask(taskId);
-      } else {
-        throw;
-      }
+    uint256 tokens = _tasks[_id].tokens;
+    if (tokens > 0) {
+      token.transfer(_assignee, tokens);
+      removeReservedTokensForTask(_id);
     }
   }
 
-  /// @notice upgrade the colony migrating its data to another colony instance
-  /// @param newColonyAddress_ the address of the new colony instance
+  function mintTokens(uint128 _wad)
+  auth
+  {
+    return token.mint(_wad);
+  }
+
+  // Upgrade the colony migrating its data adn funds to another colony instance
   function upgrade(address newColonyAddress_)
   auth
   {
