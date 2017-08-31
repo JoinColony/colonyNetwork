@@ -36,24 +36,11 @@ contract('Colony', function (accounts) {
     eternalStorage = await EternalStorage.at(extStorageAddress);
   });
 
-  describe('when created', () => {
+  describe.only('when created', () => {
     it('should accept ether', async function () {
       await colony.send(1);
       let colonyBalance = web3.eth.getBalance(colony.address);
       assert.equal(colonyBalance.toNumber(), 1);
-    });
-
-    it('should throw if colony tries to change EternalStorage owner with invalid address', async function () {
-      const ownableContract = await Ownable.new();
-      let tx;
-      try {
-        tx = await ownableContract.changeOwner('0x0');
-      } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-
-      const owner = await ownableContract.owner.call();
-      assert.equal(owner, MAIN_ACCOUNT);
     });
 
     it('should take deploying user as an owner', async function () {

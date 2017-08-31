@@ -1,9 +1,7 @@
 pragma solidity ^0.4.8;
 
-import "./Ownable.sol";
 
-
-contract EternalStorage is Ownable {
+contract EternalStorage {
 
     ////////////
     //UInt
@@ -18,13 +16,11 @@ contract EternalStorage is Ownable {
     }
 
     function setUIntValue(bytes32 record, uint value)
-    onlyOwner
     {
         uIntStorage[record] = value;
     }
 
     function deleteUIntValue(bytes32 record)
-    onlyOwner
     {
       delete uIntStorage[record];
     }
@@ -42,13 +38,11 @@ contract EternalStorage is Ownable {
     }
 
     function setStringValue(bytes32 record, string value)
-    onlyOwner
     {
         stringStorage[record] = value;
     }
 
     function deleteStringValue(bytes32 record)
-    onlyOwner
     {
       delete stringStorage[record];
     }
@@ -66,13 +60,11 @@ contract EternalStorage is Ownable {
     }
 
     function setAddressValue(bytes32 record, address value)
-    onlyOwner
     {
         addressStorage[record] = value;
     }
 
     function deleteAddressValue(bytes32 record)
-    onlyOwner
     {
       delete addressStorage[record];
     }
@@ -90,13 +82,11 @@ contract EternalStorage is Ownable {
     }
 
     function setBytesValue(bytes32 record, bytes value)
-    onlyOwner
     {
         bytesStorage[record] = value;
     }
 
     function deleteBytesValue(bytes32 record)
-    onlyOwner
     {
       delete bytesStorage[record];
     }
@@ -114,13 +104,11 @@ contract EternalStorage is Ownable {
     }
 
     function setBooleanValue(bytes32 record, bool value)
-    onlyOwner
     {
         booleanStorage[record] = value;
     }
 
     function deleteBooleanValue(bytes32 record)
-    onlyOwner
     {
       delete booleanStorage[record];
     }
@@ -137,13 +125,11 @@ contract EternalStorage is Ownable {
     }
 
     function setIntValue(bytes32 record, int value)
-    onlyOwner
     {
         intStorage[record] = value;
     }
 
     function deleteIntValue(bytes32 record)
-    onlyOwner
     {
       delete intStorage[record];
     }
