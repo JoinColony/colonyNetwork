@@ -1,23 +1,13 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.15;
 
+import "../lib/dappsys/auth.sol";
+import "./Authority.sol";
 import "./TaskLibrary.sol";
-import "./SecurityLibrary.sol";
 import "./EternalStorage.sol";
 import "./Token.sol";
 
 
-contract Colony {
-
-  modifier onlyAdminOrOwner {
-    if (!(this.userIsInRole(msg.sender, 0) || this.userIsInRole(msg.sender, 1))) { throw; }
-    _;
-  }
-
-  modifier onlyOwner {
-    if (!this.userIsInRole(msg.sender, 0)) { throw; }
-    _;
-  }
-
+contract Colony is DSAuth {
   /// @notice throw if the id is invalid
   /// @param _id the ID to validate
   modifier throwIfIsEmptyString(string _id) {
@@ -27,7 +17,6 @@ contract Colony {
 
   // Link libraries containing business logic to EternalStorage
   using TaskLibrary for address;
-  using SecurityLibrary for address;
   address public eternalStorage;
   Token public token;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
@@ -40,41 +29,8 @@ contract Colony {
   {
     name = _name;
     eternalStorage = new EternalStorage();
-  }
-
-  /// @notice returns the number of users in a given role for this colony
-  function countUsersInRole(uint _role)
-  constant returns(uint256)
-  {
-    return eternalStorage.countUsersInRole(_role);
-  }
-
-  /// @notice returns user info based in a given address
-  /// @param _user the address to be verified
-  /// @param _role the role to be verified
-  /// @return a boolean value indicating if the user is in this role or not
-  function userIsInRole(address _user, uint _role)
-  constant returns (bool)
-  {
-    return eternalStorage.userIsInRole(_user, _role);
-  }
-
-  /// @notice adds a new user to a given role in this colony
-  /// @param _user the address of the user
-  /// @param _role the user role
-  function addUserToRole(address _user, uint _role)
-  onlyAdminOrOwner
-  {
-    eternalStorage.addUserToRole(_user, _role);
-  }
-
-  /// @notice removes an admin from the colony
-  /// @param _user the address of the owner to be removed
-  /// @param _role the role of the user to be removed
-  function removeUserFromRole(address _user, uint _role)
-  onlyAdminOrOwner
-  {
-    eternalStorage.removeUserFromRole(_user, _role);
+    var authority = new Authority();
+    setAuthority(authority);
   }
 
   /// @notice gets the reserved colony tokens for funding tasks
@@ -89,7 +45,7 @@ contract Colony {
   /// @notice contribute ETH to a task
   /// @param taskId the task ID
   function contributeEthToTask(uint256 taskId)
-  onlyAdminOrOwner
+  auth
   payable
   {
     eternalStorage.contributeEthToTask(taskId, msg.value);
@@ -99,7 +55,7 @@ contract Colony {
   /// @param taskId the task ID
   /// @param tokensWei the amount of tokens wei to fund the task
   function contributeTokensWeiToTask(uint256 taskId, uint256 tokensWei)
-  onlyAdminOrOwner
+  auth
   {
     // When a user funds a task, the actually is a transfer of tokens ocurring from their address to the colony's one.
     if (token.transfer(this, tokensWei)) {
@@ -113,7 +69,7 @@ contract Colony {
   /// @param taskId the task ID
   /// @param tokensWei the amount of tokens wei to fund the task
   function setReservedTokensWeiForTask(uint256 taskId, uint256 tokensWei)
-  onlyAdminOrOwner
+  auth
   {
     // When tasks are funded from the pool of unassigned tokens,
     // no transfer takes place - we just mark them as assigned.
@@ -131,7 +87,7 @@ contract Colony {
   /// @notice allows refunding of reserved tokens back into the colony pool for closed tasks
   /// @param taskId the task ID
   function removeReservedTokensWeiForTask(uint256 taskId)
-  onlyAdminOrOwner
+  auth
   {
     return eternalStorage.removeReservedTokensWeiForTask(taskId);
   }
@@ -149,7 +105,7 @@ contract Colony {
     string _name,
     string _summary
   )
-  onlyAdminOrOwner
+  auth
   throwIfIsEmptyString(_name)
   {
       eternalStorage.makeTask(_name, _summary);
@@ -158,7 +114,7 @@ contract Colony {
   /// @notice this function updates the 'accepted' flag in the task
   /// @param _id the task id
   function acceptTask(uint256 _id)
-  onlyAdminOrOwner
+  auth
   {
     eternalStorage.acceptTask(_id);
   }
@@ -167,7 +123,7 @@ contract Colony {
   /// @param _id the task id
   /// @param _name the task name
   function updateTaskTitle(uint256 _id, string _name)
-  onlyAdminOrOwner
+  auth
   throwIfIsEmptyString(_name)
   {
     eternalStorage.updateTaskTitle(_id, _name);
@@ -177,7 +133,7 @@ contract Colony {
   /// @param _id the task id
   /// @param _summary an IPFS hash
   function updateTaskSummary(uint256 _id, string _summary)
-  onlyAdminOrOwner
+  auth
   throwIfIsEmptyString(_summary)
   {
     eternalStorage.updateTaskSummary(_id, _summary);
@@ -187,7 +143,7 @@ contract Colony {
   /// @param taskId the task ID to be completed and paid
   /// @param paymentAddress the address of the user to be paid
   function completeAndPayTask(uint256 taskId, address paymentAddress)
-  onlyAdminOrOwner
+  auth
   {
     var (taskEth, taskTokens) = eternalStorage.getTaskBalance(taskId);
 
@@ -213,7 +169,9 @@ contract Colony {
 
   /// @notice upgrade the colony migrating its data to another colony instance
   /// @param newColonyAddress_ the address of the new colony instance
-  function upgrade(address newColonyAddress_) {
+  function upgrade(address newColonyAddress_)
+  auth
+  {
     var tokensBalance = token.balanceOf(this);
     assert(tokensBalance > 0 && !token.transfer(newColonyAddress_, tokensBalance));
     selfdestruct(newColonyAddress_);
