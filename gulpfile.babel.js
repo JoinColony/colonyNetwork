@@ -23,9 +23,9 @@ gulp.task('deploy:contracts', [gethClient, 'clean:contracts'], () => {
 
 gulp.task('clean:contracts', done => rimraf('./build/contracts/*', done));
 
-const cleanIntegrationFakeContracts = () => {
+const cleanUpgradeTempContracts = () => {
   return new Promise((resolve, reject) => {
-    rimraf('./contracts/Fake*.*', resolve);
+    rimraf('./contracts/Updated*.*', resolve);
   });
 };
 
@@ -48,19 +48,20 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
   const UPDATED_VERSION=VERSION+1;
 
-  return execute(`cp ColonyFactory.sol FakeNewColonyFactory.sol`, { cwd: './contracts' })
-  .then(execute(`cp ColonyNetwork.sol FakeNewRootColony.sol`, { cwd: './contracts' }))
-  .then(execute(`cp Colony.sol FakeUpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'new Colony'/'new FakeUpdatedColony'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'Colony.sol'/'FakeUpdatedColony.sol'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract ColonyFactory'/'contract FakeNewColonyFactory'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'Colony(colonyAddress'/'FakeUpdatedColony(colonyAddress'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'Colony colonyNew'/'FakeUpdatedColony colonyNew'/g FakeNewColonyFactory.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract FakeNewRootColony'/g FakeNewRootColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract Colony'/'contract FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function Colony'/'function FakeUpdatedColony'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'uint256 public version = ${VERSION}'/'uint256 public version = ${UPDATED_VERSION}'/g FakeUpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'address public eternalStorage;'/'address public eternalStorage;function isUpdated() constant returns(bool) {return true;}'/g FakeUpdatedColony.sol`, { cwd: './contracts' }));
+  return execute(`cp Token.sol UpdatedToken.sol`, { cwd: './contracts' })
+  .then(execute(`sed -ie'' s/'Token'/'UpdatedToken'/g UpdatedToken.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'function mint'/'function isUpdated() constant returns(bool) {return true;} function mint'/g UpdatedToken.sol`, { cwd: './contracts' }))
+  .then(execute(`cp Resolver.sol UpdatedResolver.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'Resolver'/'UpdatedResolver'/g UpdatedResolver.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() constant returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'Pointer(destination, 0);'/'Pointer(destination, 0); pointers[stringToSig("isUpdated()")] = Pointer(destination, 32);'/g UpdatedResolver.sol`, { cwd: './contracts' }))
+  .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
+  .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'function Colony'/'function UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'uint256 public version = ${VERSION}'/'uint256 public version = ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'bytes32 public name;'/'bytes32 public name;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
 });
 
 gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
@@ -99,9 +100,9 @@ gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'],
   return execute(cmd);
 });
 
-gulp.task('test:contracts:integration', 'Run contract integration tests', ['deploy:contracts', 'generate:contracts:integration'], () => {
-  const cmd = makeCmd(`truffle test ./integration-test/test/* --network integration`);
-  return execute(cmd).then(cleanIntegrationFakeContracts);
+gulp.task('test:contracts:upgrade', 'Run contract upgrade tests', ['deploy:contracts', 'generate:contracts:integration'], () => {
+  const cmd = makeCmd(`truffle test ./upgrade-test/* --network integration`);
+  return execute(cmd).then(cleanUpgradeTempContracts);
 });
 
 gulp.task('test:contracts:coverage', 'Run contract test coverage using solidity-coverage', () => {

@@ -34,7 +34,7 @@ test:
     - greenkeeper-lockfile-update
   override:
     - gulp test:contracts
-    - gulp test:contracts:integration --parity
+    - gulp test:contracts:upgrade --parity
     - gulp test:contracts:gasCosts --parity
     - gulp test:contracts:coverage
   post:
