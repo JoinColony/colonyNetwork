@@ -1,21 +1,19 @@
 pragma solidity ^0.4.15;
 
+import "../lib/dappsys/auth.sol";
 
-contract Resolver {
+
+contract Resolver is DSAuth {
   struct Pointer { address destination; uint outsize; }
   mapping (bytes4 => Pointer) public pointers;
 
-  function Resolver(address destination) {
-    pointers[stringToSig("symbol")] = Pointer(destination, 32);
-    pointers[stringToSig("decimals")] = Pointer(destination, 32);
-    pointers[stringToSig("name")] = Pointer(destination, 32);
-    pointers[stringToSig("totalSupply()")] = Pointer(destination, 32);
-    pointers[stringToSig("balanceOf(address)")] = Pointer(destination, 32);
-    pointers[stringToSig("allowance(address,address)")] = Pointer(destination, 32);
-    pointers[stringToSig("transfer(address,uint256)")] = Pointer(destination, 32);
-    pointers[stringToSig("transferFrom(address,address,uint256)")] = Pointer(destination, 32);
-    pointers[stringToSig("approve(address,uint256)")] = Pointer(destination, 32);
-    pointers[stringToSig("mint(uint128)")] = Pointer(destination, 0);
+  function Resolver() {
+  }
+
+  function register(string signature, address destination, uint outsize)
+  auth
+  {
+    pointers[stringToSig(signature)] = Pointer(destination, outsize);
   }
 
   // Public API
