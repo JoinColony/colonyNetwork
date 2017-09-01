@@ -1,28 +1,29 @@
 /* globals artifacts */
 
+import upgradableContracts from '../helpers/upgradable-contracts';
+
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
 const Token = artifacts.require('Token');
 const UpdatedToken = artifacts.require('UpdatedToken');
-const UpdatedResolver = artifacts.require('UpdatedResolver');
 
 contract('Token contract upgrade', function (accounts) {
   const COINBASE_ACCOUNT = accounts[0];
   const ACCOUNT_TWO = accounts[1];
   const ACCOUNT_THREE = accounts[2];
 
+  let tokenContract;
   let token;
   let resolver;
   let etherRouter;
-
   let updatedToken;
 
   beforeEach(async function () {
-    token = await Token.deployed();
-    resolver = await Resolver.new(token.address);
+    tokenContract = await Token.new();
+    resolver = await Resolver.new();
     // Instantiate a new EtherRouter to clear the data
     etherRouter = await EtherRouter.new();
-    await etherRouter.setResolver(resolver.address);
+    await upgradableContracts.setupUpgradableToken(tokenContract, resolver, etherRouter);
     token = await Token.at(etherRouter.address);
   });
 
@@ -39,9 +40,9 @@ contract('Token contract upgrade', function (accounts) {
       await token.approve(ACCOUNT_THREE, 10, { from: ACCOUNT_TWO });
 
       // Upgrade Token
-      const updatedTokenDeployed = await UpdatedToken.deployed();
-      resolver = await UpdatedResolver.new(updatedTokenDeployed.address);
-      await etherRouter.setResolver(resolver.address);
+      const updatedTokenContract = await UpdatedToken.new();
+      await upgradableContracts.setupUpgradableToken(updatedTokenContract, resolver, etherRouter);
+      await resolver.register("isUpdated()", updatedTokenContract.address, 32);
       updatedToken = await UpdatedToken.at(etherRouter.address);
     });
 
