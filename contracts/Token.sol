@@ -1,11 +1,11 @@
 pragma solidity ^0.4.15;
 
 import "../lib/dappsys/auth.sol";
-import "../lib/dappsys/erc20.sol";
 import "../lib/dappsys/math.sol";
+import "./ERC20Extended.sol";
 
 
-contract Token is ERC20, DSMath, DSAuth {
+contract Token is ERC20Extended, DSMath, DSAuth {
     address resolver;
     bytes32 public symbol;
     uint256 public decimals;
