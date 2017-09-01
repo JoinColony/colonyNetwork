@@ -53,7 +53,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should return zero task count', async function () {
-      const taskCount = await colony.getTaskCount.call();
+      const taskCount = await colony.taskCount.call();
       assert.equal(taskCount, 0);
     });
 
@@ -296,7 +296,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask('TASK C', 'INTERESTING TASK SUMMARY');
       await colony.makeTask('TASK D', 'INTERESTING TASK SUMMARY');
       await colony.makeTask('TASK E', 'INTERESTING TASK SUMMARY');
-      const taskCount = await colony.getTaskCount.call();
+      const taskCount = await colony.taskCount.call();
       assert.equal(taskCount, 5);
     });
   });
