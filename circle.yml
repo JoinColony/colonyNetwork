@@ -8,7 +8,7 @@ dependencies:
     - "~/.yarn-cache"
 
   override:
-    - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.24.6
+    - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.27.5
     - mkdir -p ~/.yarn-cache
     - yarn --pure-lockfile --cache-folder ~/.yarn-cache #truffle-contract replies on ethjs-abi which requires node>v6.5
     - yarn global add gulp@3.9.1
