@@ -6,6 +6,7 @@ import "./ERC20Extended.sol";
 
 
 contract Colony is DSAuth, DSMath {
+  address resolver;
   ERC20Extended public token;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
@@ -55,13 +56,14 @@ contract Colony is DSAuth, DSMath {
   function getTask(uint256 _id)
   constant returns (string, string, bool, uint, uint, uint, bool)
   {
-    return (tasks[_id].name,
-      tasks[_id].description,
-      tasks[_id].accepted,
-      tasks[_id].eth,
-      tasks[_id].tokens,
-      tasks[_id].reservedTokens,
-      tasks[_id].funded);
+    Task storage task = tasks[_id];
+    return (task.name,
+      task.description,
+      task.accepted,
+      task.eth,
+      task.tokens,
+      task.reservedTokens,
+      task.funded);
   }
 
   function makeTask(string _name, string _summary)
@@ -104,8 +106,9 @@ contract Colony is DSAuth, DSMath {
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
-    tasks[_id].eth = add(tasks[_id].eth, msg.value);
-    tasks[_id].funded = true;
+    Task storage task = tasks[_id];
+    task.eth = add(task.eth, msg.value);
+    task.funded = true;
   }
 
   function contributeTokensToTask(uint256 _id, uint256 _amount)
@@ -113,8 +116,9 @@ contract Colony is DSAuth, DSMath {
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
-    tasks[_id].tokens = add(tasks[_id].tokens, _amount);
-    tasks[_id].funded = true;
+    Task storage task = tasks[_id];
+    task.tokens = add(task.tokens, _amount);
+    task.funded = true;
   }
 
   function setReservedTokensForTask(uint256 _id, uint256 _amount)
@@ -122,15 +126,16 @@ contract Colony is DSAuth, DSMath {
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
+    Task storage task = tasks[_id];
     // Ensure colony has sufficient tokens
     var colonyTokenBalance = token.balanceOf(this);
-    var availableColonyTokens = add(sub(colonyTokenBalance, reservedTokens), tasks[_id].reservedTokens);
+    var availableColonyTokens = add(sub(colonyTokenBalance, reservedTokens), task.reservedTokens);
     require(availableColonyTokens >= _amount);
 
-    reservedTokens = add(sub(reservedTokens, tasks[_id].reservedTokens), _amount);
-    tasks[_id].tokens = add(sub(tasks[_id].tokens, tasks[_id].reservedTokens), _amount);
-    tasks[_id].reservedTokens = _amount;
-    tasks[_id].funded = true;
+    reservedTokens = add(sub(reservedTokens, task.reservedTokens), _amount);
+    task.tokens = add(sub(task.tokens, task.reservedTokens), _amount);
+    task.reservedTokens = _amount;
+    task.funded = true;
   }
 
   function removeReservedTokensForTask(uint256 _id)
@@ -138,9 +143,10 @@ contract Colony is DSAuth, DSMath {
   tasksExists(_id)
   taskAccepted(_id)
   {
+    Task storage task = tasks[_id];
     // Intentioanlly not removing the `task_tokensWei` value because of tracking history for tasks
-    reservedTokens = sub(reservedTokens, tasks[_id].reservedTokens);
-    tasks[_id].reservedTokens = 0;
+    reservedTokens = sub(reservedTokens, task.reservedTokens);
+    task.reservedTokens = 0;
   }
 
   /// @notice mark a task as completed, pay the user who completed it and root colony fee
@@ -151,14 +157,15 @@ contract Colony is DSAuth, DSMath {
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
-    require(token.balanceOf(this) >= tasks[_id].tokens);
+    Task storage task = tasks[_id];
+    require(token.balanceOf(this) >= task.tokens);
     acceptTask(_id);
 
-    if (tasks[_id].eth > 0) {
-      _assignee.transfer(tasks[_id].eth);
+    if (task.eth > 0) {
+      _assignee.transfer(task.eth);
     }
 
-    uint256 tokens = tasks[_id].tokens;
+    uint256 tokens = task.tokens;
     if (tokens > 0) {
       token.transfer(_assignee, tokens);
       removeReservedTokensForTask(_id);
