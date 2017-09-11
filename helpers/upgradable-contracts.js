@@ -51,8 +51,61 @@ module.exports = {
     const _registeredResolver = await etherRouter.resolver.call();
     assert.equal(_registeredResolver, resolver.address);
   },
-  async setupUpgradableColony () {
+  async setupColonyVersionResolver (colony, resolver) {
+    await resolver.register("token()", colony.address, 0);
+    await resolver.register("version()", colony.address, 0);
+    await resolver.register("setToken(address)", colony.address, 0);
+    await resolver.register("getTask(uint256)", colony.address, 192);
+    await resolver.register("makeTask(bytes32)", colony.address, 0);
+    await resolver.register("updateTaskIpfsDecodedHash(uint256,bytes32)", colony.address, 0);
+    await resolver.register("acceptTask(uint256)", colony.address, 0);
+    await resolver.register("contributeEthToTask(uint256)", colony.address, 0);
+    await resolver.register("contributeTokensToTask(uint256,uint256)", colony.address, 0);
+    await resolver.register("setReservedTokensForTask(uint256,uint256)", colony.address, 0);
+    await resolver.register("removeReservedTokensForTask(uint256)", colony.address, 0);
+    await resolver.register("completeAndPayTask(uint256,address)", colony.address, 0);
+    await resolver.register("mintTokens(uint128)", colony.address, 0);
 
+    // Validate Colony functions are registered
+    let response = await resolver.lookup.call('0xfc0c546a'); // token
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x54fd4d5'); // version
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x144fa6d7'); // setToken
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x1d65e77e'); // getTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 192);
+    response = await resolver.lookup.call('0x560c6d92'); // makeTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x2665c808'); // updateTaskIpfsDecodedHash
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x1bf6912d'); // acceptTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x7852661'); // contributeEthToTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0xfe809756'); // contributeTokensToTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0xa59792f7'); // setReservedTokensForTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0xf93ab663'); // removeReservedTokensForTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x2f6da7bb'); // completeAndPayTask
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x5ab75c42'); // mintTokens
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
   },
   async setupUpgradableColonyNetwork () {
 
