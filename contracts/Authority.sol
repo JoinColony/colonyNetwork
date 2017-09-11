@@ -32,13 +32,9 @@ contract Authority is DSRoles {
     setRoleCapability(owner_role, colony, acceptTaskSig, true);
     setRoleCapability(admin_role, colony, acceptTaskSig, true);
 
-    bytes4 updateTaskTitleSig = bytes4(sha3("updateTaskTitle(uint256,string)"));
-    setRoleCapability(owner_role, colony, updateTaskTitleSig, true);
-    setRoleCapability(admin_role, colony, updateTaskTitleSig, true);
-
-    bytes4 updateTaskSummarySig = bytes4(sha3("updateTaskSummary(uint256,string)"));
-    setRoleCapability(owner_role, colony, updateTaskSummarySig, true);
-    setRoleCapability(admin_role, colony, updateTaskSummarySig, true);
+    bytes4 updateTaskIpfsDecodedHashSig = bytes4(sha3("updateTaskIpfsDecodedHash(uint256,bytes32)"));
+    setRoleCapability(owner_role, colony, updateTaskIpfsDecodedHashSig, true);
+    setRoleCapability(admin_role, colony, updateTaskIpfsDecodedHashSig, true);
 
     bytes4 completeAndPayTaskSig = bytes4(sha3("completeAndPayTask(uint256,address)"));
     setRoleCapability(owner_role, colony, completeAndPayTaskSig, true);

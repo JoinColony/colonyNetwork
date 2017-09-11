@@ -15,7 +15,7 @@ contract('all', function (accounts) {
   let colonyNetwork;
 
   let makeTaskCost;
-  let updateTaskCost;
+  let updateTaskIpfsDecodedHashCost;
   let mintTokensCost;
   let contributeEthToTaskCost;
   let contributeTokensToTaskCost;
@@ -44,18 +44,18 @@ contract('all', function (accounts) {
   describe('Gas costs', function () {
     it('when working with a Colony', async function () {
       // makeTask
-      let estimate = await colony.makeTask.estimateGas('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01');
+      let estimate = await colony.makeTask.estimateGas('9bb76d8e6c89b524d34a454b3140df28');
       console.log('makeTask estimate : ', estimate);
-      let tx = await colony.makeTask('My new task', 'QmTDMoVqvyBkNMRhzvukTDznntByUNDwyNdSfV8dZ3VKRC01', { gasPrice });
+      let tx = await colony.makeTask('9bb76d8e6c89b524d34a454b3140df28', { gasPrice });
       makeTaskCost = tx.receipt.gasUsed;
       console.log('makeTask actual cost :', makeTaskCost);
 
-      // updateTaskTitle
-      estimate = await colony.updateTaskTitle.estimateGas(0, 'My updated task');
-      console.log('updateTaskTitle estimate : ', estimate);
-      tx = await colony.updateTaskTitle(1, 'My updated task', { gasPrice });
-      updateTaskCost = tx.receipt.gasUsed;
-      console.log('updateTaskTitle actual cost :', updateTaskCost);
+      // updateTaskIpfsDecodedHash
+      estimate = await colony.updateTaskIpfsDecodedHash.estimateGas(0, 'My updated task');
+      console.log('updateTaskIpfsDecodedHash estimate : ', estimate);
+      tx = await colony.updateTaskIpfsDecodedHash(1, '9bb76d8e6c89b524d34a454b3140df29', { gasPrice });
+      updateTaskIpfsDecodedHashCost = tx.receipt.gasUsed;
+      console.log('updateTaskIpfsDecodedHash actual cost :', updateTaskIpfsDecodedHashCost);
 
       // mintTokens
       estimate = await colony.mintTokens.estimateGas(200);
@@ -94,7 +94,7 @@ contract('all', function (accounts) {
 
     it('Average gas costs for customers should not exceed 1 ETH per month', function (done) {
       const totalGasCost = (makeTaskCost * 100) // assume 100 tasks per month are created
-      + (updateTaskCost * 20) // assume 20% of all tasks are updated once
+      + (updateTaskIpfsDecodedHashCost * 20) // assume 20% of all tasks are updated once
       + (contributeTokensToTaskCost * 100) // assume all new tasks have their budget set once
       + (completeAndPayTaskCost * 25) // quarter of all tasks are closed and paid out
       + (mintTokensCost * 1); // only once per month are new colony tokens generated
