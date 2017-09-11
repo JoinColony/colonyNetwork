@@ -14,8 +14,7 @@ contract Colony is DSAuth, DSMath {
   bytes32 public name;
 
   struct Task {
-    string name;
-    string description;
+    bytes32 ipfsDecodedHash;
     bool accepted;
     uint eth;
     uint tokens;
@@ -25,11 +24,6 @@ contract Colony is DSAuth, DSMath {
   mapping (uint => Task) public tasks;
   uint public taskCount;
   uint public reservedTokens;
-
-  modifier throwIfIsEmptyString(string _id) {
-    require(bytes(_id).length != 0);
-    _;
-  }
 
   modifier tasksExists(uint256 _id) {
     require(_id <= taskCount);
@@ -54,11 +48,10 @@ contract Colony is DSAuth, DSMath {
   }
 
   function getTask(uint256 _id)
-  constant returns (string, string, bool, uint, uint, uint, bool)
+  constant returns (bytes32, bool, uint, uint, uint, bool)
   {
     Task storage task = tasks[_id];
-    return (task.name,
-      task.description,
+    return (task.ipfsDecodedHash,
       task.accepted,
       task.eth,
       task.tokens,
@@ -66,30 +59,19 @@ contract Colony is DSAuth, DSMath {
       task.funded);
   }
 
-  function makeTask(string _name, string _summary)
+  function makeTask(bytes32 _ipfsDecodedHash)
   auth
-  throwIfIsEmptyString(_name)
   {
     taskCount += 1;
-    tasks[taskCount] = Task(_name, _summary, false, 0, 0, 0, false);
+    tasks[taskCount] = Task(_ipfsDecodedHash, false, 0, 0, 0, false);
   }
 
-  function updateTaskTitle(uint256 _id, string _name)
+  function updateTaskIpfsDecodedHash(uint256 _id, bytes32 _ipfsDecodedHash)
   auth
-  throwIfIsEmptyString(_name)
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
-    tasks[_id].name = _name;
-  }
-
-  function updateTaskSummary(uint256 _id, string _summary)
-  auth
-  throwIfIsEmptyString(_summary)
-  tasksExists(_id)
-  tasksNotAccepted(_id)
-  {
-    tasks[_id].description = _summary;
+    tasks[_id].ipfsDecodedHash = _ipfsDecodedHash;
   }
 
   function acceptTask(uint256 _id)
