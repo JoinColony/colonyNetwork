@@ -1,11 +1,9 @@
 /* globals artifacts */
 import testHelper from '../helpers/test-helper';
-import upgradableContracts from '../helpers/upgradable-contracts';
 
 const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet.sol');
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
-const Token = artifacts.require('Token');
 
 contract('EtherRouter / Resolver', function (accounts) {
   const COINBASE_ACCOUNT = accounts[0];
@@ -14,19 +12,15 @@ contract('EtherRouter / Resolver', function (accounts) {
 
   let etherRouter;
   let resolver;
-  let token;
-  let tokenDeployed;
   let multisig;
 
   before(async function () {
-    tokenDeployed = await Token.new();
     resolver = await Resolver.new();
   });
 
   beforeEach(async function () {
     etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolver.address);
-    token = await Token.at(etherRouter.address);
     // Need at least 2 confirmations for EtherRouter owner-required transactions
     multisig = await MultiSigWallet.new([ACCOUNT_TWO, ACCOUNT_THREE], 2);
     await etherRouter.setOwner(multisig.address);

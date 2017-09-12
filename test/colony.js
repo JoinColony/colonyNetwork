@@ -29,7 +29,7 @@ contract('Colony', function (accounts) {
   let colonyNetwork;
 
   before(async function () {
-    colonyNetwork = await ColonyNetwork.new();
+    colonyNetwork = await ColonyNetwork.deployed();
   });
 
   beforeEach(async function () {

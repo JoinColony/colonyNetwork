@@ -9,7 +9,8 @@ module.exports = {
     // Make sure this is a throw we expect.
     if (err.message.indexOf('VM Exception while processing transaction: out of gas') == 0
   && err.message.indexOf('VM Exception while processing transaction: invalid JUMP') == 0
-  && err.message.indexOf('VM Exception while processing transaction: invalid opcode') == 0) {
+  && err.message.indexOf('VM Exception while processing transaction: invalid opcode') == 0
+  && err.message.indexOf('VM Exception while executing eth_call: invalid opcode') == 0) {
     throw err;
   }
     // Okay, so, there is a discrepancy between how testrpc handles

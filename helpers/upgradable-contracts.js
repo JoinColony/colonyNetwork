@@ -1,5 +1,4 @@
-// These globals represent contracts and are added by Truffle:
-/* globals EtherRouter, Resolver, Token, Colony, ColonyNetwork */
+const assert = require('assert');
 
 module.exports = {
   async setupUpgradableToken (token, resolver, etherRouter) {
@@ -51,9 +50,11 @@ module.exports = {
     const _registeredResolver = await etherRouter.resolver.call();
     assert.equal(_registeredResolver, resolver.address);
   },
-  async setupColonyVersionResolver (colony, resolver) {
-    await resolver.register("token()", colony.address, 0);
-    await resolver.register("version()", colony.address, 0);
+  async setupColonyVersionResolver (colony, resolver, colonyNetwork) {
+    await resolver.register("token()", colony.address, 32);
+    await resolver.register("version()", colony.address, 32);
+    await resolver.register("taskCount()", colony.address, 32);
+    await resolver.register("reservedTokens()", colony.address, 32);
     await resolver.register("setToken(address)", colony.address, 0);
     await resolver.register("getTask(uint256)", colony.address, 192);
     await resolver.register("makeTask(bytes32)", colony.address, 0);
@@ -69,10 +70,16 @@ module.exports = {
     // Validate Colony functions are registered
     let response = await resolver.lookup.call('0xfc0c546a'); // token
     assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x54fd4d5'); // version
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x54fd4d50'); // version
     assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0xb6cb58a5'); // taskCount
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x15a55347'); // reservedTokens
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 32);
     response = await resolver.lookup.call('0x144fa6d7'); // setToken
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
@@ -106,8 +113,12 @@ module.exports = {
     response = await resolver.lookup.call('0x5ab75c42'); // mintTokens
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-  },
-  async setupUpgradableColonyNetwork () {
 
+    const version = await colony.version.call();
+    await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);
+    const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+    assert.equal(version, currentColonyVersion.toNumber());
+  },
+  async setupUpgradableColonyNetwork (colony, resolver, colonyNetwork) {
   }
 };
