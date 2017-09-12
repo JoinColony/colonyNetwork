@@ -30,9 +30,9 @@ contract EtherRouter is DSAuth {
     }
   }
 
-  function setResolver(Resolver _resolver)
+  function setResolver(address _resolver)
   auth
   {
-    resolver = _resolver;
+    resolver = Resolver(_resolver);
   }
 }
