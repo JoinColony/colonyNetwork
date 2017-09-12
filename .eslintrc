@@ -21,5 +21,8 @@
     "import/no-unresolved": [0],
     "import/no-extraneous-dependencies": [0]
     /* Test-only */
-  }
+  },
+  "parserOptions": {
+   "ecmaVersion": 2017
+ }
 }
