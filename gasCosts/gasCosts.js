@@ -1,8 +1,11 @@
 /* globals artifacts */
+const upgradableContracts = require('../helpers/upgradable-contracts');
+
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
+const Resolver = artifacts.require('Resolver');
 
 contract('all', function (accounts) {
   const gasPrice = 20e9;
@@ -10,6 +13,7 @@ contract('all', function (accounts) {
   const OTHER_ACCOUNT = accounts[1];
 
   let colony;
+  let resolver;
   let token;
   let authority;
   let colonyNetwork;
@@ -23,10 +27,10 @@ contract('all', function (accounts) {
 
   before(async function () {
     console.log('Gas price : ', gasPrice);
-  });
-
-  beforeEach(async function () {
+    colony = await Colony.new();
+    resolver = await Resolver.new();
     colonyNetwork = await ColonyNetwork.new();
+    await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
     const estimate = await colonyNetwork.createColony.estimateGas('Antz');
     console.log('createColony estimate : ', estimate);
     const tx = await colonyNetwork.createColony('Antz', { gasPrice });

@@ -1,0 +1,40 @@
+const upgradableContracts = require('../helpers/upgradable-contracts');
+const Colony = artifacts.require('./Colony.sol');
+const ColonyNetwork = artifacts.require('./ColonyNetwork.sol');
+const EtherRouter = artifacts.require('./EtherRouter.sol');
+const Resolver = artifacts.require('./Resolver.sol');
+const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet.sol');
+
+module.exports = function (deployer, network, accounts) {
+  // Create a new Colony (version) and setup a new Resolver for it
+  let colony;
+  let version;
+  let resolver;
+  let colonyNetwork;
+  deployer.then(function () {
+    return Colony.new();
+  })
+  .then(function (instance) {
+    colony = instance;
+    return colony.version.call();
+  })
+  .then(function (_version) {
+    version = _version.toNumber();
+    return Resolver.new();
+  })
+  .then(function (_resolver) {
+    resolver = _resolver;
+    return ColonyNetwork.deployed();
+  })
+  .then(function (_colonyNetwork) {
+    colonyNetwork = _colonyNetwork;
+    // Register the new Colony contract version with the newly setup Resolver
+    return upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
+  })
+  .then(function (r) {
+    console.log('### Colony version', version, 'set to Resolver', resolver.address);
+  })
+  .catch(function (err) {
+    console.log('### Error occurred ', err);
+  });
+};
