@@ -3,15 +3,15 @@ pragma solidity ^0.4.15;
 import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
+import "./IColony.sol";
 
 
-contract Colony is DSAuth, DSMath {
+contract Colony is DSAuth, DSMath, IColony {
   address resolver;
   ERC20Extended public token;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   uint256 public version = 4;
-  bytes32 public name;
 
   struct Task {
     bytes32 ipfsDecodedHash;
@@ -40,10 +40,9 @@ contract Colony is DSAuth, DSMath {
     _;
   }
 
-  function Colony(bytes32 _name, address _token)
-  payable
+  function setToken(address _token)
+  auth
   {
-    name = _name;
     token = ERC20Extended(_token);
   }
 
