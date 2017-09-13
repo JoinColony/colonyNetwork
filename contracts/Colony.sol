@@ -11,7 +11,7 @@ contract Colony is DSAuth, DSMath, IColony {
   ERC20Extended public token;
   // This property, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  uint256 public version = 4;
+  uint256 public version = 5;
 
   struct Task {
     bytes32 ipfsDecodedHash;
