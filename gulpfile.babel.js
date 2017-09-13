@@ -54,13 +54,12 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   .then(execute(`cp Resolver.sol UpdatedResolver.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'Resolver'/'UpdatedResolver'/g UpdatedResolver.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() constant returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
-  .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function Colony'/'function UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'uint256 public version = ${VERSION}'/'uint256 public version = ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'bytes32 public name;'/'bytes32 public name;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
+  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
 });
 
 gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
