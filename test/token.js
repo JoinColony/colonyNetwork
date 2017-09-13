@@ -11,6 +11,7 @@ contract('Token', function (accounts) {
   const COINBASE_ACCOUNT = accounts[0];
   const ACCOUNT_TWO = accounts[1];
   const ACCOUNT_THREE = accounts[2];
+  const GAS_TO_SPEND = 4700000;
 
   let etherRouter;
   let resolver;
@@ -178,6 +179,50 @@ contract('Token', function (accounts) {
 
       var totalSupply = await etherRouterToken.totalSupply.call();
       assert.equal(0, totalSupply.toNumber());
+    });
+  });
+
+  describe('when working with ether transfers', function () {
+    it('should NOT accept eth', async function () {
+      var tx;
+      try {
+        // Throws 'VM Exception while processing transaction: invalid opcode' error
+        tx = await token.send(2, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
+      assert.equal(0, tokenBalance.toNumber());
+    });
+
+    it.skip('should NOT accept eth via etherRouter transfer', async function () {
+      var tx;
+      try {
+        tx = await etherRouterToken.send(2, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      
+      let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
+      assert.equal(0, tokenBalance.toNumber());
+    });
+
+    it('should NOT accept eth via etherRouter call to function', async function () {
+      var tx;
+      try {
+        tx = await etherRouterToken.mint(200, { value: 2, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = testHelper.checkErrorNonPayableFunction(err);
+      }
+
+      var totalSupply = await etherRouterToken.totalSupply.call();
+      assert.equal(0, totalSupply.toNumber());
+
+      let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
+      assert.equal(0, tokenBalance.toNumber());
     });
   });
 });
