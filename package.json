@@ -33,7 +33,7 @@
     "mocha-circleci-reporter": "^0.0.2",
     "pshell": "^1.1.0",
     "request": "^2.81.0",
-    "rimraf": "^2.6.1",
+    "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
     "solidity-coverage": "^0.2.2",
     "solidity-sha3": "^0.4.1",
