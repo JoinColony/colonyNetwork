@@ -159,15 +159,6 @@ contract Colony is DSAuth, DSMath, IColony {
     return token.mint(_wad);
   }
 
-  // Upgrade the colony migrating its data adn funds to another colony instance
-  function upgrade(address newColonyAddress_)
-  auth
-  {
-    var tokensBalance = token.balanceOf(this);
-    assert(tokensBalance > 0 && !token.transfer(newColonyAddress_, tokensBalance));
-    selfdestruct(newColonyAddress_);
-  }
-
   function ()
   payable
   {
