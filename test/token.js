@@ -187,11 +187,10 @@ contract('Token', function (accounts) {
       var tx;
       try {
         // Throws 'VM Exception while processing transaction: invalid opcode' error
-        tx = await token.send(2, { gas: GAS_TO_SPEND });
+        tx = await token.send(2);
       } catch(err) {
         tx = testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
@@ -205,7 +204,7 @@ contract('Token', function (accounts) {
         tx = testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-      
+
       let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
