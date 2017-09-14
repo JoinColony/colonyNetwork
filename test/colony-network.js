@@ -16,6 +16,7 @@ contract('ColonyNetwork', function (accounts) {
   let resolver;
   let colonyNetwork;
   let createColonyGas;
+  let version;
 
   before(async function () {
     createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
@@ -23,6 +24,7 @@ contract('ColonyNetwork', function (accounts) {
 
   beforeEach(async function () {
     colony = await Colony.new();
+    version = await colony.version.call();
     resolver = await Resolver.new();
     colonyNetwork = await ColonyNetwork.new();
     await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
@@ -36,10 +38,13 @@ contract('ColonyNetwork', function (accounts) {
     });
 
     it('should have the correct current Colony version set', async function () {
-      const colony = await Colony.new();
-      const version = await colony.version.call();
       const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
+    });
+
+    it('should have the Resolver for current Colony version set', async function () {
+      const currentResolver = await colonyNetwork.colonyVersionResolver.call(version.toNumber());
+      assert.equal(currentResolver, resolver.address);
     });
   });
 
@@ -81,7 +86,6 @@ contract('ColonyNetwork', function (accounts) {
       const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
       colony = await Colony.at(colonyAddress);
       const actualColonyVersion = await colony.version.call();
-      const version = await IColony.at(colony.address).version();
       assert.equal(version.toNumber(), actualColonyVersion.toNumber());
     });
 

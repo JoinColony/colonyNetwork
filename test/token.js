@@ -29,7 +29,7 @@ contract('Token', function (accounts) {
     etherRouterToken = await Token.at(etherRouter.address);
   });
 
-  describe('when working with ERC20 properties', function () {
+  describe.skip('when working with ERC20 properties', function () {
     it('token `symbol` property is correct', async() => {
       const tokenSymbol = await etherRouterToken.symbol();
       assert.equal(web3.toUtf8(tokenSymbol), 'CLNY');
