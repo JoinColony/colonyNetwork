@@ -1,6 +1,7 @@
 pragma solidity ^0.4.15;
 
 import "../lib/dappsys/auth.sol";
+import "../lib/dappsys/roles.sol";
 import "./Authority.sol";
 import "./IColony.sol";
 import "./EtherRouter.sol";
@@ -13,24 +14,24 @@ contract ColonyNetwork is DSAuth {
   mapping (uint => address) _coloniesIndex;
   mapping (bytes32 => address) _colonies;
   // Maps colony contract versions to respective resolvers
-  mapping (uint => address) _colonyVersionResolver;
+  mapping (uint => address) public colonyVersionResolver;
 
   function createColony(bytes32 name) {
     var token = new Token();
     var etherRouter = new EtherRouter();
-    var resolver = _colonyVersionResolver[currentColonyVersion];
+    var resolver = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolver);
 
     var colony = IColony(etherRouter);
     colony.setToken(token);
-    var authority = new Authority(colony);
+    token.setOwner(colony);
 
+    var authority = new Authority(colony);
     var dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
-    // Transfer ownership to colony creator
-    dsauth.setOwner(msg.sender);
+    authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
-    token.setOwner(colony);
+
     _colonyCount += 1;
     _coloniesIndex[_colonyCount] = colony;
     _colonies[name] = colony;
@@ -39,7 +40,7 @@ contract ColonyNetwork is DSAuth {
   function addColonyVersion(uint _version, address _resolver)
   auth
   {
-    _colonyVersionResolver[_version] = _resolver;
+    colonyVersionResolver[_version] = _resolver;
     if(_version > currentColonyVersion) {
       currentColonyVersion = _version;
     }
@@ -67,11 +68,12 @@ contract ColonyNetwork is DSAuth {
   }
 
   function upgradeColony(bytes32 _name, uint _newVersion) {
+    // TODO: only Colony owner can call this
     address etherRouter = _colonies[_name];
-    IColony c = IColony(etherRouter);
+    var c = IColony(etherRouter);
     uint oldVersion = c.version();
     require(_newVersion > oldVersion);
-    address newResolver = _colonyVersionResolver[_newVersion];
+    address newResolver = colonyVersionResolver[_newVersion];
     require(newResolver != 0x0);
     EtherRouter e = EtherRouter(etherRouter);
     e.setResolver(newResolver);
