@@ -9,9 +9,15 @@ import "./IColony.sol";
 contract Colony is DSAuth, DSMath, IColony {
   address resolver;
   ERC20Extended public token;
-  // This property, exactly as defined, is used in build scripts. Take care when updating.
+  mapping (uint => Task) public tasks;
+  uint public taskCount;
+  uint public reservedTokens;
+
+  // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  uint256 public version = 5;
+  function version() constant returns (uint256) {
+    return 5;
+  }
 
   struct Task {
     bytes32 ipfsDecodedHash;
@@ -21,9 +27,6 @@ contract Colony is DSAuth, DSMath, IColony {
     uint reservedTokens;
     bool funded;
   }
-  mapping (uint => Task) public tasks;
-  uint public taskCount;
-  uint public reservedTokens;
 
   modifier tasksExists(uint256 _id) {
     require(_id <= taskCount);

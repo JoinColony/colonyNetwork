@@ -45,7 +45,7 @@ const checkCoverageAgainstThreshold = () => {
 };
 
 gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
-  const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
+  const VERSION = await executeWithOutput(`grep "function version() constant returns (uint256) { return " ./contracts/Colony.sol | tr -d 'function version() constant returns (uint256) { return ' | tr -d '; }\n'`);
   const UPDATED_VERSION=VERSION+1;
 
   return execute(`cp Token.sol UpdatedToken.sol`, { cwd: './contracts' })
@@ -58,7 +58,7 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'uint256 public version = ${VERSION}'/'uint256 public version = ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'function version() constant returns (uint256) { return ${VERSION}'/'function version() constant returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
 });
 
