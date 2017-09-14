@@ -55,9 +55,9 @@ contract('Colony', function (accounts) {
       assert.equal(colonyBalance.toNumber(), expectedBalance);
     });
 
-    it('should take deploying user as an owner', async function () {
+    it('should take colony network as an owner', async function () {
       const owner = await colony.owner.call();
-      assert.equal(owner, MAIN_ACCOUNT);
+      assert.equal(owner, colonyNetwork.address);
     });
 
     it('should return zero task count', async function () {
