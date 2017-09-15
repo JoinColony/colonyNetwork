@@ -40,7 +40,11 @@ contract('ColonyNetwork', function (accounts) {
     it('should accept ether', async function () {
       await colonyNetwork.send(1);
       let colonyNetworkBalance = web3.eth.getBalance(colonyNetwork.address);
-      assert.equal(colonyNetworkBalance.toNumber(), 1);
+
+      // Note: Until https://github.com/sc-forks/solidity-coverage/issues/92 is complete
+      // issue https://github.com/ethereumjs/testrpc/issues/122 manifests itself here
+      const expectedBalance = (web3.version.network == 'coverage') ? 2 : 1;
+      assert.equal(colonyNetworkBalance.toNumber(), expectedBalance);
     });
 
     it('should have the correct current Colony version set', async function () {
