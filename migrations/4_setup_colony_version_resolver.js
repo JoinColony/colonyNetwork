@@ -24,10 +24,13 @@ module.exports = function (deployer, network, accounts) {
   })
   .then(function (_resolver) {
     resolver = _resolver;
-    return ColonyNetwork.deployed();
+    return EtherRouter.deployed();
   })
-  .then(function (_colonyNetwork) {
-    colonyNetwork = _colonyNetwork;
+  .then(function (_etherRouter) {
+    return ColonyNetwork.at(_etherRouter.address);
+  })
+  .then(function (instance) {
+    colonyNetwork = instance;
     // Register the new Colony contract version with the newly setup Resolver
     return upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
   })

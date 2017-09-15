@@ -2,6 +2,8 @@
 import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 
+const EtherRouter = artifacts.require('EtherRouter');
+const Resolver = artifacts.require('Resolver');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const Token = artifacts.require('Token');
@@ -29,7 +31,8 @@ contract('Colony', function (accounts) {
   let colonyNetwork;
 
   before(async function () {
-    colonyNetwork = await ColonyNetwork.deployed();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async function () {

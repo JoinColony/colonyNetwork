@@ -3,6 +3,7 @@ import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 const upgradableContracts = require('../helpers/upgradable-contracts');
 
+const EtherRouter = artifacts.require('EtherRouter');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
@@ -14,19 +15,24 @@ contract('ColonyNetwork', function (accounts) {
   const OTHER_ACCOUNT = accounts[1];
   let colony;
   let resolver;
+  let resolverColonyNetworkDeployed;
   let colonyNetwork;
   let createColonyGas;
   let version;
 
   before(async function () {
     createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
+    resolverColonyNetworkDeployed = await Resolver.deployed();
   });
 
   beforeEach(async function () {
     colony = await Colony.new();
     version = await colony.version.call();
     resolver = await Resolver.new();
-    colonyNetwork = await ColonyNetwork.new();
+
+    const etherRouter = await EtherRouter.new();
+    etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
   });
 

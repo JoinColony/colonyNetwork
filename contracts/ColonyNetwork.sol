@@ -9,6 +9,7 @@ import "./Token.sol";
 
 
 contract ColonyNetwork is DSAuth {
+  address resolver;
   uint256 public colonyCount;
   uint256 public currentColonyVersion;
   mapping (uint => address) _coloniesIndex;
