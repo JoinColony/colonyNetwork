@@ -52,8 +52,8 @@ contract('ColonyNetwork', function (accounts) {
     it('should allow users to create new colonies', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
       const address = await colonyNetwork.getColony(COLONY_KEY);
-      const countColonies = await colonyNetwork.countColonies.call();
-      assert.equal(countColonies.toNumber(), 1);
+      const colonyCount = await colonyNetwork.colonyCount.call();
+      assert.equal(colonyCount.toNumber(), 1);
     });
 
     it('should maintain correct count of colonies', async function () {
@@ -64,8 +64,8 @@ contract('ColonyNetwork', function (accounts) {
       await colonyNetwork.createColony(testHelper.getRandomString(7));
       await colonyNetwork.createColony(testHelper.getRandomString(7));
       await colonyNetwork.createColony(testHelper.getRandomString(7));
-      const countColonies = await colonyNetwork.countColonies.call();
-      assert.equal(countColonies.toNumber(), 7);
+      const colonyCount = await colonyNetwork.colonyCount.call();
+      assert.equal(colonyCount.toNumber(), 7);
     });
 
     it('should allow users to get the address of a colony by its index', async function () {

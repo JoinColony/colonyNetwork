@@ -9,7 +9,7 @@ import "./Token.sol";
 
 
 contract ColonyNetwork is DSAuth {
-  uint256 _colonyCount;
+  uint256 public colonyCount;
   uint256 public currentColonyVersion;
   mapping (uint => address) _coloniesIndex;
   mapping (bytes32 => address) _colonies;
@@ -32,8 +32,8 @@ contract ColonyNetwork is DSAuth {
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
 
-    _colonyCount += 1;
-    _coloniesIndex[_colonyCount] = colony;
+    colonyCount += 1;
+    _coloniesIndex[colonyCount] = colony;
     _colonies[name] = colony;
   }
 
@@ -57,14 +57,6 @@ contract ColonyNetwork is DSAuth {
   constant returns (address)
   {
     return _coloniesIndex[_idx];
-  }
-
-  /// @notice this function returns the amount of colonies created
-  /// @return the amount of colonies created
-  function countColonies()
-  constant returns (uint256)
-  {
-    return _colonyCount;
   }
 
   function upgradeColony(bytes32 _name, uint _newVersion) {
