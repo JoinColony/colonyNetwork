@@ -6,6 +6,7 @@ const Colony = artifacts.require('Colony');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 const Resolver = artifacts.require('Resolver');
+const EtherRouter = artifacts.require('EtherRouter');
 
 contract('all', function (accounts) {
   const gasPrice = 20e9;
@@ -29,7 +30,8 @@ contract('all', function (accounts) {
     console.log('Gas price : ', gasPrice);
     colony = await Colony.new();
     resolver = await Resolver.new();
-    colonyNetwork = await ColonyNetwork.new();
+    const etherRouter = await EtherRouter.deployed();
+    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
     const estimate = await colonyNetwork.createColony.estimateGas('Antz');
     console.log('createColony estimate : ', estimate);

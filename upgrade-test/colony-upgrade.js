@@ -29,7 +29,8 @@ contract('Colony contract upgrade', function (accounts) {
   let updatedColonyVersion;
 
   before(async function () {
-    colonyNetwork = await ColonyNetwork.deployed();
+    const etherRouterColonyNetwork = await EtherRouter.deployed();
+    colonyNetwork = await ColonyNetwork.at(etherRouterColonyNetwork.address);
 
     COLONY_KEY = testHelper.getRandomString(7);
     await colonyNetwork.createColony(COLONY_KEY);
