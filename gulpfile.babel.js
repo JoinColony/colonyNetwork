@@ -57,6 +57,7 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'function version() constant returns (uint256) { return ${VERSION}'/'function version() constant returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
