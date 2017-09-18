@@ -56,6 +56,27 @@ contract('ColonyNetwork', function (accounts) {
       const currentResolver = await colonyNetwork.colonyVersionResolver.call(version.toNumber());
       assert.equal(currentResolver, resolver.address);
     });
+
+    it('should be able to register a higher Colony contract version', async function () {
+      const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
+      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const updatedVersion = currentColonyVersion.add(1).toNumber();
+      await colonyNetwork.addColonyVersion(updatedVersion, sampleResolver);
+
+      const updatedColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      assert.equal(updatedColonyVersion.toNumber(), updatedVersion);
+      const currentResolver = await colonyNetwork.colonyVersionResolver.call(updatedVersion);
+      assert.equal(currentResolver, sampleResolver);
+    });
+
+    it('when registering a lower version of the Colony contract, should NOT update the current (latest) colony version', async function () {
+      const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
+      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      await colonyNetwork.addColonyVersion(currentColonyVersion.sub(1).toNumber(), sampleResolver);
+
+      const updatedColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      assert.equal(updatedColonyVersion.toNumber(), currentColonyVersion.toNumber());
+    });
   });
 
   describe('when creating new colonies', () => {
@@ -78,6 +99,19 @@ contract('ColonyNetwork', function (accounts) {
       assert.equal(colonyCount.toNumber(), 7);
     });
 
+    it('should fail if ETH is sent', async function () {
+      let tx;
+      try {
+        tx = await colonyNetwork.createColony(COLONY_KEY, { value: 1, gas: createColonyGas });
+      } catch (err) {
+        tx = testHelper.checkErrorNonPayableFunction(err);
+      }
+      let colonyNetworkBalance = web3.eth.getBalance(colonyNetwork.address);
+      assert.equal(0, colonyNetworkBalance.toNumber());
+    });
+  })
+
+  describe('when working with existing colonies', () => {
     it('should allow users to get the address of a colony by its index', async function () {
       await colonyNetwork.createColony('Colony1');
       await colonyNetwork.createColony('Colony2');
@@ -99,15 +133,19 @@ contract('ColonyNetwork', function (accounts) {
       assert.equal(version.toNumber(), actualColonyVersion.toNumber());
     });
 
-    it('should fail if ETH is sent', async function () {
-      let tx;
-      try {
-        tx = await colonyNetwork.createColony(COLONY_KEY, { value: 1, gas: createColonyGas });
-      } catch (err) {
-        tx = testHelper.checkErrorNonPayableFunction(err);
-      }
-      let colonyNetworkBalance = web3.eth.getBalance(colonyNetwork.address);
-      assert.equal(0, colonyNetworkBalance.toNumber());
+    it('should be able to upgrade a colony, if colony owner', async function () {
+      await colonyNetwork.createColony(COLONY_KEY);
+      let colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+      let colony = await EtherRouter.at(colonyAddress);
+
+      const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
+      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const newVersion = currentColonyVersion.add(1).toNumber();
+      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+
+      await colonyNetwork.upgradeColony(COLONY_KEY, newVersion);
+      let resolver = await colony.resolver.call();
+      assert.equal(resolver, sampleResolver);
     });
   });
 });
