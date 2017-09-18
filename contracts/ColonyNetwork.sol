@@ -61,11 +61,16 @@ contract ColonyNetwork is DSAuth {
   }
 
   function upgradeColony(bytes32 _name, uint _newVersion) {
-    // TODO: only Colony owner can call this
     address etherRouter = _colonies[_name];
-    var c = IColony(etherRouter);
-    uint oldVersion = c.version();
-    require(_newVersion > oldVersion);
+    // Check the calling user is authorised
+    DSAuth auth = DSAuth(etherRouter);
+    DSAuthority authority = auth.authority();
+    require(authority.canCall(msg.sender, etherRouter, 0x0e1f20b4));
+    // Upgrades can only go up in version
+    IColony colony = IColony(etherRouter);
+    uint currentVersion = colony.version();
+    require(_newVersion > currentVersion);
+    // Requested version has to be registered
     address newResolver = colonyVersionResolver[_newVersion];
     require(newResolver != 0x0);
     EtherRouter e = EtherRouter(etherRouter);

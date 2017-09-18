@@ -112,7 +112,7 @@ contract('ColonyNetwork', function (accounts) {
     });
   })
 
-  describe('when working with existing colonies', () => {
+  describe('when getting existing colonies', () => {
     it('should allow users to get the address of a colony by its index', async function () {
       await colonyNetwork.createColony('Colony1');
       await colonyNetwork.createColony('Colony2');
@@ -133,8 +133,10 @@ contract('ColonyNetwork', function (accounts) {
       const actualColonyVersion = await colony.version.call();
       assert.equal(version.toNumber(), actualColonyVersion.toNumber());
     });
+  });
 
-    it('should be able to upgrade a colony, if colony owner', async function () {
+  describe('when upgrading a colony', () => {
+    it('should be able to upgrade a colony, if a colony owner', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
       let colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
       let colony = await EtherRouter.at(colonyAddress);
@@ -189,6 +191,28 @@ contract('ColonyNetwork', function (accounts) {
 
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
+    });
+
+    it('should NOT be able to upgrade a colony if not a colony owner', async function () {
+      await colonyNetwork.createColony(COLONY_KEY);
+      const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+      colony = await EtherRouter.at(colonyAddress);
+      let resolver = await colony.resolver.call();
+
+      const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
+      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const newVersion = currentColonyVersion.add(1).toNumber();
+      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+
+      let tx;
+      try {
+        tx = await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      assert.notEqual(resolver, sampleResolver);
     });
   });
 });
