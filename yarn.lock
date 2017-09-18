@@ -1555,9 +1555,9 @@ ethereumjs-testrpc-sc@4.0.3:
     ethereumjs-vm "https://github.com/sc-forks/ethereumjs-vm-sc.git"
     webpack "^3.0.0"
 
-ethereumjs-testrpc@^4.1.1:
-  version "4.1.1"
-  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc/-/ethereumjs-testrpc-4.1.1.tgz#ea4af03ff24463dead1116404d25083b4bf869a6"
+ethereumjs-testrpc@^4.1.3:
+  version "4.1.3"
+  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc/-/ethereumjs-testrpc-4.1.3.tgz#74db90c9075fdfa3ba2513f08595baac36a86c7e"
   dependencies:
     webpack "^3.0.0"
 
@@ -1591,9 +1591,9 @@ ethereumjs-util@^5.0.0:
     rlp "^2.0.0"
     secp256k1 "^3.0.1"
 
-"ethereumjs-vm@git+https://github.com/sc-forks/ethereumjs-vm-sc.git":
+"ethereumjs-vm@https://github.com/sc-forks/ethereumjs-vm-sc.git":
   version "2.0.2"
-  resolved "git+https://github.com/sc-forks/ethereumjs-vm-sc.git#0aa274178f0a257ae76436fe16b1ad18b8cf2725"
+  resolved "https://github.com/sc-forks/ethereumjs-vm-sc.git#0aa274178f0a257ae76436fe16b1ad18b8cf2725"
   dependencies:
     async "^2.1.2"
     async-eventemitter "^0.2.2"
