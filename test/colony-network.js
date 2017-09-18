@@ -13,6 +13,7 @@ contract('ColonyNetwork', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
+  const GAS_TO_SPEND = 4700000;
   let colony;
   let resolver;
   let resolverColonyNetworkDeployed;
@@ -146,6 +147,48 @@ contract('ColonyNetwork', function (accounts) {
       await colonyNetwork.upgradeColony(COLONY_KEY, newVersion);
       let resolver = await colony.resolver.call();
       assert.equal(resolver, sampleResolver);
+    });
+
+    it('should NOT be able to upgrade a colony to a lower version', async function () {
+      await colonyNetwork.createColony(COLONY_KEY);
+      let colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+      let colony = await Colony.at(colonyAddress);
+
+      const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
+      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const newVersion = currentColonyVersion.sub(1).toNumber();
+      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+
+      let tx;
+      try {
+        tx = await await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let version = await colony.version.call();
+      assert.equal(version.toNumber(), currentColonyVersion.toNumber());
+    });
+
+    it('should NOT be able to upgrade a colony to a nonexistent version', async function () {
+      await colonyNetwork.createColony(COLONY_KEY);
+      let colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+      let colony = await Colony.at(colonyAddress);
+
+      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const newVersion = currentColonyVersion.add(1).toNumber();
+
+      let tx;
+      try {
+        tx = await await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let version = await colony.version.call();
+      assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
   });
 });
