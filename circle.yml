@@ -10,6 +10,7 @@ dependencies:
   override:
     - curl -o- -L https://yarnpkg.com/install.sh | bash -s -- --version 0.24.6
     - mkdir -p ~/.yarn-cache
+    - yarn global add greenkeeper-lockfile@1
     - yarn --pure-lockfile --cache-folder ~/.yarn-cache #truffle-contract replies on ethjs-abi which requires node>v6.5
     - yarn global add gulp@3.9.1
 
@@ -29,6 +30,7 @@ dependencies:
 test:
   pre:
     - 'sed -i "s/spec/mocha-circleci-reporter/g" ./truffle.js' #Replace mocha spec reporter in truffle with mocha-junit-reporter
+    - greenkeeper-lockfile-update
   override:
     - gulp test:contracts
     - gulp test:contracts:integration --parity
@@ -36,3 +38,4 @@ test:
     - gulp test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
+    - greenkeeper-lockfile-upload
