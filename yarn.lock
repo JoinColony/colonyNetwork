@@ -1447,7 +1447,7 @@ ethereumjs-testrpc-sc@4.0.1:
   dependencies:
     webpack "^3.0.0"
 
-ethereumjs-testrpc@^4.1.1:
+ethereumjs-testrpc@4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/ethereumjs-testrpc/-/ethereumjs-testrpc-4.1.1.tgz#ea4af03ff24463dead1116404d25083b4bf869a6"
   dependencies:
@@ -3800,7 +3800,7 @@ trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
 
-truffle@^3.4.9:
+truffle@3.4.9:
   version "3.4.9"
   resolved "https://registry.yarnpkg.com/truffle/-/truffle-3.4.9.tgz#9186a2b8d51696fffae1439bf8eea3dd3deed44e"
   dependencies:
