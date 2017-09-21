@@ -29,7 +29,7 @@ const cleanUpgradeTempContracts = () => {
   });
 };
 
-gulp.task('versionColonyContract', ['deploy:contracts'], async () => {
+gulp.task('versionColonyContract', 'Append version number to Colony.json file', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
   console.log('Current Colony contract version is', VERSION);
 
@@ -63,7 +63,7 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
 });
 
-gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
+gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts'], () => {
   const cmd = makeCmd(`truffle test`);
   return execute(cmd);
 });
