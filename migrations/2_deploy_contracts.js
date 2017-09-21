@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
 
-const ColonyNetwork = artifacts.require('./ColonyNetwork.sol');
-const EtherRouter = artifacts.require('./EtherRouter.sol');
-const Resolver = artifacts.require('./Resolver.sol');
+const ColonyNetwork = artifacts.require('./ColonyNetwork');
+const EtherRouter = artifacts.require('./EtherRouter');
+const Resolver = artifacts.require('./Resolver');
 
 module.exports = function (deployer, network) {
   console.log(`## ${network} network ##`);

@@ -1,9 +1,9 @@
 const upgradableContracts = require('../helpers/upgradable-contracts');
-const Colony = artifacts.require('./Colony.sol');
-const ColonyNetwork = artifacts.require('./ColonyNetwork.sol');
-const EtherRouter = artifacts.require('./EtherRouter.sol');
-const Resolver = artifacts.require('./Resolver.sol');
-const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet.sol');
+const Colony = artifacts.require('./Colony');
+const ColonyNetwork = artifacts.require('./ColonyNetwork');
+const EtherRouter = artifacts.require('./EtherRouter');
+const Resolver = artifacts.require('./Resolver');
+const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet');
 
 module.exports = function (deployer, network, accounts) {
   // Create a new Colony (version) and setup a new Resolver for it
