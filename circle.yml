@@ -13,7 +13,7 @@ dependencies:
     - yarn global add greenkeeper-lockfile@1
     - yarn --pure-lockfile --cache-folder ~/.yarn-cache #truffle-contract replies on ethjs-abi which requires node>v6.5
     - yarn global add gulp@3.9.1
-    - git submodule update --init --recursive --remote
+    - git submodule update --init
 
     # Set up parity
     - wget http://d1h4xl4cr1h0mo.cloudfront.net/v1.5.12/x86_64-unknown-linux-gnu/parity_1.5.12_amd64.deb
