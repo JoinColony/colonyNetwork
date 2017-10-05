@@ -23,7 +23,7 @@ contract('all', function (accounts) {
   let makeTaskCost;
   let updateTaskIpfsDecodedHashCost;
   let mintTokensCost;
-  let contributeEthToTaskCost;
+  let setTaskPayoutCost;
   let contributeTokensToTaskCost;
   let completeAndPayTaskCost;
 
@@ -57,12 +57,12 @@ contract('all', function (accounts) {
       makeTaskCost = tx.receipt.gasUsed;
       console.log('makeTask actual cost :', makeTaskCost);
 
-      // updateTaskIpfsDecodedHash
-      estimate = await colony.updateTaskIpfsDecodedHash.estimateGas(0, 'My updated task');
-      console.log('updateTaskIpfsDecodedHash estimate : ', estimate);
-      tx = await colony.updateTaskIpfsDecodedHash(1, '9bb76d8e6c89b524d34a454b3140df29', { gasPrice });
+      // setTaskBrief
+      estimate = await colony.setTaskBrief.estimateGas(1, 'My updated task');
+      console.log('setTaskBrief estimate : ', estimate);
+      tx = await colony.setTaskBrief(1, '9bb76d8e6c89b524d34a454b3140df29', { gasPrice });
       updateTaskIpfsDecodedHashCost = tx.receipt.gasUsed;
-      console.log('updateTaskIpfsDecodedHash actual cost :', updateTaskIpfsDecodedHashCost);
+      console.log('setTaskBrief actual cost :', updateTaskIpfsDecodedHashCost);
 
       // mintTokens
       estimate = await colony.mintTokens.estimateGas(200);
@@ -71,19 +71,12 @@ contract('all', function (accounts) {
       mintTokensCost = tx.receipt.gasUsed;
       console.log('mintTokens actual cost :', mintTokensCost);
 
-      // contributeEthToTask
-      estimate = await colony.contributeEthToTask.estimateGas(0, { value: 50 });
-      console.log('contributeEthToTask estimate : ', estimate);
-      tx = await colony.contributeEthToTask(1, { value: 50, gasPrice });
-      contributeEthToTaskCost = tx.receipt.gasUsed;
-      console.log('contributeEthToTask actual cost :', contributeEthToTaskCost);
-
-      // setReservedTokensForTask
-      estimate = await colony.setReservedTokensForTask.estimateGas(0, 50);
-      console.log('setReservedTokensForTask estimate : ', estimate);
-      tx = await colony.setReservedTokensForTask(1, 50, { gasPrice });
-      contributeTokensToTaskCost = tx.receipt.gasUsed;
-      console.log('setReservedTokensForTask actual cost :', contributeTokensToTaskCost);
+      // setTaskPayout
+      estimate = await colony.setTaskPayout.estimateGas(1, 0, token.address, 50);
+      console.log('setTaskPayout estimate : ', estimate);
+      tx = await colony.setTaskPayout(1, 0, token.address, 50, { gasPrice });
+      setTaskPayoutCost = tx.receipt.gasUsed;
+      console.log('setTaskPayout actual cost :', setTaskPayoutCost);
 
       // completeAndPayTask
       estimate = await colony.completeAndPayTask.estimateGas(0, OTHER_ACCOUNT);
@@ -102,7 +95,7 @@ contract('all', function (accounts) {
     it('Average gas costs for customers should not exceed 1 ETH per month', async function () {
       const totalGasCost = (makeTaskCost * 100) // assume 100 tasks per month are created
       + (updateTaskIpfsDecodedHashCost * 20) // assume 20% of all tasks are updated once
-      + (contributeTokensToTaskCost * 100) // assume all new tasks have their budget set once
+      + (setTaskPayoutCost * 100) // assume all new tasks have their budget set once
       + (completeAndPayTaskCost * 25) // quarter of all tasks are closed and paid out
       + (mintTokensCost * 1); // only once per month are new colony tokens generated
 

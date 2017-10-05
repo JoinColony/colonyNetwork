@@ -49,7 +49,7 @@ contract('Colony', function (accounts) {
   describe('when initialised', () => {
     it('should accept ether', async function () {
       let colonyBalancePre = await testHelper.web3GetBalance(colony.address);
-      await colony.send(1);
+      await colony.transfer(1);
       let colonyBalance = await testHelper.web3GetBalance(colony.address);
 
       // Note: Until https://github.com/sc-forks/solidity-coverage/issues/92 is complete
@@ -113,11 +113,10 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
-      assert.isFalse(task[1]);
-      assert.equal(task[2].toNumber(), 0);
+      assert.equal(task[1].toNumber(), 1);
+      assert.isFalse(task[2]);
       assert.equal(task[3].toNumber(), 0);
       assert.equal(task[4].toNumber(), 0);
-      assert.isFalse(task[5]);
     });
 
     it('should fail if a non-admin user tries to make a task', async function () {
@@ -129,51 +128,78 @@ contract('Colony', function (accounts) {
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
+
+    it('should set the task manager as the creator', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      const task = await colony.getTask.call(1);
+      const rolesCount = task[1];
+      assert.equal(rolesCount.toNumber(), 1);
+      const taskManager = await colony.getTaskRoleAddress.call(1, 0);
+      assert.equal(taskManager, MAIN_ACCOUNT);
+    });
+
+    it('should return the correct number of tasks', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(ipfsDecodedHash);
+      const taskCount = await colony.taskCount.call();
+      assert.equal(taskCount.toNumber(), 5);
+    });
   });
 
   describe('when updating existing tasks', () => {
-    it('should allow admins to edit task ipfsDecodedHash', async function () {
+    it('should allow admins to edit the task brief', async function () {
       await colony.makeTask(ipfsDecodedHash);
-      await colony.updateTaskIpfsDecodedHash(1, newIpfsDecodedHash);
+      await colony.setTaskBrief(1, newIpfsDecodedHash);
       const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
 
-    it('should fail if a non-admin user tries to edit task ipfsDecodedHash', async function () {
+    it('should fail if a non-admin user tries to edit the task brief', async function () {
       await colony.makeTask(ipfsDecodedHash);
 
       let tx;
       try {
-        tx = await colony.updateTaskIpfsDecodedHash(1, newIpfsDecodedHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.setTaskBrief(1, newIpfsDecodedHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should fail if the task was already accepted', async function () {
+    it('should fail to edit the task brief, if the task was already accepted', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
       const task = await colony.getTask.call(1);
-      assert.isTrue(task[1], 'Wrong accepted value');
+      assert.isTrue(task[2], 'Wrong accepted value');
 
       let tx;
       try {
-        tx = await colony.updateTaskIpfsDecodedHash(1, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
+        tx = await colony.setTaskBrief(1, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should fail if I try to update a task using an invalid id', async function () {
+    it('should fail if I try to edit the task brief using an invalid task id', async function () {
       let tx;
       try {
-        tx = await colony.updateTaskIpfsDecodedHash(10, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
+        tx = await colony.setTaskBrief(10, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should be able to set the task due date', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      const dueDate = new Date().getTime() + 1000;
+      await colony.setTaskDueDate(1, dueDate);
+      const task = await colony.getTask.call(1);
+      assert.equal(task[3], dueDate);
     });
   });
 
@@ -182,7 +208,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
       const task = await colony.getTask.call(1);
-      assert.isTrue(task[1]);
+      assert.isTrue(task[2]);
     });
 
     it('should fail if a non-admin tries to accept the task', async function () {
@@ -217,92 +243,36 @@ contract('Colony', function (accounts) {
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
-
-    it('should allow admin to close task', async function () {
-      const prevBalance = await testHelper.web3GetBalance(OTHER_ACCOUNT);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.mintTokens(100);
-      await colony.setReservedTokensForTask(1, 80);
-      await colony.contributeEthToTask(1, { value: 10000 });
-      await colony.completeAndPayTask(1, OTHER_ACCOUNT);
-      const task = await colony.getTask.call(1);
-      assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
-      assert.isTrue(task[1]);
-      assert.equal(task[2].toNumber(), 10000);
-      assert.equal(task[3].toNumber(), 80);
-      assert.equal(task[4].toNumber(), 0);
-      const currentBalance = await testHelper.web3GetBalance(OTHER_ACCOUNT);
-      assert.equal(currentBalance.minus(prevBalance).toNumber(), 10000);
-    });
-
-    it('should fail if a non-admin user tries to close task', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.contributeEthToTask(1, { value: 10000 });
-
-      let tx;
-      try {
-        tx = await colony.completeAndPayTask(1, OTHER_ACCOUNT, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-
-      const task = await colony.getTask.call(1);
-      assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
-      assert.isFalse(task[1]);
-    });
-
-    it('should return the correct number of tasks', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
-      const taskCount = await colony.taskCount.call();
-      assert.equal(taskCount, 5);
-    });
   });
 
   describe('when funding tasks', () => {
-    it('should "tokens" property be raised by the amount of tokens received', async function () {
+    it('should be able to set the task payouts for different roles', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
-      await colony.setReservedTokensForTask(1, 10);
-      const task = await colony.getTask.call(1);
-      assert.equal(task[3].toNumber(), 10);
+      // Set the manager payout as 5000 wei and 100 colony tokens
+      await colony.setTaskPayout(1, 0, 0x0, 5000);
+      await colony.setTaskPayout(1, 0, token.address, 100);
+      // Set the evaluator payout as 40 colony tokens
+      await colony.setTaskPayout(1, 1, token.address, 40);
+      // Set the worker payout as 98000 wei and 200 colony tokens
+      await colony.setTaskPayout(1, 2, 0x0, 98000);
+      await colony.setTaskPayout(1, 2, token.address, 200);
+
+      const taskPayoutManager1 = await colony.getTaskPayout.call(1, 0, 0x0);
+      assert.equal(taskPayoutManager1.toNumber(), 5000);
+      const taskPayoutManager2 = await colony.getTaskPayout.call(1, 0, token.address);
+      assert.equal(taskPayoutManager2.toNumber(), 100);
+
+      const taskPayoutEvaluator = await colony.getTaskPayout.call(1, 1, token.address);
+      assert.equal(taskPayoutEvaluator.toNumber(), 40);
+
+      const taskPayoutWorker1 = await colony.getTaskPayout.call(1, 2, 0x0);
+      assert.equal(taskPayoutWorker1.toNumber(), 98000);
+      const taskPayoutWorker2 = await colony.getTaskPayout.call(1, 2, token.address);
+      assert.equal(taskPayoutWorker2.toNumber(), 200);
     });
 
-    it('should "eth" property be raised by the amount of ether received', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.contributeEthToTask(1, { value: 10 });
-      const task = await colony.getTask.call(1);
-      assert.equal(task[2].toNumber(), 10);
-    });
-
-    it('should set the "funded" to "true" when the task is funded with ether', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.contributeEthToTask(1, { value: 10 });
-      const task = await colony.getTask.call(1);
-      assert.isTrue(task[5]);
-    });
-
-    it('should set the "funded" to "true" when the task is funded with tokens', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.mintTokens(100);
-      await colony.setReservedTokensForTask(1, 10);
-      const task = await colony.getTask.call(1);
-      assert.isTrue(task[5]);
-    });
-
-    it('should set the "funded" to "true" when the task is funded with 0 tokens', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.mintTokens(100);
-      await colony.setReservedTokensForTask(1, 0);
-      const task = await colony.getTask.call(1);
-      assert.isTrue(task[5]);
-    });
-
-    it('should fail if admin tries to contribute to an accepted task', async function () {
+    it.skip('should fail if admin tries to contribute to an accepted task', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
 
@@ -315,7 +285,7 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should fail if admin tries to contribute to a nonexistent task', async function () {
+    it.skip('should fail if admin tries to contribute to a nonexistent task', async function () {
       let tx;
       try {
         tx = await colony.contributeEthToTask(100000, { value: 10, gas: GAS_TO_SPEND });
@@ -325,14 +295,14 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should allow admins to fund task with ether', async function () {
+    it.skip('should allow admins to fund task with ether', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.contributeEthToTask(1, { value: 100 });
       const task = await colony.getTask.call(1);
-      assert.equal(task[2], 100);
+      assert.equal(task[5], 100);
     });
 
-    it('should fail if a non-admin user tries to fund task with ether', async function () {
+    it.skip('should fail if a non-admin user tries to fund task with ether', async function () {
       await colony.makeTask(ipfsDecodedHash);
       let tx;
       try {
@@ -347,13 +317,13 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should allow admins to fund a task with own tokens', async function () {
+    it.skip('should allow admins to fund a task with own tokens', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
       await colony.makeTask(newIpfsDecodedHash);
       await colony.setReservedTokensForTask(1, 100);
       const task1 = await colony.getTask.call(1);
-      assert.equal(task1[4].toNumber(), 100);
+      assert.equal(task1[7].toNumber(), 100);
       await colony.completeAndPayTask(1, OTHER_ACCOUNT);
       const otherAccountTokenBalance = await token.balanceOf.call(OTHER_ACCOUNT);
       assert.equal(otherAccountTokenBalance.toNumber(), 100);
@@ -361,34 +331,34 @@ contract('Colony', function (accounts) {
       await colony.contributeTokensToTask(2, 95, { from: OTHER_ACCOUNT });
 
       const task2 = await colony.getTask.call(2);
-      assert.equal(testHelper.hexToUtf8(task2[0]), newIpfsDecodedHash);
-      assert.isFalse(task2[1]);
-      assert.equal(task2[2].toNumber(), 0);
-      assert.equal(task2[3].toNumber(), 95);
-      assert.equal(task2[4].toNumber(), 0);
-      assert.isTrue(task2[5]);
+      assert.equal(testHelper.hexToUtf8(task2[3]), newIpfsDecodedHash);
+      assert.isFalse(task2[4]);
+      assert.equal(task2[5].toNumber(), 0);
+      assert.equal(task2[6].toNumber(), 95);
+      assert.equal(task2[7].toNumber(), 0);
+      assert.isTrue(task2[8]);
     });
 
-    it('should reserve the correct number of tokens when an admin funds task with pool tokens', async function () {
+    it.skip('should reserve the correct number of tokens when an admin funds task with pool tokens', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
       await colony.setReservedTokensForTask(1, 70);
       let reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 70);
       let task = await colony.getTask.call(1);
-      assert.equal(task[3].toNumber(), 70);
-      assert.equal(task[4].toNumber(), 70);
-      assert.isTrue(task[5]);
+      assert.equal(task[6].toNumber(), 70);
+      assert.equal(task[7].toNumber(), 70);
+      assert.isTrue(task[8]);
       await colony.setReservedTokensForTask(1, 100);
       reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 100);
       task = await colony.getTask.call(1);
-      assert.equal(task[3].toNumber(), 100);
-      assert.equal(task[4].toNumber(), 100);
-      assert.isTrue(task[5]);
+      assert.equal(task[6].toNumber(), 100);
+      assert.equal(task[7].toNumber(), 100);
+      assert.isTrue(task[8]);
     });
 
-    it('should take into account number of tokens already assigned when reassigning task budget', async function () {
+    it.skip('should take into account number of tokens already assigned when reassigning task budget', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
       await colony.setReservedTokensForTask(1, 20); // 20 reserved and 80 remaining available
@@ -397,16 +367,16 @@ contract('Colony', function (accounts) {
       await colony.setReservedTokensForTask(2, 40); // 40 reserved and 40 remaining available
       await colony.contributeTokensToTask(2, 20);
       let task = await colony.getTask.call(2);
-      assert.equal(task[3].toNumber(), 60, 'Wrong tokens wei value');
+      assert.equal(task[6].toNumber(), 60, 'Wrong tokens wei value');
       await colony.setReservedTokensForTask(2, 80); // 80 reserved and 0 remaining available
       let reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 80, 'Has not reserved the right amount of colony tokens.');
       task = await colony.getTask.call(2);
-      assert.equal(task[3].toNumber(), 100, 'Wrong tokens wei value');
-      assert.equal(task[4].toNumber(), 80, 'Wrong tokens wei reserved value');
+      assert.equal(task[6].toNumber(), 100, 'Wrong tokens wei value');
+      assert.equal(task[7].toNumber(), 80, 'Wrong tokens wei reserved value');
     });
 
-    it('should fail if admins fund a task with more tokens than they have available in colony pool', async function () {
+    it.skip('should fail if admins fund a task with more tokens than they have available in colony pool', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
       await colony.makeTask(newIpfsDecodedHash);
@@ -424,7 +394,7 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should fail if a non-admin user tries to contribute with tokens from the pool', async function () {
+    it.skip('should fail if a non-admin user tries to contribute with tokens from the pool', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
 
@@ -437,7 +407,7 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should fail if a non-admin user try to contribute tokens', async function () {
+    it.skip('should fail if a non-admin user try to contribute tokens', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
       let tx;
@@ -449,7 +419,7 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should allow an admin to refund task tokens', async function () {
+    it.skip('should allow an admin to refund task tokens', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
       await colony.setReservedTokensForTask(1, 80);
@@ -458,18 +428,18 @@ contract('Colony', function (accounts) {
       const reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 0);
       const task = await colony.getTask.call(1);
-      assert.equal(task[3].toNumber(), 80, 'Has not cleared the task token funds correctly');
+      assert.equal(task[6].toNumber(), 80, 'Has not cleared the task token funds correctly');
     });
 
-    it('should NOT allow admin to refund task tokens if task not accepted', async function () {
+    it.skip('should NOT allow admin to refund task tokens if task not accepted', async function () {
       await colony.mintTokens(100);
       await colony.makeTask(ipfsDecodedHash);
       await colony.setReservedTokensForTask(1, 80);
       let reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 80);
       let task = await colony.getTask.call(1);
-      assert.equal(task[3].toNumber(), 80);
-      assert.equal(task[4].toNumber(), 80);
+      assert.equal(task[6].toNumber(), 80);
+      assert.equal(task[7].toNumber(), 80);
       let tx;
       try {
         tx = await colony.removeReservedTokensForTask(1, optionsToSpotTransactionFailure);
@@ -481,18 +451,7 @@ contract('Colony', function (accounts) {
       reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 80);
       task = await colony.getTask.call(1);
-      assert.equal(task[3].toNumber(), 80);
-    });
-
-    it.skip('should transfer 95% of tokens to task completor and 5% to colonyNetwork on completing a task', async function () {
-      await colony.mint(100);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setReservedTokensForTask(1, 100);
-      await colony.completeAndPayTask(1, OTHER_ACCOUNT);
-      const otherAccountTokenBalance = await colony.balanceOf.call(OTHER_ACCOUNT);
-      assert.strictEqual(otherAccountTokenBalance.toNumber(), 95, 'Token balance is not 95% of task token value');
-      const colonyNetworkTokenBalance = await colony.balanceOf.call(colonyNetwork.address);
-      assert.strictEqual(colonyNetworkTokenBalance.toNumber(), 5, 'ColonyNetwork token balance is not 5% of task token value');
+      assert.equal(task[6].toNumber(), 80);
     });
   });
 });

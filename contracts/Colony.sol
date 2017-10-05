@@ -21,11 +21,12 @@ contract Colony is DSAuth, DSMath, IColony {
 
   struct Task {
     bytes32 ipfsDecodedHash;
+    address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
     bool accepted;
-    uint eth;
-    uint tokens;
-    uint reservedTokens;
-    bool funded;
+    uint dueDate;
+    uint payoutsWeCannotMake;
+    mapping (address => uint) totalPayouts;
+    mapping (uint => mapping (address => uint)) payouts;
   }
 
   modifier tasksExists(uint256 _id) {
@@ -49,24 +50,21 @@ contract Colony is DSAuth, DSMath, IColony {
     token = ERC20Extended(_token);
   }
 
-  function getTask(uint256 _id) public view returns (bytes32, bool, uint, uint, uint, bool) {
-    Task storage task = tasks[_id];
-    return (task.ipfsDecodedHash,
-      task.accepted,
-      task.eth,
-      task.tokens,
-      task.reservedTokens,
-      task.funded);
-  }
-
   function makeTask(bytes32 _ipfsDecodedHash) public
   auth
   {
     taskCount += 1;
-    tasks[taskCount] = Task(_ipfsDecodedHash, false, 0, 0, 0, false);
+    address[] memory _roles = new address[](1);
+    _roles[0] = msg.sender;
+    tasks[taskCount] = Task({
+        ipfsDecodedHash: _ipfsDecodedHash,
+        roles: _roles,
+        accepted: false,
+        dueDate: 0,
+        payoutsWeCannotMake: 0 });
   }
 
-  function updateTaskIpfsDecodedHash(uint256 _id, bytes32 _ipfsDecodedHash) public
+  function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -82,25 +80,54 @@ contract Colony is DSAuth, DSMath, IColony {
     tasks[_id].accepted = true;
   }
 
-  function contributeEthToTask(uint256 _id) public
+  function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   auth
-  payable
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
-    Task storage task = tasks[_id];
-    task.eth = add(task.eth, msg.value);
-    task.funded = true;
+    tasks[_id].dueDate = _dueDate;
   }
 
-  function contributeTokensToTask(uint256 _id, uint256 _amount) public
+  function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
     Task storage task = tasks[_id];
-    task.tokens = add(task.tokens, _amount);
-    task.funded = true;
+    uint currentAmount = task.payouts[_role][_token];
+    task.payouts[_role][_token] = add(currentAmount, _amount);
+
+    uint currentTotalAmount = task.totalPayouts[_token];
+    task.totalPayouts[_token] = add(currentTotalAmount, _amount);
+
+    //TODO: Check Task pot and set `payoutsWeCannotMake`
+  }
+
+  function getTask(uint256 _id) public view
+  returns (bytes32, uint, bool, uint, uint)
+  {
+    Task storage task = tasks[_id];
+    uint rolesCount = task.roles.length;
+
+    return (task.ipfsDecodedHash,
+      rolesCount,
+      task.accepted,
+      task.dueDate,
+      task.payoutsWeCannotMake);
+  }
+
+  function getTaskRoleAddress (uint _id, uint _role) public view
+  returns (address)
+  {
+    return tasks[_id].roles[_role];
+  }
+
+  // To get all payouts for a task iterate over roles.length
+  function getTaskPayout(uint _id, uint _role, address _token) public view
+  returns (uint)
+  {
+    Task storage task = tasks[_id];
+    return task.payouts[_role][_token];
   }
 
   function setReservedTokensForTask(uint256 _id, uint256 _amount) public
@@ -111,13 +138,13 @@ contract Colony is DSAuth, DSMath, IColony {
     Task storage task = tasks[_id];
     // Ensure colony has sufficient tokens
     var colonyTokenBalance = token.balanceOf(this);
-    var availableColonyTokens = add(sub(colonyTokenBalance, reservedTokens), task.reservedTokens);
-    require(availableColonyTokens >= _amount);
+    //TODO: task.fundingPot property cannot be added to the Task struct because of EVM stack depth limitations
+    //var availableColonyTokens = add(sub(colonyTokenBalance, reservedTokens), task.fundingPot);
+    //require(availableColonyTokens >= _amount);
 
-    reservedTokens = add(sub(reservedTokens, task.reservedTokens), _amount);
-    task.tokens = add(sub(task.tokens, task.reservedTokens), _amount);
-    task.reservedTokens = _amount;
-    task.funded = true;
+    //reservedTokens = add(sub(reservedTokens, task.fundingPot), _amount);
+    //task.workerTokens = add(sub(task.workerTokens, task.fundingPot), _amount);
+    //task.fundingPot = _amount;
   }
 
   function removeReservedTokensForTask(uint256 _id) public
@@ -127,8 +154,8 @@ contract Colony is DSAuth, DSMath, IColony {
   {
     Task storage task = tasks[_id];
     // Intentioanlly not removing the `task_tokensWei` value because of tracking history for tasks
-    reservedTokens = sub(reservedTokens, task.reservedTokens);
-    task.reservedTokens = 0;
+    //reservedTokens = sub(reservedTokens, task.fundingPot);
+    //task.fundingPot = 0;
   }
 
   /// @notice mark a task as completed, pay the user who completed it and root colony fee
@@ -140,18 +167,25 @@ contract Colony is DSAuth, DSMath, IColony {
   tasksNotAccepted(_id)
   {
     Task storage task = tasks[_id];
-    require(token.balanceOf(this) >= task.tokens);
+    //require(token.balanceOf(this) >= task.fundingPot);
     acceptTask(_id);
 
-    if (task.eth > 0) {
-      _assignee.transfer(task.eth);
-    }
+    //if (task.workerEth > 0) {
+    //  _assignee.transfer(task.workerEth);
+    //}
 
-    uint256 tokens = task.tokens;
-    if (tokens > 0) {
-      token.transfer(_assignee, tokens);
-      removeReservedTokensForTask(_id);
-    }
+    //uint256 tokens = task.workerTokens;
+    //if (tokens > 0) {
+    //  token.transfer(_assignee, tokens);
+    //  removeReservedTokensForTask(_id);
+    //}
+  }
+
+  function claimPayout(uint _id, uint _role, address _token) public {
+    Task storage task = tasks[_id];
+    assert(task.roles[_role] == msg.sender);
+    uint payout = task.payouts[_role][_token];
+    //TODO: Token transfer
   }
 
   function mintTokens(uint128 _wad) public
