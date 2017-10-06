@@ -117,7 +117,7 @@ contract('all', function (accounts) {
       if (client.indexOf('TestRPC') === -1) {
         assert.isBelow(totalEtherCost, 1, 'Monthly average costs exceed target');
       } else {
-        console.log('IGNORING THE RESULT DUE TO TESTRPC INACCURICIES IN ESTIMATEGAS');
+        console.log('IGNORING THE RESULT DUE TO TESTRPC INACCURACIES IN ESTIMATEGAS');
       }
     });
   });
