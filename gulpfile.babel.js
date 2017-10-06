@@ -64,7 +64,7 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
 });
 
 gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts'], () => {
-  const cmd = makeCmd(`truffle test`);
+  const cmd = makeCmd(`truffle test --network development`);
   return execute(cmd);
 });
 
@@ -95,7 +95,7 @@ gulp.task('parity', async () => {
 });
 
 gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'], () => {
-  const cmd = makeCmd(`truffle test gasCosts/gasCosts.js`);
+  const cmd = makeCmd(`truffle test gasCosts/gasCosts.js --network development`);
   return execute(cmd);
 });
 
