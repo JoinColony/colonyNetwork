@@ -48,13 +48,14 @@ contract('Colony', function (accounts) {
 
   describe('when initialised', () => {
     it('should accept ether', async function () {
-      let colonyBalancePre = await web3.eth.getBalance(colony.address);
+      let colonyBalancePre = await testHelper.web3GetBalance(colony.address);
       await colony.send(1);
-      let colonyBalance = await web3.eth.getBalance(colony.address);
+      let colonyBalance = await testHelper.web3GetBalance(colony.address);
 
       // Note: Until https://github.com/sc-forks/solidity-coverage/issues/92 is complete
       // issue https://github.com/ethereumjs/testrpc/issues/122 manifests itself here
-      const expectedBalance = (web3.version.network == 'coverage') ? 2 : 1;
+      const network = await testHelper.web3GetNetwork();
+      const expectedBalance = (network == 'coverage') ? 2 : 1;
       assert.equal(colonyBalance.toNumber(), expectedBalance);
     });
 
@@ -73,7 +74,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.mintTokens(100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -124,7 +125,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.makeTask(ipfsDecodedHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -145,7 +146,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.updateTaskIpfsDecodedHash(1, newIpfsDecodedHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -160,7 +161,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.updateTaskIpfsDecodedHash(1, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -170,7 +171,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.updateTaskIpfsDecodedHash(10, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -190,7 +191,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.acceptTask(1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -202,7 +203,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.acceptTask(1, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -212,13 +213,13 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.acceptTask(10, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should allow admin to close task', async function () {
-      const prevBalance = web3.eth.getBalance(OTHER_ACCOUNT);
+      const prevBalance = await testHelper.web3GetBalance(OTHER_ACCOUNT);
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
       await colony.setReservedTokensForTask(1, 80);
@@ -230,8 +231,8 @@ contract('Colony', function (accounts) {
       assert.equal(task[2].toNumber(), 10000);
       assert.equal(task[3].toNumber(), 80);
       assert.equal(task[4].toNumber(), 0);
-
-      assert.equal(web3.eth.getBalance(OTHER_ACCOUNT).minus(prevBalance).toNumber(), 10000);
+      const currentBalance = await testHelper.web3GetBalance(OTHER_ACCOUNT);
+      assert.equal(currentBalance.minus(prevBalance).toNumber(), 10000);
     });
 
     it('should fail if a non-admin user tries to close task', async function () {
@@ -242,7 +243,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.completeAndPayTask(1, OTHER_ACCOUNT, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
@@ -309,7 +310,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.contributeEthToTask(1, { value: 10, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -319,7 +320,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.contributeEthToTask(100000, { value: 10, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -341,7 +342,7 @@ contract('Colony', function (accounts) {
           gas: GAS_TO_SPEND,
         });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -418,7 +419,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.setReservedTokensForTask(3, 150, optionsToSpotTransactionFailure);
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -431,7 +432,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.contributeTokensToTask(1, 100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -443,7 +444,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.setReservedTokensForTask(1, 100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -473,7 +474,7 @@ contract('Colony', function (accounts) {
       try {
         tx = await colony.removeReservedTokensForTask(1, optionsToSpotTransactionFailure);
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 

@@ -83,7 +83,7 @@ contract('Token', function (accounts) {
       try {
         await etherRouterToken.transfer(ACCOUNT_TWO, 1500001);
       } catch (err) {
-        testHelper.ifUsingTestRPC(err);
+        await testHelper.ifUsingTestRPC(err);
       }
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -109,7 +109,7 @@ contract('Token', function (accounts) {
       try {
         await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
       } catch(err) {
-        testHelper.ifUsingTestRPC(err);
+        await testHelper.ifUsingTestRPC(err);
       }
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -121,7 +121,7 @@ contract('Token', function (accounts) {
       try {
         await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO });
       } catch(err) {
-        testHelper.ifUsingTestRPC(err);
+        await testHelper.ifUsingTestRPC(err);
       }
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -134,7 +134,7 @@ contract('Token', function (accounts) {
       try {
         await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
       } catch(err) {
-        testHelper.ifUsingTestRPC(err);
+        await testHelper.ifUsingTestRPC(err);
       }
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -174,7 +174,7 @@ contract('Token', function (accounts) {
       try {
         await etherRouterToken.mint(1500000, { from: ACCOUNT_THREE });
       } catch(err) {
-        testHelper.ifUsingTestRPC(err);
+        await testHelper.ifUsingTestRPC(err);
       }
 
       var totalSupply = await etherRouterToken.totalSupply.call();
@@ -189,10 +189,10 @@ contract('Token', function (accounts) {
         // Throws 'VM Exception while processing transaction: invalid opcode' error
         tx = await token.send(2);
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
 
-      let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
+      let tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
 
@@ -201,11 +201,11 @@ contract('Token', function (accounts) {
       try {
         tx = await etherRouterToken.send(2, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
+      let tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
 
@@ -220,7 +220,7 @@ contract('Token', function (accounts) {
       var totalSupply = await etherRouterToken.totalSupply.call();
       assert.equal(0, totalSupply.toNumber());
 
-      let tokenBalance = web3.eth.getBalance(etherRouterToken.address);
+      let tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
   });

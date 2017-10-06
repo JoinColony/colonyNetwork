@@ -1,4 +1,5 @@
 /* globals artifacts */
+import testHelper from '../helpers/test-helper';
 const upgradableContracts = require('../helpers/upgradable-contracts');
 
 const ColonyNetwork = artifacts.require('ColonyNetwork');
@@ -98,7 +99,7 @@ contract('all', function (accounts) {
       console.log('setUserRole actual cost :', tx.receipt.gasUsed);
     });
 
-    it('Average gas costs for customers should not exceed 1 ETH per month', function (done) {
+    it('Average gas costs for customers should not exceed 1 ETH per month', async function () {
       const totalGasCost = (makeTaskCost * 100) // assume 100 tasks per month are created
       + (updateTaskIpfsDecodedHashCost * 20) // assume 20% of all tasks are updated once
       + (contributeTokensToTaskCost * 100) // assume all new tasks have their budget set once
@@ -112,13 +113,13 @@ contract('all', function (accounts) {
 
       // Only do this assert if we're using testrpc. There's discrepancy between TestRPC estimategas
       // and geth estimateGas; the former is too high.
-      if (web3.version.node.indexOf('TestRPC') === -1) {
+      const client = await testHelper.web3GetClient();
+      console.log('client', client);
+      if (client.indexOf('TestRPC') === -1) {
         assert.isBelow(totalEtherCost, 1, 'Monthly average costs exceed target');
       } else {
         console.log('IGNORING THE RESULT DUE TO TESTRPC INACCURICIES IN ESTIMATEGAS');
       }
-
-      done();
     });
   });
 });
