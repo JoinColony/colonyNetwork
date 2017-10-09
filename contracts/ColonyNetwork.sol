@@ -20,8 +20,8 @@ contract ColonyNetwork is DSAuth {
   function createColony(bytes32 name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
-    var resolver = colonyVersionResolver[currentColonyVersion];
-    etherRouter.setResolver(resolver);
+    var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
+    etherRouter.setResolver(resolverForLatestColonyVersion);
 
     var colony = IColony(etherRouter);
     colony.setToken(token);
