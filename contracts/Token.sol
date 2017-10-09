@@ -18,15 +18,15 @@ contract Token is ERC20Extended, DSMath, DSAuth {
     function Token() {
     }
 
-    function totalSupply() constant returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return _supply;
     }
 
-    function balanceOf(address src) constant returns (uint256) {
+    function balanceOf(address src) public view returns (uint256) {
         return _balances[src];
     }
 
-    function allowance(address src, address guy) constant returns (uint256) {
+    function allowance(address src, address guy) public view returns (uint256) {
         return _approvals[src][guy];
     }
 

@@ -48,15 +48,11 @@ contract ColonyNetwork is DSAuth {
   }
 
   // Returns the address of a Colony by index
-  function getColony(bytes32 _name)
-  constant returns (address)
-  {
+  function getColony(bytes32 _name) public view returns (address) {
     return _colonies[_name];
   }
 
-  function getColonyAt(uint _idx)
-  constant returns (address)
-  {
+  function getColonyAt(uint _idx) public view returns (address) {
     return _coloniesIndex[_idx];
   }
 

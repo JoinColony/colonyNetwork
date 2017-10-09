@@ -15,7 +15,7 @@ contract Colony is DSAuth, DSMath, IColony {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() constant returns (uint256) { return 5; }
+  function version() public view returns (uint256) { return 5; }
 
   struct Task {
     bytes32 ipfsDecodedHash;
@@ -47,9 +47,7 @@ contract Colony is DSAuth, DSMath, IColony {
     token = ERC20Extended(_token);
   }
 
-  function getTask(uint256 _id)
-  constant returns (bytes32, bool, uint, uint, uint, bool)
-  {
+  function getTask(uint256 _id) public view returns (bytes32, bool, uint, uint, uint, bool) {
     Task storage task = tasks[_id];
     return (task.ipfsDecodedHash,
       task.accepted,
