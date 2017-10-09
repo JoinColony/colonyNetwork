@@ -15,9 +15,6 @@ contract Token is ERC20Extended, DSMath, DSAuth {
     mapping (address => uint256) _balances;
     mapping (address => mapping (address => uint256)) _approvals;
 
-    function Token() {
-    }
-
     function totalSupply() public view returns (uint256) {
         return _supply;
     }
@@ -30,7 +27,7 @@ contract Token is ERC20Extended, DSMath, DSAuth {
         return _approvals[src][guy];
     }
 
-    function transfer(address dst, uint wad) returns (bool) {
+    function transfer(address dst, uint wad) public returns (bool) {
         assert(_balances[msg.sender] >= wad);
 
         _balances[msg.sender] = sub(_balances[msg.sender], wad);
@@ -41,7 +38,7 @@ contract Token is ERC20Extended, DSMath, DSAuth {
         return true;
     }
 
-    function transferFrom(address src, address dst, uint wad) returns (bool) {
+    function transferFrom(address src, address dst, uint wad) public returns (bool) {
         assert(_balances[src] >= wad);
         assert(_approvals[src][msg.sender] >= wad);
 
@@ -54,7 +51,7 @@ contract Token is ERC20Extended, DSMath, DSAuth {
         return true;
     }
 
-    function approve(address guy, uint256 wad) returns (bool) {
+    function approve(address guy, uint256 wad) public returns (bool) {
         _approvals[msg.sender][guy] = wad;
 
         Approval(msg.sender, guy, wad);
@@ -62,7 +59,7 @@ contract Token is ERC20Extended, DSMath, DSAuth {
         return true;
     }
 
-    function mint(uint128 wad)
+    function mint(uint128 wad) public
     auth
     {
         _balances[msg.sender] = add(_balances[msg.sender], wad);

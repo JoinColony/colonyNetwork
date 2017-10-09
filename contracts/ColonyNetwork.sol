@@ -17,7 +17,7 @@ contract ColonyNetwork is DSAuth {
   // Maps colony contract versions to respective resolvers
   mapping (uint => address) public colonyVersionResolver;
 
-  function createColony(bytes32 name) {
+  function createColony(bytes32 name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
     var resolver = colonyVersionResolver[currentColonyVersion];
@@ -38,7 +38,7 @@ contract ColonyNetwork is DSAuth {
     _colonies[name] = colony;
   }
 
-  function addColonyVersion(uint _version, address _resolver)
+  function addColonyVersion(uint _version, address _resolver) public
   auth
   {
     colonyVersionResolver[_version] = _resolver;
@@ -56,7 +56,7 @@ contract ColonyNetwork is DSAuth {
     return _coloniesIndex[_idx];
   }
 
-  function upgradeColony(bytes32 _name, uint _newVersion) {
+  function upgradeColony(bytes32 _name, uint _newVersion) public {
     address etherRouter = _colonies[_name];
     // Check the calling user is authorised
     DSAuth auth = DSAuth(etherRouter);
@@ -73,7 +73,7 @@ contract ColonyNetwork is DSAuth {
     e.setResolver(newResolver);
   }
 
-  function ()
+  function () public
   payable
   { }
 }

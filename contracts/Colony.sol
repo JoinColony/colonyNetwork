@@ -41,7 +41,7 @@ contract Colony is DSAuth, DSMath, IColony {
     _;
   }
 
-  function setToken(address _token)
+  function setToken(address _token) public
   auth
   {
     token = ERC20Extended(_token);
@@ -57,14 +57,14 @@ contract Colony is DSAuth, DSMath, IColony {
       task.funded);
   }
 
-  function makeTask(bytes32 _ipfsDecodedHash)
+  function makeTask(bytes32 _ipfsDecodedHash) public
   auth
   {
     taskCount += 1;
     tasks[taskCount] = Task(_ipfsDecodedHash, false, 0, 0, 0, false);
   }
 
-  function updateTaskIpfsDecodedHash(uint256 _id, bytes32 _ipfsDecodedHash)
+  function updateTaskIpfsDecodedHash(uint256 _id, bytes32 _ipfsDecodedHash) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -72,7 +72,7 @@ contract Colony is DSAuth, DSMath, IColony {
     tasks[_id].ipfsDecodedHash = _ipfsDecodedHash;
   }
 
-  function acceptTask(uint256 _id)
+  function acceptTask(uint256 _id) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -80,7 +80,7 @@ contract Colony is DSAuth, DSMath, IColony {
     tasks[_id].accepted = true;
   }
 
-  function contributeEthToTask(uint256 _id)
+  function contributeEthToTask(uint256 _id) public
   auth
   payable
   tasksExists(_id)
@@ -91,7 +91,7 @@ contract Colony is DSAuth, DSMath, IColony {
     task.funded = true;
   }
 
-  function contributeTokensToTask(uint256 _id, uint256 _amount)
+  function contributeTokensToTask(uint256 _id, uint256 _amount) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -101,7 +101,7 @@ contract Colony is DSAuth, DSMath, IColony {
     task.funded = true;
   }
 
-  function setReservedTokensForTask(uint256 _id, uint256 _amount)
+  function setReservedTokensForTask(uint256 _id, uint256 _amount) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -118,7 +118,7 @@ contract Colony is DSAuth, DSMath, IColony {
     task.funded = true;
   }
 
-  function removeReservedTokensForTask(uint256 _id)
+  function removeReservedTokensForTask(uint256 _id) public
   auth
   tasksExists(_id)
   taskAccepted(_id)
@@ -132,7 +132,7 @@ contract Colony is DSAuth, DSMath, IColony {
   /// @notice mark a task as completed, pay the user who completed it and root colony fee
   /// @param _id the task ID to be completed and paid
   /// @param _assignee the address of the user to be paid
-  function completeAndPayTask(uint256 _id, address _assignee)
+  function completeAndPayTask(uint256 _id, address _assignee) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -152,13 +152,13 @@ contract Colony is DSAuth, DSMath, IColony {
     }
   }
 
-  function mintTokens(uint128 _wad)
+  function mintTokens(uint128 _wad) public
   auth
   {
     return token.mint(_wad);
   }
 
-  function ()
+  function () public
   payable
   {
       // Contracts that want to receive Ether with a plain "send" have to implement

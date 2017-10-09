@@ -7,7 +7,7 @@ contract Authority is DSRoles {
   uint8 owner_role = 0;
   uint8 admin_role = 1;
 
-  function Authority(address colony) {
+  function Authority(address colony) public {
     bytes4 contributeEthToTaskSig = bytes4(sha3("contributeEthToTask(uint256)"));
     setRoleCapability(owner_role, colony, contributeEthToTaskSig, true);
     setRoleCapability(admin_role, colony, contributeEthToTaskSig, true);

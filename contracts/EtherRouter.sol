@@ -6,7 +6,7 @@ import "../lib/dappsys/auth.sol";
 contract EtherRouter is DSAuth {
   Resolver public resolver;
 
-  function() payable {
+  function() payable public {
     uint r;
 
     // Get routing information for the called function
@@ -27,7 +27,7 @@ contract EtherRouter is DSAuth {
     }
   }
 
-  function setResolver(address _resolver)
+  function setResolver(address _resolver) public
   auth
   {
     resolver = Resolver(_resolver);
