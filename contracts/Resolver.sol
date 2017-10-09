@@ -14,16 +14,16 @@ contract Resolver is DSAuth {
   }
 
   // Public API
-  function lookup(bytes4 sig) public returns(address, uint) {
+  function lookup(bytes4 sig) public view returns(address, uint) {
     return (destination(sig), outsize(sig));
   }
 
   // Helpers
-  function destination(bytes4 sig) public returns(address) {
+  function destination(bytes4 sig) public view returns(address) {
     return pointers[sig].destination;
   }
 
-  function outsize(bytes4 sig) public returns(uint) {
+  function outsize(bytes4 sig) public view returns(uint) {
     if (pointers[sig].destination != 0) {
       // Stored destination and outsize
       return pointers[sig].outsize;
@@ -33,7 +33,7 @@ contract Resolver is DSAuth {
     }
   }
 
-  function stringToSig(string signature) public returns(bytes4) {
+  function stringToSig(string signature) public pure returns(bytes4) {
     return bytes4(keccak256(signature));
   }
 }
