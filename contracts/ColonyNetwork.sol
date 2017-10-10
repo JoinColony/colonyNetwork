@@ -1,4 +1,6 @@
 pragma solidity ^0.4.17;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/roles.sol";
