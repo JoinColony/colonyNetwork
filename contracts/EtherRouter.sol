@@ -1,4 +1,5 @@
 pragma solidity ^0.4.17;
+
 import "./Resolver.sol";
 import "../lib/dappsys/auth.sol";
 
@@ -6,7 +7,7 @@ import "../lib/dappsys/auth.sol";
 contract EtherRouter is DSAuth {
   Resolver public resolver;
 
-  function() payable public {
+  function() payable external {
     uint r;
 
     // Get routing information for the called function

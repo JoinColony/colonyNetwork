@@ -73,7 +73,7 @@ contract ColonyNetwork is DSAuth {
     e.setResolver(newResolver);
   }
 
-  function () public
+  function () external
   payable
   { }
 }

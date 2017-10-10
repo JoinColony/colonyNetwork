@@ -158,7 +158,7 @@ contract Colony is DSAuth, DSMath, IColony {
     return token.mint(_wad);
   }
 
-  function () public
+  function () external
   payable
   {
       // Contracts that want to receive Ether with a plain "send" have to implement
