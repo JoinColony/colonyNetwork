@@ -29,7 +29,7 @@ const cleanUpgradeTempContracts = () => {
   });
 };
 
-gulp.task('versionColonyContract', ['deploy:contracts'], async () => {
+gulp.task('versionColonyContract', 'Append version number to Colony.json file', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
   console.log('Current Colony contract version is', VERSION);
 
@@ -45,26 +45,26 @@ const checkCoverageAgainstThreshold = () => {
 };
 
 gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
-  const VERSION = await executeWithOutput(`grep "function version() constant returns (uint256) { return " ./contracts/Colony.sol | tr -d 'function version() constant returns (uint256) { return ' | tr -d '; }\n'`);
+  const VERSION = await executeWithOutput(`grep "function version() public view returns (uint256) { return " ./contracts/Colony.sol | tr -d 'function version() public view returns (uint256) { return ' | tr -d '; }\n'`);
   const UPDATED_VERSION=VERSION+1;
 
   return execute(`cp Token.sol UpdatedToken.sol`, { cwd: './contracts' })
   .then(execute(`sed -ie'' s/'Token'/'UpdatedToken'/g UpdatedToken.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function mint'/'function isUpdated() constant returns(bool) {return true;} function mint'/g UpdatedToken.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'function mint'/'function isUpdated() public view returns(bool) {return true;} function mint'/g UpdatedToken.sol`, { cwd: './contracts' }))
   .then(execute(`cp Resolver.sol UpdatedResolver.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'Resolver'/'UpdatedResolver'/g UpdatedResolver.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() constant returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() public view returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
   .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() public view returns(bool) {return true;}'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function version() constant returns (uint256) { return ${VERSION}'/'function version() constant returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() constant returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
+  .then(execute(`sed -ie'' s/'function version() public view returns (uint256) { return ${VERSION}'/'function version() public view returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() public view returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
 });
 
-gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts', 'versionColonyContract'], () => {
-  const cmd = makeCmd(`truffle test`);
+gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts'], () => {
+  const cmd = makeCmd(`truffle test --network development`);
   return execute(cmd);
 });
 
@@ -95,7 +95,7 @@ gulp.task('parity', async () => {
 });
 
 gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'], () => {
-  const cmd = makeCmd(`truffle test gasCosts/gasCosts.js`);
+  const cmd = makeCmd(`truffle test gasCosts/gasCosts.js --network development`);
   return execute(cmd);
 });
 

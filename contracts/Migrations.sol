@@ -1,4 +1,6 @@
-pragma solidity ^0.4.8;
+pragma solidity ^0.4.17;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 
 contract Migrations {
@@ -10,15 +12,15 @@ contract Migrations {
     if (msg.sender == owner) { _; }
   }
 
-  function Migrations() {
+  function Migrations() public {
     owner = msg.sender;
   }
 
-  function setCompleted(uint completed) restricted {
+  function setCompleted(uint completed) public restricted {
     last_completed_migration = completed;
   }
 
-  function upgrade(address new_address) restricted {
+  function upgrade(address new_address) public restricted {
     Migrations upgraded = Migrations(new_address);
     upgraded.setCompleted(last_completed_migration);
   }

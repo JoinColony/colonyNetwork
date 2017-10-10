@@ -1,8 +1,8 @@
 const upgradableContracts = require('../helpers/upgradable-contracts');
-const ColonyNetwork = artifacts.require('./ColonyNetwork.sol');
-const EtherRouter = artifacts.require('./EtherRouter.sol');
-const Resolver = artifacts.require('./Resolver.sol');
-const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet.sol');
+const ColonyNetwork = artifacts.require('./ColonyNetwork');
+const EtherRouter = artifacts.require('./EtherRouter');
+const Resolver = artifacts.require('./Resolver');
+const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet');
 
 module.exports = function (deployer, network, accounts) {
   let etherRouter;

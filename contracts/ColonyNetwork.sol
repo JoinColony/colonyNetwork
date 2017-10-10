@@ -1,4 +1,6 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.17;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/roles.sol";
@@ -17,11 +19,11 @@ contract ColonyNetwork is DSAuth {
   // Maps colony contract versions to respective resolvers
   mapping (uint => address) public colonyVersionResolver;
 
-  function createColony(bytes32 name) {
+  function createColony(bytes32 name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
-    var resolver = colonyVersionResolver[currentColonyVersion];
-    etherRouter.setResolver(resolver);
+    var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
+    etherRouter.setResolver(resolverForLatestColonyVersion);
 
     var colony = IColony(etherRouter);
     colony.setToken(token);
@@ -38,7 +40,7 @@ contract ColonyNetwork is DSAuth {
     _colonies[name] = colony;
   }
 
-  function addColonyVersion(uint _version, address _resolver)
+  function addColonyVersion(uint _version, address _resolver) public
   auth
   {
     colonyVersionResolver[_version] = _resolver;
@@ -48,19 +50,15 @@ contract ColonyNetwork is DSAuth {
   }
 
   // Returns the address of a Colony by index
-  function getColony(bytes32 _name)
-  constant returns (address)
-  {
+  function getColony(bytes32 _name) public view returns (address) {
     return _colonies[_name];
   }
 
-  function getColonyAt(uint _idx)
-  constant returns (address)
-  {
+  function getColonyAt(uint _idx) public view returns (address) {
     return _coloniesIndex[_idx];
   }
 
-  function upgradeColony(bytes32 _name, uint _newVersion) {
+  function upgradeColony(bytes32 _name, uint _newVersion) public {
     address etherRouter = _colonies[_name];
     // Check the calling user is authorised
     DSAuth auth = DSAuth(etherRouter);
@@ -77,7 +75,7 @@ contract ColonyNetwork is DSAuth {
     e.setResolver(newResolver);
   }
 
-  function ()
+  function () external
   payable
   { }
 }

@@ -36,7 +36,10 @@ test:
     - gulp test:contracts
     - gulp test:contracts:upgrade --parity
     - gulp test:contracts:gasCosts --parity
-    - gulp test:contracts:coverage
+    #TODO: Temporary disable code coverage tests until SC supports solc 0.4.17 and experimental features
+    #https://github.com/sc-forks/solidity-coverage/issues/128
+    #https://github.com/sc-forks/solidity-coverage/issues/131
+    #- gulp test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload

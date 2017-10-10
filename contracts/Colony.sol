@@ -1,4 +1,6 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.17;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
@@ -15,7 +17,7 @@ contract Colony is DSAuth, DSMath, IColony {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() constant returns (uint256) { return 5; }
+  function version() public view returns (uint256) { return 5; }
 
   struct Task {
     bytes32 ipfsDecodedHash;
@@ -41,15 +43,13 @@ contract Colony is DSAuth, DSMath, IColony {
     _;
   }
 
-  function setToken(address _token)
+  function setToken(address _token) public
   auth
   {
     token = ERC20Extended(_token);
   }
 
-  function getTask(uint256 _id)
-  constant returns (bytes32, bool, uint, uint, uint, bool)
-  {
+  function getTask(uint256 _id) public view returns (bytes32, bool, uint, uint, uint, bool) {
     Task storage task = tasks[_id];
     return (task.ipfsDecodedHash,
       task.accepted,
@@ -59,14 +59,14 @@ contract Colony is DSAuth, DSMath, IColony {
       task.funded);
   }
 
-  function makeTask(bytes32 _ipfsDecodedHash)
+  function makeTask(bytes32 _ipfsDecodedHash) public
   auth
   {
     taskCount += 1;
     tasks[taskCount] = Task(_ipfsDecodedHash, false, 0, 0, 0, false);
   }
 
-  function updateTaskIpfsDecodedHash(uint256 _id, bytes32 _ipfsDecodedHash)
+  function updateTaskIpfsDecodedHash(uint256 _id, bytes32 _ipfsDecodedHash) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -74,7 +74,7 @@ contract Colony is DSAuth, DSMath, IColony {
     tasks[_id].ipfsDecodedHash = _ipfsDecodedHash;
   }
 
-  function acceptTask(uint256 _id)
+  function acceptTask(uint256 _id) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -82,7 +82,7 @@ contract Colony is DSAuth, DSMath, IColony {
     tasks[_id].accepted = true;
   }
 
-  function contributeEthToTask(uint256 _id)
+  function contributeEthToTask(uint256 _id) public
   auth
   payable
   tasksExists(_id)
@@ -93,7 +93,7 @@ contract Colony is DSAuth, DSMath, IColony {
     task.funded = true;
   }
 
-  function contributeTokensToTask(uint256 _id, uint256 _amount)
+  function contributeTokensToTask(uint256 _id, uint256 _amount) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -103,7 +103,7 @@ contract Colony is DSAuth, DSMath, IColony {
     task.funded = true;
   }
 
-  function setReservedTokensForTask(uint256 _id, uint256 _amount)
+  function setReservedTokensForTask(uint256 _id, uint256 _amount) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -120,7 +120,7 @@ contract Colony is DSAuth, DSMath, IColony {
     task.funded = true;
   }
 
-  function removeReservedTokensForTask(uint256 _id)
+  function removeReservedTokensForTask(uint256 _id) public
   auth
   tasksExists(_id)
   taskAccepted(_id)
@@ -134,7 +134,7 @@ contract Colony is DSAuth, DSMath, IColony {
   /// @notice mark a task as completed, pay the user who completed it and root colony fee
   /// @param _id the task ID to be completed and paid
   /// @param _assignee the address of the user to be paid
-  function completeAndPayTask(uint256 _id, address _assignee)
+  function completeAndPayTask(uint256 _id, address _assignee) public
   auth
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -154,13 +154,13 @@ contract Colony is DSAuth, DSMath, IColony {
     }
   }
 
-  function mintTokens(uint128 _wad)
+  function mintTokens(uint128 _wad) public
   auth
   {
     return token.mint(_wad);
   }
 
-  function ()
+  function () external
   payable
   {
       // Contracts that want to receive Ether with a plain "send" have to implement

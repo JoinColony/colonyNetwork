@@ -1,4 +1,7 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.17;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
+
 import "./Resolver.sol";
 import "../lib/dappsys/auth.sol";
 
@@ -6,7 +9,7 @@ import "../lib/dappsys/auth.sol";
 contract EtherRouter is DSAuth {
   Resolver public resolver;
 
-  function() payable {
+  function() payable external {
     uint r;
 
     // Get routing information for the called function
@@ -27,7 +30,7 @@ contract EtherRouter is DSAuth {
     }
   }
 
-  function setResolver(address _resolver)
+  function setResolver(address _resolver) public
   auth
   {
     resolver = Resolver(_resolver);

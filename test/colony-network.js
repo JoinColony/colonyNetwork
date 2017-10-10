@@ -22,7 +22,8 @@ contract('ColonyNetwork', function (accounts) {
   let version;
 
   before(async function () {
-    createColonyGas = (web3.version.network == 'coverage') ? '0xfffffffffff' : 4e6;
+    const network = await testHelper.web3GetNetwork();
+    createColonyGas = (network == 'coverage') ? '0xfffffffffff' : 4e6;
     resolverColonyNetworkDeployed = await Resolver.deployed();
   });
 
@@ -40,11 +41,12 @@ contract('ColonyNetwork', function (accounts) {
   describe('when initialised', () => {
     it('should accept ether', async function () {
       await colonyNetwork.send(1);
-      let colonyNetworkBalance = web3.eth.getBalance(colonyNetwork.address);
+      let colonyNetworkBalance = await testHelper.web3GetBalance(colonyNetwork.address);
 
       // Note: Until https://github.com/sc-forks/solidity-coverage/issues/92 is complete
       // issue https://github.com/ethereumjs/testrpc/issues/122 manifests itself here
-      const expectedBalance = (web3.version.network == 'coverage') ? 2 : 1;
+      const network = await testHelper.web3GetNetwork();
+      const expectedBalance = (network == 'coverage') ? 2 : 1;
       assert.equal(colonyNetworkBalance.toNumber(), expectedBalance);
     });
 
@@ -107,7 +109,7 @@ contract('ColonyNetwork', function (accounts) {
       } catch (err) {
         tx = testHelper.checkErrorNonPayableFunction(err);
       }
-      let colonyNetworkBalance = web3.eth.getBalance(colonyNetwork.address);
+      let colonyNetworkBalance = await testHelper.web3GetBalance(colonyNetwork.address);
       assert.equal(0, colonyNetworkBalance.toNumber());
     });
   })
@@ -163,9 +165,9 @@ contract('ColonyNetwork', function (accounts) {
 
       let tx;
       try {
-        tx = await await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
+        tx = await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
       } catch (err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
@@ -183,9 +185,9 @@ contract('ColonyNetwork', function (accounts) {
 
       let tx;
       try {
-        tx = await await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
+        tx = await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
       } catch (err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
@@ -208,7 +210,7 @@ contract('ColonyNetwork', function (accounts) {
       try {
         tx = await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch (err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 

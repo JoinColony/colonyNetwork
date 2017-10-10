@@ -1,4 +1,7 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.17;
+pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
+
 
 import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
@@ -15,22 +18,19 @@ contract Token is ERC20Extended, DSMath, DSAuth {
     mapping (address => uint256) _balances;
     mapping (address => mapping (address => uint256)) _approvals;
 
-    function Token() {
-    }
-
-    function totalSupply() constant returns (uint256) {
+    function totalSupply() public view returns (uint256) {
         return _supply;
     }
 
-    function balanceOf(address src) constant returns (uint256) {
+    function balanceOf(address src) public view returns (uint256) {
         return _balances[src];
     }
 
-    function allowance(address src, address guy) constant returns (uint256) {
+    function allowance(address src, address guy) public view returns (uint256) {
         return _approvals[src][guy];
     }
 
-    function transfer(address dst, uint wad) returns (bool) {
+    function transfer(address dst, uint wad) public returns (bool) {
         assert(_balances[msg.sender] >= wad);
 
         _balances[msg.sender] = sub(_balances[msg.sender], wad);
@@ -41,7 +41,7 @@ contract Token is ERC20Extended, DSMath, DSAuth {
         return true;
     }
 
-    function transferFrom(address src, address dst, uint wad) returns (bool) {
+    function transferFrom(address src, address dst, uint wad) public returns (bool) {
         assert(_balances[src] >= wad);
         assert(_approvals[src][msg.sender] >= wad);
 
@@ -54,7 +54,7 @@ contract Token is ERC20Extended, DSMath, DSAuth {
         return true;
     }
 
-    function approve(address guy, uint256 wad) returns (bool) {
+    function approve(address guy, uint256 wad) public returns (bool) {
         _approvals[msg.sender][guy] = wad;
 
         Approval(msg.sender, guy, wad);
@@ -62,7 +62,7 @@ contract Token is ERC20Extended, DSMath, DSAuth {
         return true;
     }
 
-    function mint(uint128 wad)
+    function mint(uint128 wad) public
     auth
     {
         _balances[msg.sender] = add(_balances[msg.sender], wad);
