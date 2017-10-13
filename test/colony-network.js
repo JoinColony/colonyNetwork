@@ -85,8 +85,9 @@ contract('ColonyNetwork', function (accounts) {
   describe('when creating new colonies', () => {
     it('should allow users to create new colonies', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
-      const address = await colonyNetwork.getColony(COLONY_KEY);
+      const address = await colonyNetwork.getColony.call(COLONY_KEY);
       const colonyCount = await colonyNetwork.colonyCount.call();
+      assert.notEqual(address, 0x0);
       assert.equal(colonyCount.toNumber(), 1);
     });
 

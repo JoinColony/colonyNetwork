@@ -38,7 +38,7 @@ contract('Colony', function (accounts) {
   beforeEach(async function () {
     COLONY_KEY = testHelper.getRandomString(7);
     await colonyNetwork.createColony(COLONY_KEY);
-    let address = await colonyNetwork.getColony(COLONY_KEY);
+    let address = await colonyNetwork.getColony.call(COLONY_KEY);
     colony = await Colony.at(address);
     let authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
