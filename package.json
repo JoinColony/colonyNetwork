@@ -35,7 +35,7 @@
     "request": "^2.83.0",
     "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
-    "solidity-coverage": "^0.2.5",
+    "solidity-coverage": "^0.2.7",
     "solidity-sha3": "^0.4.1",
     "solium": "^0.5.5",
     "truffle": "^4.0.0-beta.2"
