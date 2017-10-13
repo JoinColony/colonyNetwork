@@ -111,7 +111,7 @@ contract('Colony', function (accounts) {
   describe('when creating tasks', () => {
     it('should allow admins to make task', async function () {
       await colony.makeTask(ipfsDecodedHash);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
       assert.isFalse(task[1]);
       assert.equal(task[2].toNumber(), 0);
@@ -135,7 +135,7 @@ contract('Colony', function (accounts) {
     it('should allow admins to edit task ipfsDecodedHash', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.updateTaskIpfsDecodedHash(1, newIpfsDecodedHash);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
 
@@ -154,7 +154,7 @@ contract('Colony', function (accounts) {
     it('should fail if the task was already accepted', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[1], 'Wrong accepted value');
 
       let tx;
@@ -181,7 +181,7 @@ contract('Colony', function (accounts) {
     it('should the "accepted" prop be set as "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[1]);
     });
 
@@ -225,7 +225,7 @@ contract('Colony', function (accounts) {
       await colony.setReservedTokensForTask(1, 80);
       await colony.contributeEthToTask(1, { value: 10000 });
       await colony.completeAndPayTask(1, OTHER_ACCOUNT);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
       assert.isTrue(task[1]);
       assert.equal(task[2].toNumber(), 10000);
@@ -247,7 +247,7 @@ contract('Colony', function (accounts) {
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
       assert.isFalse(task[1]);
     });
@@ -268,21 +268,21 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
       await colony.setReservedTokensForTask(1, 10);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(task[3].toNumber(), 10);
     });
 
     it('should "eth" property be raised by the amount of ether received', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.contributeEthToTask(1, { value: 10 });
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(task[2].toNumber(), 10);
     });
 
     it('should set the "funded" to "true" when the task is funded with ether', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.contributeEthToTask(1, { value: 10 });
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[5]);
     });
 
@@ -290,7 +290,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
       await colony.setReservedTokensForTask(1, 10);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[5]);
     });
 
@@ -298,7 +298,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
       await colony.setReservedTokensForTask(1, 0);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[5]);
     });
 
@@ -328,7 +328,7 @@ contract('Colony', function (accounts) {
     it('should allow admins to fund task with ether', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.contributeEthToTask(1, { value: 100 });
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(task[2], 100);
     });
 
@@ -352,7 +352,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.makeTask(newIpfsDecodedHash);
       await colony.setReservedTokensForTask(1, 100);
-      const task1 = await colony.getTask(1);
+      const task1 = await colony.getTask.call(1);
       assert.equal(task1[4].toNumber(), 100);
       await colony.completeAndPayTask(1, OTHER_ACCOUNT);
       const otherAccountTokenBalance = await token.balanceOf.call(OTHER_ACCOUNT);
@@ -360,7 +360,7 @@ contract('Colony', function (accounts) {
       await authority.setUserRole(OTHER_ACCOUNT, 1, true);
       await colony.contributeTokensToTask(2, 95, { from: OTHER_ACCOUNT });
 
-      const task2 = await colony.getTask(2);
+      const task2 = await colony.getTask.call(2);
       assert.equal(testHelper.hexToUtf8(task2[0]), newIpfsDecodedHash);
       assert.isFalse(task2[1]);
       assert.equal(task2[2].toNumber(), 0);
@@ -375,14 +375,14 @@ contract('Colony', function (accounts) {
       await colony.setReservedTokensForTask(1, 70);
       let reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 70);
-      let task = await colony.getTask(1);
+      let task = await colony.getTask.call(1);
       assert.equal(task[3].toNumber(), 70);
       assert.equal(task[4].toNumber(), 70);
       assert.isTrue(task[5]);
       await colony.setReservedTokensForTask(1, 100);
       reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 100);
-      task = await colony.getTask(1);
+      task = await colony.getTask.call(1);
       assert.equal(task[3].toNumber(), 100);
       assert.equal(task[4].toNumber(), 100);
       assert.isTrue(task[5]);
@@ -396,12 +396,12 @@ contract('Colony', function (accounts) {
       await colony.makeTask(newIpfsDecodedHash);
       await colony.setReservedTokensForTask(2, 40); // 40 reserved and 40 remaining available
       await colony.contributeTokensToTask(2, 20);
-      let task = await colony.getTask(2);
+      let task = await colony.getTask.call(2);
       assert.equal(task[3].toNumber(), 60, 'Wrong tokens wei value');
       await colony.setReservedTokensForTask(2, 80); // 80 reserved and 0 remaining available
       let reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 80, 'Has not reserved the right amount of colony tokens.');
-      task = await colony.getTask(2);
+      task = await colony.getTask.call(2);
       assert.equal(task[3].toNumber(), 100, 'Wrong tokens wei value');
       assert.equal(task[4].toNumber(), 80, 'Wrong tokens wei reserved value');
     });
@@ -457,7 +457,7 @@ contract('Colony', function (accounts) {
       await colony.removeReservedTokensForTask(1);
       const reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 0);
-      const task = await colony.getTask(1);
+      const task = await colony.getTask.call(1);
       assert.equal(task[3].toNumber(), 80, 'Has not cleared the task token funds correctly');
     });
 
@@ -467,7 +467,7 @@ contract('Colony', function (accounts) {
       await colony.setReservedTokensForTask(1, 80);
       let reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 80);
-      let task = await colony.getTask(1);
+      let task = await colony.getTask.call(1);
       assert.equal(task[3].toNumber(), 80);
       assert.equal(task[4].toNumber(), 80);
       let tx;
@@ -480,7 +480,7 @@ contract('Colony', function (accounts) {
 
       reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 80);
-      task = await colony.getTask(1);
+      task = await colony.getTask.call(1);
       assert.equal(task[3].toNumber(), 80);
     });
 
