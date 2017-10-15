@@ -49,7 +49,7 @@ contract('Colony', function (accounts) {
   describe('when initialised', () => {
     it('should accept ether', async function () {
       let colonyBalancePre = await testHelper.web3GetBalance(colony.address);
-      await colony.transfer(1);
+      await colony.send(1);
       let colonyBalance = await testHelper.web3GetBalance(colony.address);
 
       // Note: Until https://github.com/sc-forks/solidity-coverage/issues/92 is complete
@@ -315,28 +315,6 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should allow admins to fund a task with own tokens', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(newIpfsDecodedHash);
-      await colony.setReservedTokensForTask(1, 100);
-      const task1 = await colony.getTask.call(1);
-      assert.equal(task1[7].toNumber(), 100);
-      await colony.completeAndPayTask(1, OTHER_ACCOUNT);
-      const otherAccountTokenBalance = await token.balanceOf.call(OTHER_ACCOUNT);
-      assert.equal(otherAccountTokenBalance.toNumber(), 100);
-      await authority.setUserRole(OTHER_ACCOUNT, 1, true);
-      await colony.contributeTokensToTask(2, 95, { from: OTHER_ACCOUNT });
-
-      const task2 = await colony.getTask.call(2);
-      assert.equal(testHelper.hexToUtf8(task2[3]), newIpfsDecodedHash);
-      assert.isFalse(task2[4]);
-      assert.equal(task2[5].toNumber(), 0);
-      assert.equal(task2[6].toNumber(), 95);
-      assert.equal(task2[7].toNumber(), 0);
-      assert.isTrue(task2[8]);
     });
 
     it.skip('should reserve the correct number of tokens when an admin funds task with pool tokens', async function () {

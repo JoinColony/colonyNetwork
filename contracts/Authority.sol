@@ -37,9 +37,5 @@ contract Authority is DSRoles {
     bytes4 removeReservedTokensForTaskSig = bytes4(keccak256("removeReservedTokensForTask(uint256)"));
     setRoleCapability(owner_role, colony, removeReservedTokensForTaskSig, true);
     setRoleCapability(admin_role, colony, removeReservedTokensForTaskSig, true);
-
-    bytes4 completeAndPayTaskSig = bytes4(keccak256("completeAndPayTask(uint256,address)"));
-    setRoleCapability(owner_role, colony, completeAndPayTaskSig, true);
-    setRoleCapability(admin_role, colony, completeAndPayTaskSig, true);
   }
 }

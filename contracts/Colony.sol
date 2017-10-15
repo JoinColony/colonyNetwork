@@ -158,34 +158,10 @@ contract Colony is DSAuth, DSMath, IColony {
     //task.fundingPot = 0;
   }
 
-  /// @notice mark a task as completed, pay the user who completed it and root colony fee
-  /// @param _id the task ID to be completed and paid
-  /// @param _assignee the address of the user to be paid
-  function completeAndPayTask(uint256 _id, address _assignee) public
-  auth
-  tasksExists(_id)
-  tasksNotAccepted(_id)
-  {
-    Task storage task = tasks[_id];
-    //require(token.balanceOf(this) >= task.fundingPot);
-    acceptTask(_id);
-
-    //if (task.workerEth > 0) {
-    //  _assignee.transfer(task.workerEth);
-    //}
-
-    //uint256 tokens = task.workerTokens;
-    //if (tokens > 0) {
-    //  token.transfer(_assignee, tokens);
-    //  removeReservedTokensForTask(_id);
-    //}
-  }
-
   function claimPayout(uint _id, uint _role, address _token) public {
     Task storage task = tasks[_id];
     assert(task.roles[_role] == msg.sender);
     uint payout = task.payouts[_role][_token];
-    //TODO: Token transfer
   }
 
   function mintTokens(uint128 _wad) public

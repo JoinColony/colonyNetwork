@@ -66,7 +66,6 @@ module.exports = {
     await resolver.register("getTaskPayout(uint256,uint256,address)", colony.address, 32);
     await resolver.register("setReservedTokensForTask(uint256,uint256)", colony.address, 0);
     await resolver.register("removeReservedTokensForTask(uint256)", colony.address, 0);
-    await resolver.register("completeAndPayTask(uint256,address)", colony.address, 0);
     await resolver.register("claimPayout(uint256,uint256,address)", colony.address, 0);
     await resolver.register("mintTokens(uint128)", colony.address, 0);
 
@@ -114,9 +113,6 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xf93ab663'); // removeReservedTokensForTask
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x2f6da7bb'); // completeAndPayTask
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xed5923b6'); // claimPayout
