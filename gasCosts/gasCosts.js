@@ -25,7 +25,7 @@ contract('all', function (accounts) {
   let mintTokensCost;
   let setTaskPayoutCost;
   let contributeTokensToTaskCost;
-  let acceptTask;
+  let acceptTaskCost;
 
   before(async function () {
     console.log('Gas price : ', gasPrice);
@@ -82,7 +82,7 @@ contract('all', function (accounts) {
       estimate = await colony.acceptTask.estimateGas(1);
       console.log('acceptTask estimate: ', estimate);
       tx = await colony.acceptTask(1, { gasPrice });
-      acceptTask = tx.receipt.gasUsed;
+      acceptTaskCost = tx.receipt.gasUsed;
       console.log('acceptTask actual cost :', acceptTaskCost);
 
       // setUserRole
@@ -96,7 +96,7 @@ contract('all', function (accounts) {
       const totalGasCost = (makeTaskCost * 100) // assume 100 tasks per month are created
       + (updateTaskIpfsDecodedHashCost * 20) // assume 20% of all tasks are updated once
       + (setTaskPayoutCost * 100) // assume all new tasks have their budget set once
-      + (acceptTask * 25) // quarter of all tasks are closed and paid out
+      + (acceptTaskCost * 25) // quarter of all tasks are closed and paid out
       + (mintTokensCost * 1); // only once per month are new colony tokens generated
 
       const totalEtherCost = web3.fromWei(totalGasCost * gasPrice, 'ether');
