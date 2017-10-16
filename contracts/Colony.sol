@@ -22,8 +22,8 @@ contract Colony is DSAuth, DSMath, IColony {
   struct Task {
     bytes32 ipfsDecodedHash;
     address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
-    bool accepted;
     uint dueDate;
+    bool accepted;
     uint payoutsWeCannotMake;
     mapping (address => uint) totalPayouts;
     mapping (uint => mapping (address => uint)) payouts;
@@ -72,14 +72,6 @@ contract Colony is DSAuth, DSMath, IColony {
     tasks[_id].ipfsDecodedHash = _ipfsDecodedHash;
   }
 
-  function acceptTask(uint256 _id) public
-  auth
-  tasksExists(_id)
-  tasksNotAccepted(_id)
-  {
-    tasks[_id].accepted = true;
-  }
-
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   auth
   tasksExists(_id)
@@ -101,6 +93,14 @@ contract Colony is DSAuth, DSMath, IColony {
     task.totalPayouts[_token] = add(currentTotalAmount, _amount);
 
     //TODO: Check Task pot and set `payoutsWeCannotMake`
+  }
+
+  function acceptTask(uint256 _id) public
+  auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    tasks[_id].accepted = true;
   }
 
   function getTask(uint256 _id) public view
