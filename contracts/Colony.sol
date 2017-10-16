@@ -130,34 +130,6 @@ contract Colony is DSAuth, DSMath, IColony {
     return task.payouts[_role][_token];
   }
 
-  function setReservedTokensForTask(uint256 _id, uint256 _amount) public
-  auth
-  tasksExists(_id)
-  tasksNotAccepted(_id)
-  {
-    //Task storage task = tasks[_id];
-    // Ensure colony has sufficient tokens
-    //var colonyTokenBalance = token.balanceOf(this);
-    //TODO: task.fundingPot property cannot be added to the Task struct because of EVM stack depth limitations
-    //var availableColonyTokens = add(sub(colonyTokenBalance, reservedTokens), task.fundingPot);
-    //require(availableColonyTokens >= _amount);
-
-    //reservedTokens = add(sub(reservedTokens, task.fundingPot), _amount);
-    //task.workerTokens = add(sub(task.workerTokens, task.fundingPot), _amount);
-    //task.fundingPot = _amount;
-  }
-
-  function removeReservedTokensForTask(uint256 _id) public
-  auth
-  tasksExists(_id)
-  taskAccepted(_id)
-  {
-    //Task storage task = tasks[_id];
-    // Intentioanlly not removing the `task_tokensWei` value because of tracking history for tasks
-    //reservedTokens = sub(reservedTokens, task.fundingPot);
-    //task.fundingPot = 0;
-  }
-
   function claimPayout(uint _id, uint _role, address _token) public
   taskAccepted(_id)
   {
