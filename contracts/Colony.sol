@@ -7,9 +7,10 @@ import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
 import "./IColonyNetwork.sol";
+import "./TransactionReviewer.sol";
 
 
-contract Colony is DSAuth, DSMath, IColony {
+contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   address resolver;
   address colonyNetworkAddress;
   ERC20Extended public token;
@@ -28,6 +29,7 @@ contract Colony is DSAuth, DSMath, IColony {
 
   uint public taskCount;
   uint public potCount;
+  uint public reservedTokens;
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
@@ -40,7 +42,9 @@ contract Colony is DSAuth, DSMath, IColony {
     bool accepted;
     uint payoutsWeCannotMake;
     uint potId;
+    // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint) totalPayouts;
+    // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
     mapping (uint => mapping (address => uint)) payouts;
   }
 
@@ -86,6 +90,46 @@ contract Colony is DSAuth, DSMath, IColony {
       potId: potCount
     });
     pots[potCount].taskId = taskCount;
+  }
+
+  // Note this relies on the function first parameter to be the uint256 taskId
+  function proposeTaskChange(bytes _data, uint _value) public returns (uint transactionId) {
+    // Get the function signature and task id from the proposed change call data
+    bytes4 sig;
+    uint taskId;
+    assembly {
+      sig := mload(add(_data, add(0x20, 0)))
+      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
+    }
+
+    uint8[2] storage txReviewers = reviewers[sig];
+    Task storage task = tasks[taskId];
+
+    if (task.roles[txReviewers[0]] == msg.sender) {
+      transactionId = submitTransaction(_data, _value, txReviewers[0]);
+    } else if (task.roles[txReviewers[1]] == msg.sender) {
+      transactionId = submitTransaction(_data, _value, txReviewers[1]);
+    }
+  }
+
+  function approveTaskChange(uint transactionId) public {
+
+  }
+
+  function setTaskEvaluator(uint256 _id, address _evaluator) public
+  //auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    tasks[_id].roles[1] = _evaluator;
+  }
+
+  function setTaskWorker(uint256 _id, address _worker) public
+  //auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    tasks[_id].roles[2] = _worker;
   }
 
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public

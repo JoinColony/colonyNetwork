@@ -54,9 +54,10 @@ module.exports = {
     await resolver.register("token()", colony.address, 32);
     await resolver.register("version()", colony.address, 32);
     await resolver.register("taskCount()", colony.address, 32);
-    await resolver.register("reservedTokens()", colony.address, 32);
+    await resolver.register("transactionCount()", colony.address, 32);
     await resolver.register("setToken(address)", colony.address, 0);
     await resolver.register("makeTask(bytes32)", colony.address, 0);
+    await resolver.register("proposeTaskChange(bytes,uint256)", colony.address, 32);
     await resolver.register("setTaskBrief(uint256,bytes32)", colony.address, 0);
     await resolver.register("acceptTask(uint256)", colony.address, 0);
     await resolver.register("setTaskDueDate(uint256,uint256)", colony.address, 0);
@@ -81,7 +82,7 @@ module.exports = {
     response = await resolver.lookup.call('0xb6cb58a5'); // taskCount
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x15a55347'); // reservedTokens
+    response = await resolver.lookup.call('0xb77bf600'); // transactionCount
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0x144fa6d7'); // setToken
@@ -90,6 +91,9 @@ module.exports = {
     response = await resolver.lookup.call('0x560c6d92'); // makeTask
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x3cb1e339'); // proposeTaskChange
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xda4db249'); // setTaskBrief
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
