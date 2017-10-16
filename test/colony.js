@@ -432,4 +432,37 @@ contract('Colony', function (accounts) {
       assert.equal(task[6].toNumber(), 80);
     });
   });
+
+  describe('when claiming payout for a task', () => {
+    it('should return error when task is not accepted', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.mintTokens(100);
+      // Set the manager payout as 200 colony tokens
+      await colony.setTaskPayout(1, 0, token.address, 200);
+
+      let tx;
+      try {
+        tx = await colony.claimPayout(1, 0, token.address, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should return error when called by account that doesn\'t match the role', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.mintTokens(100);
+      // Set the manager payout as 200 colony tokens
+      await colony.setTaskPayout(1, 0, token.address, 200);
+      await colony.acceptTask(1);
+
+      let tx;
+      try {
+        tx = await colony.claimPayout(1, 0, token.address, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+  });
 });
