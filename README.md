@@ -5,21 +5,18 @@
 
 ```
 git clone https://github.com/JoinColony/colonyNetwork.git
-yarn --pure-lockfile
+yarn
+yarn global add gulp@3.9.1
+git submodule update
 ```
 
 ## Contracts
-CommonColony.sol
-Colony.sol
+The contract upgradability is using the EtherRouter pattern, see "Token Upgradability" section in https://medium.com/p/3da67d833087 for implementation details.
 
-## Libraries
-ColonyLibrary.sol
-SecurityLibrary.sol
-TaskLibrary.sol
-TokenLibrary.sol
+The `math`, `erc20`, `auth`, `roles` and a significant part of the `token` contract have been reused from the [Dappsys library](https://github.com/dapphub/dappsys-monolithic).
 
 ## Testing
-See available commands and description via `gulp help`
+Run `gulp help` for a list of all checks. Prominent ones being:
 
 To run all tests:
 ```
@@ -29,25 +26,12 @@ To run tests with code coverage using [solidity-coverage](https://github.com/sc-
 ```
 gulp test:contracts:coverage
 ```
-To run gas costs tests:
-```
-gulp test:contracts:gasCosts
-```
 To lint contracts using [Solium](https://github.com/duaraghav8/Solium)
 ```
 gulp lint:contracts
 ```
-## Workflow
+
+## Branch structure
 Current Colony Beta product is integrated in `master` branch, which is used in `colonyDapp` repo. 
 The new release implementing the whitepaper is integrated in `develop` branch. 
 Changes in `master` are not necessarity reverse integrated in `develop` as contract architecture will potentially differ significantly.
-
-The rest of the workflow follows `git-flow` similarly to `colonyDapp`, namely:
-Which branch should be used for bringing forth production releases? - [master]
-Which branch should be used for integration of the "next release"? [develop]
-How to name your supporting branch prefixes?
-Feature branches? [feature/] 
-Release branches? [release/] 
-Hotfix branches? [hotfix/] 
-Support branches? [support/] 
-Version tag prefix? [] 
