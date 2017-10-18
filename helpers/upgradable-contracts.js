@@ -56,15 +56,15 @@ module.exports = {
     await resolver.register("taskCount()", colony.address, 32);
     await resolver.register("reservedTokens()", colony.address, 32);
     await resolver.register("setToken(address)", colony.address, 0);
-    await resolver.register("getTask(uint256)", colony.address, 192);
     await resolver.register("makeTask(bytes32)", colony.address, 0);
-    await resolver.register("updateTaskIpfsDecodedHash(uint256,bytes32)", colony.address, 0);
+    await resolver.register("setTaskBrief(uint256,bytes32)", colony.address, 0);
     await resolver.register("acceptTask(uint256)", colony.address, 0);
-    await resolver.register("contributeEthToTask(uint256)", colony.address, 0);
-    await resolver.register("contributeTokensToTask(uint256,uint256)", colony.address, 0);
-    await resolver.register("setReservedTokensForTask(uint256,uint256)", colony.address, 0);
-    await resolver.register("removeReservedTokensForTask(uint256)", colony.address, 0);
-    await resolver.register("completeAndPayTask(uint256,address)", colony.address, 0);
+    await resolver.register("setTaskDueDate(uint256,uint256)", colony.address, 0);
+    await resolver.register("setTaskPayout(uint256,uint256,address,uint256)", colony.address, 0);
+    await resolver.register("getTask(uint256)", colony.address, 160);
+    await resolver.register("getTaskRoleAddress(uint256,uint256)", colony.address, 32);
+    await resolver.register("getTaskPayout(uint256,uint256,address)", colony.address, 32);
+    await resolver.register("claimPayout(uint256,uint256,address)", colony.address, 0);
     await resolver.register("mintTokens(uint128)", colony.address, 0);
 
     // Validate Colony functions are registered
@@ -83,31 +83,31 @@ module.exports = {
     response = await resolver.lookup.call('0x144fa6d7'); // setToken
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x1d65e77e'); // getTask
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 192);
     response = await resolver.lookup.call('0x560c6d92'); // makeTask
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x2665c808'); // updateTaskIpfsDecodedHash
+    response = await resolver.lookup.call('0xda4db249'); // setTaskBrief
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x1bf6912d'); // acceptTask
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x7852661'); // contributeEthToTask
+    response = await resolver.lookup.call('0xcae960fe'); // setTaskDueDate
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xfe809756'); // contributeTokensToTask
+    response = await resolver.lookup.call('0xbe2320af'); // setTaskPayout
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xa59792f7'); // setReservedTokensForTask
+    response = await resolver.lookup.call('0x1d65e77e'); // getTask
     assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xf93ab663'); // removeReservedTokensForTask
+    assert.equal(response[1], 160);
+    response = await resolver.lookup.call('0xe9ec8cc3'); // getTaskRoleAddress
     assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x2f6da7bb'); // completeAndPayTask
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0xf409a8c4'); // getTaskPayout
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0xed5923b6'); // claimPayout
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x5ab75c42'); // mintTokens
