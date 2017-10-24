@@ -164,6 +164,18 @@ contract('Colony', function (accounts) {
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
 
+    it('should allow manager to submit an update of task due date', async function () {
+      var dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 1);
+      dueDate = dueDate.getTime();
+
+      await colony.makeTask(ipfsDecodedHash);
+      const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
+      await colony.proposeTaskChange(txData, 0);
+      const task = await colony.getTask.call(1);
+      assert.equal(task[3], dueDate);
+    });
+
     it.skip('should fail if a non-admin user tries to edit the task brief', async function () {
       await colony.makeTask(ipfsDecodedHash);
 
@@ -199,14 +211,6 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should be able to set the task due date', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      const dueDate = new Date().getTime() + 1000;
-      await colony.setTaskDueDate(1, dueDate);
-      const task = await colony.getTask.call(1);
-      assert.equal(task[3], dueDate);
     });
   });
 
