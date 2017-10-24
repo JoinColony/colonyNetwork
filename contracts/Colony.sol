@@ -193,6 +193,17 @@ contract Colony is DSAuth, DSMath, IColony {
     Task storage task = tasks[_id];
     require(task.roles[_role] == msg.sender);
     uint payout = task.payouts[_role][_token];
+    task.payouts[_role][_token] = 0;
+    task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
+    feesPaid[_token] = sub(feesPaid[_token], payout);
+    if (_token == 0x0){
+      // Payout ether
+      task.roles[_role].transfer(payout);
+    } else {
+      // Payout token
+      ERC20Extended payoutToken = ERC20Extended(_token);
+      payoutToken.transfer(msg.sender, payout);
+    }
   }
 
   function getPotBalance(uint256 _potID, address _token) returns (uint256){

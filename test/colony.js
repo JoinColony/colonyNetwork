@@ -434,6 +434,34 @@ contract('Colony', function (accounts) {
   });
 
   describe('when claiming payout for a task', () => {
+
+    it('should payout agreed tokens for a task', async function (){
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.mintTokens(300);
+      await colony.claimColonyFunds(token.address);
+      // Set the manager payout as 200 colony tokens
+      await colony.setTaskPayout(1, 0, token.address, 200);
+      await colony.moveFundsBetweenPots(0,1,200,token.address);
+      await colony.acceptTask(1);
+      await colony.claimPayout(1, 0, token.address);
+      let balance = await token.balanceOf.call(accounts[0]);
+      assert.equal(balance.toNumber(), 200);
+    });
+
+    it('should payout agreed ether for a task', async function (){
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.send(300);
+      await colony.claimColonyFunds(0x0);
+      // Set the manager payout as 200 colony tokens
+      await colony.setTaskPayout(1, 0, 0x0, 200);
+      await colony.moveFundsBetweenPots(0,1,200,0x0);
+      await colony.acceptTask(1);
+      let balanceBefore = await testHelper.web3GetBalance(accounts[0]);
+      await colony.claimPayout(1, 0, 0x0, {gasPrice: 0});
+      let balanceAfter = await testHelper.web3GetBalance(accounts[0]);
+      assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 200);
+    });
+
     it('should return error when task is not accepted', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
