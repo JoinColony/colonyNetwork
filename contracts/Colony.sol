@@ -106,10 +106,10 @@ contract Colony is DSAuth, DSMath, IColony {
   {
     Task storage task = tasks[_id];
     uint currentAmount = task.payouts[_role][_token];
-    task.payouts[_role][_token] = add(currentAmount, _amount);
+    task.payouts[_role][_token] = _amount;
 
     uint currentTotalAmount = task.totalPayouts[_token];
-    task.totalPayouts[_token] = add(currentTotalAmount, _amount);
+    task.totalPayouts[_token] = add(sub(currentTotalAmount, currentAmount), _amount);
 
     //TODO: Check Task pot and set `payoutsWeCannotMake`
   }
