@@ -155,7 +155,7 @@ contract('Colony', function (accounts) {
     });
   });
 
-  describe('when changing tasks', () => {
+  describe('when updating tasks', () => {
     it('should allow manager to submit an update of task brief', async function () {
       await colony.makeTask(ipfsDecodedHash);
       const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
@@ -176,7 +176,37 @@ contract('Colony', function (accounts) {
       assert.equal(task[3], dueDate);
     });
 
-    it.skip('should fail if a non-admin user tries to edit the task brief', async function () {
+    it('should allow manager to submit an update of task payout in ether', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      const txData = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 5000);
+      await colony.proposeTaskChange(txData, 0);
+      const taskPayoutManager = await colony.getTaskPayout.call(1, 0, 0x0);
+      assert.equal(taskPayoutManager.toNumber(), 5000);
+    });
+
+    it('should allow manager to submit an update of task payout in colony tokens', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.mintTokens(100);
+      const txData = await colony.contract.setTaskPayout.getData(1, 0, token.address, 100);
+
+      await colony.proposeTaskChange(txData, 0);
+      const taskPayoutManager = await colony.getTaskPayout.call(1, 0, token.address);
+      assert.equal(taskPayoutManager.toNumber(), 100);
+    });
+
+    it.skip('should fail to submit a task update for a not registered function signature', async function () {});
+
+    it.skip('should fail to submit update of task brief, using an invalid task id', async function () {
+      let tx;
+      try {
+        tx = await colony.setTaskBrief(10, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it.skip('should fail if task evaluator tries to submit an update of task brief', async function () {
       await colony.makeTask(ipfsDecodedHash);
 
       let tx;
@@ -188,7 +218,7 @@ contract('Colony', function (accounts) {
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it.skip('should fail to edit the task brief, if the task was already accepted', async function () {
+    it.skip('should fail to submit update of task brief, if the task was already accepted', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
       const task = await colony.getTask.call(1);
@@ -197,16 +227,6 @@ contract('Colony', function (accounts) {
       let tx;
       try {
         tx = await colony.setTaskBrief(1, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should fail if I try to edit the task brief using an invalid task id', async function () {
-      let tx;
-      try {
-        tx = await colony.setTaskBrief(10, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
