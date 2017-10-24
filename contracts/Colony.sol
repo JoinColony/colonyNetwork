@@ -10,6 +10,7 @@ import "./IColony.sol";
 
 contract Colony is DSAuth, DSMath, IColony {
   address resolver;
+  address colonyNetworkAddress;
   ERC20Extended public token;
   mapping (uint => Task) public tasks;
   uint public taskCount;
@@ -136,6 +137,11 @@ contract Colony is DSAuth, DSMath, IColony {
     Task storage task = tasks[_id];
     require(task.roles[_role] == msg.sender);
     uint payout = task.payouts[_role][_token];
+  }
+
+  function setColonyNetwork(address _address) public {
+    require (colonyNetworkAddress==0x0);
+    colonyNetworkAddress = _address;
   }
 
   function mintTokens(uint128 _wad) public

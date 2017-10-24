@@ -66,6 +66,7 @@ module.exports = {
     await resolver.register("getTaskPayout(uint256,uint256,address)", colony.address, 32);
     await resolver.register("claimPayout(uint256,uint256,address)", colony.address, 0);
     await resolver.register("mintTokens(uint128)", colony.address, 0);
+    await resolver.register("setColonyNetwork(address)", colony.address, 0);
 
     // Validate Colony functions are registered
     let response = await resolver.lookup.call('0xfc0c546a'); // token
@@ -111,6 +112,9 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x5ab75c42'); // mintTokens
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x03e27b42'); // setColonyNetwork(address)
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
 
