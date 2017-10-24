@@ -117,7 +117,6 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   function setTaskEvaluator(uint256 _id, address _evaluator) public
-  //auth
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
@@ -125,7 +124,6 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   function setTaskWorker(uint256 _id, address _worker) public
-  //auth
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
