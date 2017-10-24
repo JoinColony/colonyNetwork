@@ -110,47 +110,45 @@ contract Colony is DSAuth, DSMath, IColony {
 
     uint currentTotalAmount = task.totalPayouts[_token];
     task.totalPayouts[_token] = add(sub(currentTotalAmount, currentAmount), _amount);
-    updateTaskPayoutsWeCannotMake(_id, _token, false, currentTotalAmount);
+    updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 
-  function updateTaskPayoutsWeCannotMake(uint256 _id, address _token, bool _potUpdated, uint _prev) {
-    // This function is only called if the budget has been updated, or the pot has been updated.
-    // If the budget has been updated, _potUpdated is false, and _prev represents the previous budget.
-    // If the pot has been updated, _potUpdated is true, and _prev represents the previous budget.
+  function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) {
     Task storage task = tasks[_id];
-    if (!_potUpdated){
-      if (
-           pots[task.potID].balance[_token] >= _prev &&                   // If the amount in the pot was enough to pay for the old budget...
-           pots[task.potID].balance[_token] < task.totalPayouts[_token]   // And the amount in the pot is not enough to pay for the new budget...
-         )
-      {
-        task.payoutsWeCannotMake += 1;                                    // Then this is a set of payouts we cannot make that we could before.
-      }
+    if (
+         _prev >= task.totalPayouts[_token] &&                          // If the old amount in the pot was enough to pay for the budget
+         pots[task.potID].balance[_token] < task.totalPayouts[_token]   // And the new amount in the pot is not enough to pay for the budget...
+       )
+    {
+      task.payoutsWeCannotMake += 1;                                    // Then this is a set of payouts we cannot make that we could before.
+    }
 
-      if (
-           pots[task.potID].balance[_token] < _prev &&                    // If the amount in the pot was not enough to pay for the old value...
-           pots[task.potID].balance[_token] >= task.totalPayouts[_token]  // And the amount in the pot is enough to pay for the new value...
-         )
-      {
-        task.payoutsWeCannotMake -= 1;                                    // Then this is a set of payouts we can make that we could not before.
-      }
+    if (
+         _prev < task.totalPayouts[_token] &&                           // If the amount in the pot was not enough to pay for the old value...
+         pots[task.potID].balance[_token] >= task.totalPayouts[_token]  // And the amount in the pot is enough to pay for the new value...
+       )
+    {
+      task.payoutsWeCannotMake -= 1;                                    // Then this is a set of payouts we can make that we could not before.
+    }
+  }
 
-    } else {
-      if (
-           _prev >= task.totalPayouts[_token] &&                          // If the old amount in the pot was enough to pay for the budget
-           pots[task.potID].balance[_token] < task.totalPayouts[_token]   // And the new amount in the pot is not enough to pay for the budget...
-         )
-      {
-        task.payoutsWeCannotMake += 1;                                    // Then this is a set of payouts we cannot make that we could before.
-      }
 
-      if (
-           _prev < task.totalPayouts[_token] &&                           // If the amount in the pot was not enough to pay for the old value...
-           pots[task.potID].balance[_token] >= task.totalPayouts[_token]  // And the amount in the pot is enough to pay for the new value...
-         )
-      {
-        task.payoutsWeCannotMake -= 1;                                    // Then this is a set of payouts we can make that we could not before.
-      }
+  function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) {
+    Task storage task = tasks[_id];
+    if (
+         pots[task.potID].balance[_token] >= _prev &&                   // If the amount in the pot was enough to pay for the old budget...
+         pots[task.potID].balance[_token] < task.totalPayouts[_token]   // And the amount in the pot is not enough to pay for the new budget...
+       )
+    {
+      task.payoutsWeCannotMake += 1;                                    // Then this is a set of payouts we cannot make that we could before.
+    }
+
+    if (
+         pots[task.potID].balance[_token] < _prev &&                    // If the amount in the pot was not enough to pay for the old value...
+         pots[task.potID].balance[_token] >= task.totalPayouts[_token]  // And the amount in the pot is enough to pay for the new value...
+       )
+    {
+      task.payoutsWeCannotMake -= 1;                                    // Then this is a set of payouts we can make that we could not before.
     }
   }
 
@@ -209,8 +207,8 @@ contract Colony is DSAuth, DSMath, IColony {
     pots[_toPot].balance[_token] = add(pots[_toPot].balance[_token], _amount);
     uint fromTaskID = pots[_fromPot].taskID;
     uint toTaskID = pots[_toPot].taskID;
-    updateTaskPayoutsWeCannotMake(toTaskID, _token, true, toPotPreviousAmount);
-    updateTaskPayoutsWeCannotMake(fromTaskID, _token, true, fromPotPreviousAmount);
+    updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskID, _token, toPotPreviousAmount);
+    updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskID, _token, fromPotPreviousAmount);
   }
 
   function claimColonyFunds(address _token) public {
