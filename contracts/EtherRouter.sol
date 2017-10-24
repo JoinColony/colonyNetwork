@@ -10,6 +10,24 @@ contract EtherRouter is DSAuth {
   Resolver public resolver;
 
   function() payable external {
+    if (msg.sig == 0x0){
+      return;
+    }
+    // Contracts that want to receive Ether with a plain "send" have to implement
+    // a fallback function with the payable modifier. Contracts now throw if no payable
+    // fallback function is defined and no function matches the signature.
+    // However, 'send' only provides 2300 gas, which is not enough for EtherRouter
+    // so we shortcut it here.
+    //
+    // Note that this means we can never have a fallback function that 'does' stuff.
+    // but those only really seem to be ICOs, to date. To be explicit, there is a hard
+    // decision to be made here. Either:
+    // 1. Contracts that use 'send' or 'transfer' cannot send money to Colonies/ColonyNetwork
+    // 2. We commit to never using a fallback function that does anything.
+    //
+    // If we wish to have such a fallback function for a Colony, it could be in a separate
+    // contract.
+
     uint r;
 
     // Get routing information for the called function
