@@ -67,6 +67,7 @@ module.exports = {
     await resolver.register("claimPayout(uint256,uint256,address)", colony.address, 0);
     await resolver.register("mintTokens(uint128)", colony.address, 0);
     await resolver.register("getPotBalance(uint256,address)", colony.address, 32);
+    await resolver.register("claimColonyFunds(address)", colony.address, 0);
     await resolver.register("setColonyNetwork(address)", colony.address, 0);
 
     // Validate Colony functions are registered
@@ -118,6 +119,9 @@ module.exports = {
     response = await resolver.lookup.call('0xed8b4eb1'); // getPotBalance(uint256,address)
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x89224a1e'); // claimColonyFunds(address)
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x03e27b42'); // setColonyNetwork(address)
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);

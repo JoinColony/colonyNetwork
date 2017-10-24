@@ -16,9 +16,13 @@ contract Colony is DSAuth, DSMath, IColony {
   // Pots can be tied to tasks or to (in the future) domains, so giving them their own mapping.
   // Pot 0  can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had fees paid.
+  mapping (address => uint) public feesPaid;
+  // This keeps track of how much of the colony's funds that it owns have been moved into pots anywhere, and have also
+  // had fees paid.
+  // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
+
   mapping (uint => Pot) pots;
   uint public taskCount;
-  uint public reservedTokens;
   uint public potCount;
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
@@ -155,6 +159,37 @@ contract Colony is DSAuth, DSMath, IColony {
 
   function getPotBalance(uint256 _potID, address _token) returns (uint256){
     return pots[_potID].balance[_token];
+  }
+
+  function claimColonyFunds(address _token) public {
+    uint toClaim;
+    uint feeToPay;
+    uint remainder;
+    if (_token==0x0){
+      // It's ether
+      toClaim = this.balance - feesPaid[_token];
+      feeToPay = toClaim / getFeeInverse();
+      remainder = sub(toClaim, feeToPay);
+      feesPaid[_token] = add(feesPaid[_token], remainder);
+      pots[0].balance[_token] = add(pots[0].balance[_token], remainder);
+      colonyNetworkAddress.transfer(feeToPay);
+    } else {
+      // Assume it's an ERC 20 token.
+      ERC20Extended targetToken = ERC20Extended(_token);
+      toClaim = targetToken.balanceOf(this) - feesPaid[_token];
+      feeToPay = toClaim / getFeeInverse();
+      remainder = sub(toClaim, feeToPay);
+      feesPaid[_token] = add(feesPaid[_token], remainder);
+      pots[0].balance[_token] = add(pots[0].balance[_token], remainder);
+      targetToken.transfer(colonyNetworkAddress, feeToPay);
+    }
+  }
+
+  function getFeeInverse() public returns (uint){
+    // Return 1 / the fee to pay to the network.
+    // e.g. if the fee is 1% (or 0.01), return 100
+    // TODO: refer to ColonyNetwork
+    return 100;
   }
 
   function setColonyNetwork(address _address) public {
