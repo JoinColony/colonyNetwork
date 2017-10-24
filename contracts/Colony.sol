@@ -13,8 +13,13 @@ contract Colony is DSAuth, DSMath, IColony {
   address colonyNetworkAddress;
   ERC20Extended public token;
   mapping (uint => Task) public tasks;
+  // Pots can be tied to tasks or to (in the future) domains, so giving them their own mapping.
+  // Pot 0  can be thought of as the pot belonging to the colony itself that hasn't been assigned
+  // to anything yet, but has had fees paid.
+  mapping (uint => Pot) pots;
   uint public taskCount;
   uint public reservedTokens;
+  uint public potCount;
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
@@ -26,8 +31,14 @@ contract Colony is DSAuth, DSMath, IColony {
     uint dueDate;
     bool accepted;
     uint payoutsWeCannotMake;
+    uint potID;
     mapping (address => uint) totalPayouts;
     mapping (uint => mapping (address => uint)) payouts;
+  }
+
+  struct Pot {
+    mapping (address => uint) balance;
+    uint taskID;
   }
 
   modifier tasksExists(uint256 _id) {
@@ -55,6 +66,7 @@ contract Colony is DSAuth, DSMath, IColony {
   auth
   {
     taskCount += 1;
+    potCount +=1;
     address[] memory _roles = new address[](1);
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
@@ -62,7 +74,9 @@ contract Colony is DSAuth, DSMath, IColony {
         roles: _roles,
         accepted: false,
         dueDate: 0,
-        payoutsWeCannotMake: 0 });
+        payoutsWeCannotMake: 0,
+        potID: potCount});
+    pots[potCount].taskID = taskCount;
   }
 
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
@@ -137,6 +151,10 @@ contract Colony is DSAuth, DSMath, IColony {
     Task storage task = tasks[_id];
     require(task.roles[_role] == msg.sender);
     uint payout = task.payouts[_role][_token];
+  }
+
+  function getPotBalance(uint256 _potID, address _token) returns (uint256){
+    return pots[_potID].balance[_token];
   }
 
   function setColonyNetwork(address _address) public {
