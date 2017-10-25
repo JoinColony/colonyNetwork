@@ -51,12 +51,7 @@ contract('Colony', function (accounts) {
       let colonyBalancePre = await testHelper.web3GetBalance(colony.address);
       await colony.send(1);
       let colonyBalance = await testHelper.web3GetBalance(colony.address);
-
-      // Note: Until https://github.com/sc-forks/solidity-coverage/issues/92 is complete
-      // issue https://github.com/ethereumjs/testrpc/issues/122 manifests itself here
-      const network = await testHelper.web3GetNetwork();
-      const expectedBalance = (network == 'coverage') ? 2 : 1;
-      assert.equal(colonyBalance.toNumber(), expectedBalance);
+      assert.equal(colonyBalance.toNumber(), 1);
     });
 
     it('should take colony network as an owner', async function () {
