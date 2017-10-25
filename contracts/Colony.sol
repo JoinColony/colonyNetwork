@@ -98,7 +98,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   // Note this relies on the function first parameter to be the uint256 taskId
-  function proposeTaskChange(bytes _data, uint _value) public returns (uint transactionId) {
+  function proposeTaskChange(bytes _data, uint _value, uint8 _role) public returns (uint transactionId) {
     // Get the function signature and task id from the proposed change call data
     bytes4 sig;
     uint taskId;
@@ -107,14 +107,13 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
       taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
     }
 
-    uint8[2] storage txReviewers = reviewers[sig];
     Task storage task = tasks[taskId];
+    require(task.roles[_role] == msg.sender);
 
-    if (task.roles[txReviewers[0]] == msg.sender) {
-      transactionId = submitTransaction(_data, _value, txReviewers[0]);
-    } else if (task.roles[txReviewers[1]] == msg.sender) {
-      transactionId = submitTransaction(_data, _value, txReviewers[1]);
-    }
+    uint8[2] storage txReviewers = reviewers[sig];
+    require(txReviewers[0] == _role || txReviewers[1] == _role);
+
+    transactionId = submitTransaction(_data, _value, _role);
   }
 
   function approveTaskChange(uint transactionId) public {

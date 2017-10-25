@@ -57,9 +57,9 @@ contract('all', function (accounts) {
 
       // Propose task change
       const txData = await colony.contract.setTaskBrief.getData(1, '9bb76d8e6c89b524d34a454b3140df29');
-      estimate = await colony.proposeTaskChange.estimateGas(txData, 0);
+      estimate = await colony.proposeTaskChange.estimateGas(txData, 0, 0);
       console.log('Propose task change of brief estimate : ', estimate);
-      tx = await colony.proposeTaskChange(txData, 0, { gasPrice });
+      tx = await colony.proposeTaskChange(txData, 0, 0, { gasPrice });
       proposeTaskUpdateCost = tx.receipt.gasUsed;
       console.log('proposeTaskChange actual cost :', proposeTaskUpdateCost);
 
