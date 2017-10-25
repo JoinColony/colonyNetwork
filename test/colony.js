@@ -441,7 +441,7 @@ contract('Colony', function (accounts) {
       await colony.claimColonyFunds(token.address);
       // Set the manager payout as 200 colony tokens
       await colony.setTaskPayout(1, 0, token.address, 200);
-      await colony.moveFundsBetweenPots(0,1,200,token.address);
+      await colony.moveFundsBetweenPots(1,2,200,token.address);
       await colony.acceptTask(1);
       await colony.claimPayout(1, 0, token.address);
       let balance = await token.balanceOf.call(accounts[0]);
@@ -454,7 +454,7 @@ contract('Colony', function (accounts) {
       await colony.claimColonyFunds(0x0);
       // Set the manager payout as 200 colony tokens
       await colony.setTaskPayout(1, 0, 0x0, 200);
-      await colony.moveFundsBetweenPots(0,1,200,0x0);
+      await colony.moveFundsBetweenPots(1,2,200,0x0);
       await colony.acceptTask(1);
       let balanceBefore = await testHelper.web3GetBalance(accounts[0]);
       await colony.claimPayout(1, 0, 0x0, {gasPrice: 0});
