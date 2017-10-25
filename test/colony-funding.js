@@ -204,17 +204,17 @@ contract('Colony', function (accounts) {
       assert.equal(task[4].toNumber(), 0);
     })
 
-    it.skip('should pay fees correctly', async function () {
-      // Not sure why this test is failing...
+    it('should pay fees correctly', async function () {
+      let colonyNetworkBalanceBefore = await testHelper.web3GetBalance(colonyNetwork.address);
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
       await colony.send(200);
       await colony.claimColonyFunds(0x0);
       let colonyPotBalance= await colony.getPotBalance.call(0,0x0);
       let colonyEtherBalance = await testHelper.web3GetBalance(colony.address);
-      let colonyNetworkBalance = await testHelper.web3GetBalance(colonyNetwork.address);
+      let colonyNetworkBalanceAfter = await testHelper.web3GetBalance(colonyNetwork.address);
       assert.equal(colonyEtherBalance.toNumber(), 297)
-      assert.equal(colonyNetworkBalance.toNumber(), 3);
+      assert.equal(colonyNetworkBalanceAfter.minus(colonyNetworkBalanceBefore).toNumber(), 3);
       assert.equal(colonyPotBalance.toNumber(), 297);
     });
 
