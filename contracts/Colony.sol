@@ -114,7 +114,7 @@ contract Colony is DSAuth, DSMath, IColony {
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 
-  function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) {
+  function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     if (
          _prev >= task.totalPayouts[_token] &&                          // If the old amount in the pot was enough to pay for the budget
@@ -134,7 +134,7 @@ contract Colony is DSAuth, DSMath, IColony {
   }
 
 
-  function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) {
+  function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     if (
          pots[task.potID].balance[_token] >= _prev &&                   // If the amount in the pot was enough to pay for the old budget...
@@ -213,7 +213,7 @@ contract Colony is DSAuth, DSMath, IColony {
     }
   }
 
-  function getPotBalance(uint256 _potID, address _token) returns (uint256){
+  function getPotBalance(uint256 _potID, address _token) public view returns (uint256){
     return pots[_potID].balance[_token];
   }
 
@@ -248,14 +248,14 @@ contract Colony is DSAuth, DSMath, IColony {
     pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
   }
 
-  function getFeeInverse() public returns (uint){
+  function getFeeInverse() public pure returns (uint){
     // Return 1 / the fee to pay to the network.
     // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: refer to ColonyNetwork
     return 100;
   }
 
-  function getRewardInverse() public returns (uint){
+  function getRewardInverse() public pure returns (uint){
     // Return 1 / the reward to pay out from revenue.
     // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: Make settable by colony
