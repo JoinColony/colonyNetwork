@@ -197,14 +197,19 @@ contract Colony is DSAuth, DSMath, IColony {
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
     task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
+    pots[task.potID].balance[_token] = sub(pots[task.potID].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
+    uint fee = payout / getFeeInverse();
+    uint remainder = sub(payout, fee);
     if (_token == 0x0){
       // Payout ether
-      task.roles[_role].transfer(payout);
+      task.roles[_role].transfer(remainder);
+      colonyNetworkAddress.transfer(fee);
     } else {
       // Payout token
       ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(msg.sender, payout);
+      payoutToken.transfer(msg.sender, remainder);
+      payoutToken.transfer(colonyNetworkAddress, fee);
     }
   }
 

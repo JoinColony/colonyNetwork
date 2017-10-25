@@ -438,9 +438,14 @@ contract('Colony', function (accounts) {
       await colony.setTaskPayout(1, 0, token.address, 200);
       await colony.moveFundsBetweenPots(1,2,200,token.address);
       await colony.acceptTask(1);
+      let networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       await colony.claimPayout(1, 0, token.address);
+      let networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 2);
       let balance = await token.balanceOf.call(accounts[0]);
-      assert.equal(balance.toNumber(), 200);
+      assert.equal(balance.toNumber(), 198);
+      let potBalance = await colony.getPotBalance.call(2, token.address);
+      assert.equal(potBalance.toNumber(), 0);
     });
 
     it('should payout agreed ether for a task', async function (){
@@ -452,9 +457,14 @@ contract('Colony', function (accounts) {
       await colony.moveFundsBetweenPots(1,2,200,0x0);
       await colony.acceptTask(1);
       let balanceBefore = await testHelper.web3GetBalance(accounts[0]);
+      let networkBalanceBefore = await testHelper.web3GetBalance(colonyNetwork.address);
       await colony.claimPayout(1, 0, 0x0, {gasPrice: 0});
       let balanceAfter = await testHelper.web3GetBalance(accounts[0]);
-      assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 200);
+      let networkBalanceAfter = await testHelper.web3GetBalance(colonyNetwork.address);
+      assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 198);
+      assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 2);
+      let potBalance = await colony.getPotBalance.call(2, 0x0);
+      assert.equal(potBalance.toNumber(), 0);
     });
 
     it('should return error when task is not accepted', async function () {

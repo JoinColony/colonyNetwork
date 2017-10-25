@@ -137,8 +137,6 @@ contract('Colony', function (accounts) {
       assert.equal(colonyPotBalance.toNumber(), 297);
     });
 
-    it.skip('should pay fees correctly after a task payout')
-
   });
 
   describe('when receiving ether', () => {
@@ -220,7 +218,6 @@ contract('Colony', function (accounts) {
       assert.equal(colonyRewardPotBalance.toNumber(), 3);
     });
 
-    it.skip('should pay fees correctly after a task payout')
   });
 
 });
