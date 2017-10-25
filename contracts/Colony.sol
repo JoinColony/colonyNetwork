@@ -68,6 +68,11 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     _;
   }
 
+  modifier self() {
+    require(address(this) == msg.sender);
+    _;
+  }
+
   function setToken(address _token) public
   auth
   {
@@ -131,7 +136,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
-  auth
+  self()
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
@@ -139,7 +144,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
-  auth
+  self()
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
@@ -147,7 +152,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
-  auth
+  self()
   tasksExists(_id)
   tasksNotAccepted(_id)
   {

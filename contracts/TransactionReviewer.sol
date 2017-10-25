@@ -21,7 +21,7 @@ contract TransactionReviewer {
     function TransactionReviewer() {
       reviewers[0xda4db249] = [0, 2]; // setTaskBrief => manager, worker
       reviewers[0xcae960fe] = [0, 2]; // setTaskDueDate => manager, worker
-      // setTaskWorker => manager, proposed worker address
+      reviewers[0xbe2320af] = [0, 2]; // setTaskPayout => manager, worker
     }
 
     struct Transaction {

@@ -176,24 +176,6 @@ contract('Colony', function (accounts) {
       assert.equal(task[3], dueDate);
     });
 
-    it('should allow manager to submit an update of task payout in ether', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      const txData = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 5000);
-      await colony.proposeTaskChange(txData, 0);
-      const taskPayoutManager = await colony.getTaskPayout.call(1, 0, 0x0);
-      assert.equal(taskPayoutManager.toNumber(), 5000);
-    });
-
-    it('should allow manager to submit an update of task payout in colony tokens', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.mintTokens(100);
-      const txData = await colony.contract.setTaskPayout.getData(1, 0, token.address, 100);
-
-      await colony.proposeTaskChange(txData, 0);
-      const taskPayoutManager = await colony.getTaskPayout.call(1, 0, token.address);
-      assert.equal(taskPayoutManager.toNumber(), 100);
-    });
-
     it.skip('should fail to submit a task update for a not registered function signature', async function () {});
 
     it.skip('should fail to submit update of task brief, using an invalid task id', async function () {
@@ -281,13 +263,21 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
       // Set the manager payout as 5000 wei and 100 colony tokens
-      await colony.setTaskPayout(1, 0, 0x0, 5000);
-      await colony.setTaskPayout(1, 0, token.address, 100);
+      const txData1 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 5000);
+      await colony.proposeTaskChange(txData1, 0);
+      const txData2 = await colony.contract.setTaskPayout.getData(1, 0, token.address, 100);
+      await colony.proposeTaskChange(txData2, 0);
+
+
       // Set the evaluator payout as 40 colony tokens
-      await colony.setTaskPayout(1, 1, token.address, 40);
+      const txData3 = await colony.contract.setTaskPayout.getData(1, 1, token.address, 40);
+      await colony.proposeTaskChange(txData3, 0);
+
       // Set the worker payout as 98000 wei and 200 colony tokens
-      await colony.setTaskPayout(1, 2, 0x0, 98000);
-      await colony.setTaskPayout(1, 2, token.address, 200);
+      const txData4 = await colony.contract.setTaskPayout.getData(1, 2, 0x0, 98000);
+      await colony.proposeTaskChange(txData4, 0);
+      const txData5 = await colony.contract.setTaskPayout.getData(1, 2, token.address, 200);
+      await colony.proposeTaskChange(txData5, 0);
 
       const taskPayoutManager1 = await colony.getTaskPayout.call(1, 0, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);
@@ -349,7 +339,8 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
       // Set the manager payout as 200 colony tokens
-      await colony.setTaskPayout(1, 0, token.address, 200);
+      const txData1 = await colony.contract.setTaskPayout.getData(1, 0, token.address, 200);
+      await colony.proposeTaskChange(txData1, 0);
 
       let tx;
       try {
@@ -364,7 +355,8 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
       // Set the manager payout as 200 colony tokens
-      await colony.setTaskPayout(1, 0, token.address, 200);
+      const txData1 = await colony.contract.setTaskPayout.getData(1, 0, token.address, 200);
+      await colony.proposeTaskChange(txData1, 0);
       await colony.acceptTask(1);
 
       let tx;
