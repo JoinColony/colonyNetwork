@@ -116,8 +116,25 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     transactionId = submitTransaction(_data, _value, _role);
   }
 
-  function approveTaskChange(uint transactionId) public {
+  function approveTaskChange(uint _transactionId, uint8 _role) public {
+    Transaction storage _transaction = transactions[_transactionId];
 
+    // Get the function signature and task id from the proposed change call data
+    bytes4 sig;
+    uint taskId;
+    bytes memory _data = _transaction.data;
+
+    assembly {
+      sig := mload(add(_data, add(0x20, 0)))
+      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
+    }
+    Task storage task = tasks[taskId];
+    require(task.roles[_role] == msg.sender);
+
+    uint8[2] storage txReviewers = reviewers[sig];
+    require(txReviewers[0] == _role || txReviewers[1] == _role);
+
+    confirmTransaction(_transactionId, _role);
   }
 
   function setTaskEvaluator(uint256 _id, address _evaluator) public

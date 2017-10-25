@@ -58,6 +58,7 @@ module.exports = {
     await resolver.register("setToken(address)", colony.address, 0);
     await resolver.register("makeTask(bytes32)", colony.address, 0);
     await resolver.register("proposeTaskChange(bytes,uint256,uint8)", colony.address, 32);
+    await resolver.register("approveTaskChange(uint256,uint8)", colony.address, 0);
     await resolver.register("setTaskEvaluator(uint256,address)", colony.address, 0);
     await resolver.register("setTaskWorker(uint256,address)", colony.address, 0);
     await resolver.register("setTaskBrief(uint256,bytes32)", colony.address, 0);
@@ -96,6 +97,9 @@ module.exports = {
     response = await resolver.lookup.call('0x6b460bff'); // proposeTaskChange
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0xf4ae4f08'); // approveTaskChange
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x05498b88'); // setTaskEvaluator
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
