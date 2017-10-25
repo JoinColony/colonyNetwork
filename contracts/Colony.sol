@@ -14,11 +14,12 @@ contract Colony is DSAuth, DSMath, IColony {
   ERC20Extended public token;
   mapping (uint => Task) public tasks;
   // Pots can be tied to tasks or to (in the future) domains, so giving them their own mapping.
-  // Pot 0  can be thought of as the pot belonging to the colony itself that hasn't been assigned
-  // to anything yet, but has had fees paid.
-  mapping (address => uint) public feesPaid;
+  // Pot 1  can be thought of as the pot belonging to the colony itself that hasn't been assigned
+  // to anything yet, but has had some siphoned off in to the reward pot.
+  // Pot 0 is the pot containing funds that can be paid to holders of colony tokens in the future.
+  mapping (address => uint) public nonRewardPotsTotal;
   // This keeps track of how much of the colony's funds that it owns have been moved into pots anywhere, and have also
-  // had fees paid.
+  // had the reward amount siphoned off.
   // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
 
   mapping (uint => Pot) pots;
@@ -161,7 +162,7 @@ contract Colony is DSAuth, DSMath, IColony {
   }
 
   function getTask(uint256 _id) public view
-  returns (bytes32, uint, bool, uint, uint)
+  returns (bytes32, uint, bool, uint, uint, uint)
   {
     Task storage task = tasks[_id];
     uint rolesCount = task.roles.length;
@@ -170,7 +171,8 @@ contract Colony is DSAuth, DSMath, IColony {
       rolesCount,
       task.accepted,
       task.dueDate,
-      task.payoutsWeCannotMake);
+      task.payoutsWeCannotMake,
+      task.potID);
   }
 
   function getTaskRoleAddress (uint _id, uint _role) public view
@@ -195,7 +197,7 @@ contract Colony is DSAuth, DSMath, IColony {
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
     task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
-    feesPaid[_token] = sub(feesPaid[_token], payout);
+    nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
     if (_token == 0x0){
       // Payout ether
       task.roles[_role].transfer(payout);
@@ -228,22 +230,17 @@ contract Colony is DSAuth, DSMath, IColony {
     uint remainder;
     if (_token==0x0){
       // It's ether
-      toClaim = this.balance - feesPaid[_token];
-      feeToPay = toClaim / getFeeInverse();
-      remainder = sub(toClaim, feeToPay);
-      feesPaid[_token] = add(feesPaid[_token], remainder);
-      pots[0].balance[_token] = add(pots[0].balance[_token], remainder);
-      colonyNetworkAddress.transfer(feeToPay);
+      toClaim = this.balance - nonRewardPotsTotal[_token] -  pots[0].balance[_token];
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
-      toClaim = targetToken.balanceOf(this) - feesPaid[_token];
-      feeToPay = toClaim / getFeeInverse();
-      remainder = sub(toClaim, feeToPay);
-      feesPaid[_token] = add(feesPaid[_token], remainder);
-      pots[0].balance[_token] = add(pots[0].balance[_token], remainder);
-      targetToken.transfer(colonyNetworkAddress, feeToPay);
+      toClaim = targetToken.balanceOf(this) - nonRewardPotsTotal[_token] - pots[0].balance[_token];
     }
+    feeToPay = toClaim / getRewardInverse();
+    remainder = sub(toClaim, feeToPay);
+    nonRewardPotsTotal[_token] = add(nonRewardPotsTotal[_token], remainder);
+    pots[1].balance[_token] = add(pots[1].balance[_token], remainder);
+    pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
   }
 
   function getFeeInverse() public returns (uint){
@@ -253,9 +250,17 @@ contract Colony is DSAuth, DSMath, IColony {
     return 100;
   }
 
-  function setColonyNetwork(address _address) public {
+  function getRewardInverse() public returns (uint){
+    // Return 1 / the reward to pay out from revenue.
+    // e.g. if the fee is 1% (or 0.01), return 100
+    // TODO: Make settable by colony
+    return 100;
+  }
+
+  function initialiseColony(address _address) public {
     require (colonyNetworkAddress==0x0);
     colonyNetworkAddress = _address;
+    potCount=1;
   }
 
   function mintTokens(uint128 _wad) public

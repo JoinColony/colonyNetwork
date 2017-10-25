@@ -69,7 +69,7 @@ module.exports = {
     await resolver.register("getPotBalance(uint256,address)", colony.address, 32);
     await resolver.register("moveFundsBetweenPots(uint256,uint256,uint256,address)", colony.address, 0);
     await resolver.register("claimColonyFunds(address)", colony.address, 0);
-    await resolver.register("setColonyNetwork(address)", colony.address, 0);
+    await resolver.register("initialiseColony(address)", colony.address, 0);
 
     // Validate Colony functions are registered
     let response = await resolver.lookup.call('0xfc0c546a'); // token
@@ -126,7 +126,7 @@ module.exports = {
     response = await resolver.lookup.call('0x89224a1e'); // claimColonyFunds(address)
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x03e27b42'); // setColonyNetwork(address)
+    response = await resolver.lookup.call('0x5d90f53c'); // initialiseColony(address)
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
 
