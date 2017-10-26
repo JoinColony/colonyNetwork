@@ -97,44 +97,39 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     pots[potCount].taskId = taskCount;
   }
 
-  // Note this relies on the function first parameter to be the uint256 taskId
   function proposeTaskChange(bytes _data, uint _value, uint8 _role) public returns (uint transactionId) {
-    // Get the function signature and task id from the proposed change call data
-    bytes4 sig;
-    uint taskId;
-    assembly {
-      sig := mload(add(_data, add(0x20, 0)))
-      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
-    }
+    var (sig, taskId) = deconstructCall(_data);
 
     Task storage task = tasks[taskId];
     require(task.roles[_role] == msg.sender);
 
-    uint8[2] storage txReviewers = reviewers[sig];
-    require(txReviewers[0] == _role || txReviewers[1] == _role);
+    uint8[2] storage _reviewers = reviewers[sig];
+    require(_reviewers[0] == _role || _reviewers[1] == _role);
 
     transactionId = submitTransaction(_data, _value, _role);
   }
 
   function approveTaskChange(uint _transactionId, uint8 _role) public {
     Transaction storage _transaction = transactions[_transactionId];
-
-    // Get the function signature and task id from the proposed change call data
-    bytes4 sig;
-    uint taskId;
     bytes memory _data = _transaction.data;
+    var (sig, taskId) = deconstructCall(_data);
 
+    Task storage task = tasks[taskId];
+    require(task.roles[_role] == msg.sender);
+
+    uint8[2] storage _reviewers = reviewers[sig];
+    require(_reviewers[0] == _role || _reviewers[1] == _role);
+
+    confirmTransaction(_transactionId, _role);
+  }
+
+  // Get the function signature and task id from the transaction bytes data
+  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
+  function deconstructCall(bytes _data) internal returns (bytes4 sig, uint256 taskId) {
     assembly {
       sig := mload(add(_data, add(0x20, 0)))
       taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
     }
-    Task storage task = tasks[taskId];
-    require(task.roles[_role] == msg.sender);
-
-    uint8[2] storage txReviewers = reviewers[sig];
-    require(txReviewers[0] == _role || txReviewers[1] == _role);
-
-    confirmTransaction(_transactionId, _role);
   }
 
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
