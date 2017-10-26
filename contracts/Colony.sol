@@ -224,6 +224,7 @@ contract Colony is DSAuth, DSMath, IColony {
   }
 
   function moveFundsBetweenPots(uint _fromPot, uint _toPot, uint _amount, address _token) public {
+    require(_fromPot > 0);
     assert(pots[_fromPot].balance[_token] >= _amount); // TODO do we need this? we're using safemath...
     uint fromPotPreviousAmount = pots[_fromPot].balance[_token];
     uint toPotPreviousAmount = pots[_toPot].balance[_token];
