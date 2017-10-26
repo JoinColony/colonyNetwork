@@ -73,6 +73,16 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
+
+    it('should not allow reinitialisation', async function (){
+      let tx;
+      try {
+        tx = await colony.initialiseColony(0x0, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
   });
 
   describe('when working with permissions', () => {
