@@ -18,11 +18,6 @@ contract TransactionReviewer {
     mapping (uint => mapping (uint => bool)) public confirmations;
     uint public transactionCount;
 
-    function TransactionReviewer() {
-      reviewers[0xda4db249] = [0, 2]; // setTaskBrief => manager, worker
-      reviewers[0xcae960fe] = [0, 2]; // setTaskDueDate => manager, worker
-      reviewers[0xbe2320af] = [0, 2]; // setTaskPayout => manager, worker
-    }
 
     struct Transaction {
         bytes data;
@@ -43,6 +38,13 @@ contract TransactionReviewer {
     modifier notExecuted(uint transactionId) {
         require(!transactions[transactionId].executed);
         _;
+    }
+
+    //TODO Secure this
+    function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer) public
+    {
+      uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
+      reviewers[_sig] = _reviewers;
     }
 
     function submitTransaction(bytes data, uint value, uint8 role) internal returns (uint transactionId)

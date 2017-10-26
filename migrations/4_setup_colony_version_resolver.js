@@ -34,7 +34,7 @@ module.exports = function (deployer, network, accounts) {
     // Register the new Colony contract version with the newly setup Resolver
     return upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
   })
-  .then(function (r) {
+  .then(function () {
     console.log('### Colony version', version, 'set to Resolver', resolver.address);
   })
   .catch(function (err) {

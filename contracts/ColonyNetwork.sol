@@ -28,6 +28,9 @@ contract ColonyNetwork is DSAuth {
     var colony = IColony(etherRouter);
     colony.setToken(token);
     colony.initialiseColony(this);
+    colony.setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
+    colony.setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
+    colony.setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
     token.setOwner(colony);
 
     var authority = new Authority(colony);
