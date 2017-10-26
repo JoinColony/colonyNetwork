@@ -71,7 +71,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -121,7 +121,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should set the task manager as the creator', async function () {
@@ -161,7 +161,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail to edit the task brief, if the task was already accepted', async function () {
@@ -176,7 +176,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to edit the task brief using an invalid task id', async function () {
@@ -186,7 +186,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should be able to set the task due date', async function () {
@@ -214,7 +214,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to accept a task that was accepted before', async function () {
@@ -226,7 +226,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to accept a task using an invalid id', async function () {
@@ -236,7 +236,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -277,7 +277,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it.skip('should fail if admin tries to contribute to a nonexistent task', async function () {
@@ -287,7 +287,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it.skip('should allow admins to fund task with ether', async function () {
@@ -309,7 +309,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it.skip('should reserve the correct number of tokens when an admin funds task with pool tokens', async function () {
@@ -364,7 +364,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it.skip('should fail if a non-admin user tries to contribute with tokens from the pool', async function () {
@@ -377,7 +377,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it.skip('should fail if a non-admin user try to contribute tokens', async function () {
@@ -389,7 +389,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it.skip('should allow an admin to refund task tokens', async function () {
@@ -419,7 +419,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       reservedTokens = await colony.reservedTokens.call();
       assert.equal(reservedTokens.toNumber(), 80);
@@ -479,7 +479,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should return error when called by account that doesn\'t match the role', async function () {
@@ -495,7 +495,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 });

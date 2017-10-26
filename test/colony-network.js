@@ -165,7 +165,7 @@ contract('ColonyNetwork', function (accounts) {
       } catch (err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
@@ -185,7 +185,7 @@ contract('ColonyNetwork', function (accounts) {
       } catch (err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
@@ -208,7 +208,7 @@ contract('ColonyNetwork', function (accounts) {
       } catch (err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       assert.notEqual(resolver, sampleResolver);
     });
