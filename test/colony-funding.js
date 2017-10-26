@@ -156,21 +156,71 @@ contract('Colony', function (accounts) {
     });
 
     it('should correctly track if we are able to make token payouts', async function(){
+      // There are twelve scenarios to test here.
+      // Pot was below payout, now equal (1 + 2)
+      // Pot was below payout, now above (3 + 4)
+      // Pot was equal to payout, now above (5 + 6)
+      // Pot was equal to payout, now below (7 + 8)
+      // Pot was above payout, now below (9 + 10)
+      // Pot was above payout, now equal (11 + 12)
+      //
+      // And, for each of these, we have to check that the update is correctly tracked when
+      // the pot changes (odd numbers), and when the payout changes (even numbers)
+      //
+      // NB We do not need to be this exhaustive when using ether, because this test is testing
+      // that updateTaskPayoutsWeCannotMakeAfterPotChange and updateTaskPayoutsWeCannotMakeAfterBudgetChange
+      // are correct, which are used in both cases.
       let otherToken = await Token.new();
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
       await colony.makeTask(ipfsDecodedHash);
+      // Pot was equal to payout, transition to pot being lower by increasing payout (8)
       await colony.setTaskPayout(1,0,otherToken.address,40);
       let task = await colony.getTask.call(1);
       assert.equal(task[4].toNumber(), 1);
+      // Pot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[4].toNumber(), 0);
-      await colony.moveFundsBetweenPots(2,1,30,otherToken.address);
+      // Pot was equal to payout, transition to being above by increasing pot (5)
+      await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 0);
+      // Pot was above payout, transition to being equal by increasing payout (12)
+      await colony.setTaskPayout(1,0,otherToken.address,80);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 0);
+      // Pot was equal to payout, transition to being above by decreasing payout (6)
+      await colony.setTaskPayout(1,0,otherToken.address,40);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 0);
+      // Pot was above payout, transition to being equal by decreasing pot (11)
+      await colony.moveFundsBetweenPots(2,1,40,otherToken.address);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 0);
+      // Pot was equal to payout, transition to pot being below payout by changing pot (7)
+      await colony.moveFundsBetweenPots(2,1,20,otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[4].toNumber(), 1);
+      // Pot was below payout, change to being above by changing pot (3)
+      await colony.moveFundsBetweenPots(1,2,60,otherToken.address);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 0);
+      // Pot was above payout, change to being below by changing pot (9)
+      await colony.moveFundsBetweenPots(2,1,60,otherToken.address);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 1);
+      // Pot was below payout, change to being above by changing payout (4)
       await colony.setTaskPayout(1,0,otherToken.address,10);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 0);
+      // Pot was above payout, change to being below by changing payout (10)
+      await colony.setTaskPayout(1,0,otherToken.address,40);
+      task = await colony.getTask.call(1);
+      assert.equal(task[4].toNumber(), 1);
+      // Pot was below payout, change to being equal by changing payout (2)
+      await colony.setTaskPayout(1,0,otherToken.address,20);
       task = await colony.getTask.call(1);
       assert.equal(task[4].toNumber(), 0);
     });
