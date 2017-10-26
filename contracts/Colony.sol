@@ -83,8 +83,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   auth
   {
     taskCount += 1;
-    potCount += 1;
-    address[] memory _roles = new address[](1);
+    potCount +=1;
+    address[] memory _roles = new address[](3);
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
       ipfsDecodedHash: _ipfsDecodedHash,
@@ -137,6 +137,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     confirmTransaction(_transactionId, _role);
   }
 
+  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
+  // Note task assignment is agreed off-chain
   function setTaskEvaluator(uint256 _id, address _evaluator) public
   tasksExists(_id)
   tasksNotAccepted(_id)
@@ -144,6 +146,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     tasks[_id].roles[1] = _evaluator;
   }
 
+  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
+  // Note task assignment is agreed off-chain
   function setTaskWorker(uint256 _id, address _worker) public
   tasksExists(_id)
   tasksNotAccepted(_id)
