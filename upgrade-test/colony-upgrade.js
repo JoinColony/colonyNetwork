@@ -76,14 +76,14 @@ contract('Colony contract upgrade', function (accounts) {
     it('should return correct tasks', async function () {
       const task1 = await updatedColony.getTask(1);
       assert.equal(testHelper.hexToUtf8(task1[0]), ipfsDecodedHash);
-      assert.equal(task1[1].toNumber(), 1);
+      assert.equal(task1[1].toNumber(), 3);
       assert.isFalse(task1[2]);
       assert.equal(task1[3].toNumber(), 0);
       assert.equal(task1[4].toNumber(), 0);
 
       const task2 = await updatedColony.getTask(2);
       assert.equal(testHelper.hexToUtf8(task2[0]), newIpfsDecodedHash);
-      assert.equal(task2[1].toNumber(), 1);
+      assert.equal(task2[1].toNumber(), 3);
       assert.isFalse(task2[2]);
       assert.equal(task2[3].toNumber(), 0);
       assert.equal(task2[4].toNumber(), 0);

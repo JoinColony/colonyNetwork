@@ -119,7 +119,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
-      assert.equal(task[1].toNumber(), 1);
+      assert.equal(task[1].toNumber(), 3);
       assert.isFalse(task[2]);
       assert.equal(task[3].toNumber(), 0);
       assert.equal(task[4].toNumber(), 0);
@@ -139,7 +139,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       const task = await colony.getTask.call(1);
       const rolesCount = task[1];
-      assert.equal(rolesCount.toNumber(), 1);
+      assert.equal(rolesCount.toNumber(), 3);
       const taskManager = await colony.getTaskRoleAddress.call(1, 0);
       assert.equal(taskManager, MAIN_ACCOUNT);
     });
@@ -156,10 +156,13 @@ contract('Colony', function (accounts) {
   });
 
   describe('when updating tasks', () => {
-    it('should allow manager to submit an update of task brief', async function () {
+
+    it('should allow manager to submit an update of task brief and worker to approve it', async function () {
       await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskWorker(1, OTHER_ACCOUNT);
       const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
       await colony.proposeTaskChange(txData, 0, 0);
+      await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
       const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
@@ -170,8 +173,10 @@ contract('Colony', function (accounts) {
       dueDate = dueDate.getTime();
 
       await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskWorker(1, OTHER_ACCOUNT);
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, 0);
+      await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
       const task = await colony.getTask.call(1);
       assert.equal(task[3], dueDate);
     });
@@ -261,23 +266,28 @@ contract('Colony', function (accounts) {
   describe('when funding tasks', () => {
     it('should be able to set the task payouts for different roles', async function () {
       await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.mintTokens(100);
       // Set the manager payout as 5000 wei and 100 colony tokens
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 5000);
       await colony.proposeTaskChange(txData1, 0, 0);
+      await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
       const txData2 = await colony.contract.setTaskPayout.getData(1, 0, token.address, 100);
       await colony.proposeTaskChange(txData2, 0, 0);
-
+      await colony.approveTaskChange(2, 2, { from: OTHER_ACCOUNT });
 
       // Set the evaluator payout as 40 colony tokens
       const txData3 = await colony.contract.setTaskPayout.getData(1, 1, token.address, 40);
       await colony.proposeTaskChange(txData3, 0, 0);
+      await colony.approveTaskChange(3, 2, { from: OTHER_ACCOUNT });
 
       // Set the worker payout as 98000 wei and 200 colony tokens
       const txData4 = await colony.contract.setTaskPayout.getData(1, 2, 0x0, 98000);
       await colony.proposeTaskChange(txData4, 0, 0);
+      await colony.approveTaskChange(4, 2, { from: OTHER_ACCOUNT });
       const txData5 = await colony.contract.setTaskPayout.getData(1, 2, token.address, 200);
       await colony.proposeTaskChange(txData5, 0, 0);
+      await colony.approveTaskChange(5, 2, { from: OTHER_ACCOUNT });
 
       const taskPayoutManager1 = await colony.getTaskPayout.call(1, 0, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);
