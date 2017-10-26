@@ -79,18 +79,28 @@ contract TransactionReviewer {
     function executeTransaction(uint transactionId) internal
     notExecuted(transactionId)
     {
-      Transaction tx = transactions[transactionId];
-      //TODO check tx is approved by everyone
-      //bytes4 memory sig = tx.data[4];
-      //uint8[2] _reviewers = reviewers[sig];
-      //require(confirmations[transactionId][_reviewers[0]] && confirmations[transactionId][_reviewers[0]]);
+      Transaction storage _transaction = transactions[transactionId];
 
-      tx.executed = true;
-      if (this.call.value(tx.value)(tx.data))
-        Execution(transactionId);
-      else {
-        ExecutionFailure(transactionId);
-        tx.executed = false;
+      // Get the function signature and task id from the proposed change call data
+      bytes4 sig;
+      bytes memory _data = _transaction.data;
+
+      assembly {
+        sig := mload(add(_data, add(0x20, 0)))
+      }
+
+      uint8[2] storage _reviewers = reviewers[sig];
+      uint8 _firstReviewer = _reviewers[0];
+      uint8 _secondReviewer = _reviewers[1];
+
+      if(confirmations[transactionId][_firstReviewer] && confirmations[transactionId][_secondReviewer]) {
+        _transaction.executed = true;
+        if (this.call.value(_transaction.value)(_transaction.data))
+          Execution(transactionId);
+        else {
+          ExecutionFailure(transactionId);
+          _transaction.executed = false;
+        }
       }
     }
 }
