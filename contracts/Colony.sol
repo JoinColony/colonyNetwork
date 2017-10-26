@@ -208,7 +208,7 @@ contract Colony is DSAuth, DSMath, IColony {
     } else {
       // Payout token
       ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(msg.sender, remainder);
+      payoutToken.transfer(task.roles[_role], remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
     }
   }
@@ -221,8 +221,8 @@ contract Colony is DSAuth, DSMath, IColony {
     assert(pots[_fromPot].balance[_token] >= _amount); // TODO do we need this? we're using safemath...
     uint fromPotPreviousAmount = pots[_fromPot].balance[_token];
     uint toPotPreviousAmount = pots[_toPot].balance[_token];
-    pots[_fromPot].balance[_token] = sub(pots[_fromPot].balance[_token], _amount);
-    pots[_toPot].balance[_token] = add(pots[_toPot].balance[_token], _amount);
+    pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
+    pots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
     uint fromTaskID = pots[_fromPot].taskID;
     uint toTaskID = pots[_toPot].taskID;
     updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskID, _token, toPotPreviousAmount);
