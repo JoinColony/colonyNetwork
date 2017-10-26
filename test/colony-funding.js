@@ -66,6 +66,23 @@ contract('Colony', function (accounts) {
       assert.equal(colonyRewardPotBalance.toNumber(), 1);
     });
 
+    it('should not put its own tokens in to the reward pot', async function () {
+      await colony.mintTokens(100);
+      let colonyRewardPotBalance= await colony.getPotBalance.call(0,token.address);
+      let colonyPotBalance= await colony.getPotBalance.call(1,token.address);
+      let colonyTokenBalance = await token.balanceOf.call(colony.address);
+      assert.equal(colonyTokenBalance.toNumber(), 100)
+      assert.equal(colonyPotBalance.toNumber(), 0);
+      assert.equal(colonyRewardPotBalance.toNumber(), 0);
+      await colony.claimColonyFunds(token.address);
+      colonyRewardPotBalance= await colony.getPotBalance.call(0,token.address);
+      colonyPotBalance= await colony.getPotBalance.call(1,token.address);
+      colonyTokenBalance = await token.balanceOf.call(colony.address);
+      assert.equal(colonyTokenBalance.toNumber(), 100)
+      assert.equal(colonyPotBalance.toNumber(), 100);
+      assert.equal(colonyRewardPotBalance.toNumber(), 0);
+    });
+
     it('should let tokens be moved between pots', async function () {
       let otherToken = await Token.new();
       await otherToken.mint(100)
