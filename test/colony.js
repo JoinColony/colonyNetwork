@@ -438,9 +438,9 @@ contract('Colony', function (accounts) {
       await colony.setTaskPayout(1, 0, token.address, 200);
       await colony.moveFundsBetweenPots(1,2,200,token.address);
       await colony.acceptTask(1);
-      let networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
+      let networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
       await colony.claimPayout(1, 0, token.address);
-      let networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      let networkBalanceAfter = await token.balanceOf.call(colonyNetwork.address);
       assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 2);
       let balance = await token.balanceOf.call(accounts[0]);
       assert.equal(balance.toNumber(), 198);
