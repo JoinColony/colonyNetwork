@@ -33,6 +33,7 @@ contract('Colony', function (accounts) {
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    await colonyNetwork.createColony("Common Colony");
   });
 
   beforeEach(async function () {
@@ -466,13 +467,14 @@ contract('Colony', function (accounts) {
       await colony.setTaskPayout(1, 0, 0x0, 200);
       await colony.moveFundsBetweenPots(1,2,200,0x0);
       await colony.acceptTask(1);
+      let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
       let balanceBefore = await testHelper.web3GetBalance(accounts[0]);
-      let networkBalanceBefore = await testHelper.web3GetBalance(colonyNetwork.address);
+      let commonBalanceBefore = await testHelper.web3GetBalance(commonColonyAddress);
       await colony.claimPayout(1, 0, 0x0, {gasPrice: 0});
       let balanceAfter = await testHelper.web3GetBalance(accounts[0]);
-      let networkBalanceAfter = await testHelper.web3GetBalance(colonyNetwork.address);
+      let commonBalanceAfter = await testHelper.web3GetBalance(commonColonyAddress);
       assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 198);
-      assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 2);
+      assert.equal(commonBalanceAfter.minus(commonBalanceBefore).toNumber(), 2);
       let potBalance = await colony.getPotBalance.call(2, 0x0);
       assert.equal(potBalance.toNumber(), 0);
     });

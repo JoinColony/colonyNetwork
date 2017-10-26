@@ -6,6 +6,7 @@ import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
+import "./IColonyNetwork.sol";
 
 
 contract Colony is DSAuth, DSMath, IColony {
@@ -204,9 +205,14 @@ contract Colony is DSAuth, DSMath, IColony {
     if (_token == 0x0){
       // Payout ether
       task.roles[_role].transfer(remainder);
-      colonyNetworkAddress.transfer(fee);
+      // Fee goes directly to Common Colony
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      address commonColonyAddress = colonyNetworkContract.getColony("Common Colony");
+      commonColonyAddress.transfer(fee);
     } else {
       // Payout token
+      // TODO: If it's a whitelisted token, it goes straight to the commonColony
+      // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
       payoutToken.transfer(task.roles[_role], remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
