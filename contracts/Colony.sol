@@ -223,8 +223,13 @@ contract Colony is DSAuth, DSMath, IColony {
     return pots[_potID].balance[_token];
   }
 
-  function moveFundsBetweenPots(uint _fromPot, uint _toPot, uint _amount, address _token) public {
+  function moveFundsBetweenPots(uint _fromPot, uint _toPot, uint _amount, address _token) public
+  auth
+  {
+    // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0);
+    // TODO: At some point, funds have to be unable to be removed from tasks (until everyone's been paid and
+    // extra funds can be reclaimed)
     assert(pots[_fromPot].balance[_token] >= _amount); // TODO do we need this? we're using safemath...
     uint fromPotPreviousAmount = pots[_fromPot].balance[_token];
     uint toPotPreviousAmount = pots[_toPot].balance[_token];

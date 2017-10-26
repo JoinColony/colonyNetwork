@@ -116,6 +116,23 @@ contract('Colony', function (accounts) {
       assert.equal(colonyRewardPotBalance.toNumber(), 1);
     });
 
+    it('should not let tokens be moved by non-admins', async function () {
+      let otherToken = await Token.new();
+      await otherToken.mint(100)
+      await otherToken.transfer(colony.address, 100)
+      await colony.claimColonyFunds(otherToken.address);
+      try {
+        await colony.moveFundsBetweenPots(1,2,51,otherToken.address, {from: addresses[1]});
+      } catch (err) {
+      }
+      let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
+      let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
+      let pot2Balance= await colony.getPotBalance.call(2,otherToken.address);
+      assert.equal(colonyTokenBalance.toNumber(), 100)
+      assert.equal(colonyPotBalance.toNumber(), 99);
+      assert.equal(pot2Balance.toNumber(), 0);
+    });
+
     it('should not allow more tokens to leave a pot than the pot has (even if the colony has that many)', async function () {
       let otherToken = await Token.new();
       await otherToken.mint(100)
