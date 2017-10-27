@@ -97,12 +97,12 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     pots[potCount].taskId = taskCount;
   }
 
-
   function proposeTaskChange(bytes _data, uint _value, uint8 _role) public returns (uint transactionId) {
     var (sig, taskId) = deconstructCall(_data);
 
     Task storage task = tasks[taskId];
     require(task.roles[_role] == msg.sender);
+    require(!task.accepted);
 
     uint8[2] storage _reviewers = reviewers[sig];
     require(_reviewers[0] !=0 || _reviewers[1] != 0);
@@ -118,6 +118,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
 
     Task storage task = tasks[taskId];
     require(task.roles[_role] == msg.sender);
+    require(!task.accepted);
 
     uint8[2] storage _reviewers = reviewers[sig];
     require(_reviewers[0] == _role || _reviewers[1] == _role);
