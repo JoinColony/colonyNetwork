@@ -266,7 +266,7 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it('should fail to submit a task update for a not registered function signature', async function () {
+    it('should fail to submit a task update for a non-registered function signature', async function () {
       await colony.makeTask(ipfsDecodedHash);
       const txData = await colony.contract.getTaskRoleAddress.getData(1, 0);
 
@@ -311,6 +311,39 @@ contract('Colony', function (accounts) {
 
       const transactionCount = await colony.transactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail to approve task update, using an invalid transaction id', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      await colony.proposeTaskChange(txData, 0, 0);
+
+      let tx;
+      try {
+        tx = await colony.approveTaskChange(10, 2, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail to approve task update twice', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      await colony.proposeTaskChange(txData, 0, 0);
+      await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
+
+      let tx;
+      try {
+        tx = await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });

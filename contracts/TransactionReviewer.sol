@@ -26,7 +26,7 @@ contract TransactionReviewer {
     }
 
     modifier transactionExists(uint transactionId) {
-        require(transactions[transactionId].data.length > 0);
+        require(transactionId <= transactionCount);
         _;
     }
 
