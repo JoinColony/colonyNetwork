@@ -191,24 +191,87 @@ contract('Colony', function (accounts) {
       assert.equal(task[3], dueDate);
     });
 
-    it.skip('should fail to submit a task update for a not registered function signature', async function () {});
-
-    it.skip('should fail to submit update of task brief, using an invalid task id', async function () {
+    it('should fail if a non-colony call is made to the task update functions', async function () {
+      await colony.makeTask(ipfsDecodedHash);
       let tx;
       try {
-        tx = await colony.setTaskBrief(10, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
+        tx = await colony.setTaskBrief(1, newIpfsDecodedHash, { gas: GAS_TO_SPEND, from: THIRD_ACCOUNT });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail if non-registered role tries to submit an update of task brief', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+
+      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+
+      let tx;
+      try {
+        tx = await colony.proposeTaskChange(txData, 0, 0, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it.skip('should fail if task evaluator tries to submit an update of task brief', async function () {
+    it('should fail if evaluator tries to submit an update of task brief', async function () {
       await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+
+      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
 
       let tx;
       try {
-        tx = await colony.setTaskBrief(1, newIpfsDecodedHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.proposeTaskChange(txData, 0, 1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail if non-registered role tries to approve an update of task brief', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+
+      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      await colony.proposeTaskChange(txData, 0, 0);
+
+      let tx;
+      try {
+        tx = await colony.approveTaskChange(1, 2, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail if evaluator tries to approve an update of task brief', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+
+      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      await colony.proposeTaskChange(txData, 0, 0);
+
+      let tx;
+      try {
+        tx = await colony.approveTaskChange(1, 1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it.skip('should fail to submit a task update for a not registered function signature', async function () {});
+
+    it.skip('should fail to submit update of task brief, using an invalid task id', async function () {
+      let tx;
+      try {
+        tx = await colony.setTaskBrief(10, newIpfsDecodedHash, { gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
