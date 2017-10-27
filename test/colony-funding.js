@@ -241,6 +241,20 @@ contract('Colony', function (accounts) {
       assert.equal(colonyPotBalance.toNumber(), 297);
     });
 
+    it('should not allow contributions to nonexistent pots', async function(){
+      let otherToken = await Token.new();
+      await otherToken.mint(100)
+      await otherToken.transfer(colony.address, 100)
+      await colony.claimColonyFunds(otherToken.address);
+      try {
+        await colony.moveFundsBetweenPots(1,5,40,otherToken.address);
+      } catch (err) {
+
+      }
+      let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
+      assert.equal(colonyPotBalance.toNumber(), 99);
+    })
+
   });
 
   describe('when receiving ether', () => {

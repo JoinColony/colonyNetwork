@@ -291,16 +291,6 @@ contract('Colony', function (accounts) {
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it.skip('should fail if admin tries to contribute to a nonexistent task', async function () {
-      let tx;
-      try {
-        tx = await colony.contributeEthToTask(100000, { value: 10, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
     it.skip('should allow admins to fund task with ether', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.contributeEthToTask(1, { value: 100 });
