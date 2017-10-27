@@ -266,7 +266,20 @@ contract('Colony', function (accounts) {
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
-    it.skip('should fail to submit a task update for a not registered function signature', async function () {});
+    it('should fail to submit a task update for a not registered function signature', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      const txData = await colony.contract.getTaskRoleAddress.getData(1, 0);
+
+      let tx;
+      try {
+        tx = await colony.proposeTaskChange(txData, 0, 0, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      const transactionCount = await colony.transactionCount.call();
+      assert.equal(transactionCount.toNumber(), 0);
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
 
     it.skip('should fail to submit update of task brief, using an invalid task id', async function () {
       let tx;
