@@ -156,6 +156,16 @@ contract('Colony', function (accounts) {
   });
 
   describe('when updating tasks', () => {
+    it('should allow the worker and evaluator roles to be assigned', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+      const evaluator = await colony.getTaskRoleAddress.call(1, 1);
+      assert.equal(evaluator, OTHER_ACCOUNT);
+
+      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      const worker = await colony.getTaskRoleAddress.call(1, 2);
+      assert.equal(worker, THIRD_ACCOUNT);
+    });
 
     it('should allow manager to submit an update of task brief and worker to approve it', async function () {
       await colony.makeTask(ipfsDecodedHash);
@@ -167,7 +177,7 @@ contract('Colony', function (accounts) {
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
 
-    it('should allow manager to submit an update of task due date', async function () {
+    it('should allow manager to submit an update of task due date and worker to approve it', async function () {
       var dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 1);
       dueDate = dueDate.getTime();
