@@ -253,7 +253,40 @@ contract('Colony', function (accounts) {
       }
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 99);
-    })
+    });
+
+
+    it('should not allow funds to be removed from a task with payouts to go', async function(){
+      let otherToken = await Token.new();
+      await otherToken.mint(100)
+      await otherToken.transfer(colony.address, 100)
+      await colony.claimColonyFunds(otherToken.address);
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.moveFundsBetweenPots(1,2,60,otherToken.address);
+      await colony.setTaskPayout(1,0,otherToken.address,50);
+      await colony.acceptTask(1);
+      try {
+        await colony.moveFundsBetweenPots(2,1,40,otherToken.address);
+      } catch(err) {
+      }
+      let colonyPotBalance= await colony.getPotBalance.call(2,otherToken.address);
+      assert.equal(colonyPotBalance.toNumber(), 60);
+    });
+
+    it('should allow funds to be removed from a task if there are no more payouts of that token to be claimed', async function(){
+      let otherToken = await Token.new();
+      await otherToken.mint(100)
+      await otherToken.transfer(colony.address, 100)
+      await colony.claimColonyFunds(otherToken.address);
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
+      await colony.setTaskPayout(1,0,otherToken.address,30);
+      await colony.acceptTask(1);
+      await colony.claimPayout(1,0,otherToken.address);
+      await colony.moveFundsBetweenPots(2,1,10,otherToken.address);
+      let colonyPotBalance= await colony.getPotBalance.call(2,otherToken.address);
+      assert.equal(colonyPotBalance.toNumber(), 0);
+    });
 
   });
 

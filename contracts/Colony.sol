@@ -228,7 +228,13 @@ contract Colony is DSAuth, DSMath, IColony {
   {
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0);
-    require(_toPot < potCount); // Only allow sending to created pots
+    require(_toPot <= potCount); // Only allow sending to created pots
+    if (pots[_fromPot].taskID > 0){
+      Task task = tasks[pots[_fromPot].taskID];
+      require(task.accepted == false || task.totalPayouts[_token] == 0);
+      // i.e. if this pot is associated with a task, prevent money being taken from the pot if the task
+      // has been accepted, unless everyone has been paid out.
+    }
     // TODO: At some point, funds have to be unable to be removed from tasks (until everyone's been paid and
     // extra funds can be reclaimed)
     assert(pots[_fromPot].balance[_token] >= _amount); // TODO do we need this? we're using safemath...
