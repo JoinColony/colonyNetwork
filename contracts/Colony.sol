@@ -40,6 +40,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
     uint dueDate;
     bool accepted;
+    bool cancelled;
     uint payoutsWeCannotMake;
     uint potId;
     // Maps a token to the sum of all payouts of it for this task
@@ -221,8 +222,16 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     tasks[_id].accepted = true;
   }
 
+  function cancelTask(uint256 _id) public
+  auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    tasks[_id].cancelled = true;
+  }
+
   function getTask(uint256 _id) public view
-  returns (bytes32, uint, bool, uint, uint, uint)
+  returns (bytes32, uint, bool, bool, uint, uint, uint)
   {
     Task storage task = tasks[_id];
     uint rolesCount = task.roles.length;
@@ -230,6 +239,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     return (task.ipfsDecodedHash,
       rolesCount,
       task.accepted,
+      task.cancelled,
       task.dueDate,
       task.payoutsWeCannotMake,
       task.potId

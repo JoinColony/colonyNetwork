@@ -121,8 +121,9 @@ contract('Colony', function (accounts) {
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
       assert.equal(task[1].toNumber(), 3);
       assert.isFalse(task[2]);
-      assert.equal(task[3].toNumber(), 0);
+      assert.isFalse(task[3]);
       assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
     });
 
     it('should fail if a non-admin user tries to make a task', async function () {
@@ -188,7 +189,7 @@ contract('Colony', function (accounts) {
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
       const task = await colony.getTask.call(1);
-      assert.equal(task[3], dueDate);
+      assert.equal(task[4], dueDate);
     });
 
     it('should fail if a non-colony call is made to the task update functions', async function () {
@@ -349,7 +350,7 @@ contract('Colony', function (accounts) {
   });
 
   describe('when accepting a task', () => {
-    it('should the "accepted" prop be set as "true"', async function () {
+    it('should set the task "accepted" property to "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
       const task = await colony.getTask.call(1);
@@ -387,6 +388,37 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+  });
+
+  describe('when cancelling a task', () => {
+    it('should set the task "cancelled" property to "true"', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.cancelTask(1);
+      const task = await colony.getTask.call(1);
+      assert.isTrue(task[3]);
+    });
+
+    it('should fail if manager tries to cancel a task that was accepted', async function () {
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.acceptTask(1);
+      let tx;
+      try {
+        tx = await colony.cancelTask(1, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail if manager tries to cancel a task with invalid id', async function () {
+      let tx;
+      try {
+        tx = await colony.cancelTask(10, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 

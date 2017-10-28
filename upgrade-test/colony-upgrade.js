@@ -78,15 +78,17 @@ contract('Colony contract upgrade', function (accounts) {
       assert.equal(testHelper.hexToUtf8(task1[0]), ipfsDecodedHash);
       assert.equal(task1[1].toNumber(), 3);
       assert.isFalse(task1[2]);
-      assert.equal(task1[3].toNumber(), 0);
+      assert.isFalse(task1[3]);
       assert.equal(task1[4].toNumber(), 0);
+      assert.equal(task1[5].toNumber(), 0);
 
       const task2 = await updatedColony.getTask(2);
       assert.equal(testHelper.hexToUtf8(task2[0]), newIpfsDecodedHash);
       assert.equal(task2[1].toNumber(), 3);
       assert.isFalse(task2[2]);
-      assert.equal(task2[3].toNumber(), 0);
+      assert.isFalse(task2[3]);
       assert.equal(task2[4].toNumber(), 0);
+      assert.equal(task2[5].toNumber(), 0);
     });
 
     it('should return correct permissions', async function () {
