@@ -53,8 +53,8 @@ module.exports = {
   async setupColonyVersionResolver (colony, resolver, colonyNetwork) {
     await resolver.register("token()", colony.address, 32);
     await resolver.register("version()", colony.address, 32);
+    await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
     await resolver.register("taskCount()", colony.address, 32);
-    await resolver.register("reviewers(bytes4,uint256)", colony.address, 32); //0xe92ed89d
     await resolver.register("transactionCount()", colony.address, 32);
     await resolver.register("setFunctionReviewers(bytes4,uint8,uint8)", colony.address, 0);
     await resolver.register("setToken(address)", colony.address, 0);
@@ -82,6 +82,9 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0x54fd4d50'); // version
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0xe92ed89d'); // reviewers
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xb6cb58a5'); // taskCount
