@@ -117,40 +117,32 @@ contract Colony is DSAuth, DSMath, IColony {
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
-    if (
-         _prev >= task.totalPayouts[_token] &&                          // If the old amount in the pot was enough to pay for the budget
-         pots[task.potID].balance[_token] < task.totalPayouts[_token]   // And the new amount in the pot is not enough to pay for the budget...
-       )
-    {
-      task.payoutsWeCannotMake += 1;                                    // Then this is a set of payouts we cannot make that we could before.
-    }
-
-    if (
-         _prev < task.totalPayouts[_token] &&                           // If the amount in the pot was not enough to pay for the old value...
-         pots[task.potID].balance[_token] >= task.totalPayouts[_token]  // And the amount in the pot is enough to pay for the new value...
-       )
-    {
-      task.payoutsWeCannotMake -= 1;                                    // Then this is a set of payouts we can make that we could not before.
+    uint totalTokenPayout = task.totalPayouts[_token];
+    uint tokenPot = pots[task.potID].balance[_token];
+    if ( _prev >= totalTokenPayout ){                                   // If the old amount in the pot was enough to pay for the budget
+      if ( tokenPot < totalTokenPayout ){                               // And the new amount in the pot is not enough to pay for the budget...
+        task.payoutsWeCannotMake += 1;                                  // Then this is a set of payouts we cannot make that we could before.
+      }
+    } else {                                                            // If this 'else' is running, then the old amount in the pot could not pay for the budget
+      if ( tokenPot >= totalTokenPayout ) {                             // And the new amount in the pot can pay for the budget
+        task.payoutsWeCannotMake -= 1;                                  // Then this is a set of payouts we can make that we could not before.
+      }
     }
   }
 
 
   function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
-    if (
-         pots[task.potID].balance[_token] >= _prev &&                   // If the amount in the pot was enough to pay for the old budget...
-         pots[task.potID].balance[_token] < task.totalPayouts[_token]   // And the amount in the pot is not enough to pay for the new budget...
-       )
-    {
-      task.payoutsWeCannotMake += 1;                                    // Then this is a set of payouts we cannot make that we could before.
-    }
-
-    if (
-         pots[task.potID].balance[_token] < _prev &&                    // If the amount in the pot was not enough to pay for the old value...
-         pots[task.potID].balance[_token] >= task.totalPayouts[_token]  // And the amount in the pot is enough to pay for the new value...
-       )
-    {
-      task.payoutsWeCannotMake -= 1;                                    // Then this is a set of payouts we can make that we could not before.
+    uint totalTokenPayout = task.totalPayouts[_token];
+    uint tokenPot = pots[task.potID].balance[_token];
+    if ( tokenPot >= _prev ){                                          // If the amount in the pot was enough to pay for the old budget...
+      if ( tokenPot < totalTokenPayout ){                              // And the amount is not enough to pay for the new budget...
+        task.payoutsWeCannotMake += 1;                                 // Then this is a set of payouts we cannot make that we could before.
+      }
+    } else {                                                           // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
+      if ( tokenPot >= totalTokenPayout ){                             // And the amount is enough to pay for the new budget...
+        task.payoutsWeCannotMake -= 1;                                 // Then this is a set of payouts we can make that we could not before.
+      }
     }
   }
 
