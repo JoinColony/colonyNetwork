@@ -14,16 +14,18 @@ contract Colony is DSAuth, DSMath, IColony {
   address colonyNetworkAddress;
   ERC20Extended public token;
   mapping (uint => Task) public tasks;
+
   // Pots can be tied to tasks or to (in the future) domains, so giving them their own mapping.
   // Pot 1  can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had some siphoned off in to the reward pot.
   // Pot 0 is the pot containing funds that can be paid to holders of colony tokens in the future.
-  mapping (address => uint) public nonRewardPotsTotal;
-  // This keeps track of how much of the colony's funds that it owns have been moved into pots anywhere, and have also
-  // had the reward amount siphoned off.
-  // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
-
   mapping (uint => Pot) pots;
+
+  // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
+  // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
+  // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
+  mapping (address => uint) public nonRewardPotsTotal;
+
   uint public taskCount;
   uint public potCount;
 
