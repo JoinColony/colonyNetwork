@@ -246,11 +246,11 @@ contract Colony is DSAuth, DSMath, IColony {
     uint remainder;
     if (_token==0x0){
       // It's ether
-      toClaim = this.balance - nonRewardPotsTotal[_token] -  pots[0].balance[_token];
+      toClaim = sub(sub(this.balance,nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
-      toClaim = targetToken.balanceOf(this) - nonRewardPotsTotal[_token] - pots[0].balance[_token];
+      toClaim = sub(sub(targetToken.balanceOf(this), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     }
     feeToPay = toClaim / getRewardInverse();
     if (token==_token){ // Well this line isn't easy to understand
