@@ -37,14 +37,14 @@ contract Colony is DSAuth, DSMath, IColony {
     uint dueDate;
     bool accepted;
     uint payoutsWeCannotMake;
-    uint potID;
+    uint potId;
     mapping (address => uint) totalPayouts;
     mapping (uint => mapping (address => uint)) payouts;
   }
 
   struct Pot {
     mapping (address => uint) balance;
-    uint taskID;
+    uint taskId;
   }
 
   modifier tasksExists(uint256 _id) {
@@ -81,8 +81,8 @@ contract Colony is DSAuth, DSMath, IColony {
         accepted: false,
         dueDate: 0,
         payoutsWeCannotMake: 0,
-        potID: potCount});
-    pots[potCount].taskID = taskCount;
+        potId: potCount});
+    pots[potCount].taskId = taskCount;
   }
 
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
@@ -118,7 +118,7 @@ contract Colony is DSAuth, DSMath, IColony {
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = task.totalPayouts[_token];
-    uint tokenPot = pots[task.potID].balance[_token];
+    uint tokenPot = pots[task.potId].balance[_token];
     if ( _prev >= totalTokenPayout ){                                   // If the old amount in the pot was enough to pay for the budget
       if ( tokenPot < totalTokenPayout ){                               // And the new amount in the pot is not enough to pay for the budget...
         task.payoutsWeCannotMake += 1;                                  // Then this is a set of payouts we cannot make that we could before.
@@ -134,7 +134,7 @@ contract Colony is DSAuth, DSMath, IColony {
   function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = task.totalPayouts[_token];
-    uint tokenPot = pots[task.potID].balance[_token];
+    uint tokenPot = pots[task.potId].balance[_token];
     if ( tokenPot >= _prev ){                                          // If the amount in the pot was enough to pay for the old budget...
       if ( tokenPot < totalTokenPayout ){                              // And the amount is not enough to pay for the new budget...
         task.payoutsWeCannotMake += 1;                                 // Then this is a set of payouts we cannot make that we could before.
@@ -165,7 +165,7 @@ contract Colony is DSAuth, DSMath, IColony {
       task.accepted,
       task.dueDate,
       task.payoutsWeCannotMake,
-      task.potID);
+      task.potId);
   }
 
   function getTaskRoleAddress (uint _id, uint _role) public view
@@ -190,7 +190,7 @@ contract Colony is DSAuth, DSMath, IColony {
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
     task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
-    pots[task.potID].balance[_token] = sub(pots[task.potID].balance[_token], payout);
+    pots[task.potId].balance[_token] = sub(pots[task.potId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
     uint fee = payout / getFeeInverse();
     uint remainder = sub(payout, fee);
@@ -211,8 +211,8 @@ contract Colony is DSAuth, DSMath, IColony {
     }
   }
 
-  function getPotBalance(uint256 _potID, address _token) public view returns (uint256){
-    return pots[_potID].balance[_token];
+  function getPotBalance(uint256 _potId, address _token) public view returns (uint256){
+    return pots[_potId].balance[_token];
   }
 
   function moveFundsBetweenPots(uint _fromPot, uint _toPot, uint _amount, address _token) public
@@ -221,8 +221,8 @@ contract Colony is DSAuth, DSMath, IColony {
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0);
     require(_toPot <= potCount); // Only allow sending to created pots
-    if (pots[_fromPot].taskID > 0){
-      Task task = tasks[pots[_fromPot].taskID];
+    if (pots[_fromPot].taskId > 0){
+      Task task = tasks[pots[_fromPot].taskId];
       require(task.accepted == false || task.totalPayouts[_token] == 0);
       // i.e. if this pot is associated with a task, prevent money being taken from the pot if the task
       // has been accepted, unless everyone has been paid out.
@@ -234,10 +234,10 @@ contract Colony is DSAuth, DSMath, IColony {
     uint toPotPreviousAmount = pots[_toPot].balance[_token];
     pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
     pots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
-    uint fromTaskID = pots[_fromPot].taskID;
-    uint toTaskID = pots[_toPot].taskID;
-    updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskID, _token, toPotPreviousAmount);
-    updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskID, _token, fromPotPreviousAmount);
+    uint fromTaskId = pots[_fromPot].taskId;
+    uint toTaskId = pots[_toPot].taskId;
+    updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
+    updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
   }
 
   function claimColonyFunds(address _token) public {
