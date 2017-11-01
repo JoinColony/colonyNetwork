@@ -224,7 +224,7 @@ contract Colony is DSAuth, DSMath, IColony {
     require(_fromPot > 0);
     require(_toPot <= potCount); // Only allow sending to created pots
     if (pots[_fromPot].taskId > 0){
-      Task task = tasks[pots[_fromPot].taskId];
+      Task storage task = tasks[pots[_fromPot].taskId];
       require(task.accepted == false || task.totalPayouts[_token] == 0);
       // i.e. if this pot is associated with a task, prevent money being taken from the pot if the task
       // has been accepted, unless everyone has been paid out.
