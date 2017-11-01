@@ -27,4 +27,10 @@ module.exports = {
   mocha: {
     reporter: 'mocha-circleci-reporter',
   },
+  solc: {
+    optimizer: {
+      enabled: true,
+      runs: 200
+    }
+  },
 };
