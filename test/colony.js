@@ -33,6 +33,7 @@ contract('Colony', function (accounts) {
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    await colonyNetwork.createColony("Common Colony");
   });
 
   beforeEach(async function () {
@@ -51,12 +52,7 @@ contract('Colony', function (accounts) {
       let colonyBalancePre = await testHelper.web3GetBalance(colony.address);
       await colony.send(1);
       let colonyBalance = await testHelper.web3GetBalance(colony.address);
-
-      // Note: Until https://github.com/sc-forks/solidity-coverage/issues/92 is complete
-      // issue https://github.com/ethereumjs/testrpc/issues/122 manifests itself here
-      const network = await testHelper.web3GetNetwork();
-      const expectedBalance = (network == 'coverage') ? 2 : 1;
-      assert.equal(colonyBalance.toNumber(), expectedBalance);
+      assert.equal(colonyBalance.toNumber(), 1);
     });
 
     it('should take colony network as an owner', async function () {
@@ -76,7 +72,17 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should not allow reinitialisation', async function (){
+      let tx;
+      try {
+        tx = await colony.initialiseColony(0x0, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -126,7 +132,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should set the task manager as the creator', async function () {
@@ -166,7 +172,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail to edit the task brief, if the task was already accepted', async function () {
@@ -181,7 +187,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to edit the task brief using an invalid task id', async function () {
@@ -191,7 +197,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should be able to set the task due date', async function () {
@@ -219,7 +225,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to accept a task that was accepted before', async function () {
@@ -231,7 +237,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to accept a task using an invalid id', async function () {
@@ -241,7 +247,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -272,168 +278,48 @@ contract('Colony', function (accounts) {
       assert.equal(taskPayoutWorker2.toNumber(), 200);
     });
 
-    it.skip('should fail if admin tries to contribute to an accepted task', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.acceptTask(1);
-
-      let tx;
-      try {
-        tx = await colony.contributeEthToTask(1, { value: 10, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should fail if admin tries to contribute to a nonexistent task', async function () {
-      let tx;
-      try {
-        tx = await colony.contributeEthToTask(100000, { value: 10, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should allow admins to fund task with ether', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.contributeEthToTask(1, { value: 100 });
-      const task = await colony.getTask.call(1);
-      assert.equal(task[5], 100);
-    });
-
-    it.skip('should fail if a non-admin user tries to fund task with ether', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      let tx;
-      try {
-        tx = await colony.contributeEthToTask(1, {
-          value: 100,
-          from: OTHER_ACCOUNT,
-          gas: GAS_TO_SPEND,
-        });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should reserve the correct number of tokens when an admin funds task with pool tokens', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setReservedTokensForTask(1, 70);
-      let reservedTokens = await colony.reservedTokens.call();
-      assert.equal(reservedTokens.toNumber(), 70);
-      let task = await colony.getTask.call(1);
-      assert.equal(task[6].toNumber(), 70);
-      assert.equal(task[7].toNumber(), 70);
-      assert.isTrue(task[8]);
-      await colony.setReservedTokensForTask(1, 100);
-      reservedTokens = await colony.reservedTokens.call();
-      assert.equal(reservedTokens.toNumber(), 100);
-      task = await colony.getTask.call(1);
-      assert.equal(task[6].toNumber(), 100);
-      assert.equal(task[7].toNumber(), 100);
-      assert.isTrue(task[8]);
-    });
-
-    it.skip('should take into account number of tokens already assigned when reassigning task budget', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setReservedTokensForTask(1, 20); // 20 reserved and 80 remaining available
-      await colony.completeAndPayTask(1, MAIN_ACCOUNT); // MAIN_ACCOUNT earns 20 tokens
-      await colony.makeTask(newIpfsDecodedHash);
-      await colony.setReservedTokensForTask(2, 40); // 40 reserved and 40 remaining available
-      await colony.contributeTokensToTask(2, 20);
-      let task = await colony.getTask.call(2);
-      assert.equal(task[6].toNumber(), 60, 'Wrong tokens wei value');
-      await colony.setReservedTokensForTask(2, 80); // 80 reserved and 0 remaining available
-      let reservedTokens = await colony.reservedTokens.call();
-      assert.equal(reservedTokens.toNumber(), 80, 'Has not reserved the right amount of colony tokens.');
-      task = await colony.getTask.call(2);
-      assert.equal(task[6].toNumber(), 100, 'Wrong tokens wei value');
-      assert.equal(task[7].toNumber(), 80, 'Wrong tokens wei reserved value');
-    });
-
-    it.skip('should fail if admins fund a task with more tokens than they have available in colony pool', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(newIpfsDecodedHash);
-      await colony.setReservedTokensForTask(1, 100);
-      await colony.completeAndPayTask(1, OTHER_ACCOUNT);
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-
-      let tx;
-      try {
-        tx = await colony.setReservedTokensForTask(3, 150, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should fail if a non-admin user tries to contribute with tokens from the pool', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-
-      let tx;
-      try {
-        tx = await colony.contributeTokensToTask(1, 100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should fail if a non-admin user try to contribute tokens', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-      let tx;
-      try {
-        tx = await colony.setReservedTokensForTask(1, 100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-    });
-
-    it.skip('should allow an admin to refund task tokens', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setReservedTokensForTask(1, 80);
-      await colony.acceptTask(1);
-      await colony.removeReservedTokensForTask(1);
-      const reservedTokens = await colony.reservedTokens.call();
-      assert.equal(reservedTokens.toNumber(), 0);
-      const task = await colony.getTask.call(1);
-      assert.equal(task[6].toNumber(), 80, 'Has not cleared the task token funds correctly');
-    });
-
-    it.skip('should NOT allow admin to refund task tokens if task not accepted', async function () {
-      await colony.mintTokens(100);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setReservedTokensForTask(1, 80);
-      let reservedTokens = await colony.reservedTokens.call();
-      assert.equal(reservedTokens.toNumber(), 80);
-      let task = await colony.getTask.call(1);
-      assert.equal(task[6].toNumber(), 80);
-      assert.equal(task[7].toNumber(), 80);
-      let tx;
-      try {
-        tx = await colony.removeReservedTokensForTask(1, optionsToSpotTransactionFailure);
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-
-      reservedTokens = await colony.reservedTokens.call();
-      assert.equal(reservedTokens.toNumber(), 80);
-      task = await colony.getTask.call(1);
-      assert.equal(task[6].toNumber(), 80);
-    });
   });
 
   describe('when claiming payout for a task', () => {
+
+    it('should payout agreed tokens for a task', async function (){
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.mintTokens(300);
+      await colony.claimColonyFunds(token.address);
+      // Set the manager payout as 200 colony tokens
+      await colony.setTaskPayout(1, 0, token.address, 200);
+      await colony.moveFundsBetweenPots(1,2,200,token.address);
+      await colony.acceptTask(1);
+      let networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
+      await colony.claimPayout(1, 0, token.address);
+      let networkBalanceAfter = await token.balanceOf.call(colonyNetwork.address);
+      assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 2);
+      let balance = await token.balanceOf.call(accounts[0]);
+      assert.equal(balance.toNumber(), 198);
+      let potBalance = await colony.getPotBalance.call(2, token.address);
+      assert.equal(potBalance.toNumber(), 0);
+    });
+
+    it('should payout agreed ether for a task', async function (){
+      await colony.makeTask(ipfsDecodedHash);
+      await colony.send(300);
+      await colony.claimColonyFunds(0x0);
+      // Set the manager payout as 200 colony tokens
+      await colony.setTaskPayout(1, 0, 0x0, 200);
+      await colony.moveFundsBetweenPots(1,2,200,0x0);
+      await colony.acceptTask(1);
+      let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
+      let balanceBefore = await testHelper.web3GetBalance(accounts[0]);
+      let commonBalanceBefore = await testHelper.web3GetBalance(commonColonyAddress);
+      await colony.claimPayout(1, 0, 0x0, {gasPrice: 0});
+      let balanceAfter = await testHelper.web3GetBalance(accounts[0]);
+      let commonBalanceAfter = await testHelper.web3GetBalance(commonColonyAddress);
+      assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 198);
+      assert.equal(commonBalanceAfter.minus(commonBalanceBefore).toNumber(), 2);
+      let potBalance = await colony.getPotBalance.call(2, 0x0);
+      assert.equal(potBalance.toNumber(), 0);
+    });
+
     it('should return error when task is not accepted', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.mintTokens(100);
@@ -446,7 +332,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should return error when called by account that doesn\'t match the role', async function () {
@@ -462,7 +348,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 });

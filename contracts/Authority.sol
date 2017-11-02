@@ -29,5 +29,9 @@ contract Authority is DSRoles {
     bytes4 setTaskPayoutSig = bytes4(keccak256("setTaskPayout(uint256,uint256,address,uint256)"));
     setRoleCapability(owner_role, colony, setTaskPayoutSig, true);
     setRoleCapability(admin_role, colony, setTaskPayoutSig, true);
+
+    bytes4 moveFundsBetweenPotsSig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,address)"));
+    setRoleCapability(owner_role, colony, moveFundsBetweenPotsSig, true);
+    setRoleCapability(admin_role, colony, moveFundsBetweenPotsSig, true);
   }
 }

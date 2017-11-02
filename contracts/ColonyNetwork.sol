@@ -27,6 +27,7 @@ contract ColonyNetwork is DSAuth {
 
     var colony = IColony(etherRouter);
     colony.setToken(token);
+    colony.initialiseColony(this);
     token.setOwner(colony);
 
     var authority = new Authority(colony);
@@ -75,7 +76,4 @@ contract ColonyNetwork is DSAuth {
     e.setResolver(newResolver);
   }
 
-  function () external
-  payable
-  { }
 }
