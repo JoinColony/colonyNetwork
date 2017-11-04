@@ -3990,9 +3990,9 @@ trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
 
-truffle@4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-4.0.0.tgz#3ad24db6b42465f33f09e402c04eb4f1d3585fb2"
+truffle@4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-4.0.1.tgz#d8661a4ad7a6ca094b7517d29b199c60e6dde665"
   dependencies:
     mocha "^3.4.2"
     original-require "^1.0.1"
