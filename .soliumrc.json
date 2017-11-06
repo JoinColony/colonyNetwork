@@ -1,6 +1,7 @@
 {
   "extends": "solium:all",
   "rules": {
+    "arg-overflow": ["error", 5],
     "imports-on-top": 0,
     "indentation": 0
   }
