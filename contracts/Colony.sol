@@ -78,12 +78,13 @@ contract Colony is DSAuth, DSMath, IColony {
     address[] memory _roles = new address[](1);
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
-        ipfsDecodedHash: _ipfsDecodedHash,
-        roles: _roles,
-        accepted: false,
-        dueDate: 0,
-        payoutsWeCannotMake: 0,
-        potId: potCount});
+      ipfsDecodedHash: _ipfsDecodedHash,
+      roles: _roles,
+      accepted: false,
+      dueDate: 0,
+      payoutsWeCannotMake: 0,
+      potId: potCount
+    });
     pots[potCount].taskId = taskCount;
   }
 
@@ -166,7 +167,8 @@ contract Colony is DSAuth, DSMath, IColony {
       task.accepted,
       task.dueDate,
       task.payoutsWeCannotMake,
-      task.potId);
+      task.potId
+    );
   }
 
   function getTaskRoleAddress (uint _id, uint _role) public view

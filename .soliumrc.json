@@ -3,7 +3,7 @@
   "rules": {
     "arg-overflow": ["warning", 5],
     "imports-on-top": 0,
-    "indentation": 0,
+    "indentation": ["error", 2],
     "quotes": ["error", "double"]
   }
 }
