@@ -37,7 +37,7 @@
     "shortid": "^2.2.8",
     "solidity-coverage": "^0.2.7",
     "solidity-sha3": "^0.4.1",
-    "solium": "^0.5.5",
+    "solium": "^1.0.3",
     "truffle": "^4.0.0-beta.2"
   },
   "dependencies": {}

@@ -74,16 +74,17 @@ contract Colony is DSAuth, DSMath, IColony {
   auth
   {
     taskCount += 1;
-    potCount +=1;
+    potCount += 1;
     address[] memory _roles = new address[](1);
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
-        ipfsDecodedHash: _ipfsDecodedHash,
-        roles: _roles,
-        accepted: false,
-        dueDate: 0,
-        payoutsWeCannotMake: 0,
-        potId: potCount});
+      ipfsDecodedHash: _ipfsDecodedHash,
+      roles: _roles,
+      accepted: false,
+      dueDate: 0,
+      payoutsWeCannotMake: 0,
+      potId: potCount
+    });
     pots[potCount].taskId = taskCount;
   }
 
@@ -121,28 +122,27 @@ contract Colony is DSAuth, DSMath, IColony {
     Task storage task = tasks[_id];
     uint totalTokenPayout = task.totalPayouts[_token];
     uint tokenPot = pots[task.potId].balance[_token];
-    if ( _prev >= totalTokenPayout ){                                   // If the old amount in the pot was enough to pay for the budget
-      if ( tokenPot < totalTokenPayout ){                               // And the new amount in the pot is not enough to pay for the budget...
+    if (_prev >= totalTokenPayout) {                                   // If the old amount in the pot was enough to pay for the budget
+      if (tokenPot < totalTokenPayout) {                               // And the new amount in the pot is not enough to pay for the budget...
         task.payoutsWeCannotMake += 1;                                  // Then this is a set of payouts we cannot make that we could before.
       }
     } else {                                                            // If this 'else' is running, then the old amount in the pot could not pay for the budget
-      if ( tokenPot >= totalTokenPayout ) {                             // And the new amount in the pot can pay for the budget
+      if (tokenPot >= totalTokenPayout) {                             // And the new amount in the pot can pay for the budget
         task.payoutsWeCannotMake -= 1;                                  // Then this is a set of payouts we can make that we could not before.
       }
     }
   }
 
-
   function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = task.totalPayouts[_token];
     uint tokenPot = pots[task.potId].balance[_token];
-    if ( tokenPot >= _prev ){                                          // If the amount in the pot was enough to pay for the old budget...
-      if ( tokenPot < totalTokenPayout ){                              // And the amount is not enough to pay for the new budget...
+    if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
+      if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
         task.payoutsWeCannotMake += 1;                                 // Then this is a set of payouts we cannot make that we could before.
       }
     } else {                                                           // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
-      if ( tokenPot >= totalTokenPayout ){                             // And the amount is enough to pay for the new budget...
+      if (tokenPot >= totalTokenPayout) {                             // And the amount is enough to pay for the new budget...
         task.payoutsWeCannotMake -= 1;                                 // Then this is a set of payouts we can make that we could not before.
       }
     }
@@ -167,7 +167,8 @@ contract Colony is DSAuth, DSMath, IColony {
       task.accepted,
       task.dueDate,
       task.payoutsWeCannotMake,
-      task.potId);
+      task.potId
+    );
   }
 
   function getTaskRoleAddress (uint _id, uint _role) public view
@@ -196,7 +197,7 @@ contract Colony is DSAuth, DSMath, IColony {
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
     uint fee = payout / getFeeInverse();
     uint remainder = sub(payout, fee);
-    if (_token == 0x0){
+    if (_token == 0x0) {
       // Payout ether
       task.roles[_role].transfer(remainder);
       // Fee goes directly to Common Colony
@@ -213,7 +214,7 @@ contract Colony is DSAuth, DSMath, IColony {
     }
   }
 
-  function getPotBalance(uint256 _potId, address _token) public view returns (uint256){
+  function getPotBalance(uint256 _potId, address _token) public view returns (uint256) {
     return pots[_potId].balance[_token];
   }
 
@@ -223,7 +224,7 @@ contract Colony is DSAuth, DSMath, IColony {
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0);
     require(_toPot <= potCount); // Only allow sending to created pots
-    if (pots[_fromPot].taskId > 0){
+    if (pots[_fromPot].taskId > 0) {
       Task storage task = tasks[pots[_fromPot].taskId];
       require(task.accepted == false || task.totalPayouts[_token] == 0);
       // i.e. if this pot is associated with a task, prevent money being taken from the pot if the task
@@ -246,7 +247,7 @@ contract Colony is DSAuth, DSMath, IColony {
     uint toClaim;
     uint feeToPay;
     uint remainder;
-    if (_token==0x0){
+    if (_token == 0x0) {
       // It's ether
       toClaim = sub(sub(this.balance,nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     } else {
@@ -255,9 +256,9 @@ contract Colony is DSAuth, DSMath, IColony {
       toClaim = sub(sub(targetToken.balanceOf(this), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     }
     feeToPay = toClaim / getRewardInverse();
-    if (token==_token){ // Well this line isn't easy to understand
+    if (token == _token) { // Well this line isn't easy to understand
       // Basically, if we're using our own tokens, then we don't siphon off a chunk for rewards
-      feeToPay=0;
+      feeToPay = 0;
     }
     remainder = sub(toClaim, feeToPay);
     nonRewardPotsTotal[_token] = add(nonRewardPotsTotal[_token], remainder);
@@ -265,14 +266,14 @@ contract Colony is DSAuth, DSMath, IColony {
     pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
   }
 
-  function getFeeInverse() public pure returns (uint){
+  function getFeeInverse() public pure returns (uint) {
     // Return 1 / the fee to pay to the network.
     // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: refer to ColonyNetwork
     return 100;
   }
 
-  function getRewardInverse() public pure returns (uint){
+  function getRewardInverse() public pure returns (uint) {
     // Return 1 / the reward to pay out from revenue.
     // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: Make settable by colony
@@ -282,7 +283,7 @@ contract Colony is DSAuth, DSMath, IColony {
   function initialiseColony(address _address) public {
     require (colonyNetworkAddress==0x0);
     colonyNetworkAddress = _address;
-    potCount=1;
+    potCount = 1;
   }
 
   function mintTokens(uint128 _wad) public

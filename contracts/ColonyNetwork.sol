@@ -45,7 +45,7 @@ contract ColonyNetwork is DSAuth {
   auth
   {
     colonyVersionResolver[_version] = _resolver;
-    if(_version > currentColonyVersion) {
+    if (_version > currentColonyVersion) {
       currentColonyVersion = _version;
     }
   }
