@@ -1484,9 +1484,9 @@ esutils@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/esutils/-/esutils-2.0.2.tgz#0abf4f1caa5bcb1f7a9d8acc6dea4faaa04bac9b"
 
-ethereumjs-testrpc-sc@4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc-sc/-/ethereumjs-testrpc-sc-4.0.2.tgz#3c0cd373bfe8804159847f4378d64145726a11e8"
+ethereumjs-testrpc-sc@6.0.5:
+  version "6.0.5"
+  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc-sc/-/ethereumjs-testrpc-sc-6.0.5.tgz#5dc71dab02dc47f03b4ef560a702154de07423e0"
   dependencies:
     webpack "^3.0.0"
 
@@ -3677,12 +3677,12 @@ solc@0.4.17:
     semver "^5.3.0"
     yargs "^4.7.1"
 
-solidity-coverage@^0.2.7:
-  version "0.2.7"
-  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.2.7.tgz#f7a11be723fdc24166e6e6fb2e26802fc9089088"
+solidity-coverage@^0.3.2:
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.3.2.tgz#a13a77e929fed0425a2e63640ab3932f4c97f355"
   dependencies:
     death "^1.1.0"
-    ethereumjs-testrpc-sc "4.0.2"
+    ethereumjs-testrpc-sc "6.0.5"
     istanbul "^0.4.5"
     keccakjs "^0.2.1"
     req-cwd "^1.0.1"
