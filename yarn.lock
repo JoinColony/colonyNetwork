@@ -1490,9 +1490,9 @@ ethereumjs-testrpc-sc@4.0.2:
   dependencies:
     webpack "^3.0.0"
 
-ethereumjs-testrpc@4.1.3:
-  version "4.1.3"
-  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc/-/ethereumjs-testrpc-4.1.3.tgz#74db90c9075fdfa3ba2513f08595baac36a86c7e"
+ethereumjs-testrpc@6.0.1:
+  version "6.0.1"
+  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc/-/ethereumjs-testrpc-6.0.1.tgz#09da15a14a31da384fb10c08c0fa9ac576ac8137"
   dependencies:
     webpack "^3.0.0"
 
