@@ -1,6 +1,7 @@
 {
   "extends": "solium:all",
   "rules": {
+    "imports-on-top": 0,
     "indentation": 0
   }
 }
