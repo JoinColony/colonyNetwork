@@ -3667,9 +3667,9 @@ sol-explore@^1.6.1, sol-explore@^1.6.2:
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/sol-explore/-/sol-explore-1.6.2.tgz#43ae8c419fd3ac056a05f8a9d1fb1022cd41ecc2"
 
-solc@0.4.17:
-  version "0.4.17"
-  resolved "https://registry.yarnpkg.com/solc/-/solc-0.4.17.tgz#75f93da6bc190becb89f6663076ab943ff95cd2f"
+solc@0.4.18:
+  version "0.4.18"
+  resolved "https://registry.yarnpkg.com/solc/-/solc-0.4.18.tgz#83ac6d871dd16a9710e67dbb76dad7f614100702"
   dependencies:
     fs-extra "^0.30.0"
     memorystream "^0.3.1"
@@ -3990,13 +3990,13 @@ trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
 
-truffle@^4.0.0-beta.2:
-  version "4.0.0-beta.2"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-4.0.0-beta.2.tgz#2c6ee893615a90eeea32f370a790edc26cd840ee"
+truffle@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-4.0.1.tgz#d8661a4ad7a6ca094b7517d29b199c60e6dde665"
   dependencies:
     mocha "^3.4.2"
     original-require "^1.0.1"
-    solc "0.4.17"
+    solc "0.4.18"
 
 tty-browserify@0.0.0:
   version "0.0.0"
