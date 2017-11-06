@@ -27,14 +27,13 @@ contract('EtherRouter / Resolver', function (accounts) {
   });
 
   describe('EtherRouter', function () {
-    it('should throw if non-owner tries to change the Resolver on EtherRouter', async function () {
+    it('should revert if non-owner tries to change the Resolver on EtherRouter', async function () {
       let tx;
       try {
         tx = await etherRouter.setResolver('0xb3e2b6020926af4763d706b5657446b95795de57', { from: COINBASE_ACCOUNT, gas: 4700000});
       } catch (err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      testHelper.checkAllGasSpent(4700000, tx);
       const _resolver = await etherRouter.resolver.call();
       assert.equal(_resolver, resolver.address);
     });
