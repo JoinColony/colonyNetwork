@@ -84,13 +84,14 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   auth
   {
     taskCount += 1;
-    potCount +=1;
+    potCount += 1;
     address[] memory _roles = new address[](3);
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
       ipfsDecodedHash: _ipfsDecodedHash,
       roles: _roles,
       accepted: false,
+      cancelled: false,
       dueDate: 0,
       payoutsWeCannotMake: 0,
       potId: potCount
@@ -106,7 +107,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     require(!task.accepted);
 
     uint8[2] storage _reviewers = reviewers[sig];
-    require(_reviewers[0] !=0 || _reviewers[1] != 0);
+    require(_reviewers[0] != 0 || _reviewers[1] != 0);
     require(_reviewers[0] == _role || _reviewers[1] == _role);
 
     transactionId = submitTransaction(_data, _value, _role);
