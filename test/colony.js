@@ -468,10 +468,14 @@ contract('Colony', function (accounts) {
 
     it('should payout agreed tokens for a task', async function (){
       await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.mintTokens(300);
       await colony.claimColonyFunds(token.address);
       // Set the manager payout as 200 colony tokens
-      await colony.setTaskPayout(1, 0, token.address, 200);
+      const txData = await colony.contract.setTaskPayout.getData(1, 0, token.address, 200);
+      await colony.proposeTaskChange(txData, 0, 0);
+      await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
+
       await colony.moveFundsBetweenPots(1,2,200,token.address);
       await colony.acceptTask(1);
       let networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
@@ -486,10 +490,13 @@ contract('Colony', function (accounts) {
 
     it('should payout agreed ether for a task', async function (){
       await colony.makeTask(ipfsDecodedHash);
+      await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.send(300);
       await colony.claimColonyFunds(0x0);
-      // Set the manager payout as 200 colony tokens
-      await colony.setTaskPayout(1, 0, 0x0, 200);
+      // Set the manager payout as 200 wei
+      const txData = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 200);
+      await colony.proposeTaskChange(txData, 0, 0);
+      await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
       await colony.moveFundsBetweenPots(1,2,200,0x0);
       await colony.acceptTask(1);
       let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
