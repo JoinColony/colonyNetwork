@@ -40,8 +40,7 @@ contract TransactionReviewer {
     _;
   }
 
-  //TODO Secure this
-  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer) public {
+  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer) internal {
     uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
     reviewers[_sig] = _reviewers;
   }

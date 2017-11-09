@@ -56,7 +56,6 @@ module.exports = {
     await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
     await resolver.register("taskCount()", colony.address, 32);
     await resolver.register("transactionCount()", colony.address, 32);
-    await resolver.register("setFunctionReviewers(bytes4,uint8,uint8)", colony.address, 0);
     await resolver.register("setToken(address)", colony.address, 0);
     await resolver.register("makeTask(bytes32)", colony.address, 0);
     await resolver.register("proposeTaskChange(bytes,uint256,uint8)", colony.address, 32);
@@ -94,9 +93,6 @@ module.exports = {
     response = await resolver.lookup.call('0xb77bf600'); // transactionCount
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x026e1146'); // setFunctionReviewers
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x144fa6d7'); // setToken
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
