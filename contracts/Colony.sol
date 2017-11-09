@@ -29,7 +29,6 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
 
   uint public taskCount;
   uint public potCount;
-  uint public reservedTokens;
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
@@ -123,6 +122,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     require(!task.accepted);
 
     uint8[2] storage _reviewers = reviewers[sig];
+    require(_reviewers[0] != 0 || _reviewers[1] != 0);
     require(_reviewers[0] == _role || _reviewers[1] == _role);
 
     confirmTransaction(_transactionId, _role);
@@ -132,7 +132,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   // Note: Relies on the encoded function's first parameter to be the uint256 taskId
   function deconstructCall(bytes _data) internal returns (bytes4 sig, uint256 taskId) {
     assembly {
-      sig := mload(add(_data, add(0x20, 0)))
+      sig := mload(add(_data, 0x20))
       taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
     }
   }
