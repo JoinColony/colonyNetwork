@@ -7,9 +7,10 @@ import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
 import "./IColonyNetwork.sol";
+import "./TransactionReviewer.sol";
 
 
-contract Colony is DSAuth, DSMath, IColony {
+contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   address resolver;
   address colonyNetworkAddress;
   ERC20Extended public token;
@@ -38,9 +39,12 @@ contract Colony is DSAuth, DSMath, IColony {
     address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
     uint dueDate;
     bool accepted;
+    bool cancelled;
     uint payoutsWeCannotMake;
     uint potId;
+    // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint) totalPayouts;
+    // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
     mapping (uint => mapping (address => uint)) payouts;
   }
 
@@ -64,6 +68,11 @@ contract Colony is DSAuth, DSMath, IColony {
     _;
   }
 
+  modifier self() {
+    require(address(this) == msg.sender);
+    _;
+  }
+
   function setToken(address _token) public
   auth
   {
@@ -75,12 +84,13 @@ contract Colony is DSAuth, DSMath, IColony {
   {
     taskCount += 1;
     potCount += 1;
-    address[] memory _roles = new address[](1);
+    address[] memory _roles = new address[](3);
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
       ipfsDecodedHash: _ipfsDecodedHash,
       roles: _roles,
       accepted: false,
+      cancelled: false,
       dueDate: 0,
       payoutsWeCannotMake: 0,
       potId: potCount
@@ -88,8 +98,65 @@ contract Colony is DSAuth, DSMath, IColony {
     pots[potCount].taskId = taskCount;
   }
 
+  function proposeTaskChange(bytes _data, uint _value, uint8 _role) public returns (uint transactionId) {
+    var (sig, taskId) = deconstructCall(_data);
+
+    Task storage task = tasks[taskId];
+    require(task.roles[_role] == msg.sender);
+    require(!task.accepted);
+
+    uint8[2] storage _reviewers = reviewers[sig];
+    require(_reviewers[0] != 0 || _reviewers[1] != 0);
+    require(_reviewers[0] == _role || _reviewers[1] == _role);
+
+    transactionId = submitTransaction(_data, _value, _role);
+  }
+
+  function approveTaskChange(uint _transactionId, uint8 _role) public {
+    Transaction storage _transaction = transactions[_transactionId];
+    bytes memory _data = _transaction.data;
+    var (sig, taskId) = deconstructCall(_data);
+
+    Task storage task = tasks[taskId];
+    require(task.roles[_role] == msg.sender);
+    require(!task.accepted);
+
+    uint8[2] storage _reviewers = reviewers[sig];
+    require(_reviewers[0] != 0 || _reviewers[1] != 0);
+    require(_reviewers[0] == _role || _reviewers[1] == _role);
+
+    confirmTransaction(_transactionId, _role);
+  }
+
+  // Get the function signature and task id from the transaction bytes data
+  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
+  function deconstructCall(bytes _data) internal returns (bytes4 sig, uint256 taskId) {
+    assembly {
+      sig := mload(add(_data, 0x20))
+      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
+    }
+  }
+
+  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
+  // Note task assignment is agreed off-chain
+  function setTaskEvaluator(uint256 _id, address _evaluator) public
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    tasks[_id].roles[1] = _evaluator;
+  }
+
+  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
+  // Note task assignment is agreed off-chain
+  function setTaskWorker(uint256 _id, address _worker) public
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    tasks[_id].roles[2] = _worker;
+  }
+
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
-  auth
+  self()
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
@@ -97,7 +164,7 @@ contract Colony is DSAuth, DSMath, IColony {
   }
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
-  auth
+  self()
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
@@ -105,7 +172,7 @@ contract Colony is DSAuth, DSMath, IColony {
   }
 
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
-  auth
+  self()
   tasksExists(_id)
   tasksNotAccepted(_id)
   {
@@ -156,8 +223,16 @@ contract Colony is DSAuth, DSMath, IColony {
     tasks[_id].accepted = true;
   }
 
+  function cancelTask(uint256 _id) public
+  auth
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  {
+    tasks[_id].cancelled = true;
+  }
+
   function getTask(uint256 _id) public view
-  returns (bytes32, uint, bool, uint, uint, uint)
+  returns (bytes32, uint, bool, bool, uint, uint, uint)
   {
     Task storage task = tasks[_id];
     uint rolesCount = task.roles.length;
@@ -165,6 +240,7 @@ contract Colony is DSAuth, DSMath, IColony {
     return (task.ipfsDecodedHash,
       rolesCount,
       task.accepted,
+      task.cancelled,
       task.dueDate,
       task.payoutsWeCannotMake,
       task.potId
@@ -284,6 +360,10 @@ contract Colony is DSAuth, DSMath, IColony {
     require (colonyNetworkAddress==0x0);
     colonyNetworkAddress = _address;
     potCount = 1;
+
+    setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
+    setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
+    setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
   }
 
   function mintTokens(uint128 _wad) public
