@@ -16,6 +16,7 @@ const gulp = gulpHelp(originalGulp, {
 const options = minimist(process.argv.slice(2));
 
 const gethClient = options.parity ? 'parity' : 'testrpc';
+const keepRunning = options.keepRunning ? true : false;
 
 gulp.task('deploy:contracts', [gethClient, 'clean:contracts'], () => {
   return execute(`truffle migrate --reset`);
@@ -70,7 +71,12 @@ gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:con
 
 gulp.task('testrpc', async () => {
   const cmd = makeCmd(`testrpc`);
-  executeDetached(cmd);
+  if (keepRunning) {
+    executeWithOutput(cmd);
+  } else {
+    executeDetached(cmd);
+  }
+
   return waitForPort('8545');
 });
 
