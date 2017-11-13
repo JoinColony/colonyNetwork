@@ -19,6 +19,29 @@ contract ColonyNetwork is DSAuth {
   // Maps colony contract versions to respective resolvers
   mapping (uint => address) public colonyVersionResolver;
 
+  struct Skill {
+    uint256 nParents; // total number of parents
+    uint256 parentNid; // the `skill_id` of the `n`th parent, where `n` is an integer power of two larger than or equal to 1
+    uint256[] children; // array of `skill_id`s of all child skills
+    uint256 nChildren; // total number of child skills
+  }
+  mapping (uint => Skill) public skills;
+  uint256 public skillCount;
+
+  function ColonyNetwork() {
+    uint256[] memory _children = new uint256[](0);
+
+    // Setup the "root skill"
+    skills[0] = Skill({
+      nParents: 0,
+      parentNid: 0,
+      children: _children,
+      nChildren: 0
+    });
+
+    skillCount = 1;
+  }
+
   function createColony(bytes32 name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
@@ -76,4 +99,17 @@ contract ColonyNetwork is DSAuth {
     e.setResolver(newResolver);
   }
 
+  //TODO: Secure this to the common colony only
+  function addSkill(uint _n_parents, uint _parent_n_id) public {
+    uint256[] memory _children = new uint256[](0);
+
+    skills[skillCount] = Skill({
+      nParents: _n_parents,
+      parentNid: _parent_n_id,
+      children: _children,
+      nChildren: 0
+    });
+
+    skillCount += 1;
+  }
 }
