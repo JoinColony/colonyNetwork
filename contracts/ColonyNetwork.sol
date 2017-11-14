@@ -16,6 +16,7 @@ contract ColonyNetwork is DSAuth {
   uint256 public currentColonyVersion;
   mapping (uint => address) _coloniesIndex;
   mapping (bytes32 => address) _colonies;
+  mapping (address => bool) _isColony;
   // Maps colony contract versions to respective resolvers
   mapping (uint => address) public colonyVersionResolver;
 
@@ -45,7 +46,23 @@ contract ColonyNetwork is DSAuth {
     _;
   }
 
-  function createColony(bytes32 _name) public {
+  struct ReputationLogEntry {
+    address user;
+    uint amount;
+    uint skillId;
+    address colony;
+    uint nUpdates;
+    uint nPreviousUpdates;
+  }
+
+  ReputationLogEntry[] ReputationUpdateLog;
+
+  modifier calledByColony() {
+    require(_isColony[msg.sender] == true);
+    _;
+  }
+
+  function createColony(bytes32 name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
     var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
@@ -71,6 +88,7 @@ contract ColonyNetwork is DSAuth {
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
     _colonies[_name] = colony;
+    _isColony[colony] = true;
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -169,4 +187,26 @@ contract ColonyNetwork is DSAuth {
     Skill storage skill = skills[_skillId];
     return skill.children[_childSkillIndex];
   }
+  function appendReputationUpdateLog(address _user, uint _amount, uint _skillId)
+  calledByColony
+  {
+    uint ReputationUpdateLogLength = ReputationUpdateLog.length;
+    uint nPreviousUpdates = 0;
+    if (ReputationUpdateLogLength>0){
+      nPreviousUpdates = ReputationUpdateLog[ReputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[ReputationUpdateLogLength-1].nUpdates;
+    }
+    uint nUpdates = 2; //TODO: Replace with (skill[_skillId][nChildren] + skill[_skillId][nParents] + 1) * 2
+    ReputationUpdateLog.push(ReputationLogEntry(_user, _amount, _skillId, msg.sender, nUpdates, nPreviousUpdates));
+  }
+
+  function getReputationUpdateLogEntry(uint _idx) view returns (address user, uint amount, uint skillId, address colony, uint nUpdates, uint nPreviousUpdates){
+    ReputationLogEntry storage e = ReputationUpdateLog[_idx];
+    user = e.user;
+    amount = e.amount;
+    skillId = e.skillId;
+    colony = e.colony;
+    nUpdates = e.nUpdates;
+    nPreviousUpdates = e.nPreviousUpdates;
+  }
+
 }

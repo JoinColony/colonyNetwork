@@ -175,8 +175,10 @@ module.exports = {
     await resolver.register("getColonyAt(uint256)", colonyNetwork.address, 32);
     await resolver.register("upgradeColony(bytes32,uint256)", colonyNetwork.address, 0);
     await resolver.register("addSkill(uint256)", colonyNetwork.address, 0);
-    await resolver.register("getParentSkillId(uint256,uint256)", colonyNetwork.address, 32);
+    await resolver.register("getParentSkckillId(uint256,uint256)", colonyNetwork.address, 32);
     await resolver.register("getChildSkillId(uint256,uint256)", colonyNetwork.address, 32);
+    await resolver.register("appendReputationUpdateLog(address,uint256,uint256)", colonyNetwork.address, 0);
+    await resolver.register("getReputationUpdateLogEntry(uint256)", colonyNetwork.address, 192);
 
     // Validate ColonyNetwork functions are registered
     let response = await resolver.lookup.call('0xe40c6c91'); // colonyCount
@@ -218,6 +220,13 @@ module.exports = {
     response = await resolver.lookup.call('0x09d10a5e'); // getChildSkillId
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x3fafa55e'); // appendReputationUpdateLog(address,uint256,uint256)
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0xf5ddff92'); // getReputationUpdateLogEntry(uint256)
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 192);
+
     await etherRouter.setResolver(resolver.address);
   }
 };
