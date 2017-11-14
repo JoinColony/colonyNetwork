@@ -163,6 +163,8 @@ module.exports = {
     await resolver.register("colonyCount()", colonyNetwork.address, 32);
     await resolver.register("currentColonyVersion()", colonyNetwork.address, 32);
     await resolver.register("colonyVersionResolver(uint256)", colonyNetwork.address, 32);
+    await resolver.register("skills(uint256)", colonyNetwork.address, 128);
+    await resolver.register("skillCount()", colonyNetwork.address, 32);
     await resolver.register("createColony(bytes32)", colonyNetwork.address, 0);
     await resolver.register("addColonyVersion(uint256,address)", colonyNetwork.address, 0);
     await resolver.register("getColony(bytes32)", colonyNetwork.address, 32);
@@ -177,6 +179,12 @@ module.exports = {
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xa33e5bd8'); // colonyVersionResolver
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x50d15fbe'); // skills
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 128);
+    response = await resolver.lookup.call('0xb82c1b4a'); // skillCount
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0x754b0031'); // createColony
