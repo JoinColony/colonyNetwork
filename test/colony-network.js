@@ -50,6 +50,11 @@ contract('ColonyNetwork', function (accounts) {
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
+    it('should have the root skill set', async function () {
+      const rootSkill = await colonyNetwork.skills.call(0);
+      assert.equal(rootSkill[0].toNumber(), 0);
+    });
+
     it('should have the Resolver for current Colony version set', async function () {
       const currentResolver = await colonyNetwork.colonyVersionResolver.call(version.toNumber());
       assert.equal(currentResolver, resolver.address);

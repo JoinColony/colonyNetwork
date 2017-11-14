@@ -28,20 +28,6 @@ contract ColonyNetwork is DSAuth {
   mapping (uint => Skill) public skills;
   uint256 public skillCount;
 
-  function ColonyNetwork() {
-    uint256[] memory _children = new uint256[](0);
-
-    // Setup the "root skill"
-    skills[0] = Skill({
-      nParents: 0,
-      parentNid: 0,
-      children: _children,
-      nChildren: 0
-    });
-
-    skillCount = 1;
-  }
-
   function createColony(bytes32 name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
@@ -100,16 +86,17 @@ contract ColonyNetwork is DSAuth {
   }
 
   //TODO: Secure this to the common colony only
-  function addSkill(uint _n_parents, uint _parent_n_id) public {
+  function addSkill(uint _nParents, uint _parentNid) public {
     uint256[] memory _children = new uint256[](0);
 
+    skillCount += 1;
     skills[skillCount] = Skill({
-      nParents: _n_parents,
-      parentNid: _parent_n_id,
+      nParents: _nParents,
+      parentNid: _parentNid,
       children: _children,
       nChildren: 0
     });
 
-    skillCount += 1;
+    //TODO: Update parent skills
   }
 }
