@@ -308,7 +308,6 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     }
     // TODO: At some point, funds have to be unable to be removed from tasks (until everyone's been paid and
     // extra funds can be reclaimed)
-    assert(pots[_fromPot].balance[_token] >= _amount); // TODO do we need this? we're using safemath...
     uint fromPotPreviousAmount = pots[_fromPot].balance[_token];
     uint toPotPreviousAmount = pots[_toPot].balance[_token];
     pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
