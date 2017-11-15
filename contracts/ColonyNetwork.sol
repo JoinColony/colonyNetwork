@@ -209,4 +209,8 @@ contract ColonyNetwork is DSAuth {
     nPreviousUpdates = e.nPreviousUpdates;
   }
 
+  function getReputationUpdateLogLength() view returns (uint) {
+    return ReputationUpdateLog.length;
+  }
+
 }

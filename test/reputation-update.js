@@ -70,14 +70,9 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      // We got a throw. Double check it wasn't appended to. Starts empty, so should still be empty,
-      // and trying to read from it will throw.
-      try {
-        tx = await colonyNetwork.getReputationUpdateLogEntry(0, { gas: GAS_TO_SPEND });
-      } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      // We got a throw. Double check it wasn't appended to. Starts empty, so should still be empty
+      let length = await colonyNetwork.getReputationUpdateLogLength();
+      assert.equal(length.toNumber(), 0);
     })
 
     it('should populate nPreviousUpdates correctly', async function () {
