@@ -19,7 +19,7 @@ const gethClient = options.parity ? 'parity' : 'testrpc';
 const keepRunning = options.keepRunning ? true : false;
 
 gulp.task('deploy:contracts', [gethClient, 'clean:contracts'], () => {
-  return execute(`truffle migrate --reset`);
+  return execute(`truffle migrate --reset --compile-all`);
 });
 
 gulp.task('clean:contracts', done => rimraf('./build/contracts/*', done));
