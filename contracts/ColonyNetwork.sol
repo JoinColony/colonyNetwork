@@ -97,6 +97,13 @@ contract ColonyNetwork is DSAuth {
       nChildren: 0
     });
 
-    //TODO: Update parent skills
+    Skill storage parentSkill = skills[_parentNid];
+    parentSkill.children.push(skillCount);
+    parentSkill.nChildren += 1;
+  }
+
+  function getChildSkill(uint _parentSkillId, uint _childSkillIndex) public view returns (uint256) {
+    Skill storage parentSkill = skills[_parentSkillId];
+    return parentSkill.children[_childSkillIndex];
   }
 }

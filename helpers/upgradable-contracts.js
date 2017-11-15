@@ -171,6 +171,7 @@ module.exports = {
     await resolver.register("getColonyAt(uint256)", colonyNetwork.address, 32);
     await resolver.register("upgradeColony(bytes32,uint256)", colonyNetwork.address, 0);
     await resolver.register("addSkill(uint256,uint256)", colonyNetwork.address, 0);
+    await resolver.register("getChildSkill(uint256,uint256)", colonyNetwork.address, 32);
 
     // Validate ColonyNetwork functions are registered
     let response = await resolver.lookup.call('0xe40c6c91'); // colonyCount
@@ -206,7 +207,9 @@ module.exports = {
     response = await resolver.lookup.call('0x1c360275'); // addSkill
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 0);
-
+    response = await resolver.lookup.call('0xa43e56ee'); // getChildSkill
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 32);
     await etherRouter.setResolver(resolver.address);
   }
 };
