@@ -190,16 +190,16 @@ contract ColonyNetwork is DSAuth {
   function appendReputationUpdateLog(address _user, uint _amount, uint _skillId)
   calledByColony
   {
-    uint ReputationUpdateLogLength = ReputationUpdateLog.length;
+    uint reputationUpdateLogLength = ReputationUpdateLog.length;
     uint nPreviousUpdates = 0;
-    if (ReputationUpdateLogLength>0){
-      nPreviousUpdates = ReputationUpdateLog[ReputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[ReputationUpdateLogLength-1].nUpdates;
+    if (reputationUpdateLogLength > 0) {
+      nPreviousUpdates = ReputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
     }
     uint nUpdates = 2; //TODO: Replace with (skill[_skillId][nChildren] + skill[_skillId][nParents] + 1) * 2
     ReputationUpdateLog.push(ReputationLogEntry(_user, _amount, _skillId, msg.sender, nUpdates, nPreviousUpdates));
   }
 
-  function getReputationUpdateLogEntry(uint _idx) view returns (address user, uint amount, uint skillId, address colony, uint nUpdates, uint nPreviousUpdates){
+  function getReputationUpdateLogEntry(uint _idx) view returns (address user, uint amount, uint skillId, address colony, uint nUpdates, uint nPreviousUpdates) {
     ReputationLogEntry storage e = ReputationUpdateLog[_idx];
     user = e.user;
     amount = e.amount;

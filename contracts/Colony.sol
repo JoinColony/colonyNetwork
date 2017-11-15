@@ -223,7 +223,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     tasks[_id].accepted = true;
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint skillId = 5; //TODO: Replace with actual skill
-    uint reputationChange  = 10; // TODO: Replace with actual reputation change
+    uint reputationChange = 10; // TODO: Replace with actual reputation change
     colonyNetworkContract.appendReputationUpdateLog(tasks[_id].roles[2], reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
