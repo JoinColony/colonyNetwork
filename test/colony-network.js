@@ -222,7 +222,7 @@ contract('ColonyNetwork', function (accounts) {
 
   describe('when adding a new skill', () => {
     it('should be able to add a new skill as a child to the root skill', async function () {
-      await colonyNetwork.addSkill(1, [0]);
+      await colonyNetwork.addSkill(0);
       const newSkill = await colonyNetwork.skills.call(1);
       assert.equal(newSkill[0].toNumber(), 1);
       assert.equal(newSkill[1].toNumber(), 0);
@@ -237,9 +237,9 @@ contract('ColonyNetwork', function (accounts) {
     });
 
     it('should be able to add multiple child skills to the root skill', async function () {
-      await colonyNetwork.addSkill(1, [0]);
-      await colonyNetwork.addSkill(1, [0]);
-      await colonyNetwork.addSkill(1, [0]);
+      await colonyNetwork.addSkill(0);
+      await colonyNetwork.addSkill(0);
+      await colonyNetwork.addSkill(0);
 
       const skillCount = await colonyNetwork.skillCount.call();
       assert.equal(skillCount.toNumber(), 3);
@@ -271,10 +271,10 @@ contract('ColonyNetwork', function (accounts) {
 
     it('should be able to add child skills a few levels down the skills tree', async function () {
       // Add 2 skill nodes to root skill
-      await colonyNetwork.addSkill(1, [0]);
-      await colonyNetwork.addSkill(1, [0]);
+      await colonyNetwork.addSkill(0);
+      await colonyNetwork.addSkill(0);
 
-      await colonyNetwork.addSkill(2, [0, 1]);
+      await colonyNetwork.addSkill(1);
 
       const newDeepSkill = await colonyNetwork.skills.call(3);
       assert.equal(newDeepSkill[0].toNumber(), 2);

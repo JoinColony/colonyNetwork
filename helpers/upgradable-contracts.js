@@ -170,7 +170,7 @@ module.exports = {
     await resolver.register("getColony(bytes32)", colonyNetwork.address, 32);
     await resolver.register("getColonyAt(uint256)", colonyNetwork.address, 32);
     await resolver.register("upgradeColony(bytes32,uint256)", colonyNetwork.address, 0);
-    await resolver.register("addSkill(uint256,uint256[])", colonyNetwork.address, 0);
+    await resolver.register("addSkill(uint256)", colonyNetwork.address, 0);
     await resolver.register("getParentSkillId(uint256,uint256)", colonyNetwork.address, 32);
     await resolver.register("getChildSkillId(uint256,uint256)", colonyNetwork.address, 32);
 
@@ -205,7 +205,7 @@ module.exports = {
     response = await resolver.lookup.call('0x724d685a'); // upgrade
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x8aff99df'); // addSkill
+    response = await resolver.lookup.call('0x162419cc'); // addSkill
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xd987fc16'); // getParentSkillId
