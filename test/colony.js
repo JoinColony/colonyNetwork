@@ -78,7 +78,7 @@ contract('Colony', function (accounts) {
     it('should not allow reinitialisation', async function (){
       let tx;
       try {
-        tx = await colony.initialiseColony(0x0, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.initialiseColony(0x0, "test", { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }

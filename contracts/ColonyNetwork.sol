@@ -32,7 +32,7 @@ contract ColonyNetwork is DSAuth {
   mapping (uint => Skill) public skills;
   uint256 public skillCount;
 
-  function createColony(bytes32 name) public {
+  function createColony(bytes32 _name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
     var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
@@ -40,7 +40,7 @@ contract ColonyNetwork is DSAuth {
 
     var colony = IColony(etherRouter);
     colony.setToken(token);
-    colony.initialiseColony(this);
+    colony.initialiseColony(this, _name);
     token.setOwner(colony);
 
     var authority = new Authority(colony);
@@ -51,7 +51,7 @@ contract ColonyNetwork is DSAuth {
 
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
-    _colonies[name] = colony;
+    _colonies[_name] = colony;
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -91,16 +91,13 @@ contract ColonyNetwork is DSAuth {
 
   //TODO: Secure this to the common colony only
   function addSkill(uint _parentSkillId) public {
-    // Compose the parents and nParents based on immediate parent values for the same
-    Skill storage parentSkill = skills[_parentSkillId];
-
-    uint nParents = parentSkill.nParents + 1;
-    uint[] storage parents = parentSkill.parents;
-    //TODO: only push the integer power of 2s
-    parents.push(_parentSkillId);
+    //TODO: Maybe we can save some gas if we initialise this as a fixed type memory array
+    // based on the nParents of the parent + 1?
+    uint256[] memory parents = new uint256[](0);
     uint256[] memory children = new uint256[](0);
-
+    uint nParents = 0;
     skillCount += 1;
+
     skills[skillCount] = Skill({
       nParents: nParents,
       nChildren: 0,
@@ -108,9 +105,20 @@ contract ColonyNetwork is DSAuth {
       children: children
     });
 
-    // Update the child skills of the immediate parent
-    parentSkill.children.push(skillCount);
-    parentSkill.nChildren += 1;
+    // Iterate through all the parent skills up to the root
+    while (_parentSkillId != 0) {
+      // Update children and children count of the parent with the new skill
+      Skill storage parentSkill = skills[_parentSkillId];
+      parentSkill.children.push(skillCount);
+      parentSkill.nChildren += 1;
+
+      skills[skillCount].nParents += 1;
+      //TODO: only push the integer power of 2s
+      skills[skillCount].parents.push(_parentSkillId);
+
+      // Go to the next parent skill
+      _parentSkillId = parentSkill.parents[0];
+    }
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
