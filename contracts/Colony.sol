@@ -355,14 +355,21 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     return 100;
   }
 
-  function initialiseColony(address _address) public {
+  function initialiseColony(address _address, bytes32 _name) public {
     require (colonyNetworkAddress==0x0);
     colonyNetworkAddress = _address;
     potCount = 1;
 
+    // Initialise the task update reviewers
     setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
     setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
     setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
+
+    // If this is the Common Colony, initialise the Root Skill in the Network
+    if (_name == "Common Colony") {
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      colonyNetworkContract.addSkill(0);
+    }
   }
 
   function mintTokens(uint128 _wad) public
