@@ -62,6 +62,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should not be able to be appended by an account that is not a colony', async function () {
+      let lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call();
       let tx;
       try {
         tx = await colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2, { gas: GAS_TO_SPEND });
@@ -70,9 +71,9 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      // We got a throw. Double check it wasn't appended to. Starts empty, so should still be empty
-      let length = await colonyNetwork.getReputationUpdateLogLength.call();
-      assert.equal(length.toNumber(), 0);
+      // We got a throw. Check it wasn't appended to
+      let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
+      assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     })
 
     it('should populate nPreviousUpdates correctly', async function () {
