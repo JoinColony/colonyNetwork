@@ -20,10 +20,14 @@ contract ColonyNetwork is DSAuth {
   mapping (uint => address) public colonyVersionResolver;
 
   struct Skill {
-    uint256 nParents; // total number of parents
-    uint256 parentNid; // the `skill_id` of the `n`th parent, where `n` is an integer power of two larger than or equal to 1
-    uint256[] children; // array of `skill_id`s of all child skills
-    uint256 nChildren; // total number of child skills
+    // total number of parent skills
+    uint256 nParents;
+    // total number of child skills
+    uint256 nChildren;
+    // array of `skill_id`s of parent skills starting from the 1st to `n`th, where `n` is an integer power of two larger than or equal to 1
+    uint256[] parents;
+    // array of `skill_id`s of all child skills
+    uint256[] children;
   }
   mapping (uint => Skill) public skills;
   uint256 public skillCount;
@@ -86,24 +90,32 @@ contract ColonyNetwork is DSAuth {
   }
 
   //TODO: Secure this to the common colony only
-  function addSkill(uint _nParents, uint _parentNid) public {
+  function addSkill(uint _nParents, uint[] _parents)  public {
     uint256[] memory _children = new uint256[](0);
 
     skillCount += 1;
     skills[skillCount] = Skill({
       nParents: _nParents,
-      parentNid: _parentNid,
-      children: _children,
-      nChildren: 0
+      nChildren: 0,
+      parents: _parents,
+      children: _children
     });
+    //TODO: Do we need to validate the _parents array entries apart from their count being correct against the nParents value?
 
-    Skill storage parentSkill = skills[_parentNid];
+    // Update the child skills of the immediate parent
+    uint parent_1_id = _parents[0];
+    Skill storage parentSkill = skills[parent_1_id];
     parentSkill.children.push(skillCount);
     parentSkill.nChildren += 1;
   }
 
-  function getChildSkill(uint _parentSkillId, uint _childSkillIndex) public view returns (uint256) {
-    Skill storage parentSkill = skills[_parentSkillId];
-    return parentSkill.children[_childSkillIndex];
+  function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
+    Skill storage skill = skills[_skillId];
+    return skill.parents[_parentSkillIndex];
+  }
+
+  function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
+    Skill storage skill = skills[_skillId];
+    return skill.children[_childSkillIndex];
   }
 }

@@ -223,19 +223,17 @@ contract('ColonyNetwork', function (accounts) {
 
   describe('when adding a new skill', () => {
     it('should be able to add a new skill as a child to the root skill', async function () {
-      await colonyNetwork.addSkill(1, 0);
+      await colonyNetwork.addSkill(1, [0]);
       const newSkill = await colonyNetwork.skills.call(1);
       assert.equal(newSkill[0].toNumber(), 1);
       assert.equal(newSkill[1].toNumber(), 0);
-      assert.equal(newSkill[2].toNumber(), 0);
 
       // Check rootSkill.nChildren is now 1
       const rootSkill = await colonyNetwork.skills.call(0);
-      assert.equal(rootSkill[2].toNumber(), 1);
+      assert.equal(rootSkill[1].toNumber(), 1);
 
       // Check rootSkill.children array first element is the id of the new skill
-      const rootSkillChild = await colonyNetwork.getChildSkill.call(0, 0);
-      console.log('rootSkillChild', rootSkillChild);
+      const rootSkillChild = await colonyNetwork.getChildSkillId.call(0, 0);
       assert.equal(rootSkillChild.toNumber(), 1);
     });
   });
