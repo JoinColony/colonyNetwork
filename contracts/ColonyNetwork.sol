@@ -90,7 +90,7 @@ contract ColonyNetwork is DSAuth {
   }
 
   //TODO: Secure this to the common colony only
-  function addSkill(uint _nParents, uint[] _parents)  public {
+  function addSkill(uint _nParents, uint[] _parents) public {
     uint256[] memory _children = new uint256[](0);
 
     skillCount += 1;
@@ -103,8 +103,8 @@ contract ColonyNetwork is DSAuth {
     //TODO: Do we need to validate the _parents array entries apart from their count being correct against the nParents value?
 
     // Update the child skills of the immediate parent
-    uint parent_1_id = _parents[0];
-    Skill storage parentSkill = skills[parent_1_id];
+    uint parent1Id = _parents[0];
+    Skill storage parentSkill = skills[parent1Id];
     parentSkill.children.push(skillCount);
     parentSkill.nChildren += 1;
   }
