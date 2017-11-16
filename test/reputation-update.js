@@ -71,7 +71,7 @@ contract('Colony', function (accounts) {
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       // We got a throw. Double check it wasn't appended to. Starts empty, so should still be empty
-      let length = await colonyNetwork.getReputationUpdateLogLength();
+      let length = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(length.toNumber(), 0);
     })
 
