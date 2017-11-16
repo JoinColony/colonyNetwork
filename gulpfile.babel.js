@@ -7,7 +7,6 @@ import shell from 'pshell';
 import request from 'request';
 import minimist from 'minimist';
 import rimraf from 'rimraf';
-var TestRPC = require("ethereumjs-testrpc");
 
 const getEnv = envVar => process.env[envVar];
 const gulp = gulpHelp(originalGulp, {
