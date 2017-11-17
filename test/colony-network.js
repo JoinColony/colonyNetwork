@@ -50,13 +50,6 @@ contract('ColonyNetwork', function (accounts) {
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
-    //TODO: Initialise the Common Colony
-    it.skip('should have the root skill set', async function () {
-      const rootSkill = await colonyNetwork.skills.call(0);
-      assert.equal(rootSkill[0].toNumber(), 0);
-      assert.equal(rootSkill[1].toNumber(), 0);
-    });
-
     it('should have the Resolver for current Colony version set', async function () {
       const currentResolver = await colonyNetwork.colonyVersionResolver.call(version.toNumber());
       assert.equal(currentResolver, resolver.address);
@@ -104,6 +97,17 @@ contract('ColonyNetwork', function (accounts) {
       const colonyCount = await colonyNetwork.colonyCount.call();
       assert.equal(colonyCount.toNumber(), 7);
     });
+
+    it('when common colony is created, should have the root skill initialised', async function () {
+      await colonyNetwork.createColony("Common Colony");
+      const skillCount = await colonyNetwork.skillCount.call();
+      assert.equal(skillCount.toNumber(), 1);
+      const rootSkill = await colonyNetwork.skills.call(1);
+      assert.equal(rootSkill[0].toNumber(), 0);
+      assert.equal(rootSkill[1].toNumber(), 0);
+    });
+
+    //TODO: Add token initialisation for the common colony
 
     it('should fail if ETH is sent', async function () {
       let tx;
