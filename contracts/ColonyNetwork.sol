@@ -34,6 +34,12 @@ contract ColonyNetwork is DSAuth {
 
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
+  modifier onlyCommonColony() {
+    address commonColony = getColony("Common Colony");
+    require(msg.sender == commonColony || msg.sender == address(this));
+    _;
+  }
+
   function createColony(bytes32 _name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
@@ -42,7 +48,7 @@ contract ColonyNetwork is DSAuth {
 
     var colony = IColony(etherRouter);
     colony.setToken(token);
-    colony.initialiseColony(this, _name);
+    colony.initialiseColony(this);
     token.setOwner(colony);
 
     var authority = new Authority(colony);
@@ -50,6 +56,10 @@ contract ColonyNetwork is DSAuth {
     dsauth.setAuthority(authority);
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
+
+    if (_name == "Common Colony") {
+      this.addSkill(0);
+    }
 
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
@@ -91,8 +101,9 @@ contract ColonyNetwork is DSAuth {
     e.setResolver(newResolver);
   }
 
-  //TODO: Secure this to the common colony only
-  function addSkill(uint _parentSkillId) public {
+  function addSkill(uint _parentSkillId) public
+  onlyCommonColony
+  {
     //TODO: Maybe we can save some gas if we initialise this as a fixed type memory array
     // based on the nParents of the parent + 1?
     uint256[] memory parents = new uint256[](0);
