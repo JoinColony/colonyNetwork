@@ -24,9 +24,8 @@ contract('Common Colony', function (accounts) {
     gas: GAS_TO_SPEND,
   };
 
-  let colony;
+  let commonColony;
   let token;
-  let resolver;
   let authority;
   let colonyNetwork;
   let createColonyGas;
@@ -39,17 +38,20 @@ contract('Common Colony', function (accounts) {
   });
 
   beforeEach(async function () {
-    colony = await Colony.new();
-    resolver = await Resolver.new();
+    let colony = await Colony.new();
+    let resolver = await Resolver.new();
 
     const etherRouter = await EtherRouter.new();
     etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
-    await colonyNetwork.createColony("Common Colony");
+
+    await colonyNetwork.createColony(COLONY_KEY);
+    let commonColonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+    commonColony = await Colony.at(commonColonyAddress);
   });
 
-  describe.only('when adding a new skill', () => {
+  describe('when adding a new skill', () => {
     it('should be able to add a new skill as a child to the root skill', async function () {
       await colonyNetwork.addSkill(1);
 

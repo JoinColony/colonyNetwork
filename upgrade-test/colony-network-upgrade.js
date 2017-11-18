@@ -44,7 +44,7 @@ contract('ColonyNetwork contract upgrade', function (accounts) {
   describe('when upgrading ColonyNetwork contract', function () {
     it('should return correct total number of colonies', async function () {
       const updatedColonyCount = await updatedColonyNetwork.colonyCount.call();
-      assert.equal(2, updatedColonyCount.toNumber());
+      assert.equal(3, updatedColonyCount.toNumber());
     });
 
     it('should return correct colonies by name', async function () {
@@ -56,10 +56,10 @@ contract('ColonyNetwork contract upgrade', function (accounts) {
     });
 
     it('should return correct colonies by index', async function () {
-      const colony1 = await updatedColonyNetwork.getColonyAt(1);
+      const colony1 = await updatedColonyNetwork.getColonyAt(2);
       assert.equal(colony1, colonyAddress1);
 
-      const colony2 = await updatedColonyNetwork.getColonyAt(2);
+      const colony2 = await updatedColonyNetwork.getColonyAt(3);
       assert.equal(colony2, colonyAddress2);
     });
   });
