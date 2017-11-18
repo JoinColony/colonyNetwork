@@ -1,3 +1,4 @@
+const assert = require('assert');
 const upgradableContracts = require('../helpers/upgradable-contracts');
 const Colony = artifacts.require('./Colony');
 const ColonyNetwork = artifacts.require('./ColonyNetwork');
@@ -22,6 +23,10 @@ module.exports = function (deployer, network, accounts) {
     return colonyNetwork.createColony("Common Colony");
   })
   .then(function () {
+    return colonyNetwork.skillCount.call();
+  })
+  .then(function (skillCount) {
+    assert.equal(skillCount.toNumber(), 1);
     return colonyNetwork.getColony.call("Common Colony");
   })
   .then(function (commonColonyAddress) {

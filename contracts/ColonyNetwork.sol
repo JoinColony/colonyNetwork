@@ -32,6 +32,8 @@ contract ColonyNetwork is DSAuth {
   mapping (uint => Skill) public skills;
   uint256 public skillCount;
 
+  event SkillAdded(uint256 skillId, uint256 parentSkillId);
+
   function createColony(bytes32 _name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
@@ -105,20 +107,24 @@ contract ColonyNetwork is DSAuth {
       children: children
     });
 
-    // Iterate through all the parent skills up to the root
-    while (_parentSkillId != 0) {
-      // Update children and children count of the parent with the new skill
-      Skill storage parentSkill = skills[_parentSkillId];
+    uint parentSkillId = _parentSkillId;
+    while (parentSkillId > 0) {
+      // Iterate through all the parent skills up to the root
+      Skill storage parentSkill = skills[parentSkillId];
       parentSkill.children.push(skillCount);
       parentSkill.nChildren += 1;
 
       skills[skillCount].nParents += 1;
-      //TODO: only push the integer power of 2s
-      skills[skillCount].parents.push(_parentSkillId);
+      skills[skillCount].parents.push(parentSkillId);
 
-      // Go to the next parent skill
-      _parentSkillId = parentSkill.parents[0];
+      if (parentSkill.nParents == 0) {
+        parentSkillId = 0;
+      } else {
+        parentSkillId = parentSkill.parents[0];
+      }
     }
+
+    SkillAdded(skillCount, _parentSkillId);
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
