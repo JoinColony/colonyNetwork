@@ -129,6 +129,22 @@ contract('Common Colony', function (accounts) {
       assert.equal(parentSkill2.toNumber(), 1);
     });
 
+    it('should NOT be able to add a child skill for a non existent parent', async function () {
+      // Add 2 skill nodes to root skill
+      await commonColony.addSkill(1);
+      await commonColony.addSkill(1);
+
+      let tx;
+      try {
+        tx = await commonColony.addSkill(4);
+      } catch (err) {
+        tx = testHelper.ifUsingTestRPC(err);
+      }
+
+      const skillCount = await colonyNetwork.skillCount.call();
+      assert.equal(skillCount.toNumber(), 3);
+    });
+
     it('should be able to add skills in the middle of the skills tree', async function () {
       // Add 2 skill nodes to root skill
       await commonColony.addSkill(1);

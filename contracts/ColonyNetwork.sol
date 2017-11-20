@@ -40,6 +40,11 @@ contract ColonyNetwork is DSAuth {
     _;
   }
 
+  modifier skillExists(uint skillId) {
+    require(skillCount >= skillId);
+    _;
+  }
+
   function createColony(bytes32 _name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
@@ -103,6 +108,7 @@ contract ColonyNetwork is DSAuth {
 
   function addSkill(uint _parentSkillId) public
   onlyCommonColony
+  skillExists(_parentSkillId)
   {
     //TODO: Maybe we can save some gas if we initialise this as a fixed type memory array
     // based on the nParents of the parent + 1?
