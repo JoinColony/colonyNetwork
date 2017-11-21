@@ -219,5 +219,31 @@ contract('Common Colony', function (accounts) {
       const skill7ParentSkillId2 = await colonyNetwork.getParentSkillId.call(7, 1);
       assert.equal(skill7ParentSkillId2.toNumber(), 1);
     });
+
+    it('when N parents are there, should record parent skill ids for N = integer powers of 2', async function () {
+      // Add 2 skill nodes to root skill
+      await commonColony.addSkill(1);
+      await commonColony.addSkill(2);
+      await commonColony.addSkill(3);
+      await commonColony.addSkill(4);
+      await commonColony.addSkill(5);
+      await commonColony.addSkill(6);
+      await commonColony.addSkill(7);
+      await commonColony.addSkill(8);
+      await commonColony.addSkill(9);
+
+      const skill10 = await colonyNetwork.skills.call(10);
+      assert.equal(skill10[0].toNumber(), 9);
+      assert.equal(skill10[1].toNumber(), 0);
+
+      const skill10ParentSkillId1 = await colonyNetwork.getParentSkillId.call(10, 0);
+      assert.equal(skill10ParentSkillId1.toNumber(), 9);
+      const skill10ParentSkillId2 = await colonyNetwork.getParentSkillId.call(10, 1);
+      assert.equal(skill10ParentSkillId2.toNumber(), 8);
+      const skill10ParentSkillId3 = await colonyNetwork.getParentSkillId.call(10, 2);
+      assert.equal(skill10ParentSkillId3.toNumber(), 6);
+      const skill10ParentSkillId4 = await colonyNetwork.getParentSkillId.call(10, 3);
+      assert.equal(skill10ParentSkillId4.toNumber(), 2);
+    });
   });
 });

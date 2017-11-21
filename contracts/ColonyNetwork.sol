@@ -125,6 +125,9 @@ contract ColonyNetwork is DSAuth {
     });
 
     uint parentSkillId = _parentSkillId;
+    uint x;
+    uint powerOfTwo = 2**x;
+
     while (parentSkillId > 0) {
       // Iterate through all the parent skills up to the root
       Skill storage parentSkill = skills[parentSkillId];
@@ -132,7 +135,11 @@ contract ColonyNetwork is DSAuth {
       parentSkill.nChildren += 1;
 
       skills[skillCount].nParents += 1;
-      skills[skillCount].parents.push(parentSkillId);
+      if (skills[skillCount].nParents == powerOfTwo) {
+        skills[skillCount].parents.push(parentSkillId);
+        x += 1;
+        powerOfTwo = 2**x;
+      }
 
       if (parentSkill.nParents == 0) {
         parentSkillId = 0;
