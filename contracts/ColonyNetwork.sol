@@ -35,7 +35,7 @@ contract ColonyNetwork is DSAuth {
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
   modifier onlyCommonColony() {
-    address commonColony = this.getColony("Common Colony");
+    address commonColony = getColony("Common Colony");
     require(msg.sender == commonColony || msg.sender == address(this));
     _;
   }
