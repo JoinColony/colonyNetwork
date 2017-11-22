@@ -117,13 +117,13 @@ contract('Colony', function (accounts) {
   describe('when creating tasks', () => {
     it('should allow admins to make task', async function () {
       await colony.makeTask(ipfsDecodedHash);
-      const task = await colony.getTask.call(1);
+      const task = await colony.tasks.call(1);
+      console.log('task', task);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
-      assert.equal(task[1].toNumber(), 3);
+      assert.isFalse(task[1]);
       assert.isFalse(task[2]);
-      assert.isFalse(task[3]);
+      assert.equal(task[3].toNumber(), 0);
       assert.equal(task[4].toNumber(), 0);
-      assert.equal(task[5].toNumber(), 0);
     });
 
     it('should fail if a non-admin user tries to make a task', async function () {
@@ -138,8 +138,7 @@ contract('Colony', function (accounts) {
 
     it('should set the task manager as the creator', async function () {
       await colony.makeTask(ipfsDecodedHash);
-      const task = await colony.getTask.call(1);
-      const rolesCount = task[1];
+      const rolesCount = await colony.getTaskRolesCount.call(1);
       assert.equal(rolesCount.toNumber(), 3);
       const taskManager = await colony.getTaskRoleAddress.call(1, 0);
       assert.equal(taskManager, MAIN_ACCOUNT);
@@ -174,7 +173,7 @@ contract('Colony', function (accounts) {
       const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
-      const task = await colony.getTask.call(1);
+      const task = await colony.tasks.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
 
@@ -188,8 +187,8 @@ contract('Colony', function (accounts) {
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
-      const task = await colony.getTask.call(1);
-      assert.equal(task[4], dueDate);
+      const task = await colony.tasks.call(1);
+      assert.equal(task[3], dueDate);
     });
 
     it('should fail if a non-colony call is made to the task update functions', async function () {
@@ -353,8 +352,8 @@ contract('Colony', function (accounts) {
     it('should set the task "accepted" property to "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
-      const task = await colony.getTask.call(1);
-      assert.isTrue(task[2]);
+      const task = await colony.tasks.call(1);
+      assert.isTrue(task[1]);
     });
 
     it('should fail if a non-admin tries to accept the task', async function () {
@@ -395,8 +394,8 @@ contract('Colony', function (accounts) {
     it('should set the task "cancelled" property to "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.cancelTask(1);
-      const task = await colony.getTask.call(1);
-      assert.isTrue(task[3]);
+      const task = await colony.tasks.call(1);
+      assert.isTrue(task[2]);
     });
 
     it('should fail if manager tries to cancel a task that was accepted', async function () {

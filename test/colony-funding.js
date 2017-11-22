@@ -189,111 +189,111 @@ contract('Colony', function (accounts) {
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 0);
       await colony.proposeTaskChange(txData1, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
-      let task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      let task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1,2,0,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being lower by increasing payout (8)
       const txData2 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
       await colony.proposeTaskChange(txData2, 0, 0);
       await colony.approveTaskChange(2, 2, { from: OTHER_ACCOUNT });
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
       // Pot 0, Payout 40
       // Pot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by increasing payout (12)
       const txData3 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 80);
       await colony.proposeTaskChange(txData3, 0, 0);
       await colony.approveTaskChange(3, 2, { from: OTHER_ACCOUNT });
 
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 80, Payout 80
       // Pot was equal to payout, transition to being above by decreasing payout (6)
       const txData4 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
       await colony.proposeTaskChange(txData4, 0, 0);
       await colony.approveTaskChange(4, 2, { from: OTHER_ACCOUNT });
 
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2,1,40,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to pot being below payout by changing pot (7)
       await colony.moveFundsBetweenPots(2,1,20,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1,2,60,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 80, Payout 40
       // Pot was above payout, change to being below by changing pot (9)
       await colony.moveFundsBetweenPots(2,1,60,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing payout (4)
       const txData5 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 10);
       await colony.proposeTaskChange(txData5, 0, 0);
       await colony.approveTaskChange(5, 2, { from: OTHER_ACCOUNT });
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 20, Payout 10
       // Pot was above, change to being above by changing payout (16)
       const txData6 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 5);
       await colony.proposeTaskChange(txData6, 0, 0);
       await colony.approveTaskChange(6, 2, { from: OTHER_ACCOUNT });
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 20, Payout 5
       // Pot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2,1,10,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 10, Payout 5
       // Pot was above payout, change to being below by changing payout (10)
       const txData7 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
       await colony.proposeTaskChange(txData7, 0, 0);
       await colony.approveTaskChange(7, 2, { from: OTHER_ACCOUNT });
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
       // Pot 10, Payout 40
       // Pot was below payout, change to being below by changing payout (14)
       const txData8 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 30);
       await colony.proposeTaskChange(txData8, 0, 0);
       await colony.approveTaskChange(8, 2, { from: OTHER_ACCOUNT });
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
       // Pot 10, Payout 30
       // Pot was below payout, change to being below by changing pot (13)
       await colony.moveFundsBetweenPots(2,1,5,otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
       // Pot 5, Payout 30
       // Pot was below payout, change to being equal by changing payout (2)
       const txData9 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 5);
       await colony.proposeTaskChange(txData9, 0, 0);
       await colony.approveTaskChange(9, 2, { from: OTHER_ACCOUNT });
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       // Pot 5, Payout 5
     });
 
@@ -433,21 +433,21 @@ contract('Colony', function (accounts) {
       await colony.proposeTaskChange(txData1, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
 
-      let task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      let task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
       await colony.moveFundsBetweenPots(1,2,40,0x0);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
       await colony.moveFundsBetweenPots(2,1,30,0x0);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 1);
 
       const txData2 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 10);
       await colony.proposeTaskChange(txData2, 0, 0);
       await colony.approveTaskChange(2, 2, { from: OTHER_ACCOUNT });
 
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 0);
+      task = await colony.tasks.call(1);
+      assert.equal(task[4].toNumber(), 0);
     })
 
     it('should pay fees on revenue correctly', async function () {

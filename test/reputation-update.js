@@ -55,7 +55,7 @@ contract('Colony', function (accounts) {
       let x = await colonyNetwork.ReputationUpdateLog.call(0);
       assert.equal(x[0], OTHER_ACCOUNT);
       assert.equal(x[1].toNumber(), 10);
-      assert.equal(x[2].toNumber(), 5);
+      assert.equal(x[2].toNumber(), 0);
       assert.equal(x[3], colony.address);
       assert.equal(x[4].toNumber(), 2);
       assert.equal(x[5].toNumber(), 0);

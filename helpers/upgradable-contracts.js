@@ -54,6 +54,7 @@ module.exports = {
     await resolver.register("token()", colony.address, 32);
     await resolver.register("version()", colony.address, 32);
     await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
+    await resolver.register("tasks(uint256)", colony.address, 224);
     await resolver.register("taskCount()", colony.address, 32);
     await resolver.register("transactionCount()", colony.address, 32);
     await resolver.register("setToken(address)", colony.address, 0);
@@ -67,7 +68,7 @@ module.exports = {
     await resolver.register("cancelTask(uint256)", colony.address, 0);
     await resolver.register("setTaskDueDate(uint256,uint256)", colony.address, 0);
     await resolver.register("setTaskPayout(uint256,uint256,address,uint256)", colony.address, 0);
-    await resolver.register("getTask(uint256)", colony.address, 224);
+    await resolver.register("getTaskRolesCount(uint256)", colony.address, 32);
     await resolver.register("getTaskRoleAddress(uint256,uint256)", colony.address, 32);
     await resolver.register("getTaskPayout(uint256,uint256,address)", colony.address, 32);
     await resolver.register("claimPayout(uint256,uint256,address)", colony.address, 0);
@@ -89,6 +90,9 @@ module.exports = {
     response = await resolver.lookup.call('0xe92ed89d'); // reviewers
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x8d977672'); // tasks
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 224);
     response = await resolver.lookup.call('0xb6cb58a5'); // taskCount
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
@@ -128,9 +132,9 @@ module.exports = {
     response = await resolver.lookup.call('0xbe2320af'); // setTaskPayout
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x1d65e77e'); // getTask
+    response = await resolver.lookup.call('0x2b47827f'); // getTaskRolesCount
     assert.equal(response[0], colony.address);
-    assert.equal(response[1], 224);
+    assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xe9ec8cc3'); // getTaskRoleAddress
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
