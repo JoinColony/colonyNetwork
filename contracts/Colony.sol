@@ -56,12 +56,12 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     uint taskId;
   }
 
-  modifier tasksExists(uint256 _id) {
+  modifier taskExists(uint256 _id) {
     require(_id <= taskCount);
     _;
   }
 
-  modifier tasksNotAccepted(uint256 _id) {
+  modifier taskNotAccepted(uint256 _id) {
     require(!tasks[_id].accepted);
     _;
   }
@@ -155,8 +155,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
   // Note task assignment is agreed off-chain
   function setTaskEvaluator(uint256 _id, address _evaluator) public
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   {
     tasks[_id].roles[1] = _evaluator;
   }
@@ -164,32 +164,32 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
   // Note task assignment is agreed off-chain
   function setTaskWorker(uint256 _id, address _worker) public
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   {
     tasks[_id].roles[2] = _worker;
   }
 
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
   self()
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   {
     tasks[_id].ipfsDecodedHash = _ipfsDecodedHash;
   }
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   self()
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   {
     tasks[_id].dueDate = _dueDate;
   }
 
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
   self()
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   {
     Task storage task = tasks[_id];
     uint currentAmount = task.payouts[_role][_token];
@@ -202,8 +202,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
 
   function setTaskSkill(uint _id, uint _skillId) public
   self()
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   skillExists(_skillId)
   {
     tasks[_id].skillIds[0] = _skillId;
@@ -241,8 +241,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
 
   function acceptTask(uint256 _id) public
   auth
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   {
     tasks[_id].accepted = true;
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
@@ -256,8 +256,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
 
   function cancelTask(uint256 _id) public
   auth
-  tasksExists(_id)
-  tasksNotAccepted(_id)
+  taskExists(_id)
+  taskNotAccepted(_id)
   {
     tasks[_id].cancelled = true;
   }
