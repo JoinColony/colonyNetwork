@@ -76,6 +76,7 @@ module.exports = {
     await resolver.register("moveFundsBetweenPots(uint256,uint256,uint256,address)", colony.address, 0);
     await resolver.register("claimColonyFunds(address)", colony.address, 0);
     await resolver.register("initialiseColony(address)", colony.address, 0);
+    await resolver.register("addSkill(uint256)", colony.address, 0);
 
     // Validate Colony functions are registered
     let response = await resolver.lookup.call('0xfc0c546a'); // token
@@ -153,6 +154,9 @@ module.exports = {
     response = await resolver.lookup.call('0x5d90f53c'); // initialiseColony(address)
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x162419cc'); // addSkill
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
 
     const version = await colony.version.call();
     await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);
@@ -163,11 +167,16 @@ module.exports = {
     await resolver.register("colonyCount()", colonyNetwork.address, 32);
     await resolver.register("currentColonyVersion()", colonyNetwork.address, 32);
     await resolver.register("colonyVersionResolver(uint256)", colonyNetwork.address, 32);
+    await resolver.register("skills(uint256)", colonyNetwork.address, 128);
+    await resolver.register("skillCount()", colonyNetwork.address, 32);
     await resolver.register("createColony(bytes32)", colonyNetwork.address, 0);
     await resolver.register("addColonyVersion(uint256,address)", colonyNetwork.address, 0);
     await resolver.register("getColony(bytes32)", colonyNetwork.address, 32);
     await resolver.register("getColonyAt(uint256)", colonyNetwork.address, 32);
     await resolver.register("upgradeColony(bytes32,uint256)", colonyNetwork.address, 0);
+    await resolver.register("addSkill(uint256)", colonyNetwork.address, 0);
+    await resolver.register("getParentSkillId(uint256,uint256)", colonyNetwork.address, 32);
+    await resolver.register("getChildSkillId(uint256,uint256)", colonyNetwork.address, 32);
 
     // Validate ColonyNetwork functions are registered
     let response = await resolver.lookup.call('0xe40c6c91'); // colonyCount
@@ -177,6 +186,12 @@ module.exports = {
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xa33e5bd8'); // colonyVersionResolver
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x50d15fbe'); // skills
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 128);
+    response = await resolver.lookup.call('0xb82c1b4a'); // skillCount
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0x754b0031'); // createColony
@@ -194,7 +209,15 @@ module.exports = {
     response = await resolver.lookup.call('0x724d685a'); // upgrade
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 0);
-
+    response = await resolver.lookup.call('0x162419cc'); // addSkill
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0xd987fc16'); // getParentSkillId
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x09d10a5e'); // getChildSkillId
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 32);
     await etherRouter.setResolver(resolver.address);
   }
 };

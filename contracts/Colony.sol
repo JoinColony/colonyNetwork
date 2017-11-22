@@ -356,10 +356,11 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   function initialiseColony(address _address) public {
-    require (colonyNetworkAddress==0x0);
+    require(colonyNetworkAddress == 0x0);
     colonyNetworkAddress = _address;
     potCount = 1;
 
+    // Initialise the task update reviewers
     setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
     setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
     setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
@@ -371,4 +372,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     return token.mint(_wad);
   }
 
+  function addSkill(uint _parentSkillId) public {
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    return colonyNetwork.addSkill(_parentSkillId);
+  }
 }

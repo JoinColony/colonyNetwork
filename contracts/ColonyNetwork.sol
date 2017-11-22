@@ -19,7 +19,33 @@ contract ColonyNetwork is DSAuth {
   // Maps colony contract versions to respective resolvers
   mapping (uint => address) public colonyVersionResolver;
 
-  function createColony(bytes32 name) public {
+  struct Skill {
+    // total number of parent skills
+    uint256 nParents;
+    // total number of child skills
+    uint256 nChildren;
+    // array of `skill_id`s of parent skills starting from the 1st to `n`th, where `n` is an integer power of two larger than or equal to 1
+    uint256[] parents;
+    // array of `skill_id`s of all child skills
+    uint256[] children;
+  }
+  mapping (uint => Skill) public skills;
+  uint256 public skillCount;
+
+  event SkillAdded(uint256 skillId, uint256 parentSkillId);
+
+  modifier onlyCommonColony() {
+    address commonColony = getColony("Common Colony");
+    require(msg.sender == commonColony || msg.sender == address(this));
+    _;
+  }
+
+  modifier skillExists(uint skillId) {
+    require(skillCount > skillId);
+    _;
+  }
+
+  function createColony(bytes32 _name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
     var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
@@ -36,9 +62,15 @@ contract ColonyNetwork is DSAuth {
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
 
+    // Root Skill initialisation consists of simply incrementing the skill counter,
+    // as the root skill requires no changes to the defaults for the Skill datatype
+    if (_name == "Common Colony") {
+      skillCount += 1;
+    }
+
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
-    _colonies[name] = colony;
+    _colonies[_name] = colony;
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -76,4 +108,65 @@ contract ColonyNetwork is DSAuth {
     e.setResolver(newResolver);
   }
 
+  function addSkill(uint _parentSkillId) public
+  onlyCommonColony
+  skillExists(_parentSkillId)
+  {
+    Skill storage parentSkill = skills[_parentSkillId];
+    uint nParents = parentSkill.nParents + 1;
+    uint256[] memory parents = new uint256[](0);
+    uint256[] memory children = new uint256[](0);
+
+    skills[skillCount] = Skill({
+      nParents: nParents,
+      nChildren: 0,
+      parents: parents,
+      children: children
+    });
+
+    uint parentSkillId = _parentSkillId;
+    bool notAtRoot = true;
+    uint powerOfTwo = 1;
+    uint treeWalkingCounter = 1;
+
+    // Walk through the tree parent skills up to the root
+    while (notAtRoot) {
+      // Add the new skill to each parent children
+      // TODO: skip this for the root skill as the children of that will always be all skills
+      parentSkill.children.push(skillCount);
+      parentSkill.nChildren += 1;
+
+      // When we are at an integer power of two steps away from the newly added skill node,
+      // add the current parent skill to the new skill's parents array
+      if (treeWalkingCounter == powerOfTwo) {
+        skills[skillCount].parents.push(parentSkillId);
+        powerOfTwo = powerOfTwo*2;
+      }
+
+      // Check if we've reached the root of the tree yet (it has no parents)
+      // Otherwise get the next parent
+      if (parentSkill.nParents == 0) {
+        notAtRoot = false;
+      } else {
+        parentSkillId = parentSkill.parents[0];
+        parentSkill = skills[parentSkill.parents[0]];
+      }
+
+      treeWalkingCounter += 1;
+    }
+
+    SkillAdded(skillCount, _parentSkillId);
+
+    skillCount += 1;
+  }
+
+  function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
+    Skill storage skill = skills[_skillId];
+    return skill.parents[_parentSkillIndex];
+  }
+
+  function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
+    Skill storage skill = skills[_skillId];
+    return skill.children[_childSkillIndex];
+  }
 }
