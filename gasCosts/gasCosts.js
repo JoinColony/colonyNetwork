@@ -15,7 +15,7 @@ contract('all', function (accounts) {
   const OTHER_ACCOUNT = accounts[1];
 
   let colony;
-  let resolver;
+  let commonColony;
   let token;
   let authority;
   let colonyNetwork;
@@ -28,7 +28,7 @@ contract('all', function (accounts) {
   before(async function () {
     console.log('Gas price : ', gasPrice);
     colony = await Colony.new();
-    resolver = await Resolver.new();
+    let resolver = await Resolver.new();
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
@@ -43,10 +43,31 @@ contract('all', function (accounts) {
     const authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
     await Colony.defaults({ gasPrice });
+
+    let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
+    commonColony = await Colony.at(commonColonyAddress);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe('Gas costs', function () {
+    it('when working with the Common Colony', async function () {
+      let tx0 = await commonColony.addSkill(0);
+      let addSkillCost0 = tx0.receipt.gasUsed;
+      console.log('addSkill to level 1 actual cost :', addSkillCost0);
+
+      let tx1 = await commonColony.addSkill(1);
+      let addSkillCost1 = tx1.receipt.gasUsed;
+      console.log('addSkill to level 2 actual cost :', addSkillCost1);
+
+      let tx2 = await commonColony.addSkill(2);
+      let addSkillCost2 = tx2.receipt.gasUsed;
+      console.log('addSkill to level 3 actual cost :', addSkillCost2);
+
+      let tx3 = await commonColony.addSkill(3);
+      let addSkillCost3 = tx3.receipt.gasUsed;
+      console.log('addSkill to level 4 actual cost :', addSkillCost3);
+    });
+
     it('when working with a Colony', async function () {
       // makeTask
       let estimate = await colony.makeTask.estimateGas('9bb76d8e6c89b524d34a454b3140df28');
