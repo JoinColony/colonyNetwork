@@ -47,7 +47,7 @@ contract('Common Colony', function (accounts) {
     commonColony = await Colony.at(commonColonyAddress);
   });
 
-  describe.only('when adding a new skill', () => {
+  describe('when adding a new skill', () => {
     it('should be able to add a new skill as a child to the root skill', async function () {
       await commonColony.addSkill(0);
 
