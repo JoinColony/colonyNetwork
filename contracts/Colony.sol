@@ -37,11 +37,14 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   struct Task {
     bytes32 ipfsDecodedHash;
     address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
-    uint dueDate;
     bool accepted;
     bool cancelled;
+    uint dueDate;
     uint payoutsWeCannotMake;
     uint potId;
+    uint domainId;
+    uint[] skillIds;
+
     // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint) totalPayouts;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
@@ -73,6 +76,12 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     _;
   }
 
+  modifier skillExists(uint256 _skillId){
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(_skillId < colonyNetworkContract.skillCount());
+    _;
+  }
+
   function setToken(address _token) public
   auth
   {
@@ -85,6 +94,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     taskCount += 1;
     potCount += 1;
     address[] memory _roles = new address[](3);
+    uint[] memory _skillIds = new uint[](1);
+
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
       ipfsDecodedHash: _ipfsDecodedHash,
@@ -93,10 +104,14 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
       cancelled: false,
       dueDate: 0,
       payoutsWeCannotMake: 0,
-      potId: potCount
+      potId: potCount,
+      domainId: 0,
+      skillIds: _skillIds
     });
+
     pots[potCount].taskId = taskCount;
   }
+
 
   function proposeTaskChange(bytes _data, uint _value, uint8 _role) public returns (uint transactionId) {
     var (sig, taskId) = deconstructCall(_data);
@@ -185,6 +200,15 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 
+  function setTaskSkill(uint _id, uint _skillId) public
+  self()
+  tasksExists(_id)
+  tasksNotAccepted(_id)
+  skillExists(_skillId)
+  {
+    tasks[_id].skillIds[0] = _skillId;
+  }
+
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = task.totalPayouts[_token];
@@ -222,7 +246,9 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   {
     tasks[_id].accepted = true;
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    uint skillId = 5; //TODO: Replace with actual skill
+    Task storage task = tasks[_id];
+    uint skillId = task.skillIds[0];
+    // uint skillId = 1;
     uint reputationChange = 10; // TODO: Replace with actual reputation change
     colonyNetworkContract.appendReputationUpdateLog(tasks[_id].roles[2], reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.

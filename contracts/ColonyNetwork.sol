@@ -58,11 +58,11 @@ contract ColonyNetwork is DSAuth {
   ReputationLogEntry[] public ReputationUpdateLog;
 
   modifier calledByColony() {
-    require(_isColony[msg.sender] == true);
+    require(_isColony[msg.sender]);
     _;
   }
 
-  function createColony(bytes32 name) public {
+  function createColony(bytes32 _name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
     var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
@@ -187,8 +187,10 @@ contract ColonyNetwork is DSAuth {
     Skill storage skill = skills[_skillId];
     return skill.children[_childSkillIndex];
   }
+
   function appendReputationUpdateLog(address _user, uint _amount, uint _skillId)
   calledByColony
+  skillExists(_skillId)
   {
     uint reputationUpdateLogLength = ReputationUpdateLog.length;
     uint nPreviousUpdates = 0;
