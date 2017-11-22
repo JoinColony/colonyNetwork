@@ -178,7 +178,7 @@ module.exports = {
     await resolver.register("getParentSkckillId(uint256,uint256)", colonyNetwork.address, 32);
     await resolver.register("getChildSkillId(uint256,uint256)", colonyNetwork.address, 32);
     await resolver.register("appendReputationUpdateLog(address,uint256,uint256)", colonyNetwork.address, 0);
-    await resolver.register("getReputationUpdateLogEntry(uint256)", colonyNetwork.address, 192);
+    await resolver.register("ReputationUpdateLog(uint256)", colonyNetwork.address, 192);
     await resolver.register("getReputationUpdateLogLength()", colonyNetwork.address, 32);
 
     // Validate ColonyNetwork functions are registered
@@ -224,7 +224,7 @@ module.exports = {
     response = await resolver.lookup.call('0x3fafa55e'); // appendReputationUpdateLog(address,uint256,uint256)
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xf5ddff92'); // getReputationUpdateLogEntry(uint256)
+    response = await resolver.lookup.call('0x5edde7e7'); // ReputationUpdateLog(uint256)
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 192);
     response = await resolver.lookup.call('0x89765977'); // getReputationUpdateLogLength()

@@ -55,7 +55,7 @@ contract ColonyNetwork is DSAuth {
     uint nPreviousUpdates;
   }
 
-  ReputationLogEntry[] ReputationUpdateLog;
+  ReputationLogEntry[] public ReputationUpdateLog;
 
   modifier calledByColony() {
     require(_isColony[msg.sender] == true);
@@ -197,16 +197,6 @@ contract ColonyNetwork is DSAuth {
     }
     uint nUpdates = 2; //TODO: Replace with (skill[_skillId][nChildren] + skill[_skillId][nParents] + 1) * 2
     ReputationUpdateLog.push(ReputationLogEntry(_user, _amount, _skillId, msg.sender, nUpdates, nPreviousUpdates));
-  }
-
-  function getReputationUpdateLogEntry(uint _idx) view returns (address user, uint amount, uint skillId, address colony, uint nUpdates, uint nPreviousUpdates) {
-    ReputationLogEntry storage e = ReputationUpdateLog[_idx];
-    user = e.user;
-    amount = e.amount;
-    skillId = e.skillId;
-    colony = e.colony;
-    nUpdates = e.nUpdates;
-    nPreviousUpdates = e.nPreviousUpdates;
   }
 
   function getReputationUpdateLogLength() view returns (uint) {

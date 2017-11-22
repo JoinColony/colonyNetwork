@@ -52,7 +52,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.acceptTask(1);
-      let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
+      let x = await colonyNetwork.ReputationUpdateLog.call(0);
       assert.equal(x[0], OTHER_ACCOUNT);
       assert.equal(x[1].toNumber(), 10);
       assert.equal(x[2].toNumber(), 5);
@@ -83,7 +83,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.setTaskWorker(2, OTHER_ACCOUNT);
       await colony.acceptTask(2);
-      let x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+      let x = await colonyNetwork.ReputationUpdateLog.call(1);
       assert.equal(x[5].toNumber(), 2);
     });
 
