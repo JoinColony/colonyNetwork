@@ -41,7 +41,7 @@ contract ColonyNetwork is DSAuth {
   }
 
   modifier skillExists(uint skillId) {
-    require(skillCount >= skillId);
+    require(skillCount > skillId);
     _;
   }
 
@@ -62,8 +62,10 @@ contract ColonyNetwork is DSAuth {
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
 
+    // Root Skill initialisation consists of simply incrementing the skill counter,
+    // as the root skill requires no changes to the defaults for the Skill datatype
     if (_name == "Common Colony") {
-      this.addSkill(0);
+      skillCount += 1;
     }
 
     colonyCount += 1;
@@ -110,12 +112,10 @@ contract ColonyNetwork is DSAuth {
   onlyCommonColony
   skillExists(_parentSkillId)
   {
-    //TODO: Maybe we can save some gas if we initialise this as a fixed type memory array
-    // based on the nParents of the parent + 1?
+    Skill storage parentSkill = skills[_parentSkillId];
+    uint nParents = parentSkill.nParents + 1;
     uint256[] memory parents = new uint256[](0);
     uint256[] memory children = new uint256[](0);
-    uint nParents = 0;
-    skillCount += 1;
 
     skills[skillCount] = Skill({
       nParents: nParents,
@@ -125,30 +125,38 @@ contract ColonyNetwork is DSAuth {
     });
 
     uint parentSkillId = _parentSkillId;
-    uint x;
-    uint powerOfTwo = 2**x;
+    bool notAtRoot = true;
+    uint powerOfTwo = 1;
+    uint treeWalkingCounter = 1;
 
-    while (parentSkillId > 0) {
-      // Iterate through all the parent skills up to the root
-      Skill storage parentSkill = skills[parentSkillId];
+    // Walk through the tree parent skills up to the root
+    while (notAtRoot) {
+      // Add the new skill to each parent children
       parentSkill.children.push(skillCount);
       parentSkill.nChildren += 1;
 
-      skills[skillCount].nParents += 1;
-      if (skills[skillCount].nParents == powerOfTwo) {
+      // When we are at an integer power of two steps away from the newly added skill node,
+      // add the current parent skill to the new skill's parents array
+      if (treeWalkingCounter == powerOfTwo) {
         skills[skillCount].parents.push(parentSkillId);
-        x += 1;
-        powerOfTwo = 2**x;
+        powerOfTwo = powerOfTwo*2;
       }
 
+      // Check if we've reached the root of the tree yet (it has no parents)
+      // Otherwise get the next parent
       if (parentSkill.nParents == 0) {
-        parentSkillId = 0;
+        notAtRoot = false;
       } else {
         parentSkillId = parentSkill.parents[0];
+        parentSkill = skills[parentSkill.parents[0]];
       }
+
+      treeWalkingCounter += 1;
     }
 
     SkillAdded(skillCount, _parentSkillId);
+
+    skillCount += 1;
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
