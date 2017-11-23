@@ -18,8 +18,8 @@ contract('Colony', function (accounts) {
   // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
   // The base58 decoded, bytes32 converted value of the task ipfsHash
-  const ipfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df28';
-  const newIpfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df29';
+  const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
+  const newSpecificationHash = '9bb76d8e6c89b524d34a454b3140df29';
 
   const optionsToSpotTransactionFailure = {
     from: MAIN_ACCOUNT,
@@ -116,9 +116,10 @@ contract('Colony', function (accounts) {
 
   describe('when creating tasks', () => {
     it('should allow admins to make task', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       const task = await colony.getTask.call(1);
-      assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
+      assert.equal(testHelper.hexToUtf8(task[0]), specificationHash);
+
       assert.isFalse(task[1]);
       assert.isFalse(task[2]);
       assert.equal(task[3].toNumber(), 0);
@@ -128,7 +129,7 @@ contract('Colony', function (accounts) {
     it('should fail if a non-admin user tries to make a task', async function () {
       let tx;
       try {
-        tx = await colony.makeTask(ipfsDecodedHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.makeTask(specificationHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
@@ -136,7 +137,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should set the task manager as the creator', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       const rolesCount = await colony.getTaskRolesCount.call(1);
       assert.equal(rolesCount.toNumber(), 3);
       const taskManager = await colony.getTaskRoleAddress.call(1, 0);
@@ -144,12 +145,13 @@ contract('Colony', function (accounts) {
     });
 
     it('should return the correct number of tasks', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
       const taskCount = await colony.getTaskCount.call();
+
       assert.equal(taskCount.toNumber(), 5);
     });
 
@@ -161,7 +163,7 @@ contract('Colony', function (accounts) {
 
   describe('when updating tasks', () => {
     it('should allow the worker and evaluator roles to be assigned', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
       const evaluator = await colony.getTaskRoleAddress.call(1, 1);
       assert.equal(evaluator, OTHER_ACCOUNT);
@@ -172,13 +174,14 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow manager to submit an update of task brief and worker to approve it', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
+
       const task = await colony.getTask.call(1);
-      assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
+      assert.equal(testHelper.hexToUtf8(task[0]), newSpecificationHash);
     });
 
     it('should allow manager to submit an update of task due date and worker to approve it', async function () {
@@ -186,7 +189,7 @@ contract('Colony', function (accounts) {
       dueDate.setDate(dueDate.getDate() + 1);
       dueDate = dueDate.getTime();
 
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, 0);
@@ -198,10 +201,10 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if a non-colony call is made to the task update functions', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       let tx;
       try {
-        tx = await colony.setTaskBrief(1, newIpfsDecodedHash, { gas: GAS_TO_SPEND, from: THIRD_ACCOUNT });
+        tx = await colony.setTaskBrief(1, newSpecificationHash, { gas: GAS_TO_SPEND, from: THIRD_ACCOUNT });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
@@ -209,10 +212,10 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if non-registered role tries to submit an update of task brief', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
 
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
 
       let tx;
       try {
@@ -224,11 +227,11 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if evaluator tries to submit an update of task brief', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
       await colony.setTaskWorker(1, THIRD_ACCOUNT);
 
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
 
       let tx;
       try {
@@ -240,10 +243,10 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if non-registered role tries to approve an update of task brief', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
 
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
 
       let tx;
@@ -256,11 +259,11 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if evaluator tries to approve an update of task brief', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
       await colony.setTaskWorker(1, THIRD_ACCOUNT);
 
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
 
       let tx;
@@ -273,7 +276,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail to submit a task update for a non-registered function signature', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       const txData = await colony.contract.getTaskRoleAddress.getData(1, 0);
 
       let tx;
@@ -288,8 +291,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail to submit update of task brief, using an invalid task id', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      const txData = await colony.contract.setTaskBrief.getData(10, newIpfsDecodedHash);
+      await colony.makeTask(specificationHash);
+      const txData = await colony.contract.setTaskBrief.getData(10, newSpecificationHash);
 
       let tx;
       try {
@@ -304,9 +307,9 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail to submit update of task brief, if the task was already accepted', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.acceptTask(1);
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
 
       let tx;
       try {
@@ -321,9 +324,9 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail to approve task update, using an invalid transaction id', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
 
       let tx;
@@ -337,9 +340,9 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail to approve task update twice', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
-      const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
+      const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
 
@@ -356,14 +359,14 @@ contract('Colony', function (accounts) {
 
   describe('when accepting a task', () => {
     it('should set the task "accepted" property to "true"', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.acceptTask(1);
       const task = await colony.getTask.call(1);
       assert.isTrue(task[1]);
     });
 
     it('should fail if a non-admin tries to accept the task', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       let tx;
       try {
         tx = await colony.acceptTask(1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
@@ -374,7 +377,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to accept a task that was accepted before', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.acceptTask(1);
       let tx;
       try {
@@ -398,14 +401,14 @@ contract('Colony', function (accounts) {
 
   describe('when cancelling a task', () => {
     it('should set the task "cancelled" property to "true"', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.cancelTask(1);
       const task = await colony.getTask.call(1);
       assert.isTrue(task[2]);
     });
 
     it('should fail if manager tries to cancel a task that was accepted', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.acceptTask(1);
       let tx;
       try {
@@ -429,7 +432,7 @@ contract('Colony', function (accounts) {
 
   describe('when funding tasks', () => {
     it('should be able to set the task payouts for different roles', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.mintTokens(100);
       // Set the manager payout as 5000 wei and 100 colony tokens
@@ -472,7 +475,7 @@ contract('Colony', function (accounts) {
   describe('when claiming payout for a task', () => {
 
     it('should payout agreed tokens for a task', async function (){
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.mintTokens(300);
       await colony.claimColonyFunds(token.address);
@@ -494,7 +497,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should payout agreed ether for a task', async function (){
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.send(300);
       await colony.claimColonyFunds(0x0);
@@ -517,7 +520,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should return error when task is not accepted', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.mintTokens(100);
       // Set the manager payout as 200 colony tokens
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, token.address, 200);
@@ -533,7 +536,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should return error when called by account that doesn\'t match the role', async function () {
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.mintTokens(100);
       // Set the manager payout as 200 colony tokens
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, token.address, 200);

@@ -46,7 +46,7 @@ contract ColonyStorage is DSAuth {
 
 
   struct Task {
-    bytes32 ipfsDecodedHash;
+    bytes32 specificationHash;
     bool accepted;
     bool cancelled;
     uint dueDate;

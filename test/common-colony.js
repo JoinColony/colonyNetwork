@@ -19,9 +19,6 @@ contract('Common Colony', function (accounts) {
   const THIRD_ACCOUNT = accounts[2];
   // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
-  // The base58 decoded, bytes32 converted value of the task ipfsHash
-  const ipfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df28';
-  const newIpfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df29';
 
   const optionsToSpotTransactionFailure = {
     from: MAIN_ACCOUNT,

@@ -16,7 +16,7 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  function makeTask(bytes32 _ipfsDecodedHash) public
+  function makeTask(bytes32 _specificationHash) public
   auth
   {
     taskCount += 1;
@@ -26,7 +26,7 @@ contract ColonyTask is ColonyStorage {
 
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
-      ipfsDecodedHash: _ipfsDecodedHash,
+      specificationHash: _specificationHash,
       roles: _roles,
       accepted: false,
       cancelled: false,
@@ -103,12 +103,12 @@ contract ColonyTask is ColonyStorage {
     tasks[_id].skillIds[0] = _skillId;
   }
 
-  function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
+  function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
   self()
   taskExists(_id)
   taskNotAccepted(_id)
   {
-    tasks[_id].ipfsDecodedHash = _ipfsDecodedHash;
+    tasks[_id].specificationHash = _specificationHash;
   }
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
@@ -146,7 +146,7 @@ contract ColonyTask is ColonyStorage {
   returns (bytes32, bool, bool, uint, uint, uint, uint)
   {
     Task storage t = tasks[_id];
-    return (t.ipfsDecodedHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.domainId);
+    return (t.specificationHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.domainId);
   }
 
   function getTaskRolesCount(uint _id) public view

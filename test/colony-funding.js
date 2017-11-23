@@ -10,7 +10,7 @@ const IColonyNetwork = artifacts.require('IColonyNetwork');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 
-const ipfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df28';
+const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
 
 contract('Colony', function (accounts) {
   let COLONY_KEY;
@@ -88,7 +88,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,51,otherToken.address);
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
@@ -103,7 +103,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       try {
         await colony.moveFundsBetweenPots(0,2,1,otherToken.address);
       } catch(err) {
@@ -123,7 +123,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       try {
         await colony.moveFundsBetweenPots(1,2,51,otherToken.address, {from: addresses[1]});
       } catch (err) {
@@ -141,8 +141,8 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
       let tx;
       try {
@@ -182,7 +182,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
@@ -333,7 +333,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.moveFundsBetweenPots(1,2,60,otherToken.address);
 
@@ -355,7 +355,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
 
@@ -392,7 +392,7 @@ contract('Colony', function (accounts) {
     it('should let ether be moved between pots', async function () {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,51,0x0);
       let colonyPotBalance= await colony.getPotBalance.call(1,0x0);
       let colonyEtherBalance = await testHelper.web3GetBalance(colony.address);
@@ -405,8 +405,8 @@ contract('Colony', function (accounts) {
     it('should not allow more ether to leave a pot than the pot has (even if the colony has that many)', async function () {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,40,0x0);
       let tx;
       try {
@@ -426,7 +426,7 @@ contract('Colony', function (accounts) {
     it('should correctly track if we are able to make ether payouts', async function(){
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
 
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 40);

@@ -19,8 +19,8 @@ contract('Colony contract upgrade', function (accounts) {
   const ACCOUNT_TWO = accounts[1];
   const ACCOUNT_THREE = accounts[2];
   // The base58 decoded, bytes32 converted value of the task ipfsHash
-  const ipfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df28';
-  const newIpfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df29';
+  const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
+  const newSpecificationHash = '9bb76d8e6c89b524d34a454b3140df29';
 
   let COLONY_KEY;
   let colony;
@@ -52,8 +52,8 @@ contract('Colony contract upgrade', function (accounts) {
     token = await Token.at(tokenAddress);
 
     await authority.setUserRole(ACCOUNT_TWO, 0, true);
-    await colony.makeTask(ipfsDecodedHash);
-    await colony.makeTask(newIpfsDecodedHash);
+    await colony.makeTask(specificationHash);
+    await colony.makeTask(newSpecificationHash);
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
@@ -85,14 +85,14 @@ contract('Colony contract upgrade', function (accounts) {
 
     it('should return correct tasks', async function () {
       const task1 = await updatedColony.getTask.call(1);
-      assert.equal(testHelper.hexToUtf8(task1[0]), ipfsDecodedHash);
+      assert.equal(testHelper.hexToUtf8(task1[0]), specificationHash);
       assert.isFalse(task1[1]);
       assert.isFalse(task1[2]);
       assert.equal(task1[3].toNumber(), 0);
       assert.equal(task1[4].toNumber(), 0);
 
       const task2 = await updatedColony.getTask.call(2);
-      assert.equal(testHelper.hexToUtf8(task2[0]), newIpfsDecodedHash);
+      assert.equal(testHelper.hexToUtf8(task2[0]), newSpecificationHash);
       assert.isFalse(task2[1]);
       assert.isFalse(task2[2]);
       assert.equal(task2[3].toNumber(), 0);
