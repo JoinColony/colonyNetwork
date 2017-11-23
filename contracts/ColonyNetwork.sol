@@ -197,7 +197,11 @@ contract ColonyNetwork is DSAuth {
     if (reputationUpdateLogLength > 0) {
       nPreviousUpdates = ReputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
     }
-    uint nUpdates = 2; //TODO: Replace with (skill[_skillId][nChildren] + skill[_skillId][nParents] + 1) * 2
+    uint nUpdates = (skills[_skillId].nParents + 1) * 2;
+    if (_amount < 0){
+      //TODO: Never true currently. _amount needs to be an int.
+      nUpdates += 2 * skills[_skillId].nChildren;
+    }
     ReputationUpdateLog.push(ReputationLogEntry(_user, _amount, _skillId, msg.sender, nUpdates, nPreviousUpdates));
   }
 

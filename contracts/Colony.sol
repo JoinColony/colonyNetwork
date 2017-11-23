@@ -170,6 +170,16 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     tasks[_id].roles[2] = _worker;
   }
 
+  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
+  // Maybe just the administrator is adequate for the skill?
+  function setTaskSkill(uint _id, uint _skillId) public
+  taskExists(_id)
+  taskNotAccepted(_id)
+  skillExists(_skillId)
+  {
+    tasks[_id].skillIds[0] = _skillId;
+  }
+
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public
   self()
   taskExists(_id)
@@ -200,14 +210,6 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 
-  function setTaskSkill(uint _id, uint _skillId) public
-  self()
-  taskExists(_id)
-  taskNotAccepted(_id)
-  skillExists(_skillId)
-  {
-    tasks[_id].skillIds[0] = _skillId;
-  }
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
@@ -248,7 +250,6 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     Task storage task = tasks[_id];
     uint skillId = task.skillIds[0];
-    // uint skillId = 1;
     uint reputationChange = 10; // TODO: Replace with actual reputation change
     colonyNetworkContract.appendReputationUpdateLog(tasks[_id].roles[2], reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
@@ -395,6 +396,7 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
   }
 
   function addSkill(uint _parentSkillId) public {
+    // TODO Secure this function.
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     return colonyNetwork.addSkill(_parentSkillId);
   }

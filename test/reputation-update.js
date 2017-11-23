@@ -29,11 +29,14 @@ contract('Colony', function (accounts) {
   let token;
   let authority;
   let colonyNetwork;
+  let commonColony;
 
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
     await colonyNetwork.createColony("Common Colony");
+    let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
+    commonColony = await Colony.at(commonColonyAddress);
   });
 
   beforeEach(async function () {
@@ -77,16 +80,46 @@ contract('Colony', function (accounts) {
     })
 
     it('should populate nPreviousUpdates correctly', async function () {
+      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength();
+      initialRepLogLength = initialRepLogLength.toNumber();
+
       await colony.makeTask(ipfsDecodedHash);
       await colony.setTaskWorker(1, OTHER_ACCOUNT);
       await colony.acceptTask(1);
+      let x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength);
+      let nPrevious = x[5].toNumber()
       await colony.makeTask(ipfsDecodedHash);
       await colony.setTaskWorker(2, OTHER_ACCOUNT);
       await colony.acceptTask(2);
-      let x = await colonyNetwork.ReputationUpdateLog.call(1);
-      assert.equal(x[5].toNumber(), 2);
+      x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength + 1);
+      assert.equal(x[5].toNumber(), 2+nPrevious);
     });
 
-    it.skip('should calculate nUpdates correctly when making a log');
+    it('should calculate nUpdates correctly when making a log', async function (){
+      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength();
+      initialRepLogLength = initialRepLogLength.toNumber();
+      let nStartingSkills = await colonyNetwork.skillCount();
+      nStartingSkills = nStartingSkills.toNumber();
+
+      await commonColony.addSkill(0);
+      await commonColony.addSkill(nStartingSkills);
+      await commonColony.addSkill(nStartingSkills+1);
+      await commonColony.addSkill(nStartingSkills+2);
+      await colony.makeTask(ipfsDecodedHash);
+      let taskCount = await colony.taskCount();
+      await colony.setTaskWorker(taskCount, OTHER_ACCOUNT);
+      await colony.setTaskSkill(taskCount, nStartingSkills+1);
+      await colony.acceptTask(taskCount);
+      let x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength);
+      assert.equal(x[4].toNumber(), 6);
+
+      await colony.makeTask(ipfsDecodedHash);
+      taskCount = await colony.taskCount();
+      await colony.setTaskWorker(taskCount, OTHER_ACCOUNT);
+      await colony.setTaskSkill(taskCount, nStartingSkills+2);
+      await colony.acceptTask(taskCount);
+      x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength+1);
+      assert.equal(x[4].toNumber(), 8);
+    });
   });
 });
