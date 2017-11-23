@@ -47,6 +47,7 @@ contract ColonyStorage is DSAuth {
 
   struct Task {
     bytes32 specificationHash;
+    bytes32 deliverableHash;
     bool accepted;
     bool cancelled;
     uint dueDate;

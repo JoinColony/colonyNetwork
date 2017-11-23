@@ -33,7 +33,7 @@ contract IColony {
   function getTransactionCount() public view returns (uint);
 
   // ColonyTask.sol
-  function getTask(uint256 taskId) public returns (bytes32, bool, bool, uint256, uint256, uint256, uint256);
+  function getTask(uint256 taskId) public returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256);
   function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) public;
   function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint);
   function claimPayout(uint256 _id, uint256 _role, address _token) public;

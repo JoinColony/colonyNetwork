@@ -27,6 +27,7 @@ contract ColonyTask is ColonyStorage {
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
       specificationHash: _specificationHash,
+      deliverableHash: "",
       roles: _roles,
       accepted: false,
       cancelled: false,
@@ -143,10 +144,10 @@ contract ColonyTask is ColonyStorage {
   }
 
   function getTask(uint256 _id) public view
-  returns (bytes32, bool, bool, uint, uint, uint, uint)
+  returns (bytes32, bytes32, bool, bool, uint, uint, uint, uint)
   {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.domainId);
+    return (t.specificationHash, t.deliverableHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.domainId);
   }
 
   function getTaskRolesCount(uint _id) public view
