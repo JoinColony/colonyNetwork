@@ -80,7 +80,7 @@ contract('Colony', function (accounts) {
     })
 
     it('should populate nPreviousUpdates correctly', async function () {
-      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength();
+      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
 
       await colony.makeTask(ipfsDecodedHash);
@@ -96,9 +96,9 @@ contract('Colony', function (accounts) {
     });
 
     it('should calculate nUpdates correctly when making a log', async function (){
-      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength();
+      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
-      let nStartingSkills = await colonyNetwork.skillCount();
+      let nStartingSkills = await colonyNetwork.skillCount.call();
       nStartingSkills = nStartingSkills.toNumber();
 
       await commonColony.addSkill(0);
@@ -106,7 +106,7 @@ contract('Colony', function (accounts) {
       await commonColony.addSkill(nStartingSkills+1);
       await commonColony.addSkill(nStartingSkills+2);
       await colony.makeTask(ipfsDecodedHash);
-      let taskCount = await colony.taskCount();
+      let taskCount = await colony.taskCount.call();
       await colony.setTaskWorker(taskCount, OTHER_ACCOUNT);
       await colony.setTaskSkill(taskCount, nStartingSkills+1);
       await colony.acceptTask(taskCount);
@@ -114,7 +114,7 @@ contract('Colony', function (accounts) {
       assert.equal(x[4].toNumber(), 6);
 
       await colony.makeTask(ipfsDecodedHash);
-      taskCount = await colony.taskCount();
+      taskCount = await colony.taskCount.call();
       await colony.setTaskWorker(taskCount, OTHER_ACCOUNT);
       await colony.setTaskSkill(taskCount, nStartingSkills+2);
       await colony.acceptTask(taskCount);
