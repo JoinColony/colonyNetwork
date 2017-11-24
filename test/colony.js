@@ -366,7 +366,7 @@ contract('Colony', function (accounts) {
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), '');
 
-      await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
+      await colony.setTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
       task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), deliverableHash);
     });
@@ -378,7 +378,7 @@ contract('Colony', function (accounts) {
       await colony.acceptTask(1);
       let tx;
       try {
-        tx = await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
+        tx = await colony.setTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
@@ -388,7 +388,7 @@ contract('Colony', function (accounts) {
     it('should fail if I try to submit work for a task using an invalid id', async function () {
       let tx;
       try {
-        tx = await colony.submitTaskDeliverable(10, deliverableHash, { gas: GAS_TO_SPEND });
+        tx = await colony.setTaskDeliverable(10, deliverableHash, { gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
