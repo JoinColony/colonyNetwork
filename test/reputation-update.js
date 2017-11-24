@@ -2,6 +2,7 @@
 import sha3 from 'solidity-sha3';
 import testHelper from '../helpers/test-helper';
 
+const upgradableContracts = require('../helpers/upgradable-contracts');
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
@@ -30,36 +31,35 @@ contract('Colony', function (accounts) {
   let authority;
   let colonyNetwork;
   let commonColony;
+  let resolverColonyNetworkDeployed;
 
   before(async function () {
-    const etherRouter = await EtherRouter.deployed();
+    resolverColonyNetworkDeployed = await Resolver.deployed();
+  });
+
+  beforeEach(async function () {
+    let colony = await Colony.new();
+    let resolver = await Resolver.new();
+
+    const etherRouter = await EtherRouter.new();
+    await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
     await colonyNetwork.createColony("Common Colony");
     let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await Colony.at(commonColonyAddress);
   });
 
-  beforeEach(async function () {
-    COLONY_KEY = testHelper.getRandomString(7);
-    await colonyNetwork.createColony(COLONY_KEY);
-    let address = await colonyNetwork.getColony.call(COLONY_KEY);
-    colony = await Colony.at(address);
-    let authorityAddress = await colony.authority.call();
-    authority = await Authority.at(authorityAddress);
-    let tokenAddress = await colony.token.call();
-    token = await Token.at(tokenAddress);
-  });
-
   describe('when update added to reputation update log', () => {
     it('should be readable', async function () {
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
-      await colony.acceptTask(1);
+      await commonColony.makeTask(ipfsDecodedHash);
+      await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
+      await commonColony.acceptTask(1);
       let x = await colonyNetwork.ReputationUpdateLog.call(0);
       assert.equal(x[0], OTHER_ACCOUNT);
       assert.equal(x[1].toNumber(), 10);
       assert.equal(x[2].toNumber(), 0);
-      assert.equal(x[3], colony.address);
+      assert.equal(x[3], commonColony.address);
       assert.equal(x[4].toNumber(), 2);
       assert.equal(x[5].toNumber(), 0);
     });
@@ -83,43 +83,39 @@ contract('Colony', function (accounts) {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
 
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
-      await colony.acceptTask(1);
+      await commonColony.makeTask(ipfsDecodedHash);
+      await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
+      await commonColony.acceptTask(1);
       let x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength);
       let nPrevious = x[5].toNumber()
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setTaskWorker(2, OTHER_ACCOUNT);
-      await colony.acceptTask(2);
+      await commonColony.makeTask(ipfsDecodedHash);
+      await commonColony.setTaskWorker(2, OTHER_ACCOUNT);
+      await commonColony.acceptTask(2);
       x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
     });
 
     it('should calculate nUpdates correctly when making a log', async function (){
-      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
-      initialRepLogLength = initialRepLogLength.toNumber();
-      let nStartingSkills = await colonyNetwork.skillCount.call();
-      nStartingSkills = nStartingSkills.toNumber();
 
       await commonColony.addSkill(0);
-      await commonColony.addSkill(nStartingSkills);
-      await commonColony.addSkill(nStartingSkills+1);
-      await commonColony.addSkill(nStartingSkills+2);
-      await colony.makeTask(ipfsDecodedHash);
-      let taskCount = await colony.taskCount.call();
-      await colony.setTaskWorker(taskCount, OTHER_ACCOUNT);
-      await colony.setTaskSkill(taskCount, nStartingSkills+1);
-      await colony.acceptTask(taskCount);
-      let x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength);
+      await commonColony.addSkill(1);
+      await commonColony.addSkill(2);
+      await commonColony.addSkill(3);
+      await commonColony.makeTask(ipfsDecodedHash);
+      await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
+      await commonColony.setTaskSkill(1, 2);
+      await commonColony.acceptTask(1);
+      let x = await colonyNetwork.ReputationUpdateLog.call(0);
+      assert.equal(x[1].toNumber(), 10);
       assert.equal(x[4].toNumber(), 6);
 
-      await colony.makeTask(ipfsDecodedHash);
-      taskCount = await colony.taskCount.call();
-      await colony.setTaskWorker(taskCount, OTHER_ACCOUNT);
-      await colony.setTaskSkill(taskCount, nStartingSkills+2);
-      await colony.acceptTask(taskCount);
-      x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength+1);
-      assert.equal(x[4].toNumber(), 8);
+      await commonColony.makeTask(ipfsDecodedHash);
+      await commonColony.setTaskWorker(2, OTHER_ACCOUNT);
+      await commonColony.setTaskSkill(2, 3);
+      await commonColony.acceptTask(2);
+      x = await colonyNetwork.ReputationUpdateLog.call(1);
+      assert.equal(x[1].toNumber(), -10);
+      assert.equal(x[4].toNumber(), 10); // Negative reputation change means children change as well.
     });
   });
 });

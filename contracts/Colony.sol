@@ -250,7 +250,8 @@ contract Colony is DSAuth, DSMath, IColony, TransactionReviewer {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     Task storage task = tasks[_id];
     uint skillId = task.skillIds[0];
-    uint reputationChange = 10; // TODO: Replace with actual reputation change
+    int sign = _id % 2 == 0 ? -1 : int8(1); // TODO: Remove this hack to allow us to test -ve reputation change
+    int reputationChange = 10 * sign; // TODO: Replace with actual reputation change
     colonyNetworkContract.appendReputationUpdateLog(tasks[_id].roles[2], reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }

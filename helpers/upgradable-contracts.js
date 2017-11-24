@@ -185,7 +185,7 @@ module.exports = {
     await resolver.register("addSkill(uint256)", colonyNetwork.address, 0);
     await resolver.register("getParentSkillId(uint256,uint256)", colonyNetwork.address, 32);
     await resolver.register("getChildSkillId(uint256,uint256)", colonyNetwork.address, 32);
-    await resolver.register("appendReputationUpdateLog(address,uint256,uint256)", colonyNetwork.address, 0);
+    await resolver.register("appendReputationUpdateLog(address,int256,uint256)", colonyNetwork.address, 0);
     await resolver.register("ReputationUpdateLog(uint256)", colonyNetwork.address, 192);
     await resolver.register("getReputationUpdateLogLength()", colonyNetwork.address, 32);
 
@@ -229,7 +229,7 @@ module.exports = {
     response = await resolver.lookup.call('0x09d10a5e'); // getChildSkillId
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x3fafa55e'); // appendReputationUpdateLog(address,uint256,uint256)
+    response = await resolver.lookup.call('0x5a8adafa'); // appendReputationUpdateLog(address,uint256,uint256)
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x5edde7e7'); // ReputationUpdateLog(uint256)

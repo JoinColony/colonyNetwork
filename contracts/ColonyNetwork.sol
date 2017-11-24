@@ -48,7 +48,7 @@ contract ColonyNetwork is DSAuth {
 
   struct ReputationLogEntry {
     address user;
-    uint amount;
+    int amount;
     uint skillId;
     address colony;
     uint nUpdates;
@@ -188,7 +188,7 @@ contract ColonyNetwork is DSAuth {
     return skill.children[_childSkillIndex];
   }
 
-  function appendReputationUpdateLog(address _user, uint _amount, uint _skillId)
+  function appendReputationUpdateLog(address _user, int _amount, uint _skillId)
   calledByColony
   skillExists(_skillId)
   {
@@ -198,7 +198,7 @@ contract ColonyNetwork is DSAuth {
       nPreviousUpdates = ReputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
     }
     uint nUpdates = (skills[_skillId].nParents + 1) * 2;
-    if (_amount < 0){
+    if (_amount < 0) {
       //TODO: Never true currently. _amount needs to be an int.
       nUpdates += 2 * skills[_skillId].nChildren;
     }
