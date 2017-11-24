@@ -20,6 +20,8 @@ contract('Colony', function (accounts) {
   // The base58 decoded, bytes32 converted value of the task ipfsHash
   const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
   const newSpecificationHash = '9bb76d8e6c89b524d34a454b3140df29';
+  const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
+  const newDeliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
 
   const optionsToSpotTransactionFailure = {
     from: MAIN_ACCOUNT,
@@ -353,6 +355,40 @@ contract('Colony', function (accounts) {
       }
 
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+  });
+
+  describe('when submitting task deliverable', () => {
+    it('should update task', async function () {
+      await colony.makeTask(specificationHash);
+      let task = await colony.getTask.call(1);
+      assert.equal(testHelper.hexToUtf8(task[1]), '');
+
+      await colony.submitTaskDeliverable(1, deliverableHash);
+      task = await colony.tasks.call(1);
+      assert.equal(testHelper.hexToUtf8(task[1]), deliverableHash);
+    });
+
+    it('should fail if I try to submit work for a task that is accepted', async function () {
+      await colony.makeTask(specificationHash);
+      await colony.acceptTask(1);
+      let tx;
+      try {
+        tx = await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail if I try to submit work for a task using an invalid id', async function () {
+      let tx;
+      try {
+        tx = await colony.submitTaskDeliverable(10, deliverableHash, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 

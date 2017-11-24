@@ -120,6 +120,13 @@ contract ColonyTask is ColonyStorage {
     tasks[_id].dueDate = _dueDate;
   }
 
+  function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
+  taskExists(_id)
+  taskNotAccepted(_id)
+  {
+    tasks[_id].deliverableHash = _deliverableHash;
+  }
+
   function acceptTask(uint256 _id) public
   auth
   taskExists(_id)
