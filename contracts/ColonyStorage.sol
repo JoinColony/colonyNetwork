@@ -83,6 +83,11 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
+  modifier onlyTaskWorker(uint256 _id) {
+    require(msg.sender == tasks[_id].roles[2]);
+    _;
+  }
+
   modifier self() {
     require(address(this) == msg.sender);
     _;
