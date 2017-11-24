@@ -14,6 +14,7 @@ contract ColonyNetwork is DSAuth {
   address resolver;
   uint256 public colonyCount;
   uint256 public currentColonyVersion;
+  // TODO: We can probably do better than having three colony-related mappings
   mapping (uint => address) _coloniesIndex;
   mapping (bytes32 => address) _colonies;
   mapping (address => bool) _isColony;

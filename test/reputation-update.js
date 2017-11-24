@@ -77,7 +77,7 @@ contract('Colony', function (accounts) {
       // We got a throw. Check it wasn't appended to
       let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
-    })
+    });
 
     it('should populate nPreviousUpdates correctly', async function () {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
@@ -87,7 +87,7 @@ contract('Colony', function (accounts) {
       await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength);
-      let nPrevious = x[5].toNumber()
+      let nPrevious = x[5].toNumber();
       await commonColony.makeTask(ipfsDecodedHash);
       await commonColony.setTaskWorker(2, OTHER_ACCOUNT);
       await commonColony.acceptTask(2);
