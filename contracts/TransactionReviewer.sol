@@ -91,6 +91,9 @@ contract TransactionReviewer {
 
     if (confirmations[transactionId][_firstReviewer] && confirmations[transactionId][_secondReviewer]) {
       _transaction.executed = true;
+      // If this is generalised to allow colonies to call any function, anywhere (as I believe they will be
+      // able to eventually), we need to blacklist some sigs at the submitTransaction stage e.g. the function
+      // call to add an entry to the reputation update log.
       if (address(this).call.value(_transaction.value)(_transaction.data)) {
         Execution(transactionId);
       } else {

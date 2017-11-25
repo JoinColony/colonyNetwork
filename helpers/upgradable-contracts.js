@@ -54,6 +54,7 @@ module.exports = {
     await resolver.register("token()", colony.address, 32);
     await resolver.register("version()", colony.address, 32);
     await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
+    await resolver.register("tasks(uint256)", colony.address, 224);
     await resolver.register("taskCount()", colony.address, 32);
     await resolver.register("transactionCount()", colony.address, 32);
     await resolver.register("setToken(address)", colony.address, 0);
@@ -67,7 +68,7 @@ module.exports = {
     await resolver.register("cancelTask(uint256)", colony.address, 0);
     await resolver.register("setTaskDueDate(uint256,uint256)", colony.address, 0);
     await resolver.register("setTaskPayout(uint256,uint256,address,uint256)", colony.address, 0);
-    await resolver.register("getTask(uint256)", colony.address, 224);
+    await resolver.register("getTaskRolesCount(uint256)", colony.address, 32);
     await resolver.register("getTaskRoleAddress(uint256,uint256)", colony.address, 32);
     await resolver.register("getTaskPayout(uint256,uint256,address)", colony.address, 32);
     await resolver.register("claimPayout(uint256,uint256,address)", colony.address, 0);
@@ -77,6 +78,7 @@ module.exports = {
     await resolver.register("claimColonyFunds(address)", colony.address, 0);
     await resolver.register("initialiseColony(address)", colony.address, 0);
     await resolver.register("addSkill(uint256)", colony.address, 0);
+    await resolver.register("setTaskSkill(uint256,uint256)", colony.address, 0);
 
     // Validate Colony functions are registered
     let response = await resolver.lookup.call('0xfc0c546a'); // token
@@ -88,6 +90,9 @@ module.exports = {
     response = await resolver.lookup.call('0xe92ed89d'); // reviewers
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x8d977672'); // tasks
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 224);
     response = await resolver.lookup.call('0xb6cb58a5'); // taskCount
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
@@ -127,9 +132,9 @@ module.exports = {
     response = await resolver.lookup.call('0xbe2320af'); // setTaskPayout
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x1d65e77e'); // getTask
+    response = await resolver.lookup.call('0x2b47827f'); // getTaskRolesCount
     assert.equal(response[0], colony.address);
-    assert.equal(response[1], 224);
+    assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xe9ec8cc3'); // getTaskRoleAddress
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
@@ -157,6 +162,9 @@ module.exports = {
     response = await resolver.lookup.call('0x162419cc'); // addSkill
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0xb8984c5a'); // setTaskSkill(uint256,uint256);
+    assert.equal(response[0], colony.address);
+    assert.equal(response[1], 0);
 
     const version = await colony.version.call();
     await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);
@@ -177,6 +185,9 @@ module.exports = {
     await resolver.register("addSkill(uint256)", colonyNetwork.address, 0);
     await resolver.register("getParentSkillId(uint256,uint256)", colonyNetwork.address, 32);
     await resolver.register("getChildSkillId(uint256,uint256)", colonyNetwork.address, 32);
+    await resolver.register("appendReputationUpdateLog(address,int256,uint256)", colonyNetwork.address, 0);
+    await resolver.register("ReputationUpdateLog(uint256)", colonyNetwork.address, 192);
+    await resolver.register("getReputationUpdateLogLength()", colonyNetwork.address, 32);
 
     // Validate ColonyNetwork functions are registered
     let response = await resolver.lookup.call('0xe40c6c91'); // colonyCount
@@ -218,6 +229,16 @@ module.exports = {
     response = await resolver.lookup.call('0x09d10a5e'); // getChildSkillId
     assert.equal(response[0], colonyNetwork.address);
     assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0x5a8adafa'); // appendReputationUpdateLog(address,uint256,uint256)
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x5edde7e7'); // ReputationUpdateLog(uint256)
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 192);
+    response = await resolver.lookup.call('0x89765977'); // getReputationUpdateLogLength()
+    assert.equal(response[0], colonyNetwork.address);
+    assert.equal(response[1], 32);
+
     await etherRouter.setResolver(resolver.address);
   }
 };

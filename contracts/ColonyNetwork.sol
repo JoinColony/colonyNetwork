@@ -14,8 +14,10 @@ contract ColonyNetwork is DSAuth {
   address resolver;
   uint256 public colonyCount;
   uint256 public currentColonyVersion;
+  // TODO: We can probably do better than having three colony-related mappings
   mapping (uint => address) _coloniesIndex;
   mapping (bytes32 => address) _colonies;
+  mapping (address => bool) _isColony;
   // Maps colony contract versions to respective resolvers
   mapping (uint => address) public colonyVersionResolver;
 
@@ -45,6 +47,22 @@ contract ColonyNetwork is DSAuth {
     _;
   }
 
+  struct ReputationLogEntry {
+    address user;
+    int amount;
+    uint skillId;
+    address colony;
+    uint nUpdates;
+    uint nPreviousUpdates;
+  }
+
+  ReputationLogEntry[] public ReputationUpdateLog;
+
+  modifier calledByColony() {
+    require(_isColony[msg.sender]);
+    _;
+  }
+
   function createColony(bytes32 _name) public {
     var token = new Token();
     var etherRouter = new EtherRouter();
@@ -71,6 +89,7 @@ contract ColonyNetwork is DSAuth {
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
     _colonies[_name] = colony;
+    _isColony[colony] = true;
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -169,4 +188,26 @@ contract ColonyNetwork is DSAuth {
     Skill storage skill = skills[_skillId];
     return skill.children[_childSkillIndex];
   }
+
+  function appendReputationUpdateLog(address _user, int _amount, uint _skillId)
+  calledByColony
+  skillExists(_skillId)
+  {
+    uint reputationUpdateLogLength = ReputationUpdateLog.length;
+    uint nPreviousUpdates = 0;
+    if (reputationUpdateLogLength > 0) {
+      nPreviousUpdates = ReputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
+    }
+    uint nUpdates = (skills[_skillId].nParents + 1) * 2;
+    if (_amount < 0) {
+      //TODO: Never true currently. _amount needs to be an int.
+      nUpdates += 2 * skills[_skillId].nChildren;
+    }
+    ReputationUpdateLog.push(ReputationLogEntry(_user, _amount, _skillId, msg.sender, nUpdates, nPreviousUpdates));
+  }
+
+  function getReputationUpdateLogLength() view returns (uint) {
+    return ReputationUpdateLog.length;
+  }
+
 }
