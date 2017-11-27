@@ -29,7 +29,9 @@ contract IColony {
   function acceptTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
   function getTaskRolesCount(uint256 _id) public view returns (uint);
-  function getTaskRoleAddress (uint256 _id, uint256 _role) public view returns (address);
+  function getTaskRoleAddress (uint256 _id, uint8 _role) public view returns (address);
+  function getTaskWorkRating(uint256 _id, uint8 _role) public view returns (bytes32);
+  function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
   function getTaskCount() public view returns (uint);
   function getTransactionCount() public view returns (uint);
 

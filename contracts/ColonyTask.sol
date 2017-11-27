@@ -76,6 +76,27 @@ contract ColonyTask is ColonyStorage {
     IColony(this).confirmTransaction(_transactionId, _role);
   }
 
+  // Get the function signature and task id from the transaction bytes data
+  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
+  function deconstructCall(bytes _data) internal returns (bytes4 sig, uint256 taskId) {
+    assembly {
+      sig := mload(add(_data, 0x20))
+      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
+    }
+  }
+
+  // TODO: Once the due date has passed or the worker has made their submission, the evaluator may rate the work
+  // TODO: Once three days have elapsed, no more objections or disputes can be raised.
+  // TODO: In the event of a user not committing or revealing within a reasonable time,
+  // their rating of their counterpart is assumed to be the highest possible and they receive a mildly negative rating
+  function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
+  confirmTaskRoleIdentity(_id, _role)
+  {
+    taskWorkRatings[_id][_role] = _ratingSecret;
+  }
+
+  // TODO: Maybe refactor the setTaskEvaluator and setTaskWorker into the same function. 
+
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
   // Note task assignment is agreed off-chain
   function setTaskEvaluator(uint256 _id, address _evaluator) public
@@ -165,18 +186,15 @@ contract ColonyTask is ColonyStorage {
     rolesCount = _roles.length;
   }
 
-  function getTaskRoleAddress (uint _id, uint _role) public view
+  function getTaskRoleAddress (uint _id, uint8 _role) public view
   returns (address)
   {
     return tasks[_id].roles[_role];
   }
 
-  // Get the function signature and task id from the transaction bytes data
-  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
-  function deconstructCall(bytes _data) internal returns (bytes4 sig, uint256 taskId) {
-    assembly {
-      sig := mload(add(_data, 0x20))
-      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
-    }
+  function getTaskWorkRating(uint _id, uint8 _role) public view 
+  returns (bytes32)
+  {
+    return taskWorkRatings[_id][_role];
   }
 }

@@ -41,6 +41,8 @@ contract ColonyStorage is DSAuth {
   // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
   mapping (address => uint) nonRewardPotsTotal;
 
+  mapping (uint => mapping (uint8 => bytes32)) public taskWorkRatings;
+
   uint taskCount;
   uint potCount;
 
@@ -85,6 +87,11 @@ contract ColonyStorage is DSAuth {
 
   modifier onlyTaskWorker(uint256 _id) {
     require(msg.sender == tasks[_id].roles[2]);
+    _;
+  }
+
+  modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
+    require(msg.sender == tasks[_id].roles[_role]);
     _;
   }
 
