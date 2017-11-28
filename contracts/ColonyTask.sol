@@ -8,6 +8,7 @@ import "./IColony.sol";
 
 
 contract ColonyTask is ColonyStorage {
+  event TaskAdded(uint256 indexed id);
 
   modifier skillExists(uint256 _skillId){
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
@@ -37,6 +38,7 @@ contract ColonyTask is ColonyStorage {
     });
 
     pots[potCount].taskId = taskCount;
+    TaskAdded(taskCount);
   }
 
   function getTaskCount() public view returns (uint) {
