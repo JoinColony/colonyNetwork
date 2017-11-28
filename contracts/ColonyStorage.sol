@@ -12,6 +12,7 @@ import "./IColonyNetwork.sol";
 contract ColonyStorage is DSAuth, DSMath, TransactionReviewer {
   address resolver;
   address colonyNetworkAddress;
+  //TODO: Remove 'public' for all variables here, and define getters on appropriate subcontracts
   ERC20Extended public token;
   mapping (uint => Task) public tasks;
 

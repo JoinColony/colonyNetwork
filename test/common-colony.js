@@ -6,6 +6,7 @@ const Resolver = artifacts.require('Resolver');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const ColonyFunding = artifacts.require('ColonyFunding');
+const ColonyTask = artifacts.require('ColonyTask');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 
@@ -37,12 +38,13 @@ contract('Common Colony', function (accounts) {
   beforeEach(async function () {
     let colony = await Colony.new();
     let colonyFunding = await ColonyFunding.new();
+    let colonyTask = await ColonyTask.new();
     let resolver = await Resolver.new();
 
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
-    await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, resolver, colonyNetwork);
+    await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, resolver, colonyNetwork);
 
     await colonyNetwork.createColony(COLONY_KEY);
     let commonColonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);

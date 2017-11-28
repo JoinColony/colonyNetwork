@@ -50,26 +50,26 @@ module.exports = {
     const _registeredResolver = await etherRouter.resolver.call();
     assert.equal(_registeredResolver, resolver.address);
   },
-  async setupColonyVersionResolver (colony, colonyFunding, resolver, colonyNetwork) {
+  async setupColonyVersionResolver (colony, colonyTask, colonyFunding, resolver, colonyNetwork) {
     await resolver.register("token()", colony.address, 32);
     await resolver.register("version()", colony.address, 32);
     await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
-    await resolver.register("tasks(uint256)", colony.address, 224);
-    await resolver.register("taskCount()", colony.address, 32);
+    await resolver.register("tasks(uint256)", colonyTask.address, 224);
+    await resolver.register("taskCount()", colonyTask.address, 32);
     await resolver.register("transactionCount()", colony.address, 32);
     await resolver.register("setToken(address)", colony.address, 0);
-    await resolver.register("makeTask(bytes32)", colony.address, 0);
-    await resolver.register("proposeTaskChange(bytes,uint256,uint8)", colony.address, 32);
-    await resolver.register("approveTaskChange(uint256,uint8)", colony.address, 0);
-    await resolver.register("setTaskEvaluator(uint256,address)", colony.address, 0);
-    await resolver.register("setTaskWorker(uint256,address)", colony.address, 0);
-    await resolver.register("setTaskBrief(uint256,bytes32)", colony.address, 0);
-    await resolver.register("acceptTask(uint256)", colony.address, 0);
-    await resolver.register("cancelTask(uint256)", colony.address, 0);
-    await resolver.register("setTaskDueDate(uint256,uint256)", colony.address, 0);
+    await resolver.register("makeTask(bytes32)", colonyTask.address, 0);
+    await resolver.register("proposeTaskChange(bytes,uint256,uint8)", colonyTask.address, 32);
+    await resolver.register("approveTaskChange(uint256,uint8)", colonyTask.address, 0);
+    await resolver.register("setTaskEvaluator(uint256,address)", colonyTask.address, 0);
+    await resolver.register("setTaskWorker(uint256,address)", colonyTask.address, 0);
+    await resolver.register("setTaskBrief(uint256,bytes32)", colonyTask.address, 0);
+    await resolver.register("acceptTask(uint256)", colonyTask.address, 0);
+    await resolver.register("cancelTask(uint256)", colonyTask.address, 0);
+    await resolver.register("setTaskDueDate(uint256,uint256)", colonyTask.address, 0);
     await resolver.register("setTaskPayout(uint256,uint256,address,uint256)", colonyFunding.address, 0);
-    await resolver.register("getTaskRolesCount(uint256)", colony.address, 32);
-    await resolver.register("getTaskRoleAddress(uint256,uint256)", colony.address, 32);
+    await resolver.register("getTaskRolesCount(uint256)", colonyTask.address, 32);
+    await resolver.register("getTaskRoleAddress(uint256,uint256)", colonyTask.address, 32);
     await resolver.register("getTaskPayout(uint256,uint256,address)", colonyFunding.address, 32);
     await resolver.register("claimPayout(uint256,uint256,address)", colonyFunding.address, 0);
     await resolver.register("mintTokens(uint128)", colony.address, 0);
@@ -78,7 +78,7 @@ module.exports = {
     await resolver.register("claimColonyFunds(address)", colonyFunding.address, 0);
     await resolver.register("initialiseColony(address)", colony.address, 0);
     await resolver.register("addSkill(uint256)", colony.address, 0);
-    await resolver.register("setTaskSkill(uint256,uint256)", colony.address, 0);
+    await resolver.register("setTaskSkill(uint256,uint256)", colonyTask.address, 0);
 
     // Validate Colony functions are registered
     let response = await resolver.lookup.call('0xfc0c546a'); // token
@@ -91,10 +91,10 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0x8d977672'); // tasks
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 224);
     response = await resolver.lookup.call('0xb6cb58a5'); // taskCount
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xb77bf600'); // transactionCount
     assert.equal(response[0], colony.address);
@@ -103,40 +103,40 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x560c6d92'); // makeTask
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x6b460bff'); // proposeTaskChange
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xf4ae4f08'); // approveTaskChange
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x05498b88'); // setTaskEvaluator
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xbbe8f783'); // setTaskWorker
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xda4db249'); // setTaskBrief
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x1bf6912d'); // acceptTask
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x7eec20a8'); // cancelTask
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xcae960fe'); // setTaskDueDate
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xbe2320af'); // setTaskPayout
     assert.equal(response[0], colonyFunding.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x2b47827f'); // getTaskRolesCount
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xe9ec8cc3'); // getTaskRoleAddress
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xf409a8c4'); // getTaskPayout
     assert.equal(response[0], colonyFunding.address);
@@ -163,7 +163,7 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xb8984c5a'); // setTaskSkill(uint256,uint256);
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
 
     const version = await colony.version.call();
