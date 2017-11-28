@@ -8,10 +8,10 @@ const EtherRouter = artifacts.require('EtherRouter');
 
 contract('Colony', function (accounts) {
   let COLONY_KEY;
-  const MAIN_ACCOUNT = accounts[0];
-  const OTHER_ACCOUNT = accounts[1];
-  const THIRD_ACCOUNT = accounts[2];
-  const FOURTH_ACCOUNT = accounts[3];
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER_ACCOUNT = accounts[3];
   // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
   // The base58 decoded, bytes32 converted value of the task ipfsHash
@@ -39,11 +39,11 @@ contract('Colony', function (accounts) {
 
   const setupTask = async function (dueDate) {
     await colony.makeTask(specificationHash);
-    await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-    await colony.setTaskWorker(1, THIRD_ACCOUNT);    
+    await colony.setTaskEvaluator(1, EVALUATOR);
+    await colony.setTaskWorker(1, WORKER);    
     const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
     await colony.proposeTaskChange(txData, 0, 0);
-    await colony.approveTaskChange(1, 2, { from: THIRD_ACCOUNT });
+    await colony.approveTaskChange(1, 2, { from: WORKER });
   };
 
   describe('when rating a task deliverable', () => {
@@ -51,10 +51,10 @@ contract('Colony', function (accounts) {
       var dueDate = new Date();
       dueDate = (dueDate.getTime() + secondsPerDay*7);
       await setupTask(dueDate);
-      await colony.setTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
+      await colony.setTaskDeliverable(1, deliverableHash, { from: WORKER });
 
-      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: OTHER_ACCOUNT });
-      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: THIRD_ACCOUNT });
+      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: WORKER });
       let rating1 = await colony.getTaskWorkRating.call(1, 1);
       assert.equal(rating1, _RATING_SECRET_1_);
       let rating2 = await colony.getTaskWorkRating.call(1, 2);
@@ -66,8 +66,8 @@ contract('Colony', function (accounts) {
       dueDate = (dueDate.getTime() - 1);
       await setupTask(dueDate);
 
-      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: OTHER_ACCOUNT });
-      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: THIRD_ACCOUNT });
+      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: WORKER });
       let rating1 = await colony.getTaskWorkRating.call(1, 1);
       assert.equal(rating1, _RATING_SECRET_1_);
       let rating2 = await colony.getTaskWorkRating.call(1, 2);
@@ -98,7 +98,7 @@ contract('Colony', function (accounts) {
 
       let tx;
       try {
-        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: FOURTH_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
