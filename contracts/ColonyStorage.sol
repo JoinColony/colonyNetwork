@@ -95,6 +95,11 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
+  modifier ratingDoesNotExist(uint256 _id, uint8 _role) {
+    require(taskWorkRatings[_id][_role] == "");
+    _;
+  }
+
   modifier taskDueDatePastOrWorkSubmitted(uint256 _id) {
     require(tasks[_id].dueDate >= now || tasks[_id].deliverableHash != "");
     _;

@@ -91,6 +91,24 @@ contract('Colony', function (accounts) {
       assert.notEqual(rating, _RATING_SECRET_1_);    
     });
 
+    it('should fail, if I try to rate work twice', async function () {
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() - 1);
+      await setupTask(dueDate);
+
+      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
+      let tx;
+      try {
+        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_2_, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let rating = await colony.getTaskWorkRating.call(1, 1);
+      assert.equal(rating, _RATING_SECRET_1_);
+    });
+
     it('should fail if I try to rate work on behalf of a worker', async function () {
       var dueDate = new Date();
       dueDate = (dueDate.getTime() -1);

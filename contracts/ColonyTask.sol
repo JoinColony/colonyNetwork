@@ -91,6 +91,7 @@ contract ColonyTask is ColonyStorage {
   // their rating of their counterpart is assumed to be the highest possible and they receive a mildly negative rating
   function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
   confirmTaskRoleIdentity(_id, _role)
+  ratingDoesNotExist(_id, _role)
   taskDueDatePastOrWorkSubmitted(_id)
   {
     taskWorkRatings[_id][_role] = _ratingSecret;
