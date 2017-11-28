@@ -2,6 +2,7 @@ const upgradableContracts = require('../helpers/upgradable-contracts');
 const Colony = artifacts.require('./Colony');
 const ColonyFunding = artifacts.require('./ColonyFunding');
 const ColonyTask = artifacts.require('./ColonyTask');
+const ColonyTransactionReviewer = artifacts.require('./ColonyTransactionReviewer');
 const ColonyNetwork = artifacts.require('./ColonyNetwork');
 const EtherRouter = artifacts.require('./EtherRouter');
 const Resolver = artifacts.require('./Resolver');
@@ -15,6 +16,7 @@ module.exports = function (deployer, network, accounts) {
   let resolver;
   let colonyNetwork;
   let colonyTask;
+  let colonyTransactionReviewer;
   deployer.then(function () {
     return Colony.new();
   })
@@ -28,6 +30,10 @@ module.exports = function (deployer, network, accounts) {
   })
   .then(function(instance){
     colonyTask = instance;
+    return ColonyTransactionReviewer.new();
+  })
+  .then(function(instance){
+    colonyTransactionReviewer = instance;
     return colony.version.call();
   })
   .then(function (_version) {
@@ -44,7 +50,7 @@ module.exports = function (deployer, network, accounts) {
   .then(function (instance) {
     colonyNetwork = instance;
     // Register the new Colony contract version with the newly setup Resolver
-    return upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
+    return upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
   })
   .then(function () {
     console.log('### Colony version', version, 'set to Resolver', resolver.address);

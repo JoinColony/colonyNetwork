@@ -5,14 +5,27 @@ pragma experimental "ABIEncoderV2";
 import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
-import "./TransactionReviewer.sol";
 import "./IColonyNetwork.sol";
 
 
-contract ColonyStorage is DSAuth, DSMath, TransactionReviewer {
-  address resolver;
-  address colonyNetworkAddress;
+contract ColonyStorage is DSAuth, DSMath {
   //TODO: Remove 'public' for all variables here, and define getters on appropriate subcontracts
+  address resolver;
+
+  mapping (uint => Transaction) public transactions;
+  // Mapping function signature to 2 task roles whose approval is needed to execute
+  mapping (bytes4 => uint8[2]) public reviewers;
+  // Maps transactions to roles and whether they've confirmed the transaction
+  mapping (uint => mapping (uint => bool)) public confirmations;
+  uint public transactionCount;
+
+  struct Transaction {
+    bytes data;
+    uint value;
+    bool executed;
+  }
+
+  address colonyNetworkAddress;
   ERC20Extended public token;
   mapping (uint => Task) public tasks;
 

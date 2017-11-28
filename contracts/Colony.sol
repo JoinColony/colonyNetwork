@@ -4,6 +4,7 @@ pragma experimental "ABIEncoderV2";
 
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
+import "./IColony.sol";
 import "./ColonyStorage.sol";
 
 contract Colony is ColonyStorage {
@@ -20,9 +21,9 @@ contract Colony is ColonyStorage {
     potCount = 1;
 
     // Initialise the task update reviewers
-    setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
-    setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
-    setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
+    IColony(this).setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
+    IColony(this).setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
+    IColony(this).setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
   }
 
   function mintTokens(uint128 _wad) public

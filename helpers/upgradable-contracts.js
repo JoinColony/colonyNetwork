@@ -50,7 +50,7 @@ module.exports = {
     const _registeredResolver = await etherRouter.resolver.call();
     assert.equal(_registeredResolver, resolver.address);
   },
-  async setupColonyVersionResolver (colony, colonyTask, colonyFunding, resolver, colonyNetwork) {
+  async setupColonyVersionResolver (colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork) {
     await resolver.register("token()", colony.address, 32);
     await resolver.register("version()", colony.address, 32);
     await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
@@ -79,8 +79,10 @@ module.exports = {
     await resolver.register("initialiseColony(address)", colony.address, 0);
     await resolver.register("addSkill(uint256)", colony.address, 0);
     await resolver.register("setTaskSkill(uint256,uint256)", colonyTask.address, 0);
+    await resolver.register("submitTransaction(bytes,uint256,uint8)", colonyTransactionReviewer.address, 32);
+    await resolver.register("confirmTransaction(uint256,uint8)", colonyTransactionReviewer.address, 0);
+    await resolver.register("setFunctionReviewers(bytes4,uint8,uint8)", colonyTransactionReviewer.address, 0);
 
-    // Validate Colony functions are registered
     let response = await resolver.lookup.call('0xfc0c546a'); // token
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
@@ -165,6 +167,16 @@ module.exports = {
     response = await resolver.lookup.call('0xb8984c5a'); // setTaskSkill(uint256,uint256);
     assert.equal(response[0], colonyTask.address);
     assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0xc9a004d5'); //submitTransaction(bytes,uint256,uint8)
+    assert.equal(response[0], colonyTransactionReviewer.address);
+    assert.equal(response[1], 32);
+    response = await resolver.lookup.call('0xb481860c'); //confirmTransaction(uint256,uint8)
+    assert.equal(response[0], colonyTransactionReviewer.address);
+    assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x026e1146'); //setFunctionReviewers(bytes4,uint8,uint8)
+    assert.equal(response[0], colonyTransactionReviewer.address);
+    assert.equal(response[1], 0);
+
 
     const version = await colony.version.call();
     await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);

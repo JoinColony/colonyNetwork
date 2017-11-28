@@ -41,4 +41,9 @@ contract IColony {
   function claimColonyFunds(address _token) public;
   function getFeeInverse() public pure returns (uint);
   function getRewardInverse() public pure returns (uint);
+
+
+  function submitTransaction(bytes,uint256,uint8) public returns (uint);
+  function confirmTransaction(uint256,uint8) public;
+  function setFunctionReviewers(bytes4,uint8,uint8) public;
 }

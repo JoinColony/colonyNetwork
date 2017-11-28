@@ -5,6 +5,7 @@ pragma experimental "ABIEncoderV2";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
+import "./IColony.sol";
 
 contract ColonyTask is ColonyStorage {
 
@@ -44,7 +45,7 @@ contract ColonyTask is ColonyStorage {
     require(_reviewers[0] != 0 || _reviewers[1] != 0);
     require(_reviewers[0] == _role || _reviewers[1] == _role);
 
-    transactionId = submitTransaction(_data, _value, _role);
+    transactionId = IColony(this).submitTransaction(_data, _value, _role);
   }
 
   function approveTaskChange(uint _transactionId, uint8 _role) public {
@@ -60,7 +61,7 @@ contract ColonyTask is ColonyStorage {
     require(_reviewers[0] != 0 || _reviewers[1] != 0);
     require(_reviewers[0] == _role || _reviewers[1] == _role);
 
-    confirmTransaction(_transactionId, _role);
+    IColony(this).confirmTransaction(_transactionId, _role);
   }
 
   // Get the function signature and task id from the transaction bytes data

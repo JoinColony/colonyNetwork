@@ -8,6 +8,7 @@ const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask= artifacts.require('ColonyTask');
+const ColonyTransactionReviewer= artifacts.require('ColonyTransactionReviewer');
 const IColony = artifacts.require('IColony');
 const Resolver = artifacts.require('Resolver');
 
@@ -18,6 +19,7 @@ contract('ColonyNetwork', function (accounts) {
   const GAS_TO_SPEND = 4700000;
   let colony;
   let colonyFunding;
+  let colonyTransactionReviewer;
   let colonyTask;
   let resolver;
   let resolverColonyNetworkDeployed;
@@ -37,11 +39,12 @@ contract('ColonyNetwork', function (accounts) {
     resolver = await Resolver.new();
     colonyFunding = await ColonyFunding.new();
     colonyTask = await ColonyTask.new();
+    colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
     const etherRouter = await EtherRouter.new();
     etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
-    await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, resolver, colonyNetwork);
+    await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
   });
 
   describe('when initialised', () => {
