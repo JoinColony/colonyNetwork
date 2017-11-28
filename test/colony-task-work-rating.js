@@ -18,6 +18,8 @@ contract('Colony', function (accounts) {
   const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
   const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
   const _RATING_SECRET_1_ = sha3(testHelper.getRandomString(5));
+  const _RATING_SECRET_2_ = sha3(testHelper.getRandomString(5));
+  const secondsPerDay = 86400;
 
   let colony;
   let colonyNetwork;
@@ -35,31 +37,64 @@ contract('Colony', function (accounts) {
     colony = await IColony.at(address);
   });
 
+  const setupTask = async function (dueDate) {
+    await colony.makeTask(specificationHash);
+    await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+    await colony.setTaskWorker(1, THIRD_ACCOUNT);    
+    const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
+    await colony.proposeTaskChange(txData, 0, 0);
+    await colony.approveTaskChange(1, 2, { from: THIRD_ACCOUNT });
+  };
+
   describe('when rating a task deliverable', () => {
-    it('should allow worker to submit rating', async function () {
-      await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
-      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: THIRD_ACCOUNT });
-      
-      let rating = await colony.getTaskWorkRating.call(1, 2);
-      assert.equal(rating, _RATING_SECRET_1_);      
+    it('should allow rating, before the due date but after the work has been submitted', async function () {
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() + secondsPerDay*7);
+      await setupTask(dueDate);
+      await colony.setTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
+
+      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: OTHER_ACCOUNT });
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: THIRD_ACCOUNT });
+      let rating1 = await colony.getTaskWorkRating.call(1, 1);
+      assert.equal(rating1, _RATING_SECRET_1_);
+      let rating2 = await colony.getTaskWorkRating.call(1, 2);
+      assert.equal(rating2, _RATING_SECRET_2_);
     });
 
-    it('should allow evaluator to submit rating', async function () {
-      await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+    it('should allow rating, after the due date has passed, when no work has been submitted', async function () {
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() - 1);
+      await setupTask(dueDate);
+
       await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: OTHER_ACCOUNT });
-        
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: THIRD_ACCOUNT });
+      let rating1 = await colony.getTaskWorkRating.call(1, 1);
+      assert.equal(rating1, _RATING_SECRET_1_);
+      let rating2 = await colony.getTaskWorkRating.call(1, 2);
+      assert.equal(rating2, _RATING_SECRET_2_);
+    });
+
+    it('should fail if I try to submit work for a task before its due date has passed and work has not been submitted', async function () {
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() + secondsPerDay*7);
+      await setupTask(dueDate);  
+  
+      let tx;
+      try {
+        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
       let rating = await colony.getTaskWorkRating.call(1, 1);
-      assert.equal(rating, _RATING_SECRET_1_);      
+      assert.notEqual(rating, _RATING_SECRET_1_);    
     });
 
     it('should fail if I try to rate work on behalf of a worker', async function () {
-      await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() -1);
+      await setupTask(dueDate); 
 
       let tx;
       try {
@@ -74,6 +109,10 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work for a task using an invalid id', async function () {
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() -1);
+      await setupTask(dueDate); 
+
       let tx;
       try {
         tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { gas: GAS_TO_SPEND });
@@ -83,5 +122,4 @@ contract('Colony', function (accounts) {
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
-
 });
