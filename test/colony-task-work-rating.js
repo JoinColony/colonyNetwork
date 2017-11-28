@@ -51,7 +51,7 @@ contract('Colony', function (accounts) {
       var dueDate = new Date();
       dueDate = (dueDate.getTime() + secondsPerDay*7);
       await setupTask(dueDate);
-      await colony.setTaskDeliverable(1, deliverableHash, { from: WORKER });
+      await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
 
       await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: WORKER });
