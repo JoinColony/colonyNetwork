@@ -146,7 +146,12 @@ contract('ColonyNetwork', function (accounts) {
       let colonyNetworkBalance = await testHelper.web3GetBalance(colonyNetwork.address);
       assert.equal(0, colonyNetworkBalance.toNumber());
     });
-  })
+
+    it("should log a ColonyAdded event", async function () {
+      const tx = await colonyNetwork.createColony(COLONY_KEY);
+      assert.equal(tx.logs[6].event, 'ColonyAdded');
+    });
+  });
 
   describe('when getting existing colonies', () => {
     it('should allow users to get the address of a colony by its index', async function () {

@@ -34,6 +34,7 @@ contract ColonyNetwork is DSAuth {
   mapping (uint => Skill) public skills;
   uint256 public skillCount;
 
+  event ColonyAdded(uint256 indexed id);
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
   modifier onlyCommonColony() {
@@ -92,6 +93,8 @@ contract ColonyNetwork is DSAuth {
     if (_name == "Common Colony") {
       skillCount += 1;
     }
+
+    ColonyAdded(colonyCount);
 
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
