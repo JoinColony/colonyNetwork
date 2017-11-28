@@ -146,6 +146,7 @@ contract ColonyTask is ColonyStorage {
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
   taskExists(_id)
   taskNotAccepted(_id)
+  workNotSubmitted(_id)
   onlyTaskWorker(_id)
   {
     tasks[_id].deliverableHash = _deliverableHash;

@@ -394,6 +394,24 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
+
+    it('should fail if I try to submit work twice', async function () {
+      await colony.makeTask(specificationHash);
+      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
+      
+      let tx;
+      try {
+        tx = await colony.submitTaskDeliverable(1, specificationHash, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      const task = await colony.tasks.call(1);
+      assert.equal(testHelper.hexToUtf8(task[1]), deliverableHash);
+    });
   });
 
   describe('when accepting a task', () => {
