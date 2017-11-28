@@ -50,7 +50,7 @@ module.exports = {
     const _registeredResolver = await etherRouter.resolver.call();
     assert.equal(_registeredResolver, resolver.address);
   },
-  async setupColonyVersionResolver (colony, resolver, colonyNetwork) {
+  async setupColonyVersionResolver (colony, colonyFunding, resolver, colonyNetwork) {
     await resolver.register("token()", colony.address, 32);
     await resolver.register("version()", colony.address, 32);
     await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
@@ -67,15 +67,15 @@ module.exports = {
     await resolver.register("acceptTask(uint256)", colony.address, 0);
     await resolver.register("cancelTask(uint256)", colony.address, 0);
     await resolver.register("setTaskDueDate(uint256,uint256)", colony.address, 0);
-    await resolver.register("setTaskPayout(uint256,uint256,address,uint256)", colony.address, 0);
+    await resolver.register("setTaskPayout(uint256,uint256,address,uint256)", colonyFunding.address, 0);
     await resolver.register("getTaskRolesCount(uint256)", colony.address, 32);
     await resolver.register("getTaskRoleAddress(uint256,uint256)", colony.address, 32);
-    await resolver.register("getTaskPayout(uint256,uint256,address)", colony.address, 32);
-    await resolver.register("claimPayout(uint256,uint256,address)", colony.address, 0);
+    await resolver.register("getTaskPayout(uint256,uint256,address)", colonyFunding.address, 32);
+    await resolver.register("claimPayout(uint256,uint256,address)", colonyFunding.address, 0);
     await resolver.register("mintTokens(uint128)", colony.address, 0);
-    await resolver.register("getPotBalance(uint256,address)", colony.address, 32);
-    await resolver.register("moveFundsBetweenPots(uint256,uint256,uint256,address)", colony.address, 0);
-    await resolver.register("claimColonyFunds(address)", colony.address, 0);
+    await resolver.register("getPotBalance(uint256,address)", colonyFunding.address, 32);
+    await resolver.register("moveFundsBetweenPots(uint256,uint256,uint256,address)", colonyFunding.address, 0);
+    await resolver.register("claimColonyFunds(address)", colonyFunding.address, 0);
     await resolver.register("initialiseColony(address)", colony.address, 0);
     await resolver.register("addSkill(uint256)", colony.address, 0);
     await resolver.register("setTaskSkill(uint256,uint256)", colony.address, 0);
@@ -130,7 +130,7 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xbe2320af'); // setTaskPayout
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyFunding.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x2b47827f'); // getTaskRolesCount
     assert.equal(response[0], colony.address);
@@ -139,22 +139,22 @@ module.exports = {
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xf409a8c4'); // getTaskPayout
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyFunding.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0xed5923b6'); // claimPayout
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyFunding.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x5ab75c42'); // mintTokens
     assert.equal(response[0], colony.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0xed8b4eb1'); // getPotBalance(uint256,address)
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyFunding.address);
     assert.equal(response[1], 32);
     response = await resolver.lookup.call('0x440f4419'); // moveFundsBetweenPots(uint256,uint256,uint256,address)
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyFunding.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x89224a1e'); // claimColonyFunds(address)
-    assert.equal(response[0], colony.address);
+    assert.equal(response[0], colonyFunding.address);
     assert.equal(response[1], 0);
     response = await resolver.lookup.call('0x5d90f53c'); // initialiseColony(address)
     assert.equal(response[0], colony.address);

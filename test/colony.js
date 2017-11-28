@@ -6,6 +6,7 @@ const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
+const IColony = artifacts.require('IColony');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 
@@ -40,7 +41,7 @@ contract('Colony', function (accounts) {
     COLONY_KEY = testHelper.getRandomString(7);
     await colonyNetwork.createColony(COLONY_KEY);
     let address = await colonyNetwork.getColony.call(COLONY_KEY);
-    colony = await Colony.at(address);
+    colony = await IColony.at(address);
     let authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
     let tokenAddress = await colony.token.call();

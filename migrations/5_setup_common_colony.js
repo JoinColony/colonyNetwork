@@ -7,7 +7,7 @@ const Resolver = artifacts.require('./Resolver');
 const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet');
 
 module.exports = function (deployer, network, accounts) {
-  // Create a new Colony (version) and setup a new Resolver for it
+  // Create the common colony
   let colony;
   let version;
   let resolver;
