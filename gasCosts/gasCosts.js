@@ -4,6 +4,10 @@ const upgradableContracts = require('../helpers/upgradable-contracts');
 
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
+const IColony = artifacts.require('IColony');
+const ColonyTask = artifacts.require('ColonyTask');
+const ColonyFunding = artifacts.require('ColonyFunding');
+const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 const Resolver = artifacts.require('Resolver');
@@ -15,6 +19,9 @@ contract('all', function (accounts) {
   const OTHER_ACCOUNT = accounts[1];
 
   let colony;
+  let colonyTask;
+  let colonyFunding;
+  let colonyTransactionReviewer;
   let commonColony;
   let token;
   let authority;
@@ -31,21 +38,25 @@ contract('all', function (accounts) {
     let resolver = await Resolver.new();
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
-    await upgradableContracts.setupColonyVersionResolver(colony, resolver, colonyNetwork);
+    colonyTask = await ColonyTask.new()
+    colonyFunding = await ColonyFunding.new()
+    colonyTransactionReviewer = await ColonyTransactionReviewer.new();
+
+    await upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     const estimate = await colonyNetwork.createColony.estimateGas('Antz');
     console.log('createColony estimate : ', estimate);
     const tx = await colonyNetwork.createColony('Antz', { gasPrice });
     console.log('createColony actual cost : ', tx.receipt.gasUsed);
     const address = await colonyNetwork.getColony.call('Antz');
-    colony = await Colony.at(address);
+    colony = await IColony.at(address);
     const tokenAddress = await colony.token.call();
     token = await Token.at(tokenAddress);
     const authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
-    await Colony.defaults({ gasPrice });
+    await IColony.defaults({ gasPrice });
 
     let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
-    commonColony = await Colony.at(commonColonyAddress);
+    commonColony = await IColony.at(commonColonyAddress);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
