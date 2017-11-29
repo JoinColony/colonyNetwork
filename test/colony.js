@@ -140,10 +140,10 @@ contract('Colony', function (accounts) {
 
     it('should set the task manager as the creator', async function () {
       await colony.makeTask(specificationHash);
-      const rolesCount = await colony.getTaskRolesCount.call(1);
-      assert.equal(rolesCount.toNumber(), 3);
-      const taskManager = await colony.getTaskRoleAddress.call(1, 0);
-      assert.equal(taskManager, MAIN_ACCOUNT);
+      const taskCount = await colony.getTaskCount.call();
+      assert.equal(taskCount.toNumber(), 1);
+      const taskManager = await colony.getTaskRole.call(1, 0);
+      assert.equal(taskManager[0], MAIN_ACCOUNT);
     });
 
     it('should return the correct number of tasks', async function () {
@@ -167,12 +167,12 @@ contract('Colony', function (accounts) {
     it('should allow the worker and evaluator roles to be assigned', async function () {
       await colony.makeTask(specificationHash);
       await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      const evaluator = await colony.getTaskRoleAddress.call(1, 1);
-      assert.equal(evaluator, OTHER_ACCOUNT);
+      const evaluator = await colony.getTaskRole.call(1, 1);
+      assert.equal(evaluator[0], OTHER_ACCOUNT);
 
       await colony.setTaskWorker(1, THIRD_ACCOUNT);
-      const worker = await colony.getTaskRoleAddress.call(1, 2);
-      assert.equal(worker, THIRD_ACCOUNT);
+      const worker = await colony.getTaskRole.call(1, 2);
+      assert.equal(worker[0], THIRD_ACCOUNT);
     });
 
     it('should allow manager to submit an update of task brief and worker to approve it', async function () {
@@ -278,7 +278,7 @@ contract('Colony', function (accounts) {
 
     it('should fail to submit a task update for a non-registered function signature', async function () {
       await colony.makeTask(specificationHash);
-      const txData = await colony.contract.getTaskRoleAddress.getData(1, 0);
+      const txData = await colony.contract.getTaskRole.getData(1, 0);
 
       let tx;
       try {

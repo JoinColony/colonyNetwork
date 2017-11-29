@@ -21,12 +21,8 @@ contract ColonyTask is ColonyStorage {
   {
     taskCount += 1;
     potCount += 1;
-    // TODO: try a dynamically sized array for the roles
-    address[] memory _roles = new address[](3);
     uint[] memory _skillIds = new uint[](1);
-    uint8[] memory _ratings = new uint8[](2);
-
-    _roles[0] = msg.sender;
+    
     tasks[taskCount] = Task({
       specificationHash: _specificationHash,
       deliverableHash: "",
@@ -35,9 +31,14 @@ contract ColonyTask is ColonyStorage {
       dueDate: 0,
       payoutsWeCannotMake: 0,
       potId: potCount,
-      domainId: 0,roles: _roles,
-      ratings: _ratings,
+      domainId: 0,
       skillIds: _skillIds
+    });
+
+    tasks[taskCount].roles[0] = Role({
+      user: msg.sender,
+      rated: false,
+      rating: 0
     });
 
     pots[potCount].taskId = taskCount;
@@ -52,7 +53,7 @@ contract ColonyTask is ColonyStorage {
     var (sig, taskId) = deconstructCall(_data);
 
     Task storage task = tasks[taskId];
-    require(task.roles[_role] == msg.sender);
+    require(task.roles[_role].user == msg.sender);
     require(!task.accepted);
 
     uint8[2] storage _reviewers = reviewers[sig];
@@ -68,7 +69,7 @@ contract ColonyTask is ColonyStorage {
     var (sig, taskId) = deconstructCall(_data);
 
     Task storage task = tasks[taskId];
-    require(task.roles[_role] == msg.sender);
+    require(task.roles[_role].user == msg.sender);
     require(!task.accepted);
 
     uint8[2] storage _reviewers = reviewers[sig];
@@ -104,13 +105,9 @@ contract ColonyTask is ColonyStorage {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id][_role]);
     
-    // TODO: We can avoid the if statement if the task.rating indexes match the role ids. Ref todo in Task struct declaration
     Task storage task = tasks[_id];
-    if (_role == 1) {
-      task.ratings[1] = _rating;
-    } else if (_role == 2) {
-      task.ratings[0] = _rating;
-    }
+    task.roles[_role].rated = true;
+    task.roles[_role].rating = _rating;
   }
 
   function generateSecret(bytes32 _salt, uint256 _value) internal pure returns (bytes32) {
@@ -125,7 +122,11 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   taskNotAccepted(_id)
   {
-    tasks[_id].roles[1] = _evaluator;
+    tasks[_id].roles[1] = Role({
+      user: _evaluator,
+      rated: false,
+      rating: 0
+    });
   }
 
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
@@ -134,7 +135,11 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   taskNotAccepted(_id)
   {
-    tasks[_id].roles[2] = _worker;
+    tasks[_id].roles[2] = Role({
+      user: _worker,
+      rated: false,
+      rating: 0
+    });
   }
 
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
@@ -183,7 +188,7 @@ contract ColonyTask is ColonyStorage {
     uint skillId = task.skillIds[0];
     int sign = _id % 2 == 0 ? -1 : int8(1); // TODO: Remove this hack to allow us to test -ve reputation change
     int reputationChange = 10 * sign; // TODO: Replace with actual reputation change
-    colonyNetworkContract.appendReputationUpdateLog(tasks[_id].roles[2], reputationChange, skillId);
+    colonyNetworkContract.appendReputationUpdateLog(task.roles[2].user, reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
 
@@ -202,17 +207,9 @@ contract ColonyTask is ColonyStorage {
     return (t.specificationHash, t.deliverableHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.domainId);
   }
 
-  function getTaskRolesCount(uint _id) public view
-  returns (uint rolesCount)
-  {
-    address[] storage _roles = tasks[_id].roles;
-    rolesCount = _roles.length;
-  }
-
-  function getTaskRoleAddress (uint _id, uint8 _role) public view
-  returns (address)
-  {
-    return tasks[_id].roles[_role];
+  function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8) {
+    Role storage role = tasks[_id].roles[_role];
+    return (role.user, role.rated, role.rating);
   }
 
   function getTaskWorkRating(uint _id, uint8 _role) public view 

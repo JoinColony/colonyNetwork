@@ -56,15 +56,19 @@ contract ColonyStorage is DSAuth {
     uint payoutsWeCannotMake;
     uint potId;
     uint domainId;
-    address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
-    // TODO: maybe switch the roles ordering so 1 is a worker and 2 is an evaluator
-    uint8[] ratings; // (0-5) ratings for work performed by 0 => manager, 1 => worker
     uint[] skillIds;
 
+    mapping (uint => Role) roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
     // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint) totalPayouts;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
     mapping (uint => mapping (address => uint)) payouts;
+  }
+
+  struct Role {
+    address user;
+    bool rated;
+    uint8 rating;
   }
 
   struct Pot {
@@ -87,13 +91,16 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
+  // TODO: Remove this and use confirmTaskRoleIdentity
   modifier onlyTaskWorker(uint256 _id) {
-    require(msg.sender == tasks[_id].roles[2]);
+    Role storage workerRole = tasks[_id].roles[2];
+    require(msg.sender == workerRole.user);
     _;
   }
 
   modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
-    require(msg.sender == tasks[_id].roles[_role]);
+    Role storage role = tasks[_id].roles[_role];
+    require(msg.sender == role.user);
     _;
   }
 

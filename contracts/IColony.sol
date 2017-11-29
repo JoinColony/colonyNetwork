@@ -28,8 +28,7 @@ contract IColony {
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
   function acceptTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
-  function getTaskRolesCount(uint256 _id) public view returns (uint);
-  function getTaskRoleAddress (uint256 _id, uint8 _role) public view returns (address);
+  function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8);
   function getTaskWorkRating(uint256 _id, uint8 _role) public view returns (bytes32);
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
   function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
