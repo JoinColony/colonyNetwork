@@ -91,13 +91,6 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
-  // TODO: Remove this and use confirmTaskRoleIdentity
-  modifier onlyTaskWorker(uint256 _id) {
-    Role storage workerRole = tasks[_id].roles[2];
-    require(msg.sender == workerRole.user);
-    _;
-  }
-
   modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
     Role storage role = tasks[_id].roles[_role];
     require(msg.sender == role.user);

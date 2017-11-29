@@ -157,7 +157,7 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   taskNotAccepted(_id)
   workNotSubmitted(_id)
-  onlyTaskWorker(_id)
+  confirmTaskRoleIdentity(_id, 2)
   {
     tasks[_id].deliverableHash = _deliverableHash;
   }
