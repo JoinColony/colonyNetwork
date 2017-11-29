@@ -21,20 +21,22 @@ contract ColonyTask is ColonyStorage {
   {
     taskCount += 1;
     potCount += 1;
+    // TODO: try a dynamically sized array for the roles
     address[] memory _roles = new address[](3);
     uint[] memory _skillIds = new uint[](1);
+    uint8[] memory _ratings = new uint8[](2);
 
     _roles[0] = msg.sender;
     tasks[taskCount] = Task({
       specificationHash: _specificationHash,
       deliverableHash: "",
-      roles: _roles,
       accepted: false,
       cancelled: false,
       dueDate: 0,
       payoutsWeCannotMake: 0,
       potId: potCount,
-      domainId: 0,
+      domainId: 0,roles: _roles,
+      ratings: _ratings,
       skillIds: _skillIds
     });
 
@@ -90,10 +92,29 @@ contract ColonyTask is ColonyStorage {
   // their rating of their counterpart is assumed to be the highest possible and they receive a mildly negative rating
   function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
   confirmTaskRoleIdentity(_id, _role)
-  ratingDoesNotExist(_id, _role)
+  ratingSecretDoesNotExist(_id, _role)
   taskDueDatePastOrWorkSubmitted(_id)
   {
     taskWorkRatings[_id][_role] = _ratingSecret;
+  }
+
+  function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public 
+  confirmTaskRoleIdentity(_id, _role)
+  {
+    bytes32 ratingSecret = generateSecret(_salt, _rating);
+    require(ratingSecret == taskWorkRatings[_id][_role]);
+    
+    // TODO: We can avoid the if statement if the task.rating indexes match the role ids. Ref todo in Task struct declaration
+    Task storage task = tasks[_id];
+    if (_role == 1) {
+      task.ratings[1] = _rating;
+    } else if (_role == 2) {
+      task.ratings[0] = _rating;
+    }
+  }
+
+  function generateSecret(bytes32 _salt, uint256 _value) internal pure returns (bytes32) {
+    return keccak256(_salt, _value);
   }
 
   // TODO: Maybe refactor the setTaskEvaluator and setTaskWorker into the same function. 

@@ -17,8 +17,14 @@ contract('Colony', function (accounts) {
   // The base58 decoded, bytes32 converted value of the task ipfsHash
   const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
   const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
-  const _RATING_SECRET_1_ = sha3(testHelper.getRandomString(5));
-  const _RATING_SECRET_2_ = sha3(testHelper.getRandomString(5));
+  const _RATING_1_ = 3;
+  const _RATING_1_SALT = sha3(testHelper.getRandomString(5));
+  const _RATING_SECRET_1_ = sha3(_RATING_1_SALT, _RATING_1_);
+
+  const _RATING_2_ = 4;
+  const _RATING_2_SALT = sha3(testHelper.getRandomString(5));
+  const _RATING_SECRET_2_ = sha3(_RATING_2_SALT, _RATING_2_);
+
   const secondsPerDay = 86400;
 
   let colony;
@@ -46,7 +52,7 @@ contract('Colony', function (accounts) {
     await colony.approveTaskChange(1, 2, { from: WORKER });
   };
 
-  describe('when rating a task deliverable', () => {
+  describe('when rating task work', () => {
     it('should allow rating, before the due date but after the work has been submitted', async function () {
       var dueDate = new Date();
       dueDate = (dueDate.getTime() + secondsPerDay*7);
@@ -138,6 +144,42 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+  });
+
+  describe('when revealing a task work rating', () => {
+    it('should allow revealing a rating by evaluator and worker', async function () {
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() + secondsPerDay*7);
+      await setupTask(dueDate);
+      await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
+      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: WORKER });
+      
+      await colony.revealTaskWorkRating(1, 1, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR });
+      await colony.revealTaskWorkRating(1, 2, _RATING_2_, _RATING_2_SALT, { from: WORKER });
+      
+      //let ratingForManager = await colony.ratings.call(0);
+      //assert.equal(rating1, _RATING_2_);
+      //let ratingForWorker = await colony.ratings.call(1);
+      //assert.equal(rating2, _RATING_1_);
+    });
+
+    it.skip('should fail if I try to reveal rating on behalf of someone else', async function () {
+      var dueDate = new Date();
+      dueDate = (dueDate.getTime() -1);
+      await setupTask(dueDate);
+      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
+
+      let tx;
+      try {
+        tx = await colony.revealTaskWorkRating(1, 1, _RATING_1_, _RATING_1_SALT, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      //TODO: test rating hasn't been set
     });
   });
 });

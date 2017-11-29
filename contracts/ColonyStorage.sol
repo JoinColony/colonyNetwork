@@ -57,6 +57,8 @@ contract ColonyStorage is DSAuth {
     uint potId;
     uint domainId;
     address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
+    // TODO: maybe switch the roles ordering so 1 is a worker and 2 is an evaluator
+    uint8[] ratings; // (0-5) ratings for work performed by 0 => manager, 1 => worker
     uint[] skillIds;
 
     // Maps a token to the sum of all payouts of it for this task
@@ -95,7 +97,7 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
-  modifier ratingDoesNotExist(uint256 _id, uint8 _role) {
+  modifier ratingSecretDoesNotExist(uint256 _id, uint8 _role) {
     require(taskWorkRatings[_id][_role] == "");
     _;
   }
