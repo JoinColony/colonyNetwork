@@ -85,7 +85,6 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  // TODO: Once the due date has passed or the worker has made their submission, the evaluator may rate the work
   // TODO: Once three days have elapsed, no more objections or disputes can be raised.
   // TODO: In the event of a user not committing or revealing within a reasonable time,
   // their rating of their counterpart is assumed to be the highest possible and they receive a mildly negative rating
