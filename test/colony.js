@@ -166,18 +166,18 @@ contract('Colony', function (accounts) {
   describe('when updating tasks', () => {
     it('should allow the worker and evaluator roles to be assigned', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
       const evaluator = await colony.getTaskRole.call(1, 1);
       assert.equal(evaluator[0], OTHER_ACCOUNT);
 
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
       const worker = await colony.getTaskRole.call(1, 2);
       assert.equal(worker[0], THIRD_ACCOUNT);
     });
 
     it('should allow manager to submit an update of task brief and worker to approve it', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
@@ -192,7 +192,7 @@ contract('Colony', function (accounts) {
       dueDate = dueDate.getTime();
 
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
@@ -214,7 +214,7 @@ contract('Colony', function (accounts) {
 
     it('should fail if non-registered role tries to submit an update of task brief', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
 
@@ -229,8 +229,8 @@ contract('Colony', function (accounts) {
 
     it('should fail if evaluator tries to submit an update of task brief', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
 
@@ -245,7 +245,7 @@ contract('Colony', function (accounts) {
 
     it('should fail if non-registered role tries to approve an update of task brief', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
@@ -261,8 +261,8 @@ contract('Colony', function (accounts) {
 
     it('should fail if evaluator tries to approve an update of task brief', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
@@ -326,7 +326,7 @@ contract('Colony', function (accounts) {
 
     it('should fail to approve task update, using an invalid transaction id', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
 
@@ -342,7 +342,7 @@ contract('Colony', function (accounts) {
 
     it('should fail to approve task update twice', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
@@ -361,8 +361,8 @@ contract('Colony', function (accounts) {
   describe('when submitting task deliverable', () => {
     it('should update task', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), '');
 
@@ -373,8 +373,8 @@ contract('Colony', function (accounts) {
 
     it('should fail if I try to submit work for a task that is accepted', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
       await colony.acceptTask(1);
       let tx;
       try {
@@ -397,8 +397,8 @@ contract('Colony', function (accounts) {
 
     it('should fail if I try to submit work twice', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskEvaluator(1, OTHER_ACCOUNT);
-      await colony.setTaskWorker(1, THIRD_ACCOUNT);
+      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
       
       let tx;
@@ -490,7 +490,7 @@ contract('Colony', function (accounts) {
   describe('when funding tasks', () => {
     it('should be able to set the task payouts for different roles', async function () {
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await colony.mintTokens(100);
       // Set the manager payout as 5000 wei and 100 colony tokens
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 5000);
@@ -533,7 +533,7 @@ contract('Colony', function (accounts) {
 
     it('should payout agreed tokens for a task', async function (){
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await colony.mintTokens(300);
       await colony.claimColonyFunds(token.address);
       // Set the manager payout as 200 colony tokens
@@ -555,7 +555,7 @@ contract('Colony', function (accounts) {
 
     it('should payout agreed ether for a task', async function (){
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await colony.send(300);
       await colony.claimColonyFunds(0x0);
       // Set the manager payout as 200 wei

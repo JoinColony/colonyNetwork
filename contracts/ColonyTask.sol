@@ -114,29 +114,14 @@ contract ColonyTask is ColonyStorage {
     return keccak256(_salt, _value);
   }
 
-  // TODO: Maybe refactor the setTaskEvaluator and setTaskWorker into the same function. 
-
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
   // Note task assignment is agreed off-chain
-  function setTaskEvaluator(uint256 _id, address _evaluator) public
+  function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public
   taskExists(_id)
   taskNotAccepted(_id)
   {
-    tasks[_id].roles[1] = Role({
-      user: _evaluator,
-      rated: false,
-      rating: 0
-    });
-  }
-
-  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
-  // Note task assignment is agreed off-chain
-  function setTaskWorker(uint256 _id, address _worker) public
-  taskExists(_id)
-  taskNotAccepted(_id)
-  {
-    tasks[_id].roles[2] = Role({
-      user: _worker,
+    tasks[_id].roles[_role] = Role({
+      user: _user,
       rated: false,
       rating: 0
     });

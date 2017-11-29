@@ -183,7 +183,7 @@ contract('Colony', function (accounts) {
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 0);
@@ -334,7 +334,7 @@ contract('Colony', function (accounts) {
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await colony.moveFundsBetweenPots(1,2,60,otherToken.address);
 
       const txData = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 50);
@@ -356,7 +356,7 @@ contract('Colony', function (accounts) {
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
 
       const txData = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 30);
@@ -427,7 +427,7 @@ contract('Colony', function (accounts) {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
       await colony.makeTask(specificationHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
 
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 40);
       await colony.proposeTaskChange(txData1, 0, 0);

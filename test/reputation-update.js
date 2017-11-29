@@ -61,7 +61,7 @@ contract('Colony', function (accounts) {
   describe('when update added to reputation update log', () => {
     it('should be readable', async function () {
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(x[0], OTHER_ACCOUNT);
@@ -92,12 +92,12 @@ contract('Colony', function (accounts) {
       initialRepLogLength = initialRepLogLength.toNumber();
 
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       let nPrevious = x[5].toNumber();
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskWorker(2, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(2, 2, OTHER_ACCOUNT);
       await commonColony.acceptTask(2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
@@ -110,7 +110,7 @@ contract('Colony', function (accounts) {
       await commonColony.addSkill(2);
       await commonColony.addSkill(3);
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await commonColony.setTaskSkill(1, 2);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
@@ -118,7 +118,7 @@ contract('Colony', function (accounts) {
       assert.equal(x[4].toNumber(), 6);
 
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskWorker(2, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(2, 2, OTHER_ACCOUNT);
       await commonColony.setTaskSkill(2, 3);
       await commonColony.acceptTask(2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);

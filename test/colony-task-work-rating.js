@@ -45,8 +45,8 @@ contract('Colony', function (accounts) {
 
   const setupTask = async function (dueDate) {
     await colony.makeTask(specificationHash);
-    await colony.setTaskEvaluator(1, EVALUATOR);
-    await colony.setTaskWorker(1, WORKER);    
+    await colony.setTaskRoleUser(1, 1, EVALUATOR);
+    await colony.setTaskRoleUser(1, 2, WORKER);    
     const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
     await colony.proposeTaskChange(txData, 0, 0);
     await colony.approveTaskChange(1, 2, { from: WORKER });

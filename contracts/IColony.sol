@@ -20,8 +20,7 @@ contract IColony {
   function makeTask(bytes32 _specificationHash) public;
   function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public;
   function approveTaskChange(uint256 _transactionId, uint8 _role) public;
-  function setTaskEvaluator(uint256 _id, address _evaluator) public;
-  function setTaskWorker(uint256 _id, address _worker) public;
+  function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public;
   function setTaskSkill(uint256 _id, uint256 _skillId) public;
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public;
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public;
