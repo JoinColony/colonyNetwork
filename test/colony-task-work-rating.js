@@ -56,8 +56,7 @@ contract('Colony', function (accounts) {
 
   describe('when rating task work', () => {
     it('should allow rating, before the due date but after the work has been submitted', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() + secondsPerDay*7);
+      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
       await setupTask(dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
 
@@ -70,8 +69,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow rating, after the due date has passed, when no work has been submitted', async function () {
-      var dueDate = testHelper.secondsSinceEpoch();
-      await setupTask(dueDate-1);
+      var dueDate = testHelper.secondsSinceEpoch() - 1;
+      await setupTask(dueDate);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
@@ -82,8 +81,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to rate before task\'s due date has passed and work has not been submitted', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() + secondsPerDay*7);
+      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
       await setupTask(dueDate);  
   
       let tx;
@@ -116,8 +114,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to rate work on behalf of a worker', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() -1);
+      var dueDate = testHelper.secondsSinceEpoch() -1;
       await setupTask(dueDate); 
 
       let tx;
@@ -133,8 +130,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work for a task using an invalid id', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() -1);
+      var dueDate = testHelper.secondsSinceEpoch() -1;
       await setupTask(dueDate); 
 
       let tx;
@@ -165,8 +161,7 @@ contract('Colony', function (accounts) {
 
   describe('when revealing a task work rating', () => {
     it('should allow revealing a rating by evaluator and worker', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() + secondsPerDay*7);
+      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
       await setupTask(dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
@@ -185,9 +180,9 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to reveal rating with an incorrect secret', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() + secondsPerDay*7);
+      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
       await setupTask(dueDate);
+
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });

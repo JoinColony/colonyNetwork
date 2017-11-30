@@ -187,9 +187,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow manager to submit an update of task due date and worker to approve it', async function () {
-      var dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + 1);
-      dueDate = dueDate.getTime();
+      var dueDate = testHelper.secondsSinceEpoch();
 
       await colony.makeTask(specificationHash);
       await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
