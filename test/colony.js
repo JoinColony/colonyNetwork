@@ -412,6 +412,22 @@ contract('Colony', function (accounts) {
       const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), deliverableHash);
     });
+
+    it('should fail if I try to submit work if I\'m not the assigned worker', async function () {
+      await colony.makeTask(specificationHash);
+      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
+      
+      let tx;
+      try {
+        tx = await colony.submitTaskDeliverable(1, specificationHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      const task = await colony.tasks.call(1);
+      assert.notEqual(testHelper.hexToUtf8(task[1]), deliverableHash);
+    });
   });
 
   describe('when accepting a task', () => {
