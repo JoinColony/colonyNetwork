@@ -18,6 +18,10 @@ contract Colony is ColonyStorage {
     token = ERC20Extended(_token);
   }
 
+  function getToken() public view returns (address){
+    return token;
+  }
+
   function initialiseColony(address _address) public {
     require(colonyNetworkAddress == 0x0);
     colonyNetworkAddress = _address;

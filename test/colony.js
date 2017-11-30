@@ -44,7 +44,7 @@ contract('Colony', function (accounts) {
     colony = await IColony.at(address);
     let authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
-    let tokenAddress = await colony.token.call();
+    let tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
   });
 

@@ -6,7 +6,7 @@ pragma experimental "ABIEncoderV2";
 contract IColony {
   function authority() public view returns (address);
   function owner() public view returns (address);
-  function token() public view returns (address);
+  function getToken() public view returns (address);
 
   function version() public view returns (uint256);
   function setToken(address _token) public;
