@@ -90,4 +90,8 @@ module.exports = {
   hexToUtf8(text) {
     return web3.toAscii(text).replace(/\u0000/g, '');
   },
+  secondsSinceEpoch()
+  { 
+    return Math.floor( Date.now() / 1000 ) ;
+  },
 };
