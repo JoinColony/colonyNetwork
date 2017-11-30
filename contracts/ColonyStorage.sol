@@ -108,7 +108,7 @@ contract ColonyStorage is DSAuth {
   }
 
   modifier taskDueDatePastOrWorkSubmitted(uint256 _id) {
-    require(tasks[_id].dueDate >= now || tasks[_id].deliverableHash != "");
+    require(tasks[_id].dueDate < now || tasks[_id].deliverableHash != "");
     _;
   }
 

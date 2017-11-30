@@ -80,14 +80,14 @@ contract('Colony', function (accounts) {
       assert.equal(rating2, _RATING_SECRET_2_);
     });
 
-    it('should fail if I try to submit work for a task before its due date has passed and work has not been submitted', async function () {
+    it('should fail if I try to rate before task\'s due date has passed and work has not been submitted', async function () {
       var dueDate = new Date();
       dueDate = (dueDate.getTime() + secondsPerDay*7);
       await setupTask(dueDate);  
   
       let tx;
       try {
-        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { gas: GAS_TO_SPEND });
+        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from:EVALUATOR, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
