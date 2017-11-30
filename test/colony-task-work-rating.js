@@ -184,21 +184,23 @@ contract('Colony', function (accounts) {
       assert.equal(roleWorker[2].toNumber(), _RATING_1_);
     });
 
-    it.skip('should fail if I try to reveal rating on behalf of someone else', async function () {
+    it('should fail if I try to reveal rating with an incorrect secret', async function () {
       var dueDate = new Date();
-      dueDate = (dueDate.getTime() -1);
+      dueDate = (dueDate.getTime() + secondsPerDay*7);
       await setupTask(dueDate);
+      await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
-
+      await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
       let tx;
       try {
-        tx = await colony.revealTaskWorkRating(1, 1, _RATING_1_, _RATING_1_SALT, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.revealTaskWorkRating(1, 0, _RATING_2_, _RATING_1_SALT, { from: WORKER, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      //TODO: test rating hasn't been set
+      let roleManager = await colony.getTaskRole.call(1, 0);
+      assert.isFalse(roleManager[1]);
     });
   });
 });
