@@ -70,9 +70,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow rating, after the due date has passed, when no work has been submitted', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() - 1);
-      await setupTask(dueDate);
+      var dueDate = testHelper.secondsSinceEpoch();
+      await setupTask(dueDate-1);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
@@ -100,9 +99,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail, if I try to rate work twice', async function () {
-      var dueDate = new Date();
-      dueDate = (dueDate.getTime() - 1);
-      await setupTask(dueDate);
+      var dueDate = testHelper.secondsSinceEpoch();
+      await setupTask(dueDate - 1);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       let tx;
