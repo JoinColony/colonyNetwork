@@ -145,6 +145,22 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
+
+    it('should fail if I try to rate work for a role that\'s not setup to be rated', async function () {
+      var dueDate = testHelper.secondsSinceEpoch();
+      await setupTask(dueDate - 1); 
+
+      let tx;
+      try {
+        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let rating = await colony.taskWorkRatings.call(1, 0);
+      assert.notEqual(rating, _RATING_SECRET_1_);
+    });
   });
 
   describe('when revealing a task work rating', () => {
