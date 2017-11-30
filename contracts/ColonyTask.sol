@@ -105,12 +105,12 @@ contract ColonyTask is ColonyStorage {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id][_role]);
     
-    Task storage task = tasks[_id];
-    task.roles[_role].rated = true;
-    task.roles[_role].rating = _rating;
+    Role storage role = tasks[_id].roles[_role];
+    role.rated = true;
+    role.rating = _rating;
   }
 
-  function generateSecret(bytes32 _salt, uint256 _value) internal pure returns (bytes32) {
+  function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
     return keccak256(_salt, _value);
   }
 
