@@ -97,6 +97,19 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
+  modifier userCanRateRole(uint256 _id, uint8 _role) {
+    // Manager rated by worker
+    // Worker rated by evaluator
+    if (_role == 0) {
+      require(tasks[_id].roles[2].user == msg.sender);
+    } else if (_role == 2) {
+      require(tasks[_id].roles[1].user == msg.sender);
+    } else {
+      revert();
+    }
+    _;    
+  }
+
   modifier ratingSecretDoesNotExist(uint256 _id, uint8 _role) {
     require(taskWorkRatings[_id][_role] == "");
     _;

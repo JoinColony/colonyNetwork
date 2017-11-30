@@ -92,16 +92,14 @@ contract ColonyTask is ColonyStorage {
   // TODO: In the event of a user not committing or revealing within a reasonable time,
   // their rating of their counterpart is assumed to be the highest possible and they receive a mildly negative rating
   function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
-  confirmTaskRoleIdentity(_id, _role)
+  userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
   taskDueDatePastOrWorkSubmitted(_id)
   {
     taskWorkRatings[_id][_role] = _ratingSecret;
   }
 
-  function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public 
-  confirmTaskRoleIdentity(_id, _role)
-  {
+  function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id][_role]);
     

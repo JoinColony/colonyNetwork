@@ -19,11 +19,11 @@ contract('Colony', function (accounts) {
   const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
   const _RATING_1_ = 3;
   const _RATING_1_SALT = sha3(testHelper.getRandomString(5));
-  const _RATING_SECRET_1_ = sha3(_RATING_1_SALT, _RATING_1_);
+  let _RATING_SECRET_1_;
 
   const _RATING_2_ = 4;
-  const _RATING_2_SALT = sha3(testHelper.getRandomString(5));
-  const _RATING_SECRET_2_ = sha3(_RATING_2_SALT, _RATING_2_);
+  const _RATING_2_SALT = '0xb77d57f4959eafa0339424b83fcfaf9c15407461';
+  let _RATING_SECRET_2_;
 
   const secondsPerDay = 86400;
 
@@ -41,6 +41,8 @@ contract('Colony', function (accounts) {
     await colonyNetwork.createColony(COLONY_KEY);
     let address = await colonyNetwork.getColony.call(COLONY_KEY);
     colony = await IColony.at(address);
+    _RATING_SECRET_1_ = await colony.generateSecret.call(_RATING_1_SALT, _RATING_1_);
+    _RATING_SECRET_2_ = await colony.generateSecret.call(_RATING_2_SALT, _RATING_2_);
   });
 
   const setupTask = async function (dueDate) {
@@ -59,11 +61,11 @@ contract('Colony', function (accounts) {
       await setupTask(dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
 
-      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
-      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: WORKER });
-      let rating1 = await colony.getTaskWorkRating.call(1, 1);
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
+      let rating1 = await colony.getTaskWorkRating.call(1, 2);
       assert.equal(rating1, _RATING_SECRET_1_);
-      let rating2 = await colony.getTaskWorkRating.call(1, 2);
+      let rating2 = await colony.getTaskWorkRating.call(1, 0);
       assert.equal(rating2, _RATING_SECRET_2_);
     });
 
@@ -72,11 +74,11 @@ contract('Colony', function (accounts) {
       dueDate = (dueDate.getTime() - 1);
       await setupTask(dueDate);
 
-      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
-      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: WORKER });
-      let rating1 = await colony.getTaskWorkRating.call(1, 1);
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
+      let rating1 = await colony.getTaskWorkRating.call(1, 2);
       assert.equal(rating1, _RATING_SECRET_1_);
-      let rating2 = await colony.getTaskWorkRating.call(1, 2);
+      let rating2 = await colony.getTaskWorkRating.call(1, 0);
       assert.equal(rating2, _RATING_SECRET_2_);
     });
 
@@ -87,13 +89,13 @@ contract('Colony', function (accounts) {
   
       let tx;
       try {
-        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from:EVALUATOR, gas: GAS_TO_SPEND });
+        tx = await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from:EVALUATOR, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let rating = await colony.getTaskWorkRating.call(1, 1);
+      let rating = await colony.getTaskWorkRating.call(1, 2);
       assert.notEqual(rating, _RATING_SECRET_1_);    
     });
 
@@ -102,16 +104,16 @@ contract('Colony', function (accounts) {
       dueDate = (dueDate.getTime() - 1);
       await setupTask(dueDate);
 
-      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       let tx;
       try {
-        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_2_, { from: EVALUATOR, gas: GAS_TO_SPEND });
+        tx = await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: EVALUATOR, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let rating = await colony.getTaskWorkRating.call(1, 1);
+      let rating = await colony.getTaskWorkRating.call(1, 2);
       assert.equal(rating, _RATING_SECRET_1_);
     });
 
@@ -122,13 +124,13 @@ contract('Colony', function (accounts) {
 
       let tx;
       try {
-        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_1_, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let rating = await colony.getTaskWorkRating.call(1, 1);
+      let rating = await colony.getTaskWorkRating.call(1, 0);
       assert.notEqual(rating, _RATING_SECRET_1_);
     });
 
@@ -139,7 +141,7 @@ contract('Colony', function (accounts) {
 
       let tx;
       try {
-        tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { gas: GAS_TO_SPEND });
+        tx = await colony.submitTaskWorkRating(10, 2, _RATING_SECRET_1_, { from: EVALUATOR, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
@@ -153,23 +155,26 @@ contract('Colony', function (accounts) {
       dueDate = (dueDate.getTime() + secondsPerDay*7);
       await setupTask(dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
-      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
-      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: WORKER });
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
       
-      await colony.revealTaskWorkRating(1, 1, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR });
-      await colony.revealTaskWorkRating(1, 2, _RATING_2_, _RATING_2_SALT, { from: WORKER });
+      await colony.revealTaskWorkRating(1, 2, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR });
+      await colony.revealTaskWorkRating(1, 0, _RATING_2_, _RATING_2_SALT, { from: WORKER });
       
-      //let ratingForManager = await colony.ratings.call(0);
-      //assert.equal(rating1, _RATING_2_);
-      //let ratingForWorker = await colony.ratings.call(1);
-      //assert.equal(rating2, _RATING_1_);
+      let roleManager = await colony.getTaskRole.call(1, 0);
+      assert.isTrue(roleManager[1]);
+      assert.equal(roleManager[2].toNumber(), _RATING_2_);
+
+      let roleWorker = await colony.getTaskRole.call(1, 2);
+      assert.isTrue(roleWorker[1]);
+      assert.equal(roleWorker[2].toNumber(), _RATING_1_);
     });
 
     it.skip('should fail if I try to reveal rating on behalf of someone else', async function () {
       var dueDate = new Date();
       dueDate = (dueDate.getTime() -1);
       await setupTask(dueDate);
-      await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
 
       let tx;
       try {
