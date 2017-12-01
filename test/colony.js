@@ -423,7 +423,7 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.notEqual(testHelper.hexToUtf8(task[1]), deliverableHash);
     });
   });

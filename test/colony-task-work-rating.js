@@ -61,11 +61,20 @@ contract('Colony', function (accounts) {
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+      let currentTime1 = testHelper.secondsSinceEpoch();
+      let rating1 = await colony.getTaskWorkRatings.call(1);
+      assert.equal(rating1[0], 1);
+      assert.equal(rating1[1], currentTime1);
+      const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(1, 2);
+      assert.equal(ratingSecret1, _RATING_SECRET_1_);
+
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
-      let rating1 = await colony.getTaskWorkRating.call(1, 2);
-      assert.equal(rating1, _RATING_SECRET_1_);
-      let rating2 = await colony.getTaskWorkRating.call(1, 0);
-      assert.equal(rating2, _RATING_SECRET_2_);
+      let currentTime2 = testHelper.secondsSinceEpoch();
+      let rating2 = await colony.getTaskWorkRatings.call(1);
+      assert.equal(rating2[0], 2);
+      assert.equal(rating2[1], currentTime2);
+      const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(1, 0);
+      assert.equal(ratingSecret2, _RATING_SECRET_2_);
     });
 
     it('should allow rating, after the due date has passed, when no work has been submitted', async function () {
@@ -74,10 +83,11 @@ contract('Colony', function (accounts) {
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
-      let rating1 = await colony.getTaskWorkRating.call(1, 2);
-      assert.equal(rating1, _RATING_SECRET_1_);
-      let rating2 = await colony.getTaskWorkRating.call(1, 0);
-      assert.equal(rating2, _RATING_SECRET_2_);
+      const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(1, 2);
+      assert.equal(ratingSecret1, _RATING_SECRET_1_);
+
+      const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(1, 0);
+      assert.equal(ratingSecret2, _RATING_SECRET_2_);
     });
 
     it('should fail if I try to rate before task\'s due date has passed and work has not been submitted', async function () {
@@ -92,7 +102,10 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let rating = await colony.getTaskWorkRating.call(1, 2);
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0], 0);  
+
+      let rating = await colony.getTaskWorkRatingSecret.call(1, 2);
       assert.notEqual(rating, _RATING_SECRET_1_);    
     });
 
@@ -109,8 +122,10 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let rating = await colony.getTaskWorkRating.call(1, 2);
-      assert.equal(rating, _RATING_SECRET_1_);
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0], 1);  
+      const ratingSecret = await colony.getTaskWorkRatingSecret.call(1, 2);
+      assert.equal(ratingSecret, _RATING_SECRET_1_);  
     });
 
     it('should fail if I try to rate work on behalf of a worker', async function () {
@@ -125,7 +140,9 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let rating = await colony.getTaskWorkRating.call(1, 0);
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0], 0);  
+      let rating = await colony.getTaskWorkRatingSecret.call(1, 0);
       assert.notEqual(rating, _RATING_SECRET_1_);
     });
 
@@ -154,8 +171,8 @@ contract('Colony', function (accounts) {
       }
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      let rating = await colony.taskWorkRatings.call(1, 0);
-      assert.notEqual(rating, _RATING_SECRET_1_);
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0], 0);  
     });
   });
 

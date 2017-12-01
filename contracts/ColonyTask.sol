@@ -96,12 +96,15 @@ contract ColonyTask is ColonyStorage {
   ratingSecretDoesNotExist(_id, _role)
   taskDueDatePastOrWorkSubmitted(_id)
   {
-    taskWorkRatings[_id][_role] = _ratingSecret;
+    RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
+    ratingSecrets.count += 1;
+    ratingSecrets.timestamp = now;
+    ratingSecrets.secret[_role] = _ratingSecret;
   }
 
   function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
-    require(ratingSecret == taskWorkRatings[_id][_role]);
+    require(ratingSecret == taskWorkRatings[_id].secret[_role]);
     
     Role storage role = tasks[_id].roles[_role];
     role.rated = true;
@@ -110,6 +113,14 @@ contract ColonyTask is ColonyStorage {
 
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
     return keccak256(_salt, _value);
+  }
+
+  function getTaskWorkRatings(uint _id) public view returns (uint256, uint256) {
+    return (taskWorkRatings[_id].count, taskWorkRatings[_id].timestamp);
+  }
+
+  function getTaskWorkRatingSecret(uint _id, uint8 _role) public view returns (bytes32) {
+    return taskWorkRatings[_id].secret[_role];
   }
 
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
@@ -193,11 +204,5 @@ contract ColonyTask is ColonyStorage {
   function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8) {
     Role storage role = tasks[_id].roles[_role];
     return (role.user, role.rated, role.rating);
-  }
-
-  function getTaskWorkRating(uint _id, uint8 _role) public view 
-  returns (bytes32)
-  {
-    return taskWorkRatings[_id][_role];
   }
 }

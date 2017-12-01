@@ -41,7 +41,7 @@ contract ColonyStorage is DSAuth {
   // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
   mapping (address => uint) nonRewardPotsTotal;
 
-  mapping (uint => mapping (uint8 => bytes32)) public taskWorkRatings;
+  mapping (uint => RatingSecrets) public taskWorkRatings;
 
   uint taskCount;
   uint potCount;
@@ -69,6 +69,12 @@ contract ColonyStorage is DSAuth {
     address user;
     bool rated;
     uint8 rating;
+  }
+
+  struct RatingSecrets {
+    uint256 count;
+    uint256 timestamp;
+    mapping (uint8 => bytes32) secret;
   }
 
   struct Pot {
@@ -111,7 +117,7 @@ contract ColonyStorage is DSAuth {
   }
 
   modifier ratingSecretDoesNotExist(uint256 _id, uint8 _role) {
-    require(taskWorkRatings[_id][_role] == "");
+    require(taskWorkRatings[_id].secret[_role] == "");
     _;
   }
 
