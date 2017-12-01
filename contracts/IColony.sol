@@ -31,7 +31,7 @@ contract IColony {
 
 
 
-  function tasks(uint taskId) public returns (bytes32, bool, bool, uint256, uint256, uint256, uint256);
+  function getTask(uint taskId) public returns (bytes32, bool, bool, uint256, uint256, uint256, uint256);
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public;
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev);
   function getTaskPayout(uint _id, uint _role, address _token) public view returns (uint);

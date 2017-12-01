@@ -62,7 +62,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should return zero task count', async function () {
-      const taskCount = await colony.taskCount.call();
+      const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount, 0);
     });
 
@@ -118,8 +118,7 @@ contract('Colony', function (accounts) {
   describe('when creating tasks', () => {
     it('should allow admins to make task', async function () {
       await colony.makeTask(ipfsDecodedHash);
-      const task = await colony.tasks.call(1);
-      console.log('task', task);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
       assert.isFalse(task[1]);
       assert.isFalse(task[2]);
@@ -174,7 +173,7 @@ contract('Colony', function (accounts) {
       const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
 
@@ -188,7 +187,7 @@ contract('Colony', function (accounts) {
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.equal(task[3], dueDate);
       const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 1);
@@ -355,7 +354,7 @@ contract('Colony', function (accounts) {
     it('should set the task "accepted" property to "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[1]);
     });
 
@@ -397,7 +396,7 @@ contract('Colony', function (accounts) {
     it('should set the task "cancelled" property to "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.cancelTask(1);
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[2]);
     });
 

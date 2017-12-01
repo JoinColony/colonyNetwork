@@ -27,7 +27,7 @@ contract ColonyStorage is DSAuth, DSMath {
 
   address colonyNetworkAddress;
   ERC20Extended token;
-  mapping (uint => Task) public tasks;
+  mapping (uint => Task) tasks;
 
   // Pots can be tied to tasks or to (in the future) domains, so giving them their own mapping.
   // Pot 1  can be thought of as the pot belonging to the colony itself that hasn't been assigned

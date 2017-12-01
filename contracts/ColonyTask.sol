@@ -144,6 +144,13 @@ contract ColonyTask is ColonyStorage {
     tasks[_id].cancelled = true;
   }
 
+  function getTask(uint256 _id) public view
+  returns (bytes32, bool, bool, uint, uint, uint, uint)
+  {
+    Task storage t = tasks[_id];
+    return (t.ipfsDecodedHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.domainId);
+  }
+
   function getTaskRolesCount(uint _id) public view
   returns (uint rolesCount)
   {
