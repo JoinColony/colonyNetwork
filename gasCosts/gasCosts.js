@@ -49,7 +49,7 @@ contract('all', function (accounts) {
     console.log('createColony actual cost : ', tx.receipt.gasUsed);
     const address = await colonyNetwork.getColony.call('Antz');
     colony = await IColony.at(address);
-    const tokenAddress = await colony.token.call();
+    const tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
     const authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
