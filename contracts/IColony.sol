@@ -26,7 +26,7 @@ contract IColony {
   function mintTokens(uint128 _wad) public;
   function addSkill(uint _parentSkillId) public;
   function taskCount() public view returns (uint);
-  function transactionCount() public view returns (uint);
+  function getTransactionCount() public view returns (uint);
 
 
 

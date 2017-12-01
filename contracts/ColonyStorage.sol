@@ -12,12 +12,12 @@ contract ColonyStorage is DSAuth, DSMath {
   //TODO: Remove 'public' for all variables here, and define getters on appropriate subcontracts
   address resolver;
 
-  mapping (uint => Transaction) public transactions;
+  mapping (uint => Transaction) transactions;
   // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping (bytes4 => uint8[2]) public reviewers;
+  mapping (bytes4 => uint8[2]) reviewers;
   // Maps transactions to roles and whether they've confirmed the transaction
-  mapping (uint => mapping (uint => bool)) public confirmations;
-  uint public transactionCount;
+  mapping (uint => mapping (uint => bool)) confirmations;
+  uint transactionCount;
 
   struct Transaction {
     bytes data;

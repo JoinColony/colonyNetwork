@@ -36,6 +36,10 @@ contract ColonyTransactionReviewer is ColonyStorage {
     reviewers[_sig] = _reviewers;
   }
 
+  function getTransactionCount() public view returns (uint){
+    return transactionCount;
+  }
+
   function submitTransaction(bytes data, uint value, uint8 role)
   self
   returns (uint transactionId) {

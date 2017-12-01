@@ -190,6 +190,8 @@ contract('Colony', function (accounts) {
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
       const task = await colony.tasks.call(1);
       assert.equal(task[3], dueDate);
+      const transactionCount = await colony.getTransactionCount.call();
+      assert.equal(transactionCount.toNumber(), 1);
     });
 
     it('should fail if a non-colony call is made to the task update functions', async function () {
@@ -277,7 +279,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      const transactionCount = await colony.transactionCount.call();
+      const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -293,7 +295,7 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
 
-      const transactionCount = await colony.transactionCount.call();
+      const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -310,7 +312,7 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
 
-      const transactionCount = await colony.transactionCount.call();
+      const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
