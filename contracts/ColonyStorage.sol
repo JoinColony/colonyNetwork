@@ -3,11 +3,10 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
-import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 
 
-contract ColonyStorage is DSAuth, DSMath {
+contract ColonyStorage is DSAuth {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
@@ -125,16 +124,6 @@ contract ColonyStorage is DSAuth, DSMath {
 
   modifier workNotSubmitted(uint256 _id) {
     require(tasks[_id].deliverableTimestamp == 0);
-    _;
-  }
-
-  modifier taskWorkRatingOpen(uint256 _id) {
-    // Check we are either past the due date or work has already been submitted
-    uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    require(taskCompletionTime > 0 && taskCompletionTime <= now);
-
-    // Check we are within 5 days of the work submission time
-    require(sub(now, taskCompletionTime) < 432000);
     _;
   }
 

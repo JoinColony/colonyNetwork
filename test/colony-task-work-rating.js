@@ -111,7 +111,7 @@ contract('Colony', function (accounts) {
 
     it('should fail, if I try to rate work twice', async function () {
       var dueDate = testHelper.secondsSinceEpoch();
-      await setupTask(dueDate - 1);
+      await setupTask(dueDate);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       let tx;
@@ -126,6 +126,23 @@ contract('Colony', function (accounts) {
       assert.equal(ratingSecrets[0], 1);  
       const ratingSecret = await colony.getTaskWorkRatingSecret.call(1, 2);
       assert.equal(ratingSecret, _RATING_SECRET_1_);  
+    });
+
+    it('should fail if I try to rate a task too late', async function () {
+      var dueDate = testHelper.secondsSinceEpoch();
+      await setupTask(dueDate);  
+      
+      testHelper.forwardTime(secondsPerDay*5 + 1);
+      let tx;
+      try {
+        tx = await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from:EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0], 0);  
     });
 
     it('should fail if I try to rate work on behalf of a worker', async function () {
@@ -204,6 +221,26 @@ contract('Colony', function (accounts) {
       let tx;
       try {
         tx = await colony.revealTaskWorkRating(1, 0, _RATING_2_, _RATING_1_SALT, { from: WORKER, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let roleManager = await colony.getTaskRole.call(1, 0);
+      assert.isFalse(roleManager[1]);
+    });
+
+    it('should fail if I try to reveal a rating late', async function () {
+      var dueDate = testHelper.secondsSinceEpoch() - 1;
+      await setupTask(dueDate);
+
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
+
+      testHelper.forwardTime(secondsPerDay*7);
+      let tx;
+      try {
+        tx = await colony.revealTaskWorkRating(1, 0, _RATING_2_, _RATING_2_SALT, { from: WORKER, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }

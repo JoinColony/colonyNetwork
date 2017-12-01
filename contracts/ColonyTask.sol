@@ -2,17 +2,33 @@ pragma solidity ^0.4.17;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
+import "../lib/dappsys/math.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 import "./IColony.sol";
 
 
-contract ColonyTask is ColonyStorage {
+contract ColonyTask is ColonyStorage, DSMath {
   event TaskAdded(uint256 indexed id);
 
   modifier skillExists(uint256 _skillId){
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     require(_skillId < colonyNetworkContract.getSkillCount());
+    _;
+  }
+
+  modifier taskWorkRatingOpen(uint256 _id) {
+    // Check we are either past the due date or work has already been submitted
+    uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
+    require(taskCompletionTime > 0 && taskCompletionTime <= now);
+
+    // Check we are within 5 days of the work submission time
+    require(sub(now, taskCompletionTime) < 432000);
+    _;
+  }
+
+  modifier taskWorkRatingRevealOpen(uint256 _id) {
+    require(sub(now, taskWorkRatings[_id].timestamp) < 432000);
     _;
   }
 
@@ -100,7 +116,9 @@ contract ColonyTask is ColonyStorage {
     ratingSecrets.secret[_role] = _ratingSecret;
   }
 
-  function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public {
+  function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public 
+  taskWorkRatingRevealOpen(_id)
+  {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id].secret[_role]);
     
