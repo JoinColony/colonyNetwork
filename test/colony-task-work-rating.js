@@ -64,7 +64,7 @@ contract('Colony', function (accounts) {
       let currentTime1 = testHelper.secondsSinceEpoch();
       let rating1 = await colony.getTaskWorkRatings.call(1);
       assert.equal(rating1[0], 1);
-      assert.equal(rating1[1], currentTime1);
+      assert.equal(rating1[1].toNumber(), currentTime1);
       const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(1, 2);
       assert.equal(ratingSecret1, _RATING_SECRET_1_);
 
@@ -72,7 +72,7 @@ contract('Colony', function (accounts) {
       let currentTime2 = testHelper.secondsSinceEpoch();
       let rating2 = await colony.getTaskWorkRatings.call(1);
       assert.equal(rating2[0], 2);
-      assert.equal(rating2[1], currentTime2);
+      assert.equal(rating2[1].toNumber(), currentTime2);
       const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(1, 0);
       assert.equal(ratingSecret2, _RATING_SECRET_2_);
     });
@@ -178,9 +178,8 @@ contract('Colony', function (accounts) {
 
   describe('when revealing a task work rating', () => {
     it('should allow revealing a rating by evaluator and worker', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
+      var dueDate = testHelper.secondsSinceEpoch() - 1;
       await setupTask(dueDate);
-      await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
       
@@ -197,10 +196,9 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to reveal rating with an incorrect secret', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
+      var dueDate = testHelper.secondsSinceEpoch() - 1;
       await setupTask(dueDate);
 
-      await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
       let tx;

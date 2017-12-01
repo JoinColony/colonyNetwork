@@ -89,13 +89,10 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  // TODO: Once three days have elapsed, no more objections or disputes can be raised.
-  // TODO: In the event of a user not committing or revealing within a reasonable time,
-  // their rating of their counterpart is assumed to be the highest possible and they receive a mildly negative rating
   function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
-  taskDueDatePastOrWorkSubmitted(_id)
+  taskWorkRatingOpen(_id)
   {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     ratingSecrets.count += 1;
