@@ -12,32 +12,31 @@ contract IColony {
   function setToken(address _token) public;
   function initialiseColony(address _network) public;
   function makeTask(bytes32 _ipfsDecodedHash) public;
-  function proposeTaskChange(bytes _data, uint _value, uint8 _role) public;
-  function approveTaskChange(uint _transactionId, uint8 _role) public;
+  function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public;
+  function approveTaskChange(uint256 _transactionId, uint8 _role) public;
   function setTaskEvaluator(uint256 _id, address _evaluator) public;
   function setTaskWorker(uint256 _id, address _worker) public;
-  function setTaskSkill(uint _id, uint _skillId) public;
+  function setTaskSkill(uint256 _id, uint256 _skillId) public;
   function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public;
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public;
   function acceptTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
-  function getTaskRolesCount(uint _id) public view returns (uint);
-  function getTaskRoleAddress (uint _id, uint _role) public view returns (address);
+  function getTaskRolesCount(uint256 _id) public view returns (uint);
+  function getTaskRoleAddress (uint256 _id, uint256 _role) public view returns (address);
   function mintTokens(uint128 _wad) public;
-  function addSkill(uint _parentSkillId) public;
+  function addSkill(uint256 _parentSkillId) public;
   function getTaskCount() public view returns (uint);
   function getTransactionCount() public view returns (uint);
 
 
 
 
-  function getTask(uint taskId) public returns (bytes32, bool, bool, uint256, uint256, uint256, uint256);
-  function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public;
-  function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev);
-  function getTaskPayout(uint _id, uint _role, address _token) public view returns (uint);
-  function claimPayout(uint _id, uint _role, address _token) public;
+  function getTask(uint256 taskId) public returns (bytes32, bool, bool, uint256, uint256, uint256, uint256);
+  function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) public;
+  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint);
+  function claimPayout(uint256 _id, uint256 _role, address _token) public;
   function getPotBalance(uint256 _potId, address _token) public view returns (uint);
-  function moveFundsBetweenPots(uint _fromPot, uint _toPot, uint _amount, address _token) public;
+  function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public;
   function claimColonyFunds(address _token) public;
   function getFeeInverse() public pure returns (uint);
   function getRewardInverse() public pure returns (uint);

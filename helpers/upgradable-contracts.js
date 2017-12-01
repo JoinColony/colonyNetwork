@@ -1,4 +1,6 @@
 const assert = require('assert');
+const fs = require('fs');
+import sha3 from 'solidity-sha3';
 
 module.exports = {
   async setupUpgradableToken (token, resolver, etherRouter) {
@@ -51,135 +53,57 @@ module.exports = {
     assert.equal(_registeredResolver, resolver.address);
   },
   async setupColonyVersionResolver (colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork) {
-    await resolver.register("getToken()", colony.address, 32);
-    await resolver.register("version()", colony.address, 32);
-    await resolver.register("reviewers(bytes4,uint256)", colony.address, 32);
-    await resolver.register("getTask(uint256)", colonyTask.address, 224);
-    await resolver.register("getTaskCount()", colonyTask.address, 32);
-    await resolver.register("getTransactionCount()", colonyTransactionReviewer.address, 32);
-    await resolver.register("setToken(address)", colony.address, 0);
-    await resolver.register("makeTask(bytes32)", colonyTask.address, 0);
-    await resolver.register("proposeTaskChange(bytes,uint256,uint8)", colonyTask.address, 32);
-    await resolver.register("approveTaskChange(uint256,uint8)", colonyTask.address, 0);
-    await resolver.register("setTaskEvaluator(uint256,address)", colonyTask.address, 0);
-    await resolver.register("setTaskWorker(uint256,address)", colonyTask.address, 0);
-    await resolver.register("setTaskBrief(uint256,bytes32)", colonyTask.address, 0);
-    await resolver.register("acceptTask(uint256)", colonyTask.address, 0);
-    await resolver.register("cancelTask(uint256)", colonyTask.address, 0);
-    await resolver.register("setTaskDueDate(uint256,uint256)", colonyTask.address, 0);
-    await resolver.register("setTaskPayout(uint256,uint256,address,uint256)", colonyFunding.address, 0);
-    await resolver.register("getTaskRolesCount(uint256)", colonyTask.address, 32);
-    await resolver.register("getTaskRoleAddress(uint256,uint256)", colonyTask.address, 32);
-    await resolver.register("getTaskPayout(uint256,uint256,address)", colonyFunding.address, 32);
-    await resolver.register("claimPayout(uint256,uint256,address)", colonyFunding.address, 0);
-    await resolver.register("mintTokens(uint128)", colony.address, 0);
-    await resolver.register("getPotBalance(uint256,address)", colonyFunding.address, 32);
-    await resolver.register("moveFundsBetweenPots(uint256,uint256,uint256,address)", colonyFunding.address, 0);
-    await resolver.register("claimColonyFunds(address)", colonyFunding.address, 0);
-    await resolver.register("initialiseColony(address)", colony.address, 0);
-    await resolver.register("addSkill(uint256)", colony.address, 0);
-    await resolver.register("setTaskSkill(uint256,uint256)", colonyTask.address, 0);
-    await resolver.register("submitTransaction(bytes,uint256,uint8)", colonyTransactionReviewer.address, 32);
-    await resolver.register("confirmTransaction(uint256,uint8)", colonyTransactionReviewer.address, 0);
-    await resolver.register("setFunctionReviewers(bytes4,uint8,uint8)", colonyTransactionReviewer.address, 0);
-    await resolver.register("getNonRewardPotsTotal(address)", colonyFunding.address, 32);
+    const deployedImplementations = {};
+    deployedImplementations['Colony'] = colony.address;
+    deployedImplementations['ColonyTask'] = colonyTask.address;
+    deployedImplementations['ColonyFunding'] = colonyFunding.address;
+    deployedImplementations['ColonyTransactionReviewer'] = colonyTransactionReviewer.address;
 
-    let response = await resolver.lookup.call('0x21df0da7'); // getToken();
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x54fd4d50'); // version
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0xe92ed89d'); // reviewers
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x1d65e77e'); // getTask(uint256);
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 224);
-    response = await resolver.lookup.call('0xc17a340e'); // getTaskCount()
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x2e7700f0'); // getTransactionCount()
-    assert.equal(response[0], colonyTransactionReviewer.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x144fa6d7'); // setToken
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x560c6d92'); // makeTask
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x6b460bff'); // proposeTaskChange
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0xf4ae4f08'); // approveTaskChange
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x05498b88'); // setTaskEvaluator
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xbbe8f783'); // setTaskWorker
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xda4db249'); // setTaskBrief
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x1bf6912d'); // acceptTask
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x7eec20a8'); // cancelTask
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xcae960fe'); // setTaskDueDate
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xbe2320af'); // setTaskPayout
-    assert.equal(response[0], colonyFunding.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x2b47827f'); // getTaskRolesCount
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0xe9ec8cc3'); // getTaskRoleAddress
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0xf409a8c4'); // getTaskPayout
-    assert.equal(response[0], colonyFunding.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0xed5923b6'); // claimPayout
-    assert.equal(response[0], colonyFunding.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x5ab75c42'); // mintTokens
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xed8b4eb1'); // getPotBalance(uint256,address)
-    assert.equal(response[0], colonyFunding.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0x440f4419'); // moveFundsBetweenPots(uint256,uint256,uint256,address)
-    assert.equal(response[0], colonyFunding.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x89224a1e'); // claimColonyFunds(address)
-    assert.equal(response[0], colonyFunding.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x5d90f53c'); // initialiseColony(address)
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x162419cc'); // addSkill
-    assert.equal(response[0], colony.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xb8984c5a'); // setTaskSkill(uint256,uint256);
-    assert.equal(response[0], colonyTask.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0xc9a004d5'); //submitTransaction(bytes,uint256,uint8)
-    assert.equal(response[0], colonyTransactionReviewer.address);
-    assert.equal(response[1], 32);
-    response = await resolver.lookup.call('0xb481860c'); //confirmTransaction(uint256,uint8)
-    assert.equal(response[0], colonyTransactionReviewer.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x026e1146'); //setFunctionReviewers(bytes4,uint8,uint8)
-    assert.equal(response[0], colonyTransactionReviewer.address);
-    assert.equal(response[1], 0);
-    response = await resolver.lookup.call('0x34fa7aa2'); //getNonRewardPotsTotal(address)
-    assert.equal(response[0], colonyFunding.address);
-    assert.equal(response[1], 32);
+    let functionsToResolve = {};
+
+    // Load IColony ABI
+    const iColonyAbi = JSON.parse(fs.readFileSync('./build/contracts/IColony.json', 'utf8')).abi;
+    iColonyAbi.map( (value, index) => {
+        let fName = value.name;
+        if (fName==='authority' || fName === 'owner') { return; } //These are from DSAuth, and so are on EtherRouter itself without any more help.
+        let fInputs = value.inputs.map(parameter => parameter.type) // Gets the types of the parameters, which is all we care about for function signatures.
+        let fOutputSize = value.outputs.length * 32;
+        // Record function name and how much data is returned
+        functionsToResolve[fName] = {inputs: fInputs, outputSize: fOutputSize, definedIn: ""}
+    })
+
+    function parseImplementation(contractName){
+        const abi = JSON.parse(fs.readFileSync('./build/contracts/' + contractName + '.json')).abi
+        abi.map( (value, index) => {
+            let fName = value.name;
+            if (functionsToResolve[fName]){
+                if (functionsToResolve[fName].definedIn !== ''){
+                    // It's a Friday afternoon, and I can't be bothered to deal with same name, different signature. Let's just resolve to not do it? We'd probably just
+                    // trip ourselves up later.
+                    console.log('What are you doing defining functions with the same name in different files!? You are going to do yourself a mischief. You seem to have two ', fName, ' in ', contractName, 'and ', functionsToResolve[fName].definedIn)
+                    process.exit(1);
+                }
+                functionsToResolve[fName].definedIn = deployedImplementations[contractName];
+            }
+        })
+    }
+    parseImplementation('Colony')
+    parseImplementation('ColonyTask')
+    parseImplementation('ColonyFunding')
+    parseImplementation('ColonyTransactionReviewer')
+
+    // Go through Colony, ColonyFunding, ColonyTask, ColonyTransactionReviewer to find where these functions are defined
+    let promises = Object.keys(functionsToResolve).map( async function(fName) {
+        const sig = fName + '(' + functionsToResolve[fName].inputs.join(',') + ')';
+        const address = functionsToResolve[fName].definedIn;
+        const outputSize = functionsToResolve[fName].outputSize;
+        const sigHash = sha3(sig).substr(0,10);
+        await resolver.register(sig,address, outputSize);
+        let response = await resolver.lookup.call(sigHash)
+        assert.equal(response[0], address);
+        assert.equal(response[1], outputSize);
+    })
+    await Promise.all(promises);
 
 
     const version = await colony.version.call();
