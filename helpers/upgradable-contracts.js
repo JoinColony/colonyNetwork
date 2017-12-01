@@ -82,6 +82,7 @@ module.exports = {
     await resolver.register("submitTransaction(bytes,uint256,uint8)", colonyTransactionReviewer.address, 32);
     await resolver.register("confirmTransaction(uint256,uint8)", colonyTransactionReviewer.address, 0);
     await resolver.register("setFunctionReviewers(bytes4,uint8,uint8)", colonyTransactionReviewer.address, 0);
+    await resolver.register("getNonRewardPotsTotal(address)", colonyFunding.address, 32);
 
     let response = await resolver.lookup.call('0x21df0da7'); // getToken();
     assert.equal(response[0], colony.address);
@@ -176,6 +177,9 @@ module.exports = {
     response = await resolver.lookup.call('0x026e1146'); //setFunctionReviewers(bytes4,uint8,uint8)
     assert.equal(response[0], colonyTransactionReviewer.address);
     assert.equal(response[1], 0);
+    response = await resolver.lookup.call('0x34fa7aa2'); //getNonRewardPotsTotal(address)
+    assert.equal(response[0], colonyFunding.address);
+    assert.equal(response[1], 32);
 
 
     const version = await colony.version.call();

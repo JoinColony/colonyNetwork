@@ -9,7 +9,10 @@ import "./IColonyNetwork.sol";
 
 
 contract ColonyStorage is DSAuth, DSMath {
-  //TODO: Remove 'public' for all variables here, and define getters on appropriate subcontracts
+  // When adding variables, do not make them public, otherwise all contracts that inherit from
+  // this one will have the getters. Make custom getters in the contract that seems most appropriate,
+  // and add it to IColony.sol
+
   address resolver;
 
   mapping (uint => Transaction) transactions;
@@ -38,7 +41,7 @@ contract ColonyStorage is DSAuth, DSMath {
   // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
   // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
-  mapping (address => uint) public nonRewardPotsTotal;
+  mapping (address => uint) nonRewardPotsTotal;
 
   uint taskCount;
   uint potCount;

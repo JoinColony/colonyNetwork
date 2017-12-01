@@ -459,9 +459,11 @@ contract('Colony', function (accounts) {
       let colonyPotBalance= await colony.getPotBalance.call(1,0x0);
       let colonyRewardPotBalance= await colony.getPotBalance.call(0,0x0);
       let colonyEtherBalance = await testHelper.web3GetBalance(colony.address);
+      let nonRewardPotsTotal = await colony.getNonRewardPotsTotal.call(0x0);
       assert.equal(colonyEtherBalance.toNumber(), 300)
       assert.equal(colonyPotBalance.toNumber(), 297);
       assert.equal(colonyRewardPotBalance.toNumber(), 3);
+      assert.equal(nonRewardPotsTotal.toNumber(), 297);
     });
 
   });

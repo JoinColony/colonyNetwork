@@ -141,6 +141,10 @@ contract ColonyFunding is ColonyStorage {
     pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
   }
 
+  function getNonRewardPotsTotal(address a) public view returns (uint){
+    return nonRewardPotsTotal[a];
+  }
+
   function getFeeInverse() public pure returns (uint) {
     // Return 1 / the fee to pay to the network.
     // e.g. if the fee is 1% (or 0.01), return 100
