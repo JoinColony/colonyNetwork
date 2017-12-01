@@ -25,7 +25,7 @@ contract IColony {
   function getTaskRoleAddress (uint _id, uint _role) public view returns (address);
   function mintTokens(uint128 _wad) public;
   function addSkill(uint _parentSkillId) public;
-  function taskCount() public view returns (uint);
+  function getTaskCount() public view returns (uint);
   function getTransactionCount() public view returns (uint);
 
 

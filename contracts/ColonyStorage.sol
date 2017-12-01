@@ -40,8 +40,8 @@ contract ColonyStorage is DSAuth, DSMath {
   // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
   mapping (address => uint) public nonRewardPotsTotal;
 
-  uint public taskCount;
-  uint public potCount;
+  uint taskCount;
+  uint potCount;
 
 
   struct Task {

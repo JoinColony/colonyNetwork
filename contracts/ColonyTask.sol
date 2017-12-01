@@ -33,6 +33,9 @@ contract ColonyTask is ColonyStorage {
     pots[potCount].taskId = taskCount;
   }
 
+  function getTaskCount() public view returns (uint){
+    return taskCount;
+  }
 
   function proposeTaskChange(bytes _data, uint _value, uint8 _role) public returns (uint transactionId) {
     var (sig, taskId) = deconstructCall(_data);

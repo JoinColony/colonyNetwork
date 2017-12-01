@@ -151,7 +151,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.makeTask(ipfsDecodedHash);
       await colony.makeTask(ipfsDecodedHash);
-      const taskCount = await colony.taskCount.call();
+      const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount.toNumber(), 5);
     });
   });
