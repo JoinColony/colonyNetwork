@@ -55,6 +55,7 @@ contract ColonyStorage is DSAuth {
     uint dueDate;
     uint payoutsWeCannotMake;
     uint potId;
+    uint deliverableTimestamp;
     uint domainId;
     uint[] skillIds;
 
@@ -122,12 +123,12 @@ contract ColonyStorage is DSAuth {
   }
 
   modifier workNotSubmitted(uint256 _id) {
-    require(tasks[_id].deliverableHash == "");
+    require(tasks[_id].deliverableTimestamp == 0);
     _;
   }
 
   modifier taskDueDatePastOrWorkSubmitted(uint256 _id) {
-    require(tasks[_id].dueDate < now || tasks[_id].deliverableHash != "");
+    require(tasks[_id].dueDate < now || tasks[_id].deliverableTimestamp != 0);
     _;
   }
 

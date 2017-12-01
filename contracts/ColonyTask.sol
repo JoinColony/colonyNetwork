@@ -31,6 +31,7 @@ contract ColonyTask is ColonyStorage {
       dueDate: 0,
       payoutsWeCannotMake: 0,
       potId: potCount,
+      deliverableTimestamp: 0,
       domainId: 0,
       skillIds: _skillIds
     });
@@ -169,6 +170,7 @@ contract ColonyTask is ColonyStorage {
   confirmTaskRoleIdentity(_id, 2)
   {
     tasks[_id].deliverableHash = _deliverableHash;
+    tasks[_id].deliverableTimestamp = now;
   }
 
   function acceptTask(uint256 _id) public
@@ -195,10 +197,10 @@ contract ColonyTask is ColonyStorage {
   }
 
   function getTask(uint256 _id) public view
-  returns (bytes32, bytes32, bool, bool, uint, uint, uint, uint)
+  returns (bytes32, bytes32, bool, bool, uint, uint, uint, uint, uint)
   {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.deliverableHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.domainId);
+    return (t.specificationHash, t.deliverableHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId);
   }
 
   function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8) {

@@ -364,9 +364,11 @@ contract('Colony', function (accounts) {
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), '');
 
+      const currentTime = testHelper.secondsSinceEpoch();
       await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
       task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), deliverableHash);
+      assert.equal(task[7], currentTime);
     });
 
     it('should fail if I try to submit work for a task that is accepted', async function () {
