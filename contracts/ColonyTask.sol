@@ -6,6 +6,7 @@ import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 import "./IColony.sol";
 
+
 contract ColonyTask is ColonyStorage {
 
   modifier skillExists(uint256 _skillId){
@@ -38,7 +39,7 @@ contract ColonyTask is ColonyStorage {
     pots[potCount].taskId = taskCount;
   }
 
-  function getTaskCount() public view returns (uint){
+  function getTaskCount() public view returns (uint) {
     return taskCount;
   }
 
@@ -124,7 +125,6 @@ contract ColonyTask is ColonyStorage {
   {
     tasks[_id].dueDate = _dueDate;
   }
-
 
   function acceptTask(uint256 _id) public
   auth

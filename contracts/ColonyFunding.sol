@@ -7,6 +7,7 @@ import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 
+
 contract ColonyFunding is ColonyStorage, DSMath {
 
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
@@ -22,7 +23,6 @@ contract ColonyFunding is ColonyStorage, DSMath {
     task.totalPayouts[_token] = add(sub(currentTotalAmount, currentAmount), _amount);
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
-
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
@@ -142,7 +142,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
     pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
   }
 
-  function getNonRewardPotsTotal(address a) public view returns (uint){
+  function getNonRewardPotsTotal(address a) public view returns (uint) {
     return nonRewardPotsTotal[a];
   }
 

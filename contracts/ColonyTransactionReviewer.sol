@@ -5,6 +5,7 @@ pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
 
+
 /// @title Transaction reviewer contract - Allows two parties to agree on transactions before execution.
 contract ColonyTransactionReviewer is ColonyStorage {
   event Confirmation(uint indexed transactionId, uint indexed senderRole);
@@ -36,20 +37,22 @@ contract ColonyTransactionReviewer is ColonyStorage {
     reviewers[_sig] = _reviewers;
   }
 
-  function getTransactionCount() public view returns (uint){
+  function getTransactionCount() public view returns (uint) {
     return transactionCount;
   }
 
   function submitTransaction(bytes data, uint value, uint8 role)
   self
-  returns (uint transactionId) {
+  returns (uint transactionId)
+  {
     transactionId = addTransaction(data, value);
     confirmTransaction(transactionId, role);
   }
 
   function addTransaction(bytes data, uint value)
   internal
-  returns (uint transactionId) {
+  returns (uint transactionId)
+  {
     transactionCount += 1;
     transactionId = transactionCount;
     transactions[transactionId] = Transaction({

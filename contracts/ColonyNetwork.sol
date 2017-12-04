@@ -203,7 +203,13 @@ contract ColonyNetwork is DSAuth {
       //TODO: Never true currently. _amount needs to be an int.
       nUpdates += 2 * skills[_skillId].nChildren;
     }
-    ReputationUpdateLog.push(ReputationLogEntry(_user, _amount, _skillId, msg.sender, nUpdates, nPreviousUpdates));
+    ReputationUpdateLog.push(ReputationLogEntry(
+      _user,
+      _amount,
+      _skillId,
+      msg.sender,
+      nUpdates,
+      nPreviousUpdates));
   }
 
   function getReputationUpdateLogLength() view returns (uint) {
