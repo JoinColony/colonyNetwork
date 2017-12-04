@@ -17,18 +17,54 @@ contract ColonyTask is ColonyStorage, DSMath {
     _;
   }
 
+  modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
+    Role storage role = tasks[_id].roles[_role];
+    require(msg.sender == role.user);
+    _;
+  }
+
+  modifier userCanRateRole(uint256 _id, uint8 _role) {
+    // Manager rated by worker
+    // Worker rated by evaluator
+    if (_role == 0) {
+      require(tasks[_id].roles[2].user == msg.sender);
+    } else if (_role == 2) {
+      require(tasks[_id].roles[1].user == msg.sender);
+    } else {
+      revert();
+    }
+    _;    
+  }
+
+  modifier ratingSecretDoesNotExist(uint256 _id, uint8 _role) {
+    require(taskWorkRatings[_id].secret[_role] == "");
+    _;
+  }
+
+  modifier workNotSubmitted(uint256 _id) {
+    require(tasks[_id].deliverableTimestamp == 0);
+    _;
+  }
+
   modifier taskWorkRatingOpen(uint256 _id) {
     // Check we are either past the due date or work has already been submitted
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
     require(taskCompletionTime > 0 && taskCompletionTime <= now);
 
     // Check we are within 5 days of the work submission time
-    require(sub(now, taskCompletionTime) < 432000);
+    require(sub(now, taskCompletionTime) <= 432000);
     _;
   }
 
   modifier taskWorkRatingRevealOpen(uint256 _id) {
-    require(sub(now, taskWorkRatings[_id].timestamp) < 432000);
+    RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
+    if (ratingSecrets.count == 2) {
+      require(sub(now, ratingSecrets.timestamp) <= 432000);
+    } else if (ratingSecrets.count < 2) {
+      uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
+      require(sub(now, taskCompletionTime) > 432000);
+      require(sub(now, taskCompletionTime) <= 432000*2);
+    }
     _;
   }
 

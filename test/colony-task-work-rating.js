@@ -210,6 +210,18 @@ contract('Colony', function (accounts) {
       assert.equal(roleWorker[2].toNumber(), _RATING_1_);
     });
 
+    it('should allow revealing a rating from the evaluator after the 5 days wait for rating commits expires', async function () {
+      var dueDate = testHelper.currentBlockTime() - 1;
+      await setupTask(dueDate);
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+
+      await testHelper.forwardTime(secondsPerDay*5+1);
+      await colony.revealTaskWorkRating(1, 2, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      let roleWorker = await colony.getTaskRole.call(1, 2);
+      assert.isTrue(roleWorker[1]);
+      assert.equal(roleWorker[2].toNumber(), _RATING_1_);
+    });
+
     it('should fail if I try to reveal rating with an incorrect secret', async function () {
       var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
@@ -228,14 +240,34 @@ contract('Colony', function (accounts) {
       assert.isFalse(roleManager[1]);
     });
 
-    it('should fail if I try to reveal a rating late', async function () {
+    it('should fail if there are two rating secrets and I try to reveal the one from the evluator late', async function () {
       var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
 
-      await testHelper.forwardTime(secondsPerDay*5+1);
+      await testHelper.forwardTime(secondsPerDay*5+2);
+      let tx;
+      try {
+        tx = await colony.revealTaskWorkRating(1, 2, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let roleWorker = await colony.getTaskRole.call(1, 2);
+      assert.isFalse(roleWorker[1]);
+    });
+
+    it('should fail if there are two rating secrets and I try to reveal the one from the worker late', async function () {
+      var dueDate = testHelper.currentBlockTime() - 1;
+      await setupTask(dueDate);
+
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
+
+      await testHelper.forwardTime(secondsPerDay*5+2);
       let tx;
       try {
         tx = await colony.revealTaskWorkRating(1, 0, _RATING_2_, _RATING_2_SALT, { from: WORKER, gas: GAS_TO_SPEND });
@@ -246,6 +278,44 @@ contract('Colony', function (accounts) {
 
       let roleManager = await colony.getTaskRole.call(1, 0);
       assert.isFalse(roleManager[1]);
+    });
+
+    it('should fail if there is one rating secret from the evaluator and I try to reveal it before the 5 days wait for rating commits expires', async function () {
+      var dueDate = testHelper.currentBlockTime() - 1;
+      await setupTask(dueDate);
+
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+
+      await testHelper.forwardTime(secondsPerDay*4);
+      let tx;
+      try {
+        tx = await colony.revealTaskWorkRating(1, 2, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let roleWorker = await colony.getTaskRole.call(1, 2);
+      assert.isFalse(roleWorker[1]);
+    });
+
+    it('should fail if there is one rating secret from the evaluator and I try to reveal it after 5 days wait for rating reveal expires', async function () {
+      var dueDate = testHelper.currentBlockTime() - 1;
+      await setupTask(dueDate);
+
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+
+      await testHelper.forwardTime(secondsPerDay*10);
+      let tx;
+      try {
+        tx = await colony.revealTaskWorkRating(1, 2, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      let roleWorker = await colony.getTaskRole.call(1, 2);
+      assert.isFalse(roleWorker[1]);
     });
   });
 });
