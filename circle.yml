@@ -33,6 +33,7 @@ test:
     - 'sed -i "s/spec/mocha-circleci-reporter/g" ./truffle.js' #Replace mocha spec reporter in truffle with mocha-junit-reporter
     - greenkeeper-lockfile-update
   override:
+    - gulp check:storageVars
     - gulp test:contracts
     - gulp test:contracts:upgrade --parity
     - gulp test:contracts:gasCosts --parity

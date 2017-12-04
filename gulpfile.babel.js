@@ -41,6 +41,10 @@ gulp.task('lint:contracts', 'Lint contracts', () => {
   return execute('solium --dir . || true');
 });
 
+gulp.task('check:storageVars', 'Check contracts only use ColonyStorage.sol for declarations of storage variables', () => {
+  return execute('./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js');
+});
+
 const checkCoverageAgainstThreshold = () => {
   return execute('istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94');
 };
