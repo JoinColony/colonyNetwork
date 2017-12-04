@@ -56,29 +56,29 @@ contract('Colony', function (accounts) {
 
   describe('when rating task work', () => {
     it('should allow rating, before the due date but after the work has been submitted', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
+      var dueDate = testHelper.currentBlockTime() + secondsPerDay*7;
       await setupTask(dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
-      let currentTime1 = testHelper.secondsSinceEpoch();
+      let currentTime1 = testHelper.currentBlockTime();
       let rating1 = await colony.getTaskWorkRatings.call(1);
       assert.equal(rating1[0], 1);
-      assert.equal(rating1[1].toNumber(), currentTime1);
+      assert.closeTo(rating1[1].toNumber(), currentTime1, 2);
       const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(1, 2);
       assert.equal(ratingSecret1, _RATING_SECRET_1_);
 
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
-      let currentTime2 = testHelper.secondsSinceEpoch();
+      let currentTime2 = testHelper.currentBlockTime();
       let rating2 = await colony.getTaskWorkRatings.call(1);
-      assert.equal(rating2[0], 2);
-      assert.equal(rating2[1].toNumber(), currentTime2);
+      assert.equal(rating2[0].toNumber(), 2);
+      assert.closeTo(rating2[1].toNumber(), currentTime2, 2);
       const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(1, 0);
       assert.equal(ratingSecret2, _RATING_SECRET_2_);
     });
 
     it('should allow rating, after the due date has passed, when no work has been submitted', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() - 1;
+      var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
@@ -91,7 +91,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to rate before task\'s due date has passed and work has not been submitted', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() + secondsPerDay*7;
+      var dueDate = testHelper.currentBlockTime() + secondsPerDay*7;
       await setupTask(dueDate);  
   
       let tx;
@@ -103,50 +103,11 @@ contract('Colony', function (accounts) {
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const ratingSecrets = await colony.getTaskWorkRatings.call(1);
-      assert.equal(ratingSecrets[0], 0);  
-
-      let rating = await colony.getTaskWorkRatingSecret.call(1, 2);
-      assert.notEqual(rating, _RATING_SECRET_1_);    
-    });
-
-    it('should fail, if I try to rate work twice', async function () {
-      var dueDate = testHelper.secondsSinceEpoch();
-      await setupTask(dueDate);
-
-      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
-      let tx;
-      try {
-        tx = await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: EVALUATOR, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-
-      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
-      assert.equal(ratingSecrets[0], 1);  
-      const ratingSecret = await colony.getTaskWorkRatingSecret.call(1, 2);
-      assert.equal(ratingSecret, _RATING_SECRET_1_);  
-    });
-
-    it('should fail if I try to rate a task too late', async function () {
-      var dueDate = testHelper.secondsSinceEpoch();
-      await setupTask(dueDate);  
-      
-      testHelper.forwardTime(secondsPerDay*5 + 1);
-      let tx;
-      try {
-        tx = await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from:EVALUATOR, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-
-      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
-      assert.equal(ratingSecrets[0], 0);  
+      assert.equal(ratingSecrets[0].toNumber(), 0);  
     });
 
     it('should fail if I try to rate work on behalf of a worker', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() -1;
+      var dueDate = testHelper.currentBlockTime() -1;
       await setupTask(dueDate); 
 
       let tx;
@@ -158,31 +119,68 @@ contract('Colony', function (accounts) {
       await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const ratingSecrets = await colony.getTaskWorkRatings.call(1);
-      assert.equal(ratingSecrets[0], 0);  
-      let rating = await colony.getTaskWorkRatingSecret.call(1, 0);
-      assert.notEqual(rating, _RATING_SECRET_1_);
-    });
-
-    it('should fail if I try to submit work for a task using an invalid id', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() -1;
-      await setupTask(dueDate); 
-
-      let tx;
-      try {
-        tx = await colony.submitTaskWorkRating(10, 2, _RATING_SECRET_1_, { from: EVALUATOR, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      assert.equal(ratingSecrets[0], 0);
     });
 
     it('should fail if I try to rate work for a role that\'s not setup to be rated', async function () {
-      var dueDate = testHelper.secondsSinceEpoch();
+      var dueDate = testHelper.currentBlockTime();
       await setupTask(dueDate - 1); 
 
       let tx;
       try {
         tx = await colony.submitTaskWorkRating(1, 1, _RATING_SECRET_1_, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0].toNumber(), 0);  
+    });
+
+    it('should fail, if I try to rate work twice', async function () {
+      var dueDate = testHelper.currentBlockTime();
+      await setupTask(dueDate - 1);
+
+      await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
+      let tx;
+      try {
+        tx = await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_2_, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0], 1);
+      const ratingSecret = await colony.getTaskWorkRatingSecret.call(1, 2);
+      assert.equal(ratingSecret, _RATING_SECRET_1_);  
+    });
+
+    it('should fail if I try to rate a task too late', async function () {
+      var dueDate = testHelper.currentBlockTime();
+      await setupTask(dueDate);  
+      
+      await testHelper.forwardTime(secondsPerDay*5+1);
+      let tx;
+      try {
+        tx = await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from:EVALUATOR, gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      const ratingSecrets = await colony.getTaskWorkRatings.call(1);
+      assert.equal(ratingSecrets[0].toNumber(), 0);  
+    });
+
+    it('should fail if I try to submit work for a task using an invalid id', async function () {
+      var dueDate = testHelper.currentBlockTime() -1;
+      await setupTask(dueDate); 
+
+      let tx;
+      try {
+        tx = await colony.submitTaskWorkRating(10, 2, _RATING_SECRET_1_, { from: EVALUATOR, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
@@ -195,7 +193,7 @@ contract('Colony', function (accounts) {
 
   describe('when revealing a task work rating', () => {
     it('should allow revealing a rating by evaluator and worker', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() - 1;
+      var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
@@ -213,7 +211,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to reveal rating with an incorrect secret', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() - 1;
+      var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
@@ -231,13 +229,13 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to reveal a rating late', async function () {
-      var dueDate = testHelper.secondsSinceEpoch() - 1;
+      var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
 
       await colony.submitTaskWorkRating(1, 2, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, 0, _RATING_SECRET_2_, { from: WORKER });
 
-      testHelper.forwardTime(secondsPerDay*7);
+      await testHelper.forwardTime(secondsPerDay*5+1);
       let tx;
       try {
         tx = await colony.revealTaskWorkRating(1, 0, _RATING_2_, _RATING_2_SALT, { from: WORKER, gas: GAS_TO_SPEND });

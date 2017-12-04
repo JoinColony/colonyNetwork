@@ -90,9 +90,9 @@ module.exports = {
   hexToUtf8(text) {
     return web3.toAscii(text).replace(/\u0000/g, '');
   },
-  secondsSinceEpoch()
+  currentBlockTime()
   { 
-    return Math.floor( Date.now() / 1000 ) ;
+    return web3.eth.getBlock("latest").timestamp;
   },
   forwardTime(seconds) {
     console.log('Forwarding time with ' + seconds + 's ...');

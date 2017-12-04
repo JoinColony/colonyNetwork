@@ -187,7 +187,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should allow manager to submit an update of task due date and worker to approve it', async function () {
-      var dueDate = testHelper.secondsSinceEpoch();
+      var dueDate = testHelper.currentBlockTime();
 
       await colony.makeTask(specificationHash);
       await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
@@ -364,7 +364,7 @@ contract('Colony', function (accounts) {
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), '');
 
-      const currentTime = testHelper.secondsSinceEpoch();
+      const currentTime = testHelper.currentBlockTime();
       await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
       task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), deliverableHash);
