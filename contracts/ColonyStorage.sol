@@ -3,12 +3,10 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
-import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
-import "./IColonyNetwork.sol";
 
 
-contract ColonyStorage is DSAuth, DSMath {
+contract ColonyStorage is DSAuth {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
@@ -86,12 +84,6 @@ contract ColonyStorage is DSAuth, DSMath {
 
   modifier self() {
     require(address(this) == msg.sender);
-    _;
-  }
-
-  modifier skillExists(uint256 _skillId){
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(_skillId < colonyNetworkContract.skillCount());
     _;
   }
 

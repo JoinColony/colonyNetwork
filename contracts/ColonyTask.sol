@@ -2,12 +2,17 @@ pragma solidity ^0.4.17;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
-import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 import "./IColony.sol";
 
 contract ColonyTask is ColonyStorage {
+
+  modifier skillExists(uint256 _skillId){
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(_skillId < colonyNetworkContract.skillCount());
+    _;
+  }
 
   function makeTask(bytes32 _ipfsDecodedHash) public
   auth

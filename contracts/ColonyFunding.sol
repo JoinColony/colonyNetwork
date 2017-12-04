@@ -2,11 +2,12 @@ pragma solidity ^0.4.17;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
+import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 
-contract ColonyFunding is ColonyStorage {
+contract ColonyFunding is ColonyStorage, DSMath {
 
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
   self()
