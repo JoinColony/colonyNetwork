@@ -38,7 +38,7 @@ gulp.task('versionColonyContract', 'Append version number to Colony.json file', 
 });
 
 gulp.task('lint:contracts', 'Lint contracts', () => {
-  return execute('solium --dir . || true');
+  return execute('solium --dir .');
 });
 
 gulp.task('check:storageVars', 'Check contracts only use ColonyStorage.sol for declarations of storage variables', () => {
