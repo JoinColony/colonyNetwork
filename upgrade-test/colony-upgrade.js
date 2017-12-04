@@ -5,8 +5,12 @@ import upgradableContracts from '../helpers/upgradable-contracts';
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
-const Colony = artifacts.require('Colony');
+const IColony = artifacts.require('IColony');
+const ColonyTask = artifacts.require('ColonyTask');
+const ColonyFunding = artifacts.require('ColonyFunding');
+const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
 const UpdatedColony = artifacts.require('UpdatedColony');
+const IUpdatedColony = artifacts.require('IUpdatedColony');
 const Authority = artifacts.require('Authority');
 const Token = artifacts.require('Token');
 
@@ -20,6 +24,9 @@ contract('Colony contract upgrade', function (accounts) {
 
   let COLONY_KEY;
   let colony;
+  let colonyTask;
+  let colonyFunding;
+  let colonyTransactionReviewer;
   let authority;
   let token;
   let colonyNetwork;
@@ -35,10 +42,13 @@ contract('Colony contract upgrade', function (accounts) {
     COLONY_KEY = testHelper.getRandomString(7);
     await colonyNetwork.createColony(COLONY_KEY);
     etherRouter = await colonyNetwork.getColony(COLONY_KEY);
-    colony = await Colony.at(etherRouter);
+    colony = await IColony.at(etherRouter);
+    colonyTask = await ColonyTask.new();
+    colonyFunding = await ColonyFunding.new();
+    colonyTransactionReviewer = await ColonyTransactionReviewer.new();
     let authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
-    let tokenAddress = await colony.token.call();
+    let tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
 
     await authority.setUserRole(ACCOUNT_TWO, 0, true);
@@ -48,13 +58,13 @@ contract('Colony contract upgrade', function (accounts) {
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", updatedColonyContract.address, 32);
-    await upgradableContracts.setupColonyVersionResolver(updatedColonyContract, resolver, colonyNetwork);
+    await upgradableContracts.setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     // Check new Colony contract version is registered successfully
     updatedColonyVersion = await colonyNetwork.currentColonyVersion.call();
 
     // Upgrade our existing colony
     await colonyNetwork.upgradeColony(COLONY_KEY, updatedColonyVersion.toNumber());
-    updatedColony = await UpdatedColony.at(etherRouter);
+    updatedColony = await IUpdatedColony.at(etherRouter);
   });
 
   describe('when upgrading Colony contract', function () {
@@ -69,19 +79,19 @@ contract('Colony contract upgrade', function (accounts) {
     });
 
     it('should return correct total number of tasks', async function () {
-      const updatedTaskCount = await updatedColony.taskCount.call();
+      const updatedTaskCount = await updatedColony.getTaskCount.call();
       assert.equal(2, updatedTaskCount.toNumber());
     });
 
     it('should return correct tasks', async function () {
-      const task1 = await updatedColony.tasks.call(1);
+      const task1 = await updatedColony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task1[0]), ipfsDecodedHash);
       assert.isFalse(task1[1]);
       assert.isFalse(task1[2]);
       assert.equal(task1[3].toNumber(), 0);
       assert.equal(task1[4].toNumber(), 0);
 
-      const task2 = await updatedColony.tasks.call(2);
+      const task2 = await updatedColony.getTask.call(2);
       assert.equal(testHelper.hexToUtf8(task2[0]), newIpfsDecodedHash);
       assert.isFalse(task2[1]);
       assert.isFalse(task2[2]);
@@ -95,7 +105,7 @@ contract('Colony contract upgrade', function (accounts) {
     });
 
     it('should return correct token address', async function () {
-      const tokenAddress = await updatedColony.token.call();
+      const tokenAddress = await updatedColony.getToken.call();
       assert.equal(token.address, tokenAddress);
     });
   });

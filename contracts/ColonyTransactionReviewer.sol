@@ -3,27 +3,17 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 
+import "./ColonyStorage.sol";
+
+
 /// @title Transaction reviewer contract - Allows two parties to agree on transactions before execution.
-contract TransactionReviewer {
+contract ColonyTransactionReviewer is ColonyStorage {
   event Confirmation(uint indexed transactionId, uint indexed senderRole);
   event Revocation(uint indexed transactionId, address indexed sender);
   event Submission(uint indexed transactionId);
   event Execution(uint indexed transactionId);
   event ExecutionFailure(uint indexed transactionId);
 
-  mapping (uint => Transaction) public transactions;
-  // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping (bytes4 => uint8[2]) public reviewers;
-  // Maps transactions to roles and whether they've confirmed the transaction
-  mapping (uint => mapping (uint => bool)) public confirmations;
-  uint public transactionCount;
-
-
-  struct Transaction {
-    bytes data;
-    uint value;
-    bool executed;
-  }
 
   modifier transactionExists(uint transactionId) {
     require(transactionId <= transactionCount);
@@ -40,17 +30,29 @@ contract TransactionReviewer {
     _;
   }
 
-  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer) internal {
+  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
+  self
+  {
     uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
     reviewers[_sig] = _reviewers;
   }
 
-  function submitTransaction(bytes data, uint value, uint8 role) internal returns (uint transactionId) {
+  function getTransactionCount() public view returns (uint) {
+    return transactionCount;
+  }
+
+  function submitTransaction(bytes data, uint value, uint8 role)
+  self
+  returns (uint transactionId)
+  {
     transactionId = addTransaction(data, value);
     confirmTransaction(transactionId, role);
   }
 
-  function addTransaction(bytes data, uint value) internal returns (uint transactionId) {
+  function addTransaction(bytes data, uint value)
+  internal
+  returns (uint transactionId)
+  {
     transactionCount += 1;
     transactionId = transactionCount;
     transactions[transactionId] = Transaction({
@@ -61,7 +63,8 @@ contract TransactionReviewer {
     Submission(transactionId);
   }
 
-  function confirmTransaction(uint transactionId, uint8 role) internal
+  function confirmTransaction(uint transactionId, uint8 role)
+  self
   transactionExists(transactionId)
   notConfirmed(transactionId, role)
   {
@@ -72,7 +75,8 @@ contract TransactionReviewer {
 
   /// @dev Allows anyone to execute a confirmed transaction.
   /// @param transactionId Transaction ID.
-  function executeTransaction(uint transactionId) internal
+  function executeTransaction(uint transactionId)
+  internal
   notExecuted(transactionId)
   {
     Transaction storage _transaction = transactions[transactionId];

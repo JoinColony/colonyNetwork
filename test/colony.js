@@ -6,6 +6,7 @@ const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
+const IColony = artifacts.require('IColony');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 
@@ -40,10 +41,10 @@ contract('Colony', function (accounts) {
     COLONY_KEY = testHelper.getRandomString(7);
     await colonyNetwork.createColony(COLONY_KEY);
     let address = await colonyNetwork.getColony.call(COLONY_KEY);
-    colony = await Colony.at(address);
+    colony = await IColony.at(address);
     let authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
-    let tokenAddress = await colony.token.call();
+    let tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
   });
 
@@ -61,7 +62,7 @@ contract('Colony', function (accounts) {
     });
 
     it('should return zero task count', async function () {
-      const taskCount = await colony.taskCount.call();
+      const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount, 0);
     });
 
@@ -117,8 +118,7 @@ contract('Colony', function (accounts) {
   describe('when creating tasks', () => {
     it('should allow admins to make task', async function () {
       await colony.makeTask(ipfsDecodedHash);
-      const task = await colony.tasks.call(1);
-      console.log('task', task);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), ipfsDecodedHash);
       assert.isFalse(task[1]);
       assert.isFalse(task[2]);
@@ -150,7 +150,7 @@ contract('Colony', function (accounts) {
       await colony.makeTask(ipfsDecodedHash);
       await colony.makeTask(ipfsDecodedHash);
       await colony.makeTask(ipfsDecodedHash);
-      const taskCount = await colony.taskCount.call();
+      const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount.toNumber(), 5);
     });
   });
@@ -173,7 +173,7 @@ contract('Colony', function (accounts) {
       const txData = await colony.contract.setTaskBrief.getData(1, newIpfsDecodedHash);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[0]), newIpfsDecodedHash);
     });
 
@@ -187,8 +187,10 @@ contract('Colony', function (accounts) {
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.equal(task[3], dueDate);
+      const transactionCount = await colony.getTransactionCount.call();
+      assert.equal(transactionCount.toNumber(), 1);
     });
 
     it('should fail if a non-colony call is made to the task update functions', async function () {
@@ -276,7 +278,7 @@ contract('Colony', function (accounts) {
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
-      const transactionCount = await colony.transactionCount.call();
+      const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -292,7 +294,7 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
 
-      const transactionCount = await colony.transactionCount.call();
+      const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -309,7 +311,7 @@ contract('Colony', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
 
-      const transactionCount = await colony.transactionCount.call();
+      const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
@@ -352,7 +354,7 @@ contract('Colony', function (accounts) {
     it('should set the task "accepted" property to "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.acceptTask(1);
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[1]);
     });
 
@@ -394,7 +396,7 @@ contract('Colony', function (accounts) {
     it('should set the task "cancelled" property to "true"', async function () {
       await colony.makeTask(ipfsDecodedHash);
       await colony.cancelTask(1);
-      const task = await colony.tasks.call(1);
+      const task = await colony.getTask.call(1);
       assert.isTrue(task[2]);
     });
 

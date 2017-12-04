@@ -38,7 +38,11 @@ gulp.task('versionColonyContract', 'Append version number to Colony.json file', 
 });
 
 gulp.task('lint:contracts', 'Lint contracts', () => {
-  return execute('solium --dir . || true');
+  return execute('solium --dir .');
+});
+
+gulp.task('check:storageVars', 'Check contracts only use ColonyStorage.sol for declarations of storage variables', () => {
+  return execute('./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js');
 });
 
 const checkCoverageAgainstThreshold = () => {
@@ -56,12 +60,15 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   .then(execute(`sed -ie'' s/'Resolver'/'UpdatedResolver'/g UpdatedResolver.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() public view returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
   .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`cp IColony.sol IUpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() public view returns(bool) {return true;}'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
   .then(execute(`sed -ie'' s/'function version() public view returns (uint256) { return ${VERSION}'/'function version() public view returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() public view returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }));
+  .then(execute(`sed -ie'' s/'contract UpdatedColony is ColonyStorage {'/'contract UpdatedColony is ColonyStorage {function isUpdated() public view returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract IColony'/'contract IUpdatedColony'/g IUpdatedColony.sol`, { cwd: './contracts' }))
+  .then(execute(`sed -ie'' s/'contract IUpdatedColony {'/'contract IUpdatedColony {function isUpdated() public view returns(bool);'/g IUpdatedColony.sol`, { cwd: './contracts' }));
 });
 
 gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts'], () => {
