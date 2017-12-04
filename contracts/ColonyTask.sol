@@ -32,6 +32,15 @@ contract ColonyTask is ColonyStorage, DSMath {
     _;
   }
 
+  modifier ratingNotReceivedForRole(uint256 _id, uint8 _role) {
+    uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
+    require(sub(now, taskCompletionTime) > 2*432000); // More than 10 days from work submission have passed
+
+    Role storage role = tasks[_id].roles[_role];
+    require(!role.rated);
+    _;
+  }
+
   function makeTask(bytes32 _specificationHash) public
   auth
   {
@@ -125,6 +134,28 @@ contract ColonyTask is ColonyStorage, DSMath {
     Role storage role = tasks[_id].roles[_role];
     role.rated = true;
     role.rating = _rating;
+  }
+
+  // In the event of a user not committing or revealing within the 10 day rating window, 
+  // their rating of their counterpart is assumed to be the highest possible 
+  // and their own rating is decreased by 5 (e.g. 0.5 points)
+  function assignWorkRating(uint _id, uint8 _role) public 
+  ratingNotReceivedForRole(_id, _role)
+  {
+    Role storage workerRole = tasks[_id].roles[2];
+
+    if (_role == 0) {
+      Role storage managerRole = tasks[_id].roles[_role];
+      managerRole.rated = true;
+      managerRole.rating = 50;
+
+      if (workerRole.rated) {
+        workerRole.rating = (workerRole.rating > 5) ? (workerRole.rating - 5) : 0;
+      }      
+    } else if (_role == 2) {
+      workerRole.rated = true;
+      workerRole.rating = 50;   
+    }
   }
 
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
