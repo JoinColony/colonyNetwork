@@ -8,6 +8,7 @@ const Resolver = artifacts.require('Resolver');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask = artifacts.require('ColonyTask');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
@@ -52,7 +53,7 @@ contract('Colony', function (accounts) {
 
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     await colonyNetwork.createColony("Common Colony");
     let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
@@ -64,7 +65,7 @@ contract('Colony', function (accounts) {
       await commonColony.makeTask(ipfsDecodedHash);
       await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
       await commonColony.acceptTask(1);
-      let x = await colonyNetwork.ReputationUpdateLog.call(0);
+      let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(x[0], OTHER_ACCOUNT);
       assert.equal(x[1].toNumber(), 10);
       assert.equal(x[2].toNumber(), 0);
@@ -95,12 +96,12 @@ contract('Colony', function (accounts) {
       await commonColony.makeTask(ipfsDecodedHash);
       await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
       await commonColony.acceptTask(1);
-      let x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength);
+      let x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       let nPrevious = x[5].toNumber();
       await commonColony.makeTask(ipfsDecodedHash);
       await commonColony.setTaskWorker(2, OTHER_ACCOUNT);
       await commonColony.acceptTask(2);
-      x = await colonyNetwork.ReputationUpdateLog.call(initialRepLogLength + 1);
+      x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
     });
 
@@ -114,7 +115,7 @@ contract('Colony', function (accounts) {
       await commonColony.setTaskWorker(1, OTHER_ACCOUNT);
       await commonColony.setTaskSkill(1, 2);
       await commonColony.acceptTask(1);
-      let x = await colonyNetwork.ReputationUpdateLog.call(0);
+      let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(x[1].toNumber(), 10);
       assert.equal(x[4].toNumber(), 6);
 
@@ -122,7 +123,7 @@ contract('Colony', function (accounts) {
       await commonColony.setTaskWorker(2, OTHER_ACCOUNT);
       await commonColony.setTaskSkill(2, 3);
       await commonColony.acceptTask(2);
-      x = await colonyNetwork.ReputationUpdateLog.call(1);
+      x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
       assert.equal(x[1].toNumber(), -10);
       assert.equal(x[4].toNumber(), 10); // Negative reputation change means children change as well.
     });

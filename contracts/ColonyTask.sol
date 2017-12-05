@@ -12,7 +12,7 @@ contract ColonyTask is ColonyStorage {
 
   modifier skillExists(uint256 _skillId){
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(_skillId < colonyNetworkContract.skillCount());
+    require(_skillId < colonyNetworkContract.getSkillCount());
     _;
   }
 

@@ -23,7 +23,7 @@ module.exports = function (deployer, network, accounts) {
     return colonyNetwork.createColony("Common Colony");
   })
   .then(function () {
-    return colonyNetwork.skillCount.call();
+    return colonyNetwork.getSkillCount.call();
   })
   .then(function (skillCount) {
     assert.equal(skillCount.toNumber(), 1);

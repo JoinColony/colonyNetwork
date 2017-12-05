@@ -5,6 +5,8 @@ const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
+const IColony = artifacts.require('IColony');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask = artifacts.require('ColonyTask');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
@@ -45,27 +47,27 @@ contract('Common Colony', function (accounts) {
 
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
 
     await colonyNetwork.createColony(COLONY_KEY);
     let commonColonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
-    commonColony = await Colony.at(commonColonyAddress);
+    commonColony = await IColony.at(commonColonyAddress);
   });
 
   describe('when adding a new skill', () => {
     it('should be able to add a new skill as a child to the root skill', async function () {
       await commonColony.addSkill(0);
 
-      const skillCount = await colonyNetwork.skillCount.call();
+      const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
 
-      const newSkill = await colonyNetwork.skills.call(1);
+      const newSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(newSkill[0].toNumber(), 1);
       assert.equal(newSkill[1].toNumber(), 0);
 
       // Check rootSkill.nChildren is now 1
-      const rootSkill = await colonyNetwork.skills.call(0);
+      const rootSkill = await colonyNetwork.getSkill.call(0);
       assert.equal(rootSkill[1].toNumber(), 1);
 
       // Check rootSkill.children first element is the id of the new skill
@@ -80,7 +82,7 @@ contract('Common Colony', function (accounts) {
       } catch (err) {
         tx = testHelper.ifUsingTestRPC(err);
       }
-      const skillCount = await colonyNetwork.skillCount.call();
+      const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);
     });
 
@@ -89,23 +91,23 @@ contract('Common Colony', function (accounts) {
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
 
-      const skillCount = await colonyNetwork.skillCount.call();
+      const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 4);
 
-      const newSkill1 = await colonyNetwork.skills.call(1);
+      const newSkill1 = await colonyNetwork.getSkill.call(1);
       assert.equal(newSkill1[0].toNumber(), 1);
       assert.equal(newSkill1[1].toNumber(), 0);
 
-      const newSkill2 = await colonyNetwork.skills.call(2);
+      const newSkill2 = await colonyNetwork.getSkill.call(2);
       assert.equal(newSkill2[0].toNumber(), 1);
       assert.equal(newSkill2[1].toNumber(), 0);
 
-      const newSkill3 = await colonyNetwork.skills.call(3);
+      const newSkill3 = await colonyNetwork.getSkill.call(3);
       assert.equal(newSkill3[0].toNumber(), 1);
       assert.equal(newSkill3[1].toNumber(), 0);
 
       // Check rootSkill.nChildren is now 3
-      const rootSkill = await colonyNetwork.skills.call(0);
+      const rootSkill = await colonyNetwork.getSkill.call(0);
       assert.equal(rootSkill[1].toNumber(), 3);
 
       // Check rootSkill.children contains the ids of the new skills
@@ -124,7 +126,7 @@ contract('Common Colony', function (accounts) {
       // Add a child skill to skill id 2
       await commonColony.addSkill(2);
 
-      const newDeepSkill = await colonyNetwork.skills.call(3);
+      const newDeepSkill = await colonyNetwork.getSkill.call(3);
       assert.equal(newDeepSkill[0].toNumber(), 2);
       assert.equal(newDeepSkill[1].toNumber(), 0);
 
@@ -147,7 +149,7 @@ contract('Common Colony', function (accounts) {
         tx = testHelper.ifUsingTestRPC(err);
       }
 
-      const skillCount = await colonyNetwork.skillCount.call();
+      const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
     });
 
@@ -159,7 +161,7 @@ contract('Common Colony', function (accounts) {
       await commonColony.addSkill(1);
       await commonColony.addSkill(2);
 
-      const rootSkill = await colonyNetwork.skills.call(0);
+      const rootSkill = await colonyNetwork.getSkill.call(0);
       assert.equal(rootSkill[0].toNumber(), 0);
       assert.equal(rootSkill[1].toNumber(), 6);
       const rootSkillChildSkillId1 = await colonyNetwork.getChildSkillId.call(0, 0);
@@ -175,7 +177,7 @@ contract('Common Colony', function (accounts) {
       const rootSkillChildSkillId6 = await colonyNetwork.getChildSkillId.call(0, 5);
       assert.equal(rootSkillChildSkillId6.toNumber(), 6);
 
-      const skill1 = await colonyNetwork.skills.call(1);
+      const skill1 = await colonyNetwork.getSkill.call(1);
       assert.equal(skill1[0].toNumber(), 1);
       assert.equal(skill1[1].toNumber(), 1);
       const skill1ParentSkillId1 = await colonyNetwork.getParentSkillId.call(1, 0);
@@ -183,7 +185,7 @@ contract('Common Colony', function (accounts) {
       const skill1ChildSkillId1 = await colonyNetwork.getChildSkillId.call(1, 0);
       assert.equal(skill1ChildSkillId1.toNumber(), 5);
 
-      const skill2 = await colonyNetwork.skills.call(2);
+      const skill2 = await colonyNetwork.getSkill.call(2);
       assert.equal(skill2[0].toNumber(), 1);
       assert.equal(skill2[1].toNumber(), 2);
       const skill2ParentSkillId1 = await colonyNetwork.getParentSkillId.call(2, 0);
@@ -193,7 +195,7 @@ contract('Common Colony', function (accounts) {
       const skill2ChildSkillId2 = await colonyNetwork.getChildSkillId.call(2, 1);
       assert.equal(skill2ChildSkillId2.toNumber(), 6);
 
-      const skill3 = await colonyNetwork.skills.call(3);
+      const skill3 = await colonyNetwork.getSkill.call(3);
       assert.equal(skill3[0].toNumber(), 2);
       assert.equal(skill3[1].toNumber(), 0);
       const skill3ParentSkillId1 = await colonyNetwork.getParentSkillId.call(3, 0);
@@ -201,13 +203,13 @@ contract('Common Colony', function (accounts) {
       const skill3ParentSkillId2 = await colonyNetwork.getParentSkillId.call(3, 1);
       assert.equal(skill3ParentSkillId2.toNumber(), 0);
 
-      const skill4 = await colonyNetwork.skills.call(4);
+      const skill4 = await colonyNetwork.getSkill.call(4);
       assert.equal(skill4[0].toNumber(), 1);
       assert.equal(skill4[1].toNumber(), 0);
       const skill4ParentSkillId1 = await colonyNetwork.getParentSkillId.call(4, 0);
       assert.equal(skill4ParentSkillId1.toNumber(), 0);
 
-      const skill5 = await colonyNetwork.skills.call(5);
+      const skill5 = await colonyNetwork.getSkill.call(5);
       assert.equal(skill5[0].toNumber(), 2);
       assert.equal(skill5[1].toNumber(), 0);
       const skill5ParentSkillId1 = await colonyNetwork.getParentSkillId.call(5, 0);
@@ -215,7 +217,7 @@ contract('Common Colony', function (accounts) {
       const skill5ParentSkillId2 = await colonyNetwork.getParentSkillId.call(5, 1);
       assert.equal(skill5ParentSkillId2.toNumber(), 0);
 
-      const skill6 = await colonyNetwork.skills.call(6);
+      const skill6 = await colonyNetwork.getSkill.call(6);
       assert.equal(skill6[0].toNumber(), 2);
       assert.equal(skill6[1].toNumber(), 0);
       const skill6ParentSkillId1 = await colonyNetwork.getParentSkillId.call(6, 0);
@@ -236,7 +238,7 @@ contract('Common Colony', function (accounts) {
       await commonColony.addSkill(8);
 
 
-      const skill9 = await colonyNetwork.skills.call(9);
+      const skill9 = await colonyNetwork.getSkill.call(9);
       assert.equal(skill9[0].toNumber(), 9);
       assert.equal(skill9[1].toNumber(), 0);
 
