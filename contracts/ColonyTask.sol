@@ -58,6 +58,8 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   modifier taskWorkRatingRevealOpen(uint256 _id) {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
+    require(ratingSecrets.count <= 2);
+    
     if (ratingSecrets.count == 2) {
       require(sub(now, ratingSecrets.timestamp) <= 432000);
     } else if (ratingSecrets.count < 2) {
@@ -191,6 +193,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     } else if (_role == 2) {
       workerRole.rated = true;
       workerRole.rating = 50;   
+    } else {
+      revert();
     }
   }
 
