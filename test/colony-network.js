@@ -4,7 +4,6 @@ import testHelper from '../helpers/test-helper';
 const upgradableContracts = require('../helpers/upgradable-contracts');
 
 const EtherRouter = artifacts.require('EtherRouter');
-const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask= artifacts.require('ColonyTask');

@@ -2,7 +2,7 @@
 import testHelper from '../helpers/test-helper';
 import upgradableContracts from '../helpers/upgradable-contracts';
 
-const ColonyNetwork = artifacts.require('ColonyNetwork');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
 const UpdatedColonyNetwork = artifacts.require('UpdatedColonyNetwork');
@@ -23,7 +23,7 @@ contract('ColonyNetwork contract upgrade', function (accounts) {
 
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     // Setup 2 test colonies
     colonyKey1 = testHelper.getRandomString(7);

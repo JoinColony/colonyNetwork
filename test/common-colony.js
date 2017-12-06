@@ -3,7 +3,6 @@ const upgradableContracts = require('../helpers/upgradable-contracts');
 
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
-const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const IColonyNetwork = artifacts.require('IColonyNetwork');
 const IColony = artifacts.require('IColony');

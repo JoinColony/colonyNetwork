@@ -43,8 +43,8 @@ module.exports = {
     iAbi.map( (value, index) => {
         let fName = value.name;
         let fType = value.type;
-        if (fName==='authority' || fName === 'owner' || fType === 'event') { return; } //These are from DSAuth, and so are on EtherRouter itself without any more help.
-        if (value.type !== 'function' ) { return; } // We only care about functions.
+        if (fName==='authority' || fName === 'owner') { return; } //These are from DSAuth, and so are on EtherRouter itself without any more help.
+        if (value.type !== 'function') { return; } // We only care about functions.
         let fInputs = value.inputs.map(parameter => parameter.type) // Gets the types of the parameters, which is all we care about for function signatures.
         let fOutputSize = value.outputs.length * 32;
         // Record function name and how much data is returned

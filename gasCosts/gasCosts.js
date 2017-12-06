@@ -2,9 +2,9 @@
 import testHelper from '../helpers/test-helper';
 const upgradableContracts = require('../helpers/upgradable-contracts');
 
-const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
 const ColonyTask = artifacts.require('ColonyTask');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
@@ -37,7 +37,7 @@ contract('all', function (accounts) {
     colony = await Colony.new();
     let resolver = await Resolver.new();
     const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     colonyTask = await ColonyTask.new()
     colonyFunding = await ColonyFunding.new()
     colonyTransactionReviewer = await ColonyTransactionReviewer.new();
