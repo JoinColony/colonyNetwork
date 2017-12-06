@@ -60,7 +60,7 @@ contract('Colony contract upgrade', function (accounts) {
     await resolver.register("isUpdated()", updatedColonyContract.address, 32);
     await upgradableContracts.setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     // Check new Colony contract version is registered successfully
-    updatedColonyVersion = await colonyNetwork.currentColonyVersion.call();
+    updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
 
     // Upgrade our existing colony
     await colonyNetwork.upgradeColony(COLONY_KEY, updatedColonyVersion.toNumber());

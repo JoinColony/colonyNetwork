@@ -107,8 +107,8 @@ contract('ColonyNetwork', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(createColonyGas, tx);
-      
-      const colonyCount = await colonyNetwork.colonyCount.call();
+
+      const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 1);
       const colonyAddress2 = await colonyNetwork.getColony.call(COLONY_KEY);
       assert.equal(colonyAddress2, colonyAddress1);
