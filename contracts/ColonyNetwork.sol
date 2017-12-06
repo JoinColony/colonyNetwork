@@ -42,6 +42,11 @@ contract ColonyNetwork is DSAuth {
     _;
   }
 
+  modifier colonyKeyUnique(bytes32 _key) {
+    require(_colonies[_key] == address(0x0));
+    _;
+  }
+
   modifier skillExists(uint skillId) {
     require(skillCount > skillId);
     _;
@@ -63,7 +68,9 @@ contract ColonyNetwork is DSAuth {
     _;
   }
 
-  function createColony(bytes32 _name) public {
+  function createColony(bytes32 _name) public 
+  colonyKeyUnique(_name)
+  {
     var token = new Token();
     var etherRouter = new EtherRouter();
     var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
