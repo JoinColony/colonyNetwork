@@ -21,7 +21,6 @@ contract('Colony', function (accounts) {
   const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
   const newSpecificationHash = '9bb76d8e6c89b524d34a454b3140df29';
   const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
-  const newDeliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
 
   const optionsToSpotTransactionFailure = {
     from: MAIN_ACCOUNT,
