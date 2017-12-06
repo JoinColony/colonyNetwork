@@ -71,8 +71,11 @@ contract ColonyStorage is DSAuth {
   }
 
   struct Role {
+    // Address of the user for the given role
     address user;
+    // Has the user work been rated
     bool rated;
+    // Rating the user received
     uint8 rating;
   }
 
