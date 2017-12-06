@@ -99,7 +99,7 @@ contract('ColonyNetwork', function (accounts) {
     it('should throw if colony key is not unique', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
       const colonyAddress1 = await colonyNetwork.getColony.call(COLONY_KEY);
-      
+
       let tx;
       try {
         tx = await colonyNetwork.createColony(COLONY_KEY, { gas: createColonyGas });
@@ -150,7 +150,7 @@ contract('ColonyNetwork', function (accounts) {
 
     it("should log a ColonyAdded event", async function () {
       const tx = await colonyNetwork.createColony(COLONY_KEY);
-      assert.equal(tx.logs[6].event, 'ColonyAdded');
+      assert.equal(tx.logs[0].event, 'ColonyAdded');
     });
   });
 
