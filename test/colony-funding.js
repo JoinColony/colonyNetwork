@@ -33,7 +33,6 @@ contract('Colony', function (accounts) {
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
-    await colonyNetwork.createColony("Common Colony");
   });
 
   beforeEach(async function () {

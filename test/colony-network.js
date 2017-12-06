@@ -95,6 +95,24 @@ contract('ColonyNetwork', function (accounts) {
       assert.equal(colonyCount.toNumber(), 1);
     });
 
+    it('should throw if colony key is not unique', async function () {
+      await colonyNetwork.createColony(COLONY_KEY);
+      const colonyAddress1 = await colonyNetwork.getColony.call(COLONY_KEY);
+      
+      let tx;
+      try {
+        tx = await colonyNetwork.createColony(COLONY_KEY, { gas: createColonyGas });
+      } catch (err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      testHelper.checkAllGasSpent(createColonyGas, tx);
+      
+      const colonyCount = await colonyNetwork.colonyCount.call();
+      assert.equal(colonyCount.toNumber(), 1);
+      const colonyAddress2 = await colonyNetwork.getColony.call(COLONY_KEY);
+      assert.equal(colonyAddress2, colonyAddress1);
+    });
+
     it('should maintain correct count of colonies', async function () {
       await colonyNetwork.createColony(testHelper.getRandomString(7));
       await colonyNetwork.createColony(testHelper.getRandomString(7));
