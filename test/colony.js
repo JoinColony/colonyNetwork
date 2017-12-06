@@ -152,6 +152,11 @@ contract('Colony', function (accounts) {
       const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount.toNumber(), 5);
     });
+
+    it("should log a TaskAdded event", async function () {
+      const tx = await colony.makeTask(ipfsDecodedHash);
+      assert.equal(tx.logs[0].event, 'TaskAdded');
+    });
   });
 
   describe('when updating tasks', () => {

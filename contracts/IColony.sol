@@ -48,4 +48,6 @@ contract IColony {
   function submitTransaction(bytes,uint256,uint8) public returns (uint);
   function confirmTransaction(uint256,uint8) public;
   function setFunctionReviewers(bytes4,uint8,uint8) public;
+
+  event TaskAdded(uint256 indexed id);
 }
