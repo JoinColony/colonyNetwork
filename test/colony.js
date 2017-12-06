@@ -158,7 +158,7 @@ contract('Colony', function (accounts) {
     });
 
     it("should log a TaskAdded event", async function () {
-      const tx = await colony.makeTask(ipfsDecodedHash);
+      const tx = await colony.makeTask(specificationHash);
       assert.equal(tx.logs[0].event, 'TaskAdded');
     });
   });

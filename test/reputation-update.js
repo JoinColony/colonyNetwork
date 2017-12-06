@@ -14,7 +14,7 @@ const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer')
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 
-contract('Colony', function (accounts) {
+contract('Colony Reputation Updates', function (accounts) {
   let COLONY_KEY;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];

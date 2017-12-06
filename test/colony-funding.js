@@ -12,7 +12,7 @@ const Authority = artifacts.require('Authority');
 
 const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
 
-contract('Colony', function (accounts) {
+contract('Colony Funding', function (accounts) {
   let COLONY_KEY;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];

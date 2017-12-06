@@ -6,7 +6,7 @@ const IColony = artifacts.require('IColony');
 const ColonyNetwork = artifacts.require('ColonyNetwork');
 const EtherRouter = artifacts.require('EtherRouter');
 
-contract('Colony', function (accounts) {
+contract('Colony Task Work Rating', function (accounts) {
   let COLONY_KEY;
   const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
@@ -33,7 +33,6 @@ contract('Colony', function (accounts) {
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await ColonyNetwork.at(etherRouter.address);
-    await colonyNetwork.createColony("Common Colony");
   });
 
   beforeEach(async function () {
