@@ -26,10 +26,10 @@ contract ColonyTask is ColonyStorage, DSMath {
   modifier userCanRateRole(uint256 _id, uint8 _role) {
     // Manager rated by worker
     // Worker rated by evaluator
-    if (_role == 0) {
-      require(tasks[_id].roles[2].user == msg.sender);
-    } else if (_role == 2) {
-      require(tasks[_id].roles[1].user == msg.sender);
+    if (_role == MANAGER) {
+      require(tasks[_id].roles[WORKER].user == msg.sender);
+    } else if (_role == WORKER) {
+      require(tasks[_id].roles[EVALUATOR].user == msg.sender);
     } else {
       revert();
     }
@@ -99,7 +99,7 @@ contract ColonyTask is ColonyStorage, DSMath {
       skillIds: _skillIds
     });
 
-    tasks[taskCount].roles[0] = Role({
+    tasks[taskCount].roles[MANAGER] = Role({
       user: msg.sender,
       rated: false,
       rating: 0
@@ -180,17 +180,17 @@ contract ColonyTask is ColonyStorage, DSMath {
   function assignWorkRating(uint _id, uint8 _role) public 
   ratingNotReceivedForRole(_id, _role)
   {
-    Role storage workerRole = tasks[_id].roles[2];
+    Role storage workerRole = tasks[_id].roles[WORKER];
 
-    if (_role == 0) {
-      Role storage managerRole = tasks[_id].roles[_role];
+    if (_role == MANAGER) {
+      Role storage managerRole = tasks[_id].roles[MANAGER];
       managerRole.rated = true;
       managerRole.rating = 50;
 
       if (workerRole.rated) {
         workerRole.rating = (workerRole.rating > 5) ? (workerRole.rating - 5) : 0;
       }      
-    } else if (_role == 2) {
+    } else if (_role == WORKER) {
       workerRole.rated = true;
       workerRole.rating = 50;   
     } else {
@@ -253,7 +253,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskExists(_id)
   taskNotAccepted(_id)
   workNotSubmitted(_id)
-  confirmTaskRoleIdentity(_id, 2)
+  confirmTaskRoleIdentity(_id, WORKER)
   {
     tasks[_id].deliverableHash = _deliverableHash;
     tasks[_id].deliverableTimestamp = now;
@@ -270,7 +270,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     uint skillId = task.skillIds[0];
     int sign = _id % 2 == 0 ? -1 : int8(1); // TODO: Remove this hack to allow us to test -ve reputation change
     int reputationChange = 10 * sign; // TODO: Replace with actual reputation change
-    colonyNetworkContract.appendReputationUpdateLog(task.roles[2].user, reputationChange, skillId);
+    colonyNetworkContract.appendReputationUpdateLog(task.roles[WORKER].user, reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
 

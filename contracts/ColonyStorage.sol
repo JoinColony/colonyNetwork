@@ -46,6 +46,9 @@ contract ColonyStorage is DSAuth {
   uint taskCount;
   uint potCount;
 
+  uint8 constant MANAGER = 0;
+  uint8 constant EVALUATOR = 1;
+  uint8 constant WORKER = 2;
 
   struct Task {
     bytes32 specificationHash;
@@ -59,7 +62,8 @@ contract ColonyStorage is DSAuth {
     uint domainId;
     uint[] skillIds;
 
-    mapping (uint => Role) roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
+    // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
+    mapping (uint => Role) roles; 
     // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint) totalPayouts;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
