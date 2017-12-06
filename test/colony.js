@@ -4,9 +4,9 @@ import testHelper from '../helpers/test-helper';
 
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
-const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 
@@ -33,7 +33,7 @@ contract('Colony', function (accounts) {
 
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async function () {

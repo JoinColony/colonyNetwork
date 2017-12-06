@@ -4,12 +4,12 @@ import testHelper from '../helpers/test-helper';
 const upgradableContracts = require('../helpers/upgradable-contracts');
 
 const EtherRouter = artifacts.require('EtherRouter');
-const ColonyNetwork = artifacts.require('ColonyNetwork');
 const Colony = artifacts.require('Colony');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask= artifacts.require('ColonyTask');
 const ColonyTransactionReviewer= artifacts.require('ColonyTransactionReviewer');
 const IColony = artifacts.require('IColony');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
 const Resolver = artifacts.require('Resolver');
 
 contract('ColonyNetwork', function (accounts) {
@@ -43,7 +43,7 @@ contract('ColonyNetwork', function (accounts) {
 
     const etherRouter = await EtherRouter.new();
     etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
   });
 
@@ -55,33 +55,33 @@ contract('ColonyNetwork', function (accounts) {
     });
 
     it('should have the correct current Colony version set', async function () {
-      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
     it('should have the Resolver for current Colony version set', async function () {
-      const currentResolver = await colonyNetwork.colonyVersionResolver.call(version.toNumber());
+      const currentResolver = await colonyNetwork.getColonyVersionResolver.call(version.toNumber());
       assert.equal(currentResolver, resolver.address);
     });
 
     it('should be able to register a higher Colony contract version', async function () {
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
-      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const updatedVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(updatedVersion, sampleResolver);
 
-      const updatedColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       assert.equal(updatedColonyVersion.toNumber(), updatedVersion);
-      const currentResolver = await colonyNetwork.colonyVersionResolver.call(updatedVersion);
+      const currentResolver = await colonyNetwork.getColonyVersionResolver.call(updatedVersion);
       assert.equal(currentResolver, sampleResolver);
     });
 
     it('when registering a lower version of the Colony contract, should NOT update the current (latest) colony version', async function () {
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
-      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       await colonyNetwork.addColonyVersion(currentColonyVersion.sub(1).toNumber(), sampleResolver);
 
-      const updatedColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       assert.equal(updatedColonyVersion.toNumber(), currentColonyVersion.toNumber());
     });
   });
@@ -90,7 +90,7 @@ contract('ColonyNetwork', function (accounts) {
     it('should allow users to create new colonies', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
-      const colonyCount = await colonyNetwork.colonyCount.call();
+      const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.notEqual(address, 0x0);
       assert.equal(colonyCount.toNumber(), 1);
     });
@@ -98,7 +98,7 @@ contract('ColonyNetwork', function (accounts) {
     it('should throw if colony key is not unique', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
       const colonyAddress1 = await colonyNetwork.getColony.call(COLONY_KEY);
-      
+
       let tx;
       try {
         tx = await colonyNetwork.createColony(COLONY_KEY, { gas: createColonyGas });
@@ -106,8 +106,8 @@ contract('ColonyNetwork', function (accounts) {
         tx = await testHelper.ifUsingTestRPC(err);
       }
       testHelper.checkAllGasSpent(createColonyGas, tx);
-      
-      const colonyCount = await colonyNetwork.colonyCount.call();
+
+      const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 1);
       const colonyAddress2 = await colonyNetwork.getColony.call(COLONY_KEY);
       assert.equal(colonyAddress2, colonyAddress1);
@@ -121,15 +121,15 @@ contract('ColonyNetwork', function (accounts) {
       await colonyNetwork.createColony(testHelper.getRandomString(7));
       await colonyNetwork.createColony(testHelper.getRandomString(7));
       await colonyNetwork.createColony(testHelper.getRandomString(7));
-      const colonyCount = await colonyNetwork.colonyCount.call();
+      const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 7);
     });
 
     it('when common colony is created, should have the root skill initialised', async function () {
       await colonyNetwork.createColony("Common Colony");
-      const skillCount = await colonyNetwork.skillCount.call();
+      const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);
-      const rootSkill = await colonyNetwork.skills.call(1);
+      const rootSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(rootSkill[0].toNumber(), 0);
       assert.equal(rootSkill[1].toNumber(), 0);
     });
@@ -149,7 +149,7 @@ contract('ColonyNetwork', function (accounts) {
 
     it("should log a ColonyAdded event", async function () {
       const tx = await colonyNetwork.createColony(COLONY_KEY);
-      assert.equal(tx.logs[6].event, 'ColonyAdded');
+      assert.equal(tx.logs[0].event, 'ColonyAdded');
     });
   });
 
@@ -183,7 +183,7 @@ contract('ColonyNetwork', function (accounts) {
       let colony = await EtherRouter.at(colonyAddress);
 
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
-      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
@@ -198,7 +198,7 @@ contract('ColonyNetwork', function (accounts) {
       let colony = await Colony.at(colonyAddress);
 
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
-      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.sub(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
@@ -219,7 +219,7 @@ contract('ColonyNetwork', function (accounts) {
       let colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
       let colony = await Colony.at(colonyAddress);
 
-      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
 
       let tx;
@@ -241,7 +241,7 @@ contract('ColonyNetwork', function (accounts) {
       let resolver = await colony.resolver.call();
 
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
-      const currentColonyVersion = await colonyNetwork.currentColonyVersion.call();
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 

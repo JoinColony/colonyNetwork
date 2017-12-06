@@ -1,7 +1,7 @@
 const assert = require('assert');
 const upgradableContracts = require('../helpers/upgradable-contracts');
 const Colony = artifacts.require('./Colony');
-const ColonyNetwork = artifacts.require('./ColonyNetwork');
+const IColonyNetwork = artifacts.require('./IColonyNetwork');
 const EtherRouter = artifacts.require('./EtherRouter');
 const Resolver = artifacts.require('./Resolver');
 const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet');
@@ -16,14 +16,14 @@ module.exports = function (deployer, network, accounts) {
     return EtherRouter.deployed();
   })
   .then(function (_etherRouter) {
-    return ColonyNetwork.at(_etherRouter.address);
+    return IColonyNetwork.at(_etherRouter.address);
   })
   .then(function (instance) {
     colonyNetwork = instance;
     return colonyNetwork.createColony("Common Colony");
   })
   .then(function () {
-    return colonyNetwork.skillCount.call();
+    return colonyNetwork.getSkillCount.call();
   })
   .then(function (skillCount) {
     assert.equal(skillCount.toNumber(), 1);

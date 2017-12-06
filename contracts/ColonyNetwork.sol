@@ -3,37 +3,14 @@ pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
-import "../lib/dappsys/roles.sol";
 import "./Authority.sol";
 import "./IColony.sol";
 import "./EtherRouter.sol";
 import "./Token.sol";
+import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetwork is DSAuth {
-  address resolver;
-  uint256 public colonyCount;
-  uint256 public currentColonyVersion;
-  // TODO: We can probably do better than having three colony-related mappings
-  mapping (uint => address) _coloniesIndex;
-  mapping (bytes32 => address) _colonies;
-  mapping (address => bool) _isColony;
-  // Maps colony contract versions to respective resolvers
-  mapping (uint => address) public colonyVersionResolver;
-
-  struct Skill {
-    // total number of parent skills
-    uint256 nParents;
-    // total number of child skills
-    uint256 nChildren;
-    // array of `skill_id`s of parent skills starting from the 1st to `n`th, where `n` is an integer power of two larger than or equal to 1
-    uint256[] parents;
-    // array of `skill_id`s of all child skills
-    uint256[] children;
-  }
-  mapping (uint => Skill) public skills;
-  uint256 public skillCount;
-
+contract ColonyNetwork is ColonyNetworkStorage {
   event ColonyAdded(uint256 indexed id);
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
@@ -53,23 +30,37 @@ contract ColonyNetwork is DSAuth {
     _;
   }
 
-  struct ReputationLogEntry {
-    address user;
-    int amount;
-    uint skillId;
-    address colony;
-    uint nUpdates;
-    uint nPreviousUpdates;
-  }
-
-  ReputationLogEntry[] public ReputationUpdateLog;
-
   modifier calledByColony() {
     require(_isColony[msg.sender]);
     _;
   }
 
-  function createColony(bytes32 _name) public 
+  function getCurrentColonyVersion() public returns (uint256) {
+    return currentColonyVersion;
+  }
+
+  function getColonyCount() public returns (uint256) {
+    return colonyCount;
+  }
+
+  function getSkillCount() public returns (uint256) {
+    return skillCount;
+  }
+
+  function getColonyVersionResolver(uint256 _version) public returns (address) {
+    return colonyVersionResolver[_version];
+  }
+
+  function getSkill(uint256 _skillId) public returns (uint256, uint256) {
+    return (skills[_skillId].nParents, skills[_skillId].nChildren);
+  }
+
+  function getReputationUpdateLogEntry(uint256 _id) public returns (address, int, uint, address, uint, uint) {
+    ReputationLogEntry storage x = ReputationUpdateLog[_id];
+    return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+  }
+
+  function createColony(bytes32 _name) public
   colonyKeyUnique(_name)
   {
     var token = new Token();

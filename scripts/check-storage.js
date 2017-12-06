@@ -5,7 +5,7 @@ import shell from 'pshell';
 
 
 fs.readdirSync('./contracts/').forEach(contractName => {
-	if (['Authority.sol', 'ColonyNetwork.sol', 'ColonyStorage.sol', 'EtherRouter.sol', 'Migrations.sol', 'Resolver.sol', 'Token.sol'].indexOf(contractName)>-1){
+	if (['Authority.sol', 'ColonyNetworkStorage.sol', 'ColonyStorage.sol', 'EtherRouter.sol', 'Migrations.sol', 'Resolver.sol', 'Token.sol'].indexOf(contractName)>-1){
 		return;
 	}
 	const src = fs.readFileSync('./contracts/' + contractName, 'utf8');

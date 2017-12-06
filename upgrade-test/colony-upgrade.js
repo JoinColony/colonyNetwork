@@ -2,7 +2,7 @@
 import testHelper from '../helpers/test-helper';
 import upgradableContracts from '../helpers/upgradable-contracts';
 
-const ColonyNetwork = artifacts.require('ColonyNetwork');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
 const IColony = artifacts.require('IColony');
@@ -37,7 +37,7 @@ contract('Colony contract upgrade', function (accounts) {
 
   before(async function () {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
-    colonyNetwork = await ColonyNetwork.at(etherRouterColonyNetwork.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
 
     COLONY_KEY = testHelper.getRandomString(7);
     await colonyNetwork.createColony(COLONY_KEY);
@@ -60,7 +60,7 @@ contract('Colony contract upgrade', function (accounts) {
     await resolver.register("isUpdated()", updatedColonyContract.address, 32);
     await upgradableContracts.setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     // Check new Colony contract version is registered successfully
-    updatedColonyVersion = await colonyNetwork.currentColonyVersion.call();
+    updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
 
     // Upgrade our existing colony
     await colonyNetwork.upgradeColony(COLONY_KEY, updatedColonyVersion.toNumber());
