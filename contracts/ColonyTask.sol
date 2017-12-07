@@ -9,6 +9,9 @@ import "./IColony.sol";
 
 
 contract ColonyTask is ColonyStorage, DSMath {
+  uint256 constant RATING_COMMIT_TIMEOUT = 432000;
+  uint256 constant RATING_REVEAL_TIMEOUT = 432000;
+
   event TaskAdded(uint256 indexed id);
 
   modifier skillExists(uint256 _skillId){
@@ -46,13 +49,16 @@ contract ColonyTask is ColonyStorage, DSMath {
     _;
   }
 
-  modifier taskWorkRatingOpen(uint256 _id) {
+  modifier taskWorkRatingCommitOpen(uint256 _id) {
+    RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
+    require(ratingSecrets.count < 2);
+
     // Check we are either past the due date or work has already been submitted
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
     require(taskCompletionTime > 0 && taskCompletionTime <= now);
 
     // Check we are within 5 days of the work submission time
-    require(sub(now, taskCompletionTime) <= 432000);
+    require(sub(now, taskCompletionTime) <= RATING_COMMIT_TIMEOUT);
     _;
   }
 
@@ -60,20 +66,26 @@ contract ColonyTask is ColonyStorage, DSMath {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     require(ratingSecrets.count <= 2);
     
+    // If both ratings have been received, start the reveal period from the time of the last rating commit
+    // Otherwise start the reveal period after the commit period has expired
+    // In both cases, keep reveal period open for 5 days
     if (ratingSecrets.count == 2) {
-      require(sub(now, ratingSecrets.timestamp) <= 432000);
+      require(sub(now, ratingSecrets.timestamp) <= RATING_REVEAL_TIMEOUT);
     } else if (ratingSecrets.count < 2) {
       uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-      require(sub(now, taskCompletionTime) > 432000);
-      require(sub(now, taskCompletionTime) <= 432000*2);
+      require(sub(now, taskCompletionTime) > RATING_COMMIT_TIMEOUT);
+      require(sub(now, taskCompletionTime) <= add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT));
     }
     _;
   }
 
-  modifier ratingNotReceivedForRole(uint256 _id, uint8 _role) {
+  modifier taskWorkRatingsClosed(uint256 _id) {
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    require(sub(now, taskCompletionTime) > 2*432000); // More than 10 days from work submission have passed
+    require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT)); // More than 10 days from work submission have passed
+    _;
+  }
 
+  modifier ratingNotReceivedForRole(uint256 _id, uint8 _role) {
     Role storage role = tasks[_id].roles[_role];
     require(!role.rated);
     _;
@@ -155,7 +167,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
-  taskWorkRatingOpen(_id)
+  taskWorkRatingCommitOpen(_id)
   {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     ratingSecrets.count += 1;
@@ -177,7 +189,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   // In the event of a user not committing or revealing within the 10 day rating window, 
   // their rating of their counterpart is assumed to be the highest possible 
   // and their own rating is decreased by 5 (e.g. 0.5 points)
-  function assignWorkRating(uint _id, uint8 _role) public 
+  function assignWorkRating(uint _id, uint8 _role) public
+  taskWorkRatingsClosed(_id)
   ratingNotReceivedForRole(_id, _role)
   {
     Role storage workerRole = tasks[_id].roles[WORKER];
