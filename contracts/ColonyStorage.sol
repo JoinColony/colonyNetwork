@@ -46,10 +46,6 @@ contract ColonyStorage is DSAuth {
   uint taskCount;
   uint potCount;
 
-  uint8 constant MANAGER = 0;
-  uint8 constant EVALUATOR = 1;
-  uint8 constant WORKER = 2;
-
   struct Task {
     bytes32 specificationHash;
     bytes32 deliverableHash;
