@@ -9,7 +9,7 @@ contract IColony {
   function owner() public view returns (address);
 
   // Colony.sol
-  function version() public view returns (uint256);
+  function version() public pure returns (uint256);
   function setToken(address _token) public;
   function getToken() public view returns (address);
   function initialiseColony(address _network) public;
