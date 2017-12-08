@@ -26,7 +26,7 @@ gulp.task('clean:contracts', done => rimraf('./build/contracts/*', done));
 
 const cleanUpgradeTempContracts = () => {
   return new Promise((resolve, reject) => {
-    rimraf('./contracts/Updated*.*', resolve);
+    rimraf('./contracts/*Updated*.*', resolve);
   });
 };
 
