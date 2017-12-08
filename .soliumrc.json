@@ -1,9 +1,13 @@
 {
   "extends": "solium:all",
+  "plugins": ["security"],
   "rules": {
-    "arg-overflow": ["warning", 5],
     "imports-on-top": 0,
+    "variable-declarations": "error",
+    "arg-overflow": ["warning", 5],
     "indentation": ["error", 2],
-    "quotes": ["error", "double"]
+    "quotes": ["error", "double"],
+    "security/no-inline-assembly": 0,
+    "security/no-call-value": 0
   }
 }

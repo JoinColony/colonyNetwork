@@ -1,6 +1,7 @@
 node_modules
 parity-genesis.json
 contracts/Updated*
+contracts/IUpdated*
 keys/*
 test-results.xml
 0

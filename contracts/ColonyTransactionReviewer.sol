@@ -31,6 +31,7 @@ contract ColonyTransactionReviewer is ColonyStorage {
   }
 
   function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
+  public
   self
   {
     uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
@@ -42,11 +43,23 @@ contract ColonyTransactionReviewer is ColonyStorage {
   }
 
   function submitTransaction(bytes data, uint value, uint8 role)
+  public
   self
   returns (uint transactionId)
   {
     transactionId = addTransaction(data, value);
     confirmTransaction(transactionId, role);
+  }
+
+  function confirmTransaction(uint transactionId, uint8 role) 
+  public
+  self
+  transactionExists(transactionId)
+  notConfirmed(transactionId, role)
+  {
+    confirmations[transactionId][role] = true;
+    Confirmation(transactionId, role);
+    executeTransaction(transactionId);
   }
 
   function addTransaction(bytes data, uint value)
@@ -61,16 +74,6 @@ contract ColonyTransactionReviewer is ColonyStorage {
       executed: false
     });
     Submission(transactionId);
-  }
-
-  function confirmTransaction(uint transactionId, uint8 role)
-  self
-  transactionExists(transactionId)
-  notConfirmed(transactionId, role)
-  {
-    confirmations[transactionId][role] = true;
-    Confirmation(transactionId, role);
-    executeTransaction(transactionId);
   }
 
   /// @dev Allows anyone to execute a confirmed transaction.

@@ -75,15 +75,6 @@ contract ColonyTask is ColonyStorage {
     IColony(this).confirmTransaction(_transactionId, _role);
   }
 
-  // Get the function signature and task id from the transaction bytes data
-  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
-  function deconstructCall(bytes _data) internal returns (bytes4 sig, uint256 taskId) {
-    assembly {
-      sig := mload(add(_data, 0x20))
-      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
-    }
-  }
-
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
   // Note task assignment is agreed off-chain
   function setTaskEvaluator(uint256 _id, address _evaluator) public
@@ -171,4 +162,12 @@ contract ColonyTask is ColonyStorage {
     return tasks[_id].roles[_role];
   }
 
+  // Get the function signature and task id from the transaction bytes data
+  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
+  function deconstructCall(bytes _data) internal returns (bytes4 sig, uint256 taskId) {
+    assembly {
+      sig := mload(add(_data, 0x20))
+      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
+    }
+  }
 }
