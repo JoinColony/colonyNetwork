@@ -159,15 +159,6 @@ contract ColonyTask is ColonyStorage, DSMath {
     IColony(this).confirmTransaction(_transactionId, _role);
   }
 
-  // Get the function signature and task id from the transaction bytes data
-  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
-  function deconstructCall(bytes _data) internal pure returns (bytes4 sig, uint256 taskId) {
-    assembly {
-      sig := mload(add(_data, 0x20))
-      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
-    }
-  }
-
   function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
@@ -309,5 +300,14 @@ contract ColonyTask is ColonyStorage, DSMath {
   function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8) {
     Role storage role = tasks[_id].roles[_role];
     return (role.user, role.rated, role.rating);
+  }
+
+  // Get the function signature and task id from the transaction bytes data
+  // Note: Relies on the encoded function's first parameter to be the uint256 taskId
+  function deconstructCall(bytes _data) internal pure returns (bytes4 sig, uint256 taskId) {
+    assembly {
+      sig := mload(add(_data, 0x20))
+      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
+    }
   }
 }
