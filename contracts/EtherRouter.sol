@@ -39,8 +39,8 @@ contract EtherRouter is DSAuth {
       r := delegatecall(sub(gas, 700), destination, mload(0x40), calldatasize, mload(0x40), outsize)
     }
 
-    // Throw if the call failed
-    assert(r == 1);
+    // Check the call is successful
+    require(r == 1);
 
     // Pass on the return value
     assembly {
