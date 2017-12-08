@@ -9,6 +9,19 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyFunding is ColonyStorage, DSMath {
+  function getFeeInverse() public pure returns (uint) {
+    // Return 1 / the fee to pay to the network.
+    // e.g. if the fee is 1% (or 0.01), return 100
+    // TODO: refer to ColonyNetwork
+    return 100;
+  }
+
+  function getRewardInverse() public pure returns (uint) {
+    // Return 1 / the reward to pay out from revenue.
+    // e.g. if the fee is 1% (or 0.01), return 100
+    // TODO: Make settable by colony
+    return 100;
+  }
 
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
   self()
@@ -22,36 +35,6 @@ contract ColonyFunding is ColonyStorage, DSMath {
     uint currentTotalAmount = task.totalPayouts[_token];
     task.totalPayouts[_token] = add(sub(currentTotalAmount, currentAmount), _amount);
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
-  }
-
-  function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
-    Task storage task = tasks[_id];
-    uint totalTokenPayout = task.totalPayouts[_token];
-    uint tokenPot = pots[task.potId].balance[_token];
-    if (_prev >= totalTokenPayout) {                                   // If the old amount in the pot was enough to pay for the budget
-      if (tokenPot < totalTokenPayout) {                               // And the new amount in the pot is not enough to pay for the budget...
-        task.payoutsWeCannotMake += 1;                                  // Then this is a set of payouts we cannot make that we could before.
-      }
-    } else {                                                            // If this 'else' is running, then the old amount in the pot could not pay for the budget
-      if (tokenPot >= totalTokenPayout) {                             // And the new amount in the pot can pay for the budget
-        task.payoutsWeCannotMake -= 1;                                  // Then this is a set of payouts we can make that we could not before.
-      }
-    }
-  }
-
-  function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
-    Task storage task = tasks[_id];
-    uint totalTokenPayout = task.totalPayouts[_token];
-    uint tokenPot = pots[task.potId].balance[_token];
-    if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
-      if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
-        task.payoutsWeCannotMake += 1;                                 // Then this is a set of payouts we cannot make that we could before.
-      }
-    } else {                                                           // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
-      if (tokenPot >= totalTokenPayout) {                             // And the amount is enough to pay for the new budget...
-        task.payoutsWeCannotMake -= 1;                                 // Then this is a set of payouts we can make that we could not before.
-      }
-    }
   }
 
   // To get all payouts for a task iterate over roles.length
@@ -146,18 +129,33 @@ contract ColonyFunding is ColonyStorage, DSMath {
     return nonRewardPotsTotal[a];
   }
 
-  function getFeeInverse() public pure returns (uint) {
-    // Return 1 / the fee to pay to the network.
-    // e.g. if the fee is 1% (or 0.01), return 100
-    // TODO: refer to ColonyNetwork
-    return 100;
+  function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
+    Task storage task = tasks[_id];
+    uint totalTokenPayout = task.totalPayouts[_token];
+    uint tokenPot = pots[task.potId].balance[_token];
+    if (_prev >= totalTokenPayout) {                                   // If the old amount in the pot was enough to pay for the budget
+      if (tokenPot < totalTokenPayout) {                               // And the new amount in the pot is not enough to pay for the budget...
+        task.payoutsWeCannotMake += 1;                                  // Then this is a set of payouts we cannot make that we could before.
+      }
+    } else {                                                            // If this 'else' is running, then the old amount in the pot could not pay for the budget
+      if (tokenPot >= totalTokenPayout) {                             // And the new amount in the pot can pay for the budget
+        task.payoutsWeCannotMake -= 1;                                  // Then this is a set of payouts we can make that we could not before.
+      }
+    }
   }
 
-  function getRewardInverse() public pure returns (uint) {
-    // Return 1 / the reward to pay out from revenue.
-    // e.g. if the fee is 1% (or 0.01), return 100
-    // TODO: Make settable by colony
-    return 100;
+  function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
+    Task storage task = tasks[_id];
+    uint totalTokenPayout = task.totalPayouts[_token];
+    uint tokenPot = pots[task.potId].balance[_token];
+    if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
+      if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
+        task.payoutsWeCannotMake += 1;                                 // Then this is a set of payouts we cannot make that we could before.
+      }
+    } else {                                                           // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
+      if (tokenPot >= totalTokenPayout) {                             // And the amount is enough to pay for the new budget...
+        task.payoutsWeCannotMake -= 1;                                 // Then this is a set of payouts we can make that we could not before.
+      }
+    }
   }
-
 }
