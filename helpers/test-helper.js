@@ -90,4 +90,13 @@ module.exports = {
   hexToUtf8(text) {
     return web3.toAscii(text).replace(/\u0000/g, '');
   },
+  currentBlockTime()
+  { 
+    return web3.eth.getBlock("latest").timestamp;
+  },
+  forwardTime(seconds) {
+    console.log('Forwarding time with ' + seconds + 's ...');
+    web3.currentProvider.send({jsonrpc: "2.0", method: "evm_increaseTime", params: [seconds], id: 0});
+    web3.currentProvider.send({jsonrpc: "2.0", method: "evm_mine", params: [], id: 0});
+  }
 };

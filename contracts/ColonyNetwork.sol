@@ -216,5 +216,4 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function getReputationUpdateLogLength() public view returns (uint) {
     return ReputationUpdateLog.length;
   }
-
 }

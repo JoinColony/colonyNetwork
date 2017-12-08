@@ -10,9 +10,9 @@ const IColonyNetwork = artifacts.require('IColonyNetwork');
 const Token = artifacts.require('Token');
 const Authority = artifacts.require('Authority');
 
-const ipfsDecodedHash = '9bb76d8e6c89b524d34a454b3140df28';
+const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
 
-contract('Colony', function (accounts) {
+contract('Colony Funding', function (accounts) {
   let COLONY_KEY;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
@@ -88,7 +88,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,51,otherToken.address);
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
@@ -103,7 +103,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       try {
         await colony.moveFundsBetweenPots(0,2,1,otherToken.address);
       } catch(err) {
@@ -123,7 +123,7 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       try {
         await colony.moveFundsBetweenPots(1,2,51,otherToken.address, {from: addresses[1]});
       } catch (err) {
@@ -141,8 +141,8 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
       let tx;
       try {
@@ -182,37 +182,37 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.makeTask(specificationHash);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 0);
       await colony.proposeTaskChange(txData1, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
       let task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1,2,0,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being lower by increasing payout (8)
       const txData2 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
       await colony.proposeTaskChange(txData2, 0, 0);
       await colony.approveTaskChange(2, 2, { from: OTHER_ACCOUNT });
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
       // Pot 0, Payout 40
       // Pot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by increasing payout (12)
       const txData3 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 80);
@@ -220,7 +220,7 @@ contract('Colony', function (accounts) {
       await colony.approveTaskChange(3, 2, { from: OTHER_ACCOUNT });
 
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 80
       // Pot was equal to payout, transition to being above by decreasing payout (6)
       const txData4 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
@@ -228,72 +228,72 @@ contract('Colony', function (accounts) {
       await colony.approveTaskChange(4, 2, { from: OTHER_ACCOUNT });
 
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2,1,40,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to pot being below payout by changing pot (7)
       await colony.moveFundsBetweenPots(2,1,20,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1,2,60,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 40
       // Pot was above payout, change to being below by changing pot (9)
       await colony.moveFundsBetweenPots(2,1,60,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing payout (4)
       const txData5 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 10);
       await colony.proposeTaskChange(txData5, 0, 0);
       await colony.approveTaskChange(5, 2, { from: OTHER_ACCOUNT });
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 20, Payout 10
       // Pot was above, change to being above by changing payout (16)
       const txData6 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 5);
       await colony.proposeTaskChange(txData6, 0, 0);
       await colony.approveTaskChange(6, 2, { from: OTHER_ACCOUNT });
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 20, Payout 5
       // Pot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2,1,10,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 10, Payout 5
       // Pot was above payout, change to being below by changing payout (10)
       const txData7 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
       await colony.proposeTaskChange(txData7, 0, 0);
       await colony.approveTaskChange(7, 2, { from: OTHER_ACCOUNT });
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
       // Pot 10, Payout 40
       // Pot was below payout, change to being below by changing payout (14)
       const txData8 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 30);
       await colony.proposeTaskChange(txData8, 0, 0);
       await colony.approveTaskChange(8, 2, { from: OTHER_ACCOUNT });
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
       // Pot 10, Payout 30
       // Pot was below payout, change to being below by changing pot (13)
       await colony.moveFundsBetweenPots(2,1,5,otherToken.address);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
       // Pot 5, Payout 30
       // Pot was below payout, change to being equal by changing payout (2)
       const txData9 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 5);
       await colony.proposeTaskChange(txData9, 0, 0);
       await colony.approveTaskChange(9, 2, { from: OTHER_ACCOUNT });
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       // Pot 5, Payout 5
     });
 
@@ -333,8 +333,8 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.makeTask(specificationHash);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await colony.moveFundsBetweenPots(1,2,60,otherToken.address);
 
       const txData = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 50);
@@ -355,8 +355,8 @@ contract('Colony', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.makeTask(specificationHash);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
 
       const txData = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 30);
@@ -392,7 +392,7 @@ contract('Colony', function (accounts) {
     it('should let ether be moved between pots', async function () {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,51,0x0);
       let colonyPotBalance= await colony.getPotBalance.call(1,0x0);
       let colonyEtherBalance = await testHelper.web3GetBalance(colony.address);
@@ -405,8 +405,8 @@ contract('Colony', function (accounts) {
     it('should not allow more ether to leave a pot than the pot has (even if the colony has that many)', async function () {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.makeTask(ipfsDecodedHash);
+      await colony.makeTask(specificationHash);
+      await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,40,0x0);
       let tx;
       try {
@@ -426,28 +426,28 @@ contract('Colony', function (accounts) {
     it('should correctly track if we are able to make ether payouts', async function(){
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(ipfsDecodedHash);
-      await colony.setTaskWorker(1, OTHER_ACCOUNT);
+      await colony.makeTask(specificationHash);
+      await colony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
 
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 40);
       await colony.proposeTaskChange(txData1, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
 
       let task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
       await colony.moveFundsBetweenPots(1,2,40,0x0);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
       await colony.moveFundsBetweenPots(2,1,30,0x0);
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 1);
+      assert.equal(task[5].toNumber(), 1);
 
       const txData2 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 10);
       await colony.proposeTaskChange(txData2, 0, 0);
       await colony.approveTaskChange(2, 2, { from: OTHER_ACCOUNT });
 
       task = await colony.getTask.call(1);
-      assert.equal(task[4].toNumber(), 0);
+      assert.equal(task[5].toNumber(), 0);
     })
 
     it('should pay fees on revenue correctly', async function () {

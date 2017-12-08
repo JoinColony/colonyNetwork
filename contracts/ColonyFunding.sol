@@ -49,7 +49,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
   taskAccepted(_id)
   {
     Task storage task = tasks[_id];
-    require(task.roles[_role] == msg.sender);
+    require(task.roles[_role].user == msg.sender);
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
     task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
@@ -59,7 +59,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
     uint remainder = sub(payout, fee);
     if (_token == 0x0) {
       // Payout ether
-      task.roles[_role].transfer(remainder);
+      task.roles[_role].user.transfer(remainder);
       // Fee goes directly to Common Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address commonColonyAddress = colonyNetworkContract.getColony("Common Colony");
@@ -69,7 +69,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
       // TODO: If it's a whitelisted token, it goes straight to the commonColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(task.roles[_role], remainder);
+      payoutToken.transfer(task.roles[_role].user, remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
     }
   }

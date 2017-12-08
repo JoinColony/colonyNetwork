@@ -41,25 +41,44 @@ contract ColonyStorage is DSAuth {
   // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
   mapping (address => uint) nonRewardPotsTotal;
 
+  mapping (uint => RatingSecrets) public taskWorkRatings;
+
   uint taskCount;
   uint potCount;
 
-
   struct Task {
-    bytes32 ipfsDecodedHash;
+    bytes32 specificationHash;
+    bytes32 deliverableHash;
     bool accepted;
     bool cancelled;
     uint dueDate;
     uint payoutsWeCannotMake;
     uint potId;
+    uint deliverableTimestamp;
     uint domainId;
-    address[] roles; // index mapping 0 => manager, 1 => evaluator, 2 => worker, 3.. => other roles
     uint[] skillIds;
 
+    // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
+    mapping (uint => Role) roles; 
     // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint) totalPayouts;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
     mapping (uint => mapping (address => uint)) payouts;
+  }
+
+  struct Role {
+    // Address of the user for the given role
+    address user;
+    // Has the user work been rated
+    bool rated;
+    // Rating the user received
+    uint8 rating;
+  }
+
+  struct RatingSecrets {
+    uint256 count;
+    uint256 timestamp;
+    mapping (uint8 => bytes32) secret;
   }
 
   struct Pot {

@@ -9,7 +9,7 @@ contract IColony {
   function owner() public view returns (address);
 
   // Colony.sol
-  function version() public view returns (uint256);
+  function version() public pure returns (uint256);
   function setToken(address _token) public;
   function getToken() public view returns (address);
   function initialiseColony(address _network) public;
@@ -17,23 +17,28 @@ contract IColony {
   function addSkill(uint256 _parentSkillId) public;
 
   // ColonyTask
-  function makeTask(bytes32 _ipfsDecodedHash) public;
+  function makeTask(bytes32 _specificationHash) public;
   function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public;
   function approveTaskChange(uint256 _transactionId, uint8 _role) public;
-  function setTaskEvaluator(uint256 _id, address _evaluator) public;
-  function setTaskWorker(uint256 _id, address _worker) public;
+  function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public;
   function setTaskSkill(uint256 _id, uint256 _skillId) public;
-  function setTaskBrief(uint256 _id, bytes32 _ipfsDecodedHash) public;
+  function setTaskBrief(uint256 _id, bytes32 _specificationHash) public;
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public;
+  function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
   function acceptTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
-  function getTaskRolesCount(uint256 _id) public view returns (uint);
-  function getTaskRoleAddress (uint256 _id, uint256 _role) public view returns (address);
+  function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8);
+  function getTaskWorkRatings(uint _id) public view returns (uint256, uint256);
+  function getTaskWorkRatingSecret(uint _id, uint8 _role) public view returns (bytes32);
+  function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
+  function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
+  function assignWorkRating(uint _id) public;
+  function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32);
   function getTaskCount() public view returns (uint);
   function getTransactionCount() public view returns (uint);
 
   // ColonyTask.sol
-  function getTask(uint256 taskId) public returns (bytes32, bool, bool, uint256, uint256, uint256, uint256);
+  function getTask(uint256 taskId) public returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256);
   function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) public;
   function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint);
   function claimPayout(uint256 _id, uint256 _role, address _token) public;
