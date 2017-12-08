@@ -38,7 +38,7 @@
     "solidity-coverage": "0.4.2",
     "solidity-parser-antlr": "^0.2.5",
     "solidity-sha3": "^0.4.1",
-    "solium": "^1.0.4",
+    "solium": "^1.0.9",
     "truffle": "^4.0.1"
   },
   "dependencies": {}
