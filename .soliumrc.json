@@ -6,6 +6,8 @@
     "variable-declarations": "error",
     "arg-overflow": ["warning", 5],
     "indentation": ["error", 2],
-    "quotes": ["error", "double"]
+    "quotes": ["error", "double"],
+    "security/no-inline-assembly": 0,
+    "security/no-call-value": 0
   }
 }

@@ -35,27 +35,27 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _;
   }
 
-  function getCurrentColonyVersion() public returns (uint256) {
+  function getCurrentColonyVersion() public view returns (uint256) {
     return currentColonyVersion;
   }
 
-  function getColonyCount() public returns (uint256) {
+  function getColonyCount() public view returns (uint256) {
     return colonyCount;
   }
 
-  function getSkillCount() public returns (uint256) {
+  function getSkillCount() public view returns (uint256) {
     return skillCount;
   }
 
-  function getColonyVersionResolver(uint256 _version) public returns (address) {
+  function getColonyVersionResolver(uint256 _version) public view returns (address) {
     return colonyVersionResolver[_version];
   }
 
-  function getSkill(uint256 _skillId) public returns (uint256, uint256) {
+  function getSkill(uint256 _skillId) public view returns (uint256, uint256) {
     return (skills[_skillId].nParents, skills[_skillId].nChildren);
   }
 
-  function getReputationUpdateLogEntry(uint256 _id) public returns (address, int, uint, address, uint, uint) {
+  function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int, uint, address, uint, uint) {
     ReputationLogEntry storage x = ReputationUpdateLog[_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
@@ -190,7 +190,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skill.children[_childSkillIndex];
   }
 
-  function appendReputationUpdateLog(address _user, int _amount, uint _skillId)
+  function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
   calledByColony
   skillExists(_skillId)
   {
@@ -213,7 +213,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
       nPreviousUpdates));
   }
 
-  function getReputationUpdateLogLength() view returns (uint) {
+  function getReputationUpdateLogLength() public view returns (uint) {
     return ReputationUpdateLog.length;
   }
 
