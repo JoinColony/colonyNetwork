@@ -15,6 +15,7 @@ contract('Colony', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const THIRD_ACCOUNT = accounts[2];
+  const FOURTH_ACCOUNT = accounts[3];
   // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
   const GAS_TO_SPEND = 4700000;
   // The base58 decoded, bytes32 converted value of the task ipfsHash
@@ -355,11 +356,22 @@ contract('Colony', function (accounts) {
     });
   });
 
+  const secondsPerDay = 86400;
+
+  const setupTask = async function (dueDate) {
+    await colony.makeTask(specificationHash);
+    await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
+    await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);    
+    const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
+    await colony.proposeTaskChange(txData, 0, 0);
+    await colony.approveTaskChange(1, 2, { from: THIRD_ACCOUNT });
+  };
+
   describe('when submitting task deliverable', () => {
     it('should update task', async function () {
-      await colony.makeTask(specificationHash);
-      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
-      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
+      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
+      await setupTask(dueDate);
+
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), '');
 
@@ -371,10 +383,23 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work for a task that is accepted', async function () {
-      await colony.makeTask(specificationHash);
-      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
-      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
+      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
+      await setupTask(dueDate);
+
       await colony.acceptTask(1);
+      let tx;
+      try {
+        tx = await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
+      } catch(err) {
+        tx = await testHelper.ifUsingTestRPC(err);
+      }
+      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+    });
+
+    it('should fail if I try to submit work for a task that is past its due date', async function () {
+      var dueDate = testHelper.currentBlockTime()-1;
+      await setupTask(dueDate);
+      
       let tx;
       try {
         tx = await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
@@ -395,9 +420,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work twice', async function () {
-      await colony.makeTask(specificationHash);
-      await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
-      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
+      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
+      await setupTask(dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
       
       let tx;
@@ -413,12 +437,12 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work if I\'m not the assigned worker', async function () {
-      await colony.makeTask(specificationHash);
-      await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
+      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
+      await setupTask(dueDate);
       
       let tx;
       try {
-        tx = await colony.submitTaskDeliverable(1, specificationHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        tx = await colony.submitTaskDeliverable(1, specificationHash, { from: FOURTH_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
         tx = await testHelper.ifUsingTestRPC(err);
       }

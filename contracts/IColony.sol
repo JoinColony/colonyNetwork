@@ -32,7 +32,7 @@ contract IColony {
   function getTaskWorkRatingSecret(uint _id, uint8 _role) public view returns (bytes32);
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
   function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
-  function assignWorkRating(uint _id, uint8 _role) public;
+  function assignWorkRating(uint _id) public;
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32);
   function getTaskCount() public view returns (uint);
   function getTransactionCount() public view returns (uint);

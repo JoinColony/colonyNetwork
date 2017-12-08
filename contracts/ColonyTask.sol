@@ -53,6 +53,11 @@ contract ColonyTask is ColonyStorage, DSMath {
     _;
   }
 
+  modifier beforeDueDate(uint256 _id) {
+    require(tasks[_id].dueDate > now);
+    _;
+  }
+
   modifier taskWorkRatingCommitOpen(uint256 _id) {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     require(ratingSecrets.count < 2);
@@ -86,12 +91,6 @@ contract ColonyTask is ColonyStorage, DSMath {
   modifier taskWorkRatingsClosed(uint256 _id) {
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
     require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT)); // More than 10 days from work submission have passed
-    _;
-  }
-
-  modifier ratingNotReceivedForRole(uint256 _id, uint8 _role) {
-    Role storage role = tasks[_id].roles[_role];
-    require(!role.rated);
     _;
   }
 
@@ -184,25 +183,21 @@ contract ColonyTask is ColonyStorage, DSMath {
   // In the event of a user not committing or revealing within the 10 day rating window, 
   // their rating of their counterpart is assumed to be the highest possible 
   // and their own rating is decreased by 5 (e.g. 0.5 points)
-  function assignWorkRating(uint _id, uint8 _role) public
+  function assignWorkRating(uint _id) public
   taskWorkRatingsClosed(_id)
-  ratingNotReceivedForRole(_id, _role)
   {
+    Role storage managerRole = tasks[_id].roles[MANAGER];
     Role storage workerRole = tasks[_id].roles[WORKER];
 
-    if (_role == MANAGER) {
-      Role storage managerRole = tasks[_id].roles[MANAGER];
+    if (!workerRole.rated) {
+      workerRole.rated = true;
+      workerRole.rating = 50;
+    }
+
+    if (!managerRole.rated) {
       managerRole.rated = true;
       managerRole.rating = 50;
-
-      if (workerRole.rated) {
-        workerRole.rating = (workerRole.rating > 5) ? (workerRole.rating - 5) : 0;
-      }      
-    } else if (_role == WORKER) {
-      workerRole.rated = true;
-      workerRole.rating = 50;   
-    } else {
-      revert();
+      workerRole.rating = (workerRole.rating > 5) ? (workerRole.rating - 5) : 0;
     }
   }
 
@@ -260,6 +255,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
   taskExists(_id)
   taskNotAccepted(_id)
+  beforeDueDate(_id)
   workNotSubmitted(_id)
   confirmTaskRoleIdentity(_id, WORKER)
   {
