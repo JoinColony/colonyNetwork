@@ -75,13 +75,16 @@ module.exports = {
     }
   },
   async checkAllGasSpent(tx) {
-    const txid = !tx.tx ? tx : tx.tx;
-    const transaction = await this.web3GetTransaction(txid);
-    const receipt = await this.web3GetTransactionReceipt(txid);
+    const network = await this.web3GetNetwork();
 
-    // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
-    // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
-    assert.closeTo(transaction.gas, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
+    if (network != "coverage") {
+      const txid = !tx.tx ? tx : tx.tx;
+      const transaction = await this.web3GetTransaction(txid);
+      const receipt = await this.web3GetTransactionReceipt(txid);
+      // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
+      // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
+      assert.closeTo(transaction.gas, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
+    }
   },
   checkErrorNonPayableFunction(tx) {
     assert.equal(tx, 'Error: Cannot send value to non-payable function');
