@@ -37,36 +37,6 @@ module.exports = {
       })
     })
   },
-  ifUsingTestRPC(err) {
-    // Make sure this the error we expect.
-    if (err.message.indexOf('out of gas') == -1
-  && err.message.indexOf('invalid JUMP') == -1
-  && err.message.indexOf('invalid opcode') == -1) {
-    throw err;
-  }
-    // Okay, so, there is a discrepancy between how testrpc handles
-    // OOG errors (throwing an exception all the way up to these tests) and
-    // how geth handles them (still making a valid transaction and returning
-    // a txid). For the explanation of why, see
-    //
-    // See https://github.com/ethereumjs/testrpc/issues/39
-    //
-    // Obviously, we want our tests to pass on both, so this is a
-    // bit of a problem. We have to have this special function that we use to catch
-    // the error. I've named it so that it reads well in the tests below - i.e.
-    // .catch(ifUsingTestRPC)
-    // Note that it just swallows the error - open to debate on whether this is
-    // the best thing to do, or it should log it even though it's expected, in
-    // case we get an error that is unexpected...
-    // console.log('Error:',err)
-
-    return new Promise((resolve, reject) => {
-      web3.eth.getBlock('latest', true, (err, res) => {
-        if (err !== null) return reject(err)
-        return resolve(res.transactions[0].hash);
-      })
-    })
-  },
   assertRevert(err) {
     if (err.message.indexOf('revert') == -1) {
       throw err;
