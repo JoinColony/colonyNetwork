@@ -41,6 +41,7 @@ module.exports = {
     try {
       await fn;
     } catch (error) {
+      console.log('error', error);
       if (error.message.indexOf('revert') == -1) {
         throw error;
       }
@@ -52,7 +53,18 @@ module.exports = {
       });
     }
 
-    assert.fail('Expected revert not received');
+    // There is a discrepancy between how testrpc handles errors 
+    // (throwing an exception all the way up to these tests) and how geth/parity handle them 
+    // (still making a valid transaction and returning a txid). For the explanation of why
+    // See https://github.com/ethereumjs/testrpc/issues/39
+    //
+    // Obviously, we want our tests to pass on all, so this is a bit of a problem. 
+    // We have to have this special function that we use to catch the error. 
+    // For testrpc we additionally check the error returned is from a `require` failure.
+    const client = await this.web3GetClient();
+    if (client.indexOf('TestRPC') !== -1) {
+      assert.fail('Expected revert not received');
+    }
   },
   async checkAllGasSpent(gasAmount, tx) {
     const txid = !tx.tx ? tx : tx.tx;
