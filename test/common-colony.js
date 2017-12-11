@@ -72,11 +72,10 @@ contract('Common Colony', function (accounts) {
     });
 
     it('should NOT be able to add a new skill if called by anyone but the common colony', async function () {
-      let tx;
       try {
-        tx = await colonyNetwork.addSkill(0);
+        await colonyNetwork.addSkill(0);
       } catch (err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);
@@ -138,11 +137,10 @@ contract('Common Colony', function (accounts) {
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
 
-      let tx;
       try {
-        tx = await commonColony.addSkill(3);
+        await commonColony.addSkill(3);
       } catch (err) {
-        tx = testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
 
       const skillCount = await colonyNetwork.getSkillCount.call();

@@ -74,15 +74,13 @@ contract('Colony Reputation Updates', function (accounts) {
 
     it('should not be able to be appended by an account that is not a colony', async function () {
       let lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call();
-      let tx;
-      try {
-        tx = await colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2, { gas: GAS_TO_SPEND });
-      } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
-      // We got a throw. Check it wasn't appended to
+      try{
+        await colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2)
+      } catch (err) {
+        testHelper.assertRevert(err);
+      }
+
       let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });

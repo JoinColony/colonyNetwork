@@ -80,11 +80,13 @@ contract('Token', function (accounts) {
     });
 
     it('should NOT be able to transfer more tokens than they have', async function () {
+      let tx;
       try {
-        await etherRouterToken.transfer(ACCOUNT_TWO, 1500001);
+        tx = await etherRouterToken.transfer(ACCOUNT_TWO, 1500001, { gas: GAS_TO_SPEND });
       } catch (err) {
-        await testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.assertRevert(err);
       }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -106,23 +108,28 @@ contract('Token', function (accounts) {
     });
 
     it('should NOT be able to transfer tokens from another address if NOT pre-approved', async function () {
+      let tx;
       try {
-        await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
+        tx = await etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
       } catch(err) {
-        await testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.assertRevert(err);
       }
+
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
 
     it('should NOT be able to transfer from another address more tokens than pre-approved', async function () {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
-
+      let tx;
       try {
-        await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO });
+        tx = await etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO, gas: GAS_TO_SPEND });
       } catch(err) {
-        await testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.assertRevert(err);
       }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
@@ -131,11 +138,14 @@ contract('Token', function (accounts) {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
       await etherRouterToken.transfer(ACCOUNT_THREE, 1500000);
 
+      let tx;
       try {
-        await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
+        tx = await etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
       } catch(err) {
-        await testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.assertRevert(err);
       }
+      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
@@ -174,7 +184,7 @@ contract('Token', function (accounts) {
       try {
         await etherRouterToken.mint(1500000, { from: ACCOUNT_THREE });
       } catch(err) {
-        await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
 
       var totalSupply = await etherRouterToken.totalSupply.call();
@@ -184,12 +194,10 @@ contract('Token', function (accounts) {
 
   describe('when working with ether transfers', function () {
     it('should NOT accept eth', async function () {
-      var tx;
       try {
-        // Throws 'VM Exception while processing transaction: invalid opcode' error
-        tx = await token.send(2);
+        await token.send(2);
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        await testHelper.assertRevert(err);
       }
 
       let tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
@@ -201,9 +209,8 @@ contract('Token', function (accounts) {
       try {
         tx = await etherRouterToken.send(2, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        tx = await testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       let tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());

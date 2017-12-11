@@ -68,23 +68,19 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if a non-admin tries to mint tokens', async function () {
-      let tx;
       try {
-        tx = await colony.mintTokens(100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.mintTokens(100, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should not allow reinitialisation', async function (){
-      let tx;
       try {
-        tx = await colony.initialiseColony(0x0, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.initialiseColony(0x0, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -129,13 +125,14 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if a non-admin user tries to make a task', async function () {
-      let tx;
       try {
-        tx = await colony.makeTask(specificationHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.makeTask(specificationHash, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+
+      const taskCount = await colony.getTaskCount.call();
+      assert.equal(taskCount.toNumber(), 0);
     });
 
     it('should set the task manager as the creator', async function () {
@@ -201,13 +198,11 @@ contract('Colony', function (accounts) {
 
     it('should fail if a non-colony call is made to the task update functions', async function () {
       await colony.makeTask(specificationHash);
-      let tx;
       try {
-        tx = await colony.setTaskBrief(1, newSpecificationHash, { gas: GAS_TO_SPEND, from: THIRD_ACCOUNT });
+        await colony.setTaskBrief(1, newSpecificationHash, { gas: GAS_TO_SPEND, from: THIRD_ACCOUNT });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if non-registered role tries to submit an update of task brief', async function () {
@@ -215,14 +210,11 @@ contract('Colony', function (accounts) {
       await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
-
-      let tx;
       try {
-        tx = await colony.proposeTaskChange(txData, 0, 0, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.proposeTaskChange(txData, 0, 0, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if evaluator tries to submit an update of task brief', async function () {
@@ -231,14 +223,11 @@ contract('Colony', function (accounts) {
       await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
-
-      let tx;
       try {
-        tx = await colony.proposeTaskChange(txData, 0, 1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.proposeTaskChange(txData, 0, 1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if non-registered role tries to approve an update of task brief', async function () {
@@ -247,14 +236,11 @@ contract('Colony', function (accounts) {
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
-
-      let tx;
       try {
-        tx = await colony.approveTaskChange(1, 2, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.approveTaskChange(1, 2, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if evaluator tries to approve an update of task brief', async function () {
@@ -264,45 +250,37 @@ contract('Colony', function (accounts) {
 
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
-
-      let tx;
       try {
-        tx = await colony.approveTaskChange(1, 1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.approveTaskChange(1, 1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail to submit a task update for a non-registered function signature', async function () {
       await colony.makeTask(specificationHash);
       const txData = await colony.contract.getTaskRole.getData(1, 0);
-
-      let tx;
       try {
-        tx = await colony.proposeTaskChange(txData, 0, 0, { gas: GAS_TO_SPEND });
+        await colony.proposeTaskChange(txData, 0, 0, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
       const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail to submit update of task brief, using an invalid task id', async function () {
       await colony.makeTask(specificationHash);
       const txData = await colony.contract.setTaskBrief.getData(10, newSpecificationHash);
 
-      let tx;
       try {
-        tx = await colony.proposeTaskChange(txData, 0, 0, { gas: GAS_TO_SPEND });
+        await colony.proposeTaskChange(txData, 0, 0, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
 
       const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail to submit update of task brief, if the task was already accepted', async function () {
@@ -310,16 +288,14 @@ contract('Colony', function (accounts) {
       await colony.acceptTask(1);
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
 
-      let tx;
       try {
-        tx = await colony.proposeTaskChange(txData, 0, 0, { gas: GAS_TO_SPEND });
+        await colony.proposeTaskChange(txData, 0, 0, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
 
       const transactionCount = await colony.getTransactionCount.call();
       assert.equal(transactionCount.toNumber(), 0);
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail to approve task update, using an invalid transaction id', async function () {
@@ -328,14 +304,11 @@ contract('Colony', function (accounts) {
       const txData = await colony.contract.setTaskBrief.getData(1, newSpecificationHash);
       await colony.proposeTaskChange(txData, 0, 0);
 
-      let tx;
       try {
-        tx = await colony.approveTaskChange(10, 2, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.approveTaskChange(10, 2, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail to approve task update twice', async function () {
@@ -345,14 +318,11 @@ contract('Colony', function (accounts) {
       await colony.proposeTaskChange(txData, 0, 0);
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
 
-      let tx;
       try {
-        tx = await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -387,36 +357,30 @@ contract('Colony', function (accounts) {
       await setupTask(dueDate);
 
       await colony.acceptTask(1);
-      let tx;
       try {
-        tx = await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
+        await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to submit work for a task that is past its due date', async function () {
       var dueDate = testHelper.currentBlockTime()-1;
       await setupTask(dueDate);
       
-      let tx;
       try {
-        tx = await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
+        await colony.submitTaskDeliverable(1, deliverableHash, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to submit work for a task using an invalid id', async function () {
-      let tx;
       try {
-        tx = await colony.submitTaskDeliverable(10, deliverableHash, { gas: GAS_TO_SPEND });
+        await colony.submitTaskDeliverable(10, deliverableHash, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to submit work twice', async function () {
@@ -424,13 +388,11 @@ contract('Colony', function (accounts) {
       await setupTask(dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
       
-      let tx;
       try {
-        tx = await colony.submitTaskDeliverable(1, specificationHash, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.submitTaskDeliverable(1, specificationHash, { from: THIRD_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), deliverableHash);
@@ -440,13 +402,11 @@ contract('Colony', function (accounts) {
       var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
       await setupTask(dueDate);
       
-      let tx;
       try {
-        tx = await colony.submitTaskDeliverable(1, specificationHash, { from: FOURTH_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.submitTaskDeliverable(1, specificationHash, { from: FOURTH_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const task = await colony.getTask.call(1);
       assert.notEqual(testHelper.hexToUtf8(task[1]), deliverableHash);
@@ -463,35 +423,29 @@ contract('Colony', function (accounts) {
 
     it('should fail if a non-admin tries to accept the task', async function () {
       await colony.makeTask(specificationHash);
-      let tx;
       try {
-        tx = await colony.acceptTask(1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.acceptTask(1, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to accept a task that was accepted before', async function () {
       await colony.makeTask(specificationHash);
       await colony.acceptTask(1);
-      let tx;
       try {
-        tx = await colony.acceptTask(1, { gas: GAS_TO_SPEND });
+        await colony.acceptTask(1, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if I try to accept a task using an invalid id', async function () {
-      let tx;
       try {
-        tx = await colony.acceptTask(10, { gas: GAS_TO_SPEND });
+        await colony.acceptTask(10, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -506,23 +460,19 @@ contract('Colony', function (accounts) {
     it('should fail if manager tries to cancel a task that was accepted', async function () {
       await colony.makeTask(specificationHash);
       await colony.acceptTask(1);
-      let tx;
       try {
-        tx = await colony.cancelTask(1, { gas: GAS_TO_SPEND });
+        await colony.cancelTask(1, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should fail if manager tries to cancel a task with invalid id', async function () {
-      let tx;
       try {
-        tx = await colony.cancelTask(10, { gas: GAS_TO_SPEND });
+        await colony.cancelTask(10, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 
@@ -622,13 +572,11 @@ contract('Colony', function (accounts) {
       const txData1 = await colony.contract.setTaskPayout.getData(1, 0, token.address, 200);
       await colony.proposeTaskChange(txData1, 0, 0);
 
-      let tx;
       try {
-        tx = await colony.claimPayout(1, 0, token.address, { gas: GAS_TO_SPEND });
+        await colony.claimPayout(1, 0, token.address, { gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
 
     it('should return error when called by account that doesn\'t match the role', async function () {
@@ -639,13 +587,11 @@ contract('Colony', function (accounts) {
       await colony.proposeTaskChange(txData1, 0, 0);
       await colony.acceptTask(1);
 
-      let tx;
       try {
-        tx = await colony.claimPayout(1, 0, token.address, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colony.claimPayout(1, 0, token.address, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
     });
   });
 });

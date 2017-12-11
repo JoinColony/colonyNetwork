@@ -95,17 +95,15 @@ contract('ColonyNetwork', function (accounts) {
       assert.equal(colonyCount.toNumber(), 1);
     });
 
-    it('should throw if colony key is not unique', async function () {
+    it('should revert if colony key is not unique', async function () {
       await colonyNetwork.createColony(COLONY_KEY);
       const colonyAddress1 = await colonyNetwork.getColony.call(COLONY_KEY);
 
-      let tx;
       try {
-        tx = await colonyNetwork.createColony(COLONY_KEY, { gas: createColonyGas });
+       await colonyNetwork.createColony(COLONY_KEY, { gas: createColonyGas });
       } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      testHelper.checkAllGasSpent(createColonyGas, tx);
 
       const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 1);
@@ -202,14 +200,12 @@ contract('ColonyNetwork', function (accounts) {
       const newVersion = currentColonyVersion.sub(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      let tx;
       try {
-        tx = await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
+        await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
       } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-
+      
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
@@ -222,13 +218,11 @@ contract('ColonyNetwork', function (accounts) {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
 
-      let tx;
       try {
-        tx = await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
+        await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
       } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
@@ -245,13 +239,11 @@ contract('ColonyNetwork', function (accounts) {
       const newVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      let tx;
       try {
-        tx = await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
+        await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
       } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       assert.notEqual(resolver, sampleResolver);
     });

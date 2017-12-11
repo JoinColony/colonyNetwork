@@ -144,11 +144,11 @@ contract('Colony Funding', function (accounts) {
       await colony.makeTask(specificationHash);
       await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
-      let tx;
+
       try {
-        tx = await colony.moveFundsBetweenPots(2,3,50,otherToken.address);
+        await colony.moveFundsBetweenPots(2,3,50,otherToken.address);
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);

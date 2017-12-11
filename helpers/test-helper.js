@@ -38,11 +38,10 @@ module.exports = {
     })
   },
   ifUsingTestRPC(err) {
-    // Make sure this is a throw we expect.
-    if (err.message.indexOf('VM Exception while processing transaction: out of gas') == 0
-  && err.message.indexOf('VM Exception while processing transaction: invalid JUMP') == 0
-  && err.message.indexOf('VM Exception while processing transaction: invalid opcode') == 0
-  && err.message.indexOf('VM Exception while executing eth_call: invalid opcode') == 0) {
+    // Make sure this the error we expect.
+    if (err.message.indexOf('out of gas') == -1
+  && err.message.indexOf('invalid JUMP') == -1
+  && err.message.indexOf('invalid opcode') == -1) {
     throw err;
   }
     // Okay, so, there is a discrepancy between how testrpc handles
@@ -68,13 +67,25 @@ module.exports = {
       })
     })
   },
+  assertRevert(err) {
+    if (err.message.indexOf('revert') == -1) {
+      throw err;
+    }
+
+    return new Promise((resolve, reject) => {
+      web3.eth.getBlock('latest', true, (err, res) => {
+        if (err !== null) return reject(err)
+        return resolve(res.transactions[0].hash);
+      })
+    })
+  },
   async checkAllGasSpent(gasAmount, tx) {
     const txid = !tx.tx ? tx : tx.tx;
     const receipt = await this.web3GetTransactionReceipt(txid);
 
     // When a transaction throws, all the gas sent is spent. So let's check that
     // we spent all the gas that we sent.
-    assert.equal(gasAmount, receipt.gasUsed, 'didnt fail - didn\'t throw and use all gas');
+    assert.closeTo(gasAmount, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
   },
   checkErrorNonPayableFunction(tx) {
     assert.equal(tx, 'Error: Cannot send value to non-payable function');

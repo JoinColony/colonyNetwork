@@ -28,37 +28,22 @@ contract('EtherRouter / Resolver', function (accounts) {
 
   describe('EtherRouter', function () {
     it('should revert if non-owner tries to change the Resolver on EtherRouter', async function () {
-      let tx;
       try {
-        tx = await etherRouter.setResolver('0xb3e2b6020926af4763d706b5657446b95795de57', { from: COINBASE_ACCOUNT, gas: 4700000});
+        await etherRouter.setResolver('0xb3e2b6020926af4763d706b5657446b95795de57', { from: COINBASE_ACCOUNT, gas: 4700000});
       } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        testHelper.assertRevert(err);
       }
       const _resolver = await etherRouter.resolver.call();
       assert.equal(_resolver, resolver.address);
     });
 
-    it('should throw if owner tries to change the Resolver on EtherRouter with invalid address', async function () {
-      const txData = await etherRouter.contract.setResolver.getData('0x0')
-      const transactionId = await multisig.submitTransaction(etherRouter.address, 0, txData, { from: ACCOUNT_TWO });
-      let tx;
-      try {
-        tx = await multisig.confirmTransaction(transactionId);
-      } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-
-      const _resolver = await etherRouter.resolver.call();
-      assert.equal(_resolver, resolver.address);
-    });
-
-    it('should throw if there have been insufficient number of confirmations to change the Resolver on EtherRouter', async function () {
+    it('should revert if there have been insufficient number of confirmations to change the Resolver on EtherRouter', async function () {
       const txData = await etherRouter.contract.setResolver.getData('0xb3e2b6020926af4763d706b5657446b95795de57');
       let tx;
       try {
         tx = await multisig.submitTransaction(etherRouter.address, 0, txData, { from: ACCOUNT_TWO });
       } catch(err) {
-        tx = await testHelper.ifUsingTestRPC(err);
+        tx = testHelper.assertRevert(err);
       }
       const transactionId = tx.logs[0].args['transactionId'];
       const isConfirmed = await multisig.isConfirmed.call(transactionId);
