@@ -16,17 +16,10 @@ contract('Colony', function (accounts) {
   const OTHER_ACCOUNT = accounts[1];
   const THIRD_ACCOUNT = accounts[2];
   const FOURTH_ACCOUNT = accounts[3];
-  // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
-  const GAS_TO_SPEND = 4700000;
   // The base58 decoded, bytes32 converted value of the task ipfsHash
   const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
   const newSpecificationHash = '9bb76d8e6c89b524d34a454b3140df29';
   const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
-
-  const optionsToSpotTransactionFailure = {
-    from: MAIN_ACCOUNT,
-    gas: GAS_TO_SPEND,
-  };
 
   let colony;
   let token;

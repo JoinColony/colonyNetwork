@@ -17,14 +17,6 @@ contract('Colony Funding', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const THIRD_ACCOUNT = accounts[2];
-  // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
-  const GAS_TO_SPEND = 4700000;
-
-  const optionsToSpotTransactionFailure = {
-    from: MAIN_ACCOUNT,
-    gas: GAS_TO_SPEND,
-  };
-
   let colony;
   let token;
   let authority;

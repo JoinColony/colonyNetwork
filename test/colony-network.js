@@ -16,7 +16,6 @@ contract('ColonyNetwork', function (accounts) {
   const COLONY_KEY = 'COLONY_TEST';
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
-  const GAS_TO_SPEND = 4700000;
   let colony;
   let colonyFunding;
   let colonyTransactionReviewer;
@@ -195,7 +194,7 @@ contract('ColonyNetwork', function (accounts) {
       const newVersion = currentColonyVersion.sub(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      await testHelper.assertRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND }));      
+      await testHelper.assertRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));      
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
@@ -208,7 +207,7 @@ contract('ColonyNetwork', function (accounts) {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
 
-      await testHelper.assertRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND }));
+      await testHelper.assertRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });

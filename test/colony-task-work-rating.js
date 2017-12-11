@@ -15,8 +15,6 @@ contract('Colony Task Work Rating', function (accounts) {
   const MANAGER_ROLE = 0;
   const EVALUATOR_ROLE = 1;
   const WORKER_ROLE = 2;
-  // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
-  const GAS_TO_SPEND = 4700000;
   // The base58 decoded, bytes32 converted value of the task ipfsHash
   const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
   const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
@@ -177,7 +175,7 @@ contract('Colony Task Work Rating', function (accounts) {
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
 
       await testHelper.forwardTime(secondsPerDay*5+1);
-      await colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      await colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR });
       let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
       assert.isTrue(roleWorker[1]);
       assert.equal(roleWorker[2].toNumber(), _RATING_1_);
@@ -251,7 +249,7 @@ contract('Colony Task Work Rating', function (accounts) {
       await setupTask(dueDate);
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
       await testHelper.forwardTime(secondsPerDay*5);
-      await colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      await colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR });
       await testHelper.forwardTime(secondsPerDay*5);
 
       await colony.assignWorkRating(1);
@@ -272,7 +270,7 @@ contract('Colony Task Work Rating', function (accounts) {
       _RATING_SECRET_1_ = await colony.generateSecret.call(_RATING_1_SALT, 4);
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
       await testHelper.forwardTime(secondsPerDay*5);
-      await colony.revealTaskWorkRating(1, WORKER_ROLE, 4, _RATING_1_SALT, { from: EVALUATOR, gas: GAS_TO_SPEND });
+      await colony.revealTaskWorkRating(1, WORKER_ROLE, 4, _RATING_1_SALT, { from: EVALUATOR });
       await testHelper.forwardTime(secondsPerDay*5);
 
       await colony.assignWorkRating(1);
@@ -291,7 +289,7 @@ contract('Colony Task Work Rating', function (accounts) {
       await setupTask(dueDate);
       await colony.submitTaskWorkRating(1, MANAGER_ROLE, _RATING_SECRET_1_, { from: WORKER });
       await testHelper.forwardTime(secondsPerDay*5);
-      await colony.revealTaskWorkRating(1, MANAGER_ROLE, _RATING_1_, _RATING_1_SALT, { from: WORKER, gas: GAS_TO_SPEND });
+      await colony.revealTaskWorkRating(1, MANAGER_ROLE, _RATING_1_, _RATING_1_SALT, { from: WORKER });
       await testHelper.forwardTime(secondsPerDay*5);
 
       await colony.assignWorkRating(1);
