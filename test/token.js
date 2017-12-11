@@ -80,12 +80,7 @@ contract('Token', function (accounts) {
     });
 
     it('should NOT be able to transfer more tokens than they have', async function () {
-      let tx;
-      try {
-        tx = await etherRouterToken.transfer(ACCOUNT_TWO, 1500001, { gas: GAS_TO_SPEND });
-      } catch (err) {
-        tx = await testHelper.assertRevert(err);
-      }
+      let tx = await testHelper.assertRevert(etherRouterToken.transfer(ACCOUNT_TWO, 1500001));
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -108,13 +103,7 @@ contract('Token', function (accounts) {
     });
 
     it('should NOT be able to transfer tokens from another address if NOT pre-approved', async function () {
-      let tx;
-      try {
-        tx = await etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
-      } catch(err) {
-        tx = await testHelper.assertRevert(err);
-      }
-
+      let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO, gas: GAS_TO_SPEND }));
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -122,12 +111,7 @@ contract('Token', function (accounts) {
 
     it('should NOT be able to transfer from another address more tokens than pre-approved', async function () {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
-      let tx;
-      try {
-        tx = await etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO, gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.assertRevert(err);
-      }
+      let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO, gas: GAS_TO_SPEND }));
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -138,12 +122,7 @@ contract('Token', function (accounts) {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
       await etherRouterToken.transfer(ACCOUNT_THREE, 1500000);
 
-      let tx;
-      try {
-        tx = await etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
-      } catch(err) {
-        tx = await testHelper.assertRevert(err);
-      }
+      let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
       testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -181,12 +160,7 @@ contract('Token', function (accounts) {
     });
 
     it('should NOT be able to mint new tokens, when called by anyone NOT the Token owner', async function () {
-      try {
-        await etherRouterToken.mint(1500000, { from: ACCOUNT_THREE });
-      } catch(err) {
-        testHelper.assertRevert(err);
-      }
-
+      await testHelper.assertRevert(etherRouterToken.mint(1500000, { from: ACCOUNT_THREE }));
       var totalSupply = await etherRouterToken.totalSupply.call();
       assert.equal(0, totalSupply.toNumber());
     });
@@ -194,24 +168,13 @@ contract('Token', function (accounts) {
 
   describe('when working with ether transfers', function () {
     it('should NOT accept eth', async function () {
-      try {
-        await token.send(2);
-      } catch(err) {
-        await testHelper.assertRevert(err);
-      }
-
+      await testHelper.assertRevert(token.send(2));
       let tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
 
     it.skip('should NOT accept eth via etherRouter transfer', async function () {
-      var tx;
-      try {
-        tx = await etherRouterToken.send(2, { gas: GAS_TO_SPEND });
-      } catch(err) {
-        tx = await testHelper.assertRevert(err);
-      }
-
+      await testHelper.assertRevert(await etherRouterToken.send(2));
       let tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });

@@ -99,12 +99,7 @@ contract('ColonyNetwork', function (accounts) {
       await colonyNetwork.createColony(COLONY_KEY);
       const colonyAddress1 = await colonyNetwork.getColony.call(COLONY_KEY);
 
-      try {
-       await colonyNetwork.createColony(COLONY_KEY, { gas: createColonyGas });
-      } catch (err) {
-        testHelper.assertRevert(err);
-      }
-
+      await testHelper.assertRevert(colonyNetwork.createColony(COLONY_KEY, { gas: createColonyGas }));
       const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 1);
       const colonyAddress2 = await colonyNetwork.getColony.call(COLONY_KEY);
@@ -200,12 +195,7 @@ contract('ColonyNetwork', function (accounts) {
       const newVersion = currentColonyVersion.sub(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      try {
-        await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
-      } catch (err) {
-        testHelper.assertRevert(err);
-      }
-      
+      await testHelper.assertRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND }));      
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
@@ -218,12 +208,7 @@ contract('ColonyNetwork', function (accounts) {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
 
-      try {
-        await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND });
-      } catch (err) {
-        testHelper.assertRevert(err);
-      }
-
+      await testHelper.assertRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { gas: GAS_TO_SPEND }));
       let version = await colony.version.call();
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
@@ -239,12 +224,7 @@ contract('ColonyNetwork', function (accounts) {
       const newVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      try {
-        await colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT, gas: GAS_TO_SPEND });
-      } catch (err) {
-        testHelper.assertRevert(err);
-      }
-
+      await testHelper.assertRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT }));
       assert.notEqual(resolver, sampleResolver);
     });
   });

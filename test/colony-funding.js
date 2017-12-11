@@ -148,7 +148,6 @@ contract('Colony Funding', function (accounts) {
       try {
         await colony.moveFundsBetweenPots(2,3,50,otherToken.address);
       } catch(err) {
-        testHelper.assertRevert(err);
       }
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);

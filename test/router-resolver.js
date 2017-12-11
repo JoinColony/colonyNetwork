@@ -28,23 +28,14 @@ contract('EtherRouter / Resolver', function (accounts) {
 
   describe('EtherRouter', function () {
     it('should revert if non-owner tries to change the Resolver on EtherRouter', async function () {
-      try {
-        await etherRouter.setResolver('0xb3e2b6020926af4763d706b5657446b95795de57', { from: COINBASE_ACCOUNT, gas: 4700000});
-      } catch (err) {
-        testHelper.assertRevert(err);
-      }
+      await testHelper.assertRevert(etherRouter.setResolver('0xb3e2b6020926af4763d706b5657446b95795de57', { from: COINBASE_ACCOUNT }));
       const _resolver = await etherRouter.resolver.call();
       assert.equal(_resolver, resolver.address);
     });
 
-    it('should revert if there have been insufficient number of confirmations to change the Resolver on EtherRouter', async function () {
+    it('should not change resolver on EtherRouter if there have been insufficient number of confirmations', async function () {
       const txData = await etherRouter.contract.setResolver.getData('0xb3e2b6020926af4763d706b5657446b95795de57');
-      let tx;
-      try {
-        tx = await multisig.submitTransaction(etherRouter.address, 0, txData, { from: ACCOUNT_TWO });
-      } catch(err) {
-        tx = testHelper.assertRevert(err);
-      }
+      const tx = await multisig.submitTransaction(etherRouter.address, 0, txData, { from: ACCOUNT_TWO });
       const transactionId = tx.logs[0].args['transactionId'];
       const isConfirmed = await multisig.isConfirmed.call(transactionId);
       assert.isFalse(isConfirmed);

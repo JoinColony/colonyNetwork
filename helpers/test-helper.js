@@ -37,24 +37,29 @@ module.exports = {
       })
     })
   },
-  assertRevert(err) {
-    if (err.message.indexOf('revert') == -1) {
-      throw err;
+  async assertRevert(fn) {
+    try {
+      await fn;
+    } catch (error) {
+      if (error.message.indexOf('revert') == -1) {
+        throw error;
+      }
+      return new Promise((resolve, reject) => {
+        web3.eth.getBlock('latest', true, (err, res) => {
+          if (err !== null) return reject(err)
+          return resolve(res.transactions[0].hash);
+        })
+      });
     }
 
-    return new Promise((resolve, reject) => {
-      web3.eth.getBlock('latest', true, (err, res) => {
-        if (err !== null) return reject(err)
-        return resolve(res.transactions[0].hash);
-      })
-    })
+    assert.fail('Expected revert not received');
   },
   async checkAllGasSpent(gasAmount, tx) {
     const txid = !tx.tx ? tx : tx.tx;
     const receipt = await this.web3GetTransactionReceipt(txid);
 
-    // When a transaction throws, all the gas sent is spent. So let's check that
-    // we spent all the gas that we sent.
+    // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
+    // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
     assert.closeTo(gasAmount, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
   },
   checkErrorNonPayableFunction(tx) {

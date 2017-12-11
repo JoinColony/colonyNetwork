@@ -74,13 +74,7 @@ contract('Colony Reputation Updates', function (accounts) {
 
     it('should not be able to be appended by an account that is not a colony', async function () {
       let lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call();
-
-      try{
-        await colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2)
-      } catch (err) {
-        testHelper.assertRevert(err);
-      }
-
+      await testHelper.assertRevert(colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2));
       let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });
