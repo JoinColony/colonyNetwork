@@ -2,7 +2,6 @@
 /* globals ColonyNetwork, Colony */
 
 import shortid from 'shortid';
-const GAS_TO_SPEND = 3500000;
 
 module.exports = {
   web3GetNetwork() {
@@ -29,6 +28,14 @@ module.exports = {
       })
     })
   },
+  web3GetTransaction(txid) {
+    return new Promise((resolve, reject) => {
+      web3.eth.getTransaction(txid, (err, res) => {
+        if (err !== null) return reject(err)
+        return resolve(res);
+      })
+    })
+  },
   web3GetTransactionReceipt(txid) {
     return new Promise((resolve, reject) => {
       web3.eth.getTransactionReceipt(txid, (err, res) => {
@@ -38,10 +45,11 @@ module.exports = {
     })
   },
   async assertRevert(fn) {
+    let tx;
     try {
-      await fn;
+      tx = await fn;
+      return tx;
     } catch (error) {
-      console.log('error', error);
       if (error.message.indexOf('revert') == -1) {
         throw error;
       }
@@ -66,13 +74,14 @@ module.exports = {
       assert.fail('Expected revert not received');
     }
   },
-  async checkAllGasSpent(gasAmount, tx) {
+  async checkAllGasSpent(tx) {
     const txid = !tx.tx ? tx : tx.tx;
+    const transaction = await this.web3GetTransaction(txid);
     const receipt = await this.web3GetTransactionReceipt(txid);
 
     // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
     // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
-    assert.closeTo(gasAmount, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
+    assert.closeTo(transaction.gas, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
   },
   checkErrorNonPayableFunction(tx) {
     assert.equal(tx, 'Error: Cannot send value to non-payable function');

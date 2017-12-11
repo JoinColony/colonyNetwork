@@ -11,7 +11,6 @@ contract('Token', function (accounts) {
   const COINBASE_ACCOUNT = accounts[0];
   const ACCOUNT_TWO = accounts[1];
   const ACCOUNT_THREE = accounts[2];
-  const GAS_TO_SPEND = 4700000;
 
   let etherRouter;
   let resolver;
@@ -81,7 +80,7 @@ contract('Token', function (accounts) {
 
     it('should NOT be able to transfer more tokens than they have', async function () {
       let tx = await testHelper.assertRevert(etherRouterToken.transfer(ACCOUNT_TWO, 1500001));
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      testHelper.checkAllGasSpent(tx);
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -103,16 +102,16 @@ contract('Token', function (accounts) {
     });
 
     it('should NOT be able to transfer tokens from another address if NOT pre-approved', async function () {
-      let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO, gas: GAS_TO_SPEND }));
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
+      testHelper.checkAllGasSpent(tx);
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
 
     it('should NOT be able to transfer from another address more tokens than pre-approved', async function () {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
-      let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO, gas: GAS_TO_SPEND }));
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO }));
+      testHelper.checkAllGasSpent(tx);
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -123,7 +122,7 @@ contract('Token', function (accounts) {
       await etherRouterToken.transfer(ACCOUNT_THREE, 1500000);
 
       let tx = await testHelper.assertRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
-      testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
+      testHelper.checkAllGasSpent(tx);
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -182,7 +181,7 @@ contract('Token', function (accounts) {
     it('should NOT accept eth via etherRouter call to function', async function () {
       var tx;
       try {
-        tx = await etherRouterToken.mint(200, { value: 2, gas: GAS_TO_SPEND });
+        tx = await etherRouterToken.mint(200, { value: 2 });
       } catch(err) {
         tx = testHelper.checkErrorNonPayableFunction(err);
       }
