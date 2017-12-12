@@ -81,9 +81,8 @@ module.exports = {
     }
 
     const receipt = await this.web3GetTransactionReceipt(txHash);
-    //TODO: receipt we get from parity has no `status` but `root` instead. 
-    // Upgrade to parity 1.0.9 for getting the fix for https://github.com/paritytech/parity/issues/6920
-    //assert.equal(receipt.status, 0);
+    // Check the receipt `status` to ensure transaction failed.
+    assert.equal(receipt.status, 0);
 
     if (isAssert) {
       const network = await this.web3GetNetwork();
@@ -93,7 +92,7 @@ module.exports = {
         // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
         assert.closeTo(transaction.gas, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
       }
-    }    
+    }
   },
   checkErrorNonPayableFunction(tx) {
     assert.equal(tx, 'Error: Cannot send value to non-payable function');
