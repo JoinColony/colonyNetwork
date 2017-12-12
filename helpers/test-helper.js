@@ -44,23 +44,21 @@ module.exports = {
       })
     })
   },
-  async assertRevert(fn) {
-    let tx;
-    try {
-      tx = await fn;
-      return tx;
-    } catch (error) {
-      if (error.message.indexOf('revert') == -1) {
-        throw error;
-      }
-      return new Promise((resolve, reject) => {
-        web3.eth.getBlock('latest', true, (err, res) => {
-          if (err !== null) return reject(err)
-          return resolve(res.transactions[0].hash);
-        })
-      });
-    }
-
+  web3GetFirstTransactionHashFromLastBlock() {
+    return new Promise((resolve, reject) => {
+      web3.eth.getBlock('latest', true, (err, res) => {
+        if (err !== null) return reject(err)
+        return resolve(res.transactions[0].hash);
+      })
+    })
+  },
+  async checkErrorRevert(promise) {
+    return this.checkError(promise, false);
+  },
+  async checkErrorAssert(promise) {
+    return this.checkError(promise, true);
+  },
+  async checkError(promise, isAssert) {
     // There is a discrepancy between how testrpc handles errors 
     // (throwing an exception all the way up to these tests) and how geth/parity handle them 
     // (still making a valid transaction and returning a txid). For the explanation of why
@@ -69,22 +67,33 @@ module.exports = {
     // Obviously, we want our tests to pass on all, so this is a bit of a problem. 
     // We have to have this special function that we use to catch the error. 
     // For testrpc we additionally check the error returned is from a `require` failure.
-    const client = await this.web3GetClient();
-    if (client.indexOf('TestRPC') !== -1) {
-      assert.fail('Expected revert not received');
-    }
-  },
-  async checkAllGasSpent(tx) {
-    const network = await this.web3GetNetwork();
+    let txHash;
+    try {
+      let tx = await promise;
+      txHash = tx.tx;
+    } catch (err) {
+      // Make sure this is a revert (returned from EtherRouter)
+      if (err.message.indexOf('VM Exception while processing transaction: revert') == -1) {
+        throw err;
+      }
 
-    if (network != "coverage") {
-      const txid = !tx.tx ? tx : tx.tx;
-      const transaction = await this.web3GetTransaction(txid);
-      const receipt = await this.web3GetTransactionReceipt(txid);
-      // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
-      // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
-      assert.closeTo(transaction.gas, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
+      txHash = await this.web3GetFirstTransactionHashFromLastBlock(); 
     }
+
+    const receipt = await this.web3GetTransactionReceipt(txHash);
+    //TODO: receipt we get from parity has no `status` but `root` instead. 
+    // Upgrade to parity 1.0.9 for getting the fix for https://github.com/paritytech/parity/issues/6920
+    //assert.equal(receipt.status, 0);
+
+    if (isAssert) {
+      const network = await this.web3GetNetwork();
+      const transaction = await this.web3GetTransaction(txHash);
+      if (network != "coverage") {
+        // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
+        // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
+        assert.closeTo(transaction.gas, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
+      }
+    }    
   },
   checkErrorNonPayableFunction(tx) {
     assert.equal(tx, 'Error: Cannot send value to non-payable function');
