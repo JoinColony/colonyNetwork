@@ -17,13 +17,6 @@ contract('Common Colony', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const THIRD_ACCOUNT = accounts[2];
-  // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
-  const GAS_TO_SPEND = 4700000;
-
-  const optionsToSpotTransactionFailure = {
-    from: MAIN_ACCOUNT,
-    gas: GAS_TO_SPEND,
-  };
 
   let commonColony;
   let colonyNetwork;
@@ -72,12 +65,7 @@ contract('Common Colony', function (accounts) {
     });
 
     it('should NOT be able to add a new skill if called by anyone but the common colony', async function () {
-      let tx;
-      try {
-        tx = await colonyNetwork.addSkill(0);
-      } catch (err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
+      await testHelper.checkErrorRevert(colonyNetwork.addSkill(0));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);
     });
@@ -138,13 +126,7 @@ contract('Common Colony', function (accounts) {
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
 
-      let tx;
-      try {
-        tx = await commonColony.addSkill(3);
-      } catch (err) {
-        tx = testHelper.ifUsingTestRPC(err);
-      }
-
+      await testHelper.checkErrorRevert(commonColony.addSkill(3));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
     });

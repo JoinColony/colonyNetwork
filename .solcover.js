@@ -1,5 +1,4 @@
 module.exports = {
-    copyPackages: [],
     skipFiles: [
       'Migrations.sol',
       'EtherRouter.sol',

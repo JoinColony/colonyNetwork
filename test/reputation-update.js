@@ -19,15 +19,8 @@ contract('Colony Reputation Updates', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const THIRD_ACCOUNT = accounts[2];
-  // This value must be high enough to certify that the failure was not due to the amount of gas but due to a exception being thrown
-  const GAS_TO_SPEND = 4700000;
   // The base58 decoded, bytes32 converted value of the task ipfsHash
   const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
-  
-  const optionsToSpotTransactionFailure = {
-    from: MAIN_ACCOUNT,
-    gas: GAS_TO_SPEND,
-  };
 
   let colony;
   let colonyFunding;
@@ -74,15 +67,7 @@ contract('Colony Reputation Updates', function (accounts) {
 
     it('should not be able to be appended by an account that is not a colony', async function () {
       let lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call();
-      let tx;
-      try {
-        tx = await colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2, { gas: GAS_TO_SPEND });
-      } catch (err) {
-        tx = await testHelper.ifUsingTestRPC(err);
-      }
-      await testHelper.checkAllGasSpent(GAS_TO_SPEND, tx);
-
-      // We got a throw. Check it wasn't appended to
+      await testHelper.checkErrorRevert(colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2));
       let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });

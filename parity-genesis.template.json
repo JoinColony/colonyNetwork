@@ -1,13 +1,15 @@
 {
     "name": "ethereum",
     "engine": {
-        "instantSeal": { "params": {} }
+        "instantSeal": null
     },
     "params": {
         "accountStartNonce": "0x0100000",
+        "gasLimitBoundDivisor": "0x400",
         "maximumExtraDataSize": "0x20",
         "minGasLimit": "0x1388",
-        "networkID" : "0x2"
+        "networkID" : "0x2",
+        "eip658Transition": 0
     },
     "genesis": {
         "seal": {
@@ -28,6 +30,7 @@
         "0000000000000000000000000000000000000002": { "balance": "1", "nonce": "1048576", "builtin": { "name": "sha256", "pricing": { "linear": { "base": 60, "word": 12 } } } },
         "0000000000000000000000000000000000000003": { "balance": "1", "nonce": "1048576", "builtin": { "name": "ripemd160", "pricing": { "linear": { "base": 600, "word": 120 } } } },
         "0000000000000000000000000000000000000004": { "balance": "1", "nonce": "1048576", "builtin": { "name": "identity", "pricing": { "linear": { "base": 15, "word": 3 } } } },
+        "wwwww": { "balance": "1000000000000000000000", "nonce": "1048576" },
         "xxxxx": { "balance": "1000000000000000000000", "nonce": "1048576" },
         "yyyyy": { "balance": "1000000000000000000000", "nonce": "1048576" },
         "zzzzz": { "balance": "1000000000000000000000", "nonce": "1048576" }
