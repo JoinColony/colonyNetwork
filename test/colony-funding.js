@@ -96,10 +96,8 @@ contract('Colony Funding', function (accounts) {
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
       await colony.makeTask(specificationHash);
-      try {
-        await colony.moveFundsBetweenPots(0,2,1,otherToken.address);
-      } catch(err) {
-      }
+
+      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(0,2,1,otherToken.address));
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       let colonyRewardPotBalance= await colony.getPotBalance.call(0,otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
@@ -116,10 +114,8 @@ contract('Colony Funding', function (accounts) {
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
       await colony.makeTask(specificationHash);
-      try {
-        await colony.moveFundsBetweenPots(1,2,51,otherToken.address, {from: addresses[1]});
-      } catch (err) {
-      }
+
+      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(1,2,51,otherToken.address, {from: OTHER_ACCOUNT}));
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
       let pot2Balance= await colony.getPotBalance.call(2,otherToken.address);
@@ -137,10 +133,7 @@ contract('Colony Funding', function (accounts) {
       await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,40,otherToken.address);
 
-      try {
-        await colony.moveFundsBetweenPots(2,3,50,otherToken.address);
-      } catch(err) {
-      }
+      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2,3,50,otherToken.address));
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
       let pot2Balance= await colony.getPotBalance.call(2,otherToken.address);
@@ -309,11 +302,7 @@ contract('Colony Funding', function (accounts) {
       await otherToken.mint(100)
       await otherToken.transfer(colony.address, 100)
       await colony.claimColonyFunds(otherToken.address);
-      try {
-        await colony.moveFundsBetweenPots(1,5,40,otherToken.address);
-      } catch (err) {
-
-      }
+      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(1,5,40,otherToken.address));
       let colonyPotBalance= await colony.getPotBalance.call(1,otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 99);
     });
@@ -333,10 +322,7 @@ contract('Colony Funding', function (accounts) {
       await colony.approveTaskChange(1, 2, { from: OTHER_ACCOUNT });
 
       await colony.acceptTask(1);
-      try {
-        await colony.moveFundsBetweenPots(2,1,40,otherToken.address);
-      } catch(err) {
-      }
+      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2,1,40,otherToken.address));
       let colonyPotBalance= await colony.getPotBalance.call(2,otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 60);
     });
@@ -399,11 +385,8 @@ contract('Colony Funding', function (accounts) {
       await colony.makeTask(specificationHash);
       await colony.makeTask(specificationHash);
       await colony.moveFundsBetweenPots(1,2,40,0x0);
-      let tx;
-      try {
-        tx = await colony.moveFundsBetweenPots(2,3,50,0x0);
-      } catch(err) {
-      }
+      
+      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2,3,50,0x0));
       let colonyEtherBalance = await testHelper.web3GetBalance(colony.address);
       let colonyPotBalance= await colony.getPotBalance.call(1,0x0);
       let pot2Balance= await colony.getPotBalance.call(2,0x0);

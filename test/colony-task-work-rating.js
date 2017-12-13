@@ -133,7 +133,7 @@ contract('Colony Task Work Rating', function (accounts) {
       var dueDate = testHelper.currentBlockTime();
       await setupTask(dueDate);  
       
-      await testHelper.forwardTime(secondsPerDay*5+1);
+      await testHelper.forwardTime(secondsPerDay*5+1, this);
       await testHelper.checkErrorRevert(colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from:EVALUATOR }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(1);
       assert.equal(ratingSecrets[0].toNumber(), 0);  
@@ -174,7 +174,7 @@ contract('Colony Task Work Rating', function (accounts) {
       await colony.submitTaskDeliverable(1, deliverableHash, { from: WORKER });
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
 
-      await testHelper.forwardTime(secondsPerDay*5+1);
+      await testHelper.forwardTime(secondsPerDay*5+1, this);
       await colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR });
       let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
       assert.isTrue(roleWorker[1]);
@@ -199,7 +199,7 @@ contract('Colony Task Work Rating', function (accounts) {
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, MANAGER_ROLE, _RATING_SECRET_2_, { from: WORKER });
 
-      await testHelper.forwardTime(secondsPerDay*5+2);
+      await testHelper.forwardTime(secondsPerDay*5+2, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR }));
       let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
@@ -212,7 +212,7 @@ contract('Colony Task Work Rating', function (accounts) {
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
       await colony.submitTaskWorkRating(1, MANAGER_ROLE, _RATING_SECRET_2_, { from: WORKER });
 
-      await testHelper.forwardTime(secondsPerDay*5+2);
+      await testHelper.forwardTime(secondsPerDay*5+2, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(1, MANAGER_ROLE, _RATING_2_, _RATING_2_SALT, { from: WORKER }));
       let roleManager = await colony.getTaskRole.call(1, MANAGER_ROLE);
       assert.isFalse(roleManager[1]);
@@ -224,7 +224,7 @@ contract('Colony Task Work Rating', function (accounts) {
 
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
 
-      await testHelper.forwardTime(secondsPerDay*4);
+      await testHelper.forwardTime(secondsPerDay*4, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR }));
       let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
@@ -236,7 +236,7 @@ contract('Colony Task Work Rating', function (accounts) {
 
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
 
-      await testHelper.forwardTime(secondsPerDay*10);
+      await testHelper.forwardTime(secondsPerDay*10, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR }));
       let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
@@ -248,9 +248,9 @@ contract('Colony Task Work Rating', function (accounts) {
       var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
-      await testHelper.forwardTime(secondsPerDay*5);
+      await testHelper.forwardTime(secondsPerDay*5, this);
       await colony.revealTaskWorkRating(1, WORKER_ROLE, _RATING_1_, _RATING_1_SALT, { from: EVALUATOR });
-      await testHelper.forwardTime(secondsPerDay*5);
+      await testHelper.forwardTime(secondsPerDay*5, this);
 
       await colony.assignWorkRating(1);
       
@@ -269,9 +269,9 @@ contract('Colony Task Work Rating', function (accounts) {
 
       _RATING_SECRET_1_ = await colony.generateSecret.call(_RATING_1_SALT, 4);
       await colony.submitTaskWorkRating(1, WORKER_ROLE, _RATING_SECRET_1_, { from: EVALUATOR });
-      await testHelper.forwardTime(secondsPerDay*5);
+      await testHelper.forwardTime(secondsPerDay*5, this);
       await colony.revealTaskWorkRating(1, WORKER_ROLE, 4, _RATING_1_SALT, { from: EVALUATOR });
-      await testHelper.forwardTime(secondsPerDay*5);
+      await testHelper.forwardTime(secondsPerDay*5, this);
 
       await colony.assignWorkRating(1);
       
@@ -288,9 +288,9 @@ contract('Colony Task Work Rating', function (accounts) {
       var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
       await colony.submitTaskWorkRating(1, MANAGER_ROLE, _RATING_SECRET_1_, { from: WORKER });
-      await testHelper.forwardTime(secondsPerDay*5);
+      await testHelper.forwardTime(secondsPerDay*5, this);
       await colony.revealTaskWorkRating(1, MANAGER_ROLE, _RATING_1_, _RATING_1_SALT, { from: WORKER });
-      await testHelper.forwardTime(secondsPerDay*5);
+      await testHelper.forwardTime(secondsPerDay*5, this);
 
       await colony.assignWorkRating(1);
       
@@ -306,7 +306,7 @@ contract('Colony Task Work Rating', function (accounts) {
     it('should assign rating 5 to manager and 4.5 to worker when no one has submitted any ratings', async function () {
       var dueDate = testHelper.currentBlockTime();
       await setupTask(dueDate);
-      await testHelper.forwardTime(secondsPerDay*10);
+      await testHelper.forwardTime(secondsPerDay*10, this);
       await colony.assignWorkRating(1);
       
       let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
@@ -321,7 +321,7 @@ contract('Colony Task Work Rating', function (accounts) {
     it('should revert if I try to assign ratings before the reveal period is over', async function () {
       var dueDate = testHelper.currentBlockTime() - 1;
       await setupTask(dueDate);
-      await testHelper.forwardTime(secondsPerDay*6);
+      await testHelper.forwardTime(secondsPerDay*6, this);
       testHelper.checkErrorRevert(colony.assignWorkRating(1));
       let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
