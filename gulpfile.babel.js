@@ -110,8 +110,8 @@ gulp.task('parity', async () => {
   }
   const cmd = makeCmd(`
     parity --chain ./parity-genesis.json
-    --author ${addresses[2]}
-    --unlock ${addresses[0]},${addresses[1]},${addresses[2]}
+    --author ${addresses[0]}
+    --unlock ${addresses[0]},${addresses[1]},${addresses[2]},${addresses[3]}
     --keys-path ./keys --geth --no-dapps
     --tx-gas-limit 0x47E7C4 --gasprice 0x0 --gas-floor-target 0x47E7C4
     --reseal-on-txs all --reseal-min-period 0

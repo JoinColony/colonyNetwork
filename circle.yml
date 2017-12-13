@@ -21,6 +21,7 @@ dependencies:
     - echo "password" > parityPassword
     - cp ./parity-genesis.template.json ./parity-genesis.json
     # Update our parity genesis file
+    - sed -i "s/wwwww/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
     - sed -i "s/xxxxx/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
     - sed -i "s/yyyyy/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
     - sed -i "s/zzzzz/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
