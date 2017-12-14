@@ -178,6 +178,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     Role storage role = tasks[_id].roles[_role];
     role.rated = true;
     role.rating = _rating;
+
+    
   }
 
   // In the event of a user not committing or revealing within the 10 day rating window, 
@@ -263,18 +265,23 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].deliverableTimestamp = now;
   }
 
+  // TODO: This can only be called when all ratings are received
   function acceptTask(uint256 _id) public
   auth
   taskExists(_id)
   taskNotAccepted(_id)
   {
-    tasks[_id].accepted = true;
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     Task storage task = tasks[_id];
+    Role storage workerRole = task.roles[WORKER];
+
+    task.accepted = true;
+
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint skillId = task.skillIds[0];
-    int sign = _id % 2 == 0 ? -1 : int8(1); // TODO: Remove this hack to allow us to test -ve reputation change
-    int reputationChange = 10 * sign; // TODO: Replace with actual reputation change
-    colonyNetworkContract.appendReputationUpdateLog(task.roles[WORKER].user, reputationChange, skillId);
+
+    int taskPotBalance = int(100); // TODO: Change with actual pots[_potId].balance[_token]
+    int reputationChange = taskPotBalance * (((workerRole.rating * 2) - 50) / 30);
+    colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
 

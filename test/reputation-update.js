@@ -58,7 +58,7 @@ contract('Colony Reputation Updates', function (accounts) {
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(x[0], OTHER_ACCOUNT);
-      assert.equal(x[1].toNumber(), 10);
+      assert.equal(x[1].toNumber(), 600);
       assert.equal(x[2].toNumber(), 0);
       assert.equal(x[3], commonColony.address);
       assert.equal(x[4].toNumber(), 2);
@@ -99,7 +99,7 @@ contract('Colony Reputation Updates', function (accounts) {
       await commonColony.setTaskSkill(1, 2);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
-      assert.equal(x[1].toNumber(), 10);
+      assert.equal(x[1].toNumber(), 600);
       assert.equal(x[4].toNumber(), 6);
 
       await commonColony.makeTask(specificationHash);
