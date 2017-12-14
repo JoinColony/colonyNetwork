@@ -1,6 +1,3 @@
-// These globals represent contracts and are added by Truffle:
-/* globals ColonyNetwork, Colony */
-
 import shortid from 'shortid';
 
 module.exports = {

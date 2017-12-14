@@ -1,6 +1,8 @@
 /* globals artifacts */
 import sha3 from 'solidity-sha3';
+import CONST from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
+import testDataGenerator from '../helpers/test-data-generator';
 
 const EtherRouter = artifacts.require('EtherRouter');
 const Resolver = artifacts.require('Resolver');
@@ -15,11 +17,13 @@ contract('Colony', function (accounts) {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const THIRD_ACCOUNT = accounts[2];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
   const FOURTH_ACCOUNT = accounts[3];
   // The base58 decoded, bytes32 converted value of the task ipfsHash
-  const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
-  const newSpecificationHash = '9bb76d8e6c89b524d34a454b3140df29';
-  const deliverableHash = '9cc89e3e3d12a672d67a424b3640ce34';
+  const specificationHash = CONST.SPECIFICATION_HASH;
+  const newSpecificationHash = CONST.SPECIFICATION_HASH_UPDATED;
+  const deliverableHash = CONST.DELIVERABLE_HASH;
 
   let colony;
   let token;
@@ -264,21 +268,10 @@ contract('Colony', function (accounts) {
     });
   });
 
-  const secondsPerDay = 86400;
-
-  const setupTask = async function (dueDate) {
-    await colony.makeTask(specificationHash);
-    await colony.setTaskRoleUser(1, 1, OTHER_ACCOUNT);
-    await colony.setTaskRoleUser(1, 2, THIRD_ACCOUNT);    
-    const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
-    await colony.proposeTaskChange(txData, 0, 0);
-    await colony.approveTaskChange(1, 2, { from: THIRD_ACCOUNT });
-  };
-
   describe('when submitting task deliverable', () => {
     it('should update task', async function () {
-      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
-      await setupTask(dueDate);
+      var dueDate = testHelper.currentBlockTime() + CONST.SECONDS_PER_DAY*4;
+      await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
 
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), '');
@@ -291,8 +284,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work for a task that is accepted', async function () {
-      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
-      await setupTask(dueDate);
+      var dueDate = testHelper.currentBlockTime() + CONST.SECONDS_PER_DAY*4;
+      await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
 
       await colony.acceptTask(1);
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, deliverableHash));
@@ -300,7 +293,7 @@ contract('Colony', function (accounts) {
 
     it('should fail if I try to submit work for a task that is past its due date', async function () {
       var dueDate = testHelper.currentBlockTime()-1;
-      await setupTask(dueDate);
+      await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, deliverableHash));
     });
 
@@ -309,8 +302,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work twice', async function () {
-      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
-      await setupTask(dueDate);
+      var dueDate = testHelper.currentBlockTime() + CONST.SECONDS_PER_DAY*4;
+      await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
       await colony.submitTaskDeliverable(1, deliverableHash, { from: THIRD_ACCOUNT });
       
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, specificationHash, { from: THIRD_ACCOUNT }));
@@ -319,8 +312,8 @@ contract('Colony', function (accounts) {
     });
 
     it('should fail if I try to submit work if I\'m not the assigned worker', async function () {
-      var dueDate = testHelper.currentBlockTime() + secondsPerDay*4;
-      await setupTask(dueDate);
+      var dueDate = testHelper.currentBlockTime() + CONST.SECONDS_PER_DAY*4;
+      await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
       
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, specificationHash, { from: FOURTH_ACCOUNT }));
       const task = await colony.getTask.call(1);

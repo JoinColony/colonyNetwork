@@ -1,6 +1,8 @@
 /* globals artifacts */
 import sha3 from 'solidity-sha3';
+import CONST from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
+import testDataGenerator from '../helpers/test-data-generator';
 
 const upgradableContracts = require('../helpers/upgradable-contracts');
 const EtherRouter = artifacts.require('EtherRouter');
@@ -16,11 +18,14 @@ const Authority = artifacts.require('Authority');
 
 contract('Colony Reputation Updates', function (accounts) {
   let COLONY_KEY;
-  const MAIN_ACCOUNT = accounts[0];
-  const OTHER_ACCOUNT = accounts[1];
-  const THIRD_ACCOUNT = accounts[2];
-  // The base58 decoded, bytes32 converted value of the task ipfsHash
-  const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER_ACCOUNT = accounts[3];
+  const MANAGER_ROLE = CONST.MANAGER_ROLE;
+  const EVALUATOR_ROLE = CONST.EVALUATOR_ROLE;
+  const WORKER_ROLE = CONST.WORKER_ROLE;
+  const specificationHash = CONST.SPECIFICATION_HASH;
 
   let colony;
   let colonyFunding;
@@ -54,10 +59,10 @@ contract('Colony Reputation Updates', function (accounts) {
   describe('when update added to reputation update log', () => {
     it('should be readable', async function () {
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
-      assert.equal(x[0], OTHER_ACCOUNT);
+      assert.equal(x[0], WORKER);
       assert.equal(x[1].toNumber(), 600);
       assert.equal(x[2].toNumber(), 0);
       assert.equal(x[3], commonColony.address);
@@ -67,7 +72,7 @@ contract('Colony Reputation Updates', function (accounts) {
 
     it('should not be able to be appended by an account that is not a colony', async function () {
       let lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call();
-      await testHelper.checkErrorRevert(colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2));
+      await testHelper.checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER_ACCOUNT, 1, 2));
       let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });
@@ -77,12 +82,12 @@ contract('Colony Reputation Updates', function (accounts) {
       initialRepLogLength = initialRepLogLength.toNumber();
 
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       let nPrevious = x[5].toNumber();
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(2, 2, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(2, WORKER_ROLE, WORKER);
       await commonColony.acceptTask(2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
@@ -95,7 +100,7 @@ contract('Colony Reputation Updates', function (accounts) {
       await commonColony.addSkill(2);
       await commonColony.addSkill(3);
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       await commonColony.setTaskSkill(1, 2);
       await commonColony.acceptTask(1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
@@ -103,12 +108,12 @@ contract('Colony Reputation Updates', function (accounts) {
       assert.equal(x[4].toNumber(), 6);
 
       await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(2, 2, OTHER_ACCOUNT);
+      await commonColony.setTaskRoleUser(2, WORKER_ROLE, WORKER);
       await commonColony.setTaskSkill(2, 3);
       await commonColony.acceptTask(2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
-      assert.equal(x[1].toNumber(), -10);
-      assert.equal(x[4].toNumber(), 10); // Negative reputation change means children change as well.
+      assert.equal(x[1].toNumber(), 600);
+      assert.equal(x[4].toNumber(), 8); // Negative reputation change means children change as well.
     });
   });
 });
