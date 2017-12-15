@@ -1,4 +1,4 @@
-import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, SPECIFICATION_HASH } from '../helpers/constants';
+import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, SPECIFICATION_HASH, DELIVERABLE_HASH } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
 
 module.exports = {
@@ -17,10 +17,8 @@ module.exports = {
         const taskId = await this.setupAssignedTask(colony, evaluator, worker, dueDate);
         const worker_rating_secret = await colony.generateSecret.call(worker_rating_salt, worker_rating);
         const manager_rating_secret = await colony.generateSecret.call(manager_rating_salt, manager_rating);
-
         await colony.submitTaskWorkRating(taskId, WORKER_ROLE, worker_rating_secret, { from: evaluator });
         await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, manager_rating_secret, { from: worker });
-        
         await colony.revealTaskWorkRating(taskId, WORKER_ROLE, worker_rating, worker_rating_salt, { from: evaluator });
         await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, manager_rating, manager_rating_salt, { from: worker });
         return taskId;
