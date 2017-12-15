@@ -5,7 +5,7 @@ import testHelper from '../helpers/test-helper';
 import testDataGenerator from '../helpers/test-data-generator';
 
 const IColony = artifacts.require('IColony');
-const ColonyNetwork = artifacts.require('ColonyNetwork');
+const IColonyNetwork = artifacts.require('IColonyNetwork');
 const EtherRouter = artifacts.require('EtherRouter');
 
 contract('Colony Task Work Rating', function (accounts) {
@@ -32,7 +32,7 @@ contract('Colony Task Work Rating', function (accounts) {
 
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await ColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async function () {

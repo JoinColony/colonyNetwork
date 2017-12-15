@@ -178,8 +178,6 @@ contract ColonyTask is ColonyStorage, DSMath {
     Role storage role = tasks[_id].roles[_role];
     role.rated = true;
     role.rating = _rating;
-
-    
   }
 
   // In the event of a user not committing or revealing within the 10 day rating window, 
@@ -280,7 +278,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     uint skillId = task.skillIds[0];
 
     int taskPotBalance = int(100); // TODO: Change with actual pots[_potId].balance[_token]
-    int reputationChange = taskPotBalance * (((workerRole.rating * 2) - 50) / 30);
+    // `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
+    int workerRatingWei = int(workerRole.rating) * 10 ** 17;
+    int reputationChange = taskPotBalance * (((workerRatingWei * 2) - (5 * 10 ** 18)) / 3);
     colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
