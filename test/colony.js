@@ -20,6 +20,7 @@ contract('Colony', function (accounts) {
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
   const FOURTH_ACCOUNT = accounts[3];
+  const WORKER_ROLE = CONST.WORKER_ROLE;
   // The base58 decoded, bytes32 converted value of the task ipfsHash
   const specificationHash = CONST.SPECIFICATION_HASH;
   const newSpecificationHash = CONST.SPECIFICATION_HASH_UPDATED;
@@ -139,8 +140,7 @@ contract('Colony', function (accounts) {
     });
 
     it("should log a TaskAdded event", async function () {
-      const tx = await colony.makeTask(specificationHash);
-      assert.equal(tx.logs[0].event, 'TaskAdded');
+      testHelper.expectEvent(colony.makeTask(specificationHash), 'TaskAdded');
     });
   });
 

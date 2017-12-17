@@ -70,8 +70,7 @@ contract('Token', function (accounts) {
       const success = await etherRouterToken.transfer.call(ACCOUNT_TWO, 300000);
       assert.equal(true, success);
 
-      var tx = await etherRouterToken.transfer(ACCOUNT_TWO, 300000);
-      assert.equal(tx.logs[0].event, 'Transfer');
+      testHelper.expectEvent(etherRouterToken.transfer(ACCOUNT_TWO, 300000), 'Transfer');
       const balanceAccount1 = await etherRouterToken.balanceOf.call(COINBASE_ACCOUNT);
       assert.equal(1200000, balanceAccount1.toNumber());
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -89,8 +88,7 @@ contract('Token', function (accounts) {
       const success = await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
       assert.equal(true, success);
 
-      var tx = await etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
-      assert.equal(tx.logs[0].event, 'Transfer');
+      testHelper.expectEvent(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }), 'Transfer');
       const balanceAccount1 = await etherRouterToken.balanceOf.call(COINBASE_ACCOUNT);
       assert.equal(1200000, balanceAccount1.toNumber());
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -126,9 +124,7 @@ contract('Token', function (accounts) {
       const success = await etherRouterToken.approve.call(ACCOUNT_TWO, 200000);
       assert.equal(true, success);
 
-      const tx = await etherRouterToken.approve(ACCOUNT_TWO, 200000);
-      assert.equal(tx.logs[0].event, 'Approval');
-
+      testHelper.expectEvent(etherRouterToken.approve(ACCOUNT_TWO, 200000), 'Approval');
       var allowance = await etherRouterToken.allowance.call(COINBASE_ACCOUNT, ACCOUNT_TWO);
       assert.equal(200000, allowance.toNumber());
     });

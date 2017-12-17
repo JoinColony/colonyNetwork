@@ -1,4 +1,5 @@
 import shortid from 'shortid';
+import { assert } from 'chai';
 
 module.exports = {
   web3GetNetwork() {
@@ -108,6 +109,12 @@ module.exports = {
   currentBlockTime()
   { 
     return web3.eth.getBlock("latest").timestamp;
+  },
+  async expectEvent(tx, eventName) {
+    const { logs } = await tx;
+    console.log(logs);
+    const event = logs.find(e => e.event === eventName);
+    return assert.exists(event);
   },
   async forwardTime(seconds, test) {
     const client = await this.web3GetClient();
