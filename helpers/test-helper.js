@@ -112,7 +112,6 @@ module.exports = {
   },
   async expectEvent(tx, eventName) {
     const { logs } = await tx;
-    console.log(logs);
     const event = logs.find(e => e.event === eventName);
     return assert.exists(event);
   },
