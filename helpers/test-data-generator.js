@@ -37,8 +37,13 @@ module.exports = {
         return taskId;
     },
     async fundColonyWithTokens(colony, token, tokenAmount) {
-        await token.mint(tokenAmount);
-        await token.transfer(colony.address, tokenAmount);
+        let colonyToken = await colony.getToken.call();
+        if (colonyToken == token.address) {
+            await colony.mintTokens(tokenAmount); 
+        } else {
+            await token.mint(tokenAmount);
+            await token.transfer(colony.address, tokenAmount);
+        }
         await colony.claimColonyFunds(token.address);
     }
 };

@@ -36,7 +36,7 @@ contract('Colony Reputation Updates', function (accounts) {
   let commonColony;
   let resolverColonyNetworkDeployed;;
   let dueDate;
-  let token;
+  let colonyToken;
 
   before(async function () {
     resolverColonyNetworkDeployed = await Resolver.deployed();
@@ -56,17 +56,18 @@ contract('Colony Reputation Updates', function (accounts) {
     let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await IColony.at(commonColonyAddress);
     dueDate = testHelper.currentBlockTime() - 1;
-    token = await Token.new();
-    await testDataGenerator.fundColonyWithTokens(commonColony, token, 20);
+    let tokenAddress = await commonColony.getToken.call();
+    colonyToken = await Token.at(tokenAddress);
+    await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 20);
   });
 
   describe('when added', () => {
     it('should be readable', async function () {
-      const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
       await commonColony.acceptTask(taskId);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(x[0], WORKER);
-      assert.equal(x[1].toNumber(), 100000000000000000000);
+      assert.equal(x[1].toNumber(), 20000000000000000000);
       assert.equal(x[2].toNumber(), 0);
       assert.equal(x[3], commonColony.address);
       assert.equal(x[4].toNumber(), 2);
@@ -84,14 +85,14 @@ contract('Colony Reputation Updates', function (accounts) {
 
     ratings.forEach(async function(rating) {
       it('should set the correct reputation change amount in log for rating ' + rating.worker, async function () {
-        const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_MANAGER_, _RATING_1_SALT, rating.worker, _RATING_2_SALT);
+        const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 20, _RATING_MANAGER_, _RATING_1_SALT, rating.worker, _RATING_2_SALT);
         await commonColony.acceptTask(taskId);
 
         let reputationLogIndex = await colonyNetwork.getReputationUpdateLogLength.call();
         reputationLogIndex = reputationLogIndex.toNumber() - 1;
         let x = await colonyNetwork.getReputationUpdateLogEntry.call(reputationLogIndex);
         assert.equal(x[0], WORKER);
-        assert.isTrue(x[1].equals(rating.reputationChangeFactor.mul(100)));
+        assert.isTrue(x[1].equals(rating.reputationChangeFactor.mul(20)));
         assert.equal(x[2].toNumber(), 0);
         assert.equal(x[3], commonColony.address);
         assert.equal(x[4].toNumber(), 2);
@@ -109,13 +110,13 @@ contract('Colony Reputation Updates', function (accounts) {
     it('should populate nPreviousUpdates correctly', async function () {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
-      await testDataGenerator.fundColonyWithTokens(commonColony, token, 20);
-      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 20);
+      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
       await commonColony.acceptTask(taskId1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       let nPrevious = x[5].toNumber();
       
-      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
       await commonColony.acceptTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
@@ -126,20 +127,20 @@ contract('Colony Reputation Updates', function (accounts) {
       await commonColony.addSkill(1);
       await commonColony.addSkill(2);
       await commonColony.addSkill(3);
-      await testDataGenerator.fundColonyWithTokens(commonColony, token, 20);
-      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 20);
+      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
       await commonColony.setTaskSkill(taskId1, 2);
       await commonColony.acceptTask(taskId1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       const result = new BigNumber('1000000000000000000');
-      assert.isTrue(x[1].equals(result.mul(100)));
+      assert.isTrue(x[1].equals(result.mul(20)));
       assert.equal(x[4].toNumber(), 6);
 
-      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
       await commonColony.setTaskSkill(taskId2, 3);
       await commonColony.acceptTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
-      assert.isTrue(x[1].equals(result.mul(100)));
+      assert.isTrue(x[1].equals(result.mul(20)));
       assert.equal(x[4].toNumber(), 8); // Negative reputation change means children change as well.
     });
   });
