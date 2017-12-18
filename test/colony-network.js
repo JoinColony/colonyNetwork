@@ -140,7 +140,7 @@ contract('ColonyNetwork', function (accounts) {
     });
 
     it("should log a ColonyAdded event", async function () {
-      testHelper.expectEvent(colonyNetwork.createColony(COLONY_KEY), 'ColonyAdded');
+      await testHelper.expectEvent(colonyNetwork.createColony(COLONY_KEY), 'ColonyAdded');
     });
   });
 

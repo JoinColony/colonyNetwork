@@ -7,6 +7,7 @@ import testDataGenerator from '../helpers/test-data-generator';
 const IColony = artifacts.require('IColony');
 const IColonyNetwork = artifacts.require('IColonyNetwork');
 const EtherRouter = artifacts.require('EtherRouter');
+const Token = artifacts.require('Token');
 
 contract('Colony Task Work Rating', function (accounts) {
   let COLONY_KEY;
@@ -29,6 +30,7 @@ contract('Colony Task Work Rating', function (accounts) {
 
   let colony;
   let colonyNetwork;
+  let token;
 
   before(async function () {
     const etherRouter = await EtherRouter.deployed();
@@ -42,6 +44,7 @@ contract('Colony Task Work Rating', function (accounts) {
     colony = await IColony.at(address);
     _RATING_SECRET_1_ = await colony.generateSecret.call(_RATING_1_SALT, _RATING_1_);
     _RATING_SECRET_2_ = await colony.generateSecret.call(_RATING_2_SALT, _RATING_2_);
+    token = await Token.new();
   });
 
   describe('when rating task work', () => {
@@ -141,8 +144,9 @@ contract('Colony Task Work Rating', function (accounts) {
 
   describe('when revealing a task work rating', () => {
     it('should allow revealing a rating by evaluator and worker', async function () {
+      await testDataGenerator.fundColonyWithTokens(colony, token, 20);
       var dueDate = testHelper.currentBlockTime() - 1;
-      const taskId = await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
+      const taskId = await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
       
       let roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
       assert.isTrue(roleManager[1]);
@@ -290,15 +294,15 @@ contract('Colony Task Work Rating', function (accounts) {
 
     it('should assign rating 5 to manager and 4.5 to worker when no one has submitted any ratings', async function () {
       var dueDate = testHelper.currentBlockTime();
-      await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
+      const taskId = await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
       await testHelper.forwardTime(CONST.SECONDS_PER_DAY*10, this);
-      await colony.assignWorkRating(1);
+      await colony.assignWorkRating(taskId);
       
-      let roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
+      let roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
       assert.isTrue(roleWorker[1]);
       assert.equal(roleWorker[2].toNumber(), 45);
 
-      let roleManager = await colony.getTaskRole.call(1, MANAGER_ROLE);
+      let roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
       assert.isTrue(roleManager[1]);
       assert.equal(roleManager[2].toNumber(), 50);
     });
