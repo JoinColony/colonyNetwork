@@ -94,6 +94,12 @@ contract ColonyTask is ColonyStorage, DSMath {
     _;
   }
 
+  modifier taskWorkRatingsAssigned(uint256 _id) {
+    require(tasks[_id].roles[WORKER].rated);
+    require(tasks[_id].roles[MANAGER].rated);
+    _;
+  }
+
   function makeTask(bytes32 _specificationHash) public
   auth
   {
@@ -263,10 +269,10 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].deliverableTimestamp = now;
   }
 
-  // TODO: This can only be called when all ratings are received
   function acceptTask(uint256 _id) public
   auth
   taskExists(_id)
+  taskWorkRatingsAssigned(_id)
   taskNotAccepted(_id)
   {
     Task storage task = tasks[_id];

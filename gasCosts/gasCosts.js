@@ -1,6 +1,9 @@
 /* globals artifacts */
+import CONST from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
+import testDataGenerator from '../helpers/test-data-generator';
 const upgradableContracts = require('../helpers/upgradable-contracts');
+import sha3 from 'solidity-sha3';
 
 const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
@@ -17,6 +20,7 @@ contract('all', function (accounts) {
   const gasPrice = 20e9;
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
+  const THIRD_ACCOUNT = accounts[2];
 
   let colony;
   let colonyTask;
@@ -87,8 +91,17 @@ contract('all', function (accounts) {
       makeTaskCost = tx.receipt.gasUsed;
       console.log('makeTask actual cost :', makeTaskCost);
 
+      await colony.setTaskRoleUser(1, CONST.EVALUATOR_ROLE, OTHER_ACCOUNT);
+      await colony.setTaskRoleUser(1, CONST.WORKER_ROLE, THIRD_ACCOUNT);
+
+      const dueDate = testHelper.currentBlockTime() - 1;
+      let txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
+      await colony.proposeTaskChange(txData, 0, CONST.MANAGER_ROLE);
+      const transactionId = await colony.getTransactionCount.call();
+      await colony.approveTaskChange(transactionId, CONST.WORKER_ROLE, { from: THIRD_ACCOUNT });
+
       // Propose task change
-      const txData = await colony.contract.setTaskBrief.getData(1, '9bb76d8e6c89b524d34a454b3140df29');
+      txData = await colony.contract.setTaskBrief.getData(1, '9bb76d8e6c89b524d34a454b3140df29');
       estimate = await colony.proposeTaskChange.estimateGas(txData, 0, 0);
       console.log('Propose task change of brief estimate : ', estimate);
       tx = await colony.proposeTaskChange(txData, 0, 0, { gasPrice });
@@ -101,6 +114,15 @@ contract('all', function (accounts) {
       tx = await colony.mintTokens(200, { gasPrice });
       mintTokensCost = tx.receipt.gasUsed;
       console.log('mintTokens actual cost :', mintTokensCost);
+  
+      const SALT = sha3(testHelper.getRandomString(5));
+      const _RATING_SECRET_1_ = await colony.generateSecret.call(SALT, 30);
+      const _RATING_SECRET_2_ = await colony.generateSecret.call(SALT, 40);
+
+      await colony.submitTaskWorkRating(1, CONST.WORKER_ROLE, _RATING_SECRET_1_, { from: OTHER_ACCOUNT });
+      await colony.submitTaskWorkRating(1, CONST.MANAGER_ROLE, _RATING_SECRET_2_, { from: THIRD_ACCOUNT });
+      await colony.revealTaskWorkRating(1, CONST.WORKER_ROLE, 30, SALT, { from: OTHER_ACCOUNT });
+      await colony.revealTaskWorkRating(1, CONST.MANAGER_ROLE, 40, SALT, { from: THIRD_ACCOUNT });
 
       // acceptTask
       estimate = await colony.acceptTask.estimateGas(1);

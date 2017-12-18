@@ -339,6 +339,13 @@ contract('Colony', function (accounts) {
       assert.isTrue(task[2]);
     });
 
+    it('should fail if the task work ratings have not been assigned', async function () {
+      await testDataGenerator.fundColonyWithTokens(colony, token, 50);
+      var dueDate = testHelper.currentBlockTime() - 1;
+      const taskId = await testDataGenerator.setupFundedTask(colony, EVALUATOR, WORKER, dueDate, token, 50);
+      await testHelper.checkErrorRevert(colony.acceptTask(taskId));
+    });
+
     it('should fail if a non-admin tries to accept the task', async function () {
       await testDataGenerator.fundColonyWithTokens(colony, token, 50);
       var dueDate = testHelper.currentBlockTime() - 1;
