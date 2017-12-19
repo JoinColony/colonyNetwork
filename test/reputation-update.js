@@ -1,8 +1,14 @@
 /* globals artifacts */
 import BigNumber from 'bignumber.js';
-
-import sha3 from 'solidity-sha3';
-import CONST from '../helpers/constants';
+import { RATING_1, 
+  RATING_2, 
+  RATING_1_SALT, 
+  RATING_2_SALT, 
+  MANAGER_ROLE, 
+  EVALUATOR_ROLE, 
+  WORKER_ROLE, 
+  SPECIFICATION_HASH,
+  SECONDS_PER_DAY } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
 import testDataGenerator from '../helpers/test-data-generator';
 
@@ -23,14 +29,6 @@ contract('Colony Reputation Updates', function (accounts) {
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
   const OTHER_ACCOUNT = accounts[3];
-  const MANAGER_ROLE = CONST.MANAGER_ROLE;
-  const EVALUATOR_ROLE = CONST.EVALUATOR_ROLE;
-  const WORKER_ROLE = CONST.WORKER_ROLE;
-  const specificationHash = CONST.SPECIFICATION_HASH;
-  const _RATING_MANAGER_ = 30;
-  const _RATING_1_SALT = sha3(testHelper.getRandomString(5));
-  const _RATING_WORKER_ = 40;
-  const _RATING_2_SALT = sha3(testHelper.getRandomString(5));
   
   let colonyNetwork;
   let commonColony;
@@ -63,7 +61,7 @@ contract('Colony Reputation Updates', function (accounts) {
 
   describe('when added', () => {
     it('should be readable', async function () {
-      const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 30, 20, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 30, 20, RATING_1, RATING_1_SALT, RATING_2, RATING_2_SALT);
       await commonColony.acceptTask(taskId);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(x[0], WORKER);
@@ -85,7 +83,7 @@ contract('Colony Reputation Updates', function (accounts) {
 
     ratings.forEach(async function(rating) {
       it('should set the correct reputation change amount in log for rating ' + rating.worker, async function () {
-        const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 40, 10, _RATING_MANAGER_, _RATING_1_SALT, rating.worker, _RATING_2_SALT);
+        const taskId = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 40, 10, RATING_1, RATING_1_SALT, rating.worker, RATING_2_SALT);
         await commonColony.acceptTask(taskId);
 
         let reputationLogIndex = await colonyNetwork.getReputationUpdateLogLength.call();
@@ -110,12 +108,12 @@ contract('Colony Reputation Updates', function (accounts) {
     it('should populate nPreviousUpdates correctly', async function () {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
-      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 10, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 10, RATING_1, RATING_1_SALT, RATING_2, RATING_2_SALT);
       await commonColony.acceptTask(taskId1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       let nPrevious = x[5].toNumber();
       
-      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 30, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 30, RATING_1, RATING_1_SALT, RATING_2, RATING_2_SALT);
       await commonColony.acceptTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
@@ -126,7 +124,7 @@ contract('Colony Reputation Updates', function (accounts) {
       await commonColony.addSkill(1);
       await commonColony.addSkill(2);
       await commonColony.addSkill(3);
-      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 10, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId1 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 10, RATING_1, RATING_1_SALT, RATING_2, RATING_2_SALT);
       await commonColony.setTaskSkill(taskId1, 2);
       await commonColony.acceptTask(taskId1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
@@ -134,7 +132,7 @@ contract('Colony Reputation Updates', function (accounts) {
       assert.isTrue(x[1].equals(result.mul(10)));
       assert.equal(x[4].toNumber(), 6);
 
-      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 30, _RATING_MANAGER_, _RATING_1_SALT, _RATING_WORKER_, _RATING_2_SALT);
+      const taskId2 = await testDataGenerator.setupRatedTask(commonColony, EVALUATOR, WORKER, dueDate, colonyToken, 5, 30, RATING_1, RATING_1_SALT, RATING_2, RATING_2_SALT);
       await commonColony.setTaskSkill(taskId2, 3);
       await commonColony.acceptTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);

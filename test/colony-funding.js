@@ -1,6 +1,14 @@
 /* globals artifacts */
 import sha3 from 'solidity-sha3';
-import CONST from '../helpers/constants';
+import { RATING_1, 
+  RATING_2, 
+  RATING_1_SALT, 
+  RATING_2_SALT, 
+  MANAGER_ROLE, 
+  EVALUATOR_ROLE, 
+  WORKER_ROLE, 
+  SPECIFICATION_HASH, 
+  DELIVERABLE_HASH } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
 import testDataGenerator from '../helpers/test-data-generator';
 
@@ -22,11 +30,6 @@ contract('Colony Funding', function (accounts) {
   const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
-
-  const _RATING_1_ = 30;
-  const _RATING_1_SALT = sha3(testHelper.getRandomString(5));
-  const _RATING_2_ = 40;
-  const _RATING_2_SALT = sha3(testHelper.getRandomString(5));
 
   let colony;
   let token;
@@ -322,7 +325,7 @@ contract('Colony Funding', function (accounts) {
       let otherToken = await Token.new();
       var dueDate = testHelper.currentBlockTime() - 1;
       await testDataGenerator.fundColonyWithTokens(colony, otherToken, 160);
-      await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 30, 30,  _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
+      await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 30, 30,  RATING_1, RATING_1_SALT, RATING_2, RATING_2_SALT);
       await colony.acceptTask(1);
 
       await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
@@ -334,10 +337,10 @@ contract('Colony Funding', function (accounts) {
       let otherToken = await Token.new();
       await testDataGenerator.fundColonyWithTokens(colony, otherToken, 100);
       var dueDate = testHelper.currentBlockTime() - 1;
-      const taskId = await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 25, 25, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
+      const taskId = await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 25, 25, RATING_1, RATING_1_SALT, RATING_2, RATING_2_SALT);
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
       await colony.acceptTask(taskId);
-      await colony.claimPayout(taskId, CONST.MANAGER_ROLE, otherToken.address);
+      await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
       let colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 35);
     });
