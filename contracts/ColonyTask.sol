@@ -269,8 +269,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].deliverableTimestamp = now;
   }
 
-  //TODO: Implement reject task logic or renamie this to completeTask
-  event ShowTokenBalanceForTask(uint256 taskId, uint256 potId, uint256 amount);
+  //TODO: Implement reject task logic or rename this to completeTask
   function acceptTask(uint256 _id) public
   auth
   taskExists(_id)
@@ -285,8 +284,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint skillId = task.skillIds[0];
 
-    uint taskPotBalance = task.payouts[0][token];
-    ShowTokenBalanceForTask(_id, task.potId, taskPotBalance);
+    uint taskPotBalance = task.payouts[2][token];
     // `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
     int workerRatingWei = int(workerRole.rating) * 10 ** 17;
     int reputationChange = int(taskPotBalance) * (((workerRatingWei * 2) - (5 * 10 ** 18)) / 3);

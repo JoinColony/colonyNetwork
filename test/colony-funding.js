@@ -321,11 +321,11 @@ contract('Colony Funding', function (accounts) {
     it('should not allow funds to be removed from a task with payouts to go', async function(){
       let otherToken = await Token.new();
       var dueDate = testHelper.currentBlockTime() - 1;
-      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 60);
-      await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 60, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
+      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 160);
+      await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 30, 30,  _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
       await colony.acceptTask(1);
 
-      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2,1,40,otherToken.address));
+      await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
       let colonyPotBalance= await colony.getPotBalance.call(2,otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 60);
     });
@@ -333,16 +333,13 @@ contract('Colony Funding', function (accounts) {
     it('should allow funds to be removed from a task if there are no more payouts of that token to be claimed', async function(){
       let otherToken = await Token.new();
       await testDataGenerator.fundColonyWithTokens(colony, otherToken, 100);
-
       var dueDate = testHelper.currentBlockTime() - 1;
-      await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 50, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
+      const taskId = await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, otherToken, 25, 25, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
-
-      await colony.acceptTask(1);
-      await colony.claimPayout(1,0,otherToken.address);
-      await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
-      let colonyPotBalance= await colony.getPotBalance.call(2, otherToken.address);
-      assert.equal(colonyPotBalance.toNumber(), 0);
+      await colony.acceptTask(taskId);
+      await colony.claimPayout(taskId, CONST.MANAGER_ROLE, otherToken.address);
+      let colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
+      assert.equal(colonyPotBalance.toNumber(), 35);
     });
   });
 

@@ -146,7 +146,7 @@ contract('Colony Task Work Rating', function (accounts) {
     it('should allow revealing a rating by evaluator and worker', async function () {
       await testDataGenerator.fundColonyWithTokens(colony, token, 20);
       var dueDate = testHelper.currentBlockTime() - 1;
-      const taskId = await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, token, 20, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
+      const taskId = await testDataGenerator.setupRatedTask(colony, EVALUATOR, WORKER, dueDate, token, 10, 10, _RATING_1_, _RATING_1_SALT, _RATING_2_, _RATING_2_SALT);
       
       let roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
       assert.isTrue(roleManager[1]);
@@ -293,7 +293,7 @@ contract('Colony Task Work Rating', function (accounts) {
     });
 
     it('should assign rating 5 to manager and 4.5 to worker when no one has submitted any ratings', async function () {
-      var dueDate = testHelper.currentBlockTime();
+      var dueDate = testHelper.currentBlockTime() - 1;
       const taskId = await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate);
       await testHelper.forwardTime(CONST.SECONDS_PER_DAY*10, this);
       await colony.assignWorkRating(taskId);
