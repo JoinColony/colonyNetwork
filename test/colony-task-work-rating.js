@@ -1,5 +1,9 @@
 /* globals artifacts */
-import { RATING_1, 
+import { MANAGER,
+  EVALUATOR, 
+  WORKER,
+  OTHER,
+  RATING_1, 
   RATING_2, 
   RATING_1_SALT, 
   RATING_2_SALT, 
@@ -19,11 +23,6 @@ const Token = artifacts.require('Token');
 
 contract('Colony Task Work Rating', function (accounts) {
   let COLONY_KEY;
-  const MANAGER = accounts[0];
-  const EVALUATOR = accounts[1];
-  const WORKER = accounts[2];
-  const OTHER_ACCOUNT = accounts[3];
-
   let _RATING_SECRET_1_;
   let _RATING_SECRET_2_;
   let colony;
@@ -94,7 +93,7 @@ contract('Colony Task Work Rating', function (accounts) {
       var dueDate = testHelper.currentBlockTime() -1;
       await testDataGenerator.setupAssignedTask(colony, EVALUATOR, WORKER, dueDate); 
 
-      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(1, MANAGER_ROLE, _RATING_SECRET_1_, { from: OTHER_ACCOUNT }));
+      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(1, MANAGER_ROLE, _RATING_SECRET_1_, { from: OTHER }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(1);
       assert.equal(ratingSecrets[0], 0);
     });

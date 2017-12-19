@@ -15,9 +15,15 @@ const RATING_2 = 40;
 let RATING_1_SALT = RATING_1_SALT || sha3(testHelper.getRandomString(5));
 let RATING_2_SALT = RATING_2_SALT || sha3(testHelper.getRandomString(5));
 let MANAGER = MANAGER || web3.eth.accounts[0];
+let EVALUATOR = EVALUATOR || web3.eth.accounts[1];
+let WORKER = WORKER || web3.eth.accounts[2];
+let OTHER = OTHER || web3.eth.accounts[3];
 
 module.exports = {
     MANAGER,
+    EVALUATOR, 
+    WORKER,
+    OTHER,
     MANAGER_ROLE,
     EVALUATOR_ROLE,
     WORKER_ROLE,

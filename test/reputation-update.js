@@ -1,6 +1,10 @@
 /* globals artifacts */
 import BigNumber from 'bignumber.js';
-import { RATING_1, 
+import { MANAGER,
+  EVALUATOR, 
+  WORKER,
+  OTHER,
+  RATING_1, 
   RATING_2, 
   RATING_1_SALT, 
   RATING_2_SALT, 
@@ -24,12 +28,7 @@ const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer')
 const Token = artifacts.require('Token');
 
 contract('Colony Reputation Updates', function (accounts) {
-  let COLONY_KEY;
-  const MANAGER = accounts[0];
-  const EVALUATOR = accounts[1];
-  const WORKER = accounts[2];
-  const OTHER_ACCOUNT = accounts[3];
-  
+  let COLONY_KEY;  
   let colonyNetwork;
   let commonColony;
   let resolverColonyNetworkDeployed;;
@@ -100,7 +99,7 @@ contract('Colony Reputation Updates', function (accounts) {
     
     it('should not be able to be appended by an account that is not a colony', async function () {
       let lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call();
-      await testHelper.checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER_ACCOUNT, 1, 2));
+      await testHelper.checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2));
       let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });
