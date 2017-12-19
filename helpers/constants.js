@@ -9,9 +9,10 @@ const WORKER_ROLE = 2;
 const SPECIFICATION_HASH = '9bb76d8e6c89b524d34a454b3140df28';
 const SPECIFICATION_HASH_UPDATED = '9bb76d8e6c89b524d34a454b3140df29';
 const DELIVERABLE_HASH = '9cc89e3e3d12a672d67a424b3640ce34';
-
-const RATING_1 = 30;
-const RATING_2 = 40;
+const MANAGER_PAYOUT = 100;
+const WORKER_PAYOUT = 200;
+const MANAGER_RATING = 30;
+const WORKER_RATING = 40;
 let RATING_1_SALT = RATING_1_SALT || sha3(testHelper.getRandomString(5));
 let RATING_2_SALT = RATING_2_SALT || sha3(testHelper.getRandomString(5));
 let MANAGER = MANAGER || web3.eth.accounts[0];
@@ -31,8 +32,10 @@ module.exports = {
     SPECIFICATION_HASH_UPDATED,
     DELIVERABLE_HASH,
     SECONDS_PER_DAY,
-    RATING_1,
-    RATING_2,
+    MANAGER_PAYOUT,
+    WORKER_PAYOUT,
+    MANAGER_RATING,
+    WORKER_RATING,
     RATING_1_SALT,
     RATING_2_SALT
 };

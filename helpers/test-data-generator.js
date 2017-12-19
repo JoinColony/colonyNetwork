@@ -1,8 +1,25 @@
-import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, SPECIFICATION_HASH, DELIVERABLE_HASH } from '../helpers/constants';
+import { MANAGER,
+    EVALUATOR, 
+    WORKER,
+    OTHER,
+    MANAGER_PAYOUT, 
+    WORKER_PAYOUT, 
+    MANAGER_RATING, 
+    WORKER_RATING, 
+    RATING_1_SALT, 
+    RATING_2_SALT, 
+    MANAGER_ROLE, 
+    EVALUATOR_ROLE, 
+    WORKER_ROLE, 
+    SPECIFICATION_HASH,
+    DELIVERABLE_HASH } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
 
 module.exports = {
-    async setupAssignedTask(colony, evaluator, worker, dueDate) {
+    async setupAssignedTask(colony, 
+        dueDate = testHelper.currentBlockTime(), 
+        evaluator = EVALUATOR, 
+        worker = WORKER) {
         await colony.makeTask(SPECIFICATION_HASH);
         let taskId = await colony.getTaskCount.call();
         taskId = taskId.toNumber();
@@ -14,13 +31,24 @@ module.exports = {
         await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
         return taskId;
     },
-    async setupFundedTask(colony, evaluator, worker, dueDate, token, manager_payout, worker_payout) {
-        const taskId = await this.setupAssignedTask(colony, evaluator, worker, dueDate);
+    async setupFundedTask(colony, 
+        token, 
+        dueDate, 
+        evaluator = EVALUATOR, 
+        worker = WORKER, 
+        manager_payout = MANAGER_PAYOUT, 
+        worker_payout = WORKER_PAYOUT) {
+        let tokenAddress;
+        if (token == undefined) {
+            tokenAddress = await colony.getToken.call();            
+        } else {
+            tokenAddress = token == 0x0 ? 0x0 : token.address;
+        }
+
+        const taskId = await this.setupAssignedTask(colony, dueDate, evaluator, worker);
         const task = await colony.getTask.call(taskId);
         const potId = task[6].toNumber();
-        const tokenAddress = token == 0x0 ? 0x0 : token.address;
         await colony.moveFundsBetweenPots(1, potId, (manager_payout + worker_payout), tokenAddress);
-        
         let txData = await colony.contract.setTaskPayout.getData(taskId, MANAGER_ROLE, tokenAddress, manager_payout);
         await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
         let transactionId = await colony.getTransactionCount.call();
@@ -32,8 +60,18 @@ module.exports = {
         await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
         return taskId;
     },
-    async setupRatedTask(colony, evaluator, worker, dueDate, token, manager_payout, worker_payout, manager_rating, manager_rating_salt, worker_rating, worker_rating_salt) {
-        const taskId = await this.setupFundedTask(colony, evaluator, worker, dueDate, token, manager_payout, worker_payout);
+    async setupRatedTask(colony, 
+        token, 
+        dueDate, 
+        evaluator = EVALUATOR, 
+        worker = WORKER,         
+        manager_payout = MANAGER_PAYOUT, 
+        worker_payout = WORKER_PAYOUT, 
+        manager_rating = MANAGER_RATING, 
+        manager_rating_salt = RATING_1_SALT, 
+        worker_rating = WORKER_RATING,
+        worker_rating_salt = RATING_2_SALT) {
+        const taskId = await this.setupFundedTask(colony, token, dueDate, evaluator, worker, manager_payout, worker_payout);
         const worker_rating_secret = await colony.generateSecret.call(worker_rating_salt, worker_rating);
         const manager_rating_secret = await colony.generateSecret.call(manager_rating_salt, manager_rating);
         await colony.submitTaskWorkRating(taskId, WORKER_ROLE, worker_rating_secret, { from: evaluator });

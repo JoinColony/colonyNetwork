@@ -54,7 +54,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   }
 
   modifier beforeDueDate(uint256 _id) {
-    require(tasks[_id].dueDate > now);
+    require(tasks[_id].dueDate >= now);
     _;
   }
 
