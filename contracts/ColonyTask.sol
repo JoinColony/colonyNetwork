@@ -110,7 +110,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[taskCount] = Task({
       specificationHash: _specificationHash,
       deliverableHash: "",
-      accepted: false,
+      finalized: false,
       cancelled: false,
       dueDate: 0,
       payoutsWeCannotMake: 0,
@@ -139,7 +139,7 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     Task storage task = tasks[taskId];
     require(task.roles[_role].user == msg.sender);
-    require(!task.accepted);
+    require(!task.finalized);
 
     uint8[2] storage _reviewers = reviewers[sig];
     require(_reviewers[0] != 0 || _reviewers[1] != 0);
@@ -155,7 +155,7 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     Task storage task = tasks[taskId];
     require(task.roles[_role].user == msg.sender);
-    require(!task.accepted);
+    require(!task.finalized);
 
     uint8[2] storage _reviewers = reviewers[sig];
     require(_reviewers[0] != 0 || _reviewers[1] != 0);
@@ -223,7 +223,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   // Note task assignment is agreed off-chain
   function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].roles[_role] = Role({
       user: _user,
@@ -236,7 +236,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   // Maybe just the administrator is adequate for the skill?
   function setTaskSkill(uint _id, uint _skillId) public
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   skillExists(_skillId)
   {
     tasks[_id].skillIds[0] = _skillId;
@@ -245,7 +245,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
   self()
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].specificationHash = _specificationHash;
   }
@@ -253,14 +253,14 @@ contract ColonyTask is ColonyStorage, DSMath {
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   self()
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].dueDate = _dueDate;
   }
 
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   beforeDueDate(_id)
   workNotSubmitted(_id)
   confirmTaskRoleIdentity(_id, WORKER)
@@ -269,17 +269,16 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].deliverableTimestamp = now;
   }
 
-  //TODO: Implement reject task logic or rename this to completeTask
-  function acceptTask(uint256 _id) public
+  function finalizeTask(uint256 _id) public
   auth
   taskExists(_id)
   taskWorkRatingsAssigned(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
     Role storage workerRole = task.roles[WORKER];
 
-    task.accepted = true;
+    task.finalized = true;
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint skillId = task.skillIds[0];
@@ -295,7 +294,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   function cancelTask(uint256 _id) public
   auth
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].cancelled = true;
   }
@@ -304,7 +303,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   returns (bytes32, bytes32, bool, bool, uint, uint, uint, uint, uint)
   {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.deliverableHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId);
+    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId);
   }
 
   function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8) {

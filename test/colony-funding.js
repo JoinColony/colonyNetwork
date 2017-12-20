@@ -284,7 +284,7 @@ contract('Colony Funding', function (accounts) {
     it('should not allow funds to be removed from a task with payouts to go', async function(){
       await testDataGenerator.fundColonyWithTokens(colony, otherToken, 303);
       const taskId = await testDataGenerator.setupRatedTask(colony, otherToken);
-      await colony.acceptTask(taskId);
+      await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
       let colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 300);
@@ -294,7 +294,7 @@ contract('Colony Funding', function (accounts) {
       await testDataGenerator.fundColonyWithTokens(colony, otherToken, 313);
       const taskId = await testDataGenerator.setupRatedTask(colony, otherToken);
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
-      await colony.acceptTask(taskId);
+      await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
       await colony.claimPayout(taskId, WORKER_ROLE, otherToken.address, { from: WORKER });
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);

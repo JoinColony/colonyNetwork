@@ -124,12 +124,12 @@ contract('all', function (accounts) {
       await colony.revealTaskWorkRating(1, CONST.WORKER_ROLE, 30, SALT, { from: OTHER_ACCOUNT });
       await colony.revealTaskWorkRating(1, CONST.MANAGER_ROLE, 40, SALT, { from: THIRD_ACCOUNT });
 
-      // acceptTask
-      estimate = await colony.acceptTask.estimateGas(1);
-      console.log('acceptTask estimate: ', estimate);
-      tx = await colony.acceptTask(1, { gasPrice });
+      // finalizeTask
+      estimate = await colony.finalizeTask.estimateGas(1);
+      console.log('finalizeTask estimate: ', estimate);
+      tx = await colony.finalizeTask(1, { gasPrice });
       acceptTaskCost = tx.receipt.gasUsed;
-      console.log('acceptTask actual cost :', acceptTaskCost);
+      console.log('finalizeTask actual cost :', acceptTaskCost);
 
       // setUserRole
       estimate = await authority.setUserRole.estimateGas(OTHER_ACCOUNT, 1, true);

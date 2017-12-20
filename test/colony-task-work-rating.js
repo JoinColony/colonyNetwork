@@ -230,9 +230,9 @@ contract('Colony Task Work Rating', function (accounts) {
 
       _RATING_SECRET_2_ = await colony.generateSecret.call(RATING_2_SALT, 4);
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, _RATING_SECRET_2_, { from: EVALUATOR });
-      await testHelper.forwardTime(SECONDS_PER_DAY*5, this);
+      await testHelper.forwardTime(SECONDS_PER_DAY*5+2, this);
       await colony.revealTaskWorkRating(taskId, WORKER_ROLE, 4, RATING_2_SALT, { from: EVALUATOR });
-      await testHelper.forwardTime(SECONDS_PER_DAY*5, this);
+      await testHelper.forwardTime(SECONDS_PER_DAY*5+2, this);
 
       await colony.assignWorkRating(taskId);
       

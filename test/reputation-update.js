@@ -59,7 +59,7 @@ contract('Colony Reputation Updates', function (accounts) {
   describe('when added', () => {
     it('should be readable', async function () {
       const taskId = await testDataGenerator.setupRatedTask(commonColony);
-      await commonColony.acceptTask(taskId);
+      await commonColony.finalizeTask(taskId);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(x[0], WORKER);
       assert.equal(x[1].toNumber(), 200000000000000000000);
@@ -81,7 +81,7 @@ contract('Colony Reputation Updates', function (accounts) {
     ratings.forEach(async function(rating) {
       it('should set the correct reputation change amount in log for rating ' + rating.worker, async function () {
         const taskId = await testDataGenerator.setupRatedTask(commonColony, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, rating.worker, RATING_2_SALT);
-        await commonColony.acceptTask(taskId);
+        await commonColony.finalizeTask(taskId);
 
         let reputationLogIndex = await colonyNetwork.getReputationUpdateLogLength.call();
         reputationLogIndex = reputationLogIndex.toNumber() - 1;
@@ -106,12 +106,12 @@ contract('Colony Reputation Updates', function (accounts) {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
       const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
-      await commonColony.acceptTask(taskId1);
+      await commonColony.finalizeTask(taskId1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       let nPrevious = x[5].toNumber();
       
       const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
-      await commonColony.acceptTask(taskId2);
+      await commonColony.finalizeTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
     });
@@ -123,7 +123,7 @@ contract('Colony Reputation Updates', function (accounts) {
       await commonColony.addSkill(3);
       const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
       await commonColony.setTaskSkill(taskId1, 2);
-      await commonColony.acceptTask(taskId1);
+      await commonColony.finalizeTask(taskId1);
       
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       const result = new BigNumber('1000000000000000000');
@@ -132,7 +132,7 @@ contract('Colony Reputation Updates', function (accounts) {
 
       const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
       await commonColony.setTaskSkill(taskId2, 3);
-      await commonColony.acceptTask(taskId2);
+      await commonColony.finalizeTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
       assert.isTrue(x[1].equals(result.mul(200)));
       assert.equal(x[4].toNumber(), 8); // Negative reputation change means children change as well.

@@ -25,7 +25,7 @@ contract IColony {
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public;
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public;
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
-  function acceptTask(uint256 _id) public;
+  function finalizeTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
   function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8);
   function getTaskWorkRatings(uint _id) public view returns (uint256, uint256);
