@@ -9,6 +9,9 @@
     "assert": true,
     "contract": true
   },
+  "rules": {
+    "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"]}]
+  },
   "parserOptions": {
    "ecmaVersion": 2017
  }
