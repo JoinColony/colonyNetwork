@@ -8,8 +8,10 @@
   },
   "scripts": {
     "solium": "bash ./scripts/solium.sh",
-    "eslint": "eslint 'gasCosts/*.js' 'helpers/*.js' 'test/*.js' 'upgrade-test/*.js'"
+    "eslint": "eslint .",
+    "eslint-staged": "bash ./scripts/eslint.sh"
   },
+  "pre-commit": "eslint-staged",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JoinColony/colonyNetwork.git"
@@ -42,6 +44,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^4.0.0",
     "mocha-circleci-reporter": "^0.0.2",
+    "pre-commit": "^1.2.2",
     "pshell": "^1.1.0",
     "request": "^2.83.0",
     "rimraf": "^2.6.2",
