@@ -1,5 +1,6 @@
 /* globals artifacts */
 import BigNumber from 'bignumber.js';
+
 import { WORKER,
   OTHER,
   MANAGER_RATING, 
