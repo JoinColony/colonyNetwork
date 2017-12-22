@@ -42,4 +42,11 @@ contract IColonyNetwork {
   function getReputationUpdateLogLength() public view returns (uint256);
   function getColonyVersionResolver(uint256 _version) public view returns (address);
   function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int, uint256, address, uint256, uint256);
+  function deposit(uint256 _amount) public;
+  function withdraw(uint256 amount) public;
+  function getStakedBalance(address _user) public view returns (uint256);
+  function setReputationRootHash(bytes32, uint256, address[]) public;
+  function startNextCycle() public;
+  function punishStakers(address[] stakers) public;
+  function getReputationMiningCycle() public view returns (address);
 }

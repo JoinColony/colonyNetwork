@@ -98,6 +98,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
   {
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0);
+    // TODO Only allow sending from created pots - perhaps not necessary explicitly, but if not, note as such here.
     require(_toPot <= potCount); // Only allow sending to created pots
     if (pots[_fromPot].taskId > 0) {
       Task storage task = tasks[pots[_fromPot].taskId];

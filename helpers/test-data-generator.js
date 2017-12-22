@@ -66,7 +66,6 @@ module.exports = {
     } else {
       tokenAddress = token === 0x0 ? 0x0 : token.address;
     }
-
     const taskId = await this.setupAssignedTask(colonyNetwork, colony, dueDate, domain, skill, evaluator, worker);
     const task = await colony.getTask.call(taskId);
     const potId = task[6].toNumber();
