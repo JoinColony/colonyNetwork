@@ -9,7 +9,13 @@ import { MANAGER,
   SPECIFICATION_HASH,
   SPECIFICATION_HASH_UPDATED,
   DELIVERABLE_HASH,
-  SECONDS_PER_DAY } from '../helpers/constants';
+  SECONDS_PER_DAY,
+  MANAGER_RATING,
+  WORKER_RATING,
+  RATING_1_SALT,
+  RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
 import testDataGenerator from '../helpers/test-data-generator';
 
@@ -65,6 +71,13 @@ contract('Colony', () => {
 
     it('should not allow reinitialisation', async () => {
       await testHelper.checkErrorRevert(colony.initialiseColony(0x0));
+    });
+
+    it('should correctly generate a rating secret', async () => {
+      const ratingSecret1 = await colony.generateSecret.call(RATING_1_SALT, MANAGER_RATING);
+      assert.equal(ratingSecret1, RATING_1_SECRET);
+      const ratingSecret2 = await colony.generateSecret.call(RATING_2_SALT, WORKER_RATING);
+      assert.equal(ratingSecret2, RATING_2_SECRET);
     });
   });
 

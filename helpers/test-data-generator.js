@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-
+import web3Utils from 'web3-utils';
 import { MANAGER,
     EVALUATOR, 
     WORKER,
@@ -53,7 +53,7 @@ module.exports = {
         manager_payout = new BigNumber(manager_payout);
         worker_payout = new BigNumber(worker_payout);
         const totalPayouts = manager_payout.add(worker_payout);
-        await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
+        await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress); 
         let txData = await colony.contract.setTaskPayout.getData(taskId, MANAGER_ROLE, tokenAddress, manager_payout);
         await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
         let transactionId = await colony.getTransactionCount.call();
@@ -77,10 +77,10 @@ module.exports = {
         worker_rating = WORKER_RATING,
         worker_rating_salt = RATING_2_SALT) {
         const taskId = await this.setupFundedTask(colony, token, dueDate, evaluator, worker, manager_payout, worker_payout);
-        const worker_rating_secret = await colony.generateSecret.call(worker_rating_salt, worker_rating);
-        const manager_rating_secret = await colony.generateSecret.call(manager_rating_salt, manager_rating);
-        await colony.submitTaskWorkRating(taskId, WORKER_ROLE, worker_rating_secret, { from: evaluator });
-        await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, manager_rating_secret, { from: worker });
+        const WORKER_RATING_SECRET = web3Utils.soliditySha3(worker_rating_salt, worker_rating);
+        const MANAGER_RATING_SECRET = web3Utils.soliditySha3(manager_rating_salt, manager_rating);
+        await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });
+        await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING_SECRET, { from: worker });
         await colony.revealTaskWorkRating(taskId, WORKER_ROLE, worker_rating, worker_rating_salt, { from: evaluator });
         await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, manager_rating, manager_rating_salt, { from: worker });
         return taskId;

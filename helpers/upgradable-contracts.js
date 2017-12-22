@@ -1,4 +1,4 @@
-import sha3 from 'solidity-sha3';
+import web3Utils from 'web3-utils';
 
 const assert = require('assert');
 const fs = require('fs');
@@ -58,7 +58,7 @@ module.exports = {
       const sig = `${fName}(${functionsToResolve[fName].inputs.join(',')})`;
       const address = functionsToResolve[fName].definedIn;
       const { outputSize } = functionsToResolve[fName];
-      const sigHash = sha3(sig).substr(0, 10);
+      const sigHash = web3Utils.soliditySha3(sig).substr(0, 10);
       await resolver.register(sig, address, outputSize);
       const response = await resolver.lookup.call(sigHash);
       assert.equal(response[0], address, `${sig} has not been registered correctly. Is it defined?`);

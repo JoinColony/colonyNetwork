@@ -1,4 +1,6 @@
 /* globals artifacts */
+import web3Utils from 'web3-utils';
+
 import { EVALUATOR,
   WORKER,
   OTHER,
@@ -6,6 +8,8 @@ import { EVALUATOR,
   WORKER_RATING,
   RATING_1_SALT,
   RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
   WORKER_ROLE,
@@ -21,8 +25,6 @@ const Token = artifacts.require('Token');
 
 contract('Colony Task Work Rating', () => {
   let COLONY_KEY;
-  let RATING_SECRET_1;
-  let RATING_SECRET_2;
   let colony;
   let colonyNetwork;
   let token;
@@ -37,8 +39,6 @@ contract('Colony Task Work Rating', () => {
     await colonyNetwork.createColony(COLONY_KEY);
     const address = await colonyNetwork.getColony.call(COLONY_KEY);
     colony = await IColony.at(address);
-    RATING_SECRET_1 = await colony.generateSecret.call(RATING_1_SALT, MANAGER_RATING);
-    RATING_SECRET_2 = await colony.generateSecret.call(RATING_2_SALT, WORKER_RATING);
     token = await Token.new();
   });
 
@@ -48,72 +48,72 @@ contract('Colony Task Work Rating', () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony, dueDate);
       await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
 
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       const currentTime1 = testHelper.currentBlockTime();
       const rating1 = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(rating1[0], 1);
       assert.closeTo(rating1[1].toNumber(), currentTime1, 2);
       const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(taskId, WORKER_ROLE);
-      assert.equal(ratingSecret1, RATING_SECRET_2);
+      assert.equal(ratingSecret1, RATING_2_SECRET);
 
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_SECRET_1, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       const currentTime2 = testHelper.currentBlockTime();
       const rating2 = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(rating2[0].toNumber(), 2);
       assert.closeTo(rating2[1].toNumber(), currentTime2, 2);
       const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(taskId, MANAGER_ROLE);
-      assert.equal(ratingSecret2, RATING_SECRET_1);
+      assert.equal(ratingSecret2, RATING_1_SECRET);
     });
 
     it('should allow rating, after the due date has passed, when no work has been submitted', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_SECRET_1, { from: WORKER });
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(taskId, MANAGER_ROLE);
-      assert.equal(ratingSecret2, RATING_SECRET_1);
+      assert.equal(ratingSecret2, RATING_1_SECRET);
       const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(taskId, WORKER_ROLE);
-      assert.equal(ratingSecret1, RATING_SECRET_2);
+      assert.equal(ratingSecret1, RATING_2_SECRET);
     });
 
     it('should fail if I try to rate before task\'s due date has passed and work has not been submitted', async () => {
       const dueDate = testHelper.currentBlockTime() + (SECONDS_PER_DAY * 7);
       const taskId = await testDataGenerator.setupAssignedTask(colony, dueDate);
-      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR }));
+      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
     it('should fail if I try to rate work on behalf of a worker', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_SECRET_1, { from: OTHER }));
+      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: OTHER }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(ratingSecrets[0], 0);
     });
 
     it('should fail if I try to rate work for a role that\'s not setup to be rated', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, EVALUATOR_ROLE, RATING_SECRET_2, { from: EVALUATOR }));
+      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, EVALUATOR_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
     it('should fail, if I try to rate work twice', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
-      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_1, { from: EVALUATOR }));
+      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: EVALUATOR }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(ratingSecrets[0], 1);
       const ratingSecret = await colony.getTaskWorkRatingSecret.call(taskId, WORKER_ROLE);
-      assert.equal(ratingSecret, RATING_SECRET_2);
+      assert.equal(ratingSecret, RATING_2_SECRET);
     });
 
     it('should fail if I try to rate a task too late', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
 
       await testHelper.forwardTime((SECONDS_PER_DAY * 5) + 1, this);
-      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR }));
+      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
@@ -121,7 +121,7 @@ contract('Colony Task Work Rating', () => {
     it('should fail if I try to submit work for a task using an invalid id', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
 
-      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(10, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR }));
+      await testHelper.checkErrorRevert(colony.submitTaskWorkRating(10, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(ratingSecrets[0], 0);
     });
@@ -144,7 +144,7 @@ contract('Colony Task Work Rating', () => {
       const dueDate = testHelper.currentBlockTime() + (SECONDS_PER_DAY * 8);
       const taskId = await testDataGenerator.setupAssignedTask(colony, dueDate);
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
-      await colony.submitTaskWorkRating(1, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await testHelper.forwardTime((SECONDS_PER_DAY * 5) + 1, this);
       await colony.revealTaskWorkRating(1, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
@@ -155,8 +155,8 @@ contract('Colony Task Work Rating', () => {
 
     it('should fail if I try to reveal rating with an incorrect secret', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_SECRET_1, { from: WORKER });
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_2_SALT, { from: WORKER }));
       const roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
       assert.isFalse(roleManager[1]);
@@ -164,8 +164,8 @@ contract('Colony Task Work Rating', () => {
 
     it('should fail if there are two rating secrets and I try to reveal the one from the evluator late', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_SECRET_1, { from: WORKER });
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await testHelper.forwardTime((SECONDS_PER_DAY * 5) + 2, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
@@ -175,8 +175,8 @@ contract('Colony Task Work Rating', () => {
 
     it('should fail if there are two rating secrets and I try to reveal the one from the worker late', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_SECRET_1, { from: WORKER });
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await testHelper.forwardTime((SECONDS_PER_DAY * 5) + 2, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }));
@@ -186,7 +186,7 @@ contract('Colony Task Work Rating', () => {
 
     it('should fail if evaluator tries to reveal rating before the 5 days wait for rating commits expires', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await testHelper.forwardTime(SECONDS_PER_DAY * 4, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
       const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
@@ -195,7 +195,7 @@ contract('Colony Task Work Rating', () => {
 
     it('should fail if evaluator tries to reveal rating after 5 days wait for rating reveal expires', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await testHelper.forwardTime(SECONDS_PER_DAY * 10, this);
       await testHelper.checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
@@ -207,7 +207,7 @@ contract('Colony Task Work Rating', () => {
   describe('when assigning work ratings after the user not commiting or revealing on time', () => {
     it('should assign rating 5 to manager and penalise worker by 0.5, when they haven\'t submitted rating on time', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await testHelper.forwardTime(SECONDS_PER_DAY * 5, this);
       await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
       await testHelper.forwardTime(SECONDS_PER_DAY * 5, this);
@@ -226,7 +226,7 @@ contract('Colony Task Work Rating', () => {
     it('should assign rating 5 to manager and 0 to worker, when ratings not submitted on time and their own rating is below 5', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
 
-      RATING_SECRET_2 = await colony.generateSecret.call(RATING_2_SALT, 4);
+      const RATING_SECRET_2 = web3Utils.soliditySha3(RATING_2_SALT, 4);
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
       await testHelper.forwardTime((SECONDS_PER_DAY * 5) + 2, this);
       await colony.revealTaskWorkRating(taskId, WORKER_ROLE, 4, RATING_2_SALT, { from: EVALUATOR });
@@ -245,7 +245,7 @@ contract('Colony Task Work Rating', () => {
 
     it('should assign rating 5 to worker, when evaluator hasn\'t submitted rating on time', async () => {
       const taskId = await testDataGenerator.setupAssignedTask(colony);
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_SECRET_1, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await testHelper.forwardTime(SECONDS_PER_DAY * 6, this);
       await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
       await testHelper.forwardTime(SECONDS_PER_DAY * 6, this);
