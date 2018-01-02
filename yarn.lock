@@ -4629,9 +4629,9 @@ solc@0.4.18:
     semver "^5.3.0"
     yargs "^4.7.1"
 
-solidity-coverage@0.4.3:
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.4.3.tgz#087bd067971a007096d98b2c7e09ec56f39e5265"
+solidity-coverage@0.4.8:
+  version "0.4.8"
+  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.4.8.tgz#2447c641d43267c12b7ac8114e573a813394766b"
   dependencies:
     death "^1.1.0"
     ethereumjs-testrpc-sc "6.0.7"
@@ -4640,16 +4640,16 @@ solidity-coverage@0.4.3:
     req-cwd "^1.0.1"
     shelljs "^0.7.4"
     sol-explore "^1.6.2"
-    solidity-parser-sc "0.4.1"
+    solidity-parser-sc "0.4.4"
     web3 "^0.18.4"
 
 solidity-parser-antlr@^0.2.5:
   version "0.2.5"
   resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.2.5.tgz#c99e6ed296a53c3abd14f236844a20b500ad1a2b"
 
-solidity-parser-sc@0.4.1:
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/solidity-parser-sc/-/solidity-parser-sc-0.4.1.tgz#d72e4fd7776a305b2b56270a821638178521f89a"
+solidity-parser-sc@0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/solidity-parser-sc/-/solidity-parser-sc-0.4.4.tgz#a7354476ce7b774caa43c9089c00b68a2efbec61"
   dependencies:
     mocha "^2.4.5"
     pegjs "^0.10.0"
