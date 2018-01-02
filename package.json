@@ -50,7 +50,7 @@
     "request": "^2.83.0",
     "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
-    "solidity-coverage": "0.4.3",
+    "solidity-coverage": "0.4.8",
     "solidity-parser-antlr": "^0.2.5",
     "solium": "^1.0.9",
     "truffle": "^4.0.1",
