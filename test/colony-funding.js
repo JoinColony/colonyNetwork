@@ -282,16 +282,16 @@ contract('Colony Funding', function (accounts) {
     });
 
     it('should not allow funds to be removed from a task with payouts to go', async function(){
-      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 303);
+      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 310 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colony, otherToken);
       await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
       let colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
-      assert.equal(colonyPotBalance.toNumber(), 300);
+      assert.equal(colonyPotBalance.toNumber(), 300 * 1e18);
     });
 
     it('should allow funds to be removed from a task if there are no more payouts of that token to be claimed', async function(){
-      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 313);
+      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 313 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colony, otherToken);
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
       await colony.finalizeTask(taskId);

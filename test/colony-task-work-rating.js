@@ -131,7 +131,7 @@ contract('Colony Task Work Rating', function (accounts) {
 
   describe('when revealing a task work rating', () => {
     it('should allow revealing a rating by evaluator and worker', async function () {
-      await testDataGenerator.fundColonyWithTokens(colony, token, 303);
+      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colony, token);
       let roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
       assert.isTrue(roleManager[1]);

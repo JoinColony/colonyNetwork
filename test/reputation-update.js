@@ -11,6 +11,8 @@ import { MANAGER,
   MANAGER_ROLE, 
   EVALUATOR_ROLE, 
   WORKER_ROLE, 
+  MANAGER_PAYOUT,
+  WORKER_PAYOUT,
   SPECIFICATION_HASH,
   SECONDS_PER_DAY } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
@@ -53,7 +55,7 @@ contract('Colony Reputation Updates', function (accounts) {
     commonColony = await IColony.at(commonColonyAddress);
     let tokenAddress = await commonColony.getToken.call();
     colonyToken = await Token.at(tokenAddress);
-    await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 600);
+    await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 600 * 1e18);
   });
 
   describe('when added', () => {
@@ -87,11 +89,11 @@ contract('Colony Reputation Updates', function (accounts) {
         reputationLogIndex = reputationLogIndex.toNumber() - 1;
         let x = await colonyNetwork.getReputationUpdateLogEntry.call(reputationLogIndex);
         assert.equal(x[0], WORKER);
-        assert.isTrue(x[1].equals(rating.reputationChangeFactor.mul(200)));
+        assert.equal(x[1].toNumber(), rating.reputationChangeFactor.mul(200).toNumber());
         assert.equal(x[2].toNumber(), 0);
         assert.equal(x[3], commonColony.address);
         assert.equal(x[4].toNumber(), 2);
-        //TODO: assert.equal(x[5].toNumber(), 0);
+        assert.equal(x[5].toNumber(), 0);
       });
     });   
     
@@ -116,7 +118,7 @@ contract('Colony Reputation Updates', function (accounts) {
       assert.equal(x[5].toNumber(), 2+nPrevious);
     });
 
-    it('should calculate nUpdates correctly when making a log', async function (){
+    it('should calculate nUpdates correctly when making a log', async function () {
       await commonColony.addSkill(0);
       await commonColony.addSkill(1);
       await commonColony.addSkill(2);
@@ -126,15 +128,15 @@ contract('Colony Reputation Updates', function (accounts) {
       await commonColony.finalizeTask(taskId1);
       
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
-      const result = new BigNumber('1000000000000000000');
-      assert.isTrue(x[1].equals(result.mul(200)));
+      const result = new BigNumber('1').mul(WORKER_PAYOUT);
+      assert.equal(x[1].toNumber(), result.toNumber());
       assert.equal(x[4].toNumber(), 6);
 
       const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
       await commonColony.setTaskSkill(taskId2, 3);
       await commonColony.finalizeTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
-      assert.isTrue(x[1].equals(result.mul(200)));
+      assert.equal(x[1].toNumber(), result.toNumber());
       assert.equal(x[4].toNumber(), 8); // Negative reputation change means children change as well.
     });
   });

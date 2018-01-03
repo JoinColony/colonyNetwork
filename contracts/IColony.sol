@@ -55,4 +55,9 @@ contract IColony {
   function setFunctionReviewers(bytes4,uint8,uint8) public;
 
   event TaskAdded(uint256 indexed id);
+  event Confirmation(uint indexed transactionId, uint indexed senderRole);
+  event Revocation(uint indexed transactionId, address indexed sender);
+  event Submission(uint indexed transactionId);
+  event Execution(uint indexed transactionId);
+  event ExecutionFailure(uint indexed transactionId);
 }

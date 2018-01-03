@@ -284,9 +284,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     uint skillId = task.skillIds[0];
 
     uint taskPotBalance = task.payouts[2][token];
-    // `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
-    int workerRatingWei = int(workerRole.rating) * 10 ** 17;
-    int reputationChange = int(taskPotBalance) * (((workerRatingWei * 2) - (5 * 10 ** 18)) / 3);
+    // Note `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
+    int reputationChange = (int(taskPotBalance) * (int(workerRole.rating)*2 - 50) / 30);
     colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
