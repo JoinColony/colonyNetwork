@@ -34,7 +34,7 @@ contract Colony is ColonyStorage {
     IColony(this).setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
   }
 
-  function mintTokens(uint128 _wad) public
+  function mintTokens(uint _wad) public
   auth
   {
     return token.mint(_wad);

@@ -62,7 +62,7 @@ contract Token is DSAuth, DSMath, ERC20Extended {
     return true;
   }
 
-  function mint(uint128 wad) public
+  function mint(uint wad) public
   auth
   {
     _balances[msg.sender] = add(_balances[msg.sender], wad);
