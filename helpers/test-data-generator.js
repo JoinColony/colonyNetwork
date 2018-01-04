@@ -1,3 +1,5 @@
+import BigNumber from 'bignumber.js';
+
 import { MANAGER,
     EVALUATOR, 
     WORKER,
@@ -48,7 +50,10 @@ module.exports = {
         const taskId = await this.setupAssignedTask(colony, dueDate, evaluator, worker);
         const task = await colony.getTask.call(taskId);
         const potId = task[6].toNumber();
-        await colony.moveFundsBetweenPots(1, potId, (manager_payout + worker_payout), tokenAddress);
+        manager_payout = new BigNumber(manager_payout);
+        worker_payout = new BigNumber(worker_payout);
+        const totalPayouts = manager_payout.add(worker_payout);
+        await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
         let txData = await colony.contract.setTaskPayout.getData(taskId, MANAGER_ROLE, tokenAddress, manager_payout);
         await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
         let transactionId = await colony.getTransactionCount.call();
@@ -82,6 +87,7 @@ module.exports = {
     },
     async fundColonyWithTokens(colony, token, tokenAmount) {
         let colonyToken = await colony.getToken.call();
+        tokenAmount = new BigNumber(tokenAmount);
         if (colonyToken == token.address) {
             await colony.mintTokens(tokenAmount); 
         } else {
