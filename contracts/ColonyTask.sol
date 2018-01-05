@@ -6,6 +6,7 @@ import "../lib/dappsys/math.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 import "./IColony.sol";
+import "./SafeMath.sol";
 
 
 contract ColonyTask is ColonyStorage, DSMath {
@@ -284,8 +285,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     uint skillId = task.skillIds[0];
 
     uint taskPotBalance = task.payouts[2][token];
-    // Note `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
-    int reputationChange = (int(taskPotBalance) * (int(workerRole.rating)*2 - 50) / 30);
+    // NOTE: `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
+    // NOTE: reputation change amount is hereby limited to MAXINT/30
+    int reputationChange = SafeMath.mulInt(int(taskPotBalance), (int(workerRole.rating)*2 - 50)) / 30;
     colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }

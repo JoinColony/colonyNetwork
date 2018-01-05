@@ -55,10 +55,13 @@ contract('Colony Reputation Updates', function (accounts) {
     commonColony = await IColony.at(commonColonyAddress);
     let tokenAddress = await commonColony.getToken.call();
     colonyToken = await Token.at(tokenAddress);
-    await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 600 * 1e18);
   });
 
   describe('when added', () => {
+    beforeEach(async function () {
+      await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 600 * 1e18);
+    });
+
     it('should be readable', async function () {
       const taskId = await testDataGenerator.setupRatedTask(commonColony);
       await commonColony.finalizeTask(taskId);
@@ -138,6 +141,24 @@ contract('Colony Reputation Updates', function (accounts) {
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
       assert.equal(x[1].toNumber(), result.toNumber());
       assert.equal(x[4].toNumber(), 8); // Negative reputation change means children change as well.
+    });
+
+    it('should revert on reputation amount overflow', async function () {
+      // Fund colony with maximum possible int number of tokens
+      const maxIntNumber = new BigNumber(2).pow(255).sub(1);
+      await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, maxIntNumber);
+      let colonyTokenBalance = await colonyToken.balanceOf.call(commonColony.address);
+
+      // Split the max tokens number as payouts between the manager and worker
+      const managerPayout = 1;
+      const workerPayout = colonyTokenBalance.sub(1);
+      const taskId = await testDataGenerator.setupRatedTask(commonColony, colonyToken, undefined, undefined, undefined, managerPayout, workerPayout, undefined, undefined, 20);
+
+      // Check the task pot is correctly funded with the max amount
+      let taskPotBalance= await commonColony.getPotBalance.call(2, colonyToken.address);
+      assert.isTrue(taskPotBalance.equals(colonyTokenBalance));
+
+      testHelper.checkErrorRevert(commonColony.finalizeTask(taskId));
     });
   });
 });
