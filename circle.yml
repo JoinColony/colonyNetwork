@@ -14,6 +14,7 @@ dependencies:
     - yarn --pure-lockfile --cache-folder ~/.yarn-cache #truffle-contract replies on ethjs-abi which requires node>v6.5
     - patch ./node_modules/ethereumjs-testrpc-sc/build/cli.node.js temp-testrpc.patch
     - patch ./node_modules/ethereumjs-testrpc/build/cli.node.js temp-testrpc.patch
+    - patch ./node_modules/truffle/build/cli.bundled.js temp-truffle.patch
     - yarn global add gulp@3.9.1
     - git submodule update --init
 
