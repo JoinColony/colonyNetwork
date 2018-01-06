@@ -1,0 +1,4 @@
+320558c320558
+<         self.can_snapshot = true;
+---
+>         self.can_snapshot = false;
