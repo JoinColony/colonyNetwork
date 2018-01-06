@@ -6,6 +6,7 @@ import "../lib/dappsys/math.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 import "./IColony.sol";
+import "./SafeMath.sol";
 
 
 contract ColonyTask is ColonyStorage, DSMath {
@@ -54,7 +55,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   }
 
   modifier beforeDueDate(uint256 _id) {
-    require(tasks[_id].dueDate > now);
+    require(tasks[_id].dueDate >= now);
     _;
   }
 
@@ -94,6 +95,12 @@ contract ColonyTask is ColonyStorage, DSMath {
     _;
   }
 
+  modifier taskWorkRatingsAssigned(uint256 _id) {
+    require(tasks[_id].roles[WORKER].rated);
+    require(tasks[_id].roles[MANAGER].rated);
+    _;
+  }
+
   function makeTask(bytes32 _specificationHash) public
   auth
   {
@@ -104,7 +111,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[taskCount] = Task({
       specificationHash: _specificationHash,
       deliverableHash: "",
-      accepted: false,
+      finalized: false,
       cancelled: false,
       dueDate: 0,
       payoutsWeCannotMake: 0,
@@ -133,7 +140,7 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     Task storage task = tasks[taskId];
     require(task.roles[_role].user == msg.sender);
-    require(!task.accepted);
+    require(!task.finalized);
 
     uint8[2] storage _reviewers = reviewers[sig];
     require(_reviewers[0] != 0 || _reviewers[1] != 0);
@@ -149,7 +156,7 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     Task storage task = tasks[taskId];
     require(task.roles[_role].user == msg.sender);
-    require(!task.accepted);
+    require(!task.finalized);
 
     uint8[2] storage _reviewers = reviewers[sig];
     require(_reviewers[0] != 0 || _reviewers[1] != 0);
@@ -217,7 +224,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   // Note task assignment is agreed off-chain
   function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].roles[_role] = Role({
       user: _user,
@@ -230,7 +237,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   // Maybe just the administrator is adequate for the skill?
   function setTaskSkill(uint _id, uint _skillId) public
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   skillExists(_skillId)
   {
     tasks[_id].skillIds[0] = _skillId;
@@ -239,7 +246,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
   self()
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].specificationHash = _specificationHash;
   }
@@ -247,14 +254,14 @@ contract ColonyTask is ColonyStorage, DSMath {
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   self()
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].dueDate = _dueDate;
   }
 
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   beforeDueDate(_id)
   workNotSubmitted(_id)
   confirmTaskRoleIdentity(_id, WORKER)
@@ -263,25 +270,32 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].deliverableTimestamp = now;
   }
 
-  function acceptTask(uint256 _id) public
+  function finalizeTask(uint256 _id) public
   auth
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskWorkRatingsAssigned(_id)
+  taskNotFinalized(_id)
   {
-    tasks[_id].accepted = true;
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     Task storage task = tasks[_id];
+    Role storage workerRole = task.roles[WORKER];
+
+    task.finalized = true;
+
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint skillId = task.skillIds[0];
-    int sign = _id % 2 == 0 ? -1 : int8(1); // TODO: Remove this hack to allow us to test -ve reputation change
-    int reputationChange = 10 * sign; // TODO: Replace with actual reputation change
-    colonyNetworkContract.appendReputationUpdateLog(task.roles[WORKER].user, reputationChange, skillId);
+
+    uint taskPotBalance = task.payouts[2][token];
+    // NOTE: `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
+    // NOTE: reputation change amount is hereby limited to MAXINT/30
+    int reputationChange = SafeMath.mulInt(int(taskPotBalance), (int(workerRole.rating)*2 - 50)) / 30;
+    colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputationChange, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
 
   function cancelTask(uint256 _id) public
   auth
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     tasks[_id].cancelled = true;
   }
@@ -290,7 +304,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   returns (bytes32, bytes32, bool, bool, uint, uint, uint, uint, uint)
   {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.deliverableHash, t.accepted, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId);
+    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId);
   }
 
   function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8) {

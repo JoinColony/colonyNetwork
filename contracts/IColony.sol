@@ -13,7 +13,7 @@ contract IColony {
   function setToken(address _token) public;
   function getToken() public view returns (address);
   function initialiseColony(address _network) public;
-  function mintTokens(uint128 _wad) public;
+  function mintTokens(uint256 _wad) public;
   function addSkill(uint256 _parentSkillId) public;
 
   // ColonyTask
@@ -25,7 +25,7 @@ contract IColony {
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public;
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public;
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
-  function acceptTask(uint256 _id) public;
+  function finalizeTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
   function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8);
   function getTaskWorkRatings(uint _id) public view returns (uint256, uint256);
@@ -55,4 +55,9 @@ contract IColony {
   function setFunctionReviewers(bytes4,uint8,uint8) public;
 
   event TaskAdded(uint256 indexed id);
+  event Confirmation(uint indexed transactionId, uint indexed senderRole);
+  event Revocation(uint indexed transactionId, address indexed sender);
+  event Submission(uint indexed transactionId);
+  event Execution(uint indexed transactionId);
+  event ExecutionFailure(uint indexed transactionId);
 }

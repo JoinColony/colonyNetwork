@@ -49,7 +49,7 @@ contract ColonyStorage is DSAuth {
   struct Task {
     bytes32 specificationHash;
     bytes32 deliverableHash;
-    bool accepted;
+    bool finalized;
     bool cancelled;
     uint dueDate;
     uint payoutsWeCannotMake;
@@ -91,13 +91,13 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
-  modifier taskNotAccepted(uint256 _id) {
-    require(!tasks[_id].accepted);
+  modifier taskNotFinalized(uint256 _id) {
+    require(!tasks[_id].finalized);
     _;
   }
 
-  modifier taskAccepted(uint256 _id) {
-    require(tasks[_id].accepted);
+  modifier taskFinalized(uint256 _id) {
+    require(tasks[_id].finalized);
     _;
   }
 

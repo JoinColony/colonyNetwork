@@ -1,35 +1,40 @@
 /* globals artifacts */
-import sha3 from 'solidity-sha3';
+import BigNumber from 'bignumber.js';
+import { MANAGER,
+  EVALUATOR, 
+  WORKER,
+  OTHER,
+  MANAGER_RATING, 
+  WORKER_RATING, 
+  RATING_1_SALT, 
+  RATING_2_SALT, 
+  MANAGER_ROLE, 
+  EVALUATOR_ROLE, 
+  WORKER_ROLE, 
+  MANAGER_PAYOUT,
+  WORKER_PAYOUT,
+  SPECIFICATION_HASH,
+  SECONDS_PER_DAY } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
+import testDataGenerator from '../helpers/test-data-generator';
 
 const upgradableContracts = require('../helpers/upgradable-contracts');
 const EtherRouter = artifacts.require('EtherRouter');
-const Resolver = artifacts.require('Resolver');
-const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
 const IColonyNetwork = artifacts.require('IColonyNetwork');
+const Resolver = artifacts.require('Resolver');
+const Colony = artifacts.require('Colony');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask = artifacts.require('ColonyTask');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
 const Token = artifacts.require('Token');
-const Authority = artifacts.require('Authority');
 
 contract('Colony Reputation Updates', function (accounts) {
-  let COLONY_KEY;
-  const MAIN_ACCOUNT = accounts[0];
-  const OTHER_ACCOUNT = accounts[1];
-  const THIRD_ACCOUNT = accounts[2];
-  // The base58 decoded, bytes32 converted value of the task ipfsHash
-  const specificationHash = '9bb76d8e6c89b524d34a454b3140df28';
-
-  let colony;
-  let colonyFunding;
-  let colonyTask;
-  let token;
-  let authority;
+  let COLONY_KEY;  
   let colonyNetwork;
   let commonColony;
   let resolverColonyNetworkDeployed;
+  let colonyToken;
 
   before(async function () {
     resolverColonyNetworkDeployed = await Resolver.deployed();
@@ -41,7 +46,6 @@ contract('Colony Reputation Updates', function (accounts) {
     let colonyTask = await ColonyTask.new();
     let colonyTransactionReviewer = await ColonyTransactionReviewer.new();
     let resolver = await Resolver.new();
-
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
@@ -49,25 +53,56 @@ contract('Colony Reputation Updates', function (accounts) {
     await colonyNetwork.createColony("Common Colony");
     let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await IColony.at(commonColonyAddress);
+    let tokenAddress = await commonColony.getToken.call();
+    colonyToken = await Token.at(tokenAddress);
   });
 
-  describe('when update added to reputation update log', () => {
+  describe('when added', () => {
+    beforeEach(async function () {
+      await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, 600 * 1e18);
+    });
+
     it('should be readable', async function () {
-      await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
-      await commonColony.acceptTask(1);
+      const taskId = await testDataGenerator.setupRatedTask(commonColony);
+      await commonColony.finalizeTask(taskId);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
-      assert.equal(x[0], OTHER_ACCOUNT);
-      assert.equal(x[1].toNumber(), 10);
+      assert.equal(x[0], WORKER);
+      assert.equal(x[1].toNumber(), 200000000000000000000);
       assert.equal(x[2].toNumber(), 0);
       assert.equal(x[3], commonColony.address);
       assert.equal(x[4].toNumber(), 2);
       assert.equal(x[5].toNumber(), 0);
     });
 
+    var ratings = [
+      {worker: 0,  reputationChangeFactor: new BigNumber('-1666666666666666666')},
+      {worker: 10, reputationChangeFactor: new BigNumber('-1000000000000000000')},
+      {worker: 20, reputationChangeFactor: new BigNumber('-333333333333333333')},
+      {worker: 30, reputationChangeFactor: new BigNumber('333333333333333333')},
+      {worker: 40, reputationChangeFactor: new BigNumber('1000000000000000000')},
+      {worker: 50, reputationChangeFactor: new BigNumber('1666666666666666666')}
+    ];
+
+    ratings.forEach(async function(rating) {
+      it('should set the correct reputation change amount in log for rating ' + rating.worker, async function () {
+        const taskId = await testDataGenerator.setupRatedTask(commonColony, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, rating.worker, RATING_2_SALT);
+        await commonColony.finalizeTask(taskId);
+
+        let reputationLogIndex = await colonyNetwork.getReputationUpdateLogLength.call();
+        reputationLogIndex = reputationLogIndex.toNumber() - 1;
+        let x = await colonyNetwork.getReputationUpdateLogEntry.call(reputationLogIndex);
+        assert.equal(x[0], WORKER);
+        assert.equal(x[1].toNumber(), rating.reputationChangeFactor.mul(200).toNumber());
+        assert.equal(x[2].toNumber(), 0);
+        assert.equal(x[3], commonColony.address);
+        assert.equal(x[4].toNumber(), 2);
+        assert.equal(x[5].toNumber(), 0);
+      });
+    });   
+    
     it('should not be able to be appended by an account that is not a colony', async function () {
       let lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call();
-      await testHelper.checkErrorRevert(colonyNetwork.appendReputationUpdateLog(MAIN_ACCOUNT, 1, 2));
+      await testHelper.checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2));
       let lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });
@@ -75,40 +110,55 @@ contract('Colony Reputation Updates', function (accounts) {
     it('should populate nPreviousUpdates correctly', async function () {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
-
-      await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
-      await commonColony.acceptTask(1);
+      const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
+      await commonColony.finalizeTask(taskId1);
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       let nPrevious = x[5].toNumber();
-      await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(2, 2, OTHER_ACCOUNT);
-      await commonColony.acceptTask(2);
+      
+      const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
+      await commonColony.finalizeTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(x[5].toNumber(), 2+nPrevious);
     });
 
-    it('should calculate nUpdates correctly when making a log', async function (){
-
+    it('should calculate nUpdates correctly when making a log', async function () {
       await commonColony.addSkill(0);
       await commonColony.addSkill(1);
       await commonColony.addSkill(2);
       await commonColony.addSkill(3);
-      await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(1, 2, OTHER_ACCOUNT);
-      await commonColony.setTaskSkill(1, 2);
-      await commonColony.acceptTask(1);
+      const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
+      await commonColony.setTaskSkill(taskId1, 2);
+      await commonColony.finalizeTask(taskId1);
+      
       let x = await colonyNetwork.getReputationUpdateLogEntry.call(0);
-      assert.equal(x[1].toNumber(), 10);
+      const result = new BigNumber('1').mul(WORKER_PAYOUT);
+      assert.equal(x[1].toNumber(), result.toNumber());
       assert.equal(x[4].toNumber(), 6);
 
-      await commonColony.makeTask(specificationHash);
-      await commonColony.setTaskRoleUser(2, 2, OTHER_ACCOUNT);
-      await commonColony.setTaskSkill(2, 3);
-      await commonColony.acceptTask(2);
+      const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
+      await commonColony.setTaskSkill(taskId2, 3);
+      await commonColony.finalizeTask(taskId2);
       x = await colonyNetwork.getReputationUpdateLogEntry.call(1);
-      assert.equal(x[1].toNumber(), -10);
-      assert.equal(x[4].toNumber(), 10); // Negative reputation change means children change as well.
+      assert.equal(x[1].toNumber(), result.toNumber());
+      assert.equal(x[4].toNumber(), 8); // Negative reputation change means children change as well.
+    });
+
+    it('should revert on reputation amount overflow', async function () {
+      // Fund colony with maximum possible int number of tokens
+      const maxIntNumber = new BigNumber(2).pow(255).sub(1);
+      await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, maxIntNumber);
+      let colonyTokenBalance = await colonyToken.balanceOf.call(commonColony.address);
+
+      // Split the max tokens number as payouts between the manager and worker
+      const managerPayout = 1;
+      const workerPayout = colonyTokenBalance.sub(1);
+      const taskId = await testDataGenerator.setupRatedTask(commonColony, colonyToken, undefined, undefined, undefined, managerPayout, workerPayout, undefined, undefined, 20);
+
+      // Check the task pot is correctly funded with the max amount
+      let taskPotBalance= await commonColony.getPotBalance.call(2, colonyToken.address);
+      assert.isTrue(taskPotBalance.equals(colonyTokenBalance));
+
+      testHelper.checkErrorRevert(commonColony.finalizeTask(taskId));
     });
   });
 });

@@ -26,7 +26,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
   function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
   self()
   taskExists(_id)
-  taskNotAccepted(_id)
+  taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
     uint currentAmount = task.payouts[_role][_token];
@@ -46,7 +46,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
   }
 
   function claimPayout(uint _id, uint _role, address _token) public
-  taskAccepted(_id)
+  taskFinalized(_id)
   {
     Task storage task = tasks[_id];
     require(task.roles[_role].user == msg.sender);
@@ -86,9 +86,9 @@ contract ColonyFunding is ColonyStorage, DSMath {
     require(_toPot <= potCount); // Only allow sending to created pots
     if (pots[_fromPot].taskId > 0) {
       Task storage task = tasks[pots[_fromPot].taskId];
-      require(task.accepted == false || task.totalPayouts[_token] == 0);
+      require(task.finalized == false || task.totalPayouts[_token] == 0);
       // i.e. if this pot is associated with a task, prevent money being taken from the pot if the task
-      // has been accepted, unless everyone has been paid out.
+      // has been finalized, unless everyone has been paid out.
     }
     // TODO: At some point, funds have to be unable to be removed from tasks (until everyone's been paid and
     // extra funds can be reclaimed)
