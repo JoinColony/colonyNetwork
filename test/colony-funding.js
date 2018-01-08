@@ -277,7 +277,7 @@ contract('Colony Funding', () => {
       const taskId = await testDataGenerator.setupRatedTask(colony, otherToken);
       await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
-      let colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 300 * 1e18);
     });
 

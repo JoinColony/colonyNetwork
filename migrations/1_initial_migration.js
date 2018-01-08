@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 const Migrations = artifacts.require('./Migrations');
 
-module.exports = function (deployer) {
+module.exports = (deployer) => {
   deployer.deploy(Migrations);
 };

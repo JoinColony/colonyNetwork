@@ -297,7 +297,7 @@ contract('Colony', () => {
     });
 
     it('should fail if I try to submit work for a task that is past its due date', async () => {
-      var dueDate = testHelper.currentBlockTime() - 1;
+      const dueDate = testHelper.currentBlockTime() - 1;
       await testDataGenerator.setupAssignedTask(colony, dueDate);
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, DELIVERABLE_HASH));
     });
@@ -431,18 +431,18 @@ contract('Colony', () => {
       await colony.finalizeTask(taskId);
       const networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
-      let networkBalanceAfter = await token.balanceOf.call(colonyNetwork.address);
+      const networkBalanceAfter = await token.balanceOf.call(colonyNetwork.address);
       assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 1 * 1e18);
-      let balance = await token.balanceOf.call(MANAGER);
+      const balance = await token.balanceOf.call(MANAGER);
       assert.equal(balance.toNumber(), 99 * 1e18);
-      let potBalance = await colony.getPotBalance.call(2, token.address);
+      const potBalance = await colony.getPotBalance.call(2, token.address);
       assert.equal(potBalance.toNumber(), 200 * 1e18);
     });
 
     it('should payout agreed ether for a task', async () => {
       await colony.send(303);
-      await colony.claimColonyFunds(0x0);  
-      var dueDate = testHelper.currentBlockTime() - 1;
+      await colony.claimColonyFunds(0x0);
+      const dueDate = testHelper.currentBlockTime() - 1;
       const taskId = await testDataGenerator.setupRatedTask(colony, 0x0, dueDate, undefined, undefined, 100, 200);
       await colony.finalizeTask(taskId);
       const commonColonyAddress = await colonyNetwork.getColony.call('Common Colony');
