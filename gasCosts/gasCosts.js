@@ -1,9 +1,19 @@
 /* globals artifacts */
-import CONST from '../helpers/constants';
+/* eslint-disable no-console */
+import { EVALUATOR,
+  WORKER,
+  MANAGER_ROLE,
+  EVALUATOR_ROLE,
+  WORKER_ROLE,
+  MANAGER_RATING,
+  WORKER_RATING,
+  RATING_1_SALT,
+  RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET,
+  SPECIFICATION_HASH } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
-import testDataGenerator from '../helpers/test-data-generator';
-const upgradableContracts = require('../helpers/upgradable-contracts');
-import sha3 from 'solidity-sha3';
+import upgradableContracts from '../helpers/upgradable-contracts';
 
 const Colony = artifacts.require('Colony');
 const IColony = artifacts.require('IColony');
@@ -11,23 +21,18 @@ const IColonyNetwork = artifacts.require('IColonyNetwork');
 const ColonyTask = artifacts.require('ColonyTask');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
-const Token = artifacts.require('Token');
-const Authority = artifacts.require('Authority');
 const Resolver = artifacts.require('Resolver');
 const EtherRouter = artifacts.require('EtherRouter');
+const Authority = artifacts.require('Authority');
 
-contract('all', function (accounts) {
+contract('all', () => {
   const gasPrice = 20e9;
-  const MAIN_ACCOUNT = accounts[0];
-  const OTHER_ACCOUNT = accounts[1];
-  const THIRD_ACCOUNT = accounts[2];
 
   let colony;
   let colonyTask;
   let colonyFunding;
   let colonyTransactionReviewer;
   let commonColony;
-  let token;
   let authority;
   let colonyNetwork;
 
@@ -36,14 +41,14 @@ contract('all', function (accounts) {
   let mintTokensCost;
   let acceptTaskCost;
 
-  before(async function () {
+  before(async () => {
     console.log('Gas price : ', gasPrice);
     colony = await Colony.new();
-    let resolver = await Resolver.new();
+    const resolver = await Resolver.new();
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    colonyTask = await ColonyTask.new()
-    colonyFunding = await ColonyFunding.new()
+    colonyTask = await ColonyTask.new();
+    colonyFunding = await ColonyFunding.new();
     colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
     await upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
@@ -53,55 +58,53 @@ contract('all', function (accounts) {
     console.log('createColony actual cost : ', tx.receipt.gasUsed);
     const address = await colonyNetwork.getColony.call('Antz');
     colony = await IColony.at(address);
-    const tokenAddress = await colony.getToken.call();
-    token = await Token.at(tokenAddress);
     const authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
     await IColony.defaults({ gasPrice });
 
-    let commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
+    const commonColonyAddress = await colonyNetwork.getColony.call('Common Colony');
     commonColony = await IColony.at(commonColonyAddress);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
-  describe('Gas costs', function () {
-    it('when working with the Common Colony', async function () {
-      let tx0 = await commonColony.addSkill(0);
-      let addSkillCost0 = tx0.receipt.gasUsed;
+  describe('Gas costs', () => {
+    it('when working with the Common Colony', async () => {
+      const tx0 = await commonColony.addSkill(0);
+      const addSkillCost0 = tx0.receipt.gasUsed;
       console.log('addSkill to level 1 actual cost :', addSkillCost0);
 
-      let tx1 = await commonColony.addSkill(1);
-      let addSkillCost1 = tx1.receipt.gasUsed;
+      const tx1 = await commonColony.addSkill(1);
+      const addSkillCost1 = tx1.receipt.gasUsed;
       console.log('addSkill to level 2 actual cost :', addSkillCost1);
 
-      let tx2 = await commonColony.addSkill(2);
-      let addSkillCost2 = tx2.receipt.gasUsed;
+      const tx2 = await commonColony.addSkill(2);
+      const addSkillCost2 = tx2.receipt.gasUsed;
       console.log('addSkill to level 3 actual cost :', addSkillCost2);
 
-      let tx3 = await commonColony.addSkill(3);
-      let addSkillCost3 = tx3.receipt.gasUsed;
+      const tx3 = await commonColony.addSkill(3);
+      const addSkillCost3 = tx3.receipt.gasUsed;
       console.log('addSkill to level 4 actual cost :', addSkillCost3);
     });
 
-    it('when working with a Colony', async function () {
+    it('when working with a Colony', async () => {
       // makeTask
-      let estimate = await colony.makeTask.estimateGas('9bb76d8e6c89b524d34a454b3140df28');
+      let estimate = await colony.makeTask.estimateGas(SPECIFICATION_HASH);
       console.log('makeTask estimate : ', estimate);
-      let tx = await colony.makeTask('9bb76d8e6c89b524d34a454b3140df28', { gasPrice });
+      let tx = await colony.makeTask(SPECIFICATION_HASH, { gasPrice });
       makeTaskCost = tx.receipt.gasUsed;
       console.log('makeTask actual cost :', makeTaskCost);
 
-      await colony.setTaskRoleUser(1, CONST.EVALUATOR_ROLE, OTHER_ACCOUNT);
-      await colony.setTaskRoleUser(1, CONST.WORKER_ROLE, THIRD_ACCOUNT);
+      await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
+      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
 
       const dueDate = testHelper.currentBlockTime() - 1;
       let txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
-      await colony.proposeTaskChange(txData, 0, CONST.MANAGER_ROLE);
+      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
       const transactionId = await colony.getTransactionCount.call();
-      await colony.approveTaskChange(transactionId, CONST.WORKER_ROLE, { from: THIRD_ACCOUNT });
+      await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
 
       // Propose task change
-      txData = await colony.contract.setTaskBrief.getData(1, '9bb76d8e6c89b524d34a454b3140df29');
+      txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH);
       estimate = await colony.proposeTaskChange.estimateGas(txData, 0, 0);
       console.log('Propose task change of brief estimate : ', estimate);
       tx = await colony.proposeTaskChange(txData, 0, 0, { gasPrice });
@@ -114,15 +117,11 @@ contract('all', function (accounts) {
       tx = await colony.mintTokens(200, { gasPrice });
       mintTokensCost = tx.receipt.gasUsed;
       console.log('mintTokens actual cost :', mintTokensCost);
-  
-      const SALT = sha3(testHelper.getRandomString(5));
-      const _RATING_SECRET_1_ = await colony.generateSecret.call(SALT, 30);
-      const _RATING_SECRET_2_ = await colony.generateSecret.call(SALT, 40);
 
-      await colony.submitTaskWorkRating(1, CONST.WORKER_ROLE, _RATING_SECRET_1_, { from: OTHER_ACCOUNT });
-      await colony.submitTaskWorkRating(1, CONST.MANAGER_ROLE, _RATING_SECRET_2_, { from: THIRD_ACCOUNT });
-      await colony.revealTaskWorkRating(1, CONST.WORKER_ROLE, 30, SALT, { from: OTHER_ACCOUNT });
-      await colony.revealTaskWorkRating(1, CONST.MANAGER_ROLE, 40, SALT, { from: THIRD_ACCOUNT });
+      await colony.submitTaskWorkRating(1, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.revealTaskWorkRating(1, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
+      await colony.revealTaskWorkRating(1, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
 
       // finalizeTask
       estimate = await colony.finalizeTask.estimateGas(1);
@@ -132,13 +131,13 @@ contract('all', function (accounts) {
       console.log('finalizeTask actual cost :', acceptTaskCost);
 
       // setUserRole
-      estimate = await authority.setUserRole.estimateGas(OTHER_ACCOUNT, 1, true);
+      estimate = await authority.setUserRole.estimateGas(EVALUATOR, 1, true);
       console.log('setUserRole estimate : ', estimate);
-      tx = await authority.setUserRole(OTHER_ACCOUNT, 1, true);
+      tx = await authority.setUserRole(EVALUATOR, 1, true);
       console.log('setUserRole actual cost :', tx.receipt.gasUsed);
     });
 
-    it('Average gas costs for customers should not exceed 1 ETH per month', async function () {
+    it('Average gas costs for customers should not exceed 1 ETH per month', async () => {
       const totalGasCost = (makeTaskCost * 100) // assume 100 tasks per month are created
       + (proposeTaskUpdateCost * 20) // assume 20% of all tasks are updated once
       + (proposeTaskUpdateCost * 100) // assume all new tasks have their budget set once

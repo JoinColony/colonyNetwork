@@ -1,5 +1,5 @@
 /* eslint-env node */
-/* eslint no-use-before-define: 0, complexity: 0, arrow-body-style: 0 */
+/* eslint no-use-before-define: 0, complexity: 0, arrow-body-style: 0, quotes: 0, no-console: 0, max-len: 0 */
 
 import originalGulp from 'gulp';
 import gulpHelp from 'gulp-help';
@@ -8,7 +8,6 @@ import request from 'request';
 import minimist from 'minimist';
 import rimraf from 'rimraf';
 
-const getEnv = envVar => process.env[envVar];
 const gulp = gulpHelp(originalGulp, {
   hideEmpty: true,
   hideDepsMessage: true,
@@ -16,7 +15,7 @@ const gulp = gulpHelp(originalGulp, {
 const options = minimist(process.argv.slice(2));
 
 const gethClient = options.parity ? 'parity' : 'testrpc';
-const keepRunning = options.keepRunning ? true : false;
+const keepRunning = !!options.keepRunning;
 
 gulp.task('deploy:contracts', [gethClient, 'clean:contracts'], () => {
   return execute(`truffle migrate --reset --compile-all`);
@@ -26,7 +25,13 @@ gulp.task('clean:contracts', done => rimraf('./build/contracts/*', done));
 
 const cleanUpgradeTempContracts = () => {
   return new Promise((resolve, reject) => {
-    rimraf('./contracts/*Updated*.*', resolve);
+    rimraf('./contracts/*Updated*.*', (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
   });
 };
 
@@ -51,24 +56,24 @@ const checkCoverageAgainstThreshold = () => {
 
 gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "function version() public view returns (uint256) { return " ./contracts/Colony.sol | tr -d 'function version() public view returns (uint256) { return ' | tr -d '; }\n'`);
-  const UPDATED_VERSION=VERSION+1;
+  const UPDATED_VERSION = VERSION + 1;
 
   return execute(`cp Token.sol UpdatedToken.sol`, { cwd: './contracts' })
-  .then(execute(`sed -ie'' s/'Token'/'UpdatedToken'/g UpdatedToken.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function mint'/'function isUpdated() public pure returns(bool) {return true;} function mint'/g UpdatedToken.sol`, { cwd: './contracts' }))
-  .then(execute(`cp Resolver.sol UpdatedResolver.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'Resolver'/'UpdatedResolver'/g UpdatedResolver.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() public pure returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
-  .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`cp IColony.sol IUpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() public pure returns(bool) {return true;}'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'function version() public pure returns (uint256) { return ${VERSION}'/'function version() public pure returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract UpdatedColony is ColonyStorage {'/'contract UpdatedColony is ColonyStorage {function isUpdated() public pure returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract IColony'/'contract IUpdatedColony'/g IUpdatedColony.sol`, { cwd: './contracts' }))
-  .then(execute(`sed -ie'' s/'contract IUpdatedColony {'/'contract IUpdatedColony {function isUpdated() public pure returns(bool);'/g IUpdatedColony.sol`, { cwd: './contracts' }));
+    .then(execute(`sed -ie'' s/'Token'/'UpdatedToken'/g UpdatedToken.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'function mint'/'function isUpdated() public pure returns(bool) {return true;} function mint'/g UpdatedToken.sol`, { cwd: './contracts' }))
+    .then(execute(`cp Resolver.sol UpdatedResolver.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'Resolver'/'UpdatedResolver'/g UpdatedResolver.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() public pure returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
+    .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
+    .then(execute(`cp IColony.sol IUpdatedColony.sol`, { cwd: './contracts' }))
+    .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() public pure returns(bool) {return true;}'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'function version() public pure returns (uint256) { return ${VERSION}'/'function version() public pure returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'contract UpdatedColony is ColonyStorage {'/'contract UpdatedColony is ColonyStorage {function isUpdated() public pure returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'contract IColony'/'contract IUpdatedColony'/g IUpdatedColony.sol`, { cwd: './contracts' }))
+    .then(execute(`sed -ie'' s/'contract IUpdatedColony {'/'contract IUpdatedColony {function isUpdated() public pure returns(bool);'/g IUpdatedColony.sol`, { cwd: './contracts' }));
 });
 
 gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts'], () => {
@@ -137,13 +142,13 @@ gulp.task('test:contracts:coverage', 'Run contract test coverage using solidity-
   return execute(cmd).then(checkCoverageAgainstThreshold);
 });
 
-const waitForPort = port => {
-  return new Promise(resolve => {
+const waitForPort = (port) => {
+  return new Promise((resolve) => {
     const req = () => {
       request({
-        url: 'http://127.0.0.1:' + port,
+        url: `http://127.0.0.1:${port}`,
         rejectUnauthorized: false,
-      }, err => {
+      }, (err) => {
         if (!err) {
           return resolve(true);
         }
@@ -177,8 +182,8 @@ const executeDetached = (cmd, opts) => {
     ...(opts || {}),
   });
   child.unref();
-  promise.catch(e => { console.error(e); process.exit(1); });
-  const killProcess = e => {
+  promise.catch((e) => { console.error(e); process.exit(1); });
+  const killProcess = (e) => {
     if (e) { console.error(e); }
     console.log(`Cleaning up. Killing child process ${child.pid}...`);
     try {

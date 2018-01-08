@@ -1,7 +1,10 @@
+import web3Utils from 'web3-utils';
 import testHelper from '../helpers/test-helper';
-import sha3 from 'solidity-sha3';
 
-const SECONDS_PER_DAY = 86400;
+let MANAGER;
+let EVALUATOR;
+let WORKER;
+let OTHER;
 const MANAGER_ROLE = 0;
 const EVALUATOR_ROLE = 1;
 const WORKER_ROLE = 2;
@@ -13,29 +16,30 @@ const MANAGER_PAYOUT = 100 * 1e18;
 const WORKER_PAYOUT = 200 * 1e18;
 const MANAGER_RATING = 30;
 const WORKER_RATING = 40;
-let RATING_1_SALT = RATING_1_SALT || sha3(testHelper.getRandomString(5));
-let RATING_2_SALT = RATING_2_SALT || sha3(testHelper.getRandomString(5));
-let MANAGER = MANAGER || web3.eth.accounts[0];
-let EVALUATOR = EVALUATOR || web3.eth.accounts[1];
-let WORKER = WORKER || web3.eth.accounts[2];
-let OTHER = OTHER || web3.eth.accounts[3];
+const SECONDS_PER_DAY = 86400;
+const RATING_1_SALT = web3Utils.soliditySha3(testHelper.getRandomString(10));
+const RATING_2_SALT = web3Utils.soliditySha3(testHelper.getRandomString(10));
+const RATING_1_SECRET = web3Utils.soliditySha3(RATING_1_SALT, MANAGER_RATING);
+const RATING_2_SECRET = web3Utils.soliditySha3(RATING_2_SALT, WORKER_RATING);
 
 module.exports = {
-    MANAGER,
-    EVALUATOR, 
-    WORKER,
-    OTHER,
-    MANAGER_ROLE,
-    EVALUATOR_ROLE,
-    WORKER_ROLE,
-    SPECIFICATION_HASH,
-    SPECIFICATION_HASH_UPDATED,
-    DELIVERABLE_HASH,
-    SECONDS_PER_DAY,
-    MANAGER_PAYOUT,
-    WORKER_PAYOUT,
-    MANAGER_RATING,
-    WORKER_RATING,
-    RATING_1_SALT,
-    RATING_2_SALT
+  MANAGER: MANAGER || web3.eth.accounts[0],
+  EVALUATOR: EVALUATOR || web3.eth.accounts[1],
+  WORKER: WORKER || web3.eth.accounts[2],
+  OTHER: OTHER || web3.eth.accounts[3],
+  MANAGER_ROLE,
+  EVALUATOR_ROLE,
+  WORKER_ROLE,
+  SPECIFICATION_HASH,
+  SPECIFICATION_HASH_UPDATED,
+  DELIVERABLE_HASH,
+  SECONDS_PER_DAY,
+  MANAGER_PAYOUT,
+  WORKER_PAYOUT,
+  MANAGER_RATING,
+  WORKER_RATING,
+  RATING_1_SALT,
+  RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET,
 };

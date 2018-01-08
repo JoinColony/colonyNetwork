@@ -17,11 +17,11 @@ module.exports = {
       network_id: 'integration',
     },
     coverage: {
-      host: "localhost",
-      network_id: "*",
-      port: 8555,         // <-- Use port 8555
+      host: 'localhost',
+      network_id: '*',
+      port: 8555, // <-- Use port 8555
       gas: 0xfffffffffff, // <-- Use this high gas value
-      gasPrice: 0x01      // <-- Use this low gas price
+      gasPrice: 0x01, // <-- Use this low gas price
     },
   },
   mocha: {
@@ -30,7 +30,7 @@ module.exports = {
   solc: {
     optimizer: {
       enabled: true,
-      runs: 200
-    }
+      runs: 200,
+    },
   },
 };

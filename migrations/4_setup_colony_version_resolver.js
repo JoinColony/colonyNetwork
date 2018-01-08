@@ -1,4 +1,8 @@
+/* globals artifacts */
+/* eslint-disable no-console */
+
 const upgradableContracts = require('../helpers/upgradable-contracts');
+
 const Colony = artifacts.require('./Colony');
 const ColonyFunding = artifacts.require('./ColonyFunding');
 const ColonyTask = artifacts.require('./ColonyTask');
@@ -6,9 +10,8 @@ const ColonyTransactionReviewer = artifacts.require('./ColonyTransactionReviewer
 const ColonyNetwork = artifacts.require('./ColonyNetwork');
 const EtherRouter = artifacts.require('./EtherRouter');
 const Resolver = artifacts.require('./Resolver');
-const MultiSigWallet = artifacts.require('multisig-wallet/MultiSigWallet');
 
-module.exports = function (deployer, network, accounts) {
+module.exports = (deployer) => {
   // Create a new Colony (version) and setup a new Resolver for it
   let colony;
   let colonyFunding;
@@ -17,45 +20,41 @@ module.exports = function (deployer, network, accounts) {
   let colonyNetwork;
   let colonyTask;
   let colonyTransactionReviewer;
-  deployer.then(function () {
-    return Colony.new();
-  })
-  .then(function (instance) {
-    colony = instance;
-    return ColonyFunding.new();
-  })
-  .then(function(instance){
-    colonyFunding = instance;
-    return ColonyTask.new();
-  })
-  .then(function(instance){
-    colonyTask = instance;
-    return ColonyTransactionReviewer.new();
-  })
-  .then(function(instance){
-    colonyTransactionReviewer = instance;
-    return colony.version.call();
-  })
-  .then(function (_version) {
-    version = _version.toNumber();
-    return Resolver.new();
-  })
-  .then(function (_resolver) {
-    resolver = _resolver;
-    return EtherRouter.deployed();
-  })
-  .then(function (_etherRouter) {
-    return ColonyNetwork.at(_etherRouter.address);
-  })
-  .then(function (instance) {
-    colonyNetwork = instance;
-    // Register the new Colony contract version with the newly setup Resolver
-    return upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
-  })
-  .then(function () {
-    console.log('### Colony version', version, 'set to Resolver', resolver.address);
-  })
-  .catch(function (err) {
-    console.log('### Error occurred ', err);
-  });
+  deployer.then(() => Colony.new())
+    .then((instance) => {
+      colony = instance;
+      return ColonyFunding.new();
+    })
+    .then((instance) => {
+      colonyFunding = instance;
+      return ColonyTask.new();
+    })
+    .then((instance) => {
+      colonyTask = instance;
+      return ColonyTransactionReviewer.new();
+    })
+    .then((instance) => {
+      colonyTransactionReviewer = instance;
+      return colony.version.call();
+    })
+    .then((_version) => {
+      version = _version.toNumber();
+      return Resolver.new();
+    })
+    .then((_resolver) => {
+      resolver = _resolver;
+      return EtherRouter.deployed();
+    })
+    .then(_etherRouter => ColonyNetwork.at(_etherRouter.address))
+    .then((instance) => {
+      colonyNetwork = instance;
+      // Register the new Colony contract version with the newly setup Resolver
+      return upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
+    })
+    .then(() => {
+      console.log('### Colony version', version, 'set to Resolver', resolver.address);
+    })
+    .catch((err) => {
+      console.log('### Error occurred ', err);
+    });
 };

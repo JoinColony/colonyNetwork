@@ -1,4 +1,6 @@
+/* globals artifacts */
 import testHelper from '../helpers/test-helper';
+
 const upgradableContracts = require('../helpers/upgradable-contracts');
 
 const EtherRouter = artifacts.require('EtherRouter');
@@ -9,30 +11,23 @@ const IColony = artifacts.require('IColony');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask = artifacts.require('ColonyTask');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
-const Token = artifacts.require('Token');
-const Authority = artifacts.require('Authority');
 
-contract('Common Colony', function (accounts) {
-  let COLONY_KEY = "Common Colony";
-  const MAIN_ACCOUNT = accounts[0];
-  const OTHER_ACCOUNT = accounts[1];
-  const THIRD_ACCOUNT = accounts[2];
-
+contract('Common Colony', () => {
+  const COLONY_KEY = 'Common Colony';
   let commonColony;
   let colonyNetwork;
-  let createColonyGas;
   let resolverColonyNetworkDeployed;
 
-  before(async function () {
+  before(async () => {
     resolverColonyNetworkDeployed = await Resolver.deployed();
   });
 
-  beforeEach(async function () {
-    let colony = await Colony.new();
-    let colonyFunding = await ColonyFunding.new();
-    let colonyTask = await ColonyTask.new();
-    let colonyTransactionReviewer = await ColonyTransactionReviewer.new();
-    let resolver = await Resolver.new();
+  beforeEach(async () => {
+    const colony = await Colony.new();
+    const colonyFunding = await ColonyFunding.new();
+    const colonyTask = await ColonyTask.new();
+    const colonyTransactionReviewer = await ColonyTransactionReviewer.new();
+    const resolver = await Resolver.new();
 
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
@@ -40,12 +35,12 @@ contract('Common Colony', function (accounts) {
     await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
 
     await colonyNetwork.createColony(COLONY_KEY);
-    let commonColonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+    const commonColonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
     commonColony = await IColony.at(commonColonyAddress);
   });
 
   describe('when adding a new skill', () => {
-    it('should be able to add a new skill as a child to the root skill', async function () {
+    it('should be able to add a new skill as a child to the root skill', async () => {
       await commonColony.addSkill(0);
 
       const skillCount = await colonyNetwork.getSkillCount.call();
@@ -64,13 +59,13 @@ contract('Common Colony', function (accounts) {
       assert.equal(rootSkillChild.toNumber(), 1);
     });
 
-    it('should NOT be able to add a new skill if called by anyone but the common colony', async function () {
+    it('should NOT be able to add a new skill if called by anyone but the common colony', async () => {
       await testHelper.checkErrorRevert(colonyNetwork.addSkill(0));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);
     });
 
-    it('should be able to add multiple child skills to the root skill', async function () {
+    it('should be able to add multiple child skills to the root skill', async () => {
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
@@ -103,7 +98,7 @@ contract('Common Colony', function (accounts) {
       assert.equal(rootSkillChild3.toNumber(), 3);
     });
 
-    it('should be able to add child skills a few levels down the skills tree', async function () {
+    it('should be able to add child skills a few levels down the skills tree', async () => {
       // Add 2 skill nodes to root skill
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
@@ -121,7 +116,7 @@ contract('Common Colony', function (accounts) {
       assert.equal(parentSkill2.toNumber(), 0);
     });
 
-    it('should NOT be able to add a child skill for a non existent parent', async function () {
+    it('should NOT be able to add a child skill for a non existent parent', async () => {
       // Add 2 skill nodes to root skill
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
@@ -131,7 +126,7 @@ contract('Common Colony', function (accounts) {
       assert.equal(skillCount.toNumber(), 3);
     });
 
-    it('should be able to add skills in the middle of the skills tree', async function () {
+    it('should be able to add skills in the middle of the skills tree', async () => {
       await commonColony.addSkill(0);
       await commonColony.addSkill(0);
       await commonColony.addSkill(2);
@@ -204,7 +199,7 @@ contract('Common Colony', function (accounts) {
       assert.equal(skill6ParentSkillId2.toNumber(), 0);
     });
 
-    it('when N parents are there, should record parent skill ids for N = integer powers of 2', async function () {
+    it('when N parents are there, should record parent skill ids for N = integer powers of 2', async () => {
       await commonColony.addSkill(0);
       await commonColony.addSkill(1);
       await commonColony.addSkill(2);
