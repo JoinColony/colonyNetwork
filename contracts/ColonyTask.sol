@@ -277,6 +277,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
+    Role storage managerRole = task.roles[MANAGER];
     Role storage workerRole = task.roles[WORKER];
 
     task.finalized = true;
@@ -284,11 +285,18 @@ contract ColonyTask is ColonyStorage, DSMath {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint skillId = task.skillIds[0];
 
-    uint taskPotBalance = task.payouts[2][token];
-    // NOTE: `workerRole.rating` is already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
+    uint managerPayout = task.payouts[MANAGER][token];
+    uint workerPayout = task.payouts[WORKER][token];
+
+    // NOTE: Ratings are already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
+    // NOTE: reputation change amount is hereby limited to MAXINT/50
+    int managerReputation = SafeMath.mulInt(int(managerPayout), (int(managerRole.rating)*2 - 50)) / 50;
+    //TODO: Change the skillId to represent the task domain
+    colonyNetworkContract.appendReputationUpdateLog(managerRole.user, managerReputation, skillId);
+
     // NOTE: reputation change amount is hereby limited to MAXINT/30
-    int reputationChange = SafeMath.mulInt(int(taskPotBalance), (int(workerRole.rating)*2 - 50)) / 30;
-    colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputationChange, skillId);
+    int workerReputation = SafeMath.mulInt(int(workerPayout), (int(workerRole.rating)*2 - 50)) / 30;
+    colonyNetworkContract.appendReputationUpdateLog(workerRole.user, workerReputation, skillId);
     // TODO Reputation changes for other relevant roles, domains.
   }
 
