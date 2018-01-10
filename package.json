@@ -11,7 +11,9 @@
     "eslint-staged": "bash ./scripts/eslint.sh",
     "eslint": "eslint .",
     "solium": "solium --dir .",
-    "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js"
+    "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
+    "testrpc:dev": "bash ./scripts/testrpc.sh",
+    "test:contracts": "npm run testrpc:dev --silent & truffle migrate --reset --compile-all && truffle test --network development"
   },
   "pre-commit": ["eslint-staged", "solium-staged"],
   "repository": {

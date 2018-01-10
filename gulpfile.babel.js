@@ -68,11 +68,6 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
     .then(execute(`sed -ie'' s/'contract IUpdatedColony {'/'contract IUpdatedColony {function isUpdated() public pure returns(bool);'/g IUpdatedColony.sol`, { cwd: './contracts' }));
 });
 
-gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts'], () => {
-  const cmd = makeCmd(`truffle test --network development`);
-  return execute(cmd);
-});
-
 gulp.task('testrpc', async () => {
   const cmd = makeCmd(`
     testrpc --acctKeys="./test-accounts.json"

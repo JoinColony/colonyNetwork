@@ -37,7 +37,7 @@ test:
     - npm run eslint
     - npm run solium
     - npm run check:storagevars
-    - gulp test:contracts
+    - npm run test:contracts
     - gulp test:contracts:upgrade --parity
     - gulp test:contracts:gasCosts --parity
     - gulp test:contracts:coverage
