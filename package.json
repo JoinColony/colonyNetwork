@@ -7,11 +7,11 @@
     "test": "test"
   },
   "scripts": {
-    "solium": "bash ./scripts/solium.sh",
-    "eslint": "eslint .",
-    "eslint-staged": "bash ./scripts/eslint.sh"
+    "solium-staged": "bash ./scripts/solium.sh",
+    "eslint-staged": "bash ./scripts/eslint.sh",
+    "eslint": "eslint ."
   },
-  "pre-commit": "eslint-staged",
+  "pre-commit": ["eslint-staged", "solium-staged"],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JoinColony/colonyNetwork.git"
