@@ -42,10 +42,6 @@ gulp.task('versionColonyContract', 'Append version number to Colony.json file', 
   return execute(`mv Colony.json Colony_${VERSION}.json`, { cwd: './build/contracts' });
 });
 
-gulp.task('check:storageVars', 'Check contracts only use ColonyStorage.sol for declarations of storage variables', () => {
-  return execute('./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js');
-});
-
 const checkCoverageAgainstThreshold = () => {
   return execute('istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94');
 };

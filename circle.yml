@@ -36,7 +36,7 @@ test:
   override:
     - npm run eslint
     - npm run solium
-    - gulp check:storageVars
+    - npm run check:storagevars
     - gulp test:contracts
     - gulp test:contracts:upgrade --parity
     - gulp test:contracts:gasCosts --parity
