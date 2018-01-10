@@ -42,10 +42,6 @@ gulp.task('versionColonyContract', 'Append version number to Colony.json file', 
   return execute(`mv Colony.json Colony_${VERSION}.json`, { cwd: './build/contracts' });
 });
 
-gulp.task('lint:contracts', 'Lint contracts', () => {
-  return execute('solium --dir .');
-});
-
 gulp.task('check:storageVars', 'Check contracts only use ColonyStorage.sol for declarations of storage variables', () => {
   return execute('./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js');
 });
@@ -76,7 +72,7 @@ gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
     .then(execute(`sed -ie'' s/'contract IUpdatedColony {'/'contract IUpdatedColony {function isUpdated() public pure returns(bool);'/g IUpdatedColony.sol`, { cwd: './contracts' }));
 });
 
-gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts', 'lint:contracts'], () => {
+gulp.task('test:contracts', 'Run contract tests', ['deploy:contracts'], () => {
   const cmd = makeCmd(`truffle test --network development`);
   return execute(cmd);
 });

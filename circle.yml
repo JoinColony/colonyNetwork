@@ -35,6 +35,7 @@ test:
     - greenkeeper-lockfile-update
   override:
     - npm run eslint
+    - npm run solium
     - gulp check:storageVars
     - gulp test:contracts
     - gulp test:contracts:upgrade --parity

@@ -9,7 +9,8 @@
   "scripts": {
     "solium-staged": "bash ./scripts/solium.sh",
     "eslint-staged": "bash ./scripts/eslint.sh",
-    "eslint": "eslint ."
+    "eslint": "eslint .",
+    "solium": "solium --dir ."
   },
   "pre-commit": ["eslint-staged", "solium-staged"],
   "repository": {
