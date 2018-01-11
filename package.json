@@ -13,9 +13,9 @@
     "solium": "solium --dir .",
     "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
     "fakeContracts": "bash ./scripts/fake-contracts.sh",
-    "testrpc:dev": "bash ./scripts/testrpc.sh",
-    "test:contracts": "npm run testrpc:dev --silent & truffle migrate --reset --compile-all && truffle test --network development",
-    "test:contracts:upgrade": "npm run testrpc:dev --silent & npm run fakeContracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration" 
+    "blockchainClient": "bash ./scripts/blockchain-client.sh",
+    "test:contracts": "npm run blockchainClient --silent & truffle migrate --reset --compile-all && truffle test --network development",
+    "test:contracts:upgrade": "npm run blockchainClient parity --silent & npm run fakeContracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration" 
   },
   "pre-commit": ["eslint-staged", "solium-staged"],
   "repository": {

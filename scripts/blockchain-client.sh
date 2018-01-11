@@ -3,10 +3,19 @@
 # Exit script as soon as a command fails.
 set -o errexit
 
-testrpc_port=8545
+# Get the choice of client: testrpc is default
+if [ "$1" == "parity" ]; then
+  bc_client=$1
+else 
+  bc_client="testrpc"
+fi
 
-testrpc_running() {
-  nc -z localhost "$testrpc_port"
+echo "Chosen client $bc_client"
+
+bc_client_port=8545
+
+bc_client_running() {
+  nc -z localhost "$bc_client_port"
 }
 
 start_testrpc() {
@@ -26,9 +35,32 @@ start_testrpc() {
   testrpc_pid=$!
 }
 
-if testrpc_running; then
-  echo "Using existing testrpc instance at port $testrpc_port"
+start_parity() {
+  mapfile -t addresses < <( parity --keys-path ./keys account list )
+  if [ ${#addresses[@]} -eq 0 ]; then
+    echo "No parity addresses found. Did you initialise it correctly?"
+    exit 1;
+  else
+    parity --chain ./parity-genesis.json \
+    --author ${addresses[0]} \
+    --unlock ${addresses[0]},${addresses[1]},${addresses[2]},${addresses[3]} \
+    --keys-path ./keys --geth --no-dapps \
+    --tx-gas-limit 0x47E7C4 --gasprice 0x0 --gas-floor-target 0x47E7C4 \
+    --reseal-on-txs all --reseal-min-period 0 \
+    --jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000" \
+    --password ./parityPassword > /dev/null &
+    parity_pid=$!
+  fi
+}
+
+if bc_client_running; then
+  echo "Using existing bc client instance at port $bc_client_port"
+  # todo: kill process
 else
-  echo "Starting our own testrpc instance at port $testrpc_port"
-  start_testrpc
+  echo "Starting our own $bc_client client instance at port $bc_client_port"
+  if [ "$bc_client" == "parity" ]; then
+    start_parity
+  else 
+    start_testrpc
+  fi
 fi
