@@ -12,6 +12,7 @@
     "eslint": "eslint .",
     "solium": "solium --dir .",
     "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
+    "fakeContracts": "bash ./scripts/fake-contracts.sh",
     "testrpc:dev": "bash ./scripts/testrpc.sh",
     "test:contracts": "npm run testrpc:dev --silent & truffle migrate --reset --compile-all && truffle test --network development"
   },
