@@ -23,6 +23,7 @@ gulp.task('deploy:contracts', [gethClient, 'clean:contracts'], () => {
 
 gulp.task('clean:contracts', done => rimraf('./build/contracts/*', done));
 
+/*
 const cleanUpgradeTempContracts = () => {
   return new Promise((resolve, reject) => {
     rimraf('./contracts/*Updated*.*', (error) => {
@@ -34,6 +35,7 @@ const cleanUpgradeTempContracts = () => {
     });
   });
 };
+*/
 
 gulp.task('versionColonyContract', 'Append version number to Colony.json file', ['deploy:contracts'], async () => {
   const VERSION = await executeWithOutput(`grep "uint256 public version = " ./contracts/Colony.sol | tr -d 'uint256 public version = ' | tr -d ';\n'`);
@@ -45,28 +47,6 @@ gulp.task('versionColonyContract', 'Append version number to Colony.json file', 
 const checkCoverageAgainstThreshold = () => {
   return execute('istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94');
 };
-
-gulp.task('generate:contracts:integration', ['deploy:contracts'], async () => {
-  const VERSION = await executeWithOutput(`grep "function version() public view returns (uint256) { return " ./contracts/Colony.sol | tr -d 'function version() public view returns (uint256) { return ' | tr -d '; }\n'`);
-  const UPDATED_VERSION = VERSION + 1;
-
-  return execute(`cp Token.sol UpdatedToken.sol`, { cwd: './contracts' })
-    .then(execute(`sed -ie'' s/'Token'/'UpdatedToken'/g UpdatedToken.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'function mint'/'function isUpdated() public pure returns(bool) {return true;} function mint'/g UpdatedToken.sol`, { cwd: './contracts' }))
-    .then(execute(`cp Resolver.sol UpdatedResolver.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'Resolver'/'UpdatedResolver'/g UpdatedResolver.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'function stringToSig'/'function isUpdated() public pure returns(bool) {return true;} function stringToSig'/g UpdatedResolver.sol`, { cwd: './contracts' }))
-    .then(execute(`cp Colony.sol UpdatedColony.sol`, { cwd: './contracts' }))
-    .then(execute(`cp IColony.sol IUpdatedColony.sol`, { cwd: './contracts' }))
-    .then(execute(`cp ColonyNetwork.sol UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'contract ColonyNetwork'/'contract UpdatedColonyNetwork'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'address resolver;'/'address resolver;function isUpdated() public pure returns(bool) {return true;}'/g UpdatedColonyNetwork.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'contract Colony'/'contract UpdatedColony'/g UpdatedColony.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'function version() public pure returns (uint256) { return ${VERSION}'/'function version() public pure returns (uint256) { return ${UPDATED_VERSION}'/g UpdatedColony.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'contract UpdatedColony is ColonyStorage {'/'contract UpdatedColony is ColonyStorage {function isUpdated() public pure returns(bool) {return true;}'/g UpdatedColony.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'contract IColony'/'contract IUpdatedColony'/g IUpdatedColony.sol`, { cwd: './contracts' }))
-    .then(execute(`sed -ie'' s/'contract IUpdatedColony {'/'contract IUpdatedColony {function isUpdated() public pure returns(bool);'/g IUpdatedColony.sol`, { cwd: './contracts' }));
-});
 
 gulp.task('testrpc', async () => {
   const cmd = makeCmd(`
@@ -117,11 +97,6 @@ gulp.task('parity', async () => {
 gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'], () => {
   const cmd = makeCmd(`truffle test gasCosts/gasCosts.js --network development`);
   return execute(cmd);
-});
-
-gulp.task('test:contracts:upgrade', 'Run contract upgrade tests', ['deploy:contracts', 'generate:contracts:integration'], () => {
-  const cmd = makeCmd(`truffle test ./upgrade-test/* --network integration`);
-  return execute(cmd).then(cleanUpgradeTempContracts);
 });
 
 gulp.task('test:contracts:coverage', 'Run contract test coverage using solidity-coverage', () => {

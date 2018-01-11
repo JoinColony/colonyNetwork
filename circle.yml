@@ -38,7 +38,7 @@ test:
     - npm run solium
     - npm run check:storagevars
     - npm run test:contracts
-    - gulp test:contracts:upgrade --parity
+    - npm run test:contracts:upgrade
     - gulp test:contracts:gasCosts --parity
     - gulp test:contracts:coverage
   post:
