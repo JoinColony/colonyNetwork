@@ -40,7 +40,7 @@ test:
     - npm run test:contracts
     - npm run test:contracts:upgrade
     - npm run test:contracts:gasCosts
-    - gulp test:contracts:coverage
+    - npm run test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload
