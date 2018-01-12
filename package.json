@@ -14,9 +14,13 @@
     "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
     "fakeContracts": "bash ./scripts/fake-contracts.sh",
     "blockchainClient": "bash ./scripts/blockchain-client.sh",
+    "killBlockchainClient": "bash ./scripts/kill-blockchain-client.sh",
     "test:contracts": "npm run blockchainClient --silent & truffle migrate --reset --compile-all && truffle test --network development",
     "test:contracts:upgrade": "npm run blockchainClient parity --silent & npm run fakeContracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration", 
-    "test:contracts:gasCosts": "npm run blockchainClient parity --silent & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development"
+    "test:contracts:gasCosts": "npm run blockchainClient parity --silent & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development",
+    "posttest:contracts": "npm run killBlockchainClient",
+    "posttest:contracts:upgrade": "npm run killBlockchainClient",
+    "posttest:contracts:gasCosts": "npm run killBlockchainClient"
   },
   "pre-commit": ["eslint-staged", "solium-staged"],
   "repository": {
