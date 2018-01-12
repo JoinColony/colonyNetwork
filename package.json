@@ -14,6 +14,7 @@
     "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
     "fakeContracts": "bash ./scripts/fake-contracts.sh",
     "cleanFakeContracts": "rimraf ./contracts/*Updated*.*",
+    "clean:contracts": "rimraf ./build/contracts/*",
     "blockchainClient": "bash ./scripts/blockchain-client.sh",
     "killBlockchainClient": "bash ./scripts/kill-blockchain-client.sh",
     "test:contracts": "npm run blockchainClient --silent & truffle migrate --reset --compile-all && truffle test --network development",
