@@ -94,11 +94,6 @@ gulp.task('parity', async () => {
   return waitForPort('8545');
 });
 
-gulp.task('test:contracts:gasCosts', 'Run gas cost tests', ['deploy:contracts'], () => {
-  const cmd = makeCmd(`truffle test gasCosts/gasCosts.js --network development`);
-  return execute(cmd);
-});
-
 gulp.task('test:contracts:coverage', 'Run contract test coverage using solidity-coverage', () => {
   const cmd = makeCmd(`solidity-coverage`);
   return execute(cmd).then(checkCoverageAgainstThreshold);

@@ -39,7 +39,7 @@ test:
     - npm run check:storagevars
     - npm run test:contracts
     - npm run test:contracts:upgrade
-    - gulp test:contracts:gasCosts --parity
+    - npm run test:contracts:gasCosts
     - gulp test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml

@@ -15,7 +15,8 @@
     "fakeContracts": "bash ./scripts/fake-contracts.sh",
     "blockchainClient": "bash ./scripts/blockchain-client.sh",
     "test:contracts": "npm run blockchainClient --silent & truffle migrate --reset --compile-all && truffle test --network development",
-    "test:contracts:upgrade": "npm run blockchainClient parity --silent & npm run fakeContracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration" 
+    "test:contracts:upgrade": "npm run blockchainClient parity --silent & npm run fakeContracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration", 
+    "test:contracts:gasCosts": "npm run blockchainClient parity --silent & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development"
   },
   "pre-commit": ["eslint-staged", "solium-staged"],
   "repository": {
