@@ -31,8 +31,7 @@ start_testrpc() {
     --account="0xe31c452e0631f67a629e88790d3119ea9505fae758b54976d2bf12bd8300ef4a, 100000000000000000000" \
     --account="0x5e383d2f98ac821c555333e5bb6109ca41ae89d613cb84887a2bdb933623c4e3, 100000000000000000000" \
     --account="0x33d2f6f6cc410c1d46d58f17efdd2b53a71527b27eaa7f2edcade351feb87425, 100000000000000000000" \
-    --account="0x32400a48ff16119c134eef44e2627502ce6e367bc4810be07642275a9db47bf7, 100000000000000000000" > /dev/null &
-  testrpc_pid=$!
+    --account="0x32400a48ff16119c134eef44e2627502ce6e367bc4810be07642275a9db47bf7, 100000000000000000000" >/dev/null 2>&1
 }
 
 start_parity() {
@@ -48,8 +47,7 @@ start_parity() {
     --tx-gas-limit 0x47E7C4 --gasprice 0x0 --gas-floor-target 0x47E7C4 \
     --reseal-on-txs all --reseal-min-period 0 \
     --jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000" \
-    --password ./parityPassword > /dev/null &
-    parity_pid=$!
+    --password ./parityPassword >/dev/null 2>&1
   fi
 }
 
