@@ -15,7 +15,6 @@ dependencies:
     - patch -N ./node_modules/ethereumjs-testrpc-sc/build/cli.node.js temp-testrpc.patch || true
     - patch -N ./node_modules/ethereumjs-testrpc/build/cli.node.js temp-testrpc.patch || true
     - patch -N ./node_modules/truffle/build/cli.bundled.js temp-truffle.patch || true
-    - yarn global add gulp@3.9.1
     - git submodule update --init
 
     # Set up parity

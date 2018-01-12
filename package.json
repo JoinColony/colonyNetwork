@@ -17,14 +17,17 @@
     "blockchainClient": "bash ./scripts/blockchain-client.sh",
     "killBlockchainClient": "bash ./scripts/kill-blockchain-client.sh",
     "test:contracts": "npm run blockchainClient --silent & truffle migrate --reset --compile-all && truffle test --network development",
-    "test:contracts:upgrade": "npm run blockchainClient parity --silent & npm run fakeContracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration", 
+    "test:contracts:upgrade": "npm run blockchainClient parity --silent & npm run fakeContracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration",
     "test:contracts:gasCosts": "npm run blockchainClient parity --silent & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development",
     "test:contracts:coverage": "solidity-coverage && istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94",
     "posttest:contracts": "npm run killBlockchainClient",
     "posttest:contracts:upgrade": "npm run cleanFakeContracts | npm run killBlockchainClient",
     "posttest:contracts:gasCosts": "npm run killBlockchainClient"
   },
-  "pre-commit": ["eslint-staged", "solium-staged"],
+  "pre-commit": [
+    "eslint-staged",
+    "solium-staged"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JoinColony/colonyNetwork.git"
@@ -51,16 +54,10 @@
     "eslint-plugin-flowtype": "^2.41.0",
     "eslint-plugin-import": "^2.8.0",
     "ethereumjs-testrpc": "6.0.3",
-    "gulp": "^3.9.1",
-    "gulp-help": "^1.6.1",
-    "gulp-util": "^3.0.8",
     "istanbul": "^0.4.5",
-    "minimist": "^1.2.0",
     "mocha": "^4.1.0",
     "mocha-circleci-reporter": "^0.0.2",
     "pre-commit": "^1.2.2",
-    "pshell": "^1.1.0",
-    "request": "^2.83.0",
     "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
     "solidity-coverage": "0.4.8",
