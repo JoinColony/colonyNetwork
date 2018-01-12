@@ -12,6 +12,7 @@
     "eslint": "eslint .",
     "solium": "solium --dir .",
     "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
+    "version:contracts": "bash ./scripts/version-contracts.sh",
     "generate:test:contracts": "bash ./scripts/generate-test-contracts.sh",
     "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
     "clean:contracts": "rimraf ./build/contracts/*",
