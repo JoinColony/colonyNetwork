@@ -7,11 +7,29 @@
     "test": "test"
   },
   "scripts": {
-    "solium": "bash ./scripts/solium.sh",
+    "solium-staged": "bash ./scripts/solium.sh",
+    "eslint-staged": "bash ./scripts/eslint.sh",
     "eslint": "eslint .",
-    "eslint-staged": "bash ./scripts/eslint.sh"
+    "solium": "solium --dir .",
+    "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
+    "version:contracts": "bash ./scripts/version-contracts.sh",
+    "generate:test:contracts": "bash ./scripts/generate-test-contracts.sh",
+    "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
+    "clean:contracts": "rimraf ./build/contracts/*",
+    "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
+    "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
+    "test:contracts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test --network development",
+    "test:contracts:upgrade": "npm run start:blockchain:client parity & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration",
+    "test:contracts:gasCosts": "npm run start:blockchain:client parity & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development",
+    "test:contracts:coverage": "solidity-coverage && istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94",
+    "posttest:contracts": "npm run stop:blockchain:client",
+    "posttest:contracts:upgrade": "npm run clean:test:contracts | npm run stop:blockchain:client",
+    "posttest:contracts:gasCosts": "npm run stop:blockchain:client"
   },
-  "pre-commit": "eslint-staged",
+  "pre-commit": [
+    "eslint-staged",
+    "solium-staged"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JoinColony/colonyNetwork.git"
@@ -38,16 +56,10 @@
     "eslint-plugin-flowtype": "^2.41.0",
     "eslint-plugin-import": "^2.8.0",
     "ethereumjs-testrpc": "6.0.3",
-    "gulp": "^3.9.1",
-    "gulp-help": "^1.6.1",
-    "gulp-util": "^3.0.8",
     "istanbul": "^0.4.5",
-    "minimist": "^1.2.0",
     "mocha": "^4.1.0",
     "mocha-circleci-reporter": "^0.0.2",
     "pre-commit": "^1.2.2",
-    "pshell": "^1.1.0",
-    "request": "^2.83.0",
     "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
     "solidity-coverage": "0.4.8",

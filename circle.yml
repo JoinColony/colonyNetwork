@@ -15,7 +15,6 @@ dependencies:
     - patch -N ./node_modules/ethereumjs-testrpc-sc/build/cli.node.js temp-testrpc.patch || true
     - patch -N ./node_modules/ethereumjs-testrpc/build/cli.node.js temp-testrpc.patch || true
     - patch -N ./node_modules/truffle/build/cli.bundled.js temp-truffle.patch || true
-    - yarn global add gulp@3.9.1
     - git submodule update --init
 
     # Set up parity
@@ -35,11 +34,12 @@ test:
     - greenkeeper-lockfile-update
   override:
     - npm run eslint
-    - gulp check:storageVars
-    - gulp test:contracts
-    - gulp test:contracts:upgrade --parity
-    - gulp test:contracts:gasCosts --parity
-    - gulp test:contracts:coverage
+    - npm run solium
+    - npm run check:storagevars
+    - npm run test:contracts
+    - npm run test:contracts:upgrade
+    - npm run test:contracts:gasCosts
+    - npm run test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload
