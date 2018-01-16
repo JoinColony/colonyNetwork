@@ -49,4 +49,6 @@ contract IColonyNetwork {
   function startNextCycle() public;
   function punishStakers(address[] stakers) public;
   function getReputationMiningCycle() public view returns (address);
+  function getReputationRootHash() public view returns (bytes32);
+  function getReputationRootHashNNodes() public view returns (uint256);
 }
