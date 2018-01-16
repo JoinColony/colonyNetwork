@@ -1821,12 +1821,6 @@ ethereumjs-testrpc-sc@6.0.7:
   dependencies:
     webpack "^3.0.0"
 
-ethereumjs-testrpc@6.0.3:
-  version "6.0.3"
-  resolved "https://registry.yarnpkg.com/ethereumjs-testrpc/-/ethereumjs-testrpc-6.0.3.tgz#7a0b87bf3670f92f607f98fa6a78801d9741b124"
-  dependencies:
-    webpack "^3.0.0"
-
 ethjs-unit@0.1.6:
   version "0.1.6"
   resolved "https://registry.yarnpkg.com/ethjs-unit/-/ethjs-unit-0.1.6.tgz#c665921e476e87bce2a9d588a6fe0405b2c41699"

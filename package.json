@@ -55,7 +55,6 @@
     "eslint-import-resolver-jest": "^1.1.0",
     "eslint-plugin-flowtype": "^2.41.0",
     "eslint-plugin-import": "^2.8.0",
-    "ethereumjs-testrpc": "6.0.3",
     "ganache-cli": "^7.0.0-beta.0",
     "istanbul": "^0.4.5",
     "mocha": "^4.1.0",
