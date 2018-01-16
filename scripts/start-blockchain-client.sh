@@ -3,11 +3,11 @@
 # Exit script as soon as a command fails.
 set -o errexit
 
-# Get the choice of client: testrpc is default
+# Get the choice of client: ganache-cli is default
 if [ "$1" == "parity" ]; then
   bc_client=$1
 else 
-  bc_client="testrpc"
+  bc_client="ganache-cli"
 fi
 
 echo "Chosen client $bc_client"
@@ -18,8 +18,8 @@ bc_client_running() {
   nc -z localhost "$bc_client_port"
 }
 
-start_testrpc() {
-  node_modules/.bin/testrpc --acctKeys="./test-accounts.json" \
+start_ganache() {
+  node_modules/.bin/ganache-cli --acctKeys="./test-accounts.json" \
     --account="0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae, 100000000000000000000" \
     --account="0xe9aebe8791ad1ebd33211687e9c53f13fe8cca53b271a6529c7d7ba05eda5ce2, 100000000000000000000" \
     --account="0x6f36842c663f5afc0ef3ac986ec62af9d09caa1bbf59a50cdb7334c9cc880e65, 100000000000000000000" \
@@ -59,6 +59,6 @@ else
   if [ "$bc_client" == "parity" ]; then
     start_parity
   else 
-    start_testrpc
+    start_ganache
   fi
 fi
