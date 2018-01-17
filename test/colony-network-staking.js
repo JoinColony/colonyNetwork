@@ -381,6 +381,21 @@ contract("ColonyNetwork", accounts => {
       assert(nSubmittedHashes.equals(1));
     });
 
+    it("should not allow a user to back the same hash with different number of nodes in a single cycle", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.forwardTime(3600, this);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+
+      await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 11, 9));
+      const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
+      assert(nSubmittedHashes.equals(1));
+    });
+
     it("should not allow a user to submit the same entry for the same hash twice in a single cycle", async () => {
       await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
       await clny.approve(colonyNetwork.address, "1000000000000000000");
@@ -434,7 +449,29 @@ contract("ColonyNetwork", accounts => {
       assert.equal(reputationUpdateLogLength.toString(), 2);
     });
 
-    it("should only allow 12 entries to back a single hash in each cycle");
+    it("should only allow 12 entries to back a single hash in each cycle", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 1);
+      await repCycle.submitNewHash("0x12345678", 10, 2);
+      await repCycle.submitNewHash("0x12345678", 10, 3);
+      await repCycle.submitNewHash("0x12345678", 10, 4);
+      await repCycle.submitNewHash("0x12345678", 10, 5);
+      await repCycle.submitNewHash("0x12345678", 10, 6);
+      await repCycle.submitNewHash("0x12345678", 10, 7);
+      await repCycle.submitNewHash("0x12345678", 10, 8);
+      await repCycle.submitNewHash("0x12345678", 10, 9);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x12345678", 10, 11);
+      await repCycle.submitNewHash("0x12345678", 10, 12);
+      await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 10, 13));
+    });
+
     it("should cope with many hashes being submitted and eliminated before a winner is assigned");
   });
 });
