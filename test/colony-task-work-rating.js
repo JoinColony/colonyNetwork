@@ -278,7 +278,7 @@ contract('Colony Task Work Rating', () => {
     it('should revert if I try to assign ratings before the reveal period is over', async () => {
       await testDataGenerator.setupAssignedTask(colony);
       await testHelper.forwardTime(SECONDS_PER_DAY * 6, this);
-      testHelper.checkErrorRevert(colony.assignWorkRating(1));
+      await testHelper.checkErrorRevert(colony.assignWorkRating(1));
       const roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
     });
