@@ -46,6 +46,9 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     require(msg.sender == reputationMiningCycle);
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
+    // Clear out the reputation log. We're setting a new root hash, so we're done with it.
+    delete ReputationUpdateLog;
+    // Reward stakers
     rewardStakers(stakers);
     reputationMiningCycle = 0x0;
     startNextCycle();
@@ -79,9 +82,32 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     // TODO: Actually think about this function
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.invalidateHash;
-    // for (uint256 i = 0; i < stakers.length; i++) {
-    //   //We need to... do something. They get newly minted tokens, right?
-    // }
+    address commonColonyAddress = _colonies["Common Colony"];
+    uint256 reward = 10**18; //TODO: Actually work out how much reputation they earn, based on activity elsewhere in the colony.
+    if (reward >= uint256(int256(-1))/2) {
+      reward = uint256(int256(-1))/2;
+    }
+    // TODO: We need to be able to prove that this will never happen, otherwise we're locked out of reputation mining.
+    // Something like the above cap is an adequate short-term solution, but at the very least need to double check the limits
+    // (which I've fingered-in-the-air, but could easily have an OBOE hiding inside).
+    assert(reward < uint256(int256(-1))); // We do a cast later, so make sure we don't overflow.
+    IColony(commonColonyAddress).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
+    for (uint256 i = 0; i < stakers.length; i++) {
+      // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
+      // the AppendReputationUpdateLog function
+      ReputationUpdateLog.push(ReputationLogEntry(
+        stakers[i], //The staker getting the reward
+        int256(reward),
+        0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
+        commonColonyAddress, // They earn this reputation in the common colony.
+        4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
+        i*4)//We're zero indexed, so this is the number of updates that came before in the reputation log.
+      );
+
+      // Also give them some newly minted tokens.
+      // We reinvest here as it's much easier (gas-wise).
+      stakedBalances[stakers[i]] += reward;
+    }
   }
 }
 
