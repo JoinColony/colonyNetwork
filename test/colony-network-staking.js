@@ -375,7 +375,7 @@ contract("ColonyNetwork", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle.call();
       const repCycle = ReputationMiningCycle.at(addr);
       await testHelper.forwardTime(3600, this);
-      repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
       await testHelper.checkErrorRevert(repCycle.submitNewHash("0x87654321", 10, 10));
       const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
       assert(nSubmittedHashes.equals(1));
@@ -389,13 +389,51 @@ contract("ColonyNetwork", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle.call();
       const repCycle = ReputationMiningCycle.at(addr);
       await testHelper.forwardTime(3600, this);
-      repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
       await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 10, 10));
       const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
       assert(nSubmittedHashes.equals(1));
     });
 
-    it("should allow a user to back the same hash more than once in a same cycle with different valid entries");
+    it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.forwardTime(3600, this);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x12345678", 10, 9);
+      const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
+      assert(nSubmittedHashes.equals(1));
+      await repCycle.confirmNewHash(0);
+
+      // Check that they have had their staked balance increase
+      const balance1Updated = await colonyNetwork.getStakedBalance(MAIN_ACCOUNT);
+      assert.equal(balance1Updated.toString(), new BN("3").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
+
+      // Check that they will be getting the reputation owed to them.
+      let repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(0);
+      assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
+      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
+      assert.equal(repLogEntryMiner[2].toString(), "0");
+      assert.equal(repLogEntryMiner[3], commonColony.address);
+      assert.equal(repLogEntryMiner[4].toString(), "4");
+      assert.equal(repLogEntryMiner[5].toString(), "0");
+
+      repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+      assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
+      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
+      assert.equal(repLogEntryMiner[2].toString(), "0");
+      assert.equal(repLogEntryMiner[3], commonColony.address);
+      assert.equal(repLogEntryMiner[4].toString(), "4");
+      assert.equal(repLogEntryMiner[5].toString(), "4");
+
+      const reputationUpdateLogLength = await colonyNetwork.getReputationUpdateLogLength();
+      assert.equal(reputationUpdateLogLength.toString(), 2);
+    });
+
     it("should only allow 12 entries to back a single hash in each cycle");
     it("should cope with many hashes being submitted and eliminated before a winner is assigned");
   });
