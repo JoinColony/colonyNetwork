@@ -67,6 +67,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     require(msg.sender == reputationMiningCycle);
     for (uint256 i = 0; i < stakers.length; i++) {
       // This is pretty harsh! Are we happy with this?
+      // Alternative: lose more than they would have gained for backing the right hash.
       stakedBalances[stakers[i]] = 0;
     }
     // TODO: Where do these staked tokens go?
@@ -117,6 +118,7 @@ contract ReputationMiningCycle {
     //Check the ticket is an eligible one for them to claim
     require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
     require(entry > 0);
+    // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
     //Check the ticket is a winning one.
     // require((now-reputationMiningWindowOpenTimestamp) < 3600);
     // x = floor(uint((2**256 - 1) / 3600)
@@ -145,7 +147,6 @@ contract ReputationMiningCycle {
     submittedHashes[newHash][nNodes].push(msg.sender);
     //Note that they submitted it.
     submittedEntries[newHash][msg.sender][entry] = true;
-
   }
 
   function confirmNewHash(uint256 roundNumber) public {
@@ -160,18 +161,19 @@ contract ReputationMiningCycle {
   function invalidateHash(uint256 round, uint256 idx) public {
     // TODO: Require that it has failed a challenge, or failed to respond in time.
     // Move its opponent on to the next stage.
-    uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx+1);
+    uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
     // TODO: Check opponent is good to move on - we're assuming both haven't timed out here.
 
     // We require that we actually had an opponent - can't invalidate the last hash.
     // If we try, then the next require should catch it.
+    require(disputeRounds[round].length > opponentIdx);
     require(disputeRounds[round][opponentIdx].hash!="");
     disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
     delete disputeRounds[round][opponentIdx];
     nInvalidatedHashes += 1;
 
     // Punish the people who proposed this
-    IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][0].hash][disputeRounds[round][0].nNodes]);
+    IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].hash][disputeRounds[round][idx].nNodes]);
 
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
