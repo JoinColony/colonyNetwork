@@ -57,6 +57,9 @@ module.exports = {
     return this.checkError(promise, true);
   },
   async checkError(promise, isAssert) {
+    // TODO: Remove this complexity when solidity-coverage moves up to ganache beta as
+    // Solidity error handling there no longer throws on contract error
+    // See release notes for details https://github.com/trufflesuite/ganache-cli/releases/tag/v7.0.0-beta.0
     // There is a discrepancy between how testrpc handles errors
     // (throwing an exception all the way up to these tests) and how geth/parity handle them
     // (still making a valid transaction and returning a txid). For the explanation of why
@@ -80,7 +83,7 @@ module.exports = {
 
     const receipt = await this.web3GetTransactionReceipt(txHash);
     // Check the receipt `status` to ensure transaction failed.
-    assert.equal(receipt.status, 0);
+    assert.equal(receipt.status, 0x00);
 
     if (isAssert) {
       const network = await this.web3GetNetwork();
