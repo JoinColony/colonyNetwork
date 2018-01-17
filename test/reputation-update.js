@@ -223,7 +223,7 @@ contract('Colony Reputation Updates', () => {
       const taskPotBalance = await commonColony.getPotBalance.call(2, colonyToken.address);
       assert.isTrue(taskPotBalance.equals(colonyTokenBalance));
 
-      testHelper.checkErrorRevert(commonColony.finalizeTask(taskId));
+      await testHelper.checkErrorRevert(commonColony.finalizeTask(taskId));
     });
   });
 });
