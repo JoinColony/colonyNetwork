@@ -367,7 +367,34 @@ contract("ColonyNetwork", accounts => {
       assert.equal(reputationUpdateLogLength.toString(), 2);
     });
 
-    it("should not allow a user to back more than one hash in a single cycle");
+    it("should not allow a user to back more than one hash in a single cycle", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.forwardTime(3600, this);
+      repCycle.submitNewHash("0x12345678", 10, 10);
+      await testHelper.checkErrorRevert(repCycle.submitNewHash("0x87654321", 10, 10));
+      const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
+      assert(nSubmittedHashes.equals(1));
+    });
+
+    it("should not allow a user to submit the same entry for the same hash twice in a single cycle", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.forwardTime(3600, this);
+      repCycle.submitNewHash("0x12345678", 10, 10);
+      await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 10, 10));
+      const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
+      assert(nSubmittedHashes.equals(1));
+    });
+
     it("should allow a user to back the same hash more than once in a same cycle with different valid entries");
     it("should only allow 12 entries to back a single hash in each cycle");
     it("should cope with many hashes being submitted and eliminated before a winner is assigned");

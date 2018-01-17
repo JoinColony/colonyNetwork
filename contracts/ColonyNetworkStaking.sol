@@ -30,7 +30,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
   function withdraw(uint _amount) public {
     uint256 balance = stakedBalances[msg.sender];
     require(balance >= _amount);
-    bool hasRequesterSubmitted = ReputationMiningCycle(reputationMiningCycle).hasSubmitted(msg.sender);
+    bool hasRequesterSubmitted = ReputationMiningCycle(reputationMiningCycle).hasSubmitted(msg.sender) == 0x0 ? false : true;
     Bool(hasRequesterSubmitted);
     require(hasRequesterSubmitted==false);
     stakedBalances[msg.sender] -= _amount;
@@ -114,12 +114,13 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
 
 contract ReputationMiningCycle {
   address colonyNetworkAddress;
+  // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
+  mapping (address => bytes32) public hasSubmitted;
   uint reputationMiningWindowOpenTimestamp;
   mapping (uint256 => Submission[]) disputeRounds;
   uint256 public nSubmittedHashes = 0;
   uint256 public nInvalidatedHashes = 0;
-  mapping (address => bool) public hasSubmitted;
 
   struct Submission {
     bytes32 hash;
@@ -144,6 +145,10 @@ contract ReputationMiningCycle {
     //Check the ticket is an eligible one for them to claim
     require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
     require(entry > 0);
+    if (hasSubmitted[msg.sender]!=0x0) {             // If this user has submitted before during this round...
+      require(newHash == hasSubmitted[msg.sender]); // ...require that they are submitting the same hash ...
+      require (submittedEntries[newHash][msg.sender][entry] == false); // ... but not this exact entry
+    }
     // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
     //Check the ticket is a winning one.
     // require((now-reputationMiningWindowOpenTimestamp) < 3600);
@@ -157,9 +162,6 @@ contract ReputationMiningCycle {
     //Insert in to list of submissions if there's still room.
     require (submittedHashes[newHash][nNodes].length <= 12);
 
-    // Require they've not submitted this before
-    // require (submittedEntries[newHash][msg.sender][entry] == false);
-
     // If this is a new hash, increment nSubmittedHashes as such.
     if (submittedHashes[newHash][nNodes].length == 0) {
       nSubmittedHashes += 1;
@@ -168,7 +170,7 @@ contract ReputationMiningCycle {
     }
 
 
-    hasSubmitted[msg.sender] = true;
+    hasSubmitted[msg.sender] = newHash;
     //And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes].push(msg.sender);
     //Note that they submitted it.
