@@ -243,9 +243,41 @@ contract("ColonyNetwork", accounts => {
       assert(rootHashNNodes.equals(10));
     });
 
+    it("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(accounts[2], "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: accounts[2] });
+      await colonyNetwork.deposit("1000000000000000000", { from: accounts[2] });
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x87654321", 11, 10, { from: OTHER_ACCOUNT });
+      await repCycle.submitNewHash("0x99999999", 12, 10, { from: accounts[2] });
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.invalidateHash(0, 3); // Invalidate the 'null' that partners the third hash submitted
+      await repCycle.invalidateHash(1, 0);
+      await repCycle.confirmNewHash(2);
+      const newAddr = await colonyNetwork.getReputationMiningCycle.call();
+      assert(newAddr !== 0x0);
+      assert(addr !== 0x0);
+      assert(newAddr !== addr);
+      const rootHash = await colonyNetwork.getReputationRootHash.call();
+      assert.equal(rootHash, "0x9999999900000000000000000000000000000000000000000000000000000000");
+      const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes.call();
+      assert(rootHashNNodes.equals(12));
+    });
+
     it("should not allow a new reputation hash to be set if more than one was submitted and they have not been elimintated", async () => {
-      await giveUserCLNYTokens(MAIN_ACCOUNT, new BN("1000000000000000000"));
-      await giveUserCLNYTokens(OTHER_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
       await clny.approve(colonyNetwork.address, "1000000000000000000");
       await colonyNetwork.deposit("1000000000000000000");
       await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
@@ -471,7 +503,5 @@ contract("ColonyNetwork", accounts => {
       await repCycle.submitNewHash("0x12345678", 10, 12);
       await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 10, 13));
     });
-
-    it("should cope with many hashes being submitted and eliminated before a winner is assigned");
   });
 });

@@ -88,7 +88,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     if (reward >= uint256(int256(-1))/2) {
       reward = uint256(int256(-1))/2;
     }
-    // TODO: We need to be able to prove that this will never happen, otherwise we're locked out of reputation mining.
+    // TODO: We need to be able to prove that the assert on the next line will never happen, otherwise we're locked out of reputation mining.
     // Something like the above cap is an adequate short-term solution, but at the very least need to double check the limits
     // (which I've fingered-in-the-air, but could easily have an OBOE hiding inside).
     assert(reward < uint256(int256(-1))); // We do a cast later, so make sure we don't overflow.
@@ -193,18 +193,26 @@ contract ReputationMiningCycle {
     // Move its opponent on to the next stage.
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
     // TODO: Check opponent is good to move on - we're assuming both haven't timed out here.
+    // We require either
+    // 1. That we actually had an opponent - can't invalidate the last hash.
+    // 2. This cycle had an odd number of submissions, and the last one in the list gets a bye
+    if (disputeRounds[round].length % 2 == 1 && disputeRounds[round].length == idx) {
+      // This is option two above - note that because arrays are zero-indexed, if idx==length, then
+      // this is the slot after the last entry, and so our opponentIdx will be the last entry
+      // We just move the opponent on, and nothing else happens.
+      // TODO: Ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
+      require(disputeRounds[round].length>1);
+      disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
+    } else {
+      require(disputeRounds[round].length > opponentIdx);
+      require(disputeRounds[round][opponentIdx].hash!="");
+      disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
+      delete disputeRounds[round][opponentIdx];
+      nInvalidatedHashes += 1;
 
-    // We require that we actually had an opponent - can't invalidate the last hash.
-    // If we try, then the next require should catch it.
-    require(disputeRounds[round].length > opponentIdx);
-    require(disputeRounds[round][opponentIdx].hash!="");
-    disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
-    delete disputeRounds[round][opponentIdx];
-    nInvalidatedHashes += 1;
-
-    // Punish the people who proposed this
-    IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].hash][disputeRounds[round][idx].nNodes]);
-
+      // Punish the people who proposed this
+      IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].hash][disputeRounds[round][idx].nNodes]);
+    }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
