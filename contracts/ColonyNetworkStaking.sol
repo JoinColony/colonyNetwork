@@ -74,7 +74,8 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
       // Alternative: lose more than they would have gained for backing the right hash.
       stakedBalances[stakers[i]] = 0;
     }
-    // TODO: Where do these staked tokens go?
+    // TODO: Where do these staked tokens go? Maybe split between the person who did the 'invalidate' transaction
+    // and the colony network?
   }
 
   function rewardStakers(address[] stakers) internal {
@@ -112,6 +113,8 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
   }
 }
 
+// TODO: Can we handle a dispute regarding the very first hash that should be set?
+
 
 contract ReputationMiningCycle {
   address colonyNetworkAddress;
@@ -120,6 +123,15 @@ contract ReputationMiningCycle {
   mapping (address => Submission) public hasSubmitted;
   uint reputationMiningWindowOpenTimestamp;
   mapping (uint256 => Submission[]) disputeRounds;
+
+  // Tracks the number of submissions in each round that have completed their challenge, one way or the other.
+  // This might be that they passed the challenge, it might be that their opponent passed (and therefore by implication,
+  // they failed), or it might be that they timed out
+  mapping (uint256 => uint256) nHashesCompletedChallengeRound;
+  // A flaw with this is that if someone spams lots of nonsense transactions, then 'good' users still have to come along and
+  // explicitly complete the pairings. But if they get the tokens that were staked in order to make the submission, maybe
+  // that's okay...?
+
   uint256 public nSubmittedHashes = 0;
   uint256 public nInvalidatedHashes = 0;
 
@@ -127,9 +139,6 @@ contract ReputationMiningCycle {
     bytes32 hash;
     uint256 nNodes;
   }
-
-  // Prevent addresses from submitting more than one hash?
-
 
   // Records for which hashes, for which addresses, for which entries have been accepted
   // Otherwise, people could keep submitting the same entry.
@@ -195,14 +204,21 @@ contract ReputationMiningCycle {
     // TODO: Check opponent is good to move on - we're assuming both haven't timed out here.
     // We require either
     // 1. That we actually had an opponent - can't invalidate the last hash.
-    // 2. This cycle had an odd number of submissions, and the last one in the list gets a bye
+    // 2. This cycle had an odd number of submissions, which was larger than 1, and we're giving the last entry a bye to the next round.
     if (disputeRounds[round].length % 2 == 1 && disputeRounds[round].length == idx) {
       // This is option two above - note that because arrays are zero-indexed, if idx==length, then
       // this is the slot after the last entry, and so our opponentIdx will be the last entry
       // We just move the opponent on, and nothing else happens.
-      // TODO: Ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
+
+      // Ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
+      require(nHashesCompletedChallengeRound[round-1] == disputeRounds[round-1].length);
+
+      // Prevent us invalidating the final hash
       require(disputeRounds[round].length>1);
+      // Move opponent on to next round
       disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
+      // Note the fact that this round has had another challenge complete
+      nHashesCompletedChallengeRound[round] += 1;
     } else {
       require(disputeRounds[round].length > opponentIdx);
       require(disputeRounds[round][opponentIdx].hash!="");
@@ -210,7 +226,10 @@ contract ReputationMiningCycle {
       delete disputeRounds[round][opponentIdx];
       nInvalidatedHashes += 1;
 
-      // Punish the people who proposed this
+      // Note that two hashes have completed this challenge round (one accepted, one rejected)
+      nHashesCompletedChallengeRound[round] += 2;
+
+      // Punish the people who proposed the hash that was rejected
       IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].hash][disputeRounds[round][idx].nNodes]);
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?

@@ -93,18 +93,16 @@ contract("ColonyNetwork", accounts => {
         return;
       }
     }
-    let stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
-    if (stakedBalance.toNumber() > 0) {
-      await colonyNetwork.withdraw(stakedBalance.toNumber(), { from: OTHER_ACCOUNT });
-    }
-    stakedBalance = await colonyNetwork.getStakedBalance.call(MAIN_ACCOUNT);
-    if (stakedBalance.toNumber() > 0) {
-      await colonyNetwork.withdraw(stakedBalance.toNumber(), { from: MAIN_ACCOUNT });
-    }
-    let userBalance = await clny.balanceOf.call(OTHER_ACCOUNT);
-    await clny.transfer(0x0, userBalance, { from: OTHER_ACCOUNT });
-    userBalance = await clny.balanceOf.call(MAIN_ACCOUNT);
-    await clny.transfer(0x0, userBalance, { from: MAIN_ACCOUNT });
+    await Promise.all(
+      accounts.map(async address => {
+        const stakedBalance = await colonyNetwork.getStakedBalance.call(address);
+        if (stakedBalance.toNumber() > 0) {
+          await colonyNetwork.withdraw(stakedBalance.toNumber(), { from: address });
+        }
+        const userBalance = await clny.balanceOf.call(address);
+        return clny.transfer(0x0, userBalance, { from: address });
+      })
+    );
   });
 
   describe("when initialised", () => {
@@ -537,6 +535,33 @@ contract("ColonyNetwork", accounts => {
         nRemainingHashes = nSubmittedHashes.sub(nInvalidatedHashes).toNumber();
       }
       await repCycle.confirmNewHash(cycle);
+    });
+
+    it("should prevent a hash from advancing if it might still get an opponent", async () => {
+      assert(accounts.length >= 8, "Not enough accounts for test to run");
+      const accountsForTest = accounts.slice(0, 8);
+      for (let i = 0; i < 8; i += 1) {
+        await giveUserCLNYTokens(accountsForTest[i], "1000000000000000000"); // eslint-disable-line no-await-in-loop
+        // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
+        // right taskId, so if they're all created at once it messes up.
+      }
+      await Promise.all(accountsForTest.map(addr => clny.approve(colonyNetwork.address, "1000000000000000000", { from: addr })));
+      await Promise.all(accountsForTest.map(addr => colonyNetwork.deposit("1000000000000000000", { from: addr })));
+
+      const reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(reputationMiningCycleAddress);
+      await testHelper.forwardTime(3600, this);
+      await Promise.all(accountsForTest.map(addr => repCycle.submitNewHash(addr, 10, 1, { from: addr })));
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.invalidateHash(0, 3);
+      await repCycle.invalidateHash(0, 5);
+      await repCycle.invalidateHash(1, 1);
+      await testHelper.checkErrorRevert(repCycle.invalidateHash(1, 3));
+      // Now clean up
+      await repCycle.invalidateHash(0, 7);
+      await repCycle.invalidateHash(1, 3);
+      await repCycle.invalidateHash(2, 1);
+      await repCycle.confirmNewHash(3);
     });
   });
 });
