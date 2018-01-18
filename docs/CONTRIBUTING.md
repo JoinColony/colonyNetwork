@@ -14,9 +14,19 @@ To report an issue, use the [GitHub issues tracker](https://github.com/JoinColon
 
 ## Workflow for Pull Requests
 
-In order to contribute, please fork off of the develop branch and make your changes there. Keep your branch up to date with develop using `git rebase`. Your PR description should provide a clear overview of your changes.
+In order to contribute, please fork off of the `develop` branch and make your changes there. Keep your branch up to date with develop using `rebase` instead of `merge`.
 
-When writing a new feature, please ensure you write appropriate `truffle` test cases under test/. We strive for 100% test coverage for our contracts and CI works with close to 100% thresholds.
+### Branch naming 
+Use the following naming schema for your PR branch: [feature/fix/maintenance/...]/[issue-#]-[a-meaningful-description-in-kebab-case] e.g. `feature/84-voting-on-disputes`
+
+### Commit messages
+- The 50/72 rule. The first line should be capitalized and can go up to 50 chars, following lines should preferably be wrapped at 72
+- Bullet points are good, please use indentation though. For the bullet, you can choose between asterisks or hyphens
+For the first line, try to be specific. e.g: "Ensure colony keys are unique" instead of "Fix a bug with contract setup"
+If you're adding or changing existing tests, they should go on the same commit.
+
+### Test coverage 
+When writing a new feature please ensure you write appropriate `truffle` test cases under test/. We strive for 100% test coverage for our contracts and CI works with close to 100% thresholds.
 
 Thank you for your help!
 
