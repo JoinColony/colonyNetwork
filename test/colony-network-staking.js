@@ -89,7 +89,7 @@ contract("ColonyNetwork", accounts => {
       } else {
         // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
         console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
-        process.exit(1);
+        // process.exit(1);
         return;
       }
     }
@@ -502,6 +502,41 @@ contract("ColonyNetwork", accounts => {
       await repCycle.submitNewHash("0x12345678", 10, 11);
       await repCycle.submitNewHash("0x12345678", 10, 12);
       await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 10, 13));
+    });
+
+    it("should cope with many hashes being submitted and eliminated before a winner is assigned", async () => {
+      // TODO: This test probably needs to be written more carefully to make sure all possible edge cases are dealt with
+      for (let i = 0; i < accounts.length; i += 1) {
+        await giveUserCLNYTokens(accounts[i], "1000000000000000000"); // eslint-disable-line no-await-in-loop
+        // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
+        // right taskId, so if they're all created at once it messes up.
+      }
+      await Promise.all(accounts.map(addr => clny.approve(colonyNetwork.address, "1000000000000000000", { from: addr })));
+      await Promise.all(accounts.map(addr => colonyNetwork.deposit("1000000000000000000", { from: addr })));
+
+      const reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(reputationMiningCycleAddress);
+      await testHelper.forwardTime(3600, this);
+      await Promise.all(accounts.map(addr => repCycle.submitNewHash(addr, 10, 1, { from: addr })));
+      // We're submitting hashes equal to their addresses for ease, though they will get zero padded.
+
+      const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
+      let nRemainingHashes = nSubmittedHashes.toNumber();
+      let cycle = 0;
+      while (nRemainingHashes > 1) {
+        for (let i = 0; i < nRemainingHashes; i += 1) {
+          if (i % 2 === 0) {
+            await repCycle.invalidateHash(cycle, i + 1); // eslint-disable-line no-await-in-loop
+            // These could all be done simultaneously, but the one-liner with Promise.all is very hard to read.
+            // It involved spread syntax and everything. If someone can come up with an easy-to-read version, I'll
+            // be all for it
+          }
+        }
+        cycle += 1;
+        const nInvalidatedHashes = await repCycle.nInvalidatedHashes.call(); // eslint-disable-line no-await-in-loop
+        nRemainingHashes = nSubmittedHashes.sub(nInvalidatedHashes).toNumber();
+      }
+      await repCycle.confirmNewHash(cycle);
     });
   });
 });
