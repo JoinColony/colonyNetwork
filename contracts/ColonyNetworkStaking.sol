@@ -122,7 +122,7 @@ contract ReputationMiningCycle {
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
   mapping (address => Submission) public hasSubmitted;
   uint reputationMiningWindowOpenTimestamp;
-  mapping (uint256 => Submission[]) disputeRounds;
+  mapping (uint256 => Submission[]) public disputeRounds;
 
   // Tracks the number of submissions in each round that have completed their challenge, one way or the other.
   // This might be that they passed the challenge, it might be that their opponent passed (and therefore by implication,
@@ -138,6 +138,8 @@ contract ReputationMiningCycle {
   struct Submission {
     bytes32 hash;
     uint256 nNodes;
+    uint256 lastResponseTimestamp;
+    uint256 challengeStepCompleted;
   }
 
   // Records for which hashes, for which addresses, for which entries have been accepted
@@ -151,6 +153,23 @@ contract ReputationMiningCycle {
     reputationMiningWindowOpenTimestamp = now;
   }
 
+  function respondToChallenge(uint256 round, uint256 idx) public {
+    // TODO: Check challenge response is valid, relating to current challenge
+    // TODO: Check challenge response relates to this hash
+
+    // Assuming that the challenge response is correct...
+    uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
+
+    disputeRounds[round][idx].lastResponseTimestamp = now;
+    disputeRounds[round][idx].challengeStepCompleted += 1;
+    // If our opponent responded to this challenge before we did, we should
+    // reset their 'last response' time to now, as they aren't able to respond
+    // to the next challenge before they know what it is!
+    if (disputeRounds[round][idx].challengeStepCompleted == disputeRounds[round][opponentIdx].challengeStepCompleted) {
+      disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
+    }
+  }
+
   function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry) public {
     //Check the ticket is an eligible one for them to claim
     require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
@@ -162,9 +181,10 @@ contract ReputationMiningCycle {
     }
     // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
     // Check the ticket is a winning one.
-    // require((now-reputationMiningWindowOpenTimestamp) < 3600);
+    // TODO Figure out how to uncomment the next line, but not break tests sporadically.
+    // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
     // x = floor(uint((2**256 - 1) / 3600)
-    if (now-reputationMiningWindowOpenTimestamp < 3600) {
+    if (now-reputationMiningWindowOpenTimestamp <= 3600) {
       uint x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
       uint target = (now - reputationMiningWindowOpenTimestamp ) * x;
       require(uint256(keccak256(msg.sender, entry, newHash)) < target);
@@ -177,11 +197,17 @@ contract ReputationMiningCycle {
     if (submittedHashes[newHash][nNodes].length == 0) {
       nSubmittedHashes += 1;
       // And add it to the first disputeRound
-      disputeRounds[0].push(Submission({hash: newHash, nNodes: nNodes}));
+      // NB if no other hash is submitted, no dispute resolution will be required.
+      disputeRounds[0].push(Submission({hash: newHash, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0}));
+      // If we've got a pair of submissions to face off, may as well start now.
+      if (nSubmittedHashes % 2 == 0) {
+        disputeRounds[0][nSubmittedHashes-1].lastResponseTimestamp = now;
+        disputeRounds[0][nSubmittedHashes-2].lastResponseTimestamp = now;
+      }
     }
 
 
-    hasSubmitted[msg.sender] = Submission({hash: newHash, nNodes: nNodes});
+    hasSubmitted[msg.sender] = Submission({hash: newHash, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0});
     //And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes].push(msg.sender);
     //Note that they submitted it.
@@ -198,10 +224,10 @@ contract ReputationMiningCycle {
   }
 
   function invalidateHash(uint256 round, uint256 idx) public {
-    // TODO: Require that it has failed a challenge, or failed to respond in time.
-    // Move its opponent on to the next stage.
+    // What we do depends on our opponent, so work out which index it was at in disputeRounds[round]
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
-    // TODO: Check opponent is good to move on - we're assuming both haven't timed out here.
+    uint256 nInNextRound;
+
     // We require either
     // 1. That we actually had an opponent - can't invalidate the last hash.
     // 2. This cycle had an odd number of submissions, which was larger than 1, and we're giving the last entry a bye to the next round.
@@ -219,18 +245,49 @@ contract ReputationMiningCycle {
       disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
       // Note the fact that this round has had another challenge complete
       nHashesCompletedChallengeRound[round] += 1;
+      // TODO: DRY with the code below.
+      // Check if the hash we just moved to the next round is the second of a pairing that should now face off.
+      nInNextRound = disputeRounds[round+1].length;
+
+      if (nInNextRound % 2 == 0) {
+        disputeRounds[round+1][nInNextRound-1].challengeStepCompleted = 0;
+        disputeRounds[round+1][nInNextRound-1].lastResponseTimestamp = now;
+        disputeRounds[round+1][nInNextRound-2].challengeStepCompleted = 0;
+        disputeRounds[round+1][nInNextRound-2].lastResponseTimestamp = now;
+      }
     } else {
       require(disputeRounds[round].length > opponentIdx);
       require(disputeRounds[round][opponentIdx].hash!="");
-      disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
-      delete disputeRounds[round][opponentIdx];
-      nInvalidatedHashes += 1;
+      // Require that it has failed a challenge (i.e. failed to respond in time)
+      require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600); //'In time' is ten minutes here.
 
-      // Note that two hashes have completed this challenge round (one accepted, one rejected)
+      if (disputeRounds[round][opponentIdx].challengeStepCompleted > disputeRounds[round][idx].challengeStepCompleted) {
+        // If true, then the opponent completed one more challenge round than the submission being invalidated, so we
+        // don't know if they're valid or not yet. Move them on to the next round.
+        disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
+        delete disputeRounds[round][opponentIdx];
+        nInvalidatedHashes += 1;
+        // Check if the hash we just moved to the next round is the second of a pairing that should now face off.
+        nInNextRound = disputeRounds[round+1].length;
+        if (nInNextRound % 2 == 0) {
+          disputeRounds[round+1][nInNextRound-1].challengeStepCompleted = 0;
+          disputeRounds[round+1][nInNextRound-1].lastResponseTimestamp = now;
+          disputeRounds[round+1][nInNextRound-2].challengeStepCompleted = 0;
+          disputeRounds[round+1][nInNextRound-2].lastResponseTimestamp = now;
+        }
+      } else {
+        // Our opponent completed the same number of challenge rounds, and both have now timed out.
+        nInvalidatedHashes += 2;
+        // Punish the people who proposed our opponent
+        IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][opponentIdx].hash][disputeRounds[round][opponentIdx].nNodes]);
+      }
+
+      // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
       nHashesCompletedChallengeRound[round] += 2;
 
       // Punish the people who proposed the hash that was rejected
       IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].hash][disputeRounds[round][idx].nNodes]);
+
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }

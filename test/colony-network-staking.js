@@ -35,6 +35,18 @@ contract("ColonyNetwork", accounts => {
     await colonyNetwork.startNextCycle();
   });
 
+  async function accommodateChallengeAndInvalidateHash(test, round, idx, respondToChallenge = true) {
+    // Have our opponent respond to the challenge asked for
+    const reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle.call();
+    const repCycle = ReputationMiningCycle.at(reputationMiningCycleAddress);
+    if (respondToChallenge) {
+      const oppIdx = idx % 2 === 1 ? idx - 1 : idx + 1;
+      await repCycle.respondToChallenge(round, oppIdx);
+      await testHelper.forwardTime(600, test);
+    }
+    return repCycle.invalidateHash(round, idx);
+  }
+
   async function giveUserCLNYTokens(address, _amount) {
     const amount = new BN(_amount);
     const mainStartingBalance = await clny.balanceOf.call(MAIN_ACCOUNT);
@@ -229,7 +241,7 @@ contract("ColonyNetwork", accounts => {
       const repCycle = ReputationMiningCycle.at(addr);
       await repCycle.submitNewHash("0x12345678", 10, 10);
       await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
-      await repCycle.invalidateHash(0, 1);
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
       await repCycle.confirmNewHash(1);
       const newAddr = await colonyNetwork.getReputationMiningCycle.call();
       assert(newAddr !== 0x0);
@@ -259,9 +271,10 @@ contract("ColonyNetwork", accounts => {
       await repCycle.submitNewHash("0x12345678", 10, 10);
       await repCycle.submitNewHash("0x87654321", 11, 10, { from: OTHER_ACCOUNT });
       await repCycle.submitNewHash("0x99999999", 12, 10, { from: accounts[2] });
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.invalidateHash(0, 3); // Invalidate the 'null' that partners the third hash submitted
-      await repCycle.invalidateHash(1, 0);
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
+      await accommodateChallengeAndInvalidateHash(this, 0, 3, false); // Invalidate the 'null' that partners the third hash submitted
+      // No response to a challenge required.
+      await accommodateChallengeAndInvalidateHash(this, 1, 0);
       await repCycle.confirmNewHash(2);
       const newAddr = await colonyNetwork.getReputationMiningCycle.call();
       assert(newAddr !== 0x0);
@@ -291,7 +304,7 @@ contract("ColonyNetwork", accounts => {
       assert(addr !== 0x0);
       assert(newAddr === addr);
       // Eliminate one so that the afterAll works.
-      await repCycle.invalidateHash(0, 0);
+      await accommodateChallengeAndInvalidateHash(this, 0, 0);
     });
 
     it("should not allow the last reputation hash to be eliminated", async () => {
@@ -308,8 +321,8 @@ contract("ColonyNetwork", accounts => {
       const repCycle = ReputationMiningCycle.at(addr);
       await repCycle.submitNewHash("0x12345678", 10, 10);
       await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
-      await repCycle.invalidateHash(0, 1);
-      await testHelper.checkErrorRevert(repCycle.invalidateHash(1, 0));
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
+      await testHelper.checkErrorRevert(accommodateChallengeAndInvalidateHash(this, 1, 0, false));
     });
 
     it("should not allow someone to submit a new reputation hash if they are ineligible", async () => {
@@ -346,7 +359,7 @@ contract("ColonyNetwork", accounts => {
       await repCycle.submitNewHash("0x12345678", 10, 10);
       await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
       await repCycle.submitNewHash("0x87654321", 10, 10, { from: accounts[2] });
-      await repCycle.invalidateHash(0, 1);
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
       balance = await colonyNetwork.getStakedBalance(OTHER_ACCOUNT);
       assert.equal(balance.toString(), "0", "Account was not punished properly");
       balance2 = await colonyNetwork.getStakedBalance(accounts[2]);
@@ -524,7 +537,10 @@ contract("ColonyNetwork", accounts => {
       while (nRemainingHashes > 1) {
         for (let i = 0; i < nRemainingHashes; i += 1) {
           if (i % 2 === 0) {
-            await repCycle.invalidateHash(cycle, i + 1); // eslint-disable-line no-await-in-loop
+            // If we're the odd-one-out in a round, we get a bye, and our opponent doesn't need to respond
+            // to a challenge.
+            const responseToChallengeNeeded = i + 1 !== nRemainingHashes;
+            await accommodateChallengeAndInvalidateHash(this, cycle, i + 1, responseToChallengeNeeded); // eslint-disable-line no-await-in-loop
             // These could all be done simultaneously, but the one-liner with Promise.all is very hard to read.
             // It involved spread syntax and everything. If someone can come up with an easy-to-read version, I'll
             // be all for it
@@ -552,16 +568,18 @@ contract("ColonyNetwork", accounts => {
       const repCycle = ReputationMiningCycle.at(reputationMiningCycleAddress);
       await testHelper.forwardTime(3600, this);
       await Promise.all(accountsForTest.map(addr => repCycle.submitNewHash(addr, 10, 1, { from: addr })));
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.invalidateHash(0, 3);
-      await repCycle.invalidateHash(0, 5);
-      await repCycle.invalidateHash(1, 1);
-      await testHelper.checkErrorRevert(repCycle.invalidateHash(1, 3));
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
+      await accommodateChallengeAndInvalidateHash(this, 0, 3);
+      await accommodateChallengeAndInvalidateHash(this, 0, 5);
+      await accommodateChallengeAndInvalidateHash(this, 1, 1);
+      await testHelper.checkErrorRevert(accommodateChallengeAndInvalidateHash(this, 1, 3, false));
       // Now clean up
-      await repCycle.invalidateHash(0, 7);
-      await repCycle.invalidateHash(1, 3);
-      await repCycle.invalidateHash(2, 1);
+      await accommodateChallengeAndInvalidateHash(this, 0, 7);
+      await accommodateChallengeAndInvalidateHash(this, 1, 3);
+      await accommodateChallengeAndInvalidateHash(this, 2, 1);
       await repCycle.confirmNewHash(3);
     });
+
+    it("should not allow a hash to be invalidated multiple times, moving multiple copies of its opponent on to the next stage");
   });
 });
