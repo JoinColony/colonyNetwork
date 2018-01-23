@@ -322,7 +322,7 @@ contract("ColonyNetwork", accounts => {
       await repCycle.submitNewHash("0x12345678", 10, 10);
       await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
       await accommodateChallengeAndInvalidateHash(this, 0, 1);
-      await testHelper.checkErrorRevert(accommodateChallengeAndInvalidateHash(this, 1, 0, false));
+      await testHelper.checkErrorRevert(accommodateChallengeAndInvalidateHash(this, 1, 1, false));
     });
 
     it("should not allow someone to submit a new reputation hash if they are ineligible", async () => {
@@ -597,5 +597,159 @@ contract("ColonyNetwork", accounts => {
       await accommodateChallengeAndInvalidateHash(this, 0, 1);
       await testHelper.checkErrorRevert(accommodateChallengeAndInvalidateHash(this, 0, 1));
     });
+
+    it("should invalidate a hash and its partner if both have timed out", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(accounts[2], "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: accounts[2] });
+      await colonyNetwork.deposit("1000000000000000000", { from: accounts[2] });
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
+      await repCycle.submitNewHash("0x99999999", 10, 10, { from: accounts[2] });
+      await testHelper.forwardTime(600, this);
+      await accommodateChallengeAndInvalidateHash(this, 0, 1, false);
+      await accommodateChallengeAndInvalidateHash(this, 0, 3, false);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should prevent invalidation of hashes before they have timed out on a challenge", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
+      await testHelper.checkErrorRevert(repCycle.invalidateHash(0, 1));
+      await testHelper.checkErrorRevert(repCycle.confirmNewHash(1));
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should prevent submission of hashes with an invalid entry for the balance of a user", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 10, 1000000000000));
+      await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
+    });
+
+    it("should prevent submission of hashes with a valid entry, but invalid hash for the current time", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.checkErrorRevert(repCycle.submitNewHash("0x12345678", 10, 1));
+    });
+
+    it('should not allow "setReputationRootHash" to be called from an account that is not not reputationMiningCycle', async () => {
+      await testHelper.checkErrorRevert(colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]));
+    });
+
+    it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
+      await testHelper.checkErrorRevert(colonyNetwork.punishStakers([accounts[0], accounts[1]]));
+    });
+
+    it('should not allow "startNextCycle" to be called if a cycle is in progress', async () => {
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      assert(parseInt(addr, 16) !== 0);
+      await testHelper.checkErrorRevert(colonyNetwork.startNextCycle());
+    });
+
+    it("should allow submitted hashes to go through multiple responses to a challenge", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
+      await repCycle.respondToChallenge(0, 1);
+      await repCycle.respondToChallenge(0, 0);
+      await repCycle.respondToChallenge(0, 0);
+      await repCycle.respondToChallenge(0, 1);
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should only allow the last hash standing to be confirmed", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
+      await accommodateChallengeAndInvalidateHash(this, 0, 0);
+      await testHelper.checkErrorRevert(repCycle.confirmNewHash(0));
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should fail if one tries to invalidate a hash that does not exist", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(accounts[2], "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: accounts[2] });
+      await colonyNetwork.deposit("1000000000000000000", { from: accounts[2] });
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x87654321", 11, 10, { from: OTHER_ACCOUNT });
+      await repCycle.submitNewHash("0x99999999", 12, 10, { from: accounts[2] });
+      await accommodateChallengeAndInvalidateHash(this, 0, 1);
+      await accommodateChallengeAndInvalidateHash(this, 0, 3, false); // Invalidate the 'null' that partners the third hash submitted
+      // No response to a challenge required.
+      await testHelper.checkErrorRevert(accommodateChallengeAndInvalidateHash(this, 1, 2, false));
+      // Cleanup after test
+      await accommodateChallengeAndInvalidateHash(this, 1, 0);
+      await repCycle.confirmNewHash(2);
+    });
+
+    it("should abort if a deposit did not complete correctly");
   });
 });

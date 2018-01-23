@@ -216,7 +216,11 @@ contract ReputationMiningCycle {
 
   function confirmNewHash(uint256 roundNumber) public {
     require (nSubmittedHashes - nInvalidatedHashes == 1);
-    require (disputeRounds[roundNumber].length == 1); //i.e. this is the hash that 'survived' all the challenges
+    require (disputeRounds[roundNumber].length == 1); //i.e. this is the final round
+    // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
+    // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
+    // element is zeroed. If this functionality of 'delete' is ever changed, this will have to change too.
+
     // TODO: Require some amount of time to have passed (i.e. people have had a chance to submit other hashes)
     Submission storage reputationRootHash = disputeRounds[roundNumber][0];
     IColonyNetwork(colonyNetworkAddress).setReputationRootHash(reputationRootHash.hash, reputationRootHash.nNodes, submittedHashes[disputeRounds[roundNumber][0].hash][disputeRounds[roundNumber][0].nNodes]);
@@ -266,6 +270,7 @@ contract ReputationMiningCycle {
         // don't know if they're valid or not yet. Move them on to the next round.
         disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
         delete disputeRounds[round][opponentIdx];
+        // TODO Delete the hash(es) being invalidated?
         nInvalidatedHashes += 1;
         // Check if the hash we just moved to the next round is the second of a pairing that should now face off.
         nInNextRound = disputeRounds[round+1].length;
