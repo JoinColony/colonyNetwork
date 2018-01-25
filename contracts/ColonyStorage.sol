@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
 import "./ERC20Extended.sol";
+import "./IColonyNetwork.sol";
 
 
 contract ColonyStorage is DSAuth {
@@ -123,6 +124,18 @@ contract ColonyStorage is DSAuth {
 
   modifier taskFinalized(uint256 _id) {
     require(tasks[_id].finalized);
+    _;
+  }
+
+  modifier globalSkill(uint256 _skillId) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(colonyNetworkContract.isGlobalSkill(_skillId));
+    _;
+  }
+
+  modifier localSkill(uint256 _skillId) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(!colonyNetworkContract.isGlobalSkill(_skillId));
     _;
   }
 

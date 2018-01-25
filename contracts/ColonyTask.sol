@@ -256,6 +256,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskExists(_id)
   taskNotFinalized(_id)
   skillExists(_skillId)
+  globalSkill(_skillId)
   {
     tasks[_id].skillIds[0] = _skillId;
   }

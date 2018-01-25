@@ -72,6 +72,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return (skills[_skillId].nParents, skills[_skillId].nChildren);
   }
 
+  function isGlobalSkill(uint256 _skillId) public view returns (bool) {
+    return skills[_skillId].globalSkill;
+  }
+
   function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int, uint, address, uint, uint) {
     ReputationLogEntry storage x = ReputationUpdateLog[_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
