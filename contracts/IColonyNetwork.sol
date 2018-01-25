@@ -26,7 +26,7 @@ contract IColonyNetwork {
 
   function getColony(bytes32 key) public view returns (address);
   function getColonyCount() public view returns (uint256);
-  function addSkill(uint256 _parentSkillId) public;
+  function addSkill(uint256 _parentSkillId, bool _globalSkill) public;
   function getSkill(uint256 _skillId) public view returns (uint256, uint256);
   function isGlobalSkill(uint256 _skillId) public view returns (bool);
   function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) public;

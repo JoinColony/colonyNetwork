@@ -158,7 +158,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     e.setResolver(newResolver);
   }
 
-  function addSkill(uint _parentSkillId) public
+  function addSkill(uint _parentSkillId, bool _globalSkill) public
   onlyCommonColony
   skillExists(_parentSkillId)
   {
@@ -172,7 +172,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
       nChildren: 0,
       parents: parents,
       children: children,
-      globalSkill: true
+      globalSkill: _globalSkill
     });
 
     uint parentSkillId = _parentSkillId;

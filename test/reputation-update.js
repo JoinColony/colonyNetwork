@@ -176,10 +176,10 @@ contract('Colony Reputation Updates', () => {
     });
 
     it('should calculate nUpdates correctly when making a log', async () => {
-      await commonColony.addSkill(0);
-      await commonColony.addSkill(1);
-      await commonColony.addSkill(2);
-      await commonColony.addSkill(3);
+      await commonColony.addSkill(0, true);
+      await commonColony.addSkill(1, true);
+      await commonColony.addSkill(2, true);
+      await commonColony.addSkill(3, true);
       const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
       await commonColony.setTaskSkill(taskId1, 2);
       await commonColony.finalizeTask(taskId1);

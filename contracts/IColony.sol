@@ -31,7 +31,7 @@ contract IColony {
   function getToken() public view returns (address);
   function initialiseColony(address _network) public;
   function mintTokens(uint256 _wad) public;
-  function addSkill(uint256 _parentSkillId) public;
+  function addSkill(uint256 _parentSkillId, bool _globalSkill) public;
 
   // ColonyTask
   function makeTask(bytes32 _specificationHash) public;

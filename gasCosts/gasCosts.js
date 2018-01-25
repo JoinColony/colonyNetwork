@@ -69,19 +69,19 @@ contract('all', () => {
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe('Gas costs', () => {
     it('when working with the Common Colony', async () => {
-      const tx0 = await commonColony.addSkill(0);
+      const tx0 = await commonColony.addSkill(0, true);
       const addSkillCost0 = tx0.receipt.gasUsed;
       console.log('addSkill to level 1 actual cost :', addSkillCost0);
 
-      const tx1 = await commonColony.addSkill(1);
+      const tx1 = await commonColony.addSkill(1, true);
       const addSkillCost1 = tx1.receipt.gasUsed;
       console.log('addSkill to level 2 actual cost :', addSkillCost1);
 
-      const tx2 = await commonColony.addSkill(2);
+      const tx2 = await commonColony.addSkill(2, true);
       const addSkillCost2 = tx2.receipt.gasUsed;
       console.log('addSkill to level 3 actual cost :', addSkillCost2);
 
-      const tx3 = await commonColony.addSkill(3);
+      const tx3 = await commonColony.addSkill(3, true);
       const addSkillCost3 = tx3.receipt.gasUsed;
       console.log('addSkill to level 4 actual cost :', addSkillCost3);
     });

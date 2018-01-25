@@ -57,9 +57,9 @@ contract Colony is ColonyStorage {
     return token.mint(_wad);
   }
 
-  function addSkill(uint _parentSkillId) public {
-    // TODO Secure this function.
+  function addSkill(uint _parentSkillId, bool _globalSkill) public {
+    // TODO Secure this function to Common Colony only
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addSkill(_parentSkillId);
+    return colonyNetwork.addSkill(_parentSkillId, _globalSkill);
   }
 }
