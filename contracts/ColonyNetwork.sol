@@ -100,9 +100,18 @@ contract ColonyNetwork is ColonyNetworkStorage {
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
 
-    // Root Skill initialisation consists of simply incrementing the skill counter,
-    // as the root skill requires no changes to the defaults for the Skill datatype
+    // For the Common Colony add the root global skill
     if (_name == "Common Colony") {
+      uint256[] memory parents = new uint256[](0);
+      uint256[] memory children = new uint256[](0);
+      skills[0] = Skill({
+        nParents: 0,
+        nChildren: 0,
+        parents: parents,
+        children: children,
+        globalSkill: true
+      });
+
       skillCount += 1;
     }
 
