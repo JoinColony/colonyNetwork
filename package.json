@@ -62,7 +62,7 @@
     "pre-commit": "^1.2.2",
     "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
-    "solidity-coverage": "0.4.8",
+    "solidity-coverage": "0.4.9",
     "solidity-parser-antlr": "^0.2.6",
     "solium": "^1.1.2",
     "truffle": "^4.0.4",
