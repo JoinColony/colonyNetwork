@@ -60,8 +60,11 @@ contract ColonyStorage is DSAuth {
 
   mapping (uint => RatingSecrets) public taskWorkRatings;
 
+  mapping (uint => Domain) public domains;
+
   uint taskCount;
   uint potCount;
+  uint domainCount;
 
   struct Task {
     bytes32 specificationHash;
@@ -103,6 +106,11 @@ contract ColonyStorage is DSAuth {
     uint taskId;
   }
 
+  struct Domain {
+    uint skillId;
+    uint potId;
+  }
+
   modifier taskExists(uint256 _id) {
     require(_id <= taskCount);
     _;
@@ -122,5 +130,4 @@ contract ColonyStorage is DSAuth {
     require(address(this) == msg.sender);
     _;
   }
-
 }

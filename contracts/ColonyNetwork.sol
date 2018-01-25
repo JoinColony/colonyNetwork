@@ -158,7 +158,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
       nParents: nParents,
       nChildren: 0,
       parents: parents,
-      children: children
+      children: children,
+      globalSkill: true
     });
 
     uint parentSkillId = _parentSkillId;

@@ -47,6 +47,8 @@ contract ColonyNetworkStorage is DSAuth {
     uint256[] parents;
     // array of `skill_id`s of all child skills
     uint256[] children;
+    // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
+    bool globalSkill;
   }
   mapping (uint => Skill) skills;
   uint256 skillCount;
