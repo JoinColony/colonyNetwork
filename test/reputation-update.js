@@ -176,12 +176,12 @@ contract('Colony Reputation Updates', () => {
     });
 
     it('should calculate nUpdates correctly when making a log', async () => {
-      await commonColony.addSkill(0, true);
       await commonColony.addSkill(1, true);
       await commonColony.addSkill(2, true);
       await commonColony.addSkill(3, true);
+      await commonColony.addSkill(4, true);
       const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
-      await commonColony.setTaskSkill(taskId1, 2);
+      await commonColony.setTaskSkill(taskId1, 3);
       await commonColony.finalizeTask(taskId1);
 
       let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
@@ -190,7 +190,7 @@ contract('Colony Reputation Updates', () => {
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
       const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
-      await commonColony.setTaskSkill(taskId2, 3);
+      await commonColony.setTaskSkill(taskId2, 4);
       await commonColony.finalizeTask(taskId2);
       repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(3);
       assert.equal(repLogEntryWorker[1].toNumber(), result.toNumber());

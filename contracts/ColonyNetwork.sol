@@ -31,12 +31,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
   event ColonyAdded(uint256 indexed id);
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
-  // Common Colony only allowed to manage Global skills
+  // Common Colony allowed to manage Global skills
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
     if (globalSkill) {
       address commonColony = getColony("Common Colony");
-      require(msg.sender == commonColony || msg.sender == address(this));
+      require(msg.sender == commonColony);
     } else {
       require(_isColony[msg.sender]);
     }
@@ -49,7 +49,14 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   modifier skillExists(uint skillId) {
-    require(skillCount > skillId);
+    require(skillCount >= skillId);
+    _;
+  }
+
+  modifier notGlobalRootSkill(uint256 parentSkillId, bool globalSkill) {
+    if (globalSkill) {
+      require(parentSkillId > 0);
+    }
     _;
   }
 
@@ -108,25 +115,18 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     // For the Common Colony add the root global skill
     if (_name == "Common Colony") {
-      uint256[] memory parents = new uint256[](0);
-      uint256[] memory children = new uint256[](0);
-      skills[0] = Skill({
-        nParents: 0,
-        nChildren: 0,
-        parents: parents,
-        children: children,
-        globalSkill: true
-      });
-
       skillCount += 1;
+      Skill memory rootGlobalSkill;
+      rootGlobalSkill.globalSkill = true;
+      skills[skillCount] = rootGlobalSkill;
     }
-
-    ColonyAdded(colonyCount);
 
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
     _colonies[_name] = colony;
     _isColony[colony] = true;
+
+    ColonyAdded(colonyCount);
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -167,19 +167,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function addSkill(uint _parentSkillId, bool _globalSkill) public
   skillExists(_parentSkillId)
   allowedToAddSkill(_globalSkill)
+  notGlobalRootSkill(_parentSkillId, _globalSkill)
   {
+    skillCount += 1;
     Skill storage parentSkill = skills[_parentSkillId];
-    uint nParents = parentSkill.nParents + 1;
-    uint256[] memory parents = new uint256[](0);
-    uint256[] memory children = new uint256[](0);
 
-    skills[skillCount] = Skill({
-      nParents: nParents,
-      nChildren: 0,
-      parents: parents,
-      children: children,
-      globalSkill: _globalSkill
-    });
+    Skill memory s;
+    s.nParents = parentSkill.nParents + 1;
+    s.globalSkill = _globalSkill;
+    skills[skillCount] = s;
 
     uint parentSkillId = _parentSkillId;
     bool notAtRoot = true;
@@ -213,8 +209,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
 
     SkillAdded(skillCount, _parentSkillId);
-
-    skillCount += 1;
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {

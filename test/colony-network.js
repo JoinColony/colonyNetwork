@@ -121,6 +121,9 @@ contract('ColonyNetwork', (accounts) => {
       const rootSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(rootSkill[0].toNumber(), 0);
       assert.equal(rootSkill[1].toNumber(), 0);
+
+      const globalSkill = await colonyNetwork.isGlobalSkill.call(1);
+      assert.isTrue(globalSkill);
     });
 
     // TODO: Add token initialisation for the common colony
