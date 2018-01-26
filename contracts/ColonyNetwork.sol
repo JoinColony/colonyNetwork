@@ -31,9 +31,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
   event ColonyAdded(uint256 indexed id);
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
-  modifier onlyCommonColony() {
-    address commonColony = getColony("Common Colony");
-    require(msg.sender == commonColony || msg.sender == address(this));
+  // Common Colony only allowed to manage Global skills
+  // All colonies are able to manage their Local (domain associated) skills
+  modifier allowedToAddSkill(bool globalSkill) {
+    if (globalSkill) {
+      address commonColony = getColony("Common Colony");
+      require(msg.sender == commonColony || msg.sender == address(this));
+    } else {
+      require(_isColony[msg.sender]);
+    }
     _;
   }
 
@@ -159,8 +165,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function addSkill(uint _parentSkillId, bool _globalSkill) public
-  onlyCommonColony
   skillExists(_parentSkillId)
+  allowedToAddSkill(_globalSkill)
   {
     Skill storage parentSkill = skills[_parentSkillId];
     uint nParents = parentSkill.nParents + 1;
