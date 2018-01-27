@@ -17,7 +17,7 @@ module.exports = (deployer) => {
     })
     .then(() => colonyNetwork.getSkillCount.call())
     .then((skillCount) => {
-      assert.equal(skillCount.toNumber(), 1);
+      assert.equal(skillCount.toNumber(), 2);
       return colonyNetwork.getColony.call('Common Colony');
     })
     .then((commonColonyAddress) => {

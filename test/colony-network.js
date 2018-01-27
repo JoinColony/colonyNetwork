@@ -114,10 +114,10 @@ contract('ColonyNetwork', (accounts) => {
       assert.equal(colonyCount.toNumber(), 7);
     });
 
-    it('when common colony is created, should have the root skill initialised', async () => {
+    it('when common colony is created, should have the root global skill initialised', async () => {
       await colonyNetwork.createColony('Common Colony');
       const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 1);
+      assert.equal(skillCount.toNumber(), 2);
       const rootSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(rootSkill[0].toNumber(), 0);
       assert.equal(rootSkill[1].toNumber(), 0);

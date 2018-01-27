@@ -49,6 +49,15 @@ contract Colony is ColonyStorage {
     IColony(this).setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
     IColony(this).setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
     IColony(this).setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
+
+    // Initialise the root domain
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    uint256 rootLocalSkill = colonyNetwork.getSkillCount();
+    domains[1] = Domain({
+      skillId: rootLocalSkill,
+      potId: 0
+    });
+    domainCount += 1;
   }
 
   function mintTokens(uint _wad) public
@@ -58,7 +67,6 @@ contract Colony is ColonyStorage {
   }
 
   function addSkill(uint _parentSkillId, bool _globalSkill) public {
-    // TODO Secure this function to Common Colony only
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     return colonyNetwork.addSkill(_parentSkillId, _globalSkill);
   }

@@ -121,6 +121,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
       skills[skillCount] = rootGlobalSkill;
     }
 
+    // For all colonies intiialise the root (domain) local skill with defaults by just incrementing the skillCount
+    skillCount += 1;
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
     _colonies[_name] = colony;
@@ -170,6 +172,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   notGlobalRootSkill(_parentSkillId, _globalSkill)
   {
     skillCount += 1;
+
     Skill storage parentSkill = skills[_parentSkillId];
 
     Skill memory s;
