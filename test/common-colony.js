@@ -13,8 +13,9 @@ const ColonyTask = artifacts.require('ColonyTask');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
 
 contract('Common Colony', () => {
-  const COLONY_KEY = 'Common Colony';
+  const COMMON_COLONY_KEY = 'Common Colony';
   let commonColony;
+  let colony;
   let colonyNetwork;
   let resolverColonyNetworkDeployed;
 
@@ -23,7 +24,7 @@ contract('Common Colony', () => {
   });
 
   beforeEach(async () => {
-    const colony = await Colony.new();
+    const colonyTemplate = await Colony.new();
     const colonyFunding = await ColonyFunding.new();
     const colonyTask = await ColonyTask.new();
     const colonyTransactionReviewer = await ColonyTransactionReviewer.new();
@@ -32,10 +33,17 @@ contract('Common Colony', () => {
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
+    await upgradableContracts.setupColonyVersionResolver(
+      colonyTemplate,
+      colonyFunding,
+      colonyTask,
+      colonyTransactionReviewer,
+      resolver,
+      colonyNetwork,
+    );
 
-    await colonyNetwork.createColony(COLONY_KEY);
-    const commonColonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+    await colonyNetwork.createColony(COMMON_COLONY_KEY);
+    const commonColonyAddress = await colonyNetwork.getColony.call(COMMON_COLONY_KEY);
     commonColony = await IColony.at(commonColonyAddress);
   });
 
@@ -222,6 +230,93 @@ contract('Common Colony', () => {
       assert.equal(skill11ParentSkillId3.toNumber(), 7);
       const skill11ParentSkillId4 = await colonyNetwork.getParentSkillId.call(11, 3);
       assert.equal(skill11ParentSkillId4.toNumber(), 3);
+    });
+  });
+
+  describe('when adding domains in the common colony', () => {
+    it('should be able to add new domains as children to the root domain', async () => {
+      await commonColony.addDomain(2);
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 3);
+      const domainCount = await commonColony.getDomainCount.call();
+      assert.equal(domainCount.toNumber(), 2);
+
+      const newDomain = await commonColony.getDomain.call(2);
+      assert.equal(newDomain[0].toNumber(), 3);
+      assert.equal(newDomain[1].toNumber(), 0);
+
+      // Check root local skill.nChildren is now 1
+      const rootLocalSkill = await colonyNetwork.getSkill.call(2);
+      assert.equal(rootLocalSkill[1].toNumber(), 1);
+
+      // Check root local skill.children first element is the id of the new skill
+      const rootSkillChild = await colonyNetwork.getChildSkillId.call(2, 0);
+      assert.equal(rootSkillChild.toNumber(), 3);
+    });
+
+    it('should NOT be able to add a child local skill more than one level from the root local skill', async () => {
+      await commonColony.addDomain(2);
+      testHelper.checkError(commonColony.addDomain(3));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 3);
+      const domainCount = await commonColony.getDomainCount.call();
+      assert.equal(domainCount.toNumber(), 2);
+    });
+  });
+
+  describe('when adding domains in a regular colony', () => {
+    beforeEach(async () => {
+      const COLONY_KEY = testHelper.getRandomString(7);
+      await colonyNetwork.createColony(COLONY_KEY);
+      const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+      colony = await IColony.at(colonyAddress);
+    });
+
+    it('should be able to add new domains as children to the root domain', async () => {
+      await colony.addDomain(3);
+      await colony.addDomain(3);
+      await colony.addDomain(3);
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 6);
+      const domainCount = await colony.getDomainCount.call();
+      assert.equal(domainCount.toNumber(), 4);
+
+      const newDomain1 = await colony.getDomain.call(2);
+      assert.equal(newDomain1[0].toNumber(), 4);
+      assert.equal(newDomain1[1].toNumber(), 0);
+
+      const newDomain2 = await colony.getDomain.call(3);
+      assert.equal(newDomain2[0].toNumber(), 5);
+      assert.equal(newDomain2[1].toNumber(), 0);
+
+      const newDomain3 = await colony.getDomain.call(4);
+      assert.equal(newDomain3[0].toNumber(), 6);
+      assert.equal(newDomain3[1].toNumber(), 0);
+
+      // Check root local skill.nChildren is now 3
+      const rootLocalSkill = await colonyNetwork.getSkill.call(3);
+      assert.equal(rootLocalSkill[1].toNumber(), 3);
+
+      // Check root local skill.children are the ids of the new skills
+      const rootSkillChild1 = await colonyNetwork.getChildSkillId.call(3, 0);
+      assert.equal(rootSkillChild1.toNumber(), 4);
+      const rootSkillChild2 = await colonyNetwork.getChildSkillId.call(3, 1);
+      assert.equal(rootSkillChild2.toNumber(), 5);
+      const rootSkillChild3 = await colonyNetwork.getChildSkillId.call(3, 2);
+      assert.equal(rootSkillChild3.toNumber(), 6);
+    });
+
+    it('should NOT be able to add a child local skill more than one level from the root local skill', async () => {
+      await colony.addDomain(3);
+      testHelper.checkError(colony.addDomain(4));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 4);
+      const domainCount = await colony.getDomainCount.call();
+      assert.equal(domainCount.toNumber(), 2);
     });
   });
 });

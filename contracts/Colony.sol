@@ -70,4 +70,34 @@ contract Colony is ColonyStorage {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     return colonyNetwork.addSkill(_parentSkillId, _globalSkill);
   }
+
+  function addDomain(uint256 _parentSkillId) public {
+    // Get the local skill id of the root domain
+    // TODO remove that when we start allowing more domain hierarchy levels
+    // Instead check that the parent skill id belongs to this colony own domain 
+    uint256 rootDomainSkillId = domains[1].skillId;
+    require(_parentSkillId == rootDomainSkillId);
+
+    addSkill(_parentSkillId, false);
+    
+    // Get new local skill
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    uint256 newLocalSkill = colonyNetwork.getSkillCount();
+
+    domainCount += 1;
+    // Add domain to local mapping
+    domains[domainCount] = Domain({
+      skillId: newLocalSkill,
+      potId: 0
+    });
+  }
+
+  function getDomain(uint256 _id) public view returns (uint256, uint256) {
+    Domain storage d = domains[_id];
+    return (d.skillId, d.potId);
+  }
+
+  function getDomainCount() public view returns (uint256) {
+    return domainCount;
+  }
 }

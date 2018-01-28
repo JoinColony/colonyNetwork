@@ -114,16 +114,38 @@ contract('ColonyNetwork', (accounts) => {
       assert.equal(colonyCount.toNumber(), 7);
     });
 
-    it('when common colony is created, should have the root global skill initialised', async () => {
+    it('when common colony is created, should have the root global and local skills initialised', async () => {
       await colonyNetwork.createColony('Common Colony');
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
-      const rootSkill = await colonyNetwork.getSkill.call(1);
-      assert.equal(rootSkill[0].toNumber(), 0);
-      assert.equal(rootSkill[1].toNumber(), 0);
+      const rootGlobalSkill = await colonyNetwork.getSkill.call(1);
+      assert.equal(rootGlobalSkill[0].toNumber(), 0);
+      assert.equal(rootGlobalSkill[1].toNumber(), 0);
 
-      const globalSkill = await colonyNetwork.isGlobalSkill.call(1);
-      assert.isTrue(globalSkill);
+      const globalSkill1 = await colonyNetwork.isGlobalSkill.call(1);
+      assert.isTrue(globalSkill1);
+
+      const globalSkill2 = await colonyNetwork.isGlobalSkill.call(2);
+      assert.isFalse(globalSkill2);
+    });
+
+    it('when any colony is created, should have the root local skill initialised', async () => {
+      await colonyNetwork.createColony(COLONY_KEY);
+      const rootLocalSkill = await colonyNetwork.getSkill.call(2);
+      assert.equal(rootLocalSkill[0].toNumber(), 0);
+      assert.equal(rootLocalSkill[1].toNumber(), 0);
+
+      const isGlobal = await colonyNetwork.isGlobalSkill.call(2);
+      assert.isFalse(isGlobal);
+
+      const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+      const colony = await Colony.at(colonyAddress);
+      const rootDomain = await colony.getDomain.call(1);
+      assert.equal(rootDomain[0].toNumber(), 1);
+      assert.equal(rootDomain[1].toNumber(), 0);
+
+      const domainCount = await colony.getDomainCount.call();
+      assert.equal(domainCount.toNumber(), 1);
     });
 
     // TODO: Add token initialisation for the common colony

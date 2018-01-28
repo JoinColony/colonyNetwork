@@ -104,7 +104,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     var colony = IColony(etherRouter);
     colony.setToken(token);
-    colony.initialiseColony(this);
     token.setOwner(colony);
 
     var authority = new Authority(colony);
@@ -128,6 +127,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _colonies[_name] = colony;
     _isColony[colony] = true;
 
+    colony.initialiseColony(this);
     ColonyAdded(colonyCount);
   }
 
