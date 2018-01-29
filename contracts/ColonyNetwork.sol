@@ -53,10 +53,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _;
   }
 
-  modifier notGlobalRootSkill(uint256 parentSkillId, bool globalSkill) {
-    if (globalSkill) {
-      require(parentSkillId > 0);
-    }
+  modifier notRootSkill(uint256 parentSkillId) {
+    require(parentSkillId > 0);
     _;
   }
 
@@ -169,11 +167,14 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function addSkill(uint _parentSkillId, bool _globalSkill) public
   skillExists(_parentSkillId)
   allowedToAddSkill(_globalSkill)
-  notGlobalRootSkill(_parentSkillId, _globalSkill)
+  notRootSkill(_parentSkillId)
   {
     skillCount += 1;
 
     Skill storage parentSkill = skills[_parentSkillId];
+
+    // Global and local skill trees are kept separate
+    require(parentSkill.globalSkill == _globalSkill);
 
     Skill memory s;
     s.nParents = parentSkill.nParents + 1;

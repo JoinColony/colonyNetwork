@@ -67,12 +67,6 @@ contract('Common Colony', () => {
       assert.equal(rootSkillChild.toNumber(), 3);
     });
 
-    it('should NOT be able to add a new skill if called by anyone but the common colony', async () => {
-      await testHelper.checkErrorRevert(colonyNetwork.addSkill(0, true));
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 2);
-    });
-
     it('should be able to add multiple child skills to the root global skill', async () => {
       await commonColony.addSkill(1, true);
       await commonColony.addSkill(1, true);
@@ -132,6 +126,12 @@ contract('Common Colony', () => {
       await testHelper.checkErrorRevert(commonColony.addSkill(5, true));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 4);
+    });
+
+    it('should NOT be able to add a child skill to a local skill parent', async () => {
+      await testHelper.checkError(commonColony.addSkill(2, true));
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 2);
     });
 
     it('should be able to add skills in the middle of the skills tree', async () => {
@@ -231,6 +231,13 @@ contract('Common Colony', () => {
       const skill11ParentSkillId4 = await colonyNetwork.getParentSkillId.call(11, 3);
       assert.equal(skill11ParentSkillId4.toNumber(), 3);
     });
+
+    it('should NOT be able to add a new root global skill', async () => {
+      await testHelper.checkError(commonColony.addSkill(0, true));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 2);
+    });
   });
 
   describe('when adding domains in the common colony', () => {
@@ -257,7 +264,7 @@ contract('Common Colony', () => {
 
     it('should NOT be able to add a child local skill more than one level from the root local skill', async () => {
       await commonColony.addDomain(2);
-      testHelper.checkError(commonColony.addDomain(3));
+      await testHelper.checkError(commonColony.addDomain(3));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
@@ -311,12 +318,35 @@ contract('Common Colony', () => {
 
     it('should NOT be able to add a child local skill more than one level from the root local skill', async () => {
       await colony.addDomain(3);
-      testHelper.checkError(colony.addDomain(4));
+      await testHelper.checkError(colony.addDomain(4));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 4);
       const domainCount = await colony.getDomainCount.call();
       assert.equal(domainCount.toNumber(), 2);
+    });
+
+    it('should NOT be able to add a child local skill to a global skill parent', async () => {
+      await testHelper.checkError(colony.addDomain(1));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 3);
+      const domainCount = await colony.getDomainCount.call();
+      assert.equal(domainCount.toNumber(), 1);
+    });
+
+    it('should NOT be able to add a new local skill by anyone but a Colony', async () => {
+      await testHelper.checkError(colony.addSkill(2, false));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 3);
+    });
+
+    it('should NOT be able to add a new root local skill', async () => {
+      await testHelper.checkError(colony.addSkill(0, false));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 3);
     });
   });
 });

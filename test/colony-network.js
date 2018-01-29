@@ -148,8 +148,6 @@ contract('ColonyNetwork', (accounts) => {
       assert.equal(domainCount.toNumber(), 1);
     });
 
-    // TODO: Add token initialisation for the common colony
-
     it('should fail if ETH is sent', async () => {
       try {
         await colonyNetwork.createColony(COLONY_KEY, { value: 1, gas: createColonyGas });
@@ -240,6 +238,25 @@ contract('ColonyNetwork', (accounts) => {
 
       await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT }));
       assert.notEqual(colonyResolver, sampleResolver);
+    });
+  });
+
+  describe('when adding a skill', () => {
+    beforeEach(async () => {
+      await colonyNetwork.createColony('Common Colony');
+    });
+
+    it('should NOT be able to add a new global skill by anyone but the common colony', async () => {
+      await testHelper.checkErrorRevert(colonyNetwork.addSkill(1, true));
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 2);
+    });
+
+    it('should NOT be able to add a new local skill by anyone but a Colony', async () => {
+      await testHelper.checkError(colonyNetwork.addSkill(2, false));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 2);
     });
   });
 });

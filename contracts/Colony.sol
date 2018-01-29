@@ -66,19 +66,23 @@ contract Colony is ColonyStorage {
     return token.mint(_wad);
   }
 
-  function addSkill(uint _parentSkillId, bool _globalSkill) public {
+  function addSkill(uint _parentSkillId, bool _globalSkill) public 
+  selfOrCommonColony
+  {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     return colonyNetwork.addSkill(_parentSkillId, _globalSkill);
   }
 
-  function addDomain(uint256 _parentSkillId) public {
+  function addDomain(uint256 _parentSkillId) public 
+  localSkill(_parentSkillId)
+  {
     // Get the local skill id of the root domain
     // TODO remove that when we start allowing more domain hierarchy levels
     // Instead check that the parent skill id belongs to this colony own domain 
     uint256 rootDomainSkillId = domains[1].skillId;
     require(_parentSkillId == rootDomainSkillId);
 
-    addSkill(_parentSkillId, false);
+    this.addSkill(_parentSkillId, false);
     
     // Get new local skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
