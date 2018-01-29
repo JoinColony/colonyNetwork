@@ -77,7 +77,7 @@ contract ColonyStorage is DSAuth {
     uint potId;
     uint deliverableTimestamp;
     uint domainId;
-    uint[] skillIds;
+    uint[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
     mapping (uint => Role) roles; 

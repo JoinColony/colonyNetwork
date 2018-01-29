@@ -123,7 +123,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   {
     taskCount += 1;
     potCount += 1;
-    uint[] memory _skillIds = new uint[](1);
+    uint[] memory _skills = new uint[](1);
     
     tasks[taskCount] = Task({
       specificationHash: _specificationHash,
@@ -135,7 +135,7 @@ contract ColonyTask is ColonyStorage, DSMath {
       potId: potCount,
       deliverableTimestamp: 0,
       domainId: 0,
-      skillIds: _skillIds
+      skills: _skills
     });
 
     tasks[taskCount].roles[MANAGER] = Role({
@@ -258,7 +258,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   skillExists(_skillId)
   globalSkill(_skillId)
   {
-    tasks[_id].skillIds[0] = _skillId;
+    tasks[_id].skills[0] = _skillId;
   }
 
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
@@ -301,7 +301,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     task.finalized = true;
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    uint skillId = task.skillIds[0];
+    uint skillId = task.skills[0];
 
     uint managerPayout = task.payouts[MANAGER][token];
     uint workerPayout = task.payouts[WORKER][token];
