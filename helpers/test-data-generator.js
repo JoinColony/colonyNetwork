@@ -22,12 +22,16 @@ module.exports = {
   async setupAssignedTask(
     colonyNetwork,
     colony,
-    dueDate = testHelper.currentBlockTime(),
+    dueDate,
     domain = 1,
     skill = 0,
     evaluator = EVALUATOR,
     worker = WORKER
   ) {
+    let dueDateTimestamp = dueDate;
+    if (!dueDateTimestamp) {
+      dueDateTimestamp = await testHelper.currentBlockTime();
+    }
     await colony.makeTask(SPECIFICATION_HASH, domain);
     let taskId = await colony.getTaskCount.call();
     taskId = taskId.toNumber();
@@ -41,7 +45,7 @@ module.exports = {
     }
     await colony.setTaskRoleUser(taskId, EVALUATOR_ROLE, evaluator);
     await colony.setTaskRoleUser(taskId, WORKER_ROLE, worker);
-    const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDate);
+    const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDateTimestamp);
     await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
     const transactionId = await colony.getTransactionCount.call();
     await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });

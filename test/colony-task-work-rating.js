@@ -49,12 +49,13 @@ contract("Colony Task Work Rating", () => {
 
   describe("when rating task work", () => {
     it("should allow rating, before the due date but after the work has been submitted", async () => {
-      const dueDate = testHelper.currentBlockTime() + SECONDS_PER_DAY * 7;
+      let dueDate = await testHelper.currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
       const taskId = await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
       await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
 
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
-      const currentTime1 = testHelper.currentBlockTime();
+      const currentTime1 = await testHelper.currentBlockTime();
       const rating1 = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(rating1[0], 1);
       assert.closeTo(rating1[1].toNumber(), currentTime1, 2);
@@ -62,7 +63,7 @@ contract("Colony Task Work Rating", () => {
       assert.equal(ratingSecret1, RATING_2_SECRET);
 
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
-      const currentTime2 = testHelper.currentBlockTime();
+      const currentTime2 = await testHelper.currentBlockTime();
       const rating2 = await colony.getTaskWorkRatings.call(taskId);
       assert.equal(rating2[0].toNumber(), 2);
       assert.closeTo(rating2[1].toNumber(), currentTime2, 2);
@@ -82,7 +83,8 @@ contract("Colony Task Work Rating", () => {
     });
 
     it("should fail if I try to rate before task's due date has passed and work has not been submitted", async () => {
-      const dueDate = testHelper.currentBlockTime() + SECONDS_PER_DAY * 7;
+      let dueDate = await testHelper.currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
       const taskId = await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
       await testHelper.checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
       const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
@@ -144,7 +146,8 @@ contract("Colony Task Work Rating", () => {
     });
 
     it("should allow revealing a rating from the evaluator after the 5 days wait for rating commits expires", async () => {
-      const dueDate = testHelper.currentBlockTime() + SECONDS_PER_DAY * 8;
+      let dueDate = await testHelper.currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 8;
       const taskId = await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
       await colony.submitTaskWorkRating(1, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });

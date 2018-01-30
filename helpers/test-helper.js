@@ -116,7 +116,15 @@ module.exports = {
     return web3.toAscii(text).replace(/\u0000/g, "");
   },
   currentBlockTime() {
-    return web3.eth.getBlock("latest").timestamp;
+    const p = new Promise((resolve, reject) => {
+      web3.eth.getBlock("latest", (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(res.timestamp);
+      });
+    });
+    return p;
   },
   async expectEvent(tx, eventName) {
     const { logs } = await tx;
