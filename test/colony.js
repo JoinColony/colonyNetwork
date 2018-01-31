@@ -247,7 +247,7 @@ contract('Colony', () => {
 
     it('should fail to submit update of task brief, if the task was already finalized', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await colony.finalizeTask(taskId);
 
       const txData = await colony.contract.setTaskBrief.getData(taskId, SPECIFICATION_HASH_UPDATED);
@@ -277,7 +277,7 @@ contract('Colony', () => {
   describe('when submitting task deliverable', () => {
     it('should update task', async () => {
       const dueDate = testHelper.currentBlockTime() + (SECONDS_PER_DAY * 4);
-      await testDataGenerator.setupAssignedTask(colony, dueDate);
+      await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
 
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), '');
@@ -291,14 +291,14 @@ contract('Colony', () => {
 
     it('should fail if I try to submit work for a task that is finalized', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH));
     });
 
     it('should fail if I try to submit work for a task that is past its due date', async () => {
       const dueDate = testHelper.currentBlockTime() - 1;
-      await testDataGenerator.setupAssignedTask(colony, dueDate);
+      await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, DELIVERABLE_HASH));
     });
 
@@ -308,7 +308,7 @@ contract('Colony', () => {
 
     it('should fail if I try to submit work twice', async () => {
       const dueDate = testHelper.currentBlockTime() + (SECONDS_PER_DAY * 4);
-      await testDataGenerator.setupAssignedTask(colony, dueDate);
+      await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
 
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: WORKER }));
@@ -318,7 +318,7 @@ contract('Colony', () => {
 
     it('should fail if I try to submit work if I\'m not the assigned worker', async () => {
       const dueDate = testHelper.currentBlockTime() + (SECONDS_PER_DAY * 4);
-      await testDataGenerator.setupAssignedTask(colony, dueDate);
+      await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
 
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }));
       const task = await colony.getTask.call(1);
@@ -329,7 +329,7 @@ contract('Colony', () => {
   describe('when accepting a task', () => {
     it('should set the task "finalized" property to "true"', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await colony.finalizeTask(taskId);
       const task = await colony.getTask.call(taskId);
       assert.isTrue(task[2]);
@@ -337,26 +337,26 @@ contract('Colony', () => {
 
     it('should fail if the task work ratings have not been assigned', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupFundedTask(colony, token);
+      const taskId = await testDataGenerator.setupFundedTask(colonyNetwork, colony, token);
       await testHelper.checkErrorRevert(colony.finalizeTask(taskId));
     });
 
     it('should fail if a non-admin tries to accept the task', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await testHelper.checkErrorRevert(colony.finalizeTask(taskId, { from: OTHER }));
     });
 
     it('should fail if I try to accept a task that was finalized before', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.finalizeTask(taskId));
     });
 
     it('should fail if I try to accept a task using an invalid id', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      await testDataGenerator.setupRatedTask(colony, token);
+      await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await testHelper.checkErrorRevert(colony.finalizeTask(10));
     });
   });
@@ -364,7 +364,7 @@ contract('Colony', () => {
   describe('when cancelling a task', () => {
     it('should set the task "cancelled" property to "true"', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
 
       await colony.cancelTask(taskId);
       const task = await colony.getTask.call(taskId);
@@ -373,7 +373,7 @@ contract('Colony', () => {
 
     it('should fail if manager tries to cancel a task that was finalized', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.cancelTask(taskId));
     });
@@ -427,7 +427,7 @@ contract('Colony', () => {
   describe('when claiming payout for a task', () => {
     it('should payout agreed tokens for a task', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await colony.finalizeTask(taskId);
       const networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
@@ -443,7 +443,18 @@ contract('Colony', () => {
       await colony.send(303);
       await colony.claimColonyFunds(0x0);
       const dueDate = testHelper.currentBlockTime() - 1;
-      const taskId = await testDataGenerator.setupRatedTask(colony, 0x0, dueDate, undefined, undefined, 100, 200);
+      const taskId = await testDataGenerator.setupRatedTask(
+        colonyNetwork,
+        colony,
+        0x0,
+        dueDate,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        100,
+        200,
+      );
       await colony.finalizeTask(taskId);
       const commonColonyAddress = await colonyNetwork.getColony.call('Common Colony');
       const balanceBefore = await testHelper.web3GetBalance(MANAGER);
@@ -459,13 +470,13 @@ contract('Colony', () => {
 
     it('should return error when task is not finalized', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await testHelper.checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address));
     });
 
     it('should return error when called by account that doesn\'t match the role', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
-      const taskId = await testDataGenerator.setupRatedTask(colony, token);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       await colony.finalizeTask(taskId);
 
       await testHelper.checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }));

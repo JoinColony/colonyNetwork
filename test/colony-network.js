@@ -38,7 +38,7 @@ contract('ColonyNetwork', (accounts) => {
     colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
     const etherRouter = await EtherRouter.new();
-    etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+    await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
   });
@@ -127,6 +127,9 @@ contract('ColonyNetwork', (accounts) => {
 
       const globalSkill2 = await colonyNetwork.isGlobalSkill.call(2);
       assert.isFalse(globalSkill2);
+
+      const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId.call();
+      assert.equal(rootGlobalSkillId, 1);
     });
 
     it('when any colony is created, should have the root local skill initialised', async () => {

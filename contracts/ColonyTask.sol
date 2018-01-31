@@ -36,12 +36,6 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   event TaskAdded(uint256 indexed id);
 
-  modifier skillExists(uint256 _skillId){
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(_skillId < colonyNetworkContract.getSkillCount());
-    _;
-  }
-
   modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
     Role storage role = tasks[_id].roles[_role];
     require(msg.sender == role.user);
@@ -123,36 +117,28 @@ contract ColonyTask is ColonyStorage, DSMath {
   {
     taskCount += 1;
     potCount += 1;
-    uint[] memory _skills = new uint[](1);
-    
-    tasks[taskCount] = Task({
-      specificationHash: _specificationHash,
-      deliverableHash: "",
-      finalized: false,
-      cancelled: false,
-      dueDate: 0,
-      payoutsWeCannotMake: 0,
-      potId: potCount,
-      deliverableTimestamp: 0,
-      domainId: 0,
-      skills: _skills
-    });
 
+    Task memory task;
+    task.specificationHash = _specificationHash;
+    task.potId = potCount;
+    task.domains = new uint[](1);
+    task.skills = new uint[](1);
+    tasks[taskCount] = task;
     tasks[taskCount].roles[MANAGER] = Role({
       user: msg.sender,
       rated: false,
       rating: 0
     });
-
+    
     pots[potCount].taskId = taskCount;
     TaskAdded(taskCount);
   }
 
-  function getTaskCount() public view returns (uint) {
+  function getTaskCount() public view returns (uint256) {
     return taskCount;
   }
 
-  function proposeTaskChange(bytes _data, uint _value, uint8 _role) public returns (uint transactionId) {
+  function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public returns (uint256 transactionId) {
     var (sig, taskId) = deconstructCall(_data);
 
     Task storage task = tasks[taskId];
@@ -166,7 +152,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     transactionId = IColony(this).submitTransaction(_data, _value, _role);
   }
 
-  function approveTaskChange(uint _transactionId, uint8 _role) public {
+  function approveTaskChange(uint256 _transactionId, uint8 _role) public {
     Transaction storage _transaction = transactions[_transactionId];
     bytes memory _data = _transaction.data;
     var (sig, taskId) = deconstructCall(_data);
@@ -182,7 +168,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     IColony(this).confirmTransaction(_transactionId, _role);
   }
 
-  function submitTaskWorkRating(uint _id, uint8 _role, bytes32 _ratingSecret) public 
+  function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public 
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
   taskWorkRatingCommitOpen(_id)
@@ -193,7 +179,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     ratingSecrets.secret[_role] = _ratingSecret;
   }
 
-  function revealTaskWorkRating(uint _id, uint8 _role, uint8 _rating, bytes32 _salt) public 
+  function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public 
   taskWorkRatingRevealOpen(_id)
   {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
@@ -207,7 +193,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   // In the event of a user not committing or revealing within the 10 day rating window, 
   // their rating of their counterpart is assumed to be the highest possible 
   // and their own rating is decreased by 5 (e.g. 0.5 points)
-  function assignWorkRating(uint _id) public
+  function assignWorkRating(uint256 _id) public
   taskWorkRatingsClosed(_id)
   {
     Role storage managerRole = tasks[_id].roles[MANAGER];
@@ -229,11 +215,11 @@ contract ColonyTask is ColonyStorage, DSMath {
     return keccak256(_salt, _value);
   }
 
-  function getTaskWorkRatings(uint _id) public view returns (uint256, uint256) {
+  function getTaskWorkRatings(uint256 _id) public view returns (uint256, uint256) {
     return (taskWorkRatings[_id].count, taskWorkRatings[_id].timestamp);
   }
 
-  function getTaskWorkRatingSecret(uint _id, uint8 _role) public view returns (bytes32) {
+  function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32) {
     return taskWorkRatings[_id].secret[_role];
   }
 
@@ -250,9 +236,17 @@ contract ColonyTask is ColonyStorage, DSMath {
     });
   }
 
+  function setTaskDomain(uint256 _id, uint256 _domainId) public
+  taskExists(_id)
+  taskNotFinalized(_id)
+  domainExists(_domainId)
+  {
+    tasks[_id].domains[0] = _domainId;
+  }
+
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
   // Maybe just the administrator is adequate for the skill?
-  function setTaskSkill(uint _id, uint _skillId) public
+  function setTaskSkill(uint256 _id, uint256 _skillId) public
   taskExists(_id)
   taskNotFinalized(_id)
   skillExists(_skillId)
@@ -326,16 +320,22 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].cancelled = true;
   }
 
-  function getTask(uint256 _id) public view
-  returns (bytes32, bytes32, bool, bool, uint, uint, uint, uint, uint)
-  {
+  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256) {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId);
+    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp);
   }
 
-  function getTaskRole(uint _id, uint8 _role) public view returns (address, bool, uint8) {
-    Role storage role = tasks[_id].roles[_role];
+  function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8) {
+    Role storage role = tasks[_id].roles[_idx];
     return (role.user, role.rated, role.rating);
+  }
+
+  function getTaskSkill(uint256 _id, uint256 _idx) public view returns (uint256) {
+    return tasks[_id].skills[_idx];
+  }
+
+  function getTaskDomain(uint256 _id, uint256 _idx) public view returns (uint256) {
+    return tasks[_id].domains[_idx];
   }
 
   // Get the function signature and task id from the transaction bytes data

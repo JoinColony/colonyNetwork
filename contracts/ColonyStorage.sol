@@ -72,12 +72,12 @@ contract ColonyStorage is DSAuth {
     bytes32 deliverableHash;
     bool finalized;
     bool cancelled;
-    uint dueDate;
-    uint payoutsWeCannotMake;
-    uint potId;
-    uint deliverableTimestamp;
-    uint domainId;
-    uint[] skills;
+    uint256 dueDate;
+    uint256 payoutsWeCannotMake;
+    uint256 potId;
+    uint256 deliverableTimestamp;
+    uint256[] domains;
+    uint256[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
     mapping (uint => Role) roles; 
@@ -136,6 +136,17 @@ contract ColonyStorage is DSAuth {
   modifier localSkill(uint256 _skillId) {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     require(!colonyNetworkContract.isGlobalSkill(_skillId));
+    _;
+  }
+
+  modifier skillExists(uint256 _skillId) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(_skillId <= colonyNetworkContract.getSkillCount());
+    _;
+  }
+
+  modifier domainExists(uint256 _domainId) {
+    require(_domainId <= domainCount);
     _;
   }
 

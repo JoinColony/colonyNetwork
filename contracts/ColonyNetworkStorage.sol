@@ -52,6 +52,7 @@ contract ColonyNetworkStorage is DSAuth {
   }
   mapping (uint => Skill) skills;
   uint256 skillCount;
+  uint256 rootGlobalSkillId;
 
   struct ReputationLogEntry {
     address user;

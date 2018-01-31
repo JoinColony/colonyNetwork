@@ -26,21 +26,21 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyFunding is ColonyStorage, DSMath {
-  function getFeeInverse() public pure returns (uint) {
+  function getFeeInverse() public pure returns (uint256) {
     // Return 1 / the fee to pay to the network.
     // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: refer to ColonyNetwork
     return 100;
   }
 
-  function getRewardInverse() public pure returns (uint) {
+  function getRewardInverse() public pure returns (uint256) {
     // Return 1 / the reward to pay out from revenue.
     // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: Make settable by colony
     return 100;
   }
 
-  function setTaskPayout(uint _id, uint _role, address _token, uint _amount) public
+  function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) public
   self()
   taskExists(_id)
   taskNotFinalized(_id)
@@ -55,14 +55,14 @@ contract ColonyFunding is ColonyStorage, DSMath {
   }
 
   // To get all payouts for a task iterate over roles.length
-  function getTaskPayout(uint _id, uint _role, address _token) public view
-  returns (uint)
+  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view
+  returns (uint256)
   {
     Task storage task = tasks[_id];
     return task.payouts[_role][_token];
   }
 
-  function claimPayout(uint _id, uint _role, address _token) public
+  function claimPayout(uint256 _id, uint256 _role, address _token) public
   taskFinalized(_id)
   {
     Task storage task = tasks[_id];
@@ -95,7 +95,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
     return pots[_potId].balance[_token];
   }
 
-  function moveFundsBetweenPots(uint _fromPot, uint _toPot, uint _amount, address _token) public
+  function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
   auth
   {
     // Prevent people moving funds from the pot for paying out token holders
@@ -142,7 +142,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
     pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
   }
 
-  function getNonRewardPotsTotal(address a) public view returns (uint) {
+  function getNonRewardPotsTotal(address a) public view returns (uint256) {
     return nonRewardPotsTotal[a];
   }
 

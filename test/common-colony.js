@@ -1,5 +1,7 @@
 /* globals artifacts */
+import { SPECIFICATION_HASH } from '../helpers/constants';
 import testHelper from '../helpers/test-helper';
+import testDataGenerator from '../helpers/test-data-generator';
 
 const upgradableContracts = require('../helpers/upgradable-contracts');
 
@@ -10,12 +12,14 @@ const IColonyNetwork = artifacts.require('IColonyNetwork');
 const IColony = artifacts.require('IColony');
 const ColonyFunding = artifacts.require('ColonyFunding');
 const ColonyTask = artifacts.require('ColonyTask');
+const Token = artifacts.require('Token');
 const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
 
 contract('Common Colony', () => {
-  const COMMON_COLONY_KEY = 'Common Colony';
+  let COLONY_KEY;
   let commonColony;
   let colony;
+  let token;
   let colonyNetwork;
   let resolverColonyNetworkDeployed;
 
@@ -29,21 +33,19 @@ contract('Common Colony', () => {
     const colonyTask = await ColonyTask.new();
     const colonyTransactionReviewer = await ColonyTransactionReviewer.new();
     const resolver = await Resolver.new();
-
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(
       colonyTemplate,
-      colonyFunding,
       colonyTask,
+      colonyFunding,
       colonyTransactionReviewer,
       resolver,
       colonyNetwork,
     );
-
-    await colonyNetwork.createColony(COMMON_COLONY_KEY);
-    const commonColonyAddress = await colonyNetwork.getColony.call(COMMON_COLONY_KEY);
+    await colonyNetwork.createColony('Common Colony');
+    const commonColonyAddress = await colonyNetwork.getColony.call('Common Colony');
     commonColony = await IColony.at(commonColonyAddress);
   });
 
@@ -249,8 +251,8 @@ contract('Common Colony', () => {
       const domainCount = await commonColony.getDomainCount.call();
       assert.equal(domainCount.toNumber(), 2);
 
-      const newDomain = await commonColony.getDomain.call(2);
-      assert.equal(newDomain[0].toNumber(), 3);
+      const newDomain = await commonColony.getDomain.call(1);
+      assert.equal(newDomain[0].toNumber(), 2);
       assert.equal(newDomain[1].toNumber(), 0);
 
       // Check root local skill.nChildren is now 1
@@ -275,10 +277,12 @@ contract('Common Colony', () => {
 
   describe('when adding domains in a regular colony', () => {
     beforeEach(async () => {
-      const COLONY_KEY = testHelper.getRandomString(7);
+      COLONY_KEY = testHelper.getRandomString(7);
       await colonyNetwork.createColony(COLONY_KEY);
-      const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
-      colony = await IColony.at(colonyAddress);
+      const address = await colonyNetwork.getColony.call(COLONY_KEY);
+      colony = await IColony.at(address);
+      const tokenAddress = await colony.getToken.call();
+      token = await Token.at(tokenAddress);
     });
 
     it('should be able to add new domains as children to the root domain', async () => {
@@ -291,16 +295,16 @@ contract('Common Colony', () => {
       const domainCount = await colony.getDomainCount.call();
       assert.equal(domainCount.toNumber(), 4);
 
-      const newDomain1 = await colony.getDomain.call(2);
-      assert.equal(newDomain1[0].toNumber(), 4);
+      const newDomain1 = await colony.getDomain.call(1);
+      assert.equal(newDomain1[0].toNumber(), 3);
       assert.equal(newDomain1[1].toNumber(), 0);
 
-      const newDomain2 = await colony.getDomain.call(3);
-      assert.equal(newDomain2[0].toNumber(), 5);
+      const newDomain2 = await colony.getDomain.call(2);
+      assert.equal(newDomain2[0].toNumber(), 4);
       assert.equal(newDomain2[1].toNumber(), 0);
 
-      const newDomain3 = await colony.getDomain.call(4);
-      assert.equal(newDomain3[0].toNumber(), 6);
+      const newDomain3 = await colony.getDomain.call(3);
+      assert.equal(newDomain3[0].toNumber(), 5);
       assert.equal(newDomain3[1].toNumber(), 0);
 
       // Check root local skill.nChildren is now 3
@@ -347,6 +351,80 @@ contract('Common Colony', () => {
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
+    });
+  });
+
+  describe('when setting domain and skill on task', () => {
+    beforeEach(async () => {
+      COLONY_KEY = testHelper.getRandomString(7);
+      await colonyNetwork.createColony(COLONY_KEY);
+      const address = await colonyNetwork.getColony.call(COLONY_KEY);
+      colony = await IColony.at(address);
+      const tokenAddress = await colony.getToken.call();
+      token = await Token.at(tokenAddress);
+    });
+
+    it('should be able to set domain on task', async () => {
+      await colony.addDomain(3);
+      await colony.makeTask(SPECIFICATION_HASH);
+      await colony.setTaskDomain(1, 2);
+      const taskDomain = await colony.getTaskDomain.call(1, 0);
+      assert.equal(taskDomain.toNumber(), 2);
+    });
+
+    it('should NOT be able to set a domain on nonexistent task', async () => {
+      await testHelper.checkError(colony.setTaskDomain(10, 3));
+    });
+
+    it('should NOT be able to set a nonexistent domain on task', async () => {
+      await colony.makeTask(SPECIFICATION_HASH);
+      await testHelper.checkError(colony.setTaskDomain(1, 20));
+
+      const taskDomain = await colony.getTaskDomain.call(1, 0);
+      assert.equal(taskDomain.toNumber(), 0);
+    });
+
+    it('should NOT be able to set a domain on finalized task', async () => {
+      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony);
+      await colony.finalizeTask(taskId);
+      await testHelper.checkError(colony.setTaskDomain(taskId, 1));
+    });
+
+    it('should be able to set global skill on task', async () => {
+      await commonColony.addSkill(1, true);
+      await commonColony.addSkill(4, true);
+
+      await colony.makeTask(SPECIFICATION_HASH);
+      await colony.setTaskSkill(1, 5);
+      const taskSkill = await colony.getTaskSkill.call(1, 0);
+      assert.equal(taskSkill.toNumber(), 5);
+    });
+
+    it('should NOT be able to set global skill on nonexistent task', async () => {
+      await testHelper.checkError(colony.setTaskSkill(10, 1));
+    });
+
+    it('should NOT be able to set global skill on finalized task', async () => {
+      await commonColony.addSkill(1, true);
+      await commonColony.addSkill(4, true);
+      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony);
+      await colony.finalizeTask(taskId);
+      await testHelper.checkError(colony.setTaskSkill(taskId, 5));
+
+      const taskSkill = await colony.getTaskSkill.call(taskId, 0);
+      assert.equal(taskSkill.toNumber(), 1);
+    });
+
+    it('should NOT be able to set nonexistent skill on task', async () => {
+      await colony.makeTask(SPECIFICATION_HASH);
+      await testHelper.checkError(colony.setTaskSkill(1, 5));
+    });
+
+    it('should NOT be able to set local skill on task', async () => {
+      await colony.makeTask(SPECIFICATION_HASH);
+      await testHelper.checkError(colony.setTaskSkill(1, 3));
     });
   });
 });

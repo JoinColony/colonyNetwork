@@ -75,6 +75,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skillCount;
   }
 
+  function getRootGlobalSkillId() public view returns (uint256) {
+    return rootGlobalSkillId;
+  }
+
   function getColonyVersionResolver(uint256 _version) public view returns (address) {
     return colonyVersionResolver[_version];
   }
@@ -116,6 +120,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
       Skill memory rootGlobalSkill;
       rootGlobalSkill.globalSkill = true;
       skills[skillCount] = rootGlobalSkill;
+      rootGlobalSkillId = skillCount;
     }
 
     // For all colonies intiialise the root (domain) local skill with defaults by just incrementing the skillCount

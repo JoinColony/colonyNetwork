@@ -51,13 +51,13 @@ contract Colony is ColonyStorage {
     IColony(this).setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
 
     // Initialise the root domain
+    domainCount += 1;
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 rootLocalSkill = colonyNetwork.getSkillCount();
     domains[1] = Domain({
       skillId: rootLocalSkill,
       potId: 0
     });
-    domainCount += 1;
   }
 
   function mintTokens(uint _wad) public
@@ -76,9 +76,9 @@ contract Colony is ColonyStorage {
   function addDomain(uint256 _parentSkillId) public 
   localSkill(_parentSkillId)
   {
+    // Note: remove that when we start allowing more domain hierarchy levels
+    // Instead check that the parent skill id belongs to this colony own domain
     // Get the local skill id of the root domain
-    // TODO remove that when we start allowing more domain hierarchy levels
-    // Instead check that the parent skill id belongs to this colony own domain 
     uint256 rootDomainSkillId = domains[1].skillId;
     require(_parentSkillId == rootDomainSkillId);
 
@@ -88,8 +88,8 @@ contract Colony is ColonyStorage {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 newLocalSkill = colonyNetwork.getSkillCount();
 
-    domainCount += 1;
     // Add domain to local mapping
+    domainCount += 1;
     domains[domainCount] = Domain({
       skillId: newLocalSkill,
       potId: 0
