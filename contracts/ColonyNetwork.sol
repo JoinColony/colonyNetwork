@@ -53,7 +53,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _;
   }
 
-  modifier notRootSkill(uint256 parentSkillId) {
+  modifier nonZero(uint256 parentSkillId) {
     require(parentSkillId > 0);
     _;
   }
@@ -123,7 +123,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
       rootGlobalSkillId = skillCount;
     }
 
-    // For all colonies intiialise the root (domain) local skill with defaults by just incrementing the skillCount
+    // For all colonies initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
@@ -172,7 +172,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function addSkill(uint _parentSkillId, bool _globalSkill) public
   skillExists(_parentSkillId)
   allowedToAddSkill(_globalSkill)
-  notRootSkill(_parentSkillId)
+  nonZero(_parentSkillId)
+  returns (uint256)
   {
     skillCount += 1;
 
@@ -218,6 +219,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
 
     SkillAdded(skillCount, _parentSkillId);
+    return skillCount;
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {

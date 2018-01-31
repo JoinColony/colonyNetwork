@@ -253,7 +253,7 @@ contract('Common Colony', () => {
 
       const newDomain = await commonColony.getDomain.call(1);
       assert.equal(newDomain[0].toNumber(), 2);
-      assert.equal(newDomain[1].toNumber(), 0);
+      assert.equal(newDomain[1].toNumber(), 1);
 
       // Check root local skill.nChildren is now 1
       const rootLocalSkill = await colonyNetwork.getSkill.call(2);
@@ -297,7 +297,7 @@ contract('Common Colony', () => {
 
       const newDomain1 = await colony.getDomain.call(1);
       assert.equal(newDomain1[0].toNumber(), 3);
-      assert.equal(newDomain1[1].toNumber(), 0);
+      assert.equal(newDomain1[1].toNumber(), 1);
 
       const newDomain2 = await colony.getDomain.call(2);
       assert.equal(newDomain2[0].toNumber(), 4);

@@ -56,7 +56,7 @@ contract Colony is ColonyStorage {
     uint256 rootLocalSkill = colonyNetwork.getSkillCount();
     domains[1] = Domain({
       skillId: rootLocalSkill,
-      potId: 0
+      potId: 1
     });
   }
 
@@ -68,6 +68,7 @@ contract Colony is ColonyStorage {
 
   function addSkill(uint _parentSkillId, bool _globalSkill) public 
   selfOrCommonColony
+  returns (uint256) 
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     return colonyNetwork.addSkill(_parentSkillId, _globalSkill);
@@ -82,12 +83,10 @@ contract Colony is ColonyStorage {
     uint256 rootDomainSkillId = domains[1].skillId;
     require(_parentSkillId == rootDomainSkillId);
 
-    this.addSkill(_parentSkillId, false);
-    
-    // Get new local skill
+    // Setup new local skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    uint256 newLocalSkill = colonyNetwork.getSkillCount();
-
+    uint256 newLocalSkill = colonyNetwork.addSkill(_parentSkillId, false);
+    
     // Add domain to local mapping
     domainCount += 1;
     domains[domainCount] = Domain({

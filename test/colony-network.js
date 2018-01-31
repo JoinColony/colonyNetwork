@@ -134,7 +134,7 @@ contract('ColonyNetwork', (accounts) => {
 
     it('when any colony is created, should have the root local skill initialised', async () => {
       await colonyNetwork.createColony(COLONY_KEY);
-      const rootLocalSkill = await colonyNetwork.getSkill.call(2);
+      const rootLocalSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(rootLocalSkill[0].toNumber(), 0);
       assert.equal(rootLocalSkill[1].toNumber(), 0);
 
@@ -145,7 +145,7 @@ contract('ColonyNetwork', (accounts) => {
       const colony = await Colony.at(colonyAddress);
       const rootDomain = await colony.getDomain.call(1);
       assert.equal(rootDomain[0].toNumber(), 1);
-      assert.equal(rootDomain[1].toNumber(), 0);
+      assert.equal(rootDomain[1].toNumber(), 1);
 
       const domainCount = await colony.getDomainCount.call();
       assert.equal(domainCount.toNumber(), 1);
