@@ -165,7 +165,8 @@ contract("all", () => {
       approveTaskChangeCost = tx.receipt.gasUsed;
       console.log("approveTaskChange actual cost :", approveTaskChangeCost);
 
-      const dueDate = testHelper.currentBlockTime() + SECONDS_PER_DAY * 5;
+      let dueDate = await testHelper.currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 5;
       txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
       transactionId = await colony.getTransactionCount.call();
