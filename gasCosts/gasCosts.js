@@ -88,9 +88,9 @@ contract('all', () => {
 
     it('when working with a Colony', async () => {
       // makeTask
-      let estimate = await colony.makeTask.estimateGas(SPECIFICATION_HASH);
+      let estimate = await colony.makeTask.estimateGas(SPECIFICATION_HASH, 1);
       console.log('makeTask estimate : ', estimate);
-      let tx = await colony.makeTask(SPECIFICATION_HASH, { gasPrice });
+      let tx = await colony.makeTask(SPECIFICATION_HASH, 1, { gasPrice });
       makeTaskCost = tx.receipt.gasUsed;
       console.log('makeTask actual cost :', makeTaskCost);
 

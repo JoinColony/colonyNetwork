@@ -37,7 +37,7 @@ contract IColony {
   function getDomainCount() public view returns (uint256);
 
   // ColonyTask
-  function makeTask(bytes32 _specificationHash) public;
+  function makeTask(bytes32 _specificationHash, uint256 _domainId) public;
   function getTaskCount() public view returns (uint256);
   function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public returns (uint256 transactionId);
   function approveTaskChange(uint256 _transactionId, uint8 _role) public;

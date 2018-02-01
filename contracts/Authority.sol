@@ -27,7 +27,7 @@ contract Authority is DSRoles {
   uint8 admin_role = 1;
 
   function Authority(address colony) public {
-    bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32)"));
+    bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32,uint256)"));
     setRoleCapability(owner_role, colony, makeTaskSig, true);
     setRoleCapability(admin_role, colony, makeTaskSig, true);
 

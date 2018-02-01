@@ -49,8 +49,8 @@ contract('Colony contract upgrade', (accounts) => {
     token = await Token.at(tokenAddress);
 
     await authority.setUserRole(ACCOUNT_TWO, 0, true);
-    await colony.makeTask(specificationHash);
-    await colony.makeTask(newSpecificationHash);
+    await colony.makeTask(specificationHash, 1);
+    await colony.makeTask(newSpecificationHash, 1);
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();

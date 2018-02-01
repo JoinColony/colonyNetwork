@@ -112,8 +112,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     _;
   }
 
-  function makeTask(bytes32 _specificationHash) public
+  function makeTask(bytes32 _specificationHash, uint256 _domainId) public
   auth
+  domainExists(_domainId)
   {
     taskCount += 1;
     potCount += 1;
@@ -131,6 +132,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     });
     
     pots[potCount].taskId = taskCount;
+    setTaskDomain(taskCount, _domainId);
+    
     TaskAdded(taskCount);
   }
 

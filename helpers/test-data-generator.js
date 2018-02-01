@@ -24,7 +24,7 @@ module.exports = {
     evaluator = EVALUATOR,
     worker = WORKER,
   ) {
-    await colony.makeTask(SPECIFICATION_HASH);
+    await colony.makeTask(SPECIFICATION_HASH, 1);
     let taskId = await colony.getTaskCount.call();
     taskId = taskId.toNumber();
     await colony.setTaskDomain(taskId, domain);
