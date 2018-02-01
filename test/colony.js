@@ -333,7 +333,7 @@ contract('Colony', () => {
     });
   });
 
-  describe('when accepting a task', () => {
+  describe('when finalizing a task', () => {
     it('should set the task "finalized" property to "true"', async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
