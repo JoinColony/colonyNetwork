@@ -2,5 +2,5 @@
 Closes #[GH issue]
 Implements [X] part for #[GH issue]
 
-<!--- Summary of changes inluding design decisions -->
+<!--- Summary of changes including design decisions -->
 
