@@ -301,11 +301,11 @@ contract('Common Colony', () => {
 
       const newDomain2 = await colony.getDomain.call(2);
       assert.equal(newDomain2[0].toNumber(), 4);
-      assert.equal(newDomain2[1].toNumber(), 0);
+      assert.equal(newDomain2[1].toNumber(), 2);
 
       const newDomain3 = await colony.getDomain.call(3);
       assert.equal(newDomain3[0].toNumber(), 5);
-      assert.equal(newDomain3[1].toNumber(), 0);
+      assert.equal(newDomain3[1].toNumber(), 3);
 
       // Check root local skill.nChildren is now 3
       const rootLocalSkill = await colonyNetwork.getSkill.call(3);

@@ -89,9 +89,10 @@ contract Colony is ColonyStorage {
     
     // Add domain to local mapping
     domainCount += 1;
+    potCount += 1;
     domains[domainCount] = Domain({
       skillId: newLocalSkill,
-      potId: 0
+      potId: potCount
     });
   }
 

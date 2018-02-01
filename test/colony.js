@@ -147,7 +147,8 @@ contract('Colony', () => {
     });
 
     it('should set the task domain correctly', async () => {
-      await colony.addDomain(3);
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      await colony.addDomain(skillCount.toNumber());
       await colony.makeTask(SPECIFICATION_HASH, 2);
       const taskDomain = await colony.getTaskDomain.call(1, 0);
       assert.equal(taskDomain.toNumber(), 2);
