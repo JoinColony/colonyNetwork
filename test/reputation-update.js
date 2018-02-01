@@ -1,5 +1,5 @@
 /* globals artifacts */
-import BigNumber from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 
 import { MANAGER,
   WORKER,
@@ -136,7 +136,7 @@ contract('Colony Reputation Updates', () => {
 
         const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0);
         assert.equal(repLogEntryManager[0], MANAGER);
-        assert.equal(repLogEntryManager[1].toNumber(), rating.reputationChangeFactorManager.mul(100).toNumber());
+        assert.equal(repLogEntryManager[1].toNumber(), rating.reputationChangeFactorManager.multipliedBy(100).toNumber());
         assert.equal(repLogEntryManager[2].toNumber(), 0);
         assert.equal(repLogEntryManager[3], commonColony.address);
         assert.equal(repLogEntryManager[4].toNumber(), 2);
@@ -144,7 +144,7 @@ contract('Colony Reputation Updates', () => {
 
         const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
         assert.equal(repLogEntryWorker[0], WORKER);
-        assert.equal(repLogEntryWorker[1].toNumber(), rating.reputationChangeFactorWorker.mul(200).toNumber());
+        assert.equal(repLogEntryWorker[1].toNumber(), rating.reputationChangeFactorWorker.multipliedBy(200).toNumber());
         assert.equal(repLogEntryWorker[2].toNumber(), 0);
         assert.equal(repLogEntryWorker[3], commonColony.address);
         assert.equal(repLogEntryWorker[4].toNumber(), 2);
@@ -185,7 +185,7 @@ contract('Colony Reputation Updates', () => {
       await commonColony.finalizeTask(taskId1);
 
       let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
-      const result = new BigNumber('1').mul(WORKER_PAYOUT);
+      const result = new BigNumber('1').multipliedBy(WORKER_PAYOUT);
       assert.equal(repLogEntryWorker[1].toNumber(), result.toNumber());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
@@ -199,13 +199,13 @@ contract('Colony Reputation Updates', () => {
 
     it('should revert on reputation amount overflow', async () => {
       // Fund colony with maximum possible int number of tokens
-      const maxIntNumber = new BigNumber(2).pow(255).sub(1);
+      const maxIntNumber = new BigNumber(2).pow(255).minus(1);
       await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, maxIntNumber);
       const colonyTokenBalance = await colonyToken.balanceOf.call(commonColony.address);
 
       // Split the max tokens number as payouts between the manager and worker
       const managerPayout = 1;
-      const workerPayout = colonyTokenBalance.sub(1);
+      const workerPayout = colonyTokenBalance.minus(1);
       const taskId = await testDataGenerator.setupRatedTask(
         commonColony,
         colonyToken,
@@ -221,7 +221,7 @@ contract('Colony Reputation Updates', () => {
 
       // Check the task pot is correctly funded with the max amount
       const taskPotBalance = await commonColony.getPotBalance.call(2, colonyToken.address);
-      assert.isTrue(taskPotBalance.equals(colonyTokenBalance));
+      assert.isTrue(taskPotBalance.isEqualTo(colonyTokenBalance));
 
       await testHelper.checkErrorRevert(commonColony.finalizeTask(taskId));
     });

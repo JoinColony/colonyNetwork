@@ -63,7 +63,7 @@ contract('ColonyNetwork', (accounts) => {
     it('should be able to register a higher Colony contract version', async () => {
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const updatedVersion = currentColonyVersion.add(1).toNumber();
+      const updatedVersion = currentColonyVersion.plus(1).toNumber();
       await colonyNetwork.addColonyVersion(updatedVersion, sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
@@ -75,7 +75,7 @@ contract('ColonyNetwork', (accounts) => {
     it('when registering a lower version of the Colony contract, should NOT update the current (latest) colony version', async () => {
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      await colonyNetwork.addColonyVersion(currentColonyVersion.sub(1).toNumber(), sampleResolver);
+      await colonyNetwork.addColonyVersion(currentColonyVersion.minus(1).toNumber(), sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       assert.equal(updatedColonyVersion.toNumber(), currentColonyVersion.toNumber());
@@ -171,7 +171,7 @@ contract('ColonyNetwork', (accounts) => {
 
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.add(1).toNumber();
+      const newVersion = currentColonyVersion.plus(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
       await colonyNetwork.upgradeColony(COLONY_KEY, newVersion);
@@ -186,7 +186,7 @@ contract('ColonyNetwork', (accounts) => {
 
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.sub(1).toNumber();
+      const newVersion = currentColonyVersion.minus(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
       await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));
@@ -196,7 +196,7 @@ contract('ColonyNetwork', (accounts) => {
     it('should NOT be able to upgrade a colony to a nonexistent version', async () => {
       await colonyNetwork.createColony(COLONY_KEY);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.add(1).toNumber();
+      const newVersion = currentColonyVersion.plus(1).toNumber();
 
       await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
@@ -210,7 +210,7 @@ contract('ColonyNetwork', (accounts) => {
 
       const sampleResolver = '0x65a760e7441cf435086ae45e14a0c8fc1080f54c';
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.add(1).toNumber();
+      const newVersion = currentColonyVersion.plus(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
       await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT }));
