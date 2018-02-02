@@ -29,9 +29,6 @@ contract("ColonyNetwork", accounts => {
     const clnyAddress = await commonColony.getToken.call();
     // console.log('CLNY address ', clnyAddress);
     clny = Token.at(clnyAddress);
-  });
-
-  before(async () => {
     await colonyNetwork.startNextCycle();
   });
 
@@ -390,7 +387,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(balance2Updated.toString(), new BN("2").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
 
       // Check that they will be getting the reputation owed to them.
-      let repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(0);
+      let repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -398,7 +395,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
 
-      repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+      repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(1, true);
       assert.equal(repLogEntryMiner[0], OTHER_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -406,7 +403,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
 
-      const reputationUpdateLogLength = await colonyNetwork.getReputationUpdateLogLength();
+      const reputationUpdateLogLength = await colonyNetwork.getReputationUpdateLogLength(true);
       assert.equal(reputationUpdateLogLength.toString(), 2);
     });
 
@@ -472,7 +469,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(balance1Updated.toString(), new BN("3").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
 
       // Check that they will be getting the reputation owed to them.
-      let repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(0);
+      let repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -480,7 +477,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
 
-      repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+      repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(1, true);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -488,7 +485,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
 
-      const reputationUpdateLogLength = await colonyNetwork.getReputationUpdateLogLength();
+      const reputationUpdateLogLength = await colonyNetwork.getReputationUpdateLogLength(true);
       assert.equal(reputationUpdateLogLength.toString(), 2);
     });
 
@@ -748,6 +745,29 @@ contract("ColonyNetwork", accounts => {
       // Cleanup after test
       await accommodateChallengeAndInvalidateHash(this, 1, 0);
       await repCycle.confirmNewHash(2);
+    });
+
+    it("should keep reputation updates that occur during one update window for the next window", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await testHelper.forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await testDataGenerator.fundColonyWithTokens(commonColony, clny, "300000000000000000000");
+      const taskId1 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony);
+      await commonColony.finalizeTask(taskId1); // Creates an entry in the reputation log for the worker and manager
+      const initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(true);
+      await repCycle.confirmNewHash(0);
+      // This confirmation should freeze the reputation log that we added the above task entries to
+      // and move it to the inactive rep log
+      const finalRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(false);
+      assert.equal(finalRepLogLength.toNumber(), initialRepLogLength.toNumber());
+      // Check the active log now has one entry in it (which will be the rewards for the miner who submitted
+      // the accepted hash.
+      const activeRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(true);
+      assert.equal(activeRepLogLength.toNumber(), 1);
     });
 
     it("should abort if a deposit did not complete correctly");

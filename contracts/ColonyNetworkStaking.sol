@@ -47,8 +47,11 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     require(msg.sender == reputationMiningCycle);
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
-    // Clear out the reputation log. We're setting a new root hash, so we're done with it.
-    delete ReputationUpdateLog;
+    // Clear out the inactive reputation log. We're setting a new root hash, so we're done with it.
+    delete ReputationUpdateLog[(activeReputationUpdateLog + 1) % 2];
+    // The active reputation update log is now switched to be the one we've just cleared out.
+    // The old activeReputationUpdateLog will be used for the next reputation mining cycle
+    activeReputationUpdateLog = (activeReputationUpdateLog + 1) % 2;
     // Reward stakers
     rewardStakers(stakers);
     reputationMiningCycle = 0x0;
@@ -76,6 +79,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     }
     // TODO: Where do these staked tokens go? Maybe split between the person who did the 'invalidate' transaction
     // and the colony network?
+    // TODO: Lose rep?
   }
 
   function rewardStakers(address[] stakers) internal {
@@ -97,7 +101,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     for (uint256 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
-      ReputationUpdateLog.push(ReputationLogEntry(
+      ReputationUpdateLog[activeReputationUpdateLog].push(ReputationLogEntry(
         stakers[i], //The staker getting the reward
         int256(reward),
         0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
