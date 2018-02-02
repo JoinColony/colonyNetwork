@@ -31,7 +31,7 @@
     "url": "git+https://github.com/JoinColony/colonyNetwork.git"
   },
   "author": "Colony (https://colony.io/)",
-  "license": "ISC",
+  "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/JoinColony/colonyNetwork/issues"
   },
