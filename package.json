@@ -1,11 +1,7 @@
 {
-  "name": "colony-network",
-  "version": "1.3.2",
-  "description": "",
-  "main": "truffle.js",
-  "directories": {
-    "test": "test"
-  },
+  "name": "@colony.io/colony-network-contracts",
+  "version": "1.0.0",
+  "description": "Contracts for Colony Network",
   "scripts": {
     "solium-staged": "bash ./scripts/solium.sh",
     "eslint-staged": "bash ./scripts/eslint.sh",
@@ -34,8 +30,8 @@
     "type": "git",
     "url": "git+https://github.com/JoinColony/colonyNetwork.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Colony (https://colony.io/)",
+  "license": "GPLv3",
   "bugs": {
     "url": "https://github.com/JoinColony/colonyNetwork/issues"
   },

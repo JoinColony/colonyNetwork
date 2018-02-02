@@ -22,20 +22,20 @@ The `math`, `erc20`, `auth`, `roles` and a significant part of the `token` contr
 ## Testing
 To run all tests:
 ```
-npm run test:contracts
+yarn run test:contracts
 ```
 To run tests with code coverage using [solidity-coverage](https://github.com/sc-forks/solidity-coverage):
 ```
-npm run test:contracts:coverage
+yarn run test:contracts:coverage
 ```
 To lint contracts using [Solium](https://github.com/duaraghav8/Solium)
 ```
-npm run solium
+yarn run solium
 ```
 
 To lint JS using `eslint` (this is also a pre-commit hook)
 ```
-npm run eslint
+yarn run eslint
 ```
 
 ## Contributing

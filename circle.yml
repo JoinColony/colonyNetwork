@@ -33,13 +33,13 @@ test:
     - 'sed -i "s/spec/mocha-circleci-reporter/g" ./truffle.js' #Replace mocha spec reporter in truffle with mocha-junit-reporter
     - greenkeeper-lockfile-update
   override:
-    - npm run eslint
-    - npm run solium
-    - npm run check:storagevars
-    - npm run test:contracts
-    - npm run test:contracts:upgrade
-    - npm run test:contracts:gasCosts
-    - npm run test:contracts:coverage
+    - yarn run eslint
+    - yarn run solium
+    - yarn run check:storagevars
+    - yarn run test:contracts
+    - yarn run test:contracts:upgrade
+    - yarn run test:contracts:gasCosts
+    - yarn run test:contracts:coverage
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload
