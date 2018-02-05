@@ -122,8 +122,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     Task memory task;
     task.specificationHash = _specificationHash;
     task.potId = potCount;
-    task.domains = new uint[](1);
-    task.skills = new uint[](1);
+    task.domains = new uint256[](1);
+    task.skills = new uint256[](1);
     tasks[taskCount] = task;
     tasks[taskCount].roles[MANAGER] = Role({
       user: msg.sender,

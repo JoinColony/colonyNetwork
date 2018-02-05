@@ -249,13 +249,13 @@ contract('ColonyNetwork', (accounts) => {
       await colonyNetwork.createColony('Common Colony');
     });
 
-    it('should NOT be able to add a new global skill by anyone but the common colony', async () => {
+    it('should not be able to add a global skill, by an address that is not the common colony ', async () => {
       await testHelper.checkErrorRevert(colonyNetwork.addSkill(1, true));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
     });
 
-    it('should NOT be able to add a new local skill by anyone but a Colony', async () => {
+    it('should NOT be able to add a local skill, by an address that is not a Colony', async () => {
       await testHelper.checkError(colonyNetwork.addSkill(2, false));
 
       const skillCount = await colonyNetwork.getSkillCount.call();

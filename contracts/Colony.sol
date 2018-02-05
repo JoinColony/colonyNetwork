@@ -66,6 +66,7 @@ contract Colony is ColonyStorage {
     return token.mint(_wad);
   }
 
+  //TODO: Secure this function
   function addGlobalSkill(uint _parentSkillId) public
   returns (uint256)
   {
