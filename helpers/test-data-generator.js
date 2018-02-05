@@ -1,5 +1,6 @@
-import BigNumber from 'bignumber.js';
 import web3Utils from 'web3-utils';
+import { BN } from 'bn.js';
+
 import { EVALUATOR,
   WORKER,
   MANAGER_PAYOUT,
@@ -66,15 +67,16 @@ module.exports = {
     const taskId = await this.setupAssignedTask(colonyNetwork, colony, dueDate, domain, skill, evaluator, worker);
     const task = await colony.getTask.call(taskId);
     const potId = task[6].toNumber();
-    const managerPayout = new BigNumber(manager_payout);
-    const workerPayout = new BigNumber(worker_payout);
+    const managerPayout = new BN(manager_payout);
+    const workerPayout = new BN(worker_payout);
     const totalPayouts = managerPayout.add(workerPayout);
-    await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
-    let txData = await colony.contract.setTaskPayout.getData(taskId, MANAGER_ROLE, tokenAddress, managerPayout);
+    await colony.moveFundsBetweenPots(1, potId, totalPayouts.toString(), tokenAddress);
+    let txData = await colony.contract.setTaskPayout.getData(taskId, MANAGER_ROLE, tokenAddress, managerPayout.toString());
     await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
     let transactionId = await colony.getTransactionCount.call();
     await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
-    txData = await colony.contract.setTaskPayout.getData(taskId, WORKER_ROLE, tokenAddress, workerPayout);
+
+    txData = await colony.contract.setTaskPayout.getData(taskId, WORKER_ROLE, tokenAddress, workerPayout.toString());
     await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
     transactionId = await colony.getTransactionCount.call();
     await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
@@ -107,12 +109,11 @@ module.exports = {
   },
   async fundColonyWithTokens(colony, token, tokenAmount) {
     const colonyToken = await colony.getToken.call();
-    const tokenAmountBN = new BigNumber(tokenAmount);
     if (colonyToken === token.address) {
-      await colony.mintTokens(tokenAmountBN);
+      await colony.mintTokens(tokenAmount);
     } else {
-      await token.mint(tokenAmountBN);
-      await token.transfer(colony.address, tokenAmountBN);
+      await token.mint(tokenAmount);
+      await token.transfer(colony.address, tokenAmount);
     }
     await colony.claimColonyFunds(token.address);
   },
