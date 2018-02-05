@@ -32,11 +32,11 @@ contract ColonyNetworkStorage is DSAuth {
   uint256 colonyCount;
   uint256 currentColonyVersion;
   // TODO: We can probably do better than having three colony-related mappings
-  mapping (uint => address) _coloniesIndex;
+  mapping (uint256 => address) _coloniesIndex;
   mapping (bytes32 => address) _colonies;
   mapping (address => bool) _isColony;
   // Maps colony contract versions to respective resolvers
-  mapping (uint => address) colonyVersionResolver;
+  mapping (uint256 => address) colonyVersionResolver;
 
   struct Skill {
     // total number of parent skills
@@ -47,17 +47,20 @@ contract ColonyNetworkStorage is DSAuth {
     uint256[] parents;
     // array of `skill_id`s of all child skills
     uint256[] children;
+    // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
+    bool globalSkill;
   }
-  mapping (uint => Skill) skills;
+  mapping (uint256 => Skill) skills;
   uint256 skillCount;
+  uint256 rootGlobalSkillId;
 
   struct ReputationLogEntry {
     address user;
     int amount;
-    uint skillId;
+    uint256 skillId;
     address colony;
-    uint nUpdates;
-    uint nPreviousUpdates;
+    uint256 nUpdates;
+    uint256 nPreviousUpdates;
   }
 
   ReputationLogEntry[] ReputationUpdateLog;

@@ -38,7 +38,7 @@ contract('ColonyNetwork', (accounts) => {
     colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
     const etherRouter = await EtherRouter.new();
-    etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+    await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
   });
@@ -114,16 +114,42 @@ contract('ColonyNetwork', (accounts) => {
       assert.equal(colonyCount.toNumber(), 7);
     });
 
-    it('when common colony is created, should have the root skill initialised', async () => {
+    it('when common colony is created, should have the root global and local skills initialised', async () => {
       await colonyNetwork.createColony('Common Colony');
       const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 1);
-      const rootSkill = await colonyNetwork.getSkill.call(1);
-      assert.equal(rootSkill[0].toNumber(), 0);
-      assert.equal(rootSkill[1].toNumber(), 0);
+      assert.equal(skillCount.toNumber(), 2);
+      const rootGlobalSkill = await colonyNetwork.getSkill.call(1);
+      assert.equal(rootGlobalSkill[0].toNumber(), 0);
+      assert.equal(rootGlobalSkill[1].toNumber(), 0);
+
+      const globalSkill1 = await colonyNetwork.isGlobalSkill.call(1);
+      assert.isTrue(globalSkill1);
+
+      const globalSkill2 = await colonyNetwork.isGlobalSkill.call(2);
+      assert.isFalse(globalSkill2);
+
+      const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId.call();
+      assert.equal(rootGlobalSkillId, 1);
     });
 
-    // TODO: Add token initialisation for the common colony
+    it('when any colony is created, should have the root local skill initialised', async () => {
+      await colonyNetwork.createColony(COLONY_KEY);
+      const rootLocalSkill = await colonyNetwork.getSkill.call(1);
+      assert.equal(rootLocalSkill[0].toNumber(), 0);
+      assert.equal(rootLocalSkill[1].toNumber(), 0);
+
+      const isGlobal = await colonyNetwork.isGlobalSkill.call(2);
+      assert.isFalse(isGlobal);
+
+      const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
+      const colony = await Colony.at(colonyAddress);
+      const rootDomain = await colony.getDomain.call(1);
+      assert.equal(rootDomain[0].toNumber(), 1);
+      assert.equal(rootDomain[1].toNumber(), 1);
+
+      const domainCount = await colony.getDomainCount.call();
+      assert.equal(domainCount.toNumber(), 1);
+    });
 
     it('should fail if ETH is sent', async () => {
       try {
@@ -215,6 +241,25 @@ contract('ColonyNetwork', (accounts) => {
 
       await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT }));
       assert.notEqual(colonyResolver, sampleResolver);
+    });
+  });
+
+  describe('when adding a skill', () => {
+    beforeEach(async () => {
+      await colonyNetwork.createColony('Common Colony');
+    });
+
+    it('should not be able to add a global skill, by an address that is not the common colony ', async () => {
+      await testHelper.checkErrorRevert(colonyNetwork.addSkill(1, true));
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 2);
+    });
+
+    it('should NOT be able to add a local skill, by an address that is not a Colony', async () => {
+      await testHelper.checkError(colonyNetwork.addSkill(2, false));
+
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      assert.equal(skillCount.toNumber(), 2);
     });
   });
 });

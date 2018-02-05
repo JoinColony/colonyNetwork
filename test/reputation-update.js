@@ -53,12 +53,12 @@ contract('Colony Reputation Updates', () => {
     });
 
     it('should be readable', async () => {
-      const taskId = await testDataGenerator.setupRatedTask(commonColony);
+      const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony);
       await commonColony.finalizeTask(taskId);
       const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0);
       assert.equal(repLogEntryManager[0], MANAGER);
       assert.equal(repLogEntryManager[1].toNumber(), ((1000 * 1e18) / 50));
-      assert.equal(repLogEntryManager[2].toNumber(), 0);
+      assert.equal(repLogEntryManager[2].toNumber(), 1);
       assert.equal(repLogEntryManager[3], commonColony.address);
       assert.equal(repLogEntryManager[4].toNumber(), 2);
       assert.equal(repLogEntryManager[5].toNumber(), 0);
@@ -66,7 +66,7 @@ contract('Colony Reputation Updates', () => {
       const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
       assert.equal(repLogEntryWorker[0], WORKER);
       assert.equal(repLogEntryWorker[1].toNumber(), 200000000000000000000);
-      assert.equal(repLogEntryWorker[2].toNumber(), 0);
+      assert.equal(repLogEntryWorker[2].toNumber(), 1);
       assert.equal(repLogEntryWorker[3], commonColony.address);
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
       assert.equal(repLogEntryWorker[5].toNumber(), 2);
@@ -120,7 +120,10 @@ contract('Colony Reputation Updates', () => {
     ratings.forEach(async (rating) => {
       it(`should set the correct reputation change amount in log for rating ${rating.worker}`, async () => {
         const taskId = await testDataGenerator.setupRatedTask(
+          colonyNetwork,
           commonColony,
+          undefined,
+          undefined,
           undefined,
           undefined,
           undefined,
@@ -137,7 +140,7 @@ contract('Colony Reputation Updates', () => {
         const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0);
         assert.equal(repLogEntryManager[0], MANAGER);
         assert.equal(repLogEntryManager[1].toNumber(), rating.reputationChangeFactorManager.mul(100).toNumber());
-        assert.equal(repLogEntryManager[2].toNumber(), 0);
+        assert.equal(repLogEntryManager[2].toNumber(), 1);
         assert.equal(repLogEntryManager[3], commonColony.address);
         assert.equal(repLogEntryManager[4].toNumber(), 2);
         assert.equal(repLogEntryManager[5].toNumber(), 0);
@@ -145,7 +148,7 @@ contract('Colony Reputation Updates', () => {
         const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
         assert.equal(repLogEntryWorker[0], WORKER);
         assert.equal(repLogEntryWorker[1].toNumber(), rating.reputationChangeFactorWorker.mul(200).toNumber());
-        assert.equal(repLogEntryWorker[2].toNumber(), 0);
+        assert.equal(repLogEntryWorker[2].toNumber(), 1);
         assert.equal(repLogEntryWorker[3], commonColony.address);
         assert.equal(repLogEntryWorker[4].toNumber(), 2);
         assert.equal(repLogEntryWorker[5].toNumber(), 2);
@@ -162,26 +165,25 @@ contract('Colony Reputation Updates', () => {
     it('should populate nPreviousUpdates correctly', async () => {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call();
       initialRepLogLength = initialRepLogLength.toNumber();
-      const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
+      const taskId1 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony);
       await commonColony.finalizeTask(taskId1);
       let repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength);
       const nPrevious = repLogEntry[5].toNumber();
       repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(repLogEntry[5].toNumber(), 2 + nPrevious);
 
-      const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
+      const taskId2 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony);
       await commonColony.finalizeTask(taskId2);
       repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 2);
       assert.equal(repLogEntry[5].toNumber(), 4 + nPrevious);
     });
 
     it('should calculate nUpdates correctly when making a log', async () => {
-      await commonColony.addSkill(0);
-      await commonColony.addSkill(1);
-      await commonColony.addSkill(2);
-      await commonColony.addSkill(3);
-      const taskId1 = await testDataGenerator.setupRatedTask(commonColony);
-      await commonColony.setTaskSkill(taskId1, 2);
+      await commonColony.addGlobalSkill(1);
+      await commonColony.addGlobalSkill(3);
+      await commonColony.addGlobalSkill(4);
+      await commonColony.addGlobalSkill(5);
+      const taskId1 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony, undefined, undefined, undefined, 4);
       await commonColony.finalizeTask(taskId1);
 
       let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
@@ -189,8 +191,7 @@ contract('Colony Reputation Updates', () => {
       assert.equal(repLogEntryWorker[1].toNumber(), result.toNumber());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
-      const taskId2 = await testDataGenerator.setupRatedTask(commonColony);
-      await commonColony.setTaskSkill(taskId2, 3);
+      const taskId2 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony, undefined, undefined, undefined, 5);
       await commonColony.finalizeTask(taskId2);
       repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(3);
       assert.equal(repLogEntryWorker[1].toNumber(), result.toNumber());
@@ -207,8 +208,11 @@ contract('Colony Reputation Updates', () => {
       const managerPayout = 1;
       const workerPayout = colonyTokenBalance.sub(1);
       const taskId = await testDataGenerator.setupRatedTask(
+        colonyNetwork,
         commonColony,
         colonyToken,
+        undefined,
+        undefined,
         undefined,
         undefined,
         undefined,

@@ -26,10 +26,12 @@ contract IColonyNetwork {
 
   function getColony(bytes32 key) public view returns (address);
   function getColonyCount() public view returns (uint256);
-  function addSkill(uint256 _parentSkillId) public;
+  function addSkill(uint256 _parentSkillId, bool _globalSkill) public returns (uint256);
   function getSkill(uint256 _skillId) public view returns (uint256, uint256);
+  function isGlobalSkill(uint256 _skillId) public view returns (bool);
   function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) public;
-  function getSkillCount() public view returns (uint);
+  function getSkillCount() public view returns (uint256);
+  function getRootGlobalSkillId() public view returns (uint256);
   function createColony(bytes32 _name) public;
   function addColonyVersion(uint256 _version, address _resolver) public;
   function getColonyAt(uint256 _idx) public view returns (address);
@@ -37,7 +39,7 @@ contract IColonyNetwork {
   function upgradeColony(bytes32 _name, uint256 _newVersion) public;
   function getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex) public view returns (uint256);
   function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) public view returns (uint256);
-  function getReputationUpdateLogLength() public view returns (uint);
+  function getReputationUpdateLogLength() public view returns (uint256);
   function getColonyVersionResolver(uint256 _version) public view returns (address);
-  function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int, uint, address, uint, uint);
+  function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int, uint256, address, uint256, uint256);
 }

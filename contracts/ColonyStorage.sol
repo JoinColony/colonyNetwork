@@ -21,6 +21,7 @@ pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/auth.sol";
 import "./ERC20Extended.sol";
+import "./IColonyNetwork.sol";
 
 
 contract ColonyStorage is DSAuth {
@@ -30,57 +31,60 @@ contract ColonyStorage is DSAuth {
 
   address resolver;
 
-  mapping (uint => Transaction) transactions;
+  mapping (uint256 => Transaction) transactions;
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
   // Maps transactions to roles and whether they've confirmed the transaction
-  mapping (uint => mapping (uint => bool)) confirmations;
-  uint transactionCount;
+  mapping (uint256 => mapping (uint256 => bool)) confirmations;
+  uint256 transactionCount;
 
   struct Transaction {
     bytes data;
-    uint value;
+    uint256 value;
     bool executed;
   }
 
   address colonyNetworkAddress;
   ERC20Extended token;
-  mapping (uint => Task) tasks;
+  mapping (uint256 => Task) tasks;
 
   // Pots can be tied to tasks or to (in the future) domains, so giving them their own mapping.
   // Pot 1  can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had some siphoned off in to the reward pot.
   // Pot 0 is the pot containing funds that can be paid to holders of colony tokens in the future.
-  mapping (uint => Pot) pots;
+  mapping (uint256 => Pot) pots;
 
   // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
   // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
-  mapping (address => uint) nonRewardPotsTotal;
+  mapping (address => uint256) nonRewardPotsTotal;
 
-  mapping (uint => RatingSecrets) public taskWorkRatings;
+  mapping (uint256 => RatingSecrets) public taskWorkRatings;
 
-  uint taskCount;
-  uint potCount;
+  mapping (uint256 => Domain) public domains;
+
+  uint256 taskCount;
+  uint256 potCount;
+  uint256 domainCount;
 
   struct Task {
     bytes32 specificationHash;
     bytes32 deliverableHash;
     bool finalized;
     bool cancelled;
-    uint dueDate;
-    uint payoutsWeCannotMake;
-    uint potId;
-    uint deliverableTimestamp;
-    uint domainId;
-    uint[] skillIds;
+    uint256 dueDate;
+    uint256 payoutsWeCannotMake;
+    uint256 potId;
+    uint256 deliverableTimestamp;
+    uint256[] domains;
+    uint256[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
-    mapping (uint => Role) roles; 
+    mapping (uint256 => Role) roles; 
     // Maps a token to the sum of all payouts of it for this task
-    mapping (address => uint) totalPayouts;
+    mapping (address => uint256) totalPayouts;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
-    mapping (uint => mapping (address => uint)) payouts;
+    mapping (uint256 => mapping (address => uint256)) payouts;
   }
 
   struct Role {
@@ -99,8 +103,13 @@ contract ColonyStorage is DSAuth {
   }
 
   struct Pot {
-    mapping (address => uint) balance;
-    uint taskId;
+    mapping (address => uint256) balance;
+    uint256 taskId;
+  }
+
+  struct Domain {
+    uint256 skillId;
+    uint256 potId;
   }
 
   modifier taskExists(uint256 _id) {
@@ -118,9 +127,31 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
+  modifier globalSkill(uint256 _skillId) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(colonyNetworkContract.isGlobalSkill(_skillId));
+    _;
+  }
+
+  modifier localSkill(uint256 _skillId) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(!colonyNetworkContract.isGlobalSkill(_skillId));
+    _;
+  }
+
+  modifier skillExists(uint256 _skillId) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    require(_skillId <= colonyNetworkContract.getSkillCount());
+    _;
+  }
+
+  modifier domainExists(uint256 _domainId) {
+    require(_domainId <= domainCount);
+    _;
+  }
+
   modifier self() {
     require(address(this) == msg.sender);
     _;
   }
-
 }

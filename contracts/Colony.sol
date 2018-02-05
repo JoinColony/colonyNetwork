@@ -49,6 +49,15 @@ contract Colony is ColonyStorage {
     IColony(this).setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
     IColony(this).setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
     IColony(this).setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
+
+    // Initialise the root domain
+    domainCount += 1;
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    uint256 rootLocalSkill = colonyNetwork.getSkillCount();
+    domains[1] = Domain({
+      skillId: rootLocalSkill,
+      potId: 1
+    });
   }
 
   function mintTokens(uint _wad) public
@@ -57,9 +66,42 @@ contract Colony is ColonyStorage {
     return token.mint(_wad);
   }
 
-  function addSkill(uint _parentSkillId) public {
-    // TODO Secure this function.
+  //TODO: Secure this function
+  function addGlobalSkill(uint _parentSkillId) public
+  returns (uint256)
+  {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addSkill(_parentSkillId);
+    return colonyNetwork.addSkill(_parentSkillId, true);
+  }
+
+  function addDomain(uint256 _parentSkillId) public 
+  localSkill(_parentSkillId)
+  {
+    // Note: remove that when we start allowing more domain hierarchy levels
+    // Instead check that the parent skill id belongs to this colony own domain
+    // Get the local skill id of the root domain
+    uint256 rootDomainSkillId = domains[1].skillId;
+    require(_parentSkillId == rootDomainSkillId);
+
+    // Setup new local skill
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    uint256 newLocalSkill = colonyNetwork.addSkill(_parentSkillId, false);
+    
+    // Add domain to local mapping
+    domainCount += 1;
+    potCount += 1;
+    domains[domainCount] = Domain({
+      skillId: newLocalSkill,
+      potId: potCount
+    });
+  }
+
+  function getDomain(uint256 _id) public view returns (uint256, uint256) {
+    Domain storage d = domains[_id];
+    return (d.skillId, d.potId);
+  }
+
+  function getDomainCount() public view returns (uint256) {
+    return domainCount;
   }
 }
