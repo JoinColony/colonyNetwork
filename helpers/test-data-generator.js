@@ -1,4 +1,4 @@
-import BigNumber from 'bignumber.js';
+import { BigNumber } from 'bignumber.js';
 import web3Utils from 'web3-utils';
 import { EVALUATOR,
   WORKER,
