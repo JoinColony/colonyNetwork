@@ -54,9 +54,9 @@
     lodash "^4.2.0"
     to-fast-properties "^2.0.0"
 
-"@colony/eslint-config-colony@2.1.0":
-  version "2.1.0"
-  resolved "https://registry.yarnpkg.com/@colony/eslint-config-colony/-/eslint-config-colony-2.1.0.tgz#f61b8b8ee9d44fb2680c5cfe223ea89c3f5f3b84"
+"@colony/eslint-config-colony@2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@colony/eslint-config-colony/-/eslint-config-colony-2.2.0.tgz#f694ae39c7dea321ac5b1fd1959cc9c1abe582e1"
 
 abbrev@1:
   version "1.1.1"
