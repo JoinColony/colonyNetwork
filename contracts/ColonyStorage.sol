@@ -154,11 +154,4 @@ contract ColonyStorage is DSAuth {
     require(address(this) == msg.sender);
     _;
   }
-
-  modifier selfOrCommonColony() {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    address commonColony = colonyNetworkContract.getColony("Common Colony");
-    require(address(this) == msg.sender || address(this) == commonColony);
-    _;
-  }
 }

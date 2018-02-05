@@ -66,12 +66,11 @@ contract Colony is ColonyStorage {
     return token.mint(_wad);
   }
 
-  function addSkill(uint _parentSkillId, bool _globalSkill) public 
-  selfOrCommonColony
-  returns (uint256) 
+  function addGlobalSkill(uint _parentSkillId) public
+  returns (uint256)
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addSkill(_parentSkillId, _globalSkill);
+    return colonyNetwork.addSkill(_parentSkillId, true);
   }
 
   function addDomain(uint256 _parentSkillId) public 
