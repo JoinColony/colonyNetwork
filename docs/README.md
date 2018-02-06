@@ -1,6 +1,7 @@
 <img align="center" src="./Colony_Header.png" /> 
 
 # The Colony Network
+[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/JoinColony/colonyNetwork)
 [![CircleCI](https://circleci.com/gh/JoinColony/colonyNetwork/tree/develop.svg?style=shield&circle-token=3091a867864d55d39aa8f4f552ecb2257376cb0f)](https://circleci.com/gh/JoinColony/colonyNetwork/tree/develop)
 [![Greenkeeper badge](https://badges.greenkeeper.io/JoinColony/colonyNetwork.svg?token=12a1f49a1f7f9afa0b0af1370e6a4646c989cba0d90ec0d5b3872cb95c08facc&ts=1505828301742)](https://greenkeeper.io/)
 
