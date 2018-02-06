@@ -10,7 +10,9 @@
     "contract": true
   },
   "rules": {
-    "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"]}]
+    "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"]}],
+    "max-len": [2, { "code": 150, "ignoreComments": true }],
+    "prettier/prettier": ["error", {"printWidth": 150}]
   },
   "parserOptions": {
    "ecmaVersion": 2017
