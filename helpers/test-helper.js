@@ -1,5 +1,5 @@
-import shortid from 'shortid';
-import { assert } from 'chai';
+import shortid from "shortid";
+import { assert } from "chai";
 
 module.exports = {
   web3GetNetwork() {
@@ -44,7 +44,7 @@ module.exports = {
   },
   web3GetFirstTransactionHashFromLastBlock() {
     return new Promise((resolve, reject) => {
-      web3.eth.getBlock('latest', true, (err, res) => {
+      web3.eth.getBlock("latest", true, (err, res) => {
         if (err !== null) return reject(err);
         return resolve(res.transactions[0].hash);
       });
@@ -74,7 +74,7 @@ module.exports = {
       txHash = tx.tx;
     } catch (err) {
       // Make sure this is a revert (returned from EtherRouter)
-      if (err.message.indexOf('VM Exception while processing transaction: revert') === -1) {
+      if (err.message.indexOf("VM Exception while processing transaction: revert") === -1) {
         throw err;
       }
 
@@ -88,29 +88,32 @@ module.exports = {
     if (isAssert) {
       const network = await this.web3GetNetwork();
       const transaction = await this.web3GetTransaction(txHash);
-      if (network !== 'coverage') {
+      if (network !== "coverage") {
         // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
         // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
-        assert.closeTo(transaction.gas, receipt.gasUsed, 73000, 'didnt fail - didn\'t throw and use all gas');
+        assert.closeTo(transaction.gas, receipt.gasUsed, 73000, "didnt fail - didn't throw and use all gas");
       }
     }
   },
   checkErrorNonPayableFunction(tx) {
-    assert.equal(tx, 'Error: Cannot send value to non-payable function');
+    assert.equal(tx, "Error: Cannot send value to non-payable function");
   },
   getRandomString(_length) {
     const length = _length || 7;
-    let randString = '';
+    let randString = "";
     while (randString.length < length) {
-      randString += shortid.generate().replace(/_/g, '').toLowerCase();
+      randString += shortid
+        .generate()
+        .replace(/_/g, "")
+        .toLowerCase();
     }
     return randString.slice(0, length);
   },
   hexToUtf8(text) {
-    return web3.toAscii(text).replace(/\u0000/g, '');
+    return web3.toAscii(text).replace(/\u0000/g, "");
   },
   currentBlockTime() {
-    return web3.eth.getBlock('latest').timestamp;
+    return web3.eth.getBlock("latest").timestamp;
   },
   async expectEvent(tx, eventName) {
     const { logs } = await tx;
@@ -119,16 +122,22 @@ module.exports = {
   },
   async forwardTime(seconds, test) {
     const client = await this.web3GetClient();
-    if (client.indexOf('TestRPC') === -1) {
+    if (client.indexOf("TestRPC") === -1) {
       test.skip();
     } else {
       // console.log('Forwarding time with ' + seconds + 's ...');
       web3.currentProvider.send({
-        jsonrpc: '2.0', method: 'evm_increaseTime', params: [seconds], id: 0,
+        jsonrpc: "2.0",
+        method: "evm_increaseTime",
+        params: [seconds],
+        id: 0
       });
       web3.currentProvider.send({
-        jsonrpc: '2.0', method: 'evm_mine', params: [], id: 0,
+        jsonrpc: "2.0",
+        method: "evm_mine",
+        params: [],
+        id: 0
       });
     }
-  },
+  }
 };

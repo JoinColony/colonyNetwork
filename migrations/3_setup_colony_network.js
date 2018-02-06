@@ -1,32 +1,33 @@
 /* globals artifacts */
 /* eslint-disable no-console */
-const upgradableContracts = require('../helpers/upgradable-contracts');
+const upgradableContracts = require("../helpers/upgradable-contracts");
 
-const ColonyNetwork = artifacts.require('./ColonyNetwork');
-const EtherRouter = artifacts.require('./EtherRouter');
-const Resolver = artifacts.require('./Resolver');
+const ColonyNetwork = artifacts.require("./ColonyNetwork");
+const EtherRouter = artifacts.require("./EtherRouter");
+const Resolver = artifacts.require("./Resolver");
 
-module.exports = (deployer) => {
+module.exports = deployer => {
   let etherRouter;
   let resolver;
   let colonyNetwork;
-  deployer.then(() => ColonyNetwork.deployed())
-    .then((instance) => {
+  deployer
+    .then(() => ColonyNetwork.deployed())
+    .then(instance => {
       colonyNetwork = instance;
       return EtherRouter.deployed();
     })
-    .then((instance) => {
+    .then(instance => {
       etherRouter = instance;
       return Resolver.deployed();
     })
-    .then((instance) => {
+    .then(instance => {
       resolver = instance;
       return upgradableContracts.setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork);
     })
     .then(() => {
-      console.log('### Colony Network setup with Resolver', resolver.address, 'and EtherRouter', etherRouter.address);
+      console.log("### Colony Network setup with Resolver", resolver.address, "and EtherRouter", etherRouter.address);
     })
-    .catch((err) => {
-      console.log('### Error occurred ', err);
+    .catch(err => {
+      console.log("### Error occurred ", err);
     });
 };
