@@ -75,15 +75,15 @@ contract("all", () => {
       const addSkillCost0 = tx0.receipt.gasUsed;
       console.log("addGlobalSkill to level 1 actual cost :", addSkillCost0);
 
-      const tx1 = await commonColony.addGlobalSkill(2);
+      const tx1 = await commonColony.addGlobalSkill(4);
       const addSkillCost1 = tx1.receipt.gasUsed;
       console.log("addGlobalSkill to level 2 actual cost :", addSkillCost1);
 
-      const tx2 = await commonColony.addGlobalSkill(3);
+      const tx2 = await commonColony.addGlobalSkill(5);
       const addSkillCost2 = tx2.receipt.gasUsed;
       console.log("addGlobalSkill to level 3 actual cost :", addSkillCost2);
 
-      const tx3 = await commonColony.addGlobalSkill(4);
+      const tx3 = await commonColony.addGlobalSkill(6);
       const addSkillCost3 = tx3.receipt.gasUsed;
       console.log("addGlobalSkill to level 4 actual cost :", addSkillCost3);
     });
