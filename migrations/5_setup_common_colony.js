@@ -1,29 +1,30 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 
-const assert = require('assert');
+const assert = require("assert");
 
-const IColonyNetwork = artifacts.require('./IColonyNetwork');
-const EtherRouter = artifacts.require('./EtherRouter');
+const IColonyNetwork = artifacts.require("./IColonyNetwork");
+const EtherRouter = artifacts.require("./EtherRouter");
 
-module.exports = (deployer) => {
+module.exports = deployer => {
   // Create the common colony
   let colonyNetwork;
-  deployer.then(() => EtherRouter.deployed())
+  deployer
+    .then(() => EtherRouter.deployed())
     .then(_etherRouter => IColonyNetwork.at(_etherRouter.address))
-    .then((instance) => {
+    .then(instance => {
       colonyNetwork = instance;
-      return colonyNetwork.createColony('Common Colony');
+      return colonyNetwork.createColony("Common Colony");
     })
     .then(() => colonyNetwork.getSkillCount.call())
-    .then((skillCount) => {
+    .then(skillCount => {
       assert.equal(skillCount.toNumber(), 2);
-      return colonyNetwork.getColony.call('Common Colony');
+      return colonyNetwork.getColony.call("Common Colony");
     })
-    .then((commonColonyAddress) => {
-      console.log('### Common Colony created at', commonColonyAddress);
+    .then(commonColonyAddress => {
+      console.log("### Common Colony created at", commonColonyAddress);
     })
-    .catch((err) => {
-      console.log('### Error occurred ', err);
+    .catch(err => {
+      console.log("### Error occurred ", err);
     });
 };

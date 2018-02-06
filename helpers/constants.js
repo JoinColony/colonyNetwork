@@ -1,5 +1,5 @@
-import web3Utils from 'web3-utils';
-import testHelper from '../helpers/test-helper';
+import web3Utils from "web3-utils";
+import testHelper from "../helpers/test-helper";
 
 let MANAGER;
 let EVALUATOR;
@@ -9,9 +9,9 @@ const MANAGER_ROLE = 0;
 const EVALUATOR_ROLE = 1;
 const WORKER_ROLE = 2;
 // The base58 decoded, bytes32 converted value of the task ipfsHash
-const SPECIFICATION_HASH = '9bb76d8e6c89b524d34a454b3140df28';
-const SPECIFICATION_HASH_UPDATED = '9bb76d8e6c89b524d34a454b3140df29';
-const DELIVERABLE_HASH = '9cc89e3e3d12a672d67a424b3640ce34';
+const SPECIFICATION_HASH = "9bb76d8e6c89b524d34a454b3140df28";
+const SPECIFICATION_HASH_UPDATED = "9bb76d8e6c89b524d34a454b3140df29";
+const DELIVERABLE_HASH = "9cc89e3e3d12a672d67a424b3640ce34";
 const MANAGER_PAYOUT = web3Utils.toBN(100 * 1e18);
 const WORKER_PAYOUT = web3Utils.toBN(200 * 1e18);
 const MANAGER_RATING = 30;
@@ -41,5 +41,5 @@ module.exports = {
   RATING_1_SALT,
   RATING_2_SALT,
   RATING_1_SECRET,
-  RATING_2_SECRET,
+  RATING_2_SECRET
 };

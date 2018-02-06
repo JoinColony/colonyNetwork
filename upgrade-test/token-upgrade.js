@@ -1,13 +1,13 @@
 /* globals artifacts */
 
-import upgradableContracts from '../helpers/upgradable-contracts';
+import upgradableContracts from "../helpers/upgradable-contracts";
 
-const EtherRouter = artifacts.require('EtherRouter');
-const Resolver = artifacts.require('Resolver');
-const Token = artifacts.require('Token');
-const UpdatedToken = artifacts.require('UpdatedToken');
+const EtherRouter = artifacts.require("EtherRouter");
+const Resolver = artifacts.require("Resolver");
+const Token = artifacts.require("Token");
+const UpdatedToken = artifacts.require("UpdatedToken");
 
-contract('Token contract upgrade', (accounts) => {
+contract("Token contract upgrade", accounts => {
   const COINBASE_ACCOUNT = accounts[0];
   const ACCOUNT_TWO = accounts[1];
   const ACCOUNT_THREE = accounts[2];
@@ -27,8 +27,8 @@ contract('Token contract upgrade', (accounts) => {
     token = await Token.at(etherRouter.address);
   });
 
-  describe('when upgrading Token contract', () => {
-    beforeEach('setup the Token contract with some data', async () => {
+  describe("when upgrading Token contract", () => {
+    beforeEach("setup the Token contract with some data", async () => {
       await token.mint(100);
       const total = await token.totalSupply.call();
       assert.equal(100, total.toNumber());
@@ -42,21 +42,21 @@ contract('Token contract upgrade', (accounts) => {
       // Upgrade Token
       const updatedTokenContract = await UpdatedToken.new();
       await upgradableContracts.setupUpgradableToken(updatedTokenContract, resolver, etherRouter);
-      await resolver.register('isUpdated()', updatedTokenContract.address, 32);
+      await resolver.register("isUpdated()", updatedTokenContract.address, 32);
       updatedToken = await UpdatedToken.at(etherRouter.address);
     });
 
-    it('should be able to lookup newly registered function on Token', async () => {
+    it("should be able to lookup newly registered function on Token", async () => {
       const y = await updatedToken.isUpdated.call();
       assert.isTrue(y);
     });
 
-    it('should return correct total supply of tokens', async () => {
+    it("should return correct total supply of tokens", async () => {
       const updatedTokenTotal = await updatedToken.totalSupply.call();
       assert.equal(100, updatedTokenTotal.toNumber());
     });
 
-    it('should return correct token balances', async () => {
+    it("should return correct token balances", async () => {
       const totalAccount1 = await updatedToken.balanceOf.call(COINBASE_ACCOUNT);
       assert.equal(50, totalAccount1.toNumber());
       const totalAccount2 = await updatedToken.balanceOf.call(ACCOUNT_TWO);
@@ -65,7 +65,7 @@ contract('Token contract upgrade', (accounts) => {
       assert.equal(30, totalAccount3.toNumber());
     });
 
-    it('should return correct token allowances', async () => {
+    it("should return correct token allowances", async () => {
       const allowance1 = await updatedToken.allowance.call(COINBASE_ACCOUNT, ACCOUNT_TWO);
       assert.equal(15, allowance1.toNumber());
       const allowance2 = await updatedToken.allowance.call(COINBASE_ACCOUNT, ACCOUNT_THREE);

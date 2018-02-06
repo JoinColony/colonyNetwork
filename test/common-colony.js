@@ -1,21 +1,21 @@
 /* globals artifacts */
-import { SPECIFICATION_HASH } from '../helpers/constants';
-import testHelper from '../helpers/test-helper';
-import testDataGenerator from '../helpers/test-data-generator';
+import { SPECIFICATION_HASH } from "../helpers/constants";
+import testHelper from "../helpers/test-helper";
+import testDataGenerator from "../helpers/test-data-generator";
 
-const upgradableContracts = require('../helpers/upgradable-contracts');
+const upgradableContracts = require("../helpers/upgradable-contracts");
 
-const EtherRouter = artifacts.require('EtherRouter');
-const Resolver = artifacts.require('Resolver');
-const Colony = artifacts.require('Colony');
-const IColonyNetwork = artifacts.require('IColonyNetwork');
-const IColony = artifacts.require('IColony');
-const ColonyFunding = artifacts.require('ColonyFunding');
-const ColonyTask = artifacts.require('ColonyTask');
-const Token = artifacts.require('Token');
-const ColonyTransactionReviewer = artifacts.require('ColonyTransactionReviewer');
+const EtherRouter = artifacts.require("EtherRouter");
+const Resolver = artifacts.require("Resolver");
+const Colony = artifacts.require("Colony");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IColony = artifacts.require("IColony");
+const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyTask = artifacts.require("ColonyTask");
+const Token = artifacts.require("Token");
+const ColonyTransactionReviewer = artifacts.require("ColonyTransactionReviewer");
 
-contract('Common Colony', () => {
+contract("Common Colony", () => {
   let COLONY_KEY;
   let commonColony;
   let colony;
@@ -42,15 +42,15 @@ contract('Common Colony', () => {
       colonyFunding,
       colonyTransactionReviewer,
       resolver,
-      colonyNetwork,
+      colonyNetwork
     );
-    await colonyNetwork.createColony('Common Colony');
-    const commonColonyAddress = await colonyNetwork.getColony.call('Common Colony');
+    await colonyNetwork.createColony("Common Colony");
+    const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await IColony.at(commonColonyAddress);
   });
 
-  describe('when adding a new global skill', () => {
-    it('should be able to add a new skill as a child to the root skill', async () => {
+  describe("when adding a new global skill", () => {
+    it("should be able to add a new skill as a child to the root skill", async () => {
       await commonColony.addGlobalSkill(1);
 
       const skillCount = await colonyNetwork.getSkillCount.call();
@@ -69,7 +69,7 @@ contract('Common Colony', () => {
       assert.equal(rootSkillChild.toNumber(), 3);
     });
 
-    it('should be able to add multiple child skills to the root global skill', async () => {
+    it("should be able to add multiple child skills to the root global skill", async () => {
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(1);
@@ -102,7 +102,7 @@ contract('Common Colony', () => {
       assert.equal(rootSkillChild3.toNumber(), 5);
     });
 
-    it('should be able to add child skills a few levels down the skills tree', async () => {
+    it("should be able to add child skills a few levels down the skills tree", async () => {
       // Add 2 skill nodes to root skill
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(1);
@@ -120,7 +120,7 @@ contract('Common Colony', () => {
       assert.equal(parentSkill2.toNumber(), 1);
     });
 
-    it('should NOT be able to add a child skill for a non existent parent', async () => {
+    it("should NOT be able to add a child skill for a non existent parent", async () => {
       // Add 2 skill nodes to root skill
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(1);
@@ -130,13 +130,13 @@ contract('Common Colony', () => {
       assert.equal(skillCount.toNumber(), 4);
     });
 
-    it('should NOT be able to add a child skill to a local skill parent', async () => {
+    it("should NOT be able to add a child skill to a local skill parent", async () => {
       await testHelper.checkError(commonColony.addGlobalSkill(2));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
     });
 
-    it('should be able to add skills in the middle of the skills tree', async () => {
+    it("should be able to add skills in the middle of the skills tree", async () => {
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(4);
@@ -209,7 +209,7 @@ contract('Common Colony', () => {
       assert.equal(skill6ParentSkillId2.toNumber(), 1);
     });
 
-    it('when N parents are there, should record parent skill ids for N = integer powers of 2', async () => {
+    it("when N parents are there, should record parent skill ids for N = integer powers of 2", async () => {
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(3);
       await commonColony.addGlobalSkill(4);
@@ -234,7 +234,7 @@ contract('Common Colony', () => {
       assert.equal(skill11ParentSkillId4.toNumber(), 3);
     });
 
-    it('should NOT be able to add a new root global skill', async () => {
+    it("should NOT be able to add a new root global skill", async () => {
       await testHelper.checkError(commonColony.addGlobalSkill(0));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
@@ -242,8 +242,8 @@ contract('Common Colony', () => {
     });
   });
 
-  describe('when adding domains in the common colony', () => {
-    it('should be able to add new domains as children to the root domain', async () => {
+  describe("when adding domains in the common colony", () => {
+    it("should be able to add new domains as children to the root domain", async () => {
       await commonColony.addDomain(2);
 
       const skillCount = await colonyNetwork.getSkillCount.call();
@@ -264,7 +264,7 @@ contract('Common Colony', () => {
       assert.equal(rootSkillChild.toNumber(), 3);
     });
 
-    it('should NOT be able to add a child local skill more than one level from the root local skill', async () => {
+    it("should NOT be able to add a child local skill more than one level from the root local skill", async () => {
       await commonColony.addDomain(2);
       await testHelper.checkError(commonColony.addDomain(3));
 
@@ -275,7 +275,7 @@ contract('Common Colony', () => {
     });
   });
 
-  describe('when adding domains in a regular colony', () => {
+  describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
       COLONY_KEY = testHelper.getRandomString(7);
       await colonyNetwork.createColony(COLONY_KEY);
@@ -285,7 +285,7 @@ contract('Common Colony', () => {
       token = await Token.at(tokenAddress);
     });
 
-    it('should be able to add new domains as children to the root domain', async () => {
+    it("should be able to add new domains as children to the root domain", async () => {
       await colony.addDomain(3);
       await colony.addDomain(3);
       await colony.addDomain(3);
@@ -320,7 +320,7 @@ contract('Common Colony', () => {
       assert.equal(rootSkillChild3.toNumber(), 6);
     });
 
-    it('should NOT be able to add a child local skill more than one level from the root local skill', async () => {
+    it("should NOT be able to add a child local skill more than one level from the root local skill", async () => {
       await colony.addDomain(3);
       await testHelper.checkError(colony.addDomain(4));
 
@@ -330,7 +330,7 @@ contract('Common Colony', () => {
       assert.equal(domainCount.toNumber(), 2);
     });
 
-    it('should NOT be able to add a child local skill to a global skill parent', async () => {
+    it("should NOT be able to add a child local skill to a global skill parent", async () => {
       await testHelper.checkError(colony.addDomain(1));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
@@ -339,14 +339,14 @@ contract('Common Colony', () => {
       assert.equal(domainCount.toNumber(), 1);
     });
 
-    it('should NOT be able to add a new local skill by anyone but a Colony', async () => {
+    it("should NOT be able to add a new local skill by anyone but a Colony", async () => {
       await testHelper.checkError(colonyNetwork.addSkill(2, false));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
     });
 
-    it('should NOT be able to add a new root local skill', async () => {
+    it("should NOT be able to add a new root local skill", async () => {
       await testHelper.checkError(colonyNetwork.addSkill(0, false));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
@@ -354,7 +354,7 @@ contract('Common Colony', () => {
     });
   });
 
-  describe('when setting domain and skill on task', () => {
+  describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
       COLONY_KEY = testHelper.getRandomString(7);
       await colonyNetwork.createColony(COLONY_KEY);
@@ -364,7 +364,7 @@ contract('Common Colony', () => {
       token = await Token.at(tokenAddress);
     });
 
-    it('should be able to set domain on task', async () => {
+    it("should be able to set domain on task", async () => {
       await colony.addDomain(3);
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskDomain(1, 2);
@@ -372,11 +372,11 @@ contract('Common Colony', () => {
       assert.equal(taskDomain.toNumber(), 2);
     });
 
-    it('should NOT be able to set a domain on nonexistent task', async () => {
+    it("should NOT be able to set a domain on nonexistent task", async () => {
       await testHelper.checkError(colony.setTaskDomain(10, 3));
     });
 
-    it('should NOT be able to set a nonexistent domain on task', async () => {
+    it("should NOT be able to set a nonexistent domain on task", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await testHelper.checkError(colony.setTaskDomain(1, 20));
 
@@ -384,14 +384,14 @@ contract('Common Colony', () => {
       assert.equal(taskDomain.toNumber(), 1);
     });
 
-    it('should NOT be able to set a domain on finalized task', async () => {
+    it("should NOT be able to set a domain on finalized task", async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony);
       await colony.finalizeTask(taskId);
       await testHelper.checkError(colony.setTaskDomain(taskId, 1));
     });
 
-    it('should be able to set global skill on task', async () => {
+    it("should be able to set global skill on task", async () => {
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(4);
 
@@ -401,11 +401,11 @@ contract('Common Colony', () => {
       assert.equal(taskSkill.toNumber(), 5);
     });
 
-    it('should NOT be able to set global skill on nonexistent task', async () => {
+    it("should NOT be able to set global skill on nonexistent task", async () => {
       await testHelper.checkError(colony.setTaskSkill(10, 1));
     });
 
-    it('should NOT be able to set global skill on finalized task', async () => {
+    it("should NOT be able to set global skill on finalized task", async () => {
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(4);
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
@@ -417,12 +417,12 @@ contract('Common Colony', () => {
       assert.equal(taskSkill.toNumber(), 1);
     });
 
-    it('should NOT be able to set nonexistent skill on task', async () => {
+    it("should NOT be able to set nonexistent skill on task", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await testHelper.checkError(colony.setTaskSkill(1, 5));
     });
 
-    it('should NOT be able to set local skill on task', async () => {
+    it("should NOT be able to set local skill on task", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await testHelper.checkError(colony.setTaskSkill(1, 3));
     });

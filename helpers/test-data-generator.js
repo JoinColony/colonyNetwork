@@ -1,7 +1,8 @@
-import web3Utils from 'web3-utils';
-import { BN } from 'bn.js';
+import web3Utils from "web3-utils";
+import { BN } from "bn.js";
 
-import { EVALUATOR,
+import {
+  EVALUATOR,
   WORKER,
   MANAGER_PAYOUT,
   WORKER_PAYOUT,
@@ -12,8 +13,9 @@ import { EVALUATOR,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
   WORKER_ROLE,
-  SPECIFICATION_HASH } from '../helpers/constants';
-import testHelper from '../helpers/test-helper';
+  SPECIFICATION_HASH
+} from "../helpers/constants";
+import testHelper from "../helpers/test-helper";
 
 module.exports = {
   async setupAssignedTask(
@@ -23,7 +25,7 @@ module.exports = {
     domain = 1,
     skill = 0,
     evaluator = EVALUATOR,
-    worker = WORKER,
+    worker = WORKER
   ) {
     await colony.makeTask(SPECIFICATION_HASH, 1);
     let taskId = await colony.getTaskCount.call();
@@ -32,7 +34,7 @@ module.exports = {
     // If the skill is not specified, default to the root global skill
     if (skill === 0) {
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
-      if (rootGlobalSkill === 0) throw new Error('Common Colony is not setup and therefore the root global skill does not exist');
+      if (rootGlobalSkill === 0) throw new Error("Common Colony is not setup and therefore the root global skill does not exist");
       await colony.setTaskSkill(taskId, rootGlobalSkill);
     } else {
       await colony.setTaskSkill(taskId, skill);
@@ -55,7 +57,7 @@ module.exports = {
     evaluator = EVALUATOR,
     worker = WORKER,
     manager_payout = MANAGER_PAYOUT,
-    worker_payout = WORKER_PAYOUT,
+    worker_payout = WORKER_PAYOUT
   ) {
     let tokenAddress;
     if (token === undefined) {
@@ -96,7 +98,7 @@ module.exports = {
     manager_rating = MANAGER_RATING,
     manager_rating_salt = RATING_1_SALT,
     worker_rating = WORKER_RATING,
-    worker_rating_salt = RATING_2_SALT,
+    worker_rating_salt = RATING_2_SALT
   ) {
     const taskId = await this.setupFundedTask(colonyNetwork, colony, token, dueDate, domain, skill, evaluator, worker, manager_payout, worker_payout);
     const WORKER_RATING_SECRET = web3Utils.soliditySha3(worker_rating_salt, worker_rating);
@@ -116,5 +118,5 @@ module.exports = {
       await token.transfer(colony.address, tokenAmount);
     }
     await colony.claimColonyFunds(token.address);
-  },
+  }
 };
