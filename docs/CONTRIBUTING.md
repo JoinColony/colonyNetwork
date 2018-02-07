@@ -26,7 +26,5 @@ If you're adding or changing existing tests, they should go on the same commit.
 ### Test coverage 
 When writing a new feature please ensure you write appropriate `truffle` test cases under test/. We strive for 100% test coverage for our contracts and CI works with close to 100% thresholds.
 
-Thank you for your help!
-
 ## Code of Conduct
 Please note we have a [code of conduct](CODE_OF_CONDUCT.md), please follow it in all your interactions with the project.
