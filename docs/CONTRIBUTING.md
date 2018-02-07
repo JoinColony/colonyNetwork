@@ -1,7 +1,5 @@
 # Contributing
 
-Help is always appreciated!
-
 The focus currently is implementing the [Colony White Paper](https://colony.io/whitepaper.pdf) which was split down in distinct chunks into the [GitHub issues tracker](https://github.com/JoinColony/colonyNetwork/issues). 
 
 Specifically we need help with the [Colony Network Token Sale MVP Backlog](https://github.com/JoinColony/colonyNetwork/issues?q=is%3Aissue+milestone%3A%22Colony+Network+Token+Sale+MVP%22+is%3Aopen). Items already being worked on are labelled "in-progress" to avoid work duplication.
