@@ -1,4 +1,5 @@
 import shortid from "shortid";
+import faker from "faker";
 import { assert } from "chai";
 
 module.exports = {
@@ -108,6 +109,9 @@ module.exports = {
         .toLowerCase();
     }
     return randString.slice(0, length);
+  },
+  getTokenArgs() {
+    return [faker.lorem.word(), faker.finance.currencyCode(), faker.random.number(18)];
   },
   hexToUtf8(text) {
     return web3.toAscii(text).replace(/\u0000/g, "");

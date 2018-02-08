@@ -53,6 +53,7 @@
     "eslint-plugin-flowtype": "^2.42.0",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-prettier": "^2.6.0",
+    "faker": "^4.1.0",
     "ganache-cli": "^6.1.0-beta.0",
     "istanbul": "^0.4.5",
     "mocha": "^5.0.0",
