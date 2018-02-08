@@ -130,6 +130,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
       rootGlobalSkill.globalSkill = true;
       skills[skillCount] = rootGlobalSkill;
       rootGlobalSkillId = skillCount;
+      // TODO: add the special 'mining' skill, which is local to the common Colony.
     }
 
     // For all colonies initialise the root (domain) local skill with defaults by just incrementing the skillCount

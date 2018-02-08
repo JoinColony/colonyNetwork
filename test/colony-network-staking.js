@@ -1,6 +1,7 @@
 /* globals artifacts */
 import { forwardTime, checkErrorRevert } from "../helpers/test-helper";
 import { giveUserCLNYTokens, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
+import { ReputationMiningClient } from "../client/main";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -719,6 +720,32 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(activeRepLogLength.toNumber(), 1);
     });
 
+    it.only("The reputation mining client should insert reputation updates from the log", async () => {
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], "1000000000000000000");
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for three task completions.
+
+      const client = new ReputationMiningClient();
+      await client.initialise(colonyNetwork.address);
+      await client.addLogContentsToReputationTree();
+      // const hash = await client.getRootHash();
+    });
+
+    it("The reputation mining clinent should calculate reputation decay correctly");
     it("should abort if a deposit did not complete correctly");
   });
 });

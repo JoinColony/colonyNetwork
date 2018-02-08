@@ -9,8 +9,9 @@ import "./ERC20Extended.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
 
+// TODO: Can we handle a dispute regarding the very first hash that should be set?
 
-contract ReputationMiningCycle {
+contract ReputationMiningCycle is PatriciaTree {
   address colonyNetworkAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
@@ -195,4 +196,7 @@ contract ReputationMiningCycle {
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
+
+
+
 }
