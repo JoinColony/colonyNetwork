@@ -96,10 +96,14 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
 
-  function createColony(bytes32 _name) public
-  colonyKeyUnique(_name)
+  function createColony(
+    bytes32 _name,
+    bytes32 _tokenName,
+    bytes32 _tokenSymbol,
+    uint256 _tokenDecimals
+  ) public colonyKeyUnique(_name)
   {
-    var token = new Token();
+    var token = new Token(_tokenName, _tokenSymbol, _tokenDecimals);
     var etherRouter = new EtherRouter();
     var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
