@@ -28,23 +28,6 @@ contract("Token", accounts => {
     etherRouterToken = await Token.at(etherRouter.address);
   });
 
-  describe.skip("when working with ERC20 properties", () => {
-    it("token `symbol` property is correct", async () => {
-      const tokenSymbol = await etherRouterToken.symbol();
-      assert.equal(web3.toUtf8(tokenSymbol), "CLNY");
-    });
-
-    it("token `decimals` property is correct", async () => {
-      const tokenDecimals = await etherRouterToken.decimals.call();
-      assert.equal(tokenDecimals.toString(), "18");
-    });
-
-    it("token `name` property is correct", async () => {
-      const tokenName = await etherRouterToken.name.call();
-      assert.equal(web3.toUtf8(tokenName), "Colony Network Token");
-    });
-  });
-
   describe("when working with ERC20 functions", () => {
     beforeEach("mint 1500000 tokens", async () => {
       await etherRouterToken.mint(1500000);
