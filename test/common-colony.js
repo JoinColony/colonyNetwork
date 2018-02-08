@@ -17,6 +17,7 @@ const ColonyTransactionReviewer = artifacts.require("ColonyTransactionReviewer")
 
 contract("Common Colony", () => {
   let COLONY_KEY;
+  let TOKEN_ARGS;
   let commonColony;
   let colony;
   let token;
@@ -44,7 +45,7 @@ contract("Common Colony", () => {
       resolver,
       colonyNetwork
     );
-    await colonyNetwork.createColony("Common Colony");
+    await colonyNetwork.createColony("Common Colony", "Colony Network Token", "CLNY", 18);
     const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await IColony.at(commonColonyAddress);
   });
@@ -278,7 +279,8 @@ contract("Common Colony", () => {
   describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
       COLONY_KEY = testHelper.getRandomString(7);
-      await colonyNetwork.createColony(COLONY_KEY);
+      TOKEN_ARGS = testHelper.getTokenArgs();
+      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
       colony = await IColony.at(address);
       const tokenAddress = await colony.getToken.call();
@@ -357,7 +359,8 @@ contract("Common Colony", () => {
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
       COLONY_KEY = testHelper.getRandomString(7);
-      await colonyNetwork.createColony(COLONY_KEY);
+      TOKEN_ARGS = testHelper.getTokenArgs();
+      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
       colony = await IColony.at(address);
       const tokenAddress = await colony.getToken.call();

@@ -37,7 +37,8 @@ contract("Colony contract upgrade", accounts => {
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
 
     COLONY_KEY = testHelper.getRandomString(7);
-    await colonyNetwork.createColony(COLONY_KEY);
+    const tokenArgs = testHelper.getTokenArgs();
+    await colonyNetwork.createColony(COLONY_KEY, ...tokenArgs);
     etherRouter = await colonyNetwork.getColony(COLONY_KEY);
     colony = await IColony.at(etherRouter);
     colonyTask = await ColonyTask.new();

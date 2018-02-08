@@ -14,7 +14,7 @@ module.exports = deployer => {
     .then(_etherRouter => IColonyNetwork.at(_etherRouter.address))
     .then(instance => {
       colonyNetwork = instance;
-      return colonyNetwork.createColony("Common Colony");
+      return colonyNetwork.createColony("Common Colony", "Colony Network Token", "CLNY", 18);
     })
     .then(() => colonyNetwork.getSkillCount.call())
     .then(skillCount => {

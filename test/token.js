@@ -17,7 +17,8 @@ contract("Token", accounts => {
   let etherRouterToken;
 
   before(async () => {
-    token = await Token.new();
+    const tokenArgs = testHelper.getTokenArgs();
+    token = await Token.new(...tokenArgs);
     resolver = await Resolver.new();
   });
 
