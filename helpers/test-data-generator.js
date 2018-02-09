@@ -27,10 +27,9 @@ module.exports = {
     evaluator = EVALUATOR,
     worker = WORKER
   ) {
-    await colony.makeTask(SPECIFICATION_HASH, 1);
+    await colony.makeTask(SPECIFICATION_HASH, domain);
     let taskId = await colony.getTaskCount.call();
     taskId = taskId.toNumber();
-    await colony.setTaskDomain(taskId, domain);
     // If the skill is not specified, default to the root global skill
     if (skill === 0) {
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
