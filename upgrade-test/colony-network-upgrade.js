@@ -20,10 +20,12 @@ contract("ColonyNetwork contract upgrade", () => {
 
     // Setup 2 test colonies
     colonyKey1 = testHelper.getRandomString(7);
-    await colonyNetwork.createColony(colonyKey1);
+    const tokenArgs1 = testHelper.getTokenArgs();
+    await colonyNetwork.createColony(colonyKey1, ...tokenArgs1);
     colonyAddress1 = await colonyNetwork.getColony(colonyKey1);
     colonyKey2 = testHelper.getRandomString(7);
-    await colonyNetwork.createColony(colonyKey2);
+    const tokenArgs2 = testHelper.getTokenArgs();
+    await colonyNetwork.createColony(colonyKey2, ...tokenArgs2);
     colonyAddress2 = await colonyNetwork.getColony(colonyKey2);
 
     // Setup new Colony contract version on the Network

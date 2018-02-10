@@ -66,9 +66,10 @@ contract("all", () => {
     colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
     await upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
-    const estimate = await colonyNetwork.createColony.estimateGas("Antz");
+    const tokenArgs = testHelper.getTokenArgs();
+    const estimate = await colonyNetwork.createColony.estimateGas("Antz", ...tokenArgs);
     console.log("createColony estimate : ", estimate);
-    const tx = await colonyNetwork.createColony("Antz", { gasPrice });
+    const tx = await colonyNetwork.createColony("Antz", ...tokenArgs, { gasPrice });
     console.log("createColony actual cost : ", tx.receipt.gasUsed);
     const address = await colonyNetwork.getColony.call("Antz");
     colony = await IColony.at(address);

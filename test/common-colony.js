@@ -17,7 +17,9 @@ const ColonyTransactionReviewer = artifacts.require("ColonyTransactionReviewer")
 
 contract("Common Colony", () => {
   let COLONY_KEY;
+  let TOKEN_ARGS;
   let commonColony;
+  let commonColonyToken;
   let colony;
   let token;
   let colonyNetwork;
@@ -44,9 +46,28 @@ contract("Common Colony", () => {
       resolver,
       colonyNetwork
     );
-    await colonyNetwork.createColony("Common Colony");
+    await colonyNetwork.createColony("Common Colony", "Colony Network Token", "CLNY", 18);
     const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await IColony.at(commonColonyAddress);
+    const commonColonyTokenAddress = await commonColony.getToken.call();
+    commonColonyToken = await Token.at(commonColonyTokenAddress);
+  });
+
+  describe("when working with ERC20 properties of Common Colony token", () => {
+    it("token `symbol` property is correct", async () => {
+      const tokenSymbol = await commonColonyToken.symbol();
+      assert.equal(web3.toUtf8(tokenSymbol), "CLNY");
+    });
+
+    it("token `decimals` property is correct", async () => {
+      const tokenDecimals = await commonColonyToken.decimals.call();
+      assert.equal(tokenDecimals.toString(), "18");
+    });
+
+    it("token `name` property is correct", async () => {
+      const tokenName = await commonColonyToken.name.call();
+      assert.equal(web3.toUtf8(tokenName), "Colony Network Token");
+    });
   });
 
   describe("when adding a new global skill", () => {
@@ -278,7 +299,8 @@ contract("Common Colony", () => {
   describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
       COLONY_KEY = testHelper.getRandomString(7);
-      await colonyNetwork.createColony(COLONY_KEY);
+      TOKEN_ARGS = testHelper.getTokenArgs();
+      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
       colony = await IColony.at(address);
       const tokenAddress = await colony.getToken.call();
@@ -357,7 +379,8 @@ contract("Common Colony", () => {
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
       COLONY_KEY = testHelper.getRandomString(7);
-      await colonyNetwork.createColony(COLONY_KEY);
+      TOKEN_ARGS = testHelper.getTokenArgs();
+      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
       colony = await IColony.at(address);
       const tokenAddress = await colony.getToken.call();

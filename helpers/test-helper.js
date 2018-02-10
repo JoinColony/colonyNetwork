@@ -109,6 +109,9 @@ module.exports = {
     }
     return randString.slice(0, length);
   },
+  getTokenArgs() {
+    return [this.getRandomString(5), this.getRandomString(3), 18];
+  },
   hexToUtf8(text) {
     return web3.toAscii(text).replace(/\u0000/g, "");
   },

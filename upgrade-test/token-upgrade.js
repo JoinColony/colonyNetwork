@@ -1,6 +1,7 @@
 /* globals artifacts */
 
 import upgradableContracts from "../helpers/upgradable-contracts";
+import testHelpers from "../helpers/test-helper";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -19,7 +20,8 @@ contract("Token contract upgrade", accounts => {
   let updatedToken;
 
   beforeEach(async () => {
-    tokenContract = await Token.new();
+    const tokenArgs = testHelpers.getTokenArgs();
+    tokenContract = await Token.new(...tokenArgs);
     resolver = await Resolver.new();
     // Instantiate a new EtherRouter to clear the data
     etherRouter = await EtherRouter.new();
@@ -40,7 +42,8 @@ contract("Token contract upgrade", accounts => {
       await token.approve(ACCOUNT_THREE, 10, { from: ACCOUNT_TWO });
 
       // Upgrade Token
-      const updatedTokenContract = await UpdatedToken.new();
+      const tokenArgs = testHelpers.getTokenArgs();
+      const updatedTokenContract = await UpdatedToken.new(...tokenArgs);
       await upgradableContracts.setupUpgradableToken(updatedTokenContract, resolver, etherRouter);
       await resolver.register("isUpdated()", updatedTokenContract.address, 32);
       updatedToken = await UpdatedToken.at(etherRouter.address);

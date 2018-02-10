@@ -17,7 +17,8 @@ contract("Token", accounts => {
   let etherRouterToken;
 
   before(async () => {
-    token = await Token.new();
+    const tokenArgs = testHelper.getTokenArgs();
+    token = await Token.new(...tokenArgs);
     resolver = await Resolver.new();
   });
 
@@ -25,23 +26,6 @@ contract("Token", accounts => {
     etherRouter = await EtherRouter.new();
     await upgradableContracts.setupUpgradableToken(token, resolver, etherRouter);
     etherRouterToken = await Token.at(etherRouter.address);
-  });
-
-  describe.skip("when working with ERC20 properties", () => {
-    it("token `symbol` property is correct", async () => {
-      const tokenSymbol = await etherRouterToken.symbol();
-      assert.equal(web3.toUtf8(tokenSymbol), "CLNY");
-    });
-
-    it("token `decimals` property is correct", async () => {
-      const tokenDecimals = await etherRouterToken.decimals.call();
-      assert.equal(tokenDecimals.toString(), "18");
-    });
-
-    it("token `name` property is correct", async () => {
-      const tokenName = await etherRouterToken.name.call();
-      assert.equal(web3.toUtf8(tokenName), "Colony Network Token");
-    });
   });
 
   describe("when working with ERC20 functions", () => {

@@ -22,12 +22,14 @@ contract("Colony Funding", () => {
 
   beforeEach(async () => {
     COLONY_KEY = testHelper.getRandomString(7);
-    await colonyNetwork.createColony(COLONY_KEY);
+    const tokenArgs = testHelper.getTokenArgs();
+    await colonyNetwork.createColony(COLONY_KEY, ...tokenArgs);
     const address = await colonyNetwork.getColony.call(COLONY_KEY);
     colony = await IColony.at(address);
     const tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
-    otherToken = await Token.new();
+    const otherTokenArgs = testHelper.getTokenArgs();
+    otherToken = await Token.new(...otherTokenArgs);
   });
 
   describe("when receiving tokens", () => {
