@@ -382,6 +382,31 @@ contract("Colony", () => {
       assert.isTrue(task[3]);
     });
 
+    it("should return funds assigned to the task back to its domain", async () => {
+      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      const taskId = await testDataGenerator.setupFundedTask(colonyNetwork, colony, token);
+      const task = await colony.getTask.call(taskId);
+      const domainId = await colony.getTaskDomain.call(taskId, 0);
+      const domain = await colony.getDomain.call(domainId);
+      const taskPotId = task[6];
+      const domainPotId = domain[1];
+
+      // TODO: ether
+      // tokens
+      const originalDomainPotBalance = await colony.getPotBalance.call(domainPotId, token.address);
+      const originalTaskPotBalance = await colony.getPotBalance.call(taskPotId, token.address);
+
+      await colony.cancelTask(taskId);
+
+      // compare new balance
+      const cancelledTaskPotBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      const cancelledDomainPotBalance = await colony.getPotBalance.call(domainPotId, token.address);
+      assert.notEqual(originalTaskPotBalance.toNumber(), cancelledTaskPotBalance.toNumber());
+      assert.notEqual(originalDomainPotBalance.toNumber(), cancelledDomainPotBalance.toNumber());
+      assert.equal(cancelledTaskPotBalance.toNumber(), 0);
+      assert.equal(originalDomainPotBalance.plus(originalTaskPotBalance).toNumber(), cancelledDomainPotBalance.toNumber());
+    });
+
     it("should fail if manager tries to cancel a task that was finalized", async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
