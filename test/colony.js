@@ -391,20 +391,34 @@ contract("Colony", () => {
       const taskPotId = task[6];
       const domainPotId = domain[1];
 
-      // TODO: ether
-      // tokens
+      // Our testDataGenerator already set up some task fund with tokens,
+      // but we need some Ether, too
+      await colony.send(101);
+      await colony.claimColonyFunds(0x0);
+      await colony.moveFundsBetweenPots(1, taskPotId, 100, 0x0);
+
+      // Keep track of original Ether balance in pots
+      const originalDomainEtherPotBalance = await colony.getPotBalance.call(domainPotId, 0x0);
+      const originalTaskEtherPotBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      // And same for the token
       const originalDomainPotBalance = await colony.getPotBalance.call(domainPotId, token.address);
       const originalTaskPotBalance = await colony.getPotBalance.call(taskPotId, token.address);
 
+      // Now that everything is set up, let's cancel the task and compare pots afterwards
       await colony.cancelTask(taskId);
 
-      // compare new balance
       const cancelledTaskPotBalance = await colony.getPotBalance.call(taskPotId, token.address);
       const cancelledDomainPotBalance = await colony.getPotBalance.call(domainPotId, token.address);
+      const cancelledTaskEtherPotBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      const cancelledDomainEtherPotBalance = await colony.getPotBalance.call(domainPotId, 0x0);
       assert.notEqual(originalTaskPotBalance.toNumber(), cancelledTaskPotBalance.toNumber());
       assert.notEqual(originalDomainPotBalance.toNumber(), cancelledDomainPotBalance.toNumber());
+      assert.notEqual(originalTaskEtherPotBalance.toNumber(), cancelledTaskEtherPotBalance.toNumber());
+      assert.notEqual(originalDomainEtherPotBalance.toNumber(), cancelledDomainEtherPotBalance.toNumber());
       assert.equal(cancelledTaskPotBalance.toNumber(), 0);
+      assert.equal(cancelledTaskEtherPotBalance.toNumber(), 0);
       assert.equal(originalDomainPotBalance.plus(originalTaskPotBalance).toNumber(), cancelledDomainPotBalance.toNumber());
+      assert.equal(originalDomainEtherPotBalance.plus(originalTaskEtherPotBalance).toNumber(), cancelledDomainEtherPotBalance.toNumber());
     });
 
     it("should fail if manager tries to cancel a task that was finalized", async () => {
