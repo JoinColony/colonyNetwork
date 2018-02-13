@@ -1,37 +1,38 @@
-import sha3 from 'solidity-sha3';
+import sha3 from "solidity-sha3";
+import BN from "bn.js";
 
-const ganache = require('ganache-core');
-const contract = require('truffle-contract');
-const ReputationMiningCycleJSON = require('../build/contracts/ReputationMiningCycle.json');
-const ColonyNetworkJSON = require('../build/contracts/ColonyNetwork.json');
-const jsonfile = require('jsonfile');
+const ganache = require("ganache-core");
+const contract = require("truffle-contract");
+const ReputationMiningCycleJSON = require("../build/contracts/ReputationMiningCycle.json");
+const ColonyNetworkJSON = require("../build/contracts/ColonyNetwork.json");
+const jsonfile = require("jsonfile");
 
-const file = './reputations.json';
+const file = "./reputations.json";
 
-const Web3 = require('web3');
-const pad = require('pad-left');
-
+const Web3 = require("web3");
 
 const ReputationMiningCycle = contract(ReputationMiningCycleJSON);
 const ColonyNetwork = contract(ColonyNetworkJSON);
-const accountAddress = '0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4';
+const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 
-export default class ReputationMiningClient {
+export class ReputationMiningClient {
   constructor() {
     this.web3 = new Web3();
-    ReputationMiningCycle.setProvider(ganache.provider({
-      network_id: 515,
-      vmErrorsOnRPCResponse: false,
-      locked: false,
-      verbose: true,
-      accounts: [
-        {
-          balance: '0x10000000000000000000000000',
-          secretKey: '0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7',
-        },
-      ],
-    }));
-    ColonyNetwork.setProvider(new Web3.providers.HttpProvider('http://localhost:8545'));
+    ReputationMiningCycle.setProvider(
+      ganache.provider({
+        network_id: 515,
+        vmErrorsOnRPCResponse: false,
+        locked: false,
+        verbose: true,
+        accounts: [
+          {
+            balance: "0x10000000000000000000000000",
+            secretKey: "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7"
+          }
+        ]
+      })
+    );
+    ColonyNetwork.setProvider(new Web3.providers.HttpProvider("http://localhost:8545"));
     try {
       this.reputations = jsonfile.readFileSync(file);
     } catch (err) {
@@ -67,8 +68,8 @@ export default class ReputationMiningClient {
   //   return this.insert(colonyAddress, skillId, userAddress, reputationScore);
   // }
 
-  getValueAsBytes(reputation, uid) {
-    return `0x${pad(this.web3.toHex(reputation).slice(2), 64, '0')}${this.web3.toHex(':').slice(2)}${pad(this.web3.toHex(uid).slice(2), 64, '0')}`;
+  static getValueAsBytes(reputation, uid) {
+    return `${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
   }
 
   // function getNode(bytes32 hash) public view returns (Data.Node n);
@@ -80,18 +81,26 @@ export default class ReputationMiningClient {
     let userAddress = _userAddress;
     // TODO fromAscii is deprecated - use asciiToHex once we upgrade web3.
     let isAddress = this.web3.isAddress(colonyAddress);
-    if (!isAddress) { return; }
-    isAddress = this.web3.isAddress(userAddress);
-    if (!isAddress) { return; }
-    if (colonyAddress.substring(0, 2) !== '0x') {
-      colonyAddress = `0x${colonyAddress}`;
+    // TODO should we return errors here?
+    if (!isAddress) {
+      return;
     }
-    if (userAddress.substring(0, 2) !== '0x') {
-      userAddress = `0x${userAddress}`;
+    isAddress = this.web3.isAddress(userAddress);
+    if (!isAddress) {
+      return;
+    }
+    if (colonyAddress.substring(0, 2) === "0x") {
+      colonyAddress = colonyAddress.slice(2);
+    }
+    if (userAddress.substring(0, 2) === "0x") {
+      userAddress = userAddress.slice(2);
     }
     colonyAddress = colonyAddress.toLowerCase();
     userAddress = userAddress.toLowerCase();
-    const key = this.web3.fromAscii(`${colonyAddress}:${skillId}:${userAddress}`);
+    const key = `${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
+      16,
+      40
+    )}`;
     const keyAlreadyExists = await this.keyExists(key);
     // const keyHash = sha3(key);
     // If we already have this key, then we lookup the unique identifier we assigned this key.
@@ -123,8 +132,8 @@ export default class ReputationMiningClient {
   }
 
   async keyExists(key) {
-    // key must already have had fromAscii applied to it.
-    let res = ['', []];
+    // key must already be in byte form. TODO: Check this?
+    let res = ["", []];
     try {
       res = await this.reputationCycle.getProof(key);
     } catch (err) {
