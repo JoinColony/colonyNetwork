@@ -321,6 +321,21 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   {
     tasks[_id].cancelled = true;
+
+    // WIP:
+    // get task pot
+    uint256 taskPotId = tasks[_id].potId;
+    Pot storage taskPot = pots[taskPotId];
+    // get domain pot
+    uint256 domainId = tasks[_id].domains[0];
+    uint256 domainPotId = domains[domainId].potId;
+    //Pot storage domainPot = pots[domainPotId];
+    // get task pot token from this colony
+    //uint256 taskEtherBalance = taskPot.balance[0x0];
+    uint256 taskTokenBalance = taskPot.balance[token];
+
+    IColony(this).moveFundsBetweenPots(taskPotId, domainPotId, taskTokenBalance, token);
+    // same for ether
   }
 
   function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256) {
