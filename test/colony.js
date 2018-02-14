@@ -31,6 +31,7 @@ contract("Colony", () => {
   let COLONY_KEY;
   let colony;
   let token;
+  let otherToken;
   let authority;
   let colonyNetwork;
 
@@ -49,6 +50,8 @@ contract("Colony", () => {
     authority = await Authority.at(authorityAddress);
     const tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
+    const otherTokenArgs = testHelper.getTokenArgs();
+    otherToken = await Token.new(...otherTokenArgs);
   });
 
   describe("when initialised", () => {
@@ -382,7 +385,7 @@ contract("Colony", () => {
       assert.isTrue(task[3]);
     });
 
-    it("should return funds assigned to the task back to its domain", async () => {
+    it("should be possible to return funds back to the domain", async () => {
       await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
       const taskId = await testDataGenerator.setupFundedTask(colonyNetwork, colony, token);
       const task = await colony.getTask.call(taskId);
@@ -397,28 +400,46 @@ contract("Colony", () => {
       await colony.claimColonyFunds(0x0);
       await colony.moveFundsBetweenPots(1, taskPotId, 100, 0x0);
 
+      // And another token
+      await otherToken.mint(101);
+      await otherToken.transfer(colony.address, 101);
+      await colony.claimColonyFunds(otherToken.address);
+      await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
+
       // Keep track of original Ether balance in pots
-      const originalDomainEtherPotBalance = await colony.getPotBalance.call(domainPotId, 0x0);
-      const originalTaskEtherPotBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      const originalDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
+      const originalTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
       // And same for the token
-      const originalDomainPotBalance = await colony.getPotBalance.call(domainPotId, token.address);
-      const originalTaskPotBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      const originalDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
+      const originalTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      // And the other token
+      const originalDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
+      const originalTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
 
-      // Now that everything is set up, let's cancel the task and compare pots afterwards
+      // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
       await colony.cancelTask(taskId);
+      await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskEtherBalance, 0x0);
+      await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskTokenBalance, token.address);
+      await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskOtherTokenBalance, otherToken.address);
 
-      const cancelledTaskPotBalance = await colony.getPotBalance.call(taskPotId, token.address);
-      const cancelledDomainPotBalance = await colony.getPotBalance.call(domainPotId, token.address);
-      const cancelledTaskEtherPotBalance = await colony.getPotBalance.call(taskPotId, 0x0);
-      const cancelledDomainEtherPotBalance = await colony.getPotBalance.call(domainPotId, 0x0);
-      assert.notEqual(originalTaskPotBalance.toNumber(), cancelledTaskPotBalance.toNumber());
-      assert.notEqual(originalDomainPotBalance.toNumber(), cancelledDomainPotBalance.toNumber());
-      assert.notEqual(originalTaskEtherPotBalance.toNumber(), cancelledTaskEtherPotBalance.toNumber());
-      assert.notEqual(originalDomainEtherPotBalance.toNumber(), cancelledDomainEtherPotBalance.toNumber());
-      assert.equal(cancelledTaskPotBalance.toNumber(), 0);
-      assert.equal(cancelledTaskEtherPotBalance.toNumber(), 0);
-      assert.equal(originalDomainPotBalance.plus(originalTaskPotBalance).toNumber(), cancelledDomainPotBalance.toNumber());
-      assert.equal(originalDomainEtherPotBalance.plus(originalTaskEtherPotBalance).toNumber(), cancelledDomainEtherPotBalance.toNumber());
+      const cancelledTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      const cancelledDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
+      const cancelledTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      const cancelledDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
+      const cancelledTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
+      const cancelledDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
+      assert.notEqual(originalTaskEtherBalance.toNumber(), cancelledTaskEtherBalance.toNumber());
+      assert.notEqual(originalDomainEtherBalance.toNumber(), cancelledDomainEtherBalance.toNumber());
+      assert.notEqual(originalTaskTokenBalance.toNumber(), cancelledTaskTokenBalance.toNumber());
+      assert.notEqual(originalDomainTokenBalance.toNumber(), cancelledDomainTokenBalance.toNumber());
+      assert.notEqual(originalTaskOtherTokenBalance.toNumber(), cancelledTaskOtherTokenBalance.toNumber());
+      assert.notEqual(originalDomainOtherTokenBalance.toNumber(), cancelledDomainOtherTokenBalance.toNumber());
+      assert.equal(cancelledTaskEtherBalance.toNumber(), 0);
+      assert.equal(cancelledTaskTokenBalance.toNumber(), 0);
+      assert.equal(cancelledTaskOtherTokenBalance.toNumber(), 0);
+      assert.equal(originalDomainEtherBalance.plus(originalTaskEtherBalance).toNumber(), cancelledDomainEtherBalance.toNumber());
+      assert.equal(originalDomainTokenBalance.plus(originalTaskTokenBalance).toNumber(), cancelledDomainTokenBalance.toNumber());
+      assert.equal(originalDomainOtherTokenBalance.plus(originalTaskOtherTokenBalance).toNumber(), cancelledDomainOtherTokenBalance.toNumber());
     });
 
     it("should fail if manager tries to cancel a task that was finalized", async () => {
