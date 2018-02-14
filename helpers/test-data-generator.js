@@ -19,15 +19,7 @@ import {
 import testHelper from "../helpers/test-helper";
 
 module.exports = {
-  async setupAssignedTask(
-    colonyNetwork,
-    colony,
-    dueDate,
-    domain = 1,
-    skill = 0,
-    evaluator = EVALUATOR,
-    worker = WORKER
-  ) {
+  async setupAssignedTask(colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER) {
     let dueDateTimestamp = dueDate;
     if (!dueDateTimestamp) {
       dueDateTimestamp = await testHelper.currentBlockTime();

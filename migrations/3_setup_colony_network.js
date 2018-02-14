@@ -18,7 +18,7 @@ module.exports = deployer => {
       colonyNetwork = instance;
       return ColonyNetworkStaking.deployed();
     })
-    .then((instance) => {
+    .then(instance => {
       colonyNetworkStaking = instance;
       return EtherRouter.deployed();
     })
