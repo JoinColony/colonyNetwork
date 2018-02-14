@@ -31,6 +31,7 @@ contract("Colony", () => {
   let COLONY_KEY;
   let colony;
   let token;
+  let otherToken;
   let authority;
   let colonyNetwork;
 
@@ -49,6 +50,8 @@ contract("Colony", () => {
     authority = await Authority.at(authorityAddress);
     const tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
+    const otherTokenArgs = testHelper.getTokenArgs();
+    otherToken = await Token.new(...otherTokenArgs);
   });
 
   describe("when initialised", () => {
@@ -380,6 +383,63 @@ contract("Colony", () => {
       await colony.cancelTask(taskId);
       const task = await colony.getTask.call(taskId);
       assert.isTrue(task[3]);
+    });
+
+    it("should be possible to return funds back to the domain", async () => {
+      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      const taskId = await testDataGenerator.setupFundedTask(colonyNetwork, colony, token);
+      const task = await colony.getTask.call(taskId);
+      const domainId = await colony.getTaskDomain.call(taskId, 0);
+      const domain = await colony.getDomain.call(domainId);
+      const taskPotId = task[6];
+      const domainPotId = domain[1];
+
+      // Our testDataGenerator already set up some task fund with tokens,
+      // but we need some Ether, too
+      await colony.send(101);
+      await colony.claimColonyFunds(0x0);
+      await colony.moveFundsBetweenPots(1, taskPotId, 100, 0x0);
+
+      // And another token
+      await otherToken.mint(101);
+      await otherToken.transfer(colony.address, 101);
+      await colony.claimColonyFunds(otherToken.address);
+      await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
+
+      // Keep track of original Ether balance in pots
+      const originalDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
+      const originalTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      // And same for the token
+      const originalDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
+      const originalTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      // And the other token
+      const originalDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
+      const originalTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
+
+      // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
+      await colony.cancelTask(taskId);
+      await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskEtherBalance, 0x0);
+      await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskTokenBalance, token.address);
+      await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskOtherTokenBalance, otherToken.address);
+
+      const cancelledTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      const cancelledDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
+      const cancelledTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      const cancelledDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
+      const cancelledTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
+      const cancelledDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
+      assert.notEqual(originalTaskEtherBalance.toNumber(), cancelledTaskEtherBalance.toNumber());
+      assert.notEqual(originalDomainEtherBalance.toNumber(), cancelledDomainEtherBalance.toNumber());
+      assert.notEqual(originalTaskTokenBalance.toNumber(), cancelledTaskTokenBalance.toNumber());
+      assert.notEqual(originalDomainTokenBalance.toNumber(), cancelledDomainTokenBalance.toNumber());
+      assert.notEqual(originalTaskOtherTokenBalance.toNumber(), cancelledTaskOtherTokenBalance.toNumber());
+      assert.notEqual(originalDomainOtherTokenBalance.toNumber(), cancelledDomainOtherTokenBalance.toNumber());
+      assert.equal(cancelledTaskEtherBalance.toNumber(), 0);
+      assert.equal(cancelledTaskTokenBalance.toNumber(), 0);
+      assert.equal(cancelledTaskOtherTokenBalance.toNumber(), 0);
+      assert.equal(originalDomainEtherBalance.plus(originalTaskEtherBalance).toNumber(), cancelledDomainEtherBalance.toNumber());
+      assert.equal(originalDomainTokenBalance.plus(originalTaskTokenBalance).toNumber(), cancelledDomainTokenBalance.toNumber());
+      assert.equal(originalDomainOtherTokenBalance.plus(originalTaskOtherTokenBalance).toNumber(), cancelledDomainOtherTokenBalance.toNumber());
     });
 
     it("should fail if manager tries to cancel a task that was finalized", async () => {
