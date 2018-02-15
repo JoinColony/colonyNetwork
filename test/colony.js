@@ -387,7 +387,7 @@ contract("Colony", () => {
     });
 
     it("should be possible to return funds back to the domain", async () => {
-      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await testDataGenerator.setupFundedTask(colonyNetwork, colony, token);
       const task = await colony.getTask.call(taskId);
       const domainId = await colony.getTaskDomain.call(taskId, 0);
