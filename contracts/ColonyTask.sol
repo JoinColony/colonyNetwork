@@ -232,10 +232,12 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskExists(_id)
   taskNotFinalized(_id)
   {
+    uint8 initialRating = (_role == EVALUATOR) ? 50 : 0;
+
     tasks[_id].roles[_role] = Role({
       user: _user,
       rated: false,
-      rating: 0
+      rating: initialRating
     });
   }
 
