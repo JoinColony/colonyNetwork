@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { EVALUATOR, WORKER, MANAGER_ROLE, WORKER_ROLE, SPECIFICATION_HASH } from "../helpers/constants";
+import { EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, SPECIFICATION_HASH, INITIAL_FUNDING } from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
 import testDataGenerator from "../helpers/test-data-generator";
 
@@ -271,21 +271,22 @@ contract("Colony Funding", () => {
     });
 
     it("should not allow funds to be removed from a task with payouts to go", async () => {
-      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 310 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, otherToken);
       await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
       const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
-      assert.equal(colonyPotBalance.toNumber(), 300 * 1e18);
+      assert.equal(colonyPotBalance.toNumber(), 350 * 1e18);
     });
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
-      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 313 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 363 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, otherToken);
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
       await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
       await colony.claimPayout(taskId, WORKER_ROLE, otherToken.address, { from: WORKER });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, otherToken.address, { from: EVALUATOR });
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
 
       const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);

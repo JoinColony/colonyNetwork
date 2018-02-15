@@ -508,11 +508,11 @@ contract("Colony", () => {
       const balance = await token.balanceOf.call(MANAGER);
       assert.equal(balance.toNumber(), 99 * 1e18);
       const potBalance = await colony.getPotBalance.call(2, token.address);
-      assert.equal(potBalance.toNumber(), 200 * 1e18);
+      assert.equal(potBalance.toNumber(), 250 * 1e18);
     });
 
     it("should payout agreed ether for a task", async () => {
-      await colony.send(303);
+      await colony.send(353);
       await colony.claimColonyFunds(0x0);
       const dueDate = testHelper.currentBlockTime() - 1;
       const taskId = await testDataGenerator.setupRatedTask(
@@ -525,6 +525,7 @@ contract("Colony", () => {
         undefined,
         undefined,
         100,
+        50,
         200
       );
       await colony.finalizeTask(taskId);
@@ -537,7 +538,7 @@ contract("Colony", () => {
       assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 99);
       assert.equal(commonBalanceAfter.minus(commonBalanceBefore).toNumber(), 1);
       const potBalance = await colony.getPotBalance.call(2, 0x0);
-      assert.equal(potBalance.toNumber(), 200);
+      assert.equal(potBalance.toNumber(), 250);
     });
 
     it("should return error when task is not finalized", async () => {
