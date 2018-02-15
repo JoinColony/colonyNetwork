@@ -15,6 +15,7 @@ import {
   EVALUATOR_ROLE,
   WORKER_ROLE,
   DELIVERABLE_HASH,
+  INITIAL_FUNDING,
   SECONDS_PER_DAY
 } from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
@@ -133,7 +134,7 @@ contract("Colony Task Work Rating", () => {
 
   describe("when revealing a task work rating", () => {
     it("should allow revealing a rating by evaluator and worker", async () => {
-      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, token);
       const roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
       assert.isTrue(roleManager[1]);
