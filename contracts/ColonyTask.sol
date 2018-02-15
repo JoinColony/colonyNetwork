@@ -52,7 +52,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     } else {
       revert();
     }
-    _;    
+    _;
   }
 
   modifier ratingSecretDoesNotExist(uint256 _id, uint8 _role) {
@@ -86,7 +86,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   modifier taskWorkRatingRevealOpen(uint256 _id) {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     require(ratingSecrets.count <= 2);
-    
+
     // If both ratings have been received, start the reveal period from the time of the last rating commit
     // Otherwise start the reveal period after the commit period has expired
     // In both cases, keep reveal period open for 5 days
@@ -130,10 +130,10 @@ contract ColonyTask is ColonyStorage, DSMath {
       rated: false,
       rating: 0
     });
-    
+
     pots[potCount].taskId = taskCount;
     setTaskDomain(taskCount, _domainId);
-    
+
     TaskAdded(taskCount);
   }
 
@@ -171,7 +171,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     IColony(this).confirmTransaction(_transactionId, _role);
   }
 
-  function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public 
+  function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
   taskWorkRatingCommitOpen(_id)
@@ -182,19 +182,19 @@ contract ColonyTask is ColonyStorage, DSMath {
     ratingSecrets.secret[_role] = _ratingSecret;
   }
 
-  function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public 
+  function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public
   taskWorkRatingRevealOpen(_id)
   {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id].secret[_role]);
-    
+
     Role storage role = tasks[_id].roles[_role];
     role.rated = true;
     role.rating = _rating;
   }
 
-  // In the event of a user not committing or revealing within the 10 day rating window, 
-  // their rating of their counterpart is assumed to be the highest possible 
+  // In the event of a user not committing or revealing within the 10 day rating window,
+  // their rating of their counterpart is assumed to be the highest possible
   // and their own rating is decreased by 5 (e.g. 0.5 points)
   function assignWorkRating(uint256 _id) public
   taskWorkRatingsClosed(_id)
@@ -294,27 +294,18 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
-    Role storage managerRole = task.roles[MANAGER];
-    Role storage workerRole = task.roles[WORKER];
-
     task.finalized = true;
-
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint skillId = task.skills[0];
-
-    uint managerPayout = task.payouts[MANAGER][token];
-    uint workerPayout = task.payouts[WORKER][token];
 
     // NOTE: Ratings are already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
     // NOTE: reputation change amount is hereby limited to MAXINT/50
-    int managerReputation = SafeMath.mulInt(int(managerPayout), (int(managerRole.rating)*2 - 50)) / 50;
-    //TODO: Change the skillId to represent the task domain
-    colonyNetworkContract.appendReputationUpdateLog(managerRole.user, managerReputation, skillId);
+    updateReputation(_id, MANAGER, skillId);
 
     // NOTE: reputation change amount is hereby limited to MAXINT/30
-    int workerReputation = SafeMath.mulInt(int(workerPayout), (int(workerRole.rating)*2 - 50)) / 30;
-    colonyNetworkContract.appendReputationUpdateLog(workerRole.user, workerReputation, skillId);
+    updateReputation(_id, WORKER, skillId);
     // TODO Reputation changes for other relevant roles, domains.
+
+    updateReputation(_id, EVALUATOR, skillId);
   }
 
   function cancelTask(uint256 _id) public
@@ -350,5 +341,18 @@ contract ColonyTask is ColonyStorage, DSMath {
       sig := mload(add(_data, 0x20))
       taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
     }
+  }
+
+  function updateReputation(uint256 taskId, uint8 roleId, uint skillId) private {
+    Task storage task = tasks[taskId];
+    uint payout = task.payouts[roleId][token];
+    Role storage role = task.roles[roleId];
+
+    int divider = (roleId == WORKER) ? 30 : 50;
+
+    int reputation = SafeMath.mulInt(int(payout), (int(role.rating)*2 - 50)) / divider;
+    //TODO: Change the skillId to represent the task domain
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, skillId);
   }
 }
