@@ -49,15 +49,15 @@ contract ColonyStorage is DSAuth {
   ERC20Extended token;
   mapping (uint256 => Task) tasks;
 
-  // Pots can be tied to tasks or to (in the future) domains, so giving them their own mapping.
-  // Pot 1  can be thought of as the pot belonging to the colony itself that hasn't been assigned
+  // Pots can be tied to tasks or domains, so giving them their own mapping.
+  // Pot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had some siphoned off in to the reward pot.
-  // Pot 0 is the pot containing funds that can be paid to holders of colony tokens in the future.
+  // Pot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
   mapping (uint256 => Pot) pots;
 
   // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
-  // TODO: This needs to be decremented whenever a payout occurs and the colony loses control of the funds.
+  // This is decremented whenever a payout occurs and the colony loses control of the funds.
   mapping (address => uint256) nonRewardPotsTotal;
 
   mapping (uint256 => RatingSecrets) public taskWorkRatings;
