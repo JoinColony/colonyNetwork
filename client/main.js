@@ -68,8 +68,8 @@ export class ReputationMiningClient {
   //   return this.insert(colonyAddress, skillId, userAddress, reputationScore);
   // }
 
-  static getValueAsBytes(reputation, uid) {
-    return `${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
+  getValueAsBytes(reputation, uid) { //eslint-disable-line
+    return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
   }
 
   // function getNode(bytes32 hash) public view returns (Data.Node n);
@@ -97,12 +97,11 @@ export class ReputationMiningClient {
     }
     colonyAddress = colonyAddress.toLowerCase();
     userAddress = userAddress.toLowerCase();
-    const key = `${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
+    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
       16,
       40
     )}`;
     const keyAlreadyExists = await this.keyExists(key);
-    // const keyHash = sha3(key);
     // If we already have this key, then we lookup the unique identifier we assigned this key.
     // Otherwise, give it the new one.
     let value;
@@ -111,7 +110,8 @@ export class ReputationMiningClient {
       value = this.reputations[key];
       // Extract uid
       const uid = this.web3.toBigNumber(`0x${value.slice(-64)}`);
-      value = this.getValueAsBytes(reputationScore, uid);
+      const existingValue = this.web3.toBigNumber(`0x${value.slice(2, 66)}`);
+      value = this.getValueAsBytes(existingValue.add(reputationScore), uid);
     } else {
       value = this.getValueAsBytes(reputationScore, this.nReputations + 1);
     }
@@ -129,6 +129,11 @@ export class ReputationMiningClient {
 
   async getRootEdgeLabelData() {
     return this.reputationCycle.getRootEdgeLabelData();
+  }
+
+  async getProof(key) {
+    const res = await this.reputationCycle.getProof(key);
+    return res;
   }
 
   async keyExists(key) {

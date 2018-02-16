@@ -755,32 +755,69 @@ contract("ColonyNetworkStaking", accounts => {
       // These should be:
       // 1. Reputation reward for MAIN_ACCOUNT for submitting the previous reputaiton hash
       //   (currently skill 0, needs to change to indicate a special mining skill)
-      let key1 = `${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
+      let key1 = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
       key1 += `${new BN("0").toString(16, 64)}`; // SkillId as uint256
       key1 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
       assert.equal(
         client.reputations[key1],
-        "0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001"
+        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001"
       );
       // 2. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
-      let key2 = `${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`;
+      let key2 = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`;
       key2 += `${new BN("1").toString(16, 64)}`;
       key2 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
       assert.equal(
         client.reputations[key2],
-        "000000000000000000000000000000000000000000000000058d15e1762800000000000000000000000000000000000000000000000000000000000000000002"
+        "0x00000000000000000000000000000000000000000000000010a741a4627800000000000000000000000000000000000000000000000000000000000000000002"
       );
       // 3. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
-      let key3 = `${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`;
+      let key3 = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`;
       key3 += `${new BN("1").toString(16, 64)}`;
       key3 += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
       assert.equal(
         client.reputations[key3],
-        "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003"
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003"
       );
     });
 
+    it("Should allow a user to prove their reputation", async () => {
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      let addr = await colonyNetwork.getReputationMiningCycle.call();
+      let repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.forwardTime(3600, this);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+      await giveUserCLNYTokens(MAIN_ACCOUNT, "1000000000000000000");
+      await testHelper.forwardTime(3600, this);
+      addr = await colonyNetwork.getReputationMiningCycle.call();
+      repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash("0x123456789", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      const client = new ReputationMiningClient();
+      await client.initialise(colonyNetwork.address);
+      await client.addLogContentsToReputationTree();
+      const newRootHash = await client.getRootHash();
+
+      await testHelper.forwardTime(3600, this);
+      addr = await colonyNetwork.getReputationMiningCycle.call();
+      repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitNewHash(newRootHash, 10, 10);
+      await repCycle.confirmNewHash(0);
+      let key = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
+      key += `${new BN("1").toString(16, 64)}`; // SkillId as uint256
+      key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
+
+      const value = client.reputations[key];
+      const proof = await client.getProof(key);
+      const [branchMask, siblings] = proof;
+      const validProof = await commonColony.verifyProof(`${key}`, `${value}`, branchMask, siblings);
+      assert.equal(validProof, true);
+    });
     it("The reputation mining clinent should calculate reputation decay correctly");
     it("should abort if a deposit did not complete correctly");
   });

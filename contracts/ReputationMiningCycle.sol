@@ -8,6 +8,7 @@ import "./EtherRouter.sol";
 import "./ERC20Extended.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
+import "./PatriciaTree/PatriciaTree.sol";
 
 // TODO: Can we handle a dispute regarding the very first hash that should be set?
 

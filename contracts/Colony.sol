@@ -22,9 +22,17 @@ import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./IColony.sol";
 import "./ColonyStorage.sol";
+import "./PatriciaTree/Data.sol";
+import {Bits} from "./PatriciaTree/Bits.sol";
 
 
 contract Colony is ColonyStorage {
+  using Bits for uint;
+  using Data for Data.Tree;
+  using Data for Data.Node;
+  using Data for Data.Edge;
+  using Data for Data.Label;
+
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
@@ -125,11 +133,52 @@ contract Colony is ColonyStorage {
   function getDomainCount() public view returns (uint256) {
     return domainCount;
   }
-
   function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
   private
   {
     uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
     reviewers[_sig] = _reviewers;
+  }
+
+  // TODO: Not sure where to put these functions
+  function verifyKey(bytes key) internal view returns (bool) {
+    uint256 colonyAddress;
+    uint256 skillid;
+    uint256 userAddress;
+    assembly {
+        colonyAddress := mload(add(key,32))
+        skillid := mload(add(key,52)) // Colony address was 20 bytes long, so add 20 bytes
+        userAddress := mload(add(key,84)) // Skillid was 32 bytes long, so add 32 bytes
+    }
+    colonyAddress >>= 96;
+    userAddress >>= 96;
+    // Require that the user is proving their own reputation in this colony.
+    require(address(colonyAddress) == address(this));
+    require(address(userAddress) == msg.sender);
+    return true;
+  }
+
+  function verifyProof(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool) {  // solium-disable-line security/no-assign-params
+    require(verifyKey(key)==true);
+    Data.Label memory k = Data.Label(keccak256(key), 256);
+    Data.Edge memory e;
+    e.node = keccak256(value);
+    for (uint i = 0; branchMask != 0; i++) {
+      uint bitSet = branchMask.lowestBitSet();
+      branchMask &= ~(uint(1) << bitSet);
+      (k, e.label) = k.splitAt(255 - bitSet);
+      uint bit;
+      (bit, e.label) = e.label.chopFirstBit();
+      bytes32[2] memory edgeHashes;
+      edgeHashes[bit] = e.edgeHash();
+      edgeHashes[1 - bit] = siblings[siblings.length - i - 1];
+      e.node = keccak256(edgeHashes);
+    }
+    e.label = k;
+    // Get roothash from colonynetwork
+    bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
+    // Check that they proved their reputation in the current root state.
+    require(rootHash == e.edgeHash());
+    return true;
   }
 }
