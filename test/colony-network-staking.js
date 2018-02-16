@@ -10,7 +10,7 @@ const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const BN = require("bn.js");
 
-contract("ColonyNetwork", accounts => {
+contract("ColonyNetworkStaking", accounts => {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
 
@@ -21,13 +21,10 @@ contract("ColonyNetwork", accounts => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    // await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
 
     const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
     commonColony = IColony.at(commonColonyAddress);
-    // console.log('CC address ', commonColonyAddress);
     const clnyAddress = await commonColony.getToken.call();
-    // console.log('CLNY address ', clnyAddress);
     clny = Token.at(clnyAddress);
     await colonyNetwork.startNextCycle();
   });
@@ -129,9 +126,8 @@ contract("ColonyNetwork", accounts => {
       await giveUserCLNYTokens(OTHER_ACCOUNT, 9000);
       await clny.approve(colonyNetwork.address, 5000, { from: OTHER_ACCOUNT });
       await colonyNetwork.deposit(5000, { from: OTHER_ACCOUNT });
-      let stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
-      await colonyNetwork.withdraw(stakedBalance.toNumber(), { from: OTHER_ACCOUNT });
-      stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
+      await colonyNetwork.withdraw(5000, { from: OTHER_ACCOUNT });
+      const stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
       assert.equal(stakedBalance.toNumber(), 0);
     });
 
@@ -158,14 +154,6 @@ contract("ColonyNetwork", accounts => {
       const userBalance = await clny.balanceOf.call(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 0);
     });
-
-    // it('should allow a new cycle to start if there is none currently', async function(){
-    //   let addr = await colonyNetwork.getReputationMiningCycle.call();
-    //   assert(addr==0x0);
-    //   await colonyNetwork.startNextCycle();
-    //   addr = await colonyNetwork.getReputationMiningCycle.call();
-    //   assert(addr!=0x0);
-    // })
 
     it("should allow a new reputation hash to be submitted", async () => {
       await giveUserCLNYTokens(MAIN_ACCOUNT, new BN("1000000000000000000"));

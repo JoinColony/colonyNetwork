@@ -11,11 +11,9 @@ import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
 
 
-contract ColonyNetworkStaking is ColonyNetworkStorage {
+contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
 
-  event Address(address _a);
-  event Bool(bool _b);
-  function deposit(uint _amount) public {
+  function deposit(uint256 _amount) public {
     // Get CLNY address
     Token clny = Token(IColony(_colonies["Common Colony"]).getToken());
     uint256 networkBalance = clny.balanceOf(this);
@@ -24,14 +22,14 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     // Check it actually transferred
     assert(clny.balanceOf(this)-networkBalance==_amount);
     // Note who it belongs to.
-    stakedBalances[msg.sender] += _amount;
+    stakedBalances[msg.sender] = add(stakedBalances[msg.sender], _amount);
   }
 
-  function withdraw(uint _amount) public {
+  function withdraw(uint256 _amount) public {
     uint256 balance = stakedBalances[msg.sender];
     require(balance >= _amount);
     bytes32 submittedHash;
-    (submittedHash, ) = ReputationMiningCycle(reputationMiningCycle).hasSubmitted(msg.sender);
+    (submittedHash, ) = ReputationMiningCycle(reputationMiningCycle).reputationHashSubmissions(msg.sender);
     bool hasRequesterSubmitted = submittedHash == 0x0 ? false : true;
     require(hasRequesterSubmitted==false);
     stakedBalances[msg.sender] -= _amount;
@@ -48,7 +46,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
     // Clear out the inactive reputation log. We're setting a new root hash, so we're done with it.
-    delete ReputationUpdateLog[(activeReputationUpdateLog + 1) % 2];
+    delete ReputationUpdateLogs[(activeReputationUpdateLog + 1) % 2];
     // The active reputation update log is now switched to be the one we've just cleared out.
     // The old activeReputationUpdateLog will be used for the next reputation mining cycle
     activeReputationUpdateLog = (activeReputationUpdateLog + 1) % 2;
@@ -87,7 +85,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
 
     // TODO: Actually think about this function
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
-    // it in ReputationMiningCycle.invalidateHash;
+    // it in ReputationMiningCycle.confirmNewHash;
     address commonColonyAddress = _colonies["Common Colony"];
     uint256 reward = 10**18; //TODO: Actually work out how much reputation they earn, based on activity elsewhere in the colony.
     if (reward >= uint256(int256(-1))/2) {
@@ -101,7 +99,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     for (uint256 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
-      ReputationUpdateLog[activeReputationUpdateLog].push(ReputationLogEntry(
+      ReputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
         stakers[i], //The staker getting the reward
         int256(reward),
         0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
@@ -124,8 +122,8 @@ contract ReputationMiningCycle {
   address colonyNetworkAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
-  mapping (address => Submission) public hasSubmitted;
-  uint reputationMiningWindowOpenTimestamp;
+  mapping (address => Submission) public reputationHashSubmissions;
+  uint256 reputationMiningWindowOpenTimestamp;
   mapping (uint256 => Submission[]) public disputeRounds;
 
   // Tracks the number of submissions in each round that have completed their challenge, one way or the other.
@@ -148,7 +146,7 @@ contract ReputationMiningCycle {
 
   // Records for which hashes, for which addresses, for which entries have been accepted
   // Otherwise, people could keep submitting the same entry.
-  mapping (bytes32 => mapping(address => mapping(uint => bool))) submittedEntries;
+  mapping (bytes32 => mapping(address => mapping(uint256 => bool))) submittedEntries;
 
   event Hash(bytes32 hash);
 
@@ -178,9 +176,9 @@ contract ReputationMiningCycle {
     //Check the ticket is an eligible one for them to claim
     require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
     require(entry > 0);
-    if (hasSubmitted[msg.sender].hash != 0x0) {           // If this user has submitted before during this round...
-      require(newHash == hasSubmitted[msg.sender].hash);  // ...require that they are submitting the same hash ...
-      require(nNodes == hasSubmitted[msg.sender].nNodes); // ...require that they are submitting the same number of nodes for that hash ...
+    if (reputationHashSubmissions[msg.sender].hash != 0x0) {           // If this user has submitted before during this round...
+      require(newHash == reputationHashSubmissions[msg.sender].hash);  // ...require that they are submitting the same hash ...
+      require(nNodes == reputationHashSubmissions[msg.sender].nNodes); // ...require that they are submitting the same number of nodes for that hash ...
       require (submittedEntries[newHash][msg.sender][entry] == false); // ... but not this exact entry
     }
     // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
@@ -189,12 +187,13 @@ contract ReputationMiningCycle {
     // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
     // x = floor(uint((2**256 - 1) / 3600)
     if (now-reputationMiningWindowOpenTimestamp <= 3600) {
-      uint x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
-      uint target = (now - reputationMiningWindowOpenTimestamp ) * x;
+      uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
+      uint256 target = (now - reputationMiningWindowOpenTimestamp ) * x;
       require(uint256(keccak256(msg.sender, entry, newHash)) < target);
     }
 
-    //Insert in to list of submissions if there's still room.
+    // We only allow this submission if there's still room
+    // Check there is still room.
     require (submittedHashes[newHash][nNodes].length < 12);
 
     // If this is a new hash, increment nSubmittedHashes as such.
@@ -211,7 +210,7 @@ contract ReputationMiningCycle {
     }
 
 
-    hasSubmitted[msg.sender] = Submission({hash: newHash, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0});
+    reputationHashSubmissions[msg.sender] = Submission({hash: newHash, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0});
     //And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes].push(msg.sender);
     //Note that they submitted it.

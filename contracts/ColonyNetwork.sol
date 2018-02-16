@@ -96,7 +96,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (!active) {
       logIdx = (logIdx + 1) % 2;
     }
-    ReputationLogEntry storage x = ReputationUpdateLog[logIdx][_id];
+    ReputationLogEntry storage x = ReputationUpdateLogs[logIdx][_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
 
@@ -252,17 +252,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
   calledByColony
   skillExists(_skillId)
   {
-    uint reputationUpdateLogLength = ReputationUpdateLog[activeReputationUpdateLog].length;
+    uint reputationUpdateLogLength = ReputationUpdateLogs[activeReputationUpdateLog].length;
     uint nPreviousUpdates = 0;
     if (reputationUpdateLogLength > 0) {
-      nPreviousUpdates = ReputationUpdateLog[activeReputationUpdateLog][reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[activeReputationUpdateLog][reputationUpdateLogLength-1].nUpdates;
+      nPreviousUpdates = ReputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nUpdates;
     }
     uint nUpdates = (skills[_skillId].nParents + 1) * 2;
     if (_amount < 0) {
       //TODO: Never true currently. _amount needs to be an int.
       nUpdates += 2 * skills[_skillId].nChildren;
     }
-    ReputationUpdateLog[activeReputationUpdateLog].push(ReputationLogEntry(
+    ReputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
       _user,
       _amount,
       _skillId,
@@ -276,6 +276,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (!active) {
       logIdx = (logIdx + 1 ) % 2;
     }
-    return ReputationUpdateLog[logIdx].length;
+    return ReputationUpdateLogs[logIdx].length;
   }
 }

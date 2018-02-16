@@ -63,7 +63,7 @@ contract ColonyNetworkStorage is DSAuth {
     uint256 nPreviousUpdates;
   }
 
-  mapping (uint => ReputationLogEntry[]) ReputationUpdateLog;
+  mapping (uint => ReputationLogEntry[]) ReputationUpdateLogs;
   uint256 activeReputationUpdateLog;
 
   bytes32 reputationRootHash;
