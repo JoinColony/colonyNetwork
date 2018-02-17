@@ -177,12 +177,20 @@ contract("all", () => {
       moveFundsBetweenPotsCost = tx.receipt.gasUsed;
       console.log("moveFundsBetweenPots actual cost :", moveFundsBetweenPotsCost);
 
-      // setTaskPayout
-      txData = await colony.contract.setTaskPayout.getData(1, MANAGER_ROLE, tokenAddress, 50);
+      // setTaskManagerPayout
+      txData = await colony.contract.setTaskManagerPayout.getData(1, tokenAddress, 50);
       await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
       transactionId = await colony.getTransactionCount.call();
       await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
-      txData = await colony.contract.setTaskPayout.getData(1, WORKER_ROLE, tokenAddress, 100);
+
+      // setTaskEvaluatorPayout
+      txData = await colony.contract.setTaskEvaluatorPayout.getData(1, tokenAddress, 40);
+      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
+      transactionId = await colony.getTransactionCount.call();
+      await colony.approveTaskChange(transactionId, EVALUATOR_ROLE, { from: EVALUATOR });
+
+      // setTaskWorkerPayout
+      txData = await colony.contract.setTaskWorkerPayout.getData(1, tokenAddress, 100);
       await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
       transactionId = await colony.getTransactionCount.call();
       await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
