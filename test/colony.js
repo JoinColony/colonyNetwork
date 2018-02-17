@@ -459,35 +459,45 @@ contract("Colony", () => {
     it("should be able to set the task payouts for different roles", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+      await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
       await colony.mintTokens(100);
       // Set the manager payout as 5000 wei and 100 colony tokens
-      const txData1 = await colony.contract.setTaskPayout.getData(1, MANAGER_ROLE, 0x0, 5000);
-      await colony.proposeTaskChange(txData1, 0, 0);
+      const txData1 = await colony.contract.setTaskManagerPayout.getData(1, 0x0, 5000);
+      await colony.proposeTaskChange(txData1, 0, MANAGER_ROLE);
       await colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER });
-      const txData2 = await colony.contract.setTaskPayout.getData(1, MANAGER_ROLE, token.address, 100);
-      await colony.proposeTaskChange(txData2, 0, 0);
+
+      const txData2 = await colony.contract.setTaskManagerPayout.getData(1, token.address, 100);
+      await colony.proposeTaskChange(txData2, 0, MANAGER_ROLE);
       await colony.approveTaskChange(2, WORKER_ROLE, { from: WORKER });
 
+      // Set the evaluator payout as 1000 ethers
+      const txData3 = await colony.contract.setTaskEvaluatorPayout.getData(1, 0x0, 1000);
+      await colony.proposeTaskChange(txData3, 0, MANAGER_ROLE);
+      await colony.approveTaskChange(3, EVALUATOR_ROLE, { from: EVALUATOR });
+
       // Set the evaluator payout as 40 colony tokens
-      const txData3 = await colony.contract.setTaskPayout.getData(1, EVALUATOR_ROLE, token.address, 40);
-      await colony.proposeTaskChange(txData3, 0, 0);
-      await colony.approveTaskChange(3, WORKER_ROLE, { from: WORKER });
+      const txData4 = await colony.contract.setTaskEvaluatorPayout.getData(1, token.address, 40);
+      await colony.proposeTaskChange(txData4, 0, MANAGER_ROLE);
+      await colony.approveTaskChange(4, EVALUATOR_ROLE, { from: EVALUATOR });
 
       // Set the worker payout as 98000 wei and 200 colony tokens
-      const txData4 = await colony.contract.setTaskPayout.getData(1, 2, 0x0, 98000);
-      await colony.proposeTaskChange(txData4, 0, 0);
-      await colony.approveTaskChange(4, WORKER_ROLE, { from: WORKER });
-      const txData5 = await colony.contract.setTaskPayout.getData(1, WORKER_ROLE, token.address, 200);
-      await colony.proposeTaskChange(txData5, 0, 0);
+      const txData5 = await colony.contract.setTaskWorkerPayout.getData(1, 0x0, 98000);
+      await colony.proposeTaskChange(txData5, 0, MANAGER_ROLE);
       await colony.approveTaskChange(5, WORKER_ROLE, { from: WORKER });
+
+      const txData6 = await colony.contract.setTaskWorkerPayout.getData(1, token.address, 200);
+      await colony.proposeTaskChange(txData6, 0, MANAGER_ROLE);
+      await colony.approveTaskChange(6, WORKER_ROLE, { from: WORKER });
 
       const taskPayoutManager1 = await colony.getTaskPayout.call(1, MANAGER_ROLE, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);
       const taskPayoutManager2 = await colony.getTaskPayout.call(1, MANAGER_ROLE, token.address);
       assert.equal(taskPayoutManager2.toNumber(), 100);
 
-      const taskPayoutEvaluator = await colony.getTaskPayout.call(1, EVALUATOR_ROLE, token.address);
-      assert.equal(taskPayoutEvaluator.toNumber(), 40);
+      const taskPayoutEvaluator1 = await colony.getTaskPayout.call(1, EVALUATOR_ROLE, 0x0);
+      assert.equal(taskPayoutEvaluator1.toNumber(), 1000);
+      const taskPayoutEvaluator2 = await colony.getTaskPayout.call(1, EVALUATOR_ROLE, token.address);
+      assert.equal(taskPayoutEvaluator2.toNumber(), 40);
 
       const taskPayoutWorker1 = await colony.getTaskPayout.call(1, WORKER_ROLE, 0x0);
       assert.equal(taskPayoutWorker1.toNumber(), 98000);
