@@ -232,12 +232,10 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskExists(_id)
   taskNotFinalized(_id)
   {
-    uint8 initialRating = (_role == EVALUATOR) ? 50 : 0;
-
     tasks[_id].roles[_role] = Role({
       user: _user,
       rated: false,
-      rating: initialRating
+      rating: 0
     });
   }
 
@@ -294,18 +292,21 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+
+    for (uint8 roleId = 0; roleId <= 2; roleId++) {
+      uint payout = task.payouts[roleId][token];
+      Role storage role = task.roles[roleId];
+      uint8 rating = (roleId == EVALUATOR) ? 50 : role.rating;
+      int divider = (roleId == WORKER) ? 30 : 50;
+      int reputation = SafeMath.mulInt(int(payout), (int(rating)*2 - 50)) / divider;
+      if (roleId == WORKER) {
+        colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
+      }
+      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.domains[0]);
+    }
+
     task.finalized = true;
-    uint skillId = task.skills[0];
-
-    // NOTE: Ratings are already 10 multiplied because of the requirement to support 0.5 subtraction of rating values
-    // NOTE: reputation change amount is hereby limited to MAXINT/50
-    updateReputation(_id, MANAGER, skillId);
-
-    // NOTE: reputation change amount is hereby limited to MAXINT/30
-    updateReputation(_id, WORKER, skillId);
-    // TODO Reputation changes for other relevant roles, domains.
-
-    updateReputation(_id, EVALUATOR, skillId);
   }
 
   function cancelTask(uint256 _id) public
@@ -341,18 +342,5 @@ contract ColonyTask is ColonyStorage, DSMath {
       sig := mload(add(_data, 0x20))
       taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
     }
-  }
-
-  function updateReputation(uint256 taskId, uint8 roleId, uint skillId) private {
-    Task storage task = tasks[taskId];
-    uint payout = task.payouts[roleId][token];
-    Role storage role = task.roles[roleId];
-
-    int divider = (roleId == WORKER) ? 30 : 50;
-
-    int reputation = SafeMath.mulInt(int(payout), (int(role.rating)*2 - 50)) / divider;
-    //TODO: Change the skillId to represent the task domain
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, skillId);
   }
 }
