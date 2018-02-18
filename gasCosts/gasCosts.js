@@ -50,6 +50,7 @@ contract("all", () => {
   let proposeTaskChangeCost;
   let approveTaskChangeCost;
   let moveFundsBetweenPotsCost;
+  let setTaskManagerPayoutCost;
   let submitTaskDeliverableCost;
   let submitTaskWorkRatingCost;
   let revealTaskWorkRatingCost;
@@ -178,10 +179,11 @@ contract("all", () => {
       console.log("moveFundsBetweenPots actual cost :", moveFundsBetweenPotsCost);
 
       // setTaskManagerPayout
-      txData = await colony.contract.setTaskManagerPayout.getData(1, tokenAddress, 50);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      transactionId = await colony.getTransactionCount.call();
-      await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
+      estimate = await colony.setTaskManagerPayout.estimateGas(1, tokenAddress, 50);
+      console.log("setTaskManagerPayout estimate : ", estimate);
+      tx = await colony.setTaskManagerPayout(1, tokenAddress, 50);
+      setTaskManagerPayoutCost = tx.receipt.gasUsed;
+      console.log("setTaskManagerPayout actual cost :", setTaskManagerPayoutCost);
 
       // setTaskEvaluatorPayout
       txData = await colony.contract.setTaskEvaluatorPayout.getData(1, tokenAddress, 40);
