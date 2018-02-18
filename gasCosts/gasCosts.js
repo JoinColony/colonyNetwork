@@ -235,9 +235,11 @@ contract("all", () => {
         makeTaskCost +
         setTaskSkillCost +
         setTaskRoleUserCost * 2 +
-        proposeTaskChangeCost * 3 +
-        approveTaskChangeCost * 3 +
+        // setTaskBrief, setTaskDueDate, setTaskEvaluatorPayout, setTaskWorkerPayout
+        proposeTaskChangeCost * 4 +
+        approveTaskChangeCost * 4 +
         submitTaskDeliverableCost +
+        setTaskManagerPayoutCost +
         submitTaskWorkRatingCost * 2 +
         revealTaskWorkRatingCost * 2 +
         finalizeTaskCost;
