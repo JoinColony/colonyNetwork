@@ -76,14 +76,11 @@ module.exports = {
     const totalPayouts = managerPayout.add(workerPayout).add(evaluatorPayout);
     await colony.moveFundsBetweenPots(1, potId, totalPayouts.toString(), tokenAddress);
 
-    let txData = await colony.contract.setTaskManagerPayout.getData(taskId, tokenAddress, managerPayout.toString());
+    await colony.setTaskManagerPayout(taskId, tokenAddress, managerPayout.toString());
+
+    let txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
     await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
     let transactionId = await colony.getTransactionCount.call();
-    await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
-
-    txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
-    await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-    transactionId = await colony.getTransactionCount.call();
     await colony.approveTaskChange(transactionId, EVALUATOR_ROLE, { from: evaluator });
 
     txData = await colony.contract.setTaskWorkerPayout.getData(taskId, tokenAddress, workerPayout.toString());
