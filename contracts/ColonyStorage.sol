@@ -112,6 +112,12 @@ contract ColonyStorage is DSAuth {
     uint256 potId;
   }
 
+  modifier isManager(uint256 _id) {
+    Task storage task = tasks[_id];
+    require(task.roles[0].user == msg.sender);
+    _;
+  }
+
   modifier taskExists(uint256 _id) {
     require(_id <= taskCount);
     _;
