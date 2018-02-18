@@ -48,7 +48,6 @@ contract Colony is ColonyStorage {
     // Initialise the task update reviewers
     IColony(this).setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
     IColony(this).setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
-    IColony(this).setFunctionReviewers(0x6aaf4a77, 0, 2); // setTaskManagerPayout => manager, worker
     IColony(this).setFunctionReviewers(0x6fb0794f, 0, 1); // setTaskEvaluatorPayout => manager, evaluator
     IColony(this).setFunctionReviewers(0x2cf62b39, 0, 2); // setTaskWorkerPayout => manager, worker
 
