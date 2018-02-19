@@ -1674,12 +1674,13 @@ eslint-config-prettier@^2.9.0:
   dependencies:
     get-stdin "^5.0.1"
 
-eslint-import-resolver-jest@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/eslint-import-resolver-jest/-/eslint-import-resolver-jest-1.1.0.tgz#89ac58ec5228cbcf082560d2d2308155fad0c349"
+eslint-import-resolver-jest@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/eslint-import-resolver-jest/-/eslint-import-resolver-jest-2.0.0.tgz#1077ea15f86caa21e9b68b1376a327f60e7e1efd"
   dependencies:
     find-root "^1.0.0"
     micromatch "^2.3.11"
+    resolve "^1.5.0"
 
 eslint-import-resolver-node@^0.3.1:
   version "0.3.2"
