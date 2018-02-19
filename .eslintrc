@@ -12,9 +12,10 @@
   "rules": {
     "import/no-extraneous-dependencies": [2, {"devDependencies": ["**/*.js"]}],
     "max-len": [2, { "code": 150, "ignoreComments": true }],
-    "prettier/prettier": ["error", {"printWidth": 150}]
+    "prettier/prettier": ["error", {"printWidth": 150}],
+    "flowtype/require-valid-file-annotation": "off"
   },
   "parserOptions": {
-   "ecmaVersion": 2017
- }
+    "ecmaVersion": 2017
+  }
 }
