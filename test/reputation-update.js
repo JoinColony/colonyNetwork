@@ -2,7 +2,7 @@
 import web3Utils from "web3-utils";
 import { BN } from "bn.js";
 
-import { MANAGER, WORKER, OTHER, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
+import { MANAGER, WORKER, EVALUATOR, OTHER, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
 import testDataGenerator from "../helpers/test-data-generator";
 
@@ -46,7 +46,7 @@ contract("Colony Reputation Updates", () => {
     colonyToken = await Token.at(tokenAddress);
     const amount = new BN(10)
       .pow(new BN(18))
-      .mul(new BN(600))
+      .mul(new BN(1000))
       .toString();
     await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, amount);
   });
@@ -63,13 +63,21 @@ contract("Colony Reputation Updates", () => {
       assert.equal(repLogEntryManager[4].toNumber(), 2);
       assert.equal(repLogEntryManager[5].toNumber(), 0);
 
-      const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+      const repLogEntryEvaluator = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+      assert.equal(repLogEntryEvaluator[0], EVALUATOR);
+      assert.equal(repLogEntryEvaluator[1].toNumber(), 50 * 1e18);
+      assert.equal(repLogEntryEvaluator[2].toNumber(), 1);
+      assert.equal(repLogEntryEvaluator[3], commonColony.address);
+      assert.equal(repLogEntryEvaluator[4].toNumber(), 2);
+      assert.equal(repLogEntryEvaluator[5].toNumber(), 2);
+
+      const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2);
       assert.equal(repLogEntryWorker[0], WORKER);
       assert.equal(repLogEntryWorker[1].toNumber(), 200 * 1e18);
       assert.equal(repLogEntryWorker[2].toNumber(), 1);
       assert.equal(repLogEntryWorker[3], commonColony.address);
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
-      assert.equal(repLogEntryWorker[5].toNumber(), 2);
+      assert.equal(repLogEntryWorker[5].toNumber(), 4);
     });
 
     const ratings = [
@@ -142,6 +150,7 @@ contract("Colony Reputation Updates", () => {
           undefined,
           undefined,
           undefined,
+          undefined,
           rating.manager,
           undefined,
           rating.worker,
@@ -157,13 +166,13 @@ contract("Colony Reputation Updates", () => {
         assert.equal(repLogEntryManager[4].toNumber(), 2);
         assert.equal(repLogEntryManager[5].toNumber(), 0);
 
-        const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+        const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2);
         assert.equal(repLogEntryWorker[0], WORKER);
         assert.equal(repLogEntryWorker[1].toString(), rating.reputationChangeWorker.toString());
         assert.equal(repLogEntryWorker[2].toNumber(), 1);
         assert.equal(repLogEntryWorker[3], commonColony.address);
         assert.equal(repLogEntryWorker[4].toNumber(), 2);
-        assert.equal(repLogEntryWorker[5].toNumber(), 2);
+        assert.equal(repLogEntryWorker[5].toNumber(), 4);
       });
     });
 
@@ -198,14 +207,14 @@ contract("Colony Reputation Updates", () => {
       const taskId1 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony, undefined, undefined, undefined, 4);
       await commonColony.finalizeTask(taskId1);
 
-      let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(1);
+      let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2);
       const result = web3Utils.toBN("1").mul(WORKER_PAYOUT);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
       const taskId2 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony, undefined, undefined, undefined, 5);
       await commonColony.finalizeTask(taskId2);
-      repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(3);
+      repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(6);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 8); // Negative reputation change means children change as well.
     });
@@ -218,8 +227,9 @@ contract("Colony Reputation Updates", () => {
         .toString(10);
       await testDataGenerator.fundColonyWithTokens(commonColony, colonyToken, maxUIntNumber);
       // Split the tokens as payouts between the manager and worker
-      const managerPayout = new BN("1");
-      const workerPayout = new BN(maxUIntNumber).sub(managerPayout);
+      const managerPayout = new BN("2");
+      const evaluatorPayout = new BN("1");
+      const workerPayout = new BN(maxUIntNumber).sub(managerPayout).sub(evaluatorPayout);
       const taskId = await testDataGenerator.setupRatedTask(
         colonyNetwork,
         commonColony,
@@ -230,6 +240,7 @@ contract("Colony Reputation Updates", () => {
         undefined,
         undefined,
         managerPayout,
+        evaluatorPayout,
         workerPayout,
         undefined,
         undefined,

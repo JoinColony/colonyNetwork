@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { EVALUATOR, WORKER, MANAGER_ROLE, WORKER_ROLE, SPECIFICATION_HASH } from "../helpers/constants";
+import { EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, SPECIFICATION_HASH, INITIAL_FUNDING } from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
 import testDataGenerator from "../helpers/test-data-generator";
 
@@ -141,9 +141,7 @@ contract("Colony Funding", () => {
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
-      const txData1 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 0);
-      await colony.proposeTaskChange(txData1, 0, 0);
-      await colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 0);
       let task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
       // Pot 0, Payout 0
@@ -153,9 +151,7 @@ contract("Colony Funding", () => {
       assert.equal(task[5].toNumber(), 0);
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being lower by increasing payout (8)
-      const txData2 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
-      await colony.proposeTaskChange(txData2, 0, 0);
-      await colony.approveTaskChange(2, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 40);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
       // Pot 0, Payout 40
@@ -170,17 +166,13 @@ contract("Colony Funding", () => {
       assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by increasing payout (12)
-      const txData3 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 80);
-      await colony.proposeTaskChange(txData3, 0, 0);
-      await colony.approveTaskChange(3, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 80);
 
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 80
       // Pot was equal to payout, transition to being above by decreasing payout (6)
-      const txData4 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
-      await colony.proposeTaskChange(txData4, 0, 0);
-      await colony.approveTaskChange(4, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 40);
 
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
@@ -206,16 +198,12 @@ contract("Colony Funding", () => {
       assert.equal(task[5].toNumber(), 1);
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing payout (4)
-      const txData5 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 10);
-      await colony.proposeTaskChange(txData5, 0, 0);
-      await colony.approveTaskChange(5, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 10);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
       // Pot 20, Payout 10
       // Pot was above, change to being above by changing payout (16)
-      const txData6 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 5);
-      await colony.proposeTaskChange(txData6, 0, 0);
-      await colony.approveTaskChange(6, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 5);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
       // Pot 20, Payout 5
@@ -225,16 +213,12 @@ contract("Colony Funding", () => {
       assert.equal(task[5].toNumber(), 0);
       // Pot 10, Payout 5
       // Pot was above payout, change to being below by changing payout (10)
-      const txData7 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 40);
-      await colony.proposeTaskChange(txData7, 0, 0);
-      await colony.approveTaskChange(7, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 40);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
       // Pot 10, Payout 40
       // Pot was below payout, change to being below by changing payout (14)
-      const txData8 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 30);
-      await colony.proposeTaskChange(txData8, 0, 0);
-      await colony.approveTaskChange(8, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 30);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
       // Pot 10, Payout 30
@@ -244,9 +228,7 @@ contract("Colony Funding", () => {
       assert.equal(task[5].toNumber(), 1);
       // Pot 5, Payout 30
       // Pot was below payout, change to being equal by changing payout (2)
-      const txData9 = await colony.contract.setTaskPayout.getData(1, 0, otherToken.address, 5);
-      await colony.proposeTaskChange(txData9, 0, 0);
-      await colony.approveTaskChange(9, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, otherToken.address, 5);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
       // Pot 5, Payout 5
@@ -271,21 +253,22 @@ contract("Colony Funding", () => {
     });
 
     it("should not allow funds to be removed from a task with payouts to go", async () => {
-      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 310 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, otherToken);
       await colony.finalizeTask(taskId);
       await testHelper.checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
       const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
-      assert.equal(colonyPotBalance.toNumber(), 300 * 1e18);
+      assert.equal(colonyPotBalance.toNumber(), 350 * 1e18);
     });
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
-      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 313 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, otherToken, 363 * 1e18);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony, otherToken);
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
       await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
       await colony.claimPayout(taskId, WORKER_ROLE, otherToken.address, { from: WORKER });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, otherToken.address, { from: EVALUATOR });
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
 
       const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
@@ -347,9 +330,7 @@ contract("Colony Funding", () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
 
-      const txData1 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 40);
-      await colony.proposeTaskChange(txData1, 0, 0);
-      await colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, 0x0, 40);
 
       let task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
@@ -360,9 +341,7 @@ contract("Colony Funding", () => {
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
 
-      const txData2 = await colony.contract.setTaskPayout.getData(1, 0, 0x0, 10);
-      await colony.proposeTaskChange(txData2, 0, 0);
-      await colony.approveTaskChange(2, WORKER_ROLE, { from: WORKER });
+      await colony.setTaskManagerPayout(1, 0x0, 10);
 
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);

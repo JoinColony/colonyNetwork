@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { SPECIFICATION_HASH } from "../helpers/constants";
+import { SPECIFICATION_HASH, INITIAL_FUNDING } from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
 import testDataGenerator from "../helpers/test-data-generator";
 
@@ -408,7 +408,7 @@ contract("Common Colony", () => {
     });
 
     it("should NOT be able to set a domain on finalized task", async () => {
-      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony);
       await colony.finalizeTask(taskId);
       await testHelper.checkError(colony.setTaskDomain(taskId, 1));
@@ -431,7 +431,7 @@ contract("Common Colony", () => {
     it("should NOT be able to set global skill on finalized task", async () => {
       await commonColony.addGlobalSkill(1);
       await commonColony.addGlobalSkill(4);
-      await testDataGenerator.fundColonyWithTokens(colony, token, 310 * 1e18);
+      await testDataGenerator.fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await testDataGenerator.setupRatedTask(colonyNetwork, colony);
       await colony.finalizeTask(taskId);
       await testHelper.checkError(colony.setTaskSkill(taskId, 5));

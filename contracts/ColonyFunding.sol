@@ -40,18 +40,16 @@ contract ColonyFunding is ColonyStorage, DSMath {
     return 100;
   }
 
-  function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) public
-  self()
-  taskExists(_id)
-  taskNotFinalized(_id)
-  {
-    Task storage task = tasks[_id];
-    uint currentAmount = task.payouts[_role][_token];
-    task.payouts[_role][_token] = _amount;
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public isManager(_id) {
+    setTaskPayout(_id, 0, _token, _amount);
+  }
 
-    uint currentTotalAmount = task.totalPayouts[_token];
-    task.totalPayouts[_token] = add(sub(currentTotalAmount, currentAmount), _amount);
-    updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
+  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public self {
+    setTaskPayout(_id, 1, _token, _amount);
+  }
+
+  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public self {
+    setTaskPayout(_id, 2, _token, _amount);
   }
 
   // To get all payouts for a task iterate over roles.length
@@ -174,5 +172,18 @@ contract ColonyFunding is ColonyStorage, DSMath {
         task.payoutsWeCannotMake -= 1;                                 // Then this is a set of payouts we can make that we could not before.
       }
     }
+  }
+
+  function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) private
+  taskExists(_id)
+  taskNotFinalized(_id)
+  {
+    Task storage task = tasks[_id];
+    uint currentAmount = task.payouts[_role][_token];
+    task.payouts[_role][_token] = _amount;
+
+    uint currentTotalAmount = task.totalPayouts[_token];
+    task.totalPayouts[_token] = add(sub(currentTotalAmount, currentAmount), _amount);
+    updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 }

@@ -5,6 +5,7 @@ import {
   EVALUATOR,
   WORKER,
   MANAGER_PAYOUT,
+  EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
   MANAGER_RATING,
   WORKER_RATING,
@@ -56,6 +57,7 @@ module.exports = {
     evaluator = EVALUATOR,
     worker = WORKER,
     manager_payout = MANAGER_PAYOUT,
+    evaluator_payout = EVALUATOR_PAYOUT,
     worker_payout = WORKER_PAYOUT
   ) {
     let tokenAddress;
@@ -70,17 +72,22 @@ module.exports = {
     const potId = task[6].toNumber();
     const managerPayout = new BN(manager_payout);
     const workerPayout = new BN(worker_payout);
-    const totalPayouts = managerPayout.add(workerPayout);
+    const evaluatorPayout = new BN(evaluator_payout);
+    const totalPayouts = managerPayout.add(workerPayout).add(evaluatorPayout);
     await colony.moveFundsBetweenPots(1, potId, totalPayouts.toString(), tokenAddress);
-    let txData = await colony.contract.setTaskPayout.getData(taskId, MANAGER_ROLE, tokenAddress, managerPayout.toString());
+
+    await colony.setTaskManagerPayout(taskId, tokenAddress, managerPayout.toString());
+
+    let txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
     await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
     let transactionId = await colony.getTransactionCount.call();
-    await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
+    await colony.approveTaskChange(transactionId, EVALUATOR_ROLE, { from: evaluator });
 
-    txData = await colony.contract.setTaskPayout.getData(taskId, WORKER_ROLE, tokenAddress, workerPayout.toString());
+    txData = await colony.contract.setTaskWorkerPayout.getData(taskId, tokenAddress, workerPayout.toString());
     await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
     transactionId = await colony.getTransactionCount.call();
     await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
+
     return taskId;
   },
   async setupRatedTask(
@@ -93,13 +100,26 @@ module.exports = {
     evaluator = EVALUATOR,
     worker = WORKER,
     manager_payout = MANAGER_PAYOUT,
+    evaluator_payout = EVALUATOR_PAYOUT,
     worker_payout = WORKER_PAYOUT,
     manager_rating = MANAGER_RATING,
     manager_rating_salt = RATING_1_SALT,
     worker_rating = WORKER_RATING,
     worker_rating_salt = RATING_2_SALT
   ) {
-    const taskId = await this.setupFundedTask(colonyNetwork, colony, token, dueDate, domain, skill, evaluator, worker, manager_payout, worker_payout);
+    const taskId = await this.setupFundedTask(
+      colonyNetwork,
+      colony,
+      token,
+      dueDate,
+      domain,
+      skill,
+      evaluator,
+      worker,
+      manager_payout,
+      evaluator_payout,
+      worker_payout
+    );
     const WORKER_RATING_SECRET = web3Utils.soliditySha3(worker_rating_salt, worker_rating);
     const MANAGER_RATING_SECRET = web3Utils.soliditySha3(manager_rating_salt, manager_rating);
     await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });

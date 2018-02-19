@@ -46,7 +46,7 @@ contract IColony {
   function assignWorkRating(uint256 _id) public;
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32);
   function getTaskWorkRatings(uint256 _id) public view returns (uint256, uint256);
-  function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32);  
+  function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32);
   function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public;
   function setTaskSkill(uint256 _id, uint256 _skillId) public;
   function setTaskDomain(uint256 _id, uint256 _domainId) public;
@@ -59,12 +59,14 @@ contract IColony {
   function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8);
   function getTaskSkill(uint256 _id, uint256 _idx) public view returns (uint256);
   function getTaskDomain(uint256 _id, uint256 _idx) public view returns (uint256);
-  
+
   // ColonyFunding.sol
   function getFeeInverse() public pure returns (uint256);
   function getRewardInverse() public pure returns (uint256);
-  function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) public;
   function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256);
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public;
+  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public;
+  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public;
   function claimPayout(uint256 _id, uint256 _role, address _token) public;
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256);
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public;

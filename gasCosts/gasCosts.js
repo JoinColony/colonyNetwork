@@ -50,6 +50,7 @@ contract("all", () => {
   let proposeTaskChangeCost;
   let approveTaskChangeCost;
   let moveFundsBetweenPotsCost;
+  let setTaskManagerPayoutCost;
   let submitTaskDeliverableCost;
   let submitTaskWorkRatingCost;
   let revealTaskWorkRatingCost;
@@ -177,12 +178,21 @@ contract("all", () => {
       moveFundsBetweenPotsCost = tx.receipt.gasUsed;
       console.log("moveFundsBetweenPots actual cost :", moveFundsBetweenPotsCost);
 
-      // setTaskPayout
-      txData = await colony.contract.setTaskPayout.getData(1, MANAGER_ROLE, tokenAddress, 50);
+      // setTaskManagerPayout
+      estimate = await colony.setTaskManagerPayout.estimateGas(1, tokenAddress, 50);
+      console.log("setTaskManagerPayout estimate : ", estimate);
+      tx = await colony.setTaskManagerPayout(1, tokenAddress, 50);
+      setTaskManagerPayoutCost = tx.receipt.gasUsed;
+      console.log("setTaskManagerPayout actual cost :", setTaskManagerPayoutCost);
+
+      // setTaskEvaluatorPayout
+      txData = await colony.contract.setTaskEvaluatorPayout.getData(1, tokenAddress, 40);
       await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
       transactionId = await colony.getTransactionCount.call();
-      await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
-      txData = await colony.contract.setTaskPayout.getData(1, WORKER_ROLE, tokenAddress, 100);
+      await colony.approveTaskChange(transactionId, EVALUATOR_ROLE, { from: EVALUATOR });
+
+      // setTaskWorkerPayout
+      txData = await colony.contract.setTaskWorkerPayout.getData(1, tokenAddress, 100);
       await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
       transactionId = await colony.getTransactionCount.call();
       await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
@@ -225,9 +235,11 @@ contract("all", () => {
         makeTaskCost +
         setTaskSkillCost +
         setTaskRoleUserCost * 2 +
-        proposeTaskChangeCost * 3 +
-        approveTaskChangeCost * 3 +
+        // setTaskBrief, setTaskDueDate, setTaskEvaluatorPayout, setTaskWorkerPayout
+        proposeTaskChangeCost * 4 +
+        approveTaskChangeCost * 4 +
         submitTaskDeliverableCost +
+        setTaskManagerPayoutCost +
         submitTaskWorkRatingCost * 2 +
         revealTaskWorkRatingCost * 2 +
         finalizeTaskCost;

@@ -48,7 +48,8 @@ contract Colony is ColonyStorage {
     // Initialise the task update reviewers
     IColony(this).setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
     IColony(this).setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
-    IColony(this).setFunctionReviewers(0xbe2320af, 0, 2); // setTaskPayout => manager, worker
+    IColony(this).setFunctionReviewers(0x6fb0794f, 0, 1); // setTaskEvaluatorPayout => manager, evaluator
+    IColony(this).setFunctionReviewers(0x2cf62b39, 0, 2); // setTaskWorkerPayout => manager, worker
 
     // Initialise the root domain
     domainCount += 1;
@@ -74,7 +75,7 @@ contract Colony is ColonyStorage {
     return colonyNetwork.addSkill(_parentSkillId, true);
   }
 
-  function addDomain(uint256 _parentSkillId) public 
+  function addDomain(uint256 _parentSkillId) public
   localSkill(_parentSkillId)
   {
     // Note: remove that when we start allowing more domain hierarchy levels
@@ -86,7 +87,7 @@ contract Colony is ColonyStorage {
     // Setup new local skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 newLocalSkill = colonyNetwork.addSkill(_parentSkillId, false);
-    
+
     // Add domain to local mapping
     domainCount += 1;
     potCount += 1;
