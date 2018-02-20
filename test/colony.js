@@ -409,7 +409,7 @@ contract("Colony", () => {
       const taskPotId = task[6];
       const domainPotId = domain[1];
 
-      // Our testDataGenerator already set up some task fund with tokens,
+      // Our test-data-generator already set up some task fund with tokens,
       // but we need some Ether, too
       await colony.send(101);
       await colony.claimColonyFunds(0x0);

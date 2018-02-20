@@ -88,10 +88,11 @@ export async function setupColonyVersionResolver(colony, colonyTask, colonyFundi
   assert.equal(version, currentColonyVersion.toNumber());
 }
 
-export async function setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkStaking) {
+export async function setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkStaking, colonyNetworkAuction) {
   const deployedImplementations = {};
   deployedImplementations.ColonyNetwork = colonyNetwork.address;
   deployedImplementations.ColonyNetworkStaking = colonyNetworkStaking.address;
+  deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
 
   await setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
 
