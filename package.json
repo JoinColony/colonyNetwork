@@ -67,8 +67,5 @@
     "truffle": "^4.0.6",
     "web3-utils": "^1.0.0-beta.29"
   },
-  "dependencies": {
-    "solidity-sha3": "^0.4.1",
-    "truffle-contract": "^3.0.2"
-  }
+  "dependencies": {}
 }

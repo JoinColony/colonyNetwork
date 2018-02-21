@@ -1,7 +1,9 @@
+/* globals artifacts */
 import web3Utils from "web3-utils";
 import { BN } from "bn.js";
 
 import {
+  MANAGER,
   EVALUATOR,
   WORKER,
   MANAGER_PAYOUT,
@@ -18,7 +20,52 @@ import {
 } from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
 
+const IColony = artifacts.require("IColony");
+const Token = artifacts.require("Token");
+
 module.exports = {
+  async giveUserCLNYTokens(colonyNetwork, address, _amount) {
+    const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
+    const commonColony = IColony.at(commonColonyAddress);
+    const clnyAddress = await commonColony.getToken.call();
+    const clny = Token.at(clnyAddress);
+    const amount = new BN(_amount);
+    const mainStartingBalance = await clny.balanceOf.call(MANAGER);
+    const targetStartingBalance = await clny.balanceOf.call(address);
+    await commonColony.mintTokens(amount * 3);
+    await commonColony.claimColonyFunds(clny.address);
+    const taskId = await this.setupRatedTask(
+      colonyNetwork,
+      commonColony,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      amount.mul(new BN("2")),
+      new BN("0"),
+      new BN("0")
+    );
+    await commonColony.finalizeTask(taskId);
+    await commonColony.claimPayout(taskId, 0, clny.address);
+
+    let mainBalance = await clny.balanceOf.call(MANAGER);
+    await clny.transfer(
+      0x0,
+      mainBalance
+        .sub(amount)
+        .sub(mainStartingBalance)
+        .toString()
+    );
+    await clny.transfer(address, amount.toString());
+    mainBalance = await clny.balanceOf.call(MANAGER);
+    if (address !== MANAGER) {
+      await clny.transfer(0x0, mainBalance.sub(mainStartingBalance).toString());
+    }
+    const userBalance = await clny.balanceOf.call(address);
+    assert.equal(targetStartingBalance.add(amount).toString(), userBalance.toString());
+  },
   async setupAssignedTask(colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER) {
     let dueDateTimestamp = dueDate;
     if (!dueDateTimestamp) {

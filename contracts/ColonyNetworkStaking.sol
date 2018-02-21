@@ -6,16 +6,21 @@ import "../lib/dappsys/auth.sol";
 import "./Authority.sol";
 import "./IColony.sol";
 import "./EtherRouter.sol";
-import "./Token.sol";
+import "./ERC20Extended.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
 
 
 contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
 
+  modifier onlyReputationMiningCycle () {
+    require(msg.sender == reputationMiningCycle);
+    _;
+  }
+
   function deposit(uint256 _amount) public {
     // Get CLNY address
-    Token clny = Token(IColony(_colonies["Common Colony"]).getToken());
+    ERC20Extended clny = ERC20Extended(IColony(_colonies["Common Colony"]).getToken());
     uint256 networkBalance = clny.balanceOf(this);
     // Move some over.
     clny.transferFrom(msg.sender, this, _amount);
@@ -33,7 +38,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     bool hasRequesterSubmitted = submittedHash == 0x0 ? false : true;
     require(hasRequesterSubmitted==false);
     stakedBalances[msg.sender] -= _amount;
-    Token clny = Token(IColony(_colonies["Common Colony"]).getToken());
+    ERC20Extended clny = ERC20Extended(IColony(_colonies["Common Colony"]).getToken());
     clny.transfer(msg.sender, _amount);
   }
 
@@ -41,8 +46,9 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     return stakedBalances[_user];
   }
 
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public {
-    require(msg.sender == reputationMiningCycle);
+  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public
+  onlyReputationMiningCycle
+  {
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
     // Clear out the inactive reputation log. We're setting a new root hash, so we're done with it.
@@ -65,11 +71,12 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     return reputationMiningCycle;
   }
 
-  function punishStakers(address[] stakers) public {
+  function punishStakers(address[] stakers) public
+  onlyReputationMiningCycle
+  {
     // TODO: Actually think about this function
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.invalidateHash;
-    require(msg.sender == reputationMiningCycle);
     for (uint256 i = 0; i < stakers.length; i++) {
       // This is pretty harsh! Are we happy with this?
       // Alternative: lose more than they would have gained for backing the right hash.
@@ -148,7 +155,14 @@ contract ReputationMiningCycle {
   // Otherwise, people could keep submitting the same entry.
   mapping (bytes32 => mapping(address => mapping(uint256 => bool))) submittedEntries;
 
-  event Hash(bytes32 hash);
+  modifier onlyFinalRoundWhenComplete(uint roundNumber){
+    require (nSubmittedHashes - nInvalidatedHashes == 1);
+    require (disputeRounds[roundNumber].length == 1); //i.e. this is the final round
+    // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
+    // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
+    // element is zeroed. If this functionality of 'delete' is ever changed, this will have to change too.
+    _;
+  }
 
   function ReputationMiningCycle() public {
     colonyNetworkAddress = msg.sender;
@@ -217,12 +231,9 @@ contract ReputationMiningCycle {
     submittedEntries[newHash][msg.sender][entry] = true;
   }
 
-  function confirmNewHash(uint256 roundNumber) public {
-    require (nSubmittedHashes - nInvalidatedHashes == 1);
-    require (disputeRounds[roundNumber].length == 1); //i.e. this is the final round
-    // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
-    // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
-    // element is zeroed. If this functionality of 'delete' is ever changed, this will have to change too.
+  function confirmNewHash(uint256 roundNumber) public
+    onlyFinalRoundWhenComplete(roundNumber)
+    {
 
     // TODO: Require some amount of time to have passed (i.e. people have had a chance to submit other hashes)
     Submission storage reputationRootHash = disputeRounds[roundNumber][0];
