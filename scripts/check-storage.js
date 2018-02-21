@@ -4,9 +4,16 @@ import fs from "fs";
 
 fs.readdirSync("./contracts/").forEach(contractName => {
   if (
-    ["Authority.sol", "ColonyNetworkStorage.sol", "ColonyStorage.sol", "EtherRouter.sol", "Migrations.sol", "Resolver.sol", "Token.sol"].indexOf(
-      contractName
-    ) > -1
+    [
+      "Authority.sol",
+      "ColonyNetworkStorage.sol",
+      "ColonyStorage.sol",
+      "EtherRouter.sol",
+      "Migrations.sol",
+      "Resolver.sol",
+      "Token.sol",
+      "SimpleMultiSig.sol"
+    ].indexOf(contractName) > -1
   ) {
     return;
   }
