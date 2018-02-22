@@ -1,7 +1,9 @@
+/* globals artifacts */
 import web3Utils from "web3-utils";
 import { BN } from "bn.js";
 
 import {
+  MANAGER,
   EVALUATOR,
   WORKER,
   MANAGER_PAYOUT,
@@ -18,16 +20,57 @@ import {
 } from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
 
+const IColony = artifacts.require("IColony");
+const Token = artifacts.require("Token");
+
 module.exports = {
-  async setupAssignedTask(
-    colonyNetwork,
-    colony,
-    dueDate = testHelper.currentBlockTime(),
-    domain = 1,
-    skill = 0,
-    evaluator = EVALUATOR,
-    worker = WORKER
-  ) {
+  async giveUserCLNYTokens(colonyNetwork, address, _amount) {
+    const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
+    const commonColony = IColony.at(commonColonyAddress);
+    const clnyAddress = await commonColony.getToken.call();
+    const clny = Token.at(clnyAddress);
+    const amount = new BN(_amount);
+    const mainStartingBalance = await clny.balanceOf.call(MANAGER);
+    const targetStartingBalance = await clny.balanceOf.call(address);
+    await commonColony.mintTokens(amount * 3);
+    await commonColony.claimColonyFunds(clny.address);
+    const taskId = await this.setupRatedTask(
+      colonyNetwork,
+      commonColony,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      amount.mul(new BN("2")),
+      new BN("0"),
+      new BN("0")
+    );
+    await commonColony.finalizeTask(taskId);
+    await commonColony.claimPayout(taskId, 0, clny.address);
+
+    let mainBalance = await clny.balanceOf.call(MANAGER);
+    await clny.transfer(
+      0x0,
+      mainBalance
+        .sub(amount)
+        .sub(mainStartingBalance)
+        .toString()
+    );
+    await clny.transfer(address, amount.toString());
+    mainBalance = await clny.balanceOf.call(MANAGER);
+    if (address !== MANAGER) {
+      await clny.transfer(0x0, mainBalance.sub(mainStartingBalance).toString());
+    }
+    const userBalance = await clny.balanceOf.call(address);
+    assert.equal(targetStartingBalance.add(amount).toString(), userBalance.toString());
+  },
+  async setupAssignedTask(colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER) {
+    let dueDateTimestamp = dueDate;
+    if (!dueDateTimestamp) {
+      dueDateTimestamp = await testHelper.currentBlockTime();
+    }
     await colony.makeTask(SPECIFICATION_HASH, domain);
     let taskId = await colony.getTaskCount.call();
     taskId = taskId.toNumber();
@@ -41,7 +84,7 @@ module.exports = {
     }
     await colony.setTaskRoleUser(taskId, EVALUATOR_ROLE, evaluator);
     await colony.setTaskRoleUser(taskId, WORKER_ROLE, worker);
-    const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDate);
+    const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDateTimestamp);
     await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
     const transactionId = await colony.getTransactionCount.call();
     await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
@@ -66,7 +109,6 @@ module.exports = {
     } else {
       tokenAddress = token === 0x0 ? 0x0 : token.address;
     }
-
     const taskId = await this.setupAssignedTask(colonyNetwork, colony, dueDate, domain, skill, evaluator, worker);
     const task = await colony.getTask.call(taskId);
     const potId = task[6].toNumber();

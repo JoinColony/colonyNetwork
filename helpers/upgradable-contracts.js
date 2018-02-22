@@ -26,9 +26,10 @@ module.exports = {
     const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
     assert.equal(version, currentColonyVersion.toNumber());
   },
-  async setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork) {
+  async setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkStaking) {
     const deployedImplementations = {};
     deployedImplementations.ColonyNetwork = colonyNetwork.address;
+    deployedImplementations.ColonyNetworkStaking = colonyNetworkStaking.address;
 
     await this.setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
 

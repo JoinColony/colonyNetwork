@@ -116,7 +116,15 @@ module.exports = {
     return web3.toAscii(text).replace(/\u0000/g, "");
   },
   currentBlockTime() {
-    return web3.eth.getBlock("latest").timestamp;
+    const p = new Promise((resolve, reject) => {
+      web3.eth.getBlock("latest", (err, res) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(res.timestamp);
+      });
+    });
+    return p;
   },
   async expectEvent(tx, eventName) {
     const { logs } = await tx;
@@ -129,13 +137,13 @@ module.exports = {
       test.skip();
     } else {
       // console.log('Forwarding time with ' + seconds + 's ...');
-      web3.currentProvider.send({
+      await web3.currentProvider.send({
         jsonrpc: "2.0",
         method: "evm_increaseTime",
         params: [seconds],
         id: 0
       });
-      web3.currentProvider.send({
+      await web3.currentProvider.send({
         jsonrpc: "2.0",
         method: "evm_mine",
         params: [],

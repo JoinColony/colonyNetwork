@@ -39,7 +39,16 @@ contract IColonyNetwork {
   function upgradeColony(bytes32 _name, uint256 _newVersion) public;
   function getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex) public view returns (uint256);
   function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) public view returns (uint256);
-  function getReputationUpdateLogLength() public view returns (uint256);
+  function getReputationUpdateLogLength(bool activeLog) public view returns (uint256);
   function getColonyVersionResolver(uint256 _version) public view returns (address);
-  function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int, uint256, address, uint256, uint256);
+  function getReputationUpdateLogEntry(uint256 _id, bool activeLog) public view returns (address, int, uint256, address, uint256, uint256);
+  function deposit(uint256 _amount) public;
+  function withdraw(uint256 amount) public;
+  function getStakedBalance(address _user) public view returns (uint256);
+  function setReputationRootHash(bytes32, uint256, address[]) public;
+  function startNextCycle() public;
+  function punishStakers(address[] stakers) public;
+  function getReputationMiningCycle() public view returns (address);
+  function getReputationRootHash() public view returns (bytes32);
+  function getReputationRootHashNNodes() public view returns (uint256);
 }

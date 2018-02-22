@@ -190,7 +190,7 @@ contract("Colony", () => {
     });
 
     it("should allow manager to submit an update of task due date and worker to approve it", async () => {
-      const dueDate = testHelper.currentBlockTime();
+      const dueDate = await testHelper.currentBlockTime();
 
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
@@ -291,13 +291,14 @@ contract("Colony", () => {
 
   describe("when submitting task deliverable", () => {
     it("should update task", async () => {
-      const dueDate = testHelper.currentBlockTime() + SECONDS_PER_DAY * 4;
+      let dueDate = await testHelper.currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 4;
       await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
 
       let task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), "");
 
-      const currentTime = testHelper.currentBlockTime();
+      const currentTime = await testHelper.currentBlockTime();
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
       task = await colony.getTask.call(1);
       assert.equal(testHelper.hexToUtf8(task[1]), DELIVERABLE_HASH);
@@ -322,7 +323,8 @@ contract("Colony", () => {
     });
 
     it("should fail if I try to submit work twice", async () => {
-      const dueDate = testHelper.currentBlockTime() + SECONDS_PER_DAY * 4;
+      let dueDate = await testHelper.currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 4;
       await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
 
@@ -332,7 +334,8 @@ contract("Colony", () => {
     });
 
     it("should fail if I try to submit work if I'm not the assigned worker", async () => {
-      const dueDate = testHelper.currentBlockTime() + SECONDS_PER_DAY * 4;
+      let dueDate = await testHelper.currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 4;
       await testDataGenerator.setupAssignedTask(colonyNetwork, colony, dueDate);
 
       await testHelper.checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }));

@@ -91,9 +91,21 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skills[_skillId].globalSkill;
   }
 
-  function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int, uint, address, uint, uint) {
-    ReputationLogEntry storage x = ReputationUpdateLog[_id];
+  function getReputationUpdateLogEntry(uint256 _id, bool active) public view returns (address, int256, uint256, address, uint256, uint256) {
+    uint logIdx = activeReputationUpdateLog;
+    if (!active) {
+      logIdx = (logIdx + 1) % 2;
+    }
+    ReputationLogEntry storage x = ReputationUpdateLogs[logIdx][_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+  }
+
+  function getReputationRootHash() public view returns (bytes32) {
+    return reputationRootHash;
+  }
+
+  function getReputationRootHashNNodes() public view returns (uint256) {
+    return reputationRootHashNNodes;
   }
 
   function createColony(
@@ -240,17 +252,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
   calledByColony
   skillExists(_skillId)
   {
-    uint reputationUpdateLogLength = ReputationUpdateLog.length;
+    uint reputationUpdateLogLength = ReputationUpdateLogs[activeReputationUpdateLog].length;
     uint nPreviousUpdates = 0;
     if (reputationUpdateLogLength > 0) {
-      nPreviousUpdates = ReputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
+      nPreviousUpdates = ReputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nUpdates;
     }
     uint nUpdates = (skills[_skillId].nParents + 1) * 2;
     if (_amount < 0) {
       //TODO: Never true currently. _amount needs to be an int.
       nUpdates += 2 * skills[_skillId].nChildren;
     }
-    ReputationUpdateLog.push(ReputationLogEntry(
+    ReputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
       _user,
       _amount,
       _skillId,
@@ -259,7 +271,11 @@ contract ColonyNetwork is ColonyNetworkStorage {
       nPreviousUpdates));
   }
 
-  function getReputationUpdateLogLength() public view returns (uint) {
-    return ReputationUpdateLog.length;
+  function getReputationUpdateLogLength(bool active) public view returns (uint) {
+    uint logIdx = activeReputationUpdateLog;
+    if (!active) {
+      logIdx = (logIdx + 1 ) % 2;
+    }
+    return ReputationUpdateLogs[logIdx].length;
   }
 }
