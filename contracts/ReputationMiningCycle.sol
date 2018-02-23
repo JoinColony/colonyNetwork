@@ -36,6 +36,7 @@ contract ReputationMiningCycle is PatriciaTree {
     uint256 nNodes;
     uint256 lastResponseTimestamp;
     uint256 challengeStepCompleted;
+    bytes32 jrh;
   }
 
   // Records for which hashes, for which addresses, for which entries have been accepted
@@ -73,6 +74,66 @@ contract ReputationMiningCycle is PatriciaTree {
     }
   }
 
+  function submitJRH(
+    uint256 index,
+    bytes32 jrh,
+    uint branchMask1,
+    bytes32[] siblings1,
+    uint branchMask2,
+    bytes32[] siblings2
+  ) public
+  {
+
+    /* bytes32 submittedHash = disputeRounds[0][index].hash;
+    bytes memory submittedHashBytes = new bytes(32);
+    bytes memory lastUpdateBytes = new bytes(32);
+    assembly {
+      let x
+      // Put the reputationRootHash and submitted hash in bytes arrays to pass to verify proof function
+      x := mload(reputationRootHash)
+      mstore(add(reputationRootHashBytes, 0x20), x)
+      x := mload(submittedHash)
+      mstore(add(submittedHashBytes, 0x20), x)
+      // No need to copy 'zero' into a bytes array, so equivalent line for the 'zero' array is missing here.
+      x := mload(nUpdates)
+      mstore(add(lastUpdateBytes, 0x20), x)
+    } */
+    /* function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool) {  // solium-disable-line security/no-assign-params */
+
+    require(checkJRHProof1(jrh, branchMask1, siblings1));
+    require(checkJRHProof2(index, jrh, branchMask2, siblings2));
+
+    // Store their JRH
+    disputeRounds[0][index].jrh = jrh;
+  }
+
+  function checkJRHProof1(bytes32 jrh, uint branchMask1, bytes32[] siblings1) internal returns (bool result) {
+    // Proof 1 needs to prove that they started with the current reputation root hash
+    bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
+    bytes memory reputationRootHashBytes = new bytes(32);
+    bytes memory zeroBytes = new bytes(32);
+    assembly {
+      mstore(add(reputationRootHashBytes, 0x20), reputationRootHash)
+    }
+    return verifyProof(jrh, zeroBytes, reputationRootHashBytes, branchMask1, siblings1);
+  }
+
+  function checkJRHProof2(uint index, bytes32 jrh, uint branchMask2, bytes32[] siblings2) internal returns (bool result) {
+    // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
+    // key is the number of updates in the reputation update log (implemented)
+    // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)
+
+    uint256 nUpdates = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogLength(false);
+    bytes32 submittedHash = disputeRounds[0][index].hash;
+    bytes memory nUpdatesBytes = new bytes(32);
+    bytes memory submittedHashBytes = new bytes(32);
+    assembly {
+      mstore(add(nUpdatesBytes, 0x20), nUpdates)
+      mstore(add(submittedHashBytes, 0x20), submittedHash)
+    }
+    return verifyProof(jrh, nUpdatesBytes, submittedHashBytes, branchMask2, siblings2);
+  }
+
   function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry) public {
     //Check the ticket is an eligible one for them to claim
     require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
@@ -102,7 +163,7 @@ contract ReputationMiningCycle is PatriciaTree {
       nSubmittedHashes += 1;
       // And add it to the first disputeRound
       // NB if no other hash is submitted, no dispute resolution will be required.
-      disputeRounds[0].push(Submission({hash: newHash, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0}));
+      disputeRounds[0].push(Submission({hash: newHash, jrh: 0x0, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0}));
       // If we've got a pair of submissions to face off, may as well start now.
       if (nSubmittedHashes % 2 == 0) {
         disputeRounds[0][nSubmittedHashes-1].lastResponseTimestamp = now;
@@ -111,7 +172,7 @@ contract ReputationMiningCycle is PatriciaTree {
     }
 
 
-    reputationHashSubmissions[msg.sender] = Submission({hash: newHash, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0});
+    reputationHashSubmissions[msg.sender] = Submission({hash: newHash, jrh: 0x0, nNodes: nNodes, lastResponseTimestamp: 0, challengeStepCompleted: 0});
     //And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes].push(msg.sender);
     //Note that they submitted it.
