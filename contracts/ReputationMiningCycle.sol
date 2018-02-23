@@ -105,6 +105,7 @@ contract ReputationMiningCycle is PatriciaTree {
 
     // Store their JRH
     disputeRounds[0][index].jrh = jrh;
+    disputeRounds[0][index].lastResponseTimestamp = now;
   }
 
   function checkJRHProof1(bytes32 jrh, uint branchMask1, bytes32[] siblings1) internal returns (bool result) {

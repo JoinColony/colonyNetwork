@@ -880,10 +880,15 @@ contract("ColonyNetworkStaking", accounts => {
 
       const nSubmittedHashes = await repCycle.nSubmittedHashes();
       assert.equal(nSubmittedHashes, 2);
-      await client.submitJustificationRootHash();
       const submission = await repCycle.disputeRounds(0, 0);
+      assert.equal(submission[4], "0x0000000000000000000000000000000000000000000000000000000000000000");
+      await client.submitJustificationRootHash();
+      const submissionAfterJRHSubmitted = await repCycle.disputeRounds(0, 0);
       const jrh = await client.justificationTree.getRootHash();
-      assert.equal(submission[4], jrh);
+      assert.equal(submissionAfterJRHSubmitted[4], jrh);
+
+      // Check 'last response' was updated.
+      assert.notEqual(submission[2].toString(), submissionAfterJRHSubmitted[2].toString());
 
       // Cleanup
       await accommodateChallengeAndInvalidateHash(this, 0, 1);
