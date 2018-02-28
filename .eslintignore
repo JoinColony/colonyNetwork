@@ -3,6 +3,5 @@
 build/*
 contracts/*
 coverage/*
-installed_contracts/*
 keys/*
 lib/*
