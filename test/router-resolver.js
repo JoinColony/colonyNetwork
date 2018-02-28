@@ -1,7 +1,7 @@
 /* globals artifacts */
 import testHelper from "../helpers/test-helper";
 
-const MultiSigWallet = artifacts.require("multisig-wallet/MultiSigWallet.sol");
+const MultiSigWallet = artifacts.require("gnosis/MultiSigWallet");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 
