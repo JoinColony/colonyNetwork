@@ -1,5 +1,15 @@
 /* globals artifacts */
-import { EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, SPECIFICATION_HASH, INITIAL_FUNDING } from "../helpers/constants";
+import {
+  MANAGER,
+  EVALUATOR,
+  WORKER,
+  MANAGER_ROLE,
+  EVALUATOR_ROLE,
+  WORKER_ROLE,
+  SPECIFICATION_HASH,
+  WORKER_PAYOUT,
+  INITIAL_FUNDING
+} from "../helpers/constants";
 import testHelper from "../helpers/test-helper";
 import testDataGenerator from "../helpers/test-data-generator";
 
@@ -273,6 +283,47 @@ contract("Colony Funding", () => {
 
       const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 0);
+    });
+
+    it("should not allow user to claim payout if rating is less or equal than 2", async () => {
+      await testDataGenerator.fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await testDataGenerator.setupRatedTask(
+        colonyNetwork,
+        colony,
+        token,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        20
+      );
+      await colony.finalizeTask(taskId);
+      const payout = await colony.getTaskPayout.call(taskId, WORKER_ROLE, token.address);
+      assert.equal(payout.toNumber(), 0, "should have worker payout of 0");
+
+      const taskInfo = await colony.getTask.call(taskId);
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address, {
+        from: MANAGER
+      });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, {
+        from: EVALUATOR
+      });
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, {
+        from: WORKER
+      });
+      const remainingPotBalance = await colony.getPotBalance(taskInfo[6].toNumber(), token.address);
+      assert.equal(remainingPotBalance.toString(), WORKER_PAYOUT.toString(), "should have remaining pot balance equal to worker payout");
+
+      await colony.moveFundsBetweenPots(taskInfo[6].toNumber(), 1, remainingPotBalance.toString(), token.address);
+
+      const potBalance = await colony.getPotBalance(taskInfo[6].toNumber(), token.address);
+      assert.equal(potBalance, 0, "should have pot balance of 0");
     });
   });
 

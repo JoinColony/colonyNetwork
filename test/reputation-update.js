@@ -207,14 +207,14 @@ contract("Colony Reputation Updates", () => {
       const taskId1 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony, undefined, undefined, undefined, 4);
       await commonColony.finalizeTask(taskId1);
 
-      let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2, true);
+      let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(3, true);
       const result = web3Utils.toBN("1").mul(WORKER_PAYOUT);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
       const taskId2 = await testDataGenerator.setupRatedTask(colonyNetwork, commonColony, undefined, undefined, undefined, 5);
       await commonColony.finalizeTask(taskId2);
-      repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(6, true);
+      repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(7, true);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 8); // Negative reputation change means children change as well.
     });
