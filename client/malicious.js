@@ -9,38 +9,92 @@ export default class MaliciousReputationMiningClient extends ReputationMiningCli
   async addLogContentsToReputationTree(makeJustificationTree = false) {
     // Snapshot the current state, in case we get in to a dispute, and have to roll back
     // to generated the justification tree.
+    let justUpdatedProof = {};
+    let nextUpdateProof = {};
 
     await this.snapshotTree();
     let nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
     nLogEntries = new BN(nLogEntries.toString());
+    let interimHash;
     for (let i = new BN("0"); i.lt(nLogEntries); i.iadd(new BN("1"))) {
-      let interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+      interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+      const logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i.toString(), false); // eslint-disable-line no-await-in-loop
+      let score = logEntry[1];
+      if (i.toString() === "4") {
+        score = score.add("0xfffffffff");
+      }
       if (makeJustificationTree) {
         if (i.toString() === "0") {
           // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
           // This 'if' statement is only in for now to make tests easier to write.
           interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
+        } else {
+          const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i.subn(1).toString(), false); // eslint-disable-line no-await-in-loop
+          const prevColonyAddress = prevLogEntry[3].slice(2);
+          const prevSkillId = prevLogEntry[2];
+          const prevUserAddress = prevLogEntry[0].slice(2);
+          const prevKey = `0x${new BN(prevColonyAddress, 16).toString(16, 40)}${new BN(prevSkillId.toString()).toString(16, 64)}${new BN(
+            prevUserAddress,
+            16
+          ).toString(16, 40)}`;
+
+          justUpdatedProof = JSON.parse(JSON.stringify(nextUpdateProof));
+          justUpdatedProof.value = this.reputations[prevKey];
         }
+        console.log("insert to justification tree");
         await this.justificationTree.insert(`0x${i.toString(16, 64)}`, interimHash, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
-        this.justificationHashes[`0x${i.toString(16, 64)}`] = interimHash;
+
+        const colonyAddress = logEntry[3].slice(2);
+        const skillId = logEntry[2];
+        const userAddress = logEntry[0].slice(2);
+        const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
+          16,
+          40
+        )}`;
+        let branchMask;
+        let siblings;
+        let value;
+
+        try {
+          [branchMask, siblings] = await this.reputationTree.getProof(key); // eslint-disable-line no-await-in-loop
+          value = this.reputations[key];
+        } catch (err) {
+          // Doesn't exist yet.
+          value = 0;
+        }
+        console.log("gotProof");
+        nextUpdateProof = { branchMask, siblings, key, value };
+        this.justificationHashes[`0x${i.toString(16, 64)}`] = { interimHash, justUpdatedProof, nextUpdateProof };
       }
+
       // We have to process these sequentially - if two updates affected the
       // same entry, we would have a potential race condition.
       // Hence, we are awaiting inside these loops.
-      const logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i.toString(), false); // eslint-disable-line no-await-in-loop
       // TODO: Include updates for all parent skills (and child, if x.amount is negative)
       // TODO: Include updates for colony-wide sums of skills.
-      let score = logEntry[1];
-      if (i.toString() === "4") {
-        score = score.add("0xfffffffff");
-      }
       await this.insert(logEntry[3], logEntry[2], logEntry[0], score); // eslint-disable-line no-await-in-loop
     }
     // Add the last entry to the justification tree
     if (makeJustificationTree) {
-      const interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+      console.log("last entry");
+      justUpdatedProof = nextUpdateProof;
+      nextUpdateProof = {};
+      interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+      console.log("interimhash", interimHash);
       await this.justificationTree.insert(`0x${nLogEntries.toString(16, 64)}`, interimHash, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
-      this.justificationHashes[`0x${nLogEntries.toString(16, 64)}`] = interimHash;
+      console.log("inserted interim");
+      const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(nLogEntries.subn(1).toString(), false); // eslint-disable-line no-await-in-loop
+      const prevColonyAddress = prevLogEntry[3].slice(2);
+      const prevSkillId = prevLogEntry[2];
+      const prevUserAddress = prevLogEntry[0].slice(2);
+      const prevKey = `0x${new BN(prevColonyAddress, 16).toString(16, 40)}${new BN(prevSkillId.toString()).toString(16, 64)}${new BN(
+        prevUserAddress,
+        16
+      ).toString(16, 40)}`;
+      console.log("prevKey", prevKey);
+      justUpdatedProof.value = this.reputations[prevKey];
+      this.justificationHashes[`0x${nLogEntries.toString(16, 64)}`] = { interimHash, justUpdatedProof, nextUpdateProof };
     }
+    console.log("done");
   }
 }

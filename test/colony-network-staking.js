@@ -895,6 +895,116 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it.only("In the event of a disagreement, allows a binary search between opponents to take place to find their first disagreement", async () => {
+      await testDataGenerator.giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await testDataGenerator.giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      await clny.approve(colonyNetwork.address, "1000000000000000000");
+      await colonyNetwork.deposit("1000000000000000000");
+      await clny.approve(colonyNetwork.address, "1000000000000000000", { from: OTHER_ACCOUNT });
+      await colonyNetwork.deposit("1000000000000000000", { from: OTHER_ACCOUNT });
+
+      let addr = await colonyNetwork.getReputationMiningCycle.call();
+      let repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.forwardTime(3600, this);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      await testDataGenerator.giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await testDataGenerator.giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await testDataGenerator.giveUserCLNYTokens(colonyNetwork, accounts[2], "1000000000000000000");
+      addr = await colonyNetwork.getReputationMiningCycle.call();
+      repCycle = ReputationMiningCycle.at(addr);
+      await testHelper.forwardTime(3600, this);
+      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle.call();
+      repCycle = ReputationMiningCycle.at(addr);
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for three task completions (manager, worker, evaluator);
+      // That's seven in total.
+      const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
+      assert.equal(nInactiveLogEntries.toNumber(), 13);
+
+      const client = new ReputationMiningClient(MAIN_ACCOUNT);
+      await client.initialise(colonyNetwork.address);
+      await client.addLogContentsToReputationTree();
+
+      const badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT);
+      await badClient.initialise(colonyNetwork.address);
+      await badClient.addLogContentsToReputationTree();
+
+      let righthash = await client.getRootHash();
+      let wronghash = await badClient.getRootHash();
+      righthash = await client.getRootHash();
+      wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      await testHelper.forwardTime(3600, this);
+
+      await client.submitRootHash();
+      await badClient.submitRootHash();
+
+      const nSubmittedHashes = await repCycle.nSubmittedHashes();
+      assert.equal(nSubmittedHashes, 2);
+      const submission = await repCycle.disputeRounds(0, 0);
+      assert.equal(submission[4], "0x0000000000000000000000000000000000000000000000000000000000000000");
+      await client.submitJustificationRootHash();
+      const submissionAfterJRHSubmitted = await repCycle.disputeRounds(0, 0);
+      const jrh = await client.justificationTree.getRootHash();
+      assert.equal(submissionAfterJRHSubmitted[4], jrh);
+      await badClient.submitJustificationRootHash();
+      const badSubmissionAfterJRHSubmitted = await repCycle.disputeRounds(0, 1);
+      const badJrh = await badClient.justificationTree.getRootHash();
+      assert.equal(badSubmissionAfterJRHSubmitted[4], badJrh);
+
+      await client.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      let goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
+      let badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 0); // Lower bound for binary search
+      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 7); // Upper bound for binary search
+      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 0);
+      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 7);
+
+      await client.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
+      badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 4);
+      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 7);
+      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 4);
+      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 7);
+
+      await client.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
+      badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 4);
+      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 5);
+      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 4);
+      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 5);
+
+      await client.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
+      badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 5);
+      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 5);
+      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 5);
+      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 5);
+
+      // TODO: Split off in to  another test here, but can't be bothered to refactor right now.
+      await client.respondToChallenge();
+      await testHelper.checkErrorRevert(badClient.respondToChallenge());
+
+      // Check
+      const goodSubmissionAfterResponseToChallenge = await repCycle.disputeRounds(0, 0);
+      const badSubmissionAfterResponseToChallenge = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmissionAfterResponseToChallenge[3].sub(badSubmissionAfterResponseToChallenge[3]).toNumber(), 1);
+      // checks that challengeStepCompleted is one more for the good submission than the bad one.
+    });
+
     it("The reputation mining clinent should calculate reputation decay correctly");
     it("should abort if a deposit did not complete correctly");
   });

@@ -78,7 +78,7 @@ contract PatriciaTree is PatriciaTreeFace {
     }
   }
 
-  function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool) {  // solium-disable-line security/no-assign-params
+  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bytes32) { // solium-disable-line security/no-assign-params
     Data.Label memory k = Data.Label(keccak256(key), 256);
     Data.Edge memory e;
     e.node = keccak256(value);
@@ -94,7 +94,12 @@ contract PatriciaTree is PatriciaTreeFace {
       e.node = keccak256(edgeHashes);
     }
     e.label = k;
-    require(rootHash == e.edgeHash());
+    return e.edgeHash();
+  }
+
+  function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool) {
+    bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
+    require(rootHash == impliedHash);
     return true;
   }
 
