@@ -297,13 +297,21 @@ contract ColonyTask is ColonyStorage, DSMath {
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
       uint payout = task.payouts[roleId][token];
       Role storage role = task.roles[roleId];
+
       uint8 rating = (roleId == EVALUATOR) ? 50 : role.rating;
       int divider = (roleId == WORKER) ? 30 : 50;
+
       int reputation = SafeMath.mulInt(int(payout), (int(rating)*2 - 50)) / divider;
+      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.domains[0]);
+
       if (roleId == WORKER) {
         colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
+
+        if (rating <= 20) {
+          task.payouts[roleId][token] = 0;
+          task.totalPayouts[token] = sub(task.totalPayouts[token], payout);
+        }
       }
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.domains[0]);
     }
 
     task.finalized = true;
