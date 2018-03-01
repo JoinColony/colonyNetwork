@@ -103,6 +103,18 @@ contract PatriciaTree is PatriciaTreeFace {
     return true;
   }
 
+  // convenience function that accepts bytes32 for key and value, which we encounter quite a lot.
+  // uint256 can be cast to bytes32 before passing in to this function.
+  function verifyProof(bytes32 rootHash, bytes32 key, bytes32 value, uint branchMask, bytes32[] siblings) public view returns (bool) {
+    bytes memory keyBytes = new bytes(32);
+    bytes memory valueBytes = new bytes(32);
+    assembly {
+      mstore(add(keyBytes, 0x20), key)
+      mstore(add(valueBytes, 0x20), value)
+    }
+    return verifyProof(rootHash, keyBytes, valueBytes, branchMask, siblings);
+  }
+
   function insert(bytes key, bytes value) public {
     tree.insert(key, value);
   }
