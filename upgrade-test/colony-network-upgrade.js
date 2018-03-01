@@ -1,5 +1,5 @@
 /* globals artifacts */
-import testHelper from "../helpers/test-helper";
+import { getRandomString, getTokenArgs } from "../helpers/test-helper";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -19,12 +19,12 @@ contract("ColonyNetwork contract upgrade", () => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     // Setup 2 test colonies
-    colonyKey1 = testHelper.getRandomString(7);
-    const tokenArgs1 = testHelper.getTokenArgs();
+    colonyKey1 = getRandomString(7);
+    const tokenArgs1 = getTokenArgs();
     await colonyNetwork.createColony(colonyKey1, ...tokenArgs1);
     colonyAddress1 = await colonyNetwork.getColony(colonyKey1);
-    colonyKey2 = testHelper.getRandomString(7);
-    const tokenArgs2 = testHelper.getTokenArgs();
+    colonyKey2 = getRandomString(7);
+    const tokenArgs2 = getTokenArgs();
     await colonyNetwork.createColony(colonyKey2, ...tokenArgs2);
     colonyAddress2 = await colonyNetwork.getColony(colonyKey2);
 

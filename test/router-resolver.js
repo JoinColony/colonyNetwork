@@ -1,5 +1,5 @@
 /* globals artifacts */
-import testHelper from "../helpers/test-helper";
+import { checkErrorRevert } from "../helpers/test-helper";
 
 const MultiSigWallet = artifacts.require("gnosis/MultiSigWallet");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -28,7 +28,7 @@ contract("EtherRouter / Resolver", accounts => {
 
   describe("EtherRouter", () => {
     it("should revert if non-owner tries to change the Resolver on EtherRouter", async () => {
-      await testHelper.checkErrorRevert(etherRouter.setResolver("0xb3e2b6020926af4763d706b5657446b95795de57", { from: COINBASE_ACCOUNT }));
+      await checkErrorRevert(etherRouter.setResolver("0xb3e2b6020926af4763d706b5657446b95795de57", { from: COINBASE_ACCOUNT }));
       const resolverUpdated = await etherRouter.resolver.call();
       assert.equal(resolverUpdated, resolver.address);
     });

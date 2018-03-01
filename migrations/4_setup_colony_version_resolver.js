@@ -1,7 +1,7 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 
-const upgradableContracts = require("../helpers/upgradable-contracts");
+const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
 
 const Colony = artifacts.require("./Colony");
 const ColonyFunding = artifacts.require("./ColonyFunding");
@@ -50,7 +50,7 @@ module.exports = deployer => {
     .then(instance => {
       colonyNetwork = instance;
       // Register the new Colony contract version with the newly setup Resolver
-      return upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
+      return setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     })
     .then(() => {
       console.log("### Colony version", version, "set to Resolver", resolver.address);

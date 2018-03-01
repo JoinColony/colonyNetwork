@@ -1,6 +1,6 @@
 /* globals artifacts */
-import testHelper from "../helpers/test-helper";
-import upgradableContracts from "../helpers/upgradable-contracts";
+import { getTokenArgs, expectEvent, checkErrorAssert, checkErrorRevert, web3GetBalance, checkErrorNonPayableFunction } from "../helpers/test-helper";
+import { setupUpgradableToken } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -17,14 +17,14 @@ contract("Token", accounts => {
   let etherRouterToken;
 
   before(async () => {
-    const tokenArgs = testHelper.getTokenArgs();
+    const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
     resolver = await Resolver.new();
   });
 
   beforeEach(async () => {
     etherRouter = await EtherRouter.new();
-    await upgradableContracts.setupUpgradableToken(token, resolver, etherRouter);
+    await setupUpgradableToken(token, resolver, etherRouter);
     etherRouterToken = await Token.at(etherRouter.address);
   });
 
@@ -53,7 +53,7 @@ contract("Token", accounts => {
       const success = await etherRouterToken.transfer.call(ACCOUNT_TWO, 300000);
       assert.equal(true, success);
 
-      await testHelper.expectEvent(etherRouterToken.transfer(ACCOUNT_TWO, 300000), "Transfer");
+      await expectEvent(etherRouterToken.transfer(ACCOUNT_TWO, 300000), "Transfer");
       const balanceAccount1 = await etherRouterToken.balanceOf.call(COINBASE_ACCOUNT);
       assert.equal(1200000, balanceAccount1.toNumber());
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -61,7 +61,7 @@ contract("Token", accounts => {
     });
 
     it("should NOT be able to transfer more tokens than they have", async () => {
-      await testHelper.checkErrorAssert(etherRouterToken.transfer(ACCOUNT_TWO, 1500001));
+      await checkErrorAssert(etherRouterToken.transfer(ACCOUNT_TWO, 1500001));
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
@@ -71,7 +71,7 @@ contract("Token", accounts => {
       const success = await etherRouterToken.transferFrom.call(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO });
       assert.equal(true, success);
 
-      await testHelper.expectEvent(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }), "Transfer");
+      await expectEvent(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }), "Transfer");
       const balanceAccount1 = await etherRouterToken.balanceOf.call(COINBASE_ACCOUNT);
       assert.equal(1200000, balanceAccount1.toNumber());
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
@@ -81,14 +81,14 @@ contract("Token", accounts => {
     });
 
     it("should NOT be able to transfer tokens from another address if NOT pre-approved", async () => {
-      await testHelper.checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
+      await checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
 
     it("should NOT be able to transfer from another address more tokens than pre-approved", async () => {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
-      await testHelper.checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO }));
+      await checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO }));
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -98,7 +98,7 @@ contract("Token", accounts => {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
       await etherRouterToken.transfer(ACCOUNT_THREE, 1500000);
 
-      await testHelper.checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
+      await checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
@@ -107,7 +107,7 @@ contract("Token", accounts => {
       const success = await etherRouterToken.approve.call(ACCOUNT_TWO, 200000);
       assert.equal(true, success);
 
-      await testHelper.expectEvent(etherRouterToken.approve(ACCOUNT_TWO, 200000), "Approval");
+      await expectEvent(etherRouterToken.approve(ACCOUNT_TWO, 200000), "Approval");
       const allowance = await etherRouterToken.allowance.call(COINBASE_ACCOUNT, ACCOUNT_TWO);
       assert.equal(200000, allowance.toNumber());
     });
@@ -132,7 +132,7 @@ contract("Token", accounts => {
     });
 
     it("should NOT be able to mint new tokens, when called by anyone NOT the Token owner", async () => {
-      await testHelper.checkErrorRevert(etherRouterToken.mint(1500000, { from: ACCOUNT_THREE }));
+      await checkErrorRevert(etherRouterToken.mint(1500000, { from: ACCOUNT_THREE }));
       const totalSupply = await etherRouterToken.totalSupply.call();
       assert.equal(0, totalSupply.toNumber());
     });
@@ -140,14 +140,14 @@ contract("Token", accounts => {
 
   describe("when working with ether transfers", () => {
     it("should NOT accept eth", async () => {
-      await testHelper.checkErrorRevert(token.send(2));
-      const tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
+      await checkErrorRevert(token.send(2));
+      const tokenBalance = await web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
 
     it.skip("should NOT accept eth via etherRouter transfer", async () => {
-      await testHelper.checkErrorRevert(await etherRouterToken.send(2));
-      const tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
+      await checkErrorRevert(await etherRouterToken.send(2));
+      const tokenBalance = await web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
 
@@ -155,13 +155,13 @@ contract("Token", accounts => {
       try {
         await etherRouterToken.mint(200, { value: 2 });
       } catch (err) {
-        testHelper.checkErrorNonPayableFunction(err);
+        checkErrorNonPayableFunction(err);
       }
 
       const totalSupply = await etherRouterToken.totalSupply.call();
       assert.equal(0, totalSupply.toNumber());
 
-      const tokenBalance = await testHelper.web3GetBalance(etherRouterToken.address);
+      const tokenBalance = await web3GetBalance(etherRouterToken.address);
       assert.equal(0, tokenBalance.toNumber());
     });
   });

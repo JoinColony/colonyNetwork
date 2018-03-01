@@ -16,8 +16,8 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import testHelper from "../helpers/test-helper";
-import upgradableContracts from "../helpers/upgradable-contracts";
+import { getTokenArgs, currentBlockTime, web3GetClient } from "../helpers/test-helper";
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const Colony = artifacts.require("Colony");
 const IColony = artifacts.require("IColony");
@@ -66,8 +66,8 @@ contract("all", () => {
     colonyFunding = await ColonyFunding.new();
     colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
-    await upgradableContracts.setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
-    const tokenArgs = testHelper.getTokenArgs();
+    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
+    const tokenArgs = getTokenArgs();
     const estimate = await colonyNetwork.createColony.estimateGas("Antz", ...tokenArgs);
     console.log("createColony estimate : ", estimate);
     const tx = await colonyNetwork.createColony("Antz", ...tokenArgs, { gasPrice });
@@ -165,8 +165,7 @@ contract("all", () => {
       approveTaskChangeCost = tx.receipt.gasUsed;
       console.log("approveTaskChange actual cost :", approveTaskChangeCost);
 
-      let dueDate = await testHelper.currentBlockTime();
-      dueDate += SECONDS_PER_DAY * 5;
+      const dueDate = currentBlockTime() + SECONDS_PER_DAY * 5;
       txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
       transactionId = await colony.getTransactionCount.call();
@@ -267,7 +266,7 @@ contract("all", () => {
 
       // Only do this assert if we're using testrpc. There's discrepancy between TestRPC estimategas
       // and geth estimateGas; the former is too high.
-      const client = await testHelper.web3GetClient();
+      const client = await web3GetClient();
       if (client.indexOf("TestRPC") === -1) {
         assert.isBelow(totalEtherCost, 1, "Monthly average costs exceed target");
       } else {
