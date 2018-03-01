@@ -6,6 +6,11 @@ const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 export default class MaliciousReputationMiningClient extends ReputationMiningClient {
   // Only difference between this and the 'real' client should be that it adds some extra
   // reputation to the fourth entry being parsed.
+  constructor(minerAddress, entryToFalsify) {
+    super(minerAddress);
+    this.entryToFalsify = entryToFalsify.toString();
+  }
+
   async addLogContentsToReputationTree(makeJustificationTree = false) {
     // Snapshot the current state, in case we get in to a dispute, and have to roll back
     // to generated the justification tree.
@@ -20,7 +25,7 @@ export default class MaliciousReputationMiningClient extends ReputationMiningCli
       interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
       const logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i.toString(), false); // eslint-disable-line no-await-in-loop
       let score = logEntry[1];
-      if (i.toString() === "4") {
+      if (i.toString() === this.entryToFalsify) {
         score = score.add("0xfffffffff");
       }
       if (makeJustificationTree) {

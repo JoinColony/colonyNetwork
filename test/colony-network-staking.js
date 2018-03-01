@@ -931,7 +931,7 @@ contract("ColonyNetworkStaking", accounts => {
       await client.initialise(colonyNetwork.address);
       await client.addLogContentsToReputationTree();
 
-      const badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT);
+      const badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, 4);
       await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
@@ -1003,6 +1003,9 @@ contract("ColonyNetworkStaking", accounts => {
       const badSubmissionAfterResponseToChallenge = await repCycle.disputeRounds(0, 1);
       assert.equal(goodSubmissionAfterResponseToChallenge[3].sub(badSubmissionAfterResponseToChallenge[3]).toNumber(), 1);
       // checks that challengeStepCompleted is one more for the good submission than the bad one.
+
+      await testHelper.forwardTime(600, this);
+      await repCycle.invalidateHash(0, 1);
     });
 
     it("The reputation mining clinent should calculate reputation decay correctly");
