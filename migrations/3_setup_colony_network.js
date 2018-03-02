@@ -1,6 +1,6 @@
 /* globals artifacts */
 /* eslint-disable no-console */
-const upgradableContracts = require("../helpers/upgradable-contracts");
+const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");
 
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkStaking = artifacts.require("./ColonyNetworkStaking");
@@ -28,7 +28,7 @@ module.exports = deployer => {
     })
     .then(instance => {
       resolver = instance;
-      return upgradableContracts.setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkStaking);
+      return setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkStaking);
     })
     .then(() => {
       console.log("### Colony Network setup with Resolver", resolver.address, "and EtherRouter", etherRouter.address);

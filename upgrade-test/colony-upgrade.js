@@ -1,6 +1,6 @@
 /* globals artifacts */
-import testHelper from "../helpers/test-helper";
-import upgradableContracts from "../helpers/upgradable-contracts";
+import { getRandomString, getTokenArgs, hexToUtf8 } from "../helpers/test-helper";
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -36,8 +36,8 @@ contract("Colony contract upgrade", accounts => {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
 
-    COLONY_KEY = testHelper.getRandomString(7);
-    const tokenArgs = testHelper.getTokenArgs();
+    COLONY_KEY = getRandomString(7);
+    const tokenArgs = getTokenArgs();
     await colonyNetwork.createColony(COLONY_KEY, ...tokenArgs);
     etherRouter = await colonyNetwork.getColony(COLONY_KEY);
     colony = await IColony.at(etherRouter);
@@ -56,14 +56,7 @@ contract("Colony contract upgrade", accounts => {
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", updatedColonyContract.address, 32);
-    await upgradableContracts.setupColonyVersionResolver(
-      updatedColonyContract,
-      colonyTask,
-      colonyFunding,
-      colonyTransactionReviewer,
-      resolver,
-      colonyNetwork
-    );
+    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     // Check new Colony contract version is registered successfully
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
 
@@ -90,14 +83,14 @@ contract("Colony contract upgrade", accounts => {
 
     it("should return correct tasks", async () => {
       const task1 = await updatedColony.getTask.call(1);
-      assert.equal(testHelper.hexToUtf8(task1[0]), specificationHash);
+      assert.equal(hexToUtf8(task1[0]), specificationHash);
       assert.isFalse(task1[2]);
       assert.isFalse(task1[3]);
       assert.equal(task1[4].toNumber(), 0);
       assert.equal(task1[5].toNumber(), 0);
 
       const task2 = await updatedColony.getTask.call(2);
-      assert.equal(testHelper.hexToUtf8(task2[0]), newSpecificationHash);
+      assert.equal(hexToUtf8(task2[0]), newSpecificationHash);
       assert.isFalse(task2[2]);
       assert.isFalse(task2[3]);
       assert.equal(task2[4].toNumber(), 0);

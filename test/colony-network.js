@@ -1,7 +1,16 @@
 /* globals artifacts */
-import testHelper from "../helpers/test-helper";
+import {
+  getTokenArgs,
+  web3GetNetwork,
+  web3GetBalance,
+  checkErrorRevert,
+  getRandomString,
+  checkErrorNonPayableFunction,
+  expectEvent,
+  checkError
+} from "../helpers/test-helper";
 
-const upgradableContracts = require("../helpers/upgradable-contracts");
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const Colony = artifacts.require("Colony");
@@ -13,7 +22,7 @@ const Resolver = artifacts.require("Resolver");
 
 contract("ColonyNetwork", accounts => {
   const COLONY_KEY = "COLONY_TEST";
-  const TOKEN_ARGS = testHelper.getTokenArgs();
+  const TOKEN_ARGS = getTokenArgs();
   const OTHER_ACCOUNT = accounts[1];
   let colonyFunding;
   let colonyTransactionReviewer;
@@ -25,7 +34,7 @@ contract("ColonyNetwork", accounts => {
   let version;
 
   before(async () => {
-    const network = await testHelper.web3GetNetwork();
+    const network = await web3GetNetwork();
     createColonyGas = network === "coverage" ? "0xfffffffffff" : 4e6;
     resolverColonyNetworkDeployed = await Resolver.deployed();
   });
@@ -41,13 +50,13 @@ contract("ColonyNetwork", accounts => {
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await upgradableContracts.setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
   });
 
   describe("when initialised", () => {
     it("should accept ether", async () => {
       await colonyNetwork.send(1);
-      const colonyNetworkBalance = await testHelper.web3GetBalance(colonyNetwork.address);
+      const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
       assert.equal(colonyNetworkBalance.toNumber(), 1);
     });
 
@@ -96,7 +105,7 @@ contract("ColonyNetwork", accounts => {
       await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
       const colonyAddress1 = await colonyNetwork.getColony.call(COLONY_KEY);
 
-      await testHelper.checkErrorRevert(colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS, { gas: createColonyGas }));
+      await checkErrorRevert(colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS, { gas: createColonyGas }));
       const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 1);
       const colonyAddress2 = await colonyNetwork.getColony.call(COLONY_KEY);
@@ -104,13 +113,13 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should maintain correct count of colonies", async () => {
-      await colonyNetwork.createColony(testHelper.getRandomString(7), ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony(testHelper.getRandomString(7), ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony(testHelper.getRandomString(7), ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony(testHelper.getRandomString(7), ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony(testHelper.getRandomString(7), ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony(testHelper.getRandomString(7), ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony(testHelper.getRandomString(7), ...testHelper.getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
       const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 7);
     });
@@ -156,22 +165,22 @@ contract("ColonyNetwork", accounts => {
       try {
         await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS, { value: 1, gas: createColonyGas });
       } catch (err) {
-        testHelper.checkErrorNonPayableFunction(err);
+        checkErrorNonPayableFunction(err);
       }
-      const colonyNetworkBalance = await testHelper.web3GetBalance(colonyNetwork.address);
+      const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
       assert.equal(0, colonyNetworkBalance.toNumber());
     });
 
     it("should log a ColonyAdded event", async () => {
-      await testHelper.expectEvent(colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS), "ColonyAdded");
+      await expectEvent(colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS), "ColonyAdded");
     });
   });
 
   describe("when getting existing colonies", () => {
     it("should allow users to get the address of a colony by its index", async () => {
-      await colonyNetwork.createColony("Colony1", ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony("Colony2", ...testHelper.getTokenArgs());
-      await colonyNetwork.createColony("Colony3", ...testHelper.getTokenArgs());
+      await colonyNetwork.createColony("Colony1", ...getTokenArgs());
+      await colonyNetwork.createColony("Colony2", ...getTokenArgs());
+      await colonyNetwork.createColony("Colony3", ...getTokenArgs());
       const colonyAddress = await colonyNetwork.getColonyAt.call(3);
       assert.notEqual(colonyAddress, "0x0000000000000000000000000000000000000000");
     });
@@ -216,7 +225,7 @@ contract("ColonyNetwork", accounts => {
       const newVersion = currentColonyVersion.sub(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));
+      await checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
@@ -225,7 +234,7 @@ contract("ColonyNetwork", accounts => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
 
-      await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));
+      await checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion));
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
@@ -240,7 +249,7 @@ contract("ColonyNetwork", accounts => {
       const newVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      await testHelper.checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colonyNetwork.upgradeColony(COLONY_KEY, newVersion, { from: OTHER_ACCOUNT }));
       assert.notEqual(colonyResolver, sampleResolver);
     });
   });
@@ -251,13 +260,13 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should not be able to add a global skill, by an address that is not the common colony ", async () => {
-      await testHelper.checkErrorRevert(colonyNetwork.addSkill(1, true));
+      await checkErrorRevert(colonyNetwork.addSkill(1, true));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
-      await testHelper.checkError(colonyNetwork.addSkill(2, false));
+      await checkError(colonyNetwork.addSkill(2, false));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);

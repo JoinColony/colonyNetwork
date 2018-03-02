@@ -1,5 +1,5 @@
 import web3Utils from "web3-utils";
-import testHelper from "../helpers/test-helper";
+import { getRandomString } from "../helpers/test-helper";
 
 let MANAGER;
 let EVALUATOR;
@@ -19,8 +19,8 @@ const WORKER_PAYOUT = web3Utils.toBN(200 * 1e18);
 const MANAGER_RATING = 30;
 const WORKER_RATING = 40;
 const SECONDS_PER_DAY = 86400;
-const RATING_1_SALT = web3Utils.soliditySha3(testHelper.getRandomString(10));
-const RATING_2_SALT = web3Utils.soliditySha3(testHelper.getRandomString(10));
+const RATING_1_SALT = web3Utils.soliditySha3(getRandomString(10));
+const RATING_2_SALT = web3Utils.soliditySha3(getRandomString(10));
 const RATING_1_SECRET = web3Utils.soliditySha3(RATING_1_SALT, MANAGER_RATING);
 const RATING_2_SECRET = web3Utils.soliditySha3(RATING_2_SALT, WORKER_RATING);
 

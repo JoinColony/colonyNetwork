@@ -27,10 +27,6 @@ import "./SafeMath.sol";
 
 
 contract ColonyTask is ColonyStorage, DSMath {
-  uint8 constant MANAGER = 0;
-  uint8 constant EVALUATOR = 1;
-  uint8 constant WORKER = 2;
-
   uint256 constant RATING_COMMIT_TIMEOUT = 432000;
   uint256 constant RATING_REVEAL_TIMEOUT = 432000;
 
