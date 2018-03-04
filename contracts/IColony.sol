@@ -44,7 +44,6 @@ contract IColony {
   function approveTaskChange(uint256 _transactionId, uint8 _role) public;
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
-  function assignWorkRating(uint256 _id) public;
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32);
   function getTaskWorkRatings(uint256 _id) public view returns (uint256, uint256);
   function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32);
@@ -57,7 +56,7 @@ contract IColony {
   function finalizeTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
   function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256);
-  function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8);
+  function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, uint8);
   function getTaskSkill(uint256 _id, uint256 _idx) public view returns (uint256);
   function getTaskDomain(uint256 _id, uint256 _idx) public view returns (uint256);
 

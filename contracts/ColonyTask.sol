@@ -98,13 +98,11 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   modifier taskWorkRatingsClosed(uint256 _id) {
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT)); // More than 10 days from work submission have passed
-    _;
-  }
-
-  modifier taskWorkRatingsAssigned(uint256 _id) {
-    require(tasks[_id].roles[WORKER].rated);
-    require(tasks[_id].roles[MANAGER].rated);
+    // Work has been rated or more than 10 days from work submission have passed
+    require(
+      tasks[_id].roles[MANAGER].rating != 0 && tasks[_id].roles[WORKER].rating != 0 ||
+      sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT)
+    );
     _;
   }
 
@@ -123,7 +121,6 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[taskCount] = task;
     tasks[taskCount].roles[MANAGER] = Role({
       user: msg.sender,
-      rated: false,
       rating: 0
     });
 
@@ -183,31 +180,10 @@ contract ColonyTask is ColonyStorage, DSMath {
   {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id].secret[_role]);
+    require(_rating >= 1 && _rating <= 3);
 
     Role storage role = tasks[_id].roles[_role];
-    role.rated = true;
     role.rating = _rating;
-  }
-
-  // In the event of a user not committing or revealing within the 10 day rating window,
-  // their rating of their counterpart is assumed to be the highest possible
-  // and their own rating is decreased by 5 (e.g. 0.5 points)
-  function assignWorkRating(uint256 _id) public
-  taskWorkRatingsClosed(_id)
-  {
-    Role storage managerRole = tasks[_id].roles[MANAGER];
-    Role storage workerRole = tasks[_id].roles[WORKER];
-
-    if (!workerRole.rated) {
-      workerRole.rated = true;
-      workerRole.rating = 50;
-    }
-
-    if (!managerRole.rated) {
-      managerRole.rated = true;
-      managerRole.rating = 50;
-      workerRole.rating = (workerRole.rating > 5) ? (workerRole.rating - 5) : 0;
-    }
   }
 
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
@@ -230,7 +206,6 @@ contract ColonyTask is ColonyStorage, DSMath {
   {
     tasks[_id].roles[_role] = Role({
       user: _user,
-      rated: false,
       rating: 0
     });
   }
@@ -284,29 +259,65 @@ contract ColonyTask is ColonyStorage, DSMath {
   function finalizeTask(uint256 _id) public
   auth
   taskExists(_id)
-  taskWorkRatingsAssigned(_id)
+  taskWorkRatingsClosed(_id)
   taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
+    int8[3] memory ratingMultiplicator = [-10, 10, 15];
+
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
       uint payout = task.payouts[roleId][token];
       Role storage role = task.roles[roleId];
 
-      uint8 rating = (roleId == EVALUATOR) ? 50 : role.rating;
-      int divider = (roleId == WORKER) ? 30 : 50;
+      uint8 submittedRating;
 
-      int reputation = SafeMath.mulInt(int(payout), (int(rating)*2 - 50)) / divider;
+      // Evaluator does not get rated by other users, so we always assign 2
+      if (roleId == EVALUATOR) {
+        submittedRating = 2;
+        role.rating = 2;
+      } else if (role.rating == 0) {
+        // If submitted rating was 0, we assign the highest possible rating.
+        submittedRating = 0;
+        role.rating = 3;
+      }
+
+      int reputation = SafeMath.mulInt(int(payout), (int(ratingMultiplicator[role.rating - 1]))) / 10;
+
+      // // Give reputation according to role's rating
       colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.domains[0]);
 
       if (roleId == WORKER) {
         colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
+      }
 
-        if (rating <= 20) {
-          task.payouts[roleId][token] = 0;
-          task.totalPayouts[token] = sub(task.totalPayouts[token], payout);
-        }
+      // Finally, assign reputation penalities if a role didn't submit rating on time
+      if (submittedRating == 0 && roleId == MANAGER) {
+        // Worker is penalized in domain and skill
+        colonyNetworkContract.appendReputationUpdateLog(
+          task.roles[WORKER].user,
+          -int(task.payouts[WORKER][token] / 2),
+          task.skills[0]
+        );
+        colonyNetworkContract.appendReputationUpdateLog(
+          task.roles[WORKER].user,
+          -int(task.payouts[WORKER][token] / 2),
+          task.domains[0]
+        );
+      } else if (submittedRating == 0 && roleId == WORKER) {
+        // Evaluator is penalized in domain
+        colonyNetworkContract.appendReputationUpdateLog(
+          task.roles[EVALUATOR].user,
+          -int(task.payouts[EVALUATOR][token] / 2),
+          task.domains[0]
+        );
+      }
+
+      // If the work was rejeced with rating 1, don't pay out worker's reward
+      if (roleId == WORKER && role.rating == 1) {
+        task.payouts[roleId][token] = 0;
+        task.totalPayouts[token] = sub(task.totalPayouts[token], payout);
       }
     }
 
@@ -326,9 +337,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp);
   }
 
-  function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8) {
+  function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, uint8) {
     Role storage role = tasks[_id].roles[_idx];
-    return (role.user, role.rated, role.rating);
+    return (role.user, role.rating);
   }
 
   function getTaskSkill(uint256 _id, uint256 _idx) public view returns (uint256) {

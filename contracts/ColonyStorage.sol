@@ -84,7 +84,7 @@ contract ColonyStorage is DSAuth {
     uint256[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
-    mapping (uint256 => Role) roles; 
+    mapping (uint256 => Role) roles;
     // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint256) totalPayouts;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
@@ -94,8 +94,6 @@ contract ColonyStorage is DSAuth {
   struct Role {
     // Address of the user for the given role
     address user;
-    // Has the user work been rated
-    bool rated;
     // Rating the user received
     uint8 rating;
   }

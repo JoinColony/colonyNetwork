@@ -57,7 +57,7 @@ contract("Colony Reputation Updates", () => {
       await commonColony.finalizeTask(taskId);
       const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
       assert.equal(repLogEntryManager[0], MANAGER);
-      assert.equal(repLogEntryManager[1].toNumber(), 1000 * 1e18 / 50);
+      assert.equal(repLogEntryManager[1].toNumber(), 100 * 1e18);
       assert.equal(repLogEntryManager[2].toNumber(), 1);
       assert.equal(repLogEntryManager[3], commonColony.address);
       assert.equal(repLogEntryManager[4].toNumber(), 2);
@@ -82,58 +82,22 @@ contract("Colony Reputation Updates", () => {
 
     const ratings = [
       {
-        manager: 0,
-        reputationChangeManager: MANAGER_PAYOUT.muln(50)
-          .neg()
-          .divn(50),
-        worker: 0,
-        reputationChangeWorker: WORKER_PAYOUT.muln(50)
-          .neg()
-          .divn(30)
+        manager: 1,
+        reputationChangeManager: MANAGER_PAYOUT.neg(),
+        worker: 1,
+        reputationChangeWorker: WORKER_PAYOUT.neg()
       },
       {
-        manager: 10,
-        reputationChangeManager: MANAGER_PAYOUT.muln(30)
-          .neg()
-          .divn(50),
-        worker: 10,
-        reputationChangeWorker: WORKER_PAYOUT.muln(30)
-          .neg()
-          .divn(30)
+        manager: 2,
+        reputationChangeManager: MANAGER_PAYOUT,
+        worker: 2,
+        reputationChangeWorker: WORKER_PAYOUT
       },
       {
-        manager: 20,
-        reputationChangeManager: MANAGER_PAYOUT.muln(10)
-          .neg()
-          .divn(50),
-        worker: 20,
-        reputationChangeWorker: WORKER_PAYOUT.muln(10)
-          .neg()
-          .divn(30)
-      },
-      {
-        manager: 25,
-        reputationChangeManager: MANAGER_PAYOUT.muln(0).divn(50),
-        worker: 25,
-        reputationChangeWorker: WORKER_PAYOUT.muln(0).divn(30)
-      },
-      {
-        manager: 30,
-        reputationChangeManager: MANAGER_PAYOUT.muln(10).divn(50),
-        worker: 30,
-        reputationChangeWorker: WORKER_PAYOUT.muln(10).divn(30)
-      },
-      {
-        manager: 40,
-        reputationChangeManager: MANAGER_PAYOUT.muln(30).divn(50),
-        worker: 40,
-        reputationChangeWorker: WORKER_PAYOUT.muln(30).divn(30)
-      },
-      {
-        manager: 50,
-        reputationChangeManager: MANAGER_PAYOUT.muln(50).divn(50),
-        worker: 50,
-        reputationChangeWorker: WORKER_PAYOUT.muln(50).divn(30)
+        manager: 3,
+        reputationChangeManager: MANAGER_PAYOUT.muln(15).divn(10),
+        worker: 3,
+        reputationChangeWorker: WORKER_PAYOUT.muln(15).divn(10)
       }
     ];
 
@@ -234,7 +198,7 @@ contract("Colony Reputation Updates", () => {
         managerPayout,
         evaluatorPayout,
         workerPayout,
-        workerRating: 20
+        workerRating: 2
       });
 
       // Check the task pot is correctly funded with the max amount
