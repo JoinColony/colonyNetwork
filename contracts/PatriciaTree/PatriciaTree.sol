@@ -115,6 +115,17 @@ contract PatriciaTree is PatriciaTreeFace {
     return verifyProof(rootHash, keyBytes, valueBytes, branchMask, siblings);
   }
 
+  function getImpliedRootBytes32(bytes32 key, bytes32 value, uint branchMask, bytes32[] siblings) public view returns (bytes32) {
+    bytes memory keyBytes = new bytes(32);
+    bytes memory valueBytes = new bytes(32);
+    assembly {
+      mstore(add(keyBytes, 0x20), key)
+      mstore(add(valueBytes, 0x20), value)
+    }
+    return getImpliedRoot(keyBytes, valueBytes, branchMask, siblings);
+
+  }
+
   function insert(bytes key, bytes value) public {
     tree.insert(key, value);
   }

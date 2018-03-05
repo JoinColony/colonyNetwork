@@ -99,9 +99,7 @@ export class ReputationMiningClient {
     await this.revertTree();
     this.justificationTree = await this.PatriciaTree.new({ from: accountAddress, gas: 4000000 });
     this.justificationHashes = {};
-    console.log("start making tre");
     await this.addLogContentsToReputationTree(true);
-    console.log(this.justificationHashes);
     const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
     const nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
@@ -116,8 +114,8 @@ export class ReputationMiningClient {
   async addLogContentsToReputationTree(makeJustificationTree = false) {
     // Snapshot the current state, in case we get in to a dispute, and have to roll back
     // to generated the justification tree.
-    let justUpdatedProof = {};
-    let nextUpdateProof = {};
+    let justUpdatedProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
+    let nextUpdateProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
 
     await this.snapshotTree();
     let nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
@@ -144,7 +142,6 @@ export class ReputationMiningClient {
           justUpdatedProof = JSON.parse(JSON.stringify(nextUpdateProof));
           justUpdatedProof.value = this.reputations[prevKey];
         }
-        console.log("insert to justification tree");
         await this.justificationTree.insert(`0x${i.toString(16, 64)}`, interimHash, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
 
         const colonyAddress = logEntry[3].slice(2);
@@ -163,9 +160,10 @@ export class ReputationMiningClient {
           value = this.reputations[key];
         } catch (err) {
           // Doesn't exist yet.
-          value = 0;
+          branchMask = 0x0;
+          siblings = [];
+          value = this.getValueAsBytes(0, 0);
         }
-        console.log("gotProof");
         nextUpdateProof = { branchMask, siblings, key, value };
         this.justificationHashes[`0x${i.toString(16, 64)}`] = { interimHash, justUpdatedProof, nextUpdateProof };
       }
@@ -179,26 +177,23 @@ export class ReputationMiningClient {
     }
     // Add the last entry to the justification tree
     if (makeJustificationTree) {
-      console.log("last entry");
       justUpdatedProof = nextUpdateProof;
       nextUpdateProof = {};
       interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
-      console.log("interimhash", interimHash);
       await this.justificationTree.insert(`0x${nLogEntries.toString(16, 64)}`, interimHash, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
-      console.log("inserted interim");
-      const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(nLogEntries.subn(1).toString(), false); // eslint-disable-line no-await-in-loop
-      const prevColonyAddress = prevLogEntry[3].slice(2);
-      const prevSkillId = prevLogEntry[2];
-      const prevUserAddress = prevLogEntry[0].slice(2);
-      const prevKey = `0x${new BN(prevColonyAddress, 16).toString(16, 40)}${new BN(prevSkillId.toString()).toString(16, 64)}${new BN(
-        prevUserAddress,
-        16
-      ).toString(16, 40)}`;
-      console.log("prevKey", prevKey);
-      justUpdatedProof.value = this.reputations[prevKey];
+      if (nLogEntries.gtn(0)) {
+        const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(nLogEntries.subn(1).toString(), false); // eslint-disable-line no-await-in-loop
+        const prevColonyAddress = prevLogEntry[3].slice(2);
+        const prevSkillId = prevLogEntry[2];
+        const prevUserAddress = prevLogEntry[0].slice(2);
+        const prevKey = `0x${new BN(prevColonyAddress, 16).toString(16, 40)}${new BN(prevSkillId.toString()).toString(16, 64)}${new BN(
+          prevUserAddress,
+          16
+        ).toString(16, 40)}`;
+        justUpdatedProof.value = this.reputations[prevKey];
+      }
       this.justificationHashes[`0x${nLogEntries.toString(16, 64)}`] = { interimHash, justUpdatedProof, nextUpdateProof };
     }
-    console.log("done");
   }
 
   async getMySubmissionRoundAndIndex() {
@@ -228,7 +223,7 @@ export class ReputationMiningClient {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
     const repCycle = ReputationMiningCycle.at(addr);
-    const submission = await repCycle.disputeRounds(round.toString(), index.toString());
+    let submission = await repCycle.disputeRounds(round.toString(), index.toString());
     const targetNode = new BN(
       submission[7]
         .plus(submission[8])
@@ -238,15 +233,14 @@ export class ReputationMiningClient {
     );
     const intermediateReputationHash = this.justificationHashes[`0x${targetNode.toString(16, 64)}`].interimHash;
     const [branchMask, siblings] = await this.justificationTree.getProof(`0x${targetNode.toString(16, 64)}`);
-    console.log(targetNode, round, index, intermediateReputationHash, branchMask, siblings);
     await repCycle.binarySearchForChallenge(round.toString(), index.toString(), intermediateReputationHash, branchMask, siblings, {
       from: this.minerAddress,
       gas: 1000000
     });
+    submission = await repCycle.disputeRounds(round.toString(), index.toString());
   }
 
   async respondToChallenge() {
-    console.log("respond to challenge");
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
     const repCycle = ReputationMiningCycle.at(addr);
@@ -264,33 +258,29 @@ export class ReputationMiningClient {
     ).toString(16, 40)}`;
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-    console.log("respond tx");
-    console.log(reputationKey, `0x${new BN(lastAgreeIdx).toString(16, 64)}`);
-    console.log(this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`]);
-    const impliedRoot = await this.justificationTree.getImpliedRoot(
-      reputationKey,
-      this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value,
-      this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.branchMask,
-      this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.siblings
-    );
-    // these are equal
-    console.log(impliedRoot, this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].interimHash);
-    const impliedRoot2 = await this.justificationTree.getImpliedRoot(
-      `0x${new BN(lastAgreeIdx).toString(16, 64)}`,
-      impliedRoot,
-      agreeStateBranchMask,
-      agreeStateSiblings
-    );
-    const jrh = await this.justificationTree.getRootHash();
 
-    console.log(impliedRoot2, jrh);
-    // but this doesn't work. FUTURE ALEX
+    // These comments can help with debugging. This implied root is the intermediate root hash that is implied
+    // const impliedRoot = await this.justificationTree.getImpliedRoot(
+    //   reputationKey,
+    //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value,
+    //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.branchMask,
+    //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.siblings
+    // );
+    // This one is the JRH implied by the proof provided alongside the above implied root - we expect this to
+    // be the JRH that has been submitted.
+    // const impliedRoot2 = await this.justificationTree.getImpliedRoot(
+    //   `0x${new BN(lastAgreeIdx).toString(16, 64)}`,
+    //   impliedRoot,
+    //   agreeStateBranchMask,
+    //   agreeStateSiblings
+    // );
+    // const jrh = await this.justificationTree.getRootHash();
     return repCycle.respondToChallengeReal(
       round.toString(),
       index.toString(),
       reputationKey,
-      this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.branchMask,
-      this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.siblings,
+      this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask,
+      this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,
       this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value,
       agreeStateBranchMask,
       agreeStateSiblings,
@@ -350,15 +340,11 @@ export class ReputationMiningClient {
       // Extract uid
       const uid = this.web3.toBigNumber(`0x${value.slice(-64)}`);
       const existingValue = this.web3.toBigNumber(`0x${value.slice(2, 66)}`);
-      console.log("existingValue", existingValue.toString());
-      console.log("reputationScore", reputationScore.toString());
-      console.log(existingValue.add(reputationScore).toString());
       value = this.getValueAsBytes(existingValue.add(reputationScore), uid);
     } else {
       value = this.getValueAsBytes(reputationScore, this.nReputations + 1);
       this.nReputations += 1;
     }
-    console.log(key, value);
     await this.reputationTree.insert(key, value, { from: accountAddress, gas: 4000000 });
     // If successful, add to our JSON.
     this.reputations[key] = value;

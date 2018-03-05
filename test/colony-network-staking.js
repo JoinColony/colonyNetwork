@@ -19,6 +19,9 @@ contract("ColonyNetworkStaking", accounts => {
   let commonColony;
   let colonyNetwork;
   let clny;
+  let goodClient;
+  let badClient;
+  let badClient2;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -31,20 +34,113 @@ contract("ColonyNetworkStaking", accounts => {
     await colonyNetwork.startNextCycle();
   });
 
-  async function accommodateChallengeAndInvalidateHash(test, round, idx, respondToChallenge = true) {
-    // Have our opponent respond to the challenge asked for
+  beforeEach(async () => {
+    goodClient = new ReputationMiningClient(MAIN_ACCOUNT);
+    badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, 0, 0xfffffffff); // Mess up the first calculation. There will always be one.
+    badClient2 = new MaliciousReputationMiningClient(accounts[2], 0, 0xeeeeeeeee); // Mess up the first calculation. There will always be one.
+    await goodClient.initialise(colonyNetwork.address);
+    await badClient.initialise(colonyNetwork.address);
+    await badClient2.initialise(colonyNetwork.address);
+
+    // Kick off reputation mining.
+    // TODO: Tests for the first reputation cycle (when log empty) should be done in another file
+    await testDataGenerator.giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+
+    await clny.approve(colonyNetwork.address, "1000000000000000000");
+    await colonyNetwork.deposit("1000000000000000000");
+
+    const addr = await colonyNetwork.getReputationMiningCycle.call();
+    const repCycle = ReputationMiningCycle.at(addr);
+    await testHelper.forwardTime(3600, this);
+    await repCycle.submitNewHash("0x0", 0, 10);
+    await repCycle.confirmNewHash(0);
+    // The inactive reputation log now has the reward for this miner, and the accepted state is empty.
+    // This is the same starting point for all tests.
+    const stakedBalance = await colonyNetwork.getStakedBalance.call(MAIN_ACCOUNT);
+    await colonyNetwork.withdraw(stakedBalance.toNumber());
+    const userBalance = await clny.balanceOf.call(MAIN_ACCOUNT);
+    await clny.transfer(0x0, userBalance, { from: MAIN_ACCOUNT });
+  });
+
+  async function accommodateChallengeAndInvalidateHash(test, client1, client2) {
     const reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle.call();
     const repCycle = ReputationMiningCycle.at(reputationMiningCycleAddress);
-    if (respondToChallenge) {
-      const oppIdx = idx % 2 === 1 ? idx - 1 : idx + 1;
-      await repCycle.respondToChallenge(round, oppIdx);
-      await forwardTime(600, test);
+    let round2;
+    let idx2;
+    let toInvalidateIdx;
+    const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
+    const submission1before = await repCycle.disputeRounds(round1.toString(), idx1.toString());
+    // Submit JRH for submission 1 if needed
+    if (submission1before[4] === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+      await client1.submitJustificationRootHash();
     }
-    return repCycle.invalidateHash(round, idx);
+    if (client2 !== undefined) {
+      [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
+      assert(round1.eq(round2), "Clients do not have submissions in the same round");
+      const submission2before = await repCycle.disputeRounds(round2.toString(), idx2.toString());
+
+      assert(
+        idx1
+          .sub(idx2)
+          .abs()
+          .eqn(1),
+        "Clients are not facing each other in this round"
+      );
+      if (submission2before[4] === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+        await client2.submitJustificationRootHash();
+      }
+      // Loop while doing the binary search, checking we were successful at each point
+      // Binary search will error when it is complete.
+      let noError = true;
+      while (noError) {
+        try {
+          await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        } catch (err) {
+          noError = false;
+        }
+        try {
+          await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        } catch (err) {
+          noError = false;
+        }
+      }
+      // Respond to the challenge - usually, only one of these should work.
+      // If both work, then the starting reputation is 0 and one client is lying
+      // about whether the key already exists.
+      noError = true;
+      try {
+        await client1.respondToChallenge();
+      } catch (err) {
+        // We are expecting an error here or below, but we don't need to do anything about it.
+      }
+      try {
+        await client2.respondToChallenge();
+      } catch (err) {
+        // We are expecting an error here or above, but we don't need to do anything about it.
+      }
+      // Work out which submission is to be invalidated.
+      const submission1 = await repCycle.disputeRounds(round1.toString(), idx1.toString());
+      const challengeStepsCompleted1 = new BN(submission1[3].toString());
+      const submission2 = await repCycle.disputeRounds(round2.toString(), idx2.toString());
+      const challengeStepsCompleted2 = new BN(submission2[3].toString());
+      if (challengeStepsCompleted1.gt(challengeStepsCompleted2)) {
+        // idx1.modn returns a javascript number, which is surprising!
+        toInvalidateIdx = idx2;
+      } else {
+        // Note that if they're equal, they're both going to be invalidated, so we can call
+        // either
+        toInvalidateIdx = idx1;
+      }
+      // Forward time, so that whichever has failed to respond by now has timed out.
+      await forwardTime(600, test);
+    } else {
+      toInvalidateIdx = idx1.modn(2) === 1 ? idx1.subn(1) : idx1.addn(1);
+    }
+    await repCycle.invalidateHash(round1.toString(), toInvalidateIdx.toString());
   }
 
   afterEach(async () => {
-    // Withdraw all stakes. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
+    // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
     const addr = await colonyNetwork.getReputationMiningCycle.call();
     const repCycle = ReputationMiningCycle.at(addr);
     let nSubmittedHashes = await repCycle.nSubmittedHashes.call();
@@ -62,6 +158,8 @@ contract("ColonyNetworkStaking", accounts => {
         return;
       }
     }
+
+    // Actually do the withdrawal.
     await Promise.all(
       accounts.map(async address => {
         const stakedBalance = await colonyNetwork.getStakedBalance.call(address);
@@ -187,18 +285,27 @@ contract("ColonyNetworkStaking", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle.call();
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
-      await repCycle.submitNewHash("0x12345678", 10, 10);
-      await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
-      await accommodateChallengeAndInvalidateHash(this, 0, 1);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      // await repCycle.submitNewHash("0x12345678", 10, 10);
+      // await repCycle.submitNewHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
+      // await accommodateChallengeAndInvalidateHash(this, 0, 1);
       await repCycle.confirmNewHash(1);
       const newAddr = await colonyNetwork.getReputationMiningCycle.call();
       assert(newAddr !== 0x0);
       assert(addr !== 0x0);
       assert(newAddr !== addr);
       const rootHash = await colonyNetwork.getReputationRootHash.call();
-      assert.equal(rootHash, "0x1234567800000000000000000000000000000000000000000000000000000000");
+      const clientRootHash = await goodClient.getRootHash();
+      assert.equal(rootHash, clientRootHash);
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes.call();
-      assert(rootHashNNodes.equals(10));
+      assert.equal(rootHashNNodes.toString(), goodClient.nReputations.toString());
     });
 
     it("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
@@ -216,22 +323,28 @@ contract("ColonyNetworkStaking", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle.call();
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
-      await repCycle.submitNewHash("0x12345678", 10, 10);
-      await repCycle.submitNewHash("0x87654321", 11, 10, { from: OTHER_ACCOUNT });
-      await repCycle.submitNewHash("0x99999999", 12, 10, { from: accounts[2] });
-      await accommodateChallengeAndInvalidateHash(this, 0, 1);
-      await accommodateChallengeAndInvalidateHash(this, 0, 3, false); // Invalidate the 'null' that partners the third hash submitted
-      // No response to a challenge required.
-      await accommodateChallengeAndInvalidateHash(this, 1, 0);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+      await badClient2.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+      await badClient2.submitRootHash();
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, badClient2); // Invalidate the 'null' that partners the third hash submitted.
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2);
+
       await repCycle.confirmNewHash(2);
       const newAddr = await colonyNetwork.getReputationMiningCycle.call();
       assert(newAddr !== 0x0);
       assert(addr !== 0x0);
       assert(newAddr !== addr);
       const rootHash = await colonyNetwork.getReputationRootHash.call();
-      assert.equal(rootHash, "0x9999999900000000000000000000000000000000000000000000000000000000");
+      const clientRootHash = await goodClient.getRootHash();
+      assert.equal(rootHash, clientRootHash);
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes.call();
-      assert(rootHashNNodes.equals(12));
+      assert.equal(rootHashNNodes.toString(), goodClient.nReputations.toString());
     });
 
     it("should not allow a new reputation hash to be set if more than one was submitted and they have not been elimintated", async () => {
@@ -860,31 +973,27 @@ contract("ColonyNetworkStaking", accounts => {
       const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      const client = new ReputationMiningClient(MAIN_ACCOUNT);
-      await client.initialise(colonyNetwork.address);
-      await client.addLogContentsToReputationTree();
+      await goodClient.addLogContentsToReputationTree();
 
-      const badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT);
-      await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
-      let righthash = await client.getRootHash();
+      let righthash = await goodClient.getRootHash();
       let wronghash = await badClient.getRootHash();
-      righthash = await client.getRootHash();
+      righthash = await goodClient.getRootHash();
       wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
       await testHelper.forwardTime(3600, this);
 
-      await client.submitRootHash();
+      await goodClient.submitRootHash();
       await badClient.submitRootHash();
 
       const nSubmittedHashes = await repCycle.nSubmittedHashes();
       assert.equal(nSubmittedHashes, 2);
       const submission = await repCycle.disputeRounds(0, 0);
       assert.equal(submission[4], "0x0000000000000000000000000000000000000000000000000000000000000000");
-      await client.submitJustificationRootHash();
+      await goodClient.submitJustificationRootHash();
       const submissionAfterJRHSubmitted = await repCycle.disputeRounds(0, 0);
-      const jrh = await client.justificationTree.getRootHash();
+      const jrh = await goodClient.justificationTree.getRootHash();
       assert.equal(submissionAfterJRHSubmitted[4], jrh);
 
       // Check 'last response' was updated.
@@ -927,82 +1036,100 @@ contract("ColonyNetworkStaking", accounts => {
       const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      const client = new ReputationMiningClient(MAIN_ACCOUNT);
-      await client.initialise(colonyNetwork.address);
-      await client.addLogContentsToReputationTree();
+      await goodClient.addLogContentsToReputationTree();
 
-      const badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, 4);
+      badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, 4, "0xfffffffff");
       await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
-      let righthash = await client.getRootHash();
+      let righthash = await goodClient.getRootHash();
       let wronghash = await badClient.getRootHash();
-      righthash = await client.getRootHash();
+      righthash = await goodClient.getRootHash();
       wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
       await testHelper.forwardTime(3600, this);
 
-      await client.submitRootHash();
+      await goodClient.submitRootHash();
       await badClient.submitRootHash();
 
       const nSubmittedHashes = await repCycle.nSubmittedHashes();
       assert.equal(nSubmittedHashes, 2);
       const submission = await repCycle.disputeRounds(0, 0);
       assert.equal(submission[4], "0x0000000000000000000000000000000000000000000000000000000000000000");
-      await client.submitJustificationRootHash();
+      await goodClient.submitJustificationRootHash();
       const submissionAfterJRHSubmitted = await repCycle.disputeRounds(0, 0);
-      const jrh = await client.justificationTree.getRootHash();
+      const jrh = await goodClient.justificationTree.getRootHash();
       assert.equal(submissionAfterJRHSubmitted[4], jrh);
       await badClient.submitJustificationRootHash();
       const badSubmissionAfterJRHSubmitted = await repCycle.disputeRounds(0, 1);
       const badJrh = await badClient.justificationTree.getRootHash();
       assert.equal(badSubmissionAfterJRHSubmitted[4], badJrh);
 
-      await client.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      let goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
-      let badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 0); // Lower bound for binary search
-      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 7); // Upper bound for binary search
-      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 0);
-      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 7);
+      let goodSubmission = await repCycle.disputeRounds(0, 0);
+      let badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[3].toNumber(), 1); // Challenge steps completed
+      assert.equal(goodSubmission[7].toNumber(), 0); // Lower bound for binary search
+      assert.equal(goodSubmission[8].toNumber(), 14); // Upper bound for binary search
+      assert.equal(badSubmission[3].toNumber(), 1);
+      assert.equal(badSubmission[7].toNumber(), 0);
+      assert.equal(badSubmission[8].toNumber(), 14);
+      await goodClient.respondToBinarySearchForChallenge();
 
-      await client.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
-      badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 4);
-      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 7);
-      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 4);
-      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 7);
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[3].toNumber(), 2);
+      assert.equal(goodSubmission[7].toNumber(), 0);
+      assert.equal(goodSubmission[8].toNumber(), 14);
+      assert.equal(badSubmission[3].toNumber(), 1);
+      assert.equal(badSubmission[7].toNumber(), 0);
+      assert.equal(badSubmission[8].toNumber(), 14);
 
-      await client.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
-      badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 4);
-      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 5);
-      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 4);
-      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 5);
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[7].toNumber(), 0);
+      assert.equal(goodSubmission[8].toNumber(), 7);
+      assert.equal(badSubmission[7].toNumber(), 0);
+      assert.equal(badSubmission[8].toNumber(), 7);
 
-      await client.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 0);
-      badSubmissionAfterBinarySearchStage = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterBinarySearchStage[7].toNumber(), 5);
-      assert.equal(goodSubmissionAfterBinarySearchStage[8].toNumber(), 5);
-      assert.equal(badSubmissionAfterBinarySearchStage[7].toNumber(), 5);
-      assert.equal(badSubmissionAfterBinarySearchStage[8].toNumber(), 5);
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[7].toNumber(), 4);
+      assert.equal(goodSubmission[8].toNumber(), 7);
+      assert.equal(badSubmission[7].toNumber(), 4);
+      assert.equal(badSubmission[8].toNumber(), 7);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[7].toNumber(), 4);
+      assert.equal(goodSubmission[8].toNumber(), 5);
+      assert.equal(badSubmission[7].toNumber(), 4);
+      assert.equal(badSubmission[8].toNumber(), 5);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[7].toNumber(), 5);
+      assert.equal(goodSubmission[8].toNumber(), 5);
+      assert.equal(badSubmission[7].toNumber(), 5);
+      assert.equal(badSubmission[8].toNumber(), 5);
 
       // TODO: Split off in to  another test here, but can't be bothered to refactor right now.
-      await client.respondToChallenge();
+      await goodClient.respondToChallenge();
       await testHelper.checkErrorRevert(badClient.respondToChallenge());
 
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.disputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterResponseToChallenge[3].sub(badSubmissionAfterResponseToChallenge[3]).toNumber(), 1);
-      // checks that challengeStepCompleted is one more for the good submission than the bad one.
+      assert.equal(goodSubmissionAfterResponseToChallenge[3].sub(badSubmissionAfterResponseToChallenge[3]).toNumber(), 2);
+      // checks that challengeStepCompleted is two more for the good submission than the bad one.
+      // it's two, because we proved the starting reputation was in the starting reputation state, rather than claiming
+      // it was a new reputation not in the tree with value 0.
 
       await testHelper.forwardTime(600, this);
       await repCycle.invalidateHash(0, 1);

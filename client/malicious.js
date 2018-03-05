@@ -6,16 +6,17 @@ const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 export default class MaliciousReputationMiningClient extends ReputationMiningClient {
   // Only difference between this and the 'real' client should be that it adds some extra
   // reputation to the fourth entry being parsed.
-  constructor(minerAddress, entryToFalsify) {
+  constructor(minerAddress, entryToFalsify, amountToFalsify) {
     super(minerAddress);
     this.entryToFalsify = entryToFalsify.toString();
+    this.amountToFalsify = amountToFalsify.toString();
   }
 
   async addLogContentsToReputationTree(makeJustificationTree = false) {
     // Snapshot the current state, in case we get in to a dispute, and have to roll back
     // to generated the justification tree.
-    let justUpdatedProof = {};
-    let nextUpdateProof = {};
+    let justUpdatedProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
+    let nextUpdateProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
 
     await this.snapshotTree();
     let nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
@@ -26,7 +27,7 @@ export default class MaliciousReputationMiningClient extends ReputationMiningCli
       const logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i.toString(), false); // eslint-disable-line no-await-in-loop
       let score = logEntry[1];
       if (i.toString() === this.entryToFalsify) {
-        score = score.add("0xfffffffff");
+        score = score.add(this.amountToFalsify);
       }
       if (makeJustificationTree) {
         if (i.toString() === "0") {
@@ -46,7 +47,6 @@ export default class MaliciousReputationMiningClient extends ReputationMiningCli
           justUpdatedProof = JSON.parse(JSON.stringify(nextUpdateProof));
           justUpdatedProof.value = this.reputations[prevKey];
         }
-        console.log("insert to justification tree");
         await this.justificationTree.insert(`0x${i.toString(16, 64)}`, interimHash, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
 
         const colonyAddress = logEntry[3].slice(2);
@@ -65,9 +65,10 @@ export default class MaliciousReputationMiningClient extends ReputationMiningCli
           value = this.reputations[key];
         } catch (err) {
           // Doesn't exist yet.
-          value = 0;
+          branchMask = 0x0;
+          siblings = [];
+          value = this.getValueAsBytes(0, 0);
         }
-        console.log("gotProof");
         nextUpdateProof = { branchMask, siblings, key, value };
         this.justificationHashes[`0x${i.toString(16, 64)}`] = { interimHash, justUpdatedProof, nextUpdateProof };
       }
@@ -81,25 +82,22 @@ export default class MaliciousReputationMiningClient extends ReputationMiningCli
     }
     // Add the last entry to the justification tree
     if (makeJustificationTree) {
-      console.log("last entry");
       justUpdatedProof = nextUpdateProof;
       nextUpdateProof = {};
       interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
-      console.log("interimhash", interimHash);
       await this.justificationTree.insert(`0x${nLogEntries.toString(16, 64)}`, interimHash, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
-      console.log("inserted interim");
-      const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(nLogEntries.subn(1).toString(), false); // eslint-disable-line no-await-in-loop
-      const prevColonyAddress = prevLogEntry[3].slice(2);
-      const prevSkillId = prevLogEntry[2];
-      const prevUserAddress = prevLogEntry[0].slice(2);
-      const prevKey = `0x${new BN(prevColonyAddress, 16).toString(16, 40)}${new BN(prevSkillId.toString()).toString(16, 64)}${new BN(
-        prevUserAddress,
-        16
-      ).toString(16, 40)}`;
-      console.log("prevKey", prevKey);
-      justUpdatedProof.value = this.reputations[prevKey];
+      if (nLogEntries.gtn(0)) {
+        const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(nLogEntries.subn(1).toString(), false); // eslint-disable-line no-await-in-loop
+        const prevColonyAddress = prevLogEntry[3].slice(2);
+        const prevSkillId = prevLogEntry[2];
+        const prevUserAddress = prevLogEntry[0].slice(2);
+        const prevKey = `0x${new BN(prevColonyAddress, 16).toString(16, 40)}${new BN(prevSkillId.toString()).toString(16, 64)}${new BN(
+          prevUserAddress,
+          16
+        ).toString(16, 40)}`;
+        justUpdatedProof.value = this.reputations[prevKey];
+      }
       this.justificationHashes[`0x${nLogEntries.toString(16, 64)}`] = { interimHash, justUpdatedProof, nextUpdateProof };
     }
-    console.log("done");
   }
 }
