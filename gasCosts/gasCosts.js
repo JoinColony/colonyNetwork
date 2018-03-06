@@ -17,8 +17,11 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime, createSignatures } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, createSignatures, forwardTime } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+import { giveUserCLNYTokens } from "../helpers/test-data-generator";
+
+const BN = require("bn.js");
 
 const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
@@ -29,6 +32,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const Authority = artifacts.require("Authority");
+const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 contract("All", () => {
   const gasPrice = 20e9;
@@ -137,6 +141,51 @@ contract("All", () => {
 
       // finalizeTask
       await colony.finalizeTask(1);
+    });
+
+    it("when working with stacking", async () => {
+      // TODO: Should Stackers be part of the constants?
+      const STACKER1 = EVALUATOR;
+      const STACKER2 = WORKER;
+
+      // Load the token
+      const clnyAddress = await commonColony.getToken.call();
+      const clny = Token.at(clnyAddress);
+
+      // Setup the stackers balance
+      const bigStr = "1000000000000000000";
+      const lessBigStr = "10000000000000000";
+      const big = new BN(bigStr);
+
+      await giveUserCLNYTokens(colonyNetwork, STACKER1, big);
+      await clny.approve(colonyNetwork.address, bigStr, { from: STACKER1 });
+
+      await giveUserCLNYTokens(colonyNetwork, STACKER2, big);
+      await clny.approve(colonyNetwork.address, bigStr, { from: STACKER2 });
+
+      // stack
+      await colonyNetwork.deposit(lessBigStr, { from: STACKER1 });
+      await colonyNetwork.deposit(lessBigStr, { from: STACKER2 });
+
+      // Start Reputation
+      await colonyNetwork.startNextCycle();
+      const repCycleAddr = await colonyNetwork.getReputationMiningCycle.call();
+
+      await forwardTime(3600, this);
+
+      const repCycle = ReputationMiningCycle.at(repCycleAddr);
+
+      // Submit Hash
+      await repCycle.submitNewHash("0x87654321", 1, 1, { from: STACKER1, gas: 600000 });
+      await repCycle.submitNewHash("0x87654321", 1, 10, { from: STACKER2, gas: 600000 });
+
+      await forwardTime(3600, this);
+
+      await repCycle.confirmNewHash(0);
+
+      // withdraw
+      await colonyNetwork.withdraw(lessBigStr, { from: STACKER1 });
+      await colonyNetwork.withdraw(lessBigStr, { from: STACKER2 });
     });
   });
 });
