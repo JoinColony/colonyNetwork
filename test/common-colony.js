@@ -13,7 +13,6 @@ const IColony = artifacts.require("IColony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
-const ColonyTransactionReviewer = artifacts.require("ColonyTransactionReviewer");
 
 contract("Common Colony", () => {
   let COLONY_KEY;
@@ -33,19 +32,12 @@ contract("Common Colony", () => {
     const colonyTemplate = await Colony.new();
     const colonyFunding = await ColonyFunding.new();
     const colonyTask = await ColonyTask.new();
-    const colonyTransactionReviewer = await ColonyTransactionReviewer.new();
     const resolver = await Resolver.new();
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await upgradableContracts.setupColonyVersionResolver(
-      colonyTemplate,
-      colonyTask,
-      colonyFunding,
-      colonyTransactionReviewer,
-      resolver,
-      colonyNetwork
-    );
+    await upgradableContracts.setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
+    
     commonColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createColony("Common Colony", commonColonyToken.address);
     const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");

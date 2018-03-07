@@ -112,4 +112,12 @@ contract Colony is ColonyStorage {
   function getDomainCount() public view returns (uint256) {
     return domainCount;
   }
+
+  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
+  public
+  self
+  {
+    uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
+    reviewers[_sig] = _reviewers;
+  }
 }

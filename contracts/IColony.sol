@@ -36,14 +36,13 @@ contract IColony {
   function addDomain(uint256 _parentSkillId) public;
   function getDomain(uint256 _id) public view returns (uint256, uint256);
   function getDomainCount() public view returns (uint256);
+  function setFunctionReviewers(bytes4, uint8, uint8) public;
 
   // ColonyTask
   function makeTask(bytes32 _specificationHash, uint256 _domainId) public;
   function getTaskCount() public view returns (uint256);
   function getTaskChangeNonce() public view returns (uint256);
   function executeTaskChange(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint256 _value, bytes _data) public;
-  function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public returns (uint256 transactionId);
-  function approveTaskChange(uint256 _transactionId, uint8 _role) public;
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
   function assignWorkRating(uint256 _id) public;
@@ -76,16 +75,5 @@ contract IColony {
   function claimColonyFunds(address _token) public;
   function getNonRewardPotsTotal(address) public view returns (uint256);
 
-  // ColonyTransactionReviewer.sol
-  function submitTransaction(bytes, uint256, uint8) public returns (uint256);
-  function confirmTransaction(uint256, uint8) public;
-  function setFunctionReviewers(bytes4, uint8, uint8) public;
-  function getTransactionCount() public view returns (uint256);
-
   event TaskAdded(uint256 indexed id);
-  event Confirmation(uint256 indexed transactionId, uint256 indexed senderRole);
-  event Revocation(uint256 indexed transactionId, address indexed sender);
-  event Submission(uint256 indexed transactionId);
-  event Execution(uint256 indexed transactionId);
-  event ExecutionFailure(uint256 indexed transactionId);
 }

@@ -19,7 +19,16 @@ import {
   RATING_1_SECRET,
   RATING_2_SECRET
 } from "../helpers/constants";
-import { getRandomString, getTokenArgs, web3GetBalance, checkErrorRevert, hexToUtf8, expectEvent, currentBlockTime } from "../helpers/test-helper";
+import {
+  getRandomString,
+  getTokenArgs,
+  web3GetBalance,
+  checkErrorRevert,
+  hexToUtf8,
+  expectEvent,
+  currentBlockTime,
+  createSignatures
+} from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, setupAssignedTask, setupFundedTask } from "../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -70,6 +79,11 @@ contract("Colony", () => {
     it("should return zero task count", async () => {
       const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount, 0);
+    });
+
+    it("should return zero for taskChangeNonce", async () => {
+      const taskChangeNonce = await colony.getTaskChangeNonce.call();
+      assert.equal(taskChangeNonce, 0);
     });
 
     it("should fail if a non-admin tries to mint tokens", async () => {
@@ -178,25 +192,26 @@ contract("Colony", () => {
       assert.equal(worker[0], WORKER);
     });
 
-    it("should allow manager to submit an update of task brief and worker to approve it", async () => {
+    it("should allow update of task brief signed by manager and worker", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      await colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER });
-
+      const signers = [MANAGER, WORKER];
+      const sigs = await createSignatures(colony, signers, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
       const task = await colony.getTask.call(1);
       assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
     });
 
-    it("should allow manager to submit an update of task due date and worker to approve it", async () => {
+    it("should allow update of task due date signed by manager and worker", async () => {
       const dueDate = currentBlockTime();
 
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      await colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER });
+      const signers = [MANAGER, WORKER];
+      const sigs = await createSignatures(colony, signers, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
 
       const task = await colony.getTask.call(1);
       assert.equal(task[4], dueDate);
@@ -207,85 +222,57 @@ contract("Colony", () => {
       await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }));
     });
 
-    it("should fail if non-registered role tries to submit an update of task brief", async () => {
+    it("should fail update of task brief signed by a non-registered role", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
 
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      await checkErrorRevert(colony.proposeTaskChange(txData, 0, 0, { from: OTHER }));
+      const signers = [MANAGER, OTHER];
+      const sigs = await createSignatures(colony, signers, 0, txData);
+
+      await checkErrorRevert(await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
     });
 
-    it("should fail if evaluator tries to submit an update of task brief", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-
-      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      await checkErrorRevert(colony.proposeTaskChange(txData, 0, EVALUATOR_ROLE, { from: EVALUATOR }));
-    });
-
-    it("should fail if non-registered role tries to approve an update of task brief", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
-
-      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      await checkErrorRevert(colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER }));
-    });
-
-    it("should fail if evaluator tries to approve an update of task brief", async () => {
+    it("should fail update of task brief signed by manager and evaluator", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
 
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      await checkErrorRevert(colony.approveTaskChange(1, EVALUATOR_ROLE, { from: EVALUATOR }));
+      const signers = [MANAGER, EVALUATOR];
+      const sigs = await createSignatures(colony, signers, 0, txData);
+
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
     });
 
-    it("should fail to submit a task update for a non-registered function signature", async () => {
+    it("should fail to execute task change for a non-registered function signature", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       const txData = await colony.contract.getTaskRole.getData(1, 0);
-      await checkErrorRevert(colony.proposeTaskChange(txData, 0, 0));
-      const transactionCount = await colony.getTransactionCount.call();
-      assert.equal(transactionCount.toNumber(), 0);
+      const signers = [MANAGER, EVALUATOR];
+      const sigs = await createSignatures(colony, signers, 0, txData);
+
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
     });
 
-    it("should fail to submit update of task brief, using an invalid task id", async () => {
+    it("should fail to execute change of task brief, using an invalid task id", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       const txData = await colony.contract.setTaskBrief.getData(10, SPECIFICATION_HASH_UPDATED);
+      const signers = [MANAGER, EVALUATOR];
+      const sigs = await createSignatures(colony, signers, 0, txData);
 
-      await checkErrorRevert(colony.proposeTaskChange(txData, 0, 0));
-      const transactionCount = await colony.getTransactionCount.call();
-      assert.equal(transactionCount.toNumber(), 0);
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
     });
 
-    it("should fail to submit update of task brief, if the task was already finalized", async () => {
+    it("should fail to execute task change, if the task is already finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
 
       const txData = await colony.contract.setTaskBrief.getData(taskId, SPECIFICATION_HASH_UPDATED);
-      await checkErrorRevert(colony.proposeTaskChange(txData, 0, MANAGER_ROLE));
-    });
+      const signers = [MANAGER, EVALUATOR];
+      const sigs = await createSignatures(colony, signers, 0, txData);
 
-    it("should fail to approve task update, using an invalid transaction id", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-
-      await checkErrorRevert(colony.approveTaskChange(10, WORKER_ROLE, { from: WORKER }));
-    });
-
-    it("should fail to approve task update twice", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      await colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER });
-
-      await checkErrorRevert(colony.approveTaskChange(1, WORKER_ROLE, { from: WORKER }));
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
     });
   });
 
@@ -465,24 +452,24 @@ contract("Colony", () => {
       await colony.setTaskManagerPayout(1, 0x0, 5000);
       await colony.setTaskManagerPayout(1, token.address, 100);
 
-      // // Set the evaluator payout as 1000 ethers
+      // Set the evaluator payout as 1000 ethers
       const txData1 = await colony.contract.setTaskEvaluatorPayout.getData(1, 0x0, 1000);
-      await colony.proposeTaskChange(txData1, 0, MANAGER_ROLE);
-      await colony.approveTaskChange(1, EVALUATOR_ROLE, { from: EVALUATOR });
+      const sigs = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData1);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData1);
 
-      // // Set the evaluator payout as 40 colony tokens
+      // Set the evaluator payout as 40 colony tokens
       const txData2 = await colony.contract.setTaskEvaluatorPayout.getData(1, token.address, 40);
-      await colony.proposeTaskChange(txData2, 0, MANAGER_ROLE);
-      await colony.approveTaskChange(2, EVALUATOR_ROLE, { from: EVALUATOR });
+      const sigs2 = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData2);
+      await colony.executeTaskChange(sigs2.sigV, sigs2.sigR, sigs2.sigS, 0, txData2);
 
-      // // Set the worker payout as 98000 wei and 200 colony tokens
+      // Set the worker payout as 98000 wei and 200 colony tokens
       const txData3 = await colony.contract.setTaskWorkerPayout.getData(1, 0x0, 98000);
-      await colony.proposeTaskChange(txData3, 0, MANAGER_ROLE);
-      await colony.approveTaskChange(3, WORKER_ROLE, { from: WORKER });
+      const sigs3 = await createSignatures(colony, [MANAGER, WORKER], 0, txData3);
+      await colony.executeTaskChange(sigs3.sigV, sigs3.sigR, sigs3.sigS, 0, txData3);
 
       const txData4 = await colony.contract.setTaskWorkerPayout.getData(1, token.address, 200);
-      await colony.proposeTaskChange(txData4, 0, MANAGER_ROLE);
-      await colony.approveTaskChange(4, WORKER_ROLE, { from: WORKER });
+      const sigs4 = await createSignatures(colony, [MANAGER, WORKER], 0, txData4);
+      await colony.executeTaskChange(sigs4.sigV, sigs4.sigR, sigs4.sigS, 0, txData4);
 
       const taskPayoutManager1 = await colony.getTaskPayout.call(1, MANAGER_ROLE, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);

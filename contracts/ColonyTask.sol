@@ -181,36 +181,6 @@ contract ColonyTask is ColonyStorage, DSMath {
     require(address(this).call.value(_value)(_data));
   }
 
-  function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public returns (uint256 transactionId) {
-    var (sig, taskId) = deconstructCall(_data);
-
-    Task storage task = tasks[taskId];
-    require(task.roles[_role].user == msg.sender);
-    require(!task.finalized);
-
-    uint8[2] storage _reviewers = reviewers[sig];
-    require(_reviewers[0] != 0 || _reviewers[1] != 0);
-    require(_reviewers[0] == _role || _reviewers[1] == _role);
-
-    transactionId = IColony(this).submitTransaction(_data, _value, _role);
-  }
-
-  function approveTaskChange(uint256 _transactionId, uint8 _role) public {
-    Transaction storage _transaction = transactions[_transactionId];
-    bytes memory _data = _transaction.data;
-    var (sig, taskId) = deconstructCall(_data);
-
-    Task storage task = tasks[taskId];
-    require(task.roles[_role].user == msg.sender);
-    require(!task.finalized);
-
-    uint8[2] storage _reviewers = reviewers[sig];
-    require(_reviewers[0] != 0 || _reviewers[1] != 0);
-    require(_reviewers[0] == _role || _reviewers[1] == _role);
-
-    IColony(this).confirmTransaction(_transactionId, _role);
-  }
-
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
