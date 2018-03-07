@@ -137,6 +137,50 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskCount;
   }
 
+  function getTaskChangeNonce() public view returns (uint256) {
+    return taskChangeNonce;
+  }
+
+  function executeTaskChange(
+    uint8[] _sigV,
+    bytes32[] _sigR,
+    bytes32[] _sigS,
+    uint256 _value,
+    bytes _data) public 
+  {
+    // Allow for 2 reviewers
+    require(_sigR.length == 2);
+    require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
+
+    var (sig, taskId) = deconstructCall(_data);
+    Task storage task = tasks[taskId];
+    require(!task.finalized);
+    
+    uint8[2] storage _reviewers = reviewers[sig];
+    require(_reviewers[0] != 0 || _reviewers[1] != 0);
+    
+    // Follows ERC191 signature scheme: https://github.com/ethereum/EIPs/issues/191
+    bytes32 txHash = keccak256(
+      byte(0x19),
+      byte(0),
+      this,
+      address(this),
+      _value,
+      _data,
+      taskChangeNonce);
+
+    address[] memory reviewerAddresses = new address[](2);
+    for (uint i = 0; i < 2; i++) {
+      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
+    }
+    
+    require(task.roles[_reviewers[0]].user == reviewerAddresses[0] || task.roles[_reviewers[0]].user == reviewerAddresses[1]);
+    require(task.roles[_reviewers[1]].user == reviewerAddresses[0] || task.roles[_reviewers[1]].user == reviewerAddresses[1]);
+    
+    taskChangeNonce = taskChangeNonce + 1;
+    require(address(this).call.value(_value)(_data));
+  }
+
   function proposeTaskChange(bytes _data, uint256 _value, uint8 _role) public returns (uint256 transactionId) {
     var (sig, taskId) = deconstructCall(_data);
 
