@@ -157,7 +157,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     require(!task.finalized);
     
     uint8[2] storage _reviewers = reviewers[sig];
-    require(_reviewers[0] != 0 || _reviewers[1] != 0);
+    uint8 r1 = _reviewers[0];
+    uint8 r2 = _reviewers[1];
+    require(r1 != 0 || r2 != 0);
     
     // Follows ERC191 signature scheme: https://github.com/ethereum/EIPs/issues/191
     bytes32 txHash = keccak256(
@@ -171,11 +173,11 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     address[] memory reviewerAddresses = new address[](2);
     for (uint i = 0; i < 2; i++) {
-      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
+      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]); 
     }
-    
-    require(task.roles[_reviewers[0]].user == reviewerAddresses[0] || task.roles[_reviewers[0]].user == reviewerAddresses[1]);
-    require(task.roles[_reviewers[1]].user == reviewerAddresses[0] || task.roles[_reviewers[1]].user == reviewerAddresses[1]);
+
+    require(task.roles[r1].user == reviewerAddresses[0] || task.roles[r1].user == reviewerAddresses[1]);
+    require(task.roles[r2].user == reviewerAddresses[0] || task.roles[r2].user == reviewerAddresses[1]);
     
     taskChangeNonce = taskChangeNonce + 1;
     require(address(this).call.value(_value)(_data));
