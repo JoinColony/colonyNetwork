@@ -31,14 +31,17 @@ dependencies:
 test:
   pre:
     - greenkeeper-lockfile-update
+    
   override:
     - yarn run eslint
     - yarn run solium
     - yarn run check:storagevars
     - yarn run test:contracts
     - yarn run test:contracts:upgrade
-    - yarn run test:contracts:gasCosts
     - yarn run test:contracts:coverage
+    - 'sed -i "s/mocha-circleci-reporter/eth-gas-reporter/g" ./truffle.js'
+    - yarn run test:contracts:gasCosts
+    
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload
