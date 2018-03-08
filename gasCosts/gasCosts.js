@@ -1,6 +1,7 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 import {
+  MANAGER,
   EVALUATOR,
   WORKER,
   MANAGER_ROLE,
@@ -16,7 +17,7 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, createSignatures } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const Colony = artifacts.require("Colony");
@@ -25,7 +26,6 @@ const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyFunding = artifacts.require("ColonyFunding");
-const ColonyTransactionReviewer = artifacts.require("ColonyTransactionReviewer");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const Authority = artifacts.require("Authority");
@@ -37,7 +37,6 @@ contract("All", () => {
   let tokenAddress;
   let colonyTask;
   let colonyFunding;
-  let colonyTransactionReviewer;
   let commonColony;
   let authority;
   let colonyNetwork;
@@ -49,9 +48,8 @@ contract("All", () => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     colonyTask = await ColonyTask.new();
     colonyFunding = await ColonyFunding.new();
-    colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     const token = await Token.new(...tokenArgs);
     await colonyNetwork.createColony("Antz", token.address);
@@ -95,18 +93,19 @@ contract("All", () => {
       await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
 
-      // Propose task change
-      let txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH);
-      await colony.proposeTaskChange(txData, 0, 0);
+      let txData;
+      let sigs;
 
-      let transactionId = await colony.getTransactionCount.call();
-      await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER, gasPrice });
+      // setTaskBrief
+      txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH);
+      sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
 
+      // setTaskDueDate
       const dueDate = currentBlockTime() + SECONDS_PER_DAY * 5;
       txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      transactionId = await colony.getTransactionCount.call();
-      await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
+      sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
 
       // moveFundsBetweenPots
       await colony.moveFundsBetweenPots(1, 2, 150, tokenAddress);
@@ -116,15 +115,13 @@ contract("All", () => {
 
       // setTaskEvaluatorPayout
       txData = await colony.contract.setTaskEvaluatorPayout.getData(1, tokenAddress, 40);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      transactionId = await colony.getTransactionCount.call();
-      await colony.approveTaskChange(transactionId, EVALUATOR_ROLE, { from: EVALUATOR });
+      sigs = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
 
       // setTaskWorkerPayout
       txData = await colony.contract.setTaskWorkerPayout.getData(1, tokenAddress, 100);
-      await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-      transactionId = await colony.getTransactionCount.call();
-      await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: WORKER });
+      sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
 
       // submitTaskDeliverable
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER, gasPrice });
