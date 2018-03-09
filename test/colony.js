@@ -230,7 +230,7 @@ contract("Colony", () => {
       const signers = [MANAGER, OTHER];
       const sigs = await createSignatures(colony, signers, 0, txData);
 
-      await checkErrorRevert(await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
     });
 
     it("should fail update of task brief signed by manager and evaluator", async () => {
