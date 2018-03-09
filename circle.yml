@@ -39,7 +39,6 @@ test:
     - yarn run test:contracts
     - yarn run test:contracts:upgrade
     - yarn run test:contracts:coverage
-    - 'sed -i "s/mocha-circleci-reporter/eth-gas-reporter/g" ./truffle.js'
     - yarn run test:contracts:gasCosts
     
   post:
