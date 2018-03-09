@@ -28,7 +28,7 @@ module.exports = {
     reporter: "mocha-circleci-reporter",
     reporterOptions: {
       currency: "USD",
-      gasPrice: 20,
+      gasPrice: 5,
       onlyCalledMethods: true
     }
   },
