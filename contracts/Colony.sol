@@ -46,10 +46,10 @@ contract Colony is ColonyStorage {
     potCount = 1;
 
     // Initialise the task update reviewers
-    IColony(this).setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
-    IColony(this).setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
-    IColony(this).setFunctionReviewers(0x6fb0794f, 0, 1); // setTaskEvaluatorPayout => manager, evaluator
-    IColony(this).setFunctionReviewers(0x2cf62b39, 0, 2); // setTaskWorkerPayout => manager, worker
+    setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
+    setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
+    setFunctionReviewers(0x6fb0794f, 0, 1); // setTaskEvaluatorPayout => manager, evaluator
+    setFunctionReviewers(0x2cf62b39, 0, 2); // setTaskWorkerPayout => manager, worker
 
     // Initialise the root domain
     domainCount += 1;
@@ -114,8 +114,7 @@ contract Colony is ColonyStorage {
   }
 
   function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
-  public
-  self
+  private
   {
     uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
     reviewers[_sig] = _reviewers;

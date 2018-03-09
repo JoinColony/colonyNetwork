@@ -36,7 +36,6 @@ contract IColony {
   function addDomain(uint256 _parentSkillId) public;
   function getDomain(uint256 _id) public view returns (uint256, uint256);
   function getDomainCount() public view returns (uint256);
-  function setFunctionReviewers(bytes4, uint8, uint8) public;
 
   // ColonyTask
   function makeTask(bytes32 _specificationHash, uint256 _domainId) public;
