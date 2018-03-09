@@ -96,10 +96,7 @@ export class ReputationMiningClient {
   }
 
   async submitJustificationRootHash() {
-    await this.revertTree();
-    this.justificationTree = await this.PatriciaTree.new({ from: accountAddress, gas: 4000000 });
-    this.justificationHashes = {};
-    await this.addLogContentsToReputationTree(true);
+    const jrh = await this.justificationTree.getRootHash();
     const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
     const nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
@@ -107,23 +104,33 @@ export class ReputationMiningClient {
     const repCycle = ReputationMiningCycle.at(addr);
 
     const [, index] = await this.getMySubmissionRoundAndIndex();
-    const jrh = await this.justificationTree.getRootHash();
     await repCycle.submitJRH(index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, { from: this.minerAddress, gas: 6000000 });
   }
 
-  async addLogContentsToReputationTree(makeJustificationTree = false) {
+  // The version of this function in malicious.js uses `this`, but not here.
+  // eslint-disable-next-line class-methods-use-this
+  getScore(i, logEntry) {
+    return logEntry[1];
+  }
+
+  async addLogContentsToReputationTree() {
+    const makeJustificationTree = true;
     // Snapshot the current state, in case we get in to a dispute, and have to roll back
     // to generated the justification tree.
     let justUpdatedProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
     let nextUpdateProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
 
-    await this.snapshotTree();
+    // await this.snapshotTree();
+    this.justificationTree = await this.PatriciaTree.new({ from: accountAddress, gas: 4000000 });
+    this.justificationHashes = {};
+
     let nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
     nLogEntries = new BN(nLogEntries.toString());
     let interimHash;
     for (let i = new BN("0"); i.lt(nLogEntries); i.iadd(new BN("1"))) {
       interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
       const logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i.toString(), false); // eslint-disable-line no-await-in-loop
+      const score = this.getScore(i, logEntry);
       if (makeJustificationTree) {
         if (i.toString() === "0") {
           // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
@@ -139,8 +146,9 @@ export class ReputationMiningClient {
             16
           ).toString(16, 40)}`;
 
-          justUpdatedProof = JSON.parse(JSON.stringify(nextUpdateProof));
           justUpdatedProof.value = this.reputations[prevKey];
+          justUpdatedProof.key = prevKey;
+          [justUpdatedProof.branchMask, justUpdatedProof.siblings] = await this.reputationTree.getProof(prevKey); // eslint-disable-line no-await-in-loop
         }
         await this.justificationTree.insert(`0x${i.toString(16, 64)}`, interimHash, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
 
@@ -165,7 +173,7 @@ export class ReputationMiningClient {
           value = this.getValueAsBytes(0, 0);
         }
         nextUpdateProof = { branchMask, siblings, key, value };
-        this.justificationHashes[`0x${i.toString(16, 64)}`] = { interimHash, justUpdatedProof, nextUpdateProof };
+        this.justificationHashes[`0x${i.toString(16, 64)}`] = JSON.parse(JSON.stringify({ interimHash, justUpdatedProof, nextUpdateProof }));
       }
 
       // We have to process these sequentially - if two updates affected the
@@ -173,7 +181,7 @@ export class ReputationMiningClient {
       // Hence, we are awaiting inside these loops.
       // TODO: Include updates for all parent skills (and child, if x.amount is negative)
       // TODO: Include updates for colony-wide sums of skills.
-      await this.insert(logEntry[3], logEntry[2], logEntry[0], logEntry[1]); // eslint-disable-line no-await-in-loop
+      await this.insert(logEntry[3], logEntry[2], logEntry[0], score); // eslint-disable-line no-await-in-loop
     }
     // Add the last entry to the justification tree
     if (makeJustificationTree) {
@@ -201,19 +209,16 @@ export class ReputationMiningClient {
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
     const repCycle = ReputationMiningCycle.at(addr);
 
-    let index = new BN("0");
+    let index = new BN("-1");
     const round = new BN("0");
-    while (true) {
-      let submission;
+    let submission = [];
+    while (submission[0] !== submittedHash) {
       try {
-        submission = await repCycle.disputeRounds(round.toString(), index.toString()); // eslint-disable-line no-await-in-loop
-        if (submission[0] === submittedHash) {
-          break;
-        }
         index.iaddn(1);
+        submission = await repCycle.disputeRounds(round.toString(), index.toString()); // eslint-disable-line no-await-in-loop
       } catch (err) {
         round.iaddn(1);
-        index = new BN("0");
+        index = new BN("-1");
       }
     }
     return [round, index];
@@ -266,8 +271,9 @@ export class ReputationMiningClient {
     //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.branchMask,
     //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.siblings
     // );
-    // This one is the JRH implied by the proof provided alongside the above implied root - we expect this to
-    // be the JRH that has been submitted.
+    // console.log('intermediatRootHash', impliedRoot);
+    // // This one is the JRH implied by the proof provided alongside the above implied root - we expect this to
+    // // be the JRH that has been submitted.
     // const impliedRoot2 = await this.justificationTree.getImpliedRoot(
     //   `0x${new BN(lastAgreeIdx).toString(16, 64)}`,
     //   impliedRoot,
@@ -275,6 +281,22 @@ export class ReputationMiningClient {
     //   agreeStateSiblings
     // );
     // const jrh = await this.justificationTree.getRootHash();
+    // console.log('implied jrh', impliedRoot2)
+    // console.log('actual jrh', jrh)
+    // const impliedRoot3 = await this.justificationTree.getImpliedRoot(
+    //   reputationKey,
+    //   this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.value,
+    //   this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask,
+    //   this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings
+    // );
+    // const impliedRoot4 = await this.justificationTree.getImpliedRoot(
+    //   `0x${new BN(firstDisagreeIdx).toString(16, 64)}`,
+    //   impliedRoot3,
+    //   disagreeStateBranchMask,
+    //   disagreeStateSiblings
+    // );
+    // console.log('intermediatRootHash2', impliedRoot3);
+    // console.log('implied jrh from irh2', impliedRoot4);
     return repCycle.respondToChallengeReal(
       round.toString(),
       index.toString(),
@@ -357,7 +379,7 @@ export class ReputationMiningClient {
     const hash = await this.getRootHash();
     // TODO: Work out what entry we should use when we submit
     const gas = await repCycle.submitNewHash.estimateGas(hash, this.nReputations, 1, { from: this.minerAddress });
-    await repCycle.submitNewHash(hash, this.nReputations, 1, { from: this.minerAddress, gas });
+    await repCycle.submitNewHash(hash, this.nReputations, 1, { from: this.minerAddress, gas: gas * 2 });
   }
 
   async getRootHash() {
