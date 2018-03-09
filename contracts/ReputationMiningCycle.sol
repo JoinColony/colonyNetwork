@@ -80,8 +80,6 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     disputeRounds[round][idx].challengeStepCompleted += 1;
     // If opponent hasn't responded yet, nothing more to do except save our intermediate hash
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
-    LogUint("MychallengeStepCompleted",disputeRounds[round][idx].challengeStepCompleted);
-    LogUint("OppchallengeStepCompleted",disputeRounds[round][opponentIdx].challengeStepCompleted);
     if (disputeRounds[round][opponentIdx].challengeStepCompleted != disputeRounds[round][idx].challengeStepCompleted ) {
       disputeRounds[round][idx].intermediateReputationHash = intermediateReputationHash;
     } else {
@@ -203,12 +201,6 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
       address logColonyAddress;
 
       (logUserAddress, , logSkillId, logColonyAddress, , ) = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogEntry(updateNumber, false);
-      Address(logColonyAddress);
-      Address(colonyAddress);
-      Uint256(logSkillId);
-      Uint256(skillId);
-      Address(logUserAddress);
-      Address(userAddress);
       require(logUserAddress == userAddress);
       require(logColonyAddress == colonyAddress);
       require(logSkillId == skillId);
@@ -233,7 +225,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
       // This implies they are claiming that this is a new hash.
       return;
     }
-    /* require(impliedRoot == jrh); */
+    require(impliedRoot == jrh);
     // They've actually verified whatever they claimed. We increment their challengeStepCompleted by one to indicate this.
     // In the event that our opponent lied about this reputation not existing yet in the tree, they will both complete
     // a call to respondToChallenge, but we will have a higher challengeStepCompleted value, and so they will be the ones
@@ -260,20 +252,16 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     int256 amount;
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
-    Bytes(agreeStateReputationValueBytes);
-    Bytes(disagreeStateReputationValueBytes);
 
     assembly {
         agreeStateReputationValue := mload(add(agreeStateReputationValueBytes, 32))
         disagreeStateReputationValue := mload(add(disagreeStateReputationValueBytes, 32))
     }
+    // TODO: Check the unique ID.
 
     (, amount, , , ,) = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogEntry(reputationTransitionIdx, false);
     // TODO: Is this safe? I think so, because even if there's over/underflows, they should
     // still be the same number.
-    Int(int(agreeStateReputationValue));
-    Int(amount);
-    Int(int(disagreeStateReputationValue));
     require(int(agreeStateReputationValue)+amount == int(disagreeStateReputationValue));
   }
 
