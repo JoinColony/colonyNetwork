@@ -108,21 +108,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNNodes;
   }
 
-  function createColony(
-    bytes32 _name,
-    bytes32 _tokenName,
-    bytes32 _tokenSymbol,
-    uint256 _tokenDecimals
-  ) public colonyKeyUnique(_name)
+  function createColony(bytes32 _name, address _tokenAddress) public
+  colonyKeyUnique(_name)
   {
-    var token = new Token(_tokenName, _tokenSymbol, _tokenDecimals);
     var etherRouter = new EtherRouter();
     var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
 
     var colony = IColony(etherRouter);
-    colony.setToken(token);
-    token.setOwner(colony);
+    colony.setToken(_tokenAddress);
 
     var authority = new Authority(colony);
     var dsauth = DSAuth(etherRouter);

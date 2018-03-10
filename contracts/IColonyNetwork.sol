@@ -32,7 +32,7 @@ contract IColonyNetwork {
   function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) public;
   function getSkillCount() public view returns (uint256);
   function getRootGlobalSkillId() public view returns (uint256);
-  function createColony(bytes32 _name, bytes32 _tokenName, bytes32 _tokenSymbol, uint256 _tokenDecimals) public;
+  function createColony(bytes32 _name, address _tokenAddress) public;
   function addColonyVersion(uint256 _version, address _resolver) public;
   function getColonyAt(uint256 _idx) public view returns (address);
   function getCurrentColonyVersion() public view returns (uint256);

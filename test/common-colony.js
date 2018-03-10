@@ -46,11 +46,10 @@ contract("Common Colony", () => {
       resolver,
       colonyNetwork
     );
-    await colonyNetwork.createColony("Common Colony", "Colony Network Token", "CLNY", 18);
+    commonColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
+    await colonyNetwork.createColony("Common Colony", commonColonyToken.address);
     const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await IColony.at(commonColonyAddress);
-    const commonColonyTokenAddress = await commonColony.getToken.call();
-    commonColonyToken = await Token.at(commonColonyTokenAddress);
   });
 
   describe("when working with ERC20 properties of Common Colony token", () => {
@@ -300,7 +299,8 @@ contract("Common Colony", () => {
     beforeEach(async () => {
       COLONY_KEY = getRandomString(7);
       TOKEN_ARGS = getTokenArgs();
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const newToken = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, newToken.address);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
       colony = await IColony.at(address);
       const tokenAddress = await colony.getToken.call();
@@ -380,11 +380,11 @@ contract("Common Colony", () => {
     beforeEach(async () => {
       COLONY_KEY = getRandomString(7);
       TOKEN_ARGS = getTokenArgs();
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
+      await token.setOwner(address);
       colony = await IColony.at(address);
-      const tokenAddress = await colony.getToken.call();
-      token = await Token.at(tokenAddress);
     });
 
     it("should be able to set domain on task", async () => {

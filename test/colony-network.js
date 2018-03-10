@@ -14,6 +14,7 @@ import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const Colony = artifacts.require("Colony");
+const Token = artifacts.require("Token");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyTransactionReviewer = artifacts.require("ColonyTransactionReviewer");
@@ -94,7 +95,8 @@ contract("ColonyNetwork", accounts => {
 
   describe("when creating new colonies", () => {
     it("should allow users to create new colonies", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const address = await colonyNetwork.getColony.call(COLONY_KEY);
       const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.notEqual(address, 0x0);
@@ -102,10 +104,11 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should revert if colony key is not unique", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const colonyAddress1 = await colonyNetwork.getColony.call(COLONY_KEY);
 
-      await checkErrorRevert(colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS, { gas: createColonyGas }));
+      await checkErrorRevert(colonyNetwork.createColony(COLONY_KEY, token.address, { gas: createColonyGas }));
       const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 1);
       const colonyAddress2 = await colonyNetwork.getColony.call(COLONY_KEY);
@@ -113,19 +116,21 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should maintain correct count of colonies", async () => {
-      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
-      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
-      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
-      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
-      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
-      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
-      await colonyNetwork.createColony(getRandomString(7), ...getTokenArgs());
+      const token = await Token.new(...getTokenArgs());
+      await colonyNetwork.createColony(getRandomString(7), token.address);
+      await colonyNetwork.createColony(getRandomString(7), token.address);
+      await colonyNetwork.createColony(getRandomString(7), token.address);
+      await colonyNetwork.createColony(getRandomString(7), token.address);
+      await colonyNetwork.createColony(getRandomString(7), token.address);
+      await colonyNetwork.createColony(getRandomString(7), token.address);
+      await colonyNetwork.createColony(getRandomString(7), token.address);
       const colonyCount = await colonyNetwork.getColonyCount.call();
       assert.equal(colonyCount.toNumber(), 7);
     });
 
     it("when common colony is created, should have the root global and local skills initialised", async () => {
-      await colonyNetwork.createColony("Common Colony", ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony("Common Colony", token.address);
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
       const rootGlobalSkill = await colonyNetwork.getSkill.call(1);
@@ -143,7 +148,8 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const rootLocalSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(rootLocalSkill[0].toNumber(), 0);
       assert.equal(rootLocalSkill[1].toNumber(), 0);
@@ -163,7 +169,8 @@ contract("ColonyNetwork", accounts => {
 
     it("should fail if ETH is sent", async () => {
       try {
-        await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS, { value: 1, gas: createColonyGas });
+        const token = await Token.new(...TOKEN_ARGS);
+        await colonyNetwork.createColony(COLONY_KEY, token.address, { value: 1, gas: createColonyGas });
       } catch (err) {
         checkErrorNonPayableFunction(err);
       }
@@ -172,15 +179,17 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should log a ColonyAdded event", async () => {
-      await expectEvent(colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS), "ColonyAdded");
+      const token = await Token.new(...TOKEN_ARGS);
+      await expectEvent(colonyNetwork.createColony(COLONY_KEY, token.address), "ColonyAdded");
     });
   });
 
   describe("when getting existing colonies", () => {
     it("should allow users to get the address of a colony by its index", async () => {
-      await colonyNetwork.createColony("Colony1", ...getTokenArgs());
-      await colonyNetwork.createColony("Colony2", ...getTokenArgs());
-      await colonyNetwork.createColony("Colony3", ...getTokenArgs());
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony("Colony1", token.address);
+      await colonyNetwork.createColony("Colony2", token.address);
+      await colonyNetwork.createColony("Colony3", token.address);
       const colonyAddress = await colonyNetwork.getColonyAt.call(3);
       assert.notEqual(colonyAddress, "0x0000000000000000000000000000000000000000");
     });
@@ -191,7 +200,8 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should be able to get the Colony version", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
       const colony = await Colony.at(colonyAddress);
       const actualColonyVersion = await colony.version.call();
@@ -201,7 +211,8 @@ contract("ColonyNetwork", accounts => {
 
   describe("when upgrading a colony", () => {
     it("should be able to upgrade a colony, if a colony owner", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
       const colony = await EtherRouter.at(colonyAddress);
 
@@ -216,7 +227,8 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
       await Colony.at(colonyAddress);
 
@@ -230,7 +242,8 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a nonexistent version", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
 
@@ -239,7 +252,8 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should NOT be able to upgrade a colony if not a colony owner", async () => {
-      await colonyNetwork.createColony(COLONY_KEY, ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
       const colonyAddress = await colonyNetwork.getColony.call(COLONY_KEY);
       const colony = await EtherRouter.at(colonyAddress);
       const colonyResolver = await colony.resolver.call();
@@ -256,20 +270,23 @@ contract("ColonyNetwork", accounts => {
 
   describe("when adding a skill", () => {
     beforeEach(async () => {
-      await colonyNetwork.createColony("Common Colony", ...TOKEN_ARGS);
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createColony(COLONY_KEY, token.address);
+      const colony = await colonyNetwork.getColony.call(COLONY_KEY);
+      await token.setOwner(colony);
     });
 
     it("should not be able to add a global skill, by an address that is not the common colony ", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1, true));
       const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 2);
+      assert.equal(skillCount.toNumber(), 1);
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
       await checkError(colonyNetwork.addSkill(2, false));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 2);
+      assert.equal(skillCount.toNumber(), 1);
     });
   });
 });
