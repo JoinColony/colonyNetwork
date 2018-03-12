@@ -130,8 +130,16 @@ export function hexToUtf8(text) {
   return web3.toAscii(text).replace(/\u0000/g, "");
 }
 
-export function currentBlockTime() {
-  return web3.eth.getBlock("latest").timestamp;
+export async function currentBlockTime() {
+  const p = new Promise((resolve, reject) => {
+    web3.eth.getBlock("latest", (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res.timestamp);
+    });
+  });
+  return p;
 }
 
 export async function expectEvent(tx, eventName) {
@@ -146,13 +154,13 @@ export async function forwardTime(seconds, test) {
     test.skip();
   } else {
     // console.log('Forwarding time with ' + seconds + 's ...');
-    web3.currentProvider.send({
+    await web3.currentProvider.send({
       jsonrpc: "2.0",
       method: "evm_increaseTime",
       params: [seconds],
       id: 0
     });
-    web3.currentProvider.send({
+    await web3.currentProvider.send({
       jsonrpc: "2.0",
       method: "evm_mine",
       params: [],

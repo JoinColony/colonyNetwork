@@ -204,7 +204,7 @@ contract("Colony", () => {
     });
 
     it("should allow update of task due date signed by manager and worker", async () => {
-      const dueDate = currentBlockTime();
+      const dueDate = await currentBlockTime();
 
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
@@ -278,13 +278,14 @@ contract("Colony", () => {
 
   describe("when submitting task deliverable", () => {
     it("should update task", async () => {
-      const dueDate = currentBlockTime() + SECONDS_PER_DAY * 4;
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 4;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
       let task = await colony.getTask.call(1);
       assert.equal(hexToUtf8(task[1]), "");
 
-      const currentTime = currentBlockTime();
+      const currentTime = await currentBlockTime();
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
       task = await colony.getTask.call(1);
       assert.equal(hexToUtf8(task[1]), DELIVERABLE_HASH);
@@ -299,7 +300,8 @@ contract("Colony", () => {
     });
 
     it("should fail if I try to submit work for a task that is past its due date", async () => {
-      const dueDate = currentBlockTime() - 1;
+      let dueDate = await currentBlockTime();
+      dueDate -= 1;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await checkErrorRevert(colony.submitTaskDeliverable(1, DELIVERABLE_HASH));
     });
@@ -309,7 +311,8 @@ contract("Colony", () => {
     });
 
     it("should fail if I try to submit work twice", async () => {
-      const dueDate = currentBlockTime() + SECONDS_PER_DAY * 4;
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 4;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
 
@@ -319,7 +322,8 @@ contract("Colony", () => {
     });
 
     it("should fail if I try to submit work if I'm not the assigned worker", async () => {
-      const dueDate = currentBlockTime() + SECONDS_PER_DAY * 4;
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 4;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
       await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }));
@@ -506,7 +510,8 @@ contract("Colony", () => {
     it("should payout agreed ether for a task", async () => {
       await colony.send(353);
       await colony.claimColonyFunds(0x0);
-      const dueDate = currentBlockTime() - 1;
+      let dueDate = await currentBlockTime();
+      dueDate -= 1;
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony,

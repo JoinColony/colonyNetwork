@@ -102,7 +102,8 @@ contract("All", () => {
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
 
       // setTaskDueDate
-      const dueDate = currentBlockTime() + SECONDS_PER_DAY * 5;
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 5;
       txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);

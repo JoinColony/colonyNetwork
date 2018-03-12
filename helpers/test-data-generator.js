@@ -23,15 +23,7 @@ import { currentBlockTime, createSignatures } from "../helpers/test-helper";
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 
-export async function setupAssignedTask({
-  colonyNetwork,
-  colony,
-  dueDate = currentBlockTime(),
-  domain = 1,
-  skill = 0,
-  evaluator = EVALUATOR,
-  worker = WORKER
-}) {
+export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
   await colony.makeTask(SPECIFICATION_HASH, domain);
   let taskId = await colony.getTaskCount.call();
   taskId = taskId.toNumber();
@@ -46,7 +38,11 @@ export async function setupAssignedTask({
   await colony.setTaskRoleUser(taskId, EVALUATOR_ROLE, evaluator);
   await colony.setTaskRoleUser(taskId, WORKER_ROLE, worker);
 
-  const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDate);
+  let dueDateTimestamp = dueDate;
+  if (!dueDateTimestamp) {
+    dueDateTimestamp = await currentBlockTime();
+  }
+  const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDateTimestamp);
   const signers = [MANAGER, WORKER];
   const sigs = await createSignatures(colony, signers, 0, txData);
   await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
