@@ -39,11 +39,11 @@ contract("Colony Reputation Updates", () => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
-    await colonyNetwork.createColony("Common Colony", ...tokenArgs);
+    colonyToken = await Token.new(...tokenArgs);
+    await colonyNetwork.createColony("Common Colony", colonyToken.address);
     const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
+    await colonyToken.setOwner(commonColonyAddress);
     commonColony = await IColony.at(commonColonyAddress);
-    const tokenAddress = await commonColony.getToken.call();
-    colonyToken = await Token.at(tokenAddress);
     const amount = new BN(10)
       .pow(new BN(18))
       .mul(new BN(1000))

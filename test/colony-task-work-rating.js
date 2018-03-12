@@ -40,7 +40,8 @@ contract("Colony Task Work Rating", () => {
   beforeEach(async () => {
     COLONY_KEY = getRandomString(7);
     const tokenArgs = getTokenArgs();
-    await colonyNetwork.createColony(COLONY_KEY, ...tokenArgs);
+    const colonyToken = await Token.new(...tokenArgs);
+    await colonyNetwork.createColony(COLONY_KEY, colonyToken.address);
     const address = await colonyNetwork.getColony.call(COLONY_KEY);
     colony = await IColony.at(address);
     const otherTokenArgs = getTokenArgs();

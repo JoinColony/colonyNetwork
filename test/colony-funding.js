@@ -33,11 +33,11 @@ contract("Colony Funding", () => {
   beforeEach(async () => {
     COLONY_KEY = getRandomString(7);
     const tokenArgs = getTokenArgs();
-    await colonyNetwork.createColony(COLONY_KEY, ...tokenArgs);
+    token = await Token.new(...tokenArgs);
+    await colonyNetwork.createColony(COLONY_KEY, token.address);
     const address = await colonyNetwork.getColony.call(COLONY_KEY);
+    await token.setOwner(address);
     colony = await IColony.at(address);
-    const tokenAddress = await colony.getToken.call();
-    token = await Token.at(tokenAddress);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
   });

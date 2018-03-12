@@ -20,6 +20,7 @@ import { getTokenArgs, currentBlockTime } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const Colony = artifacts.require("Colony");
+const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ColonyTask = artifacts.require("ColonyTask");
@@ -52,8 +53,10 @@ contract("All", () => {
 
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyTransactionReviewer, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
-    await colonyNetwork.createColony("Antz", ...tokenArgs);
+    const token = await Token.new(...tokenArgs);
+    await colonyNetwork.createColony("Antz", token.address);
     const address = await colonyNetwork.getColony.call("Antz");
+    await token.setOwner(address);
     colony = await IColony.at(address);
     tokenAddress = await colony.getToken.call();
     const authorityAddress = await colony.authority.call();
@@ -68,7 +71,8 @@ contract("All", () => {
   describe("Gas costs", () => {
     it("when working with the Colony Network", async () => {
       const tokenArgs = getTokenArgs();
-      await colonyNetwork.createColony("Test", ...tokenArgs);
+      const token = await Token.new(...tokenArgs);
+      await colonyNetwork.createColony("Test", token.address);
     });
 
     it("when working with the Common Colony", async () => {
