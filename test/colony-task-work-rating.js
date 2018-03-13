@@ -217,10 +217,9 @@ contract("Colony Task Work Rating", () => {
     it("should assign rating 5 to manager and penalise worker by 0.5, when they haven't submitted rating on time", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
-      await forwardTime(SECONDS_PER_DAY * 5, this);
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
-      await forwardTime(SECONDS_PER_DAY * 5, this);
-
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.assignWorkRating(taskId);
 
       const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
@@ -237,9 +236,9 @@ contract("Colony Task Work Rating", () => {
 
       const RATING_SECRET_2 = web3Utils.soliditySha3(RATING_2_SALT, 4);
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_SECRET_2, { from: EVALUATOR });
-      await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(taskId, WORKER_ROLE, 4, RATING_2_SALT, { from: EVALUATOR });
-      await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
 
       await colony.assignWorkRating(taskId);
 
@@ -255,9 +254,9 @@ contract("Colony Task Work Rating", () => {
     it("should assign rating 5 to worker, when evaluator hasn't submitted rating on time", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
-      await forwardTime(SECONDS_PER_DAY * 6, this);
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
-      await forwardTime(SECONDS_PER_DAY * 6, this);
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
 
       await colony.assignWorkRating(taskId);
 
@@ -272,7 +271,7 @@ contract("Colony Task Work Rating", () => {
 
     it("should assign rating 5 to manager and 4.5 to worker when no one has submitted any ratings", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
-      await forwardTime(SECONDS_PER_DAY * 10, this);
+      await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await colony.assignWorkRating(taskId);
 
       const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
