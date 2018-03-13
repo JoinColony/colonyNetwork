@@ -146,8 +146,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     bytes32[] _sigR,
     bytes32[] _sigS,
     uint256 _value,
-    bytes _data) public 
+    bytes _data) public
   {
+    require(_value == 0);
     // Allow for 2 reviewers
     require(_sigR.length == 2);
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
@@ -159,13 +160,15 @@ contract ColonyTask is ColonyStorage, DSMath {
     uint8[2] storage _reviewers = reviewers[sig];
     uint8 r1 = _reviewers[0];
     uint8 r2 = _reviewers[1];
-    require(r1 != 0 || r2 != 0);
+    // Prevent calls to non registered /arbitrary function on the contract
+    // Checks at least one of the two reviewers registered is different to the task manager
+    require(r1 != MANAGER || r2 != MANAGER);
     
     // Follows ERC191 signature scheme: https://github.com/ethereum/EIPs/issues/191
     bytes32 txHash = keccak256(
       byte(0x19),
       byte(0),
-      this,
+      address(this),
       address(this),
       _value,
       _data,

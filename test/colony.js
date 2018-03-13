@@ -192,6 +192,29 @@ contract("Colony", () => {
       assert.equal(worker[0], WORKER);
     });
 
+    it("should correctly increment `taskChangeNonce`", async () => {
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+
+      // Change the task brief
+      let txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
+      const signers = [MANAGER, WORKER];
+      let sigs = await createSignatures(colony, signers, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
+
+      let taskChangeNonce = await colony.getTaskChangeNonce.call();
+      assert.equal(taskChangeNonce, 1);
+
+      // Change the due date
+      const dueDate = await currentBlockTime();
+      txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
+      sigs = await createSignatures(colony, signers, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
+
+      taskChangeNonce = await colony.getTaskChangeNonce.call();
+      assert.equal(taskChangeNonce, 2);
+    });
+
     it("should allow update of task brief signed by manager and worker", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
