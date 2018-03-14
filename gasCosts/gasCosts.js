@@ -34,6 +34,8 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Authority = artifacts.require("Authority");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
+const oneHourLater = async () => forwardTime(3600, this);
+
 contract("All", () => {
   const gasPrice = 20e9;
 
@@ -143,49 +145,63 @@ contract("All", () => {
       await colony.finalizeTask(1);
     });
 
-    it("when working with stacking", async () => {
-      // TODO: Should Stackers be part of the constants?
-      const STACKER1 = EVALUATOR;
-      const STACKER2 = WORKER;
+    it("when working with staking", async () => {
+      // TODO: Should stakers be part of the constants?
+      const STAKER1 = EVALUATOR;
+      const STAKER2 = WORKER;
+      const STAKER3 = MANAGER;
 
       // Load the token
       const clnyAddress = await commonColony.getToken.call();
       const clny = Token.at(clnyAddress);
 
-      // Setup the stackers balance
+      // Setup the stakers balance
       const bigStr = "1000000000000000000";
       const lessBigStr = "10000000000000000";
       const big = new BN(bigStr);
 
-      await giveUserCLNYTokens(colonyNetwork, STACKER1, big);
-      await clny.approve(colonyNetwork.address, bigStr, { from: STACKER1 });
+      await giveUserCLNYTokens(colonyNetwork, STAKER1, big);
+      await clny.approve(colonyNetwork.address, bigStr, { from: STAKER1 });
 
-      await giveUserCLNYTokens(colonyNetwork, STACKER2, big);
-      await clny.approve(colonyNetwork.address, bigStr, { from: STACKER2 });
+      await giveUserCLNYTokens(colonyNetwork, STAKER2, big);
+      await clny.approve(colonyNetwork.address, bigStr, { from: STAKER2 });
 
-      // stack
-      await colonyNetwork.deposit(lessBigStr, { from: STACKER1 });
-      await colonyNetwork.deposit(lessBigStr, { from: STACKER2 });
+      await giveUserCLNYTokens(colonyNetwork, STAKER3, big);
+      await clny.approve(colonyNetwork.address, bigStr, { from: STAKER3 });
+
+      // stake
+      await colonyNetwork.deposit(lessBigStr, { from: STAKER1 });
+      await colonyNetwork.deposit(lessBigStr, { from: STAKER2 });
+      await colonyNetwork.deposit(lessBigStr, { from: STAKER3 });
 
       // Start Reputation
       await colonyNetwork.startNextCycle();
       const repCycleAddr = await colonyNetwork.getReputationMiningCycle.call();
 
-      await forwardTime(3600, this);
+      await oneHourLater();
 
       const repCycle = ReputationMiningCycle.at(repCycleAddr);
 
       // Submit Hash
-      await repCycle.submitNewHash("0x87654321", 1, 1, { from: STACKER1, gas: 600000 });
-      await repCycle.submitNewHash("0x87654321", 1, 10, { from: STACKER2, gas: 600000 });
+      await repCycle.submitNewHash("0x87654321", 1, 1, { from: STAKER1, gas: 600000 });
+      await repCycle.submitNewHash("0x87654322", 2, 10, { from: STAKER2, gas: 600000 });
+      await repCycle.submitNewHash("0x87654323", 3, 10, { from: STAKER3, gas: 600000 });
 
-      await forwardTime(3600, this);
-
-      await repCycle.confirmNewHash(0);
+      // Session of respond / invalidate between our 3 submissions
+      await repCycle.respondToChallenge(0, 0);
+      await oneHourLater();
+      await repCycle.invalidateHash(0, 1);
+      await oneHourLater();
+      await repCycle.invalidateHash(0, 3); // Invalidate the 'null' competing against submission idx=2
+      await oneHourLater();
+      await repCycle.respondToChallenge(1, 1);
+      await oneHourLater();
+      await repCycle.invalidateHash(1, 0);
+      await oneHourLater();
+      await repCycle.confirmNewHash(2);
 
       // withdraw
-      await colonyNetwork.withdraw(lessBigStr, { from: STACKER1 });
-      await colonyNetwork.withdraw(lessBigStr, { from: STACKER2 });
+      await colonyNetwork.withdraw(lessBigStr, { from: STAKER3 });
     });
   });
 });
