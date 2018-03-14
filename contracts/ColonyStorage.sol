@@ -37,6 +37,7 @@ contract ColonyStorage is DSAuth {
   // Maps transactions to roles and whether they've confirmed the transaction
   mapping (uint256 => mapping (uint256 => bool)) confirmations;
   uint256 transactionCount;
+  uint256 taskChangeNonce;
 
   struct Transaction {
     bytes data;

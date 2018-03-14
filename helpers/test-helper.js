@@ -1,5 +1,9 @@
+/* eslint-disable no-console */
 import shortid from "shortid";
 import { assert } from "chai";
+import web3Utils from "web3-utils";
+import ethUtils from "ethereumjs-util";
+import fs from "fs";
 
 export function web3GetNetwork() {
   return new Promise((resolve, reject) => {
@@ -127,8 +131,16 @@ export function hexToUtf8(text) {
   return web3.toAscii(text).replace(/\u0000/g, "");
 }
 
-export function currentBlockTime() {
-  return web3.eth.getBlock("latest").timestamp;
+export async function currentBlockTime() {
+  const p = new Promise((resolve, reject) => {
+    web3.eth.getBlock("latest", (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res.timestamp);
+    });
+  });
+  return p;
 }
 
 export async function expectEvent(tx, eventName) {
@@ -142,18 +154,47 @@ export async function forwardTime(seconds, test) {
   if (client.indexOf("TestRPC") === -1) {
     test.skip();
   } else {
-    // console.log('Forwarding time with ' + seconds + 's ...');
-    web3.currentProvider.send({
+    console.log(`Forwarding time with ${seconds}s ...`);
+    await web3.currentProvider.send({
       jsonrpc: "2.0",
       method: "evm_increaseTime",
       params: [seconds],
       id: 0
     });
-    web3.currentProvider.send({
+    await web3.currentProvider.send({
       jsonrpc: "2.0",
       method: "evm_mine",
       params: [],
       id: 0
     });
   }
+}
+
+export async function createSignatures(colony, signers, value, data) {
+  const sourceAddress = colony.address;
+  const destinationAddress = colony.address;
+  const nonce = await colony.getTaskChangeNonce.call();
+  const accountsJson = JSON.parse(fs.readFileSync("./test-accounts.json", "utf8"));
+  const input = `${"0x19"}${"00"}${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(
+    value.toString("16"),
+    "64",
+    "0"
+  )}${data.slice(2)}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
+  const msgHash = web3Utils.soliditySha3(input);
+
+  const sigV = [];
+  const sigR = [];
+  const sigS = [];
+
+  for (let i = 0; i < signers.length; i += 1) {
+    const user = signers[i].toString();
+    const privKey = accountsJson.private_keys[user];
+    const sig = ethUtils.ecsign(Buffer.from(msgHash.slice(2), "hex"), Buffer.from(privKey, "hex"));
+
+    sigV.push(sig.v);
+    sigR.push(`0x${sig.r.toString("hex")}`);
+    sigS.push(`0x${sig.s.toString("hex")}`);
+  }
+
+  return { sigV, sigR, sigS };
 }

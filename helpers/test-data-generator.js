@@ -18,20 +18,12 @@ import {
   WORKER_ROLE,
   SPECIFICATION_HASH
 } from "../helpers/constants";
-import { currentBlockTime } from "../helpers/test-helper";
+import { currentBlockTime, createSignatures } from "../helpers/test-helper";
 
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 
-export async function setupAssignedTask({
-  colonyNetwork,
-  colony,
-  dueDate = currentBlockTime(),
-  domain = 1,
-  skill = 0,
-  evaluator = EVALUATOR,
-  worker = WORKER
-}) {
+export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
   await colony.makeTask(SPECIFICATION_HASH, domain);
   let taskId = await colony.getTaskCount.call();
   taskId = taskId.toNumber();
@@ -45,10 +37,16 @@ export async function setupAssignedTask({
   }
   await colony.setTaskRoleUser(taskId, EVALUATOR_ROLE, evaluator);
   await colony.setTaskRoleUser(taskId, WORKER_ROLE, worker);
-  const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDate);
-  await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-  const transactionId = await colony.getTransactionCount.call();
-  await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
+
+  let dueDateTimestamp = dueDate;
+  if (!dueDateTimestamp) {
+    dueDateTimestamp = await currentBlockTime();
+  }
+  const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDateTimestamp);
+  const signers = [MANAGER, WORKER];
+  const sigs = await createSignatures(colony, signers, 0, txData);
+  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
+
   return taskId;
 }
 
@@ -66,6 +64,9 @@ export async function setupFundedTask({
   workerPayout = WORKER_PAYOUT
 }) {
   let tokenAddress;
+  let txData;
+  let sigs;
+
   if (token === undefined) {
     tokenAddress = await colony.getToken.call();
   } else {
@@ -82,16 +83,13 @@ export async function setupFundedTask({
 
   await colony.setTaskManagerPayout(taskId, tokenAddress, managerPayout.toString());
 
-  let txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
-  await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-  let transactionId = await colony.getTransactionCount.call();
-  await colony.approveTaskChange(transactionId, EVALUATOR_ROLE, { from: evaluator });
+  txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
+  sigs = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData);
+  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
 
   txData = await colony.contract.setTaskWorkerPayout.getData(taskId, tokenAddress, workerPayout.toString());
-  await colony.proposeTaskChange(txData, 0, MANAGER_ROLE);
-  transactionId = await colony.getTransactionCount.call();
-  await colony.approveTaskChange(transactionId, WORKER_ROLE, { from: worker });
-
+  sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
   return taskId;
 }
 

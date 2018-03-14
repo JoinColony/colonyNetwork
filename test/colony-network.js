@@ -17,7 +17,6 @@ const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
-const ColonyTransactionReviewer = artifacts.require("ColonyTransactionReviewer");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Resolver = artifacts.require("Resolver");
 
@@ -26,7 +25,6 @@ contract("ColonyNetwork", accounts => {
   const TOKEN_ARGS = getTokenArgs();
   const OTHER_ACCOUNT = accounts[1];
   let colonyFunding;
-  let colonyTransactionReviewer;
   let colonyTask;
   let resolver;
   let resolverColonyNetworkDeployed;
@@ -46,12 +44,11 @@ contract("ColonyNetwork", accounts => {
     resolver = await Resolver.new();
     colonyFunding = await ColonyFunding.new();
     colonyTask = await ColonyTask.new();
-    colonyTransactionReviewer = await ColonyTransactionReviewer.new();
 
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await setupColonyVersionResolver(colony, colonyFunding, colonyTask, colonyTransactionReviewer, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyFunding, colonyTask, resolver, colonyNetwork);
   });
 
   describe("when initialised", () => {
