@@ -1,6 +1,6 @@
 import ReputationMiningClient from "./main";
 
-export default class MaliciousReputationMiningClient extends ReputationMiningClient {
+class MaliciousReputationMiningClient extends ReputationMiningClient {
   // Only difference between this and the 'real' client should be that it adds some extra
   // reputation to the fourth entry being parsed.
   constructor(minerAddress, entryToFalsify, amountToFalsify) {
@@ -17,3 +17,5 @@ export default class MaliciousReputationMiningClient extends ReputationMiningCli
     return score;
   }
 }
+
+export default MaliciousReputationMiningClient;

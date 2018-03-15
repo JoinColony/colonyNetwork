@@ -17,7 +17,7 @@ const Web3 = require("web3");
 const ColonyNetwork = contract(ColonyNetworkJSON);
 const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 
-export class ReputationMiningClient {
+class ReputationMiningClient {
   constructor(minerAddress) {
     this.web3 = new Web3();
     this.minerAddress = minerAddress;
@@ -396,3 +396,5 @@ export class ReputationMiningClient {
     return res;
   }
 }
+
+export default ReputationMiningClient;
