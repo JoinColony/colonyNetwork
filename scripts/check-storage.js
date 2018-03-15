@@ -1,24 +1,35 @@
 /* eslint-disable no-console */
 import parser from "solidity-parser-antlr";
 import fs from "fs";
+import path from "path";
 
-fs.readdirSync("./contracts/").forEach(contractName => {
+// Taken from https://gist.github.com/kethinov/6658166#gistcomment-1941504
+const walkSync = (dir, filelist = []) => {
+  fs.readdirSync(dir).forEach(file => {
+    filelist = fs.statSync(path.join(dir, file)).isDirectory() ? walkSync(path.join(dir, file), filelist) : filelist.concat(path.join(dir, file)); // eslint-disable-line no-param-reassign
+  });
+  return filelist;
+};
+
+walkSync("./contracts/").forEach(contractName => {
+  // Contracts listed here are allowed to have storage variables
   if (
     [
-      "gnosis",
-      "Authority.sol",
-      "ColonyNetworkStorage.sol",
-      "ColonyStorage.sol",
-      "EtherRouter.sol",
-      "Migrations.sol",
-      "Resolver.sol",
-      "Token.sol",
-      "ReputationMiningCycle.sol"
+      "contracts/Authority.sol",
+      "contracts/ColonyNetworkStorage.sol",
+      "contracts/ColonyStorage.sol",
+      "contracts/EtherRouter.sol",
+      "contracts/Migrations.sol",
+      "contracts/Resolver.sol",
+      "contracts/ReputationMiningCycle.sol", // Does not use EtherRouter
+      "contracts/Token.sol", // Not directly used by any colony contracts
+      "contracts/PatriciaTree/PatriciaTree.sol", // Used by ReputationMiningCycle, which does not use EtherRouter
+      "contracts/gnosis/MultiSigWallet.sol" // Not directly used by any colony contracts
     ].indexOf(contractName) > -1
   ) {
     return;
   }
-  const src = fs.readFileSync(`./contracts/${contractName}`, "utf8");
+  const src = fs.readFileSync(`./${contractName}`, "utf8");
 
   const result = parser.parse(src, { tolerant: true });
   // Filters out an unknown number of 'pragmas' that we have.
