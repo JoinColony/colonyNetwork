@@ -184,7 +184,7 @@ class ReputationMiningClient {
       // Hence, we are awaiting inside these loops.
       // TODO: Include updates for all parent skills (and child, if x.amount is negative)
       // TODO: Include updates for colony-wide sums of skills.
-      await this.insert(logEntry[3], logEntry[2], logEntry[0], score); // eslint-disable-line no-await-in-loop
+      await this.insert(logEntry[3], logEntry[2], logEntry[0], score, i); // eslint-disable-line no-await-in-loop
     }
     // Add the last entry to the justification tree
     if (makeJustificationTree) {
@@ -329,7 +329,7 @@ class ReputationMiningClient {
   // function getProof(bytes key) public view returns (uint branchMask, bytes32[] _siblings);
   // function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool);
   // function insert(bytes key, bytes value) public;
-  async insert(_colonyAddress, skillId, _userAddress, reputationScore) {
+  async insert(_colonyAddress, skillId, _userAddress, reputationScore, index) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
     // TODO fromAscii is deprecated - use asciiToHex once we upgrade web3.
@@ -365,9 +365,9 @@ class ReputationMiningClient {
       // Extract uid
       const uid = this.web3.toBigNumber(`0x${value.slice(-64)}`);
       const existingValue = this.web3.toBigNumber(`0x${value.slice(2, 66)}`);
-      value = this.getValueAsBytes(existingValue.add(reputationScore), uid);
+      value = this.getValueAsBytes(existingValue.add(reputationScore), uid, index);
     } else {
-      value = this.getValueAsBytes(reputationScore, this.nReputations + 1);
+      value = this.getValueAsBytes(reputationScore, this.nReputations + 1, index);
       this.nReputations += 1;
     }
     await this.reputationTree.insert(key, value, { from: accountAddress, gas: 4000000 });

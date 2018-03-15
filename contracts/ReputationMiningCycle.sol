@@ -252,12 +252,22 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     int256 amount;
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
+    uint256 agreeStateReputationUID;
+    uint256 disagreeStateReputationUID;
 
     assembly {
         agreeStateReputationValue := mload(add(agreeStateReputationValueBytes, 32))
         disagreeStateReputationValue := mload(add(disagreeStateReputationValueBytes, 32))
+        agreeStateReputationUID := mload(add(agreeStateReputationValueBytes, 64))
+        disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
     }
+
     // TODO: Check the unique ID.
+    if (agreeStateReputationUID != 0) {
+      // i.e. if this was an existing reputation, then require that the ID hasn't changed.
+      // TODO: Situation where it is not an existing reputation
+      require(agreeStateReputationUID==disagreeStateReputationUID);
+    }
 
     (, amount, , , ,) = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogEntry(reputationTransitionIdx, false);
     // TODO: Is this safe? I think so, because even if there's over/underflows, they should
