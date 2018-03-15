@@ -160,11 +160,11 @@ export async function expectEvent(tx, eventName) {
 
 export async function forwardTime(seconds, test) {
   const client = await web3GetClient();
-  if (client.indexOf("TestRPC") === -1) {
-    test.skip();
-  } else {
-    console.log(`Forwarding time with ${seconds}s ...`);
-    const p = new Promise((resolve, reject) => {
+  const p = new Promise((resolve, reject) => {
+    if (client.indexOf("TestRPC") === -1) {
+      resolve(test.skip());
+    } else {
+      console.log(`Forwarding time with ${seconds}s ...`);
       web3.currentProvider.send(
         {
           jsonrpc: "2.0",
@@ -176,7 +176,7 @@ export async function forwardTime(seconds, test) {
           if (err) {
             return reject(err);
           }
-          web3.currentProvider.send(
+          return web3.currentProvider.send(
             {
               jsonrpc: "2.0",
               method: "evm_mine",
@@ -192,9 +192,9 @@ export async function forwardTime(seconds, test) {
           );
         }
       );
-    });
-    return p;
-  }
+    }
+  });
+  return p;
 }
 
 export async function createSignatures(colony, signers, value, data) {
