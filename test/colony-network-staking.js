@@ -70,11 +70,13 @@ contract("ColonyNetworkStaking", accounts => {
     let toInvalidateIdx;
     const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
     const submission1before = await repCycle.disputeRounds(round1.toString(), idx1.toString());
-    // Submit JRH for submission 1 if needed
-    if (submission1before[4] === "0x0000000000000000000000000000000000000000000000000000000000000000") {
-      await client1.submitJustificationRootHash();
-    }
     if (client2 !== undefined) {
+      // Submit JRH for submission 1 if needed
+      // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
+      if (submission1before[4] === "0x0000000000000000000000000000000000000000000000000000000000000000") {
+        await client1.submitJustificationRootHash();
+      }
+
       [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
       assert(round1.eq(round2), "Clients do not have submissions in the same round");
       const submission2before = await repCycle.disputeRounds(round2.toString(), idx2.toString());

@@ -267,6 +267,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
 
 
   function submitJRH(
+    uint256 round,
     uint256 index,
     bytes32 jrh,
     uint branchMask1,
@@ -276,19 +277,19 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   ) public
   {
     // Require we've not submitted already.
-    require(disputeRounds[0][index].jrh == 0x0);
+    require(disputeRounds[round][index].jrh == 0x0);
 
     // Check the proofs for the JRH
     require(checkJRHProof1(jrh, branchMask1, siblings1));
-    require(checkJRHProof2(index, jrh, branchMask2, siblings2));
+    require(checkJRHProof2(round, index, jrh, branchMask2, siblings2));
 
     // Store their JRH
-    disputeRounds[0][index].jrh = jrh;
-    disputeRounds[0][index].lastResponseTimestamp = now;
-    disputeRounds[0][index].challengeStepCompleted += 1;
+    disputeRounds[round][index].jrh = jrh;
+    disputeRounds[round][index].lastResponseTimestamp = now;
+    disputeRounds[round][index].challengeStepCompleted += 1;
 
     // Set bounds for first binary search if it's going to be needed
-    disputeRounds[0][index].upperBound = disputeRounds[0][index].jrhNnodes;
+    disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
   }
 
   function checkJRHProof1(bytes32 jrh, uint branchMask1, bytes32[] siblings1) internal returns (bool result) {
@@ -297,14 +298,14 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     return verifyProof(jrh, bytes32(0), reputationRootHash, branchMask1, siblings1);
   }
 
-  function checkJRHProof2(uint index, bytes32 jrh, uint branchMask2, bytes32[] siblings2) internal returns (bool result) {
+  function checkJRHProof2(uint round, uint index, bytes32 jrh, uint branchMask2, bytes32[] siblings2) internal returns (bool result) {
     // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
     // key is the number of updates in the reputation update log (implemented)
     // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)
     // TODO: Account for decay calculations
     uint256 nUpdates = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogLength(false);
-    disputeRounds[0][index].jrhNnodes = nUpdates + 1;
-    bytes32 submittedHash = disputeRounds[0][index].hash;
+    disputeRounds[round][index].jrhNnodes = nUpdates + 1;
+    bytes32 submittedHash = disputeRounds[round][index].hash;
     return verifyProof(jrh, bytes32(nUpdates), submittedHash, branchMask2, siblings2);
   }
 

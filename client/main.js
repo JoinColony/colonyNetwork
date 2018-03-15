@@ -103,8 +103,11 @@ class ReputationMiningClient {
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
     const repCycle = ReputationMiningCycle.at(addr);
 
-    const [, index] = await this.getMySubmissionRoundAndIndex();
-    await repCycle.submitJRH(index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, { from: this.minerAddress, gas: 6000000 });
+    const [round, index] = await this.getMySubmissionRoundAndIndex();
+    await repCycle.submitJRH(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
+      from: this.minerAddress,
+      gas: 6000000
+    });
   }
 
   // The version of this function in malicious.js uses `this`, but not here.
