@@ -271,7 +271,7 @@ contract ColonyTask is ColonyStorage, DSMath {
       uint payout = task.payouts[roleId][token];
       Role storage role = task.roles[roleId];
 
-      uint8 submittedRating;
+      uint8 submittedRating = role.rating;
 
       // Evaluator does not get rated by other users, so we always assign 2
       if (roleId == EVALUATOR) {
