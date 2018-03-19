@@ -1077,7 +1077,7 @@ contract("ColonyNetworkStaking", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle.call();
       repCycle = ReputationMiningCycle.at(addr);
       await forwardTime(3600, this);
-      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x0", 0, 10);
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle.call();
       repCycle = ReputationMiningCycle.at(addr);
@@ -1142,7 +1142,7 @@ contract("ColonyNetworkStaking", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle.call();
       repCycle = ReputationMiningCycle.at(addr);
       await forwardTime(3600, this);
-      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x0", 0, 10);
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle.call();
       repCycle = ReputationMiningCycle.at(addr);
@@ -1185,56 +1185,56 @@ contract("ColonyNetworkStaking", accounts => {
       let goodSubmission = await repCycle.disputeRounds(0, 0);
       let badSubmission = await repCycle.disputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 1); // Challenge steps completed
-      assert.equal(goodSubmission[7].toNumber(), 0); // Lower bound for binary search
-      assert.equal(goodSubmission[8].toNumber(), 14); // Upper bound for binary search
+      assert.equal(goodSubmission[8].toNumber(), 0); // Lower bound for binary search
+      assert.equal(goodSubmission[9].toNumber(), 14); // Upper bound for binary search
       assert.equal(badSubmission[3].toNumber(), 1);
-      assert.equal(badSubmission[7].toNumber(), 0);
-      assert.equal(badSubmission[8].toNumber(), 14);
+      assert.equal(badSubmission[8].toNumber(), 0);
+      assert.equal(badSubmission[9].toNumber(), 14);
       await goodClient.respondToBinarySearchForChallenge();
 
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 2);
-      assert.equal(goodSubmission[7].toNumber(), 0);
-      assert.equal(goodSubmission[8].toNumber(), 14);
+      assert.equal(goodSubmission[8].toNumber(), 0);
+      assert.equal(goodSubmission[9].toNumber(), 14);
       assert.equal(badSubmission[3].toNumber(), 1);
-      assert.equal(badSubmission[7].toNumber(), 0);
-      assert.equal(badSubmission[8].toNumber(), 14);
+      assert.equal(badSubmission[8].toNumber(), 0);
+      assert.equal(badSubmission[9].toNumber(), 14);
 
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmission[7].toNumber(), 0);
-      assert.equal(goodSubmission[8].toNumber(), 7);
-      assert.equal(badSubmission[7].toNumber(), 0);
-      assert.equal(badSubmission[8].toNumber(), 7);
-
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.disputeRounds(0, 0);
-      badSubmission = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmission[7].toNumber(), 4);
-      assert.equal(goodSubmission[8].toNumber(), 7);
-      assert.equal(badSubmission[7].toNumber(), 4);
-      assert.equal(badSubmission[8].toNumber(), 7);
+      assert.equal(goodSubmission[8].toNumber(), 0);
+      assert.equal(goodSubmission[9].toNumber(), 7);
+      assert.equal(badSubmission[8].toNumber(), 0);
+      assert.equal(badSubmission[9].toNumber(), 7);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmission[7].toNumber(), 4);
+      assert.equal(goodSubmission[8].toNumber(), 4);
+      assert.equal(goodSubmission[9].toNumber(), 7);
+      assert.equal(badSubmission[8].toNumber(), 4);
+      assert.equal(badSubmission[9].toNumber(), 7);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[8].toNumber(), 4);
+      assert.equal(goodSubmission[9].toNumber(), 5);
+      assert.equal(badSubmission[8].toNumber(), 4);
+      assert.equal(badSubmission[9].toNumber(), 5);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
       assert.equal(goodSubmission[8].toNumber(), 5);
-      assert.equal(badSubmission[7].toNumber(), 4);
+      assert.equal(goodSubmission[9].toNumber(), 5);
       assert.equal(badSubmission[8].toNumber(), 5);
-
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.disputeRounds(0, 0);
-      badSubmission = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmission[7].toNumber(), 5);
-      assert.equal(goodSubmission[8].toNumber(), 5);
-      assert.equal(badSubmission[7].toNumber(), 5);
-      assert.equal(badSubmission[8].toNumber(), 5);
+      assert.equal(badSubmission[9].toNumber(), 5);
 
       // TODO: Split off in to  another test here, but can't be bothered to refactor right now.
       await goodClient.respondToChallenge();
@@ -1273,7 +1273,7 @@ contract("ColonyNetworkStaking", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle.call();
       repCycle = ReputationMiningCycle.at(addr);
       await forwardTime(3600, this);
-      await repCycle.submitNewHash("0x12345678", 10, 10);
+      await repCycle.submitNewHash("0x0", 0, 10);
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle.call();
       repCycle = ReputationMiningCycle.at(addr);
