@@ -12,7 +12,8 @@ fs.readdirSync("./contracts/").forEach(contractName => {
       "EtherRouter.sol",
       "Migrations.sol",
       "Resolver.sol",
-      "Token.sol"
+      "Token.sol",
+      "ReputationMiningCycle.sol"
     ].indexOf(contractName) > -1
   ) {
     return;
