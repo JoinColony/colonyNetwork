@@ -8,6 +8,12 @@ const ColonyNetworkStaking = artifacts.require("./ColonyNetworkStaking");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
+// We `require` the ReputationMiningCycle object to make sure
+// it is injected in the `artifacts` variables during test
+// preparation. We need this for the eth-gas-reporter.
+// See https://github.com/cgewecke/eth-gas-reporter/issues/64
+artifacts.require("./ReputationMiningCycle");
+
 module.exports = (deployer, network) => {
   console.log(`## ${network} network ##`);
   deployer.deploy([SafeMath]);
