@@ -13,6 +13,7 @@ import "./ReputationMiningCycle.sol";
 
 
 contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
+  // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
     require(msg.sender == reputationMiningCycle);
@@ -122,5 +123,3 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     }
   }
 }
-
-// TODO: Can we handle a dispute regarding the very first hash that should be set?

@@ -10,8 +10,6 @@ import "./ERC20Extended.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
 
-// TODO: Can we handle a dispute regarding the very first hash that should be set?
-
 
 contract ReputationMiningCycle {
   address colonyNetworkAddress;
@@ -198,7 +196,4 @@ contract ReputationMiningCycle {
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
-
-
-
 }
