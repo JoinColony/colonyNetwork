@@ -59,7 +59,7 @@ export function web3GetFirstTransactionHashFromLastBlock() {
   });
 }
 
-export async function checkError(promise, isAssert) {
+async function checkError(promise, isAssert) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
   // (still making a valid transaction and returning a txid). For the explanation of why
