@@ -60,31 +60,22 @@ export function web3GetFirstTransactionHashFromLastBlock() {
 }
 
 export async function checkError(promise, isAssert) {
-  // TODO: Remove this complexity when solidity-coverage moves up to ganache beta as
-  // Solidity error handling there no longer throws on contract error
-  // See release notes for details https://github.com/trufflesuite/ganache-cli/releases/tag/v7.0.0-beta.0
-  // There is a discrepancy between how testrpc handles errors
+  // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
   // (still making a valid transaction and returning a txid). For the explanation of why
   // See https://github.com/ethereumjs/testrpc/issues/39
   //
   // Obviously, we want our tests to pass on all, so this is a bit of a problem.
   // We have to have this special function that we use to catch the error.
-  // For testrpc we additionally check the error returned is from a `require` failure.
   let txHash;
+  let receipt;
   try {
-    const tx = await promise;
-    txHash = tx.tx;
+    txHash = await promise;
+    receipt = await web3GetTransactionReceipt(txHash);
   } catch (err) {
-    // Make sure this is a revert (returned from EtherRouter)
-    if (err.message.indexOf("VM Exception while processing transaction: revert") === -1) {
-      throw err;
-    }
-
-    txHash = await web3GetFirstTransactionHashFromLastBlock();
+    ({ txHash, receipt } = err);
   }
 
-  const receipt = await web3GetTransactionReceipt(txHash);
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00);
 
@@ -92,7 +83,7 @@ export async function checkError(promise, isAssert) {
     const network = await web3GetNetwork();
     const transaction = await web3GetTransaction(txHash);
     if (network !== "coverage") {
-      // When a transaction throws, all the gas sent is spent. So let's check that we spent all the gas that we sent.
+      // When a transaction `throws`, all the gas sent is spent. So let's check that we spent all the gas that we sent.
       // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
       assert.closeTo(transaction.gas, receipt.gasUsed, 73000, "didnt fail - didn't throw and use all gas");
     }

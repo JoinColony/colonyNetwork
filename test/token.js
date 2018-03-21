@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { getTokenArgs, expectEvent, checkErrorAssert, checkErrorRevert, web3GetBalance, checkErrorNonPayableFunction } from "../helpers/test-helper";
+import { getTokenArgs, expectEvent, checkErrorRevert, web3GetBalance, checkErrorNonPayableFunction } from "../helpers/test-helper";
 import { setupUpgradableToken } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -61,7 +61,7 @@ contract("Token", accounts => {
     });
 
     it("should NOT be able to transfer more tokens than they have", async () => {
-      await checkErrorAssert(etherRouterToken.transfer(ACCOUNT_TWO, 1500001));
+      await checkErrorRevert(etherRouterToken.transfer(ACCOUNT_TWO, 1500001));
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
@@ -81,14 +81,14 @@ contract("Token", accounts => {
     });
 
     it("should NOT be able to transfer tokens from another address if NOT pre-approved", async () => {
-      await checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
+      await checkErrorRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
 
     it("should NOT be able to transfer from another address more tokens than pre-approved", async () => {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
-      await checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO }));
+      await checkErrorRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300001, { from: ACCOUNT_TWO }));
 
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
@@ -98,7 +98,7 @@ contract("Token", accounts => {
       await etherRouterToken.approve(ACCOUNT_TWO, 300000);
       await etherRouterToken.transfer(ACCOUNT_THREE, 1500000);
 
-      await checkErrorAssert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
+      await checkErrorRevert(etherRouterToken.transferFrom(COINBASE_ACCOUNT, ACCOUNT_TWO, 300000, { from: ACCOUNT_TWO }));
       const balanceAccount2 = await etherRouterToken.balanceOf.call(ACCOUNT_TWO);
       assert.equal(0, balanceAccount2.toNumber());
     });
