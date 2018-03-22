@@ -341,22 +341,14 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].cancelled = true;
   }
 
-  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256) {
+  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256[], uint256[]) {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp);
+    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domains, t.skills);
   }
 
   function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8) {
     Role storage role = tasks[_id].roles[_idx];
     return (role.user, role.rated, role.rating);
-  }
-
-  function getTaskSkill(uint256 _id, uint256 _idx) public view returns (uint256) {
-    return tasks[_id].skills[_idx];
-  }
-
-  function getTaskDomain(uint256 _id, uint256 _idx) public view returns (uint256) {
-    return tasks[_id].domains[_idx];
   }
 
   // Get the function signature and task id from the transaction bytes data
