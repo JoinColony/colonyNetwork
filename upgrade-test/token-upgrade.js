@@ -45,7 +45,7 @@ contract("Token contract upgrade", accounts => {
       const tokenArgs = getTokenArgs();
       const updatedTokenContract = await UpdatedToken.new(...tokenArgs);
       await setupUpgradableToken(updatedTokenContract, resolver, etherRouter);
-      await resolver.register("isUpdated()", updatedTokenContract.address, 32);
+      await resolver.register("isUpdated()", updatedTokenContract.address);
       updatedToken = await UpdatedToken.at(etherRouter.address);
     });
 

@@ -48,12 +48,13 @@ contract EtherRouter is DSAuth {
     uint r;
 
     // Get routing information for the called function
-    var (destination, outsize) = resolver.lookup(msg.sig);
+    address destination = resolver.lookup(msg.sig);
 
     // Make the call
     assembly {
       calldatacopy(mload(0x40), 0, calldatasize)
-      r := delegatecall(sub(gas, 700), destination, mload(0x40), calldatasize, mload(0x40), outsize)
+      r := delegatecall(sub(gas, 700), destination, mload(0x40), calldatasize, mload(0x40), 0)
+      returndatacopy(mload(0x40), 0, returndatasize)
     }
 
     // Check the call is successful
@@ -61,7 +62,7 @@ contract EtherRouter is DSAuth {
 
     // Pass on the return value
     assembly {
-      return(mload(0x40), outsize)
+      return(mload(0x40), returndatasize)
     }
   }
 

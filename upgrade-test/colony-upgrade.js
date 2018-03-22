@@ -53,7 +53,7 @@ contract("Colony contract upgrade", accounts => {
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
-    await resolver.register("isUpdated()", updatedColonyContract.address, 32);
+    await resolver.register("isUpdated()", updatedColonyContract.address);
     await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, resolver, colonyNetwork);
     // Check new Colony contract version is registered successfully
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();

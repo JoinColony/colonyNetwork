@@ -4,6 +4,7 @@ import { checkErrorRevert } from "../helpers/test-helper";
 const MultiSigWallet = artifacts.require("gnosis/MultiSigWallet");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
+const ColonyNetwork = artifacts.require("ColonyNetwork");
 
 contract("EtherRouter / Resolver", accounts => {
   const COINBASE_ACCOUNT = accounts[0];
@@ -15,7 +16,7 @@ contract("EtherRouter / Resolver", accounts => {
   let multisig;
 
   before(async () => {
-    resolver = await Resolver.new();
+    resolver = await Resolver.deployed();
   });
 
   beforeEach(async () => {
@@ -45,14 +46,16 @@ contract("EtherRouter / Resolver", accounts => {
   });
 
   describe("Resolver", () => {
-    it("when checking outsize, should return correct return param size for given function", async () => {
-      const outsize = await resolver.outsize.call("0x18160ddd");
-      assert.equal(outsize, 32);
+    it("should return correct destination for given function", async () => {
+      const deployedColonyNetwork = await ColonyNetwork.deployed();
+      const signature = await resolver.stringToSig.call("createColony(bytes32,address)");
+      const destination = await resolver.lookup.call(signature);
+      assert.equal(destination, deployedColonyNetwork.address);
     });
 
-    it("when checking outsize for a function that doesn't exist, should return default of 32", async () => {
-      const outsize = await resolver.outsize.call("0x18118aaa");
-      assert.equal(outsize, 32);
+    it("when checking destination for a function that doesn't exist, should return 0", async () => {
+      const destination = await resolver.lookup.call("0xdeadbeef");
+      assert.equal(destination, 0);
     });
 
     it("should return correctly encoded function signature", async () => {
