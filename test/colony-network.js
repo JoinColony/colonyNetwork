@@ -6,8 +6,7 @@ import {
   checkErrorRevert,
   getRandomString,
   checkErrorNonPayableFunction,
-  expectEvent,
-  checkError
+  expectEvent
 } from "../helpers/test-helper";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
@@ -280,7 +279,7 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
-      await checkError(colonyNetwork.addSkill(2, false));
+      await checkErrorRevert(colonyNetwork.addSkill(2, false));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);

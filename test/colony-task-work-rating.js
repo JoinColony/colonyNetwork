@@ -206,7 +206,7 @@ contract("Colony Task Work Rating", () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
-      await forwardTime(SECONDS_PER_DAY * 10, this);
+      await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
       const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);

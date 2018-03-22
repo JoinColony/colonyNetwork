@@ -67,7 +67,7 @@
     "prettier": "^1.11.1",
     "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
-    "solidity-coverage": "0.4.11",
+    "solidity-coverage": "0.4.14",
     "solidity-parser-antlr": "^0.2.7",
     "solium": "^1.1.5",
     "truffle": "^4.1.3",
