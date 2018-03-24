@@ -153,7 +153,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
   }
 
-  // Returns the address of a Colony by index
   function getColony(bytes32 _name) public view returns (address) {
     return _colonies[_name];
   }

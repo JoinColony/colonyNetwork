@@ -345,8 +345,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId, t.skills);
   }
 
-  function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8) {
-    Role storage role = tasks[_id].roles[_idx];
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8) {
+    Role storage role = tasks[_id].roles[_role];
     return (role.user, role.rated, role.rating);
   }
 
