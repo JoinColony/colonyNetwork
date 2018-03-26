@@ -199,7 +199,8 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public
   taskWorkRatingRevealOpen(_id)
-  {
+  { 
+    // MAYBE: we should hash these the other way around, i.e. generateSecret(_rating, _salt)
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id].secret[_role]);
 

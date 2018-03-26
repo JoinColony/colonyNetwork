@@ -59,6 +59,15 @@ export function web3GetFirstTransactionHashFromLastBlock() {
   });
 }
 
+export function web3GetCode(a) {
+  return new Promise((resolve, reject) => {
+    web3.eth.getCode(a, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res);
+    });
+  });
+}
+
 async function checkError(promise, isAssert) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
@@ -125,6 +134,18 @@ export function hexToUtf8(text) {
 export async function currentBlockTime() {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock("latest", (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res.timestamp);
+    });
+  });
+  return p;
+}
+
+export async function getBlockTime(blockNumber) {
+  const p = new Promise((resolve, reject) => {
+    web3.eth.getBlock(blockNumber, (err, res) => {
       if (err) {
         return reject(err);
       }
