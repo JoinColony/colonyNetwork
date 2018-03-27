@@ -151,6 +151,11 @@ contract ColonyStorage is DSAuth {
     _;
   }
 
+  modifier isInBootstrapPhase() {
+    require(taskCount == 0);
+    _;
+  }
+
   modifier self() {
     require(address(this) == msg.sender);
     _;

@@ -1,4 +1,7 @@
 /* globals artifacts */
+
+import { toBN } from "web3-utils";
+
 import {
   MANAGER,
   EVALUATOR,
@@ -31,13 +34,19 @@ import {
 } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, setupAssignedTask, setupFundedTask } from "../helpers/test-data-generator";
 
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+
+const Colony = artifacts.require("Colony");
+const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const Authority = artifacts.require("Authority");
+const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyTask = artifacts.require("ColonyTask");
 
-contract("Colony", () => {
+contract("Colony", addresses => {
   let COLONY_KEY;
   let colony;
   let token;
@@ -46,8 +55,18 @@ contract("Colony", () => {
   let colonyNetwork;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
+    const resolverColonyNetworkDeployed = await Resolver.deployed();
+    const colonyTemplate = await Colony.new();
+    const colonyFunding = await ColonyFunding.new();
+    const colonyTask = await ColonyTask.new();
+    const resolver = await Resolver.new();
+    const etherRouter = await EtherRouter.new();
+    await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
+
+    const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
+    await colonyNetwork.createColony("Common Colony", clnyToken.address);
   });
 
   beforeEach(async () => {
@@ -177,6 +196,87 @@ contract("Colony", () => {
 
     it("should log a TaskAdded event", async () => {
       await expectEvent(colony.makeTask(SPECIFICATION_HASH, 1), "TaskAdded");
+    });
+  });
+
+  describe("when bootstrapping the colony", () => {
+    const INITIAL_REPUTATIONS = [toBN(5 * 1e18).toString(), toBN(4 * 1e18).toString(), toBN(3 * 1e18).toString(), toBN(2 * 1e18).toString()];
+    const INITIAL_ADDRESSES = addresses.slice(0, 4);
+
+    it("should assign reputation correctly when bootstrapping the colony", async () => {
+      const skillCount = await colonyNetwork.getSkillCount.call();
+
+      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
+
+      const numberOfReputationLogs = await colonyNetwork.getReputationUpdateLogLength(true);
+      assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
+
+      const updateLog = await colonyNetwork.getReputationUpdateLogEntry(0, true);
+      assert.equal(updateLog[0], INITIAL_ADDRESSES[0]);
+      assert.equal(updateLog[1].toString(), INITIAL_REPUTATIONS[0]);
+      assert.equal(updateLog[2].toString(), skillCount.toNumber());
+    });
+
+    it("should assign tokens correctly when bootstrapping the colony", async () => {
+      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
+
+      const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
+      assert.equal(balance.toString(), INITIAL_REPUTATIONS[0]);
+    });
+
+    it("should be able to bootstrap colony more than once", async () => {
+      const amount = toBN(10 * 1e18).toString();
+      await colony.mintTokens(amount);
+      await colony.bootstrapColony([INITIAL_ADDRESSES[0]], [INITIAL_REPUTATIONS[0]]);
+      await colony.bootstrapColony([INITIAL_ADDRESSES[0]], [INITIAL_REPUTATIONS[0]]);
+
+      const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
+      assert.equal(balance.toString(), amount);
+    });
+
+    it("should throw if length of inputs is not equal", async () => {
+      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await checkErrorRevert(colony.bootstrapColony([INITIAL_ADDRESSES[0]], INITIAL_REPUTATIONS));
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, [INITIAL_REPUTATIONS[0]]));
+    });
+
+    it("should not allow negative number", async () => {
+      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await checkErrorRevert(
+        colony.bootstrapColony(
+          [INITIAL_ADDRESSES[0]],
+          [
+            toBN(5 * 1e18)
+              .neg()
+              .toString()
+          ]
+        )
+      );
+    });
+
+    it("should throw if there is not enough funds to send", async () => {
+      await colony.mintTokens(toBN(10 * 1e18).toString());
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS));
+
+      const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
+      assert.equal(balance.toString(), "0");
+    });
+
+    it("should not allow non-creator to bootstrap reputation", async () => {
+      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await checkErrorRevert(
+        colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
+          from: addresses[1]
+        })
+      );
+    });
+
+    it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
+      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_REPUTATIONS, INITIAL_ADDRESSES));
     });
   });
 
