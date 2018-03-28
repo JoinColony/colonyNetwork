@@ -118,7 +118,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     Task memory task;
     task.specificationHash = _specificationHash;
     task.potId = potCount;
-    task.domains = new uint256[](1);
+    task.domainId = _domainId;
     task.skills = new uint256[](1);
     tasks[taskCount] = task;
     tasks[taskCount].roles[MANAGER] = Role({
@@ -128,7 +128,6 @@ contract ColonyTask is ColonyStorage, DSMath {
     });
 
     pots[potCount].taskId = taskCount;
-    setTaskDomain(taskCount, _domainId);
 
     TaskAdded(taskCount);
   }
@@ -260,7 +259,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   domainExists(_domainId)
   {
-    tasks[_id].domains[0] = _domainId;
+    tasks[_id].domainId = _domainId;
   }
 
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
@@ -318,7 +317,7 @@ contract ColonyTask is ColonyStorage, DSMath {
       int divider = (roleId == WORKER) ? 30 : 50;
 
       int reputation = SafeMath.mulInt(int(payout), (int(rating)*2 - 50)) / divider;
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.domains[0]);
+      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.domainId);
 
       if (roleId == WORKER) {
         colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
@@ -341,9 +340,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[_id].cancelled = true;
   }
 
-  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256[], uint256[]) {
+  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256, uint256[]) {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domains, t.skills);
+    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId, t.skills);
   }
 
   function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8) {

@@ -384,7 +384,7 @@ contract("Common Colony", () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskDomain(1, 2);
       const task = await colony.getTask.call(1);
-      assert.equal(task[8][0].toNumber(), 2);
+      assert.equal(task[8].toNumber(), 2);
     });
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
@@ -396,7 +396,7 @@ contract("Common Colony", () => {
       await checkErrorRevert(colony.setTaskDomain(1, 20));
 
       const task = await colony.getTask.call(1);
-      assert.equal(task[8][0].toNumber(), 1);
+      assert.equal(task[8].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on finalized task", async () => {
