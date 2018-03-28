@@ -169,6 +169,17 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   assert.equal(targetStartingBalance.add(amount).toString(), userBalance.toString());
 }
 
+export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount) {
+  const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
+  const commonColony = IColony.at(commonColonyAddress);
+  const clnyAddress = await commonColony.getToken.call();
+  const clny = Token.at(clnyAddress);
+
+  await giveUserCLNYTokens(colonyNetwork, address, _amount);
+  await clny.approve(colonyNetwork.address, _amount.toString(), { from: address });
+  await colonyNetwork.deposit(_amount.toString(), { from: address });
+}
+
 export async function fundColonyWithTokens(colony, token, tokenAmount) {
   const colonyToken = await colony.getToken.call();
   if (colonyToken === token.address) {
