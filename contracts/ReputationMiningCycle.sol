@@ -10,7 +10,9 @@ import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
 import "./PatriciaTree/PatriciaTree.sol";
 
-// TODO: Can we handle a dispute regarding the very first hash that should be set?
+// TODO: Can we handle all possible disputes regarding the very first hash that should be set?
+// Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
+// A possible workaround would be to 'kick off' reputation mining with a known dummy state...
 
 contract ReputationMiningCycle is PatriciaTree, DSMath {
   address colonyNetworkAddress;
@@ -42,6 +44,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     uint256 jrhNnodes;
     uint256 lowerBound;
     uint256 upperBound;
+    uint256 provedPreviousReputationUID;
   }
 
   // Records for which hashes, for which addresses, for which entries have been accepted
@@ -162,22 +165,27 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   uint constant __AGREE_STATE_BRANCH_MASK__ = 4;
   uint constant __DISAGREE_STATE_NNODES__ = 5;
   uint constant __DISAGREE_STATE_BRANCH_MASK__ = 6;
-
-  uint constant __REPUTATION_SIBLINGS__ = 0;
-  uint constant __AGREE_STATE_SIBLINGS__ = 1;
-  uint constant __DISAGREE_STATE_SIBLINGS__ = 2;
+  uint constant __PREVIOUS_NEW_REPUTATION_BRANCH_MASK__ = 7;
+  uint constant __REQUIRE_REPUTATION_CHECK__ = 8;
 
   function respondToChallengeReal(
-    uint256[7] u, //An array of 7 UINT Params, ordered as given above.
+    uint256[9] u, //An array of 9 UINT Params, ordered as given above.
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes agreeStateReputationValue,
     bytes32[] agreeStateSiblings,
     bytes disagreeStateReputationValue,
-    bytes32[] disagreeStateSiblings
+    bytes32[] disagreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValue,
+    bytes32[] previousNewReputationSiblings
   ) public
     challengeOpen(u[__ROUND__], u[__IDX__])
   {
+    u[__REQUIRE_REPUTATION_CHECK__] = 0;
+    Bytes32("0x11223344");
+    Bytes(agreeStateReputationValue);
+    Bytes(disagreeStateReputationValue);
     // TODO: More checks that this is an appropriate time to respondToChallenge (maybe in modifier);
     /* bytes32 jrh = disputeRounds[round][idx].jrh; */
     // The contract knows
@@ -203,7 +211,13 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     proveAfterReputationValue(u, _reputationKey, reputationSiblings, disagreeStateReputationValue, disagreeStateSiblings);
 
     // Perform the reputation calculation ourselves.
-    performReputationCalculation(u[__ROUND__], u[__IDX__], agreeStateReputationValue, disagreeStateReputationValue);
+    performReputationCalculation(u, agreeStateReputationValue, disagreeStateReputationValue, previousNewReputationValue);
+
+    // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
+    if (u[__REQUIRE_REPUTATION_CHECK__]==1) {
+      checkPreviousReputationInState(u, _reputationKey, reputationSiblings, agreeStateReputationValue, agreeStateSiblings, previousNewReputationKey, previousNewReputationValue, previousNewReputationSiblings);
+      saveProvedReputation(u, previousNewReputationValue);
+    }
 
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[u[__ROUND__]][u[__IDX__]].challengeStepCompleted += 1;
@@ -251,7 +265,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
 
   event Bytes(bytes a);
   event Bytes32(bytes32 a);
-  function proveBeforeReputationValue(uint256[7] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings) internal {
+  function proveBeforeReputationValue(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings) internal {
     bytes32 jrh = disputeRounds[u[__ROUND__]][u[__IDX__]].jrh;
     uint256 lastAgreeIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before.
     uint256 reputationValue;
@@ -287,7 +301,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     // where we don't prove anything with merkle proofs in this whole dance is here.
   }
 
-  function proveAfterReputationValue(uint256[7] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes disagreeStateReputationValue, bytes32[] disagreeStateSiblings) internal {
+  function proveAfterReputationValue(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes disagreeStateReputationValue, bytes32[] disagreeStateSiblings) internal {
     bytes32 jrh = disputeRounds[u[__ROUND__]][u[__IDX__]].jrh;
     uint256 firstDisagreeIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound;
     bytes32 reputationRootHash = getImpliedRoot(_reputationKey, disagreeStateReputationValue, u[__REPUTATION_BRANCH_MASK__], reputationSiblings);
@@ -311,9 +325,9 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
 
   event Int(int a);
 
-  function performReputationCalculation(uint256 round, uint256 idx, bytes agreeStateReputationValueBytes, bytes disagreeStateReputationValueBytes) internal {
+  function performReputationCalculation(uint256[9] u, bytes agreeStateReputationValueBytes, bytes disagreeStateReputationValueBytes, bytes previousNewReputationValueBytes) internal {
     // TODO: Possibility of decay calculation
-    uint reputationTransitionIdx = disputeRounds[round][idx].lowerBound - 1;
+    uint reputationTransitionIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound - 1;
     int256 amount;
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
@@ -327,17 +341,55 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
     }
 
-    // TODO: Check the unique ID.
     if (agreeStateReputationUID != 0) {
       // i.e. if this was an existing reputation, then require that the ID hasn't changed.
       // TODO: Situation where it is not an existing reputation
       require(agreeStateReputationUID==disagreeStateReputationUID);
+    } else {
+      uint256 previousNewReputationUID;
+      assembly {
+        previousNewReputationUID := mload(add(previousNewReputationValueBytes, 64))
+      }
+      require(previousNewReputationUID+1 == disagreeStateReputationUID);
+      // Flag that we need to check that the reputation they supplied is in the 'agree' state.
+      // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
+      // this function, without adding a new variable to the stack in the parent function...
+      u[__REQUIRE_REPUTATION_CHECK__] = 1;
     }
 
     (, amount, , , ,) = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogEntry(reputationTransitionIdx, false);
     // TODO: Is this safe? I think so, because even if there's over/underflows, they should
     // still be the same number.
     require(int(agreeStateReputationValue)+amount == int(disagreeStateReputationValue));
+  }
+
+
+  function checkPreviousReputationInState(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings, bytes previousNewReputationKey, bytes previousNewReputationValue, bytes32[] previousNewReputationSiblings ) internal {
+    uint256 lastAgreeIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before.
+
+    //
+    bytes32 reputationRootHash = getImpliedRoot(previousNewReputationKey, previousNewReputationValue, u[__PREVIOUS_NEW_REPUTATION_BRANCH_MASK__], previousNewReputationSiblings);
+    bytes memory jhLeafValue = new bytes(64);
+    bytes memory lastAgreeIdxBytes = new bytes(32);
+    assembly {
+      mstore(add(jhLeafValue, 0x20), reputationRootHash)
+      let x := mload(add(u, mul(32,3))) // 3 = __AGREE_STATE_NNODES__. Constants not supported by inline assembly
+      mstore(add(jhLeafValue, 0x40), x)
+      mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
+    }
+    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
+    // agree on.
+    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[__AGREE_STATE_BRANCH_MASK__], agreeStateSiblings);
+    require(impliedRoot == disputeRounds[u[__ROUND__]][u[__IDX__]].jrh);
+  }
+
+  function saveProvedReputation(uint256[9] u, bytes previousNewReputationValue) internal {
+    uint256 previousReputationUID;
+    assembly {
+      previousReputationUID := mload(add(previousNewReputationValue,0x40))
+    }
+    // Save the index for tiebreak scenarios later.
+    disputeRounds[u[__ROUND__]][u[__IDX__]].provedPreviousReputationUID = previousReputationUID;
   }
 
 
@@ -438,7 +490,8 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
         upperBound: 0,
         jrhNnodes: 0,
         intermediateReputationHash: 0x0,
-        intermediateReputationNNodes: 0
+        intermediateReputationNNodes: 0,
+        provedPreviousReputationUID: 0
       }));
       // If we've got a pair of submissions to face off, may as well start now.
       if (nSubmittedHashes % 2 == 0) {
@@ -460,7 +513,8 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
       upperBound: 0,
       jrhNnodes: 0,
       intermediateReputationHash: 0x0,
-      intermediateReputationNNodes: 0
+      intermediateReputationNNodes: 0,
+      provedPreviousReputationUID: 0
     });
     //And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes].push(msg.sender);
@@ -482,6 +536,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     disputeRounds[roundNumber][index].lastResponseTimestamp = now;
     disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNnodes;
     disputeRounds[roundNumber][index].lowerBound = 0;
+    disputeRounds[roundNumber][index].provedPreviousReputationUID = 0;
     if (disputeRounds[roundNumber][index].jrh != 0x0) {
       // If this submission has a JRH, we give ourselves credit for it in the next round - it's possible
       // that a submission got a bye without submitting a JRH, which will not have this starting '1'.
@@ -530,13 +585,26 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     } else {
       require(disputeRounds[round].length > opponentIdx);
       require(disputeRounds[round][opponentIdx].hash!="");
+
       // Require that this is not better than its opponent.
       require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted);
+      require(disputeRounds[round][opponentIdx].provedPreviousReputationUID >= disputeRounds[round][idx].provedPreviousReputationUID);
+
       // Require that it has failed a challenge (i.e. failed to respond in time)
       require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600); //'In time' is ten minutes here.
-      if (disputeRounds[round][opponentIdx].challengeStepCompleted > disputeRounds[round][idx].challengeStepCompleted) {
-        // If true, then the opponent completed one more challenge round than the submission being invalidated, so we
-        // don't know if they're valid or not yet. Move them on to the next round.
+
+      // Work out whether we are invalidating just the supplied idx or its opponent too.
+      bool eliminateOpponent = false;
+      if (
+      disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted &&
+      disputeRounds[round][opponentIdx].provedPreviousReputationUID == disputeRounds[round][idx].provedPreviousReputationUID
+      ){
+        eliminateOpponent = true;
+      }
+
+      if (!eliminateOpponent) {
+        // If here, then the opponent completed one more challenge round than the submission being invalidated or
+        // proved a later UID was in the tree, so we don't know if they're valid or not yet. Move them on to the next round.
         disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
         delete disputeRounds[round][opponentIdx];
         // TODO Delete the hash(es) being invalidated?

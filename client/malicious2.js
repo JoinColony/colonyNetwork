@@ -2,8 +2,7 @@ import BN from "bn.js";
 import ReputationMiningClient from "./main";
 
 class MaliciousReputationMiningClient2 extends ReputationMiningClient {
-  // Only difference between this and the 'real' client should be that it adds some extra
-  // reputation to the fourth entry being parsed.
+  // This client uses the wrong UID for a reputation (even an existing one)
   constructor(minerAddress, entryToFalsify, amountToFalsify) {
     super(minerAddress);
     this.entryToFalsify = entryToFalsify.toString();
