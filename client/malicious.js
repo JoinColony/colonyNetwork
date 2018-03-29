@@ -3,8 +3,8 @@ import ReputationMiningClient from "./main";
 class MaliciousReputationMiningClient extends ReputationMiningClient {
   // Only difference between this and the 'real' client should be that it adds some extra
   // reputation to the fourth entry being parsed.
-  constructor(minerAddress, entryToFalsify, amountToFalsify) {
-    super(minerAddress);
+  constructor(minerAddress, realProviderPort, entryToFalsify, amountToFalsify) {
+    super(minerAddress, realProviderPort);
     this.entryToFalsify = entryToFalsify.toString();
     this.amountToFalsify = amountToFalsify.toString();
   }

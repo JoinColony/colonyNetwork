@@ -18,7 +18,7 @@ const ColonyNetwork = contract(ColonyNetworkJSON);
 const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 
 class ReputationMiningClient {
-  constructor(minerAddress) {
+  constructor(minerAddress, realProviderPort = 8545) {
     this.web3 = new Web3();
     this.minerAddress = minerAddress;
     this.PatriciaTree = contract(PatriciaTreeJSON);
@@ -35,8 +35,7 @@ class ReputationMiningClient {
       ]
     });
     this.PatriciaTree.setProvider(this.ganacheProvider);
-
-    this.realProvider = new Web3.providers.HttpProvider("http://localhost:8545");
+    this.realProvider = new Web3.providers.HttpProvider(`http://localhost:${realProviderPort}`);
     ColonyNetwork.setProvider(this.realProvider);
     ReputationMiningCycle.setProvider(this.realProvider);
     try {

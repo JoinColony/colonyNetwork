@@ -3,8 +3,8 @@ import ReputationMiningClient from "./main";
 
 class MaliciousReputationMiningClient2 extends ReputationMiningClient {
   // This client uses the wrong UID for a reputation (even an existing one)
-  constructor(minerAddress, entryToFalsify, amountToFalsify) {
-    super(minerAddress);
+  constructor(minerAddress, realProviderPort, entryToFalsify, amountToFalsify) {
+    super(minerAddress, realProviderPort);
     this.entryToFalsify = entryToFalsify.toString();
     this.amountToFalsify = amountToFalsify.toString();
   }
