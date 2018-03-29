@@ -14,7 +14,7 @@ const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const BN = require("bn.js");
 
-contract.only("ColonyNetworkStaking", accounts => {
+contract("ColonyNetworkStaking", accounts => {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
 
