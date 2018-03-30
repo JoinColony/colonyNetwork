@@ -1,4 +1,4 @@
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.21;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
@@ -54,7 +54,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
     // Clear out the inactive reputation log. We're setting a new root hash, so we're done with it.
-    delete ReputationUpdateLogs[(activeReputationUpdateLog + 1) % 2];
+    delete reputationUpdateLogs[(activeReputationUpdateLog + 1) % 2];
     // The active reputation update log is now switched to be the one we've just cleared out.
     // The old activeReputationUpdateLog will be used for the next reputation mining cycle
     activeReputationUpdateLog = (activeReputationUpdateLog + 1) % 2;
@@ -108,7 +108,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     for (uint256 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
-      ReputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
+      reputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
         stakers[i], //The staker getting the reward
         int256(reward),
         0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.

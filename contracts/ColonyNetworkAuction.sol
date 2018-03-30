@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.21;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
@@ -34,7 +34,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     DutchAuction auction = new DutchAuction(clny, _token);
     uint availableTokens = ERC20Extended(_token).balanceOf(this);
     ERC20Extended(_token).transfer(auction, availableTokens);
-    AuctionCreated(address(auction), _token, availableTokens);
+    emit AuctionCreated(address(auction), _token, availableTokens);
   }
 }
 
@@ -167,7 +167,7 @@ contract DutchAuction is DSMath {
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
     
-    AuctionBid(msg.sender, amount, sub(remainingToEndAuction, amount));
+    emit AuctionBid(msg.sender, amount, sub(remainingToEndAuction, amount));
   }
 
   // Finalize the auction and set the final Token price
@@ -179,7 +179,7 @@ contract DutchAuction is DSMath {
     clnyToken.transfer(colonyNetwork, receivedTotal);
     finalPrice = add((mul(receivedTotal, TOKEN_MULTIPLIER) / quantity), 1);
     finalized = true;
-    AuctionFinalized(finalPrice);
+    emit AuctionFinalized(finalPrice);
   }
 
   function claim() public 
@@ -199,7 +199,7 @@ contract DutchAuction is DSMath {
     assert(token.balanceOf(msg.sender) == add(beforeClaimBalance, tokens));
     assert(bids[msg.sender] == 0);
 
-    AuctionClaim(msg.sender, tokens);
+    emit AuctionClaim(msg.sender, tokens);
     return true;
   }
 
