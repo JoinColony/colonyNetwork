@@ -34,7 +34,7 @@ contract("ColonyNetwork contract upgrade", () => {
     // Setup new Colony contract version on the Network
     const updatedColonyNetworkContract = await UpdatedColonyNetwork.new();
     const resolver = await Resolver.deployed();
-    await resolver.register("isUpdated()", updatedColonyNetworkContract.address, 32);
+    await resolver.register("isUpdated()", updatedColonyNetworkContract.address);
 
     updatedColonyNetwork = await UpdatedColonyNetwork.at(etherRouter.address);
   });

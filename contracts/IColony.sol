@@ -56,11 +56,9 @@ contract IColony {
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
   function finalizeTask(uint256 _id) public;
   function cancelTask(uint256 _id) public;
-  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256);
+  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256, uint256[]);
   function getTaskRole(uint256 _id, uint8 _idx) public view returns (address, bool, uint8);
-  function getTaskSkill(uint256 _id, uint256 _idx) public view returns (uint256);
-  function getTaskDomain(uint256 _id, uint256 _idx) public view returns (uint256);
-
+  
   // ColonyFunding.sol
   function getFeeInverse() public pure returns (uint256);
   function getRewardInverse() public pure returns (uint256);

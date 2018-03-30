@@ -171,8 +171,8 @@ contract("Colony", () => {
       const skillCount = await colonyNetwork.getSkillCount.call();
       await colony.addDomain(skillCount.toNumber());
       await colony.makeTask(SPECIFICATION_HASH, 2);
-      const taskDomain = await colony.getTaskDomain.call(1, 0);
-      assert.equal(taskDomain.toNumber(), 2);
+      const task = await colony.getTask.call(1);
+      assert.equal(task[8].toNumber(), 2);
     });
 
     it("should log a TaskAdded event", async () => {
@@ -404,7 +404,7 @@ contract("Colony", () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
       const task = await colony.getTask.call(taskId);
-      const domainId = await colony.getTaskDomain.call(taskId, 0);
+      const domainId = task[8].toNumber();
       const domain = await colony.getDomain.call(domainId);
       const taskPotId = task[6];
       const domainPotId = domain[1];

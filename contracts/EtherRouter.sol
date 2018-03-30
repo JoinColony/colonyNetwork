@@ -45,23 +45,17 @@ contract EtherRouter is DSAuth {
     // If we wish to have such a fallback function for a Colony, it could be in a separate
     // contract.
 
-    uint r;
-
     // Get routing information for the called function
-    var (destination, outsize) = resolver.lookup(msg.sig);
+    address destination = resolver.lookup(msg.sig);
 
     // Make the call
     assembly {
       calldatacopy(mload(0x40), 0, calldatasize)
-      r := delegatecall(sub(gas, 700), destination, mload(0x40), calldatasize, mload(0x40), outsize)
-    }
-
-    // Check the call is successful
-    require(r == 1);
-
-    // Pass on the return value
-    assembly {
-      return(mload(0x40), outsize)
+      let result := delegatecall(sub(gas, 700), destination, mload(0x40), calldatasize, mload(0x40), 0)
+      returndatacopy(mload(0x40), 0, returndatasize)
+      switch result
+      case 1 { return(mload(0x40), returndatasize) }
+      default { revert(mload(0x40), returndatasize) }
     }
   }
 

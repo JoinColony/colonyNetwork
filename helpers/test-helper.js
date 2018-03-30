@@ -76,13 +76,13 @@ async function checkError(promise, isAssert) {
   //
   // Obviously, we want our tests to pass on all, so this is a bit of a problem.
   // We have to have this special function that we use to catch the error.
-  let txHash;
+  let tx;
   let receipt;
   try {
-    txHash = await promise;
-    receipt = await web3GetTransactionReceipt(txHash);
+    tx = await promise;
+    receipt = await web3GetTransactionReceipt(tx);
   } catch (err) {
-    ({ txHash, receipt } = err);
+    ({ tx, receipt } = err);
   }
 
   // Check the receipt `status` to ensure transaction failed.
@@ -90,7 +90,7 @@ async function checkError(promise, isAssert) {
 
   if (isAssert) {
     const network = await web3GetNetwork();
-    const transaction = await web3GetTransaction(txHash);
+    const transaction = await web3GetTransaction(tx);
     if (network !== "coverage") {
       // When a transaction `throws`, all the gas sent is spent. So let's check that we spent all the gas that we sent.
       // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.

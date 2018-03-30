@@ -383,8 +383,8 @@ contract("Common Colony", () => {
       await colony.addDomain(3);
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskDomain(1, 2);
-      const taskDomain = await colony.getTaskDomain.call(1, 0);
-      assert.equal(taskDomain.toNumber(), 2);
+      const task = await colony.getTask.call(1);
+      assert.equal(task[8].toNumber(), 2);
     });
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
@@ -395,8 +395,8 @@ contract("Common Colony", () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await checkErrorRevert(colony.setTaskDomain(1, 20));
 
-      const taskDomain = await colony.getTaskDomain.call(1, 0);
-      assert.equal(taskDomain.toNumber(), 1);
+      const task = await colony.getTask.call(1);
+      assert.equal(task[8].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on finalized task", async () => {
@@ -412,8 +412,8 @@ contract("Common Colony", () => {
 
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskSkill(1, 5);
-      const taskSkill = await colony.getTaskSkill.call(1, 0);
-      assert.equal(taskSkill.toNumber(), 5);
+      const task = await colony.getTask.call(1);
+      assert.equal(task[9][0].toNumber(), 5);
     });
 
     it("should NOT be able to set global skill on nonexistent task", async () => {
@@ -428,8 +428,8 @@ contract("Common Colony", () => {
       await colony.finalizeTask(taskId);
       await checkErrorRevert(colony.setTaskSkill(taskId, 5));
 
-      const taskSkill = await colony.getTaskSkill.call(taskId, 0);
-      assert.equal(taskSkill.toNumber(), 1);
+      const task = await colony.getTask.call(taskId);
+      assert.equal(task[9][0].toNumber(), 1);
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {

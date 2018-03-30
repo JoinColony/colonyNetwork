@@ -30,23 +30,13 @@ contract ColonyStorage is DSAuth {
   // and add it to IColony.sol
 
   address resolver;
-
-  mapping (uint256 => Transaction) transactions;
-  // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping (bytes4 => uint8[2]) reviewers;
-  // Maps transactions to roles and whether they've confirmed the transaction
-  mapping (uint256 => mapping (uint256 => bool)) confirmations;
-  uint256 transactionCount;
-  uint256 taskChangeNonce;
-
-  struct Transaction {
-    bytes data;
-    uint256 value;
-    bool executed;
-  }
-
   address colonyNetworkAddress;
   ERC20Extended token;
+
+  // Mapping function signature to 2 task roles whose approval is needed to execute
+  mapping (bytes4 => uint8[2]) reviewers;
+  uint256 taskChangeNonce;
+  
   mapping (uint256 => Task) tasks;
 
   // Pots can be tied to tasks or domains, so giving them their own mapping.
@@ -81,7 +71,7 @@ contract ColonyStorage is DSAuth {
     uint256 payoutsWeCannotMake;
     uint256 potId;
     uint256 deliverableTimestamp;
-    uint256[] domains;
+    uint256 domainId;
     uint256[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source

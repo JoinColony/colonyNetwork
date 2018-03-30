@@ -43,9 +43,8 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
       if (fType === "function") {
         // Gets the types of the parameters, which is all we care about for function signatures.
         const fInputs = value.inputs.map(parameter => parameter.type);
-        const fOutputSize = value.outputs.length * 32;
-        // Record function name and how much data is returned
-        functionsToResolve[fName] = { inputs: fInputs, outputSize: fOutputSize, definedIn: "" };
+        // Record function name
+        functionsToResolve[fName] = { inputs: fInputs, definedIn: "" };
       }
     }
     return functionsToResolve;
@@ -54,12 +53,10 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
   const promises = Object.keys(functionsToResolve).map(async fName => {
     const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
     const address = functionsToResolve[fName].definedIn;
-    const { outputSize } = functionsToResolve[fName];
     const sigHash = web3Utils.soliditySha3(sig).substr(0, 10);
-    await resolver.register(sig, address, outputSize);
-    const response = await resolver.lookup.call(sigHash);
-    assert.equal(response[0], address, `${sig} has not been registered correctly. Is it defined?`);
-    assert.equal(response[1], outputSize, `${sig} has the wrong output size.`);
+    await resolver.register(sig, address);
+    const destination = await resolver.lookup.call(sigHash);
+    assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
   });
   return Promise.all(promises);
 }
