@@ -61,6 +61,20 @@ contract Colony is ColonyStorage {
     });
   }
 
+  function bootstrapColony(address[] _users, int[] _amounts) public
+  auth
+  isInBootstrapPhase
+  {
+    require(_users.length == _amounts.length);
+
+    for (uint i = 0; i < _users.length; i++) {
+      require(_amounts[i] >= 0);
+
+      token.transfer(_users[i], uint(_amounts[i]));
+      IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
+    }
+  }
+
   function mintTokens(uint _wad) public
   auth
   {

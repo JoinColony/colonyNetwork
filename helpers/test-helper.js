@@ -166,7 +166,7 @@ export async function forwardTime(seconds, test) {
   if (client.indexOf("TestRPC") === -1) {
     test.skip();
   } else {
-    console.log(`Forwarding time with ${seconds}s ...`);
+    // console.log(`Forwarding time with ${seconds}s ...`);
     await web3.currentProvider.send({
       jsonrpc: "2.0",
       method: "evm_increaseTime",
