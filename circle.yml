@@ -43,3 +43,4 @@ test:
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload
+    - mv ./coverage/ $CIRCLE_ARTIFACTS/coverage/
