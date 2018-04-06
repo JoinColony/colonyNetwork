@@ -44,8 +44,9 @@ contract IColony {
   function version() public pure returns (uint256);
 
   /// @notice Set the colony token. Secured function to authorised members
-  /// @param _token Address of the token contract to use. Note that "ownership" of the token
-  /// also has to be transferred to the colony after this call
+  /// @param _token Address of the token contract to use. 
+  /// Note that if the `mint` functionality is to be controlled through the colony,
+  /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
 
   /// @notice Get the colony token
@@ -84,7 +85,7 @@ contract IColony {
   /// @param _parentSkillId Id of the local skill under which the new skill will be added
   function addDomain(uint256 _parentSkillId) public;
 
-  /// @notice Get the domain respective local skill and funding pot id
+  /// @notice Get the domain's local skill and funding pot id
   /// @param _id Id of the domain which details to get
   /// @return The domain "local" skill id
   /// @return The domain's funding pot id

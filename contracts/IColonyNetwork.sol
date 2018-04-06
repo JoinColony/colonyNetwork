@@ -92,7 +92,8 @@ contract IColonyNetwork {
   /// Note that the token ownership (if there is one) has to be transferred to the newly created colony
   /// @param _name A unique key for the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
-  /// which additionally has to support `mint functionality as defined in `ERC20Extended` 
+  /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
+  /// Support for `mint` in mandatory only for the Common Colony Token
   function createColony(bytes32 _name, address _tokenAddress) public;
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
@@ -190,7 +191,7 @@ contract IColonyNetwork {
   /// @return 
   function getReputationRootHashNNodes() public view returns (uint256);
 
-  /// @notice 
-  /// @param _token
+  /// @notice Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network
+  /// @param _token Address of the token held by the network to be auctioned
   function startTokenAuction(address _token) public;
 }
