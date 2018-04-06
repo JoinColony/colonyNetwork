@@ -27,15 +27,11 @@ import "./ColonyStorage.sol";
 
 contract ColonyFunding is ColonyStorage, DSMath {
   function getFeeInverse() public pure returns (uint256) {
-    // Return 1 / the fee to pay to the network.
-    // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: refer to ColonyNetwork
     return 100;
   }
 
   function getRewardInverse() public pure returns (uint256) {
-    // Return 1 / the reward to pay out from revenue.
-    // e.g. if the fee is 1% (or 0.01), return 100
     // TODO: Make settable by colony
     return 100;
   }
@@ -141,8 +137,8 @@ contract ColonyFunding is ColonyStorage, DSMath {
     pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
   }
 
-  function getNonRewardPotsTotal(address a) public view returns (uint256) {
-    return nonRewardPotsTotal[a];
+  function getNonRewardPotsTotal(address _token) public view returns (uint256) {
+    return nonRewardPotsTotal[_token];
   }
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
