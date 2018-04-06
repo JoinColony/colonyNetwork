@@ -25,13 +25,21 @@ pragma experimental "ABIEncoderV2";
 contract IColonyNetwork {
 
   /// @notice Event logged when a new colony is added
+  /// @dev Emitted from `IColonyNetwork.createColony` function
   /// @param id The colony id in the network
   event ColonyAdded(uint256 indexed id);
 
   /// @notice Event logged when a new skill is added
+  /// @dev Emitted from `IColonyNetwork.addSkill` function
   /// @param skillId The skill id
   /// @param parentSkillId The id of the parent skill under which this new skill is added 
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
+
+  /// @notice Event logged when a new auction is created and started
+  /// @dev Emitted from `IColonyNetwork.startTokenAuction` function
+  /// @param auction Address of the created auction contract
+  /// @param token Address of the token for auction
+  /// @param quantity Quantity of `token` to auction
   event AuctionCreated(address auction, address token, uint256 quantity);
 
   /// @notice Get the colony address by its `key`
@@ -66,7 +74,7 @@ contract IColonyNetwork {
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or 
   /// @param _user The address of the user for the reputation update
-  /// @param _amount The amount of tokens for the reputation update
+  /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
   /// @param _skillId The skill for the reputation update
   function appendReputationUpdateLog(address _user, int256 _amount, uint256 _skillId) public;
 
@@ -84,9 +92,10 @@ contract IColonyNetwork {
   /// Note that the token ownership (if there is one) has to be transferred to the newly created colony
   /// @param _name A unique key for the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
+  /// which additionally has to support `mint functionality as defined in `ERC20Extended` 
   function createColony(bytes32 _name, address _tokenAddress) public;
 
-  /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract
+  /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
   /// @param _version The new Colony contract version
   /// @param _resolver Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
   function addColonyVersion(uint256 _version, address _resolver) public;
@@ -109,6 +118,7 @@ contract IColonyNetwork {
   /// @notice Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_skillId`
   /// @param _skillId Id of the skill
   /// @param _parentSkillIndex Index of the `skill.parents` array to get
+  /// Note that not all parent skill ids are stored here. See `Skill.parents` member for definition on which parents are stored
   /// @return Skill Id of the requested parent skill
   function getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex) public view returns (uint256);
 
@@ -146,7 +156,7 @@ contract IColonyNetwork {
   function deposit(uint256 _amount) public;
   
   /// @notice Allow a user who has staked CLNY tokens to withdraw them
-  /// @dev Errors if the user has submitted a new reputation root hash in the current mining cycle
+  /// @dev Errors if the user has submitted a new reputation root hash or backed one someone else submitted in the current mining cycle
   /// @param amount CLNY tokens amount to withdraw
   function withdraw(uint256 amount) public;
 
@@ -158,7 +168,7 @@ contract IColonyNetwork {
   /// @notice Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
   /// @param newHash The reputation root hash
   /// @param newNNodes The updated nodes count value
-  /// @param stakers Array of the current reputation mining cycle stakers 
+  /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
   function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public;
 
   /// @notice Starts a new Reputation Mining cycle
@@ -179,5 +189,8 @@ contract IColonyNetwork {
   /// @notice
   /// @return 
   function getReputationRootHashNNodes() public view returns (uint256);
+
+  /// @notice 
+  /// @param _token
   function startTokenAuction(address _token) public;
 }

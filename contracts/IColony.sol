@@ -43,7 +43,7 @@ contract IColony {
   /// @return Version number
   function version() public pure returns (uint256);
 
-  /// @notice Set the colony token
+  /// @notice Set the colony token. Secured function to authorised members
   /// @param _token Address of the token contract to use. Note that "ownership" of the token
   /// also has to be transferred to the colony after this call
   function setToken(address _token) public;
@@ -57,13 +57,13 @@ contract IColony {
   function initialiseColony(address _network) public;
 
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users`
-  /// This reputation is assigned in the colony-wide domain
+  /// This reputation is assigned in the colony-wide domain. Secured function to authorised members
   /// @dev Only allowed to be called when `taskCount` is 0 by authorized addresses
   /// @param _users Array of address to bootstrap with reputation
   /// @param _amount Amount of reputation/tokens for every address
   function bootstrapColony(address[] _users, int[] _amount) public;
 
-  /// @notice Mint `_wad` amount of colony tokens
+  /// @notice Mint `_wad` amount of colony tokens. Secured function to authorised members
   /// @param _wad Amount to mint
   function mintTokens(uint256 _wad) public;
 
@@ -95,7 +95,7 @@ contract IColony {
   function getDomainCount() public view returns (uint256);
 
   // Implemented in ColonyTask.sol
-  /// @notice Make a new task in the colony
+  /// @notice Make a new task in the colony. Secured function to authorised members
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
   function makeTask(bytes32 _specificationHash, uint256 _domainId) public;
@@ -115,7 +115,8 @@ contract IColony {
   /// @param _sigV recovery id
   /// @param _sigR r output of the ECDSA signature of the transaction 
   /// @param _sigS s output of the ECDSA signature of the transaction 
-  /// @param _value The transaction value. Currently we only accept 0 value transactions but this is kept as a future option
+  /// @param _value The transaction value, i.e. number of wei to be sent when the transaction is executed 
+  /// Currently we only accept 0 value transactions but this is kept as a future option
   /// @param _data The transaction data
   function executeTaskChange(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint256 _value, bytes _data) public;
   
@@ -126,6 +127,7 @@ contract IColony {
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _ratingSecret `keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50)
+  /// Can be generated via `IColony.generateSecret` helper function
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
 
   /// @notice Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role` 
@@ -170,7 +172,7 @@ contract IColony {
 
   /// @notice Set the skill for task `_id`
   /// @dev Currently we only allow one skill per task although we have provisioned for an array of skills in `Task` struct
-  /// Allowed before a task is finalized.
+  /// Allowed before a task is finalized
   /// @param _id Id of the task
   /// @param _skillId Id of the skill which has to be a global skill
   function setTaskSkill(uint256 _id, uint256 _skillId) public;
@@ -181,15 +183,14 @@ contract IColony {
   function setTaskDomain(uint256 _id, uint256 _domainId) public;
 
   /// @notice Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb
-  /// Allowed before a task is finalized.
+  /// Allowed before a task is finalized
   /// @param _id Id of the task
   /// @param _specificationHash Unique hash of the task brief in ddb
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public;
 
-  /// @notice Set the due date on task `_id`. Allowed before a task is finalized.
-  
+  /// @notice Set the due date on task `_id`. Allowed before a task is finalized
   /// @param _id Id of the task
-  /// @param _dueDate Due date
+  /// @param _dueDate Due date as seconds since unix epoch
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public;
 
   /// @notice Submit the task deliverable, i.e. the output of the work performed for task `_id`
@@ -200,12 +201,12 @@ contract IColony {
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
 
   /// @notice Called after task work rating is complete which closes the task and logs the respective reputation log updates
-  /// Allowed to be called once per task.
+  /// Allowed to be called once per task. Secured function to authorised members
   /// @dev Set the `task.finalized` property to true
   /// @param _id Id of the task
   function finalizeTask(uint256 _id) public;
 
-  /// @notice Cancel a task at any point before it is finalized. 
+  /// @notice Cancel a task at any point before it is finalized. Secured function to authorised members
   /// Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`
   /// @dev Set the `task.cancelled` property to true
   /// @param _id Id of the task
@@ -281,18 +282,20 @@ contract IColony {
   /// @return Funding pot balance
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256);
   
-  /// @notice Moves a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`
+  /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`. 
+  /// Secured function to authorised members
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
   /// @param _amount Amount of funds
   /// @param _token Address of the token, `0x0` value indicates Ether
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public;
   
-  /// @notice 
+  /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
+  /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimColonyFunds(address _token) public;
   
-  /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the network as fees (network reward)
+  /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Total amount of tokens in pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) public view returns (uint256);
