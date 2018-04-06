@@ -360,7 +360,7 @@ class ReputationMiningClient {
     // console.log('implied jrh from irh2', impliedRoot4);
     // console.log('about to respondToChallengeReal')
 
-    return repCycle.respondToChallengeReal(
+    return repCycle.respondToChallenge(
       [
         round.toString(),
         index.toString(),

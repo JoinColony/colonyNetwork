@@ -135,23 +135,6 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
   }
 
-  function respondToChallenge(uint256 round, uint256 idx) public {
-    // TODO: Check challenge response is valid, relating to current challenge
-    // TODO: Check challenge response relates to this hash
-
-    // Assuming that the challenge response is correct...
-    uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
-
-    disputeRounds[round][idx].lastResponseTimestamp = now;
-    disputeRounds[round][idx].challengeStepCompleted += 1;
-    // If our opponent responded to this challenge before we did, we should
-    // reset their 'last response' time to now, as they aren't able to respond
-    // to the next challenge before they know what it is!
-    if (disputeRounds[round][idx].challengeStepCompleted == disputeRounds[round][opponentIdx].challengeStepCompleted) {
-      disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
-    }
-  }
-
   modifier challengeOpen(uint256 round, uint256 idx){
     // TODO: More checks that this is an appropriate time to respondToChallenge
     require(disputeRounds[round][idx].lowerBound==disputeRounds[round][idx].upperBound);
@@ -168,7 +151,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   uint constant __PREVIOUS_NEW_REPUTATION_BRANCH_MASK__ = 7;
   uint constant __REQUIRE_REPUTATION_CHECK__ = 8;
 
-  function respondToChallengeReal(
+  function respondToChallenge(
     uint256[9] u, //An array of 9 UINT Params, ordered as given above.
     bytes _reputationKey,
     bytes32[] reputationSiblings,
@@ -451,6 +434,10 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     return verifyProof(jrh, nUpdatesBytes, jhLeafValue, branchMask2, siblings2);
   }
 
+  function getEntryHash(address submitter, uint256 entry, bytes32 newHash) public pure returns (bytes32) {
+    return keccak256(submitter, entry, newHash);
+  }
+
   function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry) public {
     //Check the ticket is an eligible one for them to claim
     require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
@@ -468,7 +455,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     if (now-reputationMiningWindowOpenTimestamp <= 3600) {
       uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
       uint256 target = (now - reputationMiningWindowOpenTimestamp ) * x;
-      require(uint256(keccak256(msg.sender, entry, newHash)) < target);
+      require(uint256(getEntryHash(msg.sender, entry, newHash)) < target);
     }
 
     // We only allow this submission if there's still room

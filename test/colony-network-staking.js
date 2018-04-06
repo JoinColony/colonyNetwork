@@ -377,6 +377,28 @@ contract("ColonyNetworkStaking", accounts => {
       assert(nSubmittedHashes.equals(0));
     });
 
+    it("should allow someone to submit a new reputation hash if they are eligible inside the window", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      // Find an entry that will be eligible in the last 60 seconds of the window
+      let i;
+      // 1 will almost always be okay here. But there's a 60/3600 chance that it wouldn't be.
+      // We don't want this test to be flickery, so let's make sure 1 is going to be okay or use a higher
+      // number if not. There is a 1 in 10**3555 chance of this test failing if this is the only thing that
+      // can be wrong, so there's a much better chance that I've written this test poorly if it starts
+      // failing - don't just dismiss it!
+      for (i = 1; i < 1000; i += 1) {
+        const hash = await repCycle.getEntryHash(MAIN_ACCOUNT, i, "0x12345678"); // eslint-disable-line no-await-in-loop
+        if (parseInt(hash.substring(2, 4), 16) < 0xfb) {
+          break;
+        }
+      }
+      await forwardTime(3540, this);
+      await repCycle.submitNewHash("0x12345678", 10, i);
+    });
+
     it("should punish all stakers if they misbehave (and report a bad hash)", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
@@ -827,6 +849,85 @@ contract("ColonyNetworkStaking", accounts => {
       // Cleanup after test
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2);
       await repCycle.confirmNewHash(2);
+    });
+
+    it("should fail if one tries to invalidate a hash that has completed more challenge rounds than its opponent", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.submitJustificationRootHash();
+      await forwardTime(600, this);
+
+      await checkErrorRevert(repCycle.invalidateHash(0, 0));
+      // Cleanup after test
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should fail to respondToChallenge if any part of the key is wrong", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      await forwardTime(3600, this);
+      const repCycle = ReputationMiningCycle.at(addr);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+
+      // Get the log entry we're arguing over.
+      const submission = await repCycle.disputeRounds(0, 0);
+      const firstDisagreeIdx = submission[8];
+
+      const logEntry = await colonyNetwork.getReputationUpdateLogEntry.call(firstDisagreeIdx - 1, false);
+      const colonyAddress = logEntry[3].slice(2);
+      const userAddress = logEntry[0].slice(2);
+      const skillId = logEntry[2];
+
+      const wrongColonyKey = `0x${new BN(0, 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
+        16,
+        40
+      )}`;
+      const wrongReputationKey = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(0).toString(16, 64)}${new BN(userAddress, 16).toString(
+        16,
+        40
+      )}`;
+      const wrongUserKey = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(0, 16).toString(
+        16,
+        40
+      )}`;
+
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], wrongColonyKey, [], 0x0, [], 0x0, [], 0, 0, []));
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], wrongReputationKey, [], 0x0, [], 0x0, [], 0, 0, []));
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], wrongUserKey, [], 0x0, [], 0x0, [], 0, 0, []));
+
+      await forwardTime(600, this);
+      await goodClient.respondToChallenge();
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
     });
 
     it("should keep reputation updates that occur during one update window for the next window", async () => {
@@ -1282,6 +1383,9 @@ contract("ColonyNetworkStaking", accounts => {
       // than the other, so when we call invalidate hash, only one will be eliminated.
 
       await forwardTime(600, this);
+      // Check that we can't invalidate the one that proved a higher reputation already existed
+      await checkErrorRevert(repCycle.invalidateHash(0, 0));
+
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
       const confirmedHash = await colonyNetwork.getReputationRootHash();
