@@ -10,7 +10,7 @@ import {Data} from "./Data.sol";
  *
  * More info at: https://github.com/chriseth/patricia-trie
  */
-contract PatriciaTreeFace {
+contract IPatriciaTree {
   function getRootHash() public view returns (bytes32);
   function getRootEdge() public view returns (Data.Edge e);
   function getNode(bytes32 hash) public view returns (Data.Node n);

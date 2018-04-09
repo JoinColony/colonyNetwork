@@ -4,7 +4,7 @@ pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
 import {Bits} from "./Bits.sol";
-import {PatriciaTreeFace} from "./PatriciaTreeFace.sol";
+import "./IPatriciaTree.sol";
 
 
 /*
@@ -12,7 +12,7 @@ import {PatriciaTreeFace} from "./PatriciaTreeFace.sol";
  *
  * More info at: https://github.com/chriseth/patricia-trie
  */
-contract PatriciaTree is PatriciaTreeFace {
+contract PatriciaTree is IPatriciaTree {
 
   using Data for Data.Tree;
   using Data for Data.Node;
