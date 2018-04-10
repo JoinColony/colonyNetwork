@@ -12,7 +12,6 @@ import "./IPatriciaTree.sol";
 contract PatriciaTree is IPatriciaTree {
 
   using Data for Data.Tree;
-  using Data for Data.Node;
   using Data for Data.Edge;
   using Data for Data.Label;
   using Bits for uint;

@@ -26,8 +26,8 @@ library Data {
 
   struct Tree {
     bytes32 root;
-    Data.Edge rootEdge;
-    mapping(bytes32 => Data.Node) nodes;
+    Edge rootEdge;
+    mapping(bytes32 => Node) nodes;
   }
 
   // Returns a label containing the longest common prefix of `self` and `label`,
@@ -61,11 +61,11 @@ library Data {
     return (uint(self.data >> 255), Label(self.data << 1, self.length - 1));
   }
 
-  function edgeHash(Data.Edge memory self) internal pure returns (bytes32) {
+  function edgeHash(Edge memory self) internal pure returns (bytes32) {
     return keccak256(self.node, self.label.length, self.label.data);
   }
 
-  function replaceNode(Data.Tree storage self, bytes32 oldHash, Data.Node memory n) internal returns (bytes32 newHash) {
+  function replaceNode(Tree storage self, bytes32 oldHash, Node memory n) internal returns (bytes32 newHash) {
     delete self.nodes[oldHash];
     return insertNode(self, n);
   }
@@ -112,7 +112,7 @@ library Data {
     return Edge(newNodeHash, prefix);
   }
 
-  function insertNode(Data.Tree storage tree, Data.Node memory n) private returns (bytes32 newHash) {
+  function insertNode(Tree storage tree, Node memory n) private returns (bytes32 newHash) {
     bytes32 h = hash(n);
     tree.nodes[h].children[0] = n.children[0];
     tree.nodes[h].children[1] = n.children[1];
@@ -120,7 +120,7 @@ library Data {
   }
 
   // Returns the hash of the encoding of a node.
-  function hash(Data.Node memory self) private pure returns (bytes32) {
+  function hash(Node memory self) private pure returns (bytes32) {
     return keccak256(edgeHash(self.children[0]), edgeHash(self.children[1]));
   }
 
