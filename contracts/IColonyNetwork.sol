@@ -171,7 +171,8 @@ contract IColonyNetwork {
   /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
   function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public;
 
-  /// @notice Starts a new Reputation Mining cycle
+  /// @notice Starts a new Reputation Mining cycle. Explicitely called only the first time,
+  /// subsequently called from within `setReputationRootHash`
   function startNextCycle() public;
 
   /// @notice 
