@@ -1,4 +1,5 @@
 import BN from "bn.js";
+import web3Utils from "web3-utils";
 
 const ganache = require("ganache-core");
 const contract = require("truffle-contract");
@@ -410,13 +411,13 @@ class ReputationMiningClient {
   async insert(_colonyAddress, skillId, _userAddress, reputationScore, index) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
-    // TODO fromAscii is deprecated - use asciiToHex once we upgrade web3.
-    let isAddress = this.web3.isAddress(colonyAddress);
+
+    let isAddress = web3Utils.isAddress(colonyAddress);
     // TODO should we return errors here?
     if (!isAddress) {
       return false;
     }
-    isAddress = this.web3.isAddress(userAddress);
+    isAddress = web3Utils.isAddress(userAddress);
     if (!isAddress) {
       return false;
     }
