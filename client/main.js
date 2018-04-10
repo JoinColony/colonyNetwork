@@ -468,10 +468,6 @@ class ReputationMiningClient {
     // return this.reputationTree.root();
   }
 
-  async getRootEdgeLabelData() {
-    return this.reputationTree.getRootEdgeLabelData();
-  }
-
   async getProof(key) {
     const res = await this.reputationTree.getProof(key);
     return res;

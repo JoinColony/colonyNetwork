@@ -32,11 +32,6 @@ contract PatriciaTree is IPatriciaTree {
     e = tree.rootEdge;
   }
 
-  // Get the root edge node.
-  function getRootEdgeLabelData() public view returns (bytes32) {
-    return tree.rootEdge.label.data;
-  }
-
   // Get the node with the given key. The key needs to be
   // the keccak256 hash of the actual key.
   function getNode(bytes32 hash) public view returns (Data.Node n) {
