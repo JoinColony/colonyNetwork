@@ -54,42 +54,6 @@ library Data {
     suffix.data = self.data << pos;
   }
 
-  // Returns the length of the longest common prefix of the two labels.
-  /*
-  function commonPrefix(Label memory self, Label memory other) internal pure returns (uint prefix) {
-    uint length = self.length < other.length ? self.length : other.length;
-    // TODO: This could actually use a "highestBitSet" helper
-    uint diff = uint(self.data ^ other.data);
-    uint mask = uint(1) << 255;
-    for (; prefix < length; prefix++) {
-      if ((mask & diff) != 0) {
-        break;
-      }
-      diff += diff;
-    }
-  }
-  */
-
-  function commonPrefix(Label memory self, Label memory other) internal pure returns (uint prefix) {
-    uint length = self.length < other.length ? self.length : other.length;
-    if (length == 0) {
-      return 0;
-    }
-    uint diff = uint(self.data ^ other.data) & ~uint(0) << 256 - length; // TODO Mask should not be needed.
-    if (diff == 0) {
-      return length;
-    }
-    return 255 - Bits.highestBitSet(diff);
-  }
-
-  // Returns the result of removing a prefix of length `prefix` bits from the
-  // given label (shifting its data to the left).
-  function removePrefix(Label memory self, uint prefix) internal pure returns (Label memory r) {
-    require(prefix <= self.length);
-    r.length = self.length - prefix;
-    r.data = self.data << prefix;
-  }
-
   // Removes the first bit from a label and returns the bit and a
   // label containing the rest of the label (shifted to the left).
   function chopFirstBit(Label memory self) internal pure returns (uint firstBit, Label memory tail) {
@@ -101,24 +65,28 @@ library Data {
     return keccak256(self.node, self.label.length, self.label.data);
   }
 
-  // Returns the hash of the encoding of a node.
-  function hash(Data.Node memory self) internal pure returns (bytes32) {
-    return keccak256(edgeHash(self.children[0]), edgeHash(self.children[1]));
-  }
-
-  function insertNode(Data.Tree storage tree, Data.Node memory n) internal returns (bytes32 newHash) {
-    bytes32 h = hash(n);
-    tree.nodes[h].children[0] = n.children[0];
-    tree.nodes[h].children[1] = n.children[1];
-    return h;
-  }
-
   function replaceNode(Data.Tree storage self, bytes32 oldHash, Data.Node memory n) internal returns (bytes32 newHash) {
     delete self.nodes[oldHash];
     return insertNode(self, n);
   }
 
-  function insertAtEdge(Tree storage self, Edge e, Label key, bytes32 value) internal returns (Edge) {
+  function insert(Tree storage self, bytes key, bytes value) internal {
+    Label memory k = Label(keccak256(key), 256);
+    bytes32 valueHash = keccak256(value);
+    Edge memory e;
+    if (self.root == 0) {
+      // Empty Trie
+      e.label = k;
+      e.node = valueHash;
+    } else {
+      e = insertAtEdge(self, self.rootEdge, k, valueHash);
+    }
+    self.root = edgeHash(e);
+    self.rootEdge = e;
+  }
+
+  // Private functions
+  function insertAtEdge(Tree storage self, Edge e, Label key, bytes32 value) private returns (Edge) {
     assert(key.length >= e.label.length);
     var (prefix, suffix) = splitCommonPrefix(key, e.label);
     bytes32 newNodeHash;
@@ -144,18 +112,35 @@ library Data {
     return Edge(newNodeHash, prefix);
   }
 
-  function insert(Tree storage self, bytes key, bytes value) internal {
-    Label memory k = Label(keccak256(key), 256);
-    bytes32 valueHash = keccak256(value);
-    Edge memory e;
-    if (self.root == 0) {
-      // Empty Trie
-      e.label = k;
-      e.node = valueHash;
-    } else {
-      e = insertAtEdge(self, self.rootEdge, k, valueHash);
+  function insertNode(Data.Tree storage tree, Data.Node memory n) private returns (bytes32 newHash) {
+    bytes32 h = hash(n);
+    tree.nodes[h].children[0] = n.children[0];
+    tree.nodes[h].children[1] = n.children[1];
+    return h;
+  }
+
+  // Returns the hash of the encoding of a node.
+  function hash(Data.Node memory self) private pure returns (bytes32) {
+    return keccak256(edgeHash(self.children[0]), edgeHash(self.children[1]));
+  }
+
+  // Returns the result of removing a prefix of length `prefix` bits from the
+  // given label (shifting its data to the left).
+  function removePrefix(Label memory self, uint prefix) private pure returns (Label memory r) {
+    require(prefix <= self.length);
+    r.length = self.length - prefix;
+    r.data = self.data << prefix;
+  }
+
+  function commonPrefix(Label memory self, Label memory other) private pure returns (uint prefix) {
+    uint length = self.length < other.length ? self.length : other.length;
+    if (length == 0) {
+      return 0;
     }
-    self.root = edgeHash(e);
-    self.rootEdge = e;
+    uint diff = uint(self.data ^ other.data) & ~uint(0) << 256 - length; // TODO Mask should not be needed.
+    if (diff == 0) {
+      return length;
+    }
+    return 255 - Bits.highestBitSet(diff);
   }
 }
