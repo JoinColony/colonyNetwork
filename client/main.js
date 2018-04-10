@@ -183,7 +183,6 @@ class ReputationMiningClient {
             newestReputationSiblings
           ] = await this.getNewestReputationInformation(i); // eslint-disable-line no-await-in-loop
         }
-        // console.log('done');
         // console.log(jhLeafValue);
         await this.justificationTree.insert(`0x${i.toString(16, 64)}`, jhLeafValue, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
 
@@ -294,7 +293,7 @@ class ReputationMiningClient {
     );
     const intermediateReputationHash = this.justificationHashes[`0x${targetNode.toString(16, 64)}`].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(`0x${targetNode.toString(16, 64)}`);
-    // const impliedRoot = await repCycle.getImpliedRoot(`0x${targetNode.toString(16,64)}`, intermediateReputationHash, branchMask, siblings);
+
     await repCycle.binarySearchForChallenge(round.toString(), index.toString(), intermediateReputationHash, branchMask, siblings, {
       from: this.minerAddress,
       gas: 1000000
@@ -306,7 +305,6 @@ class ReputationMiningClient {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
     const repCycle = ReputationMiningCycle.at(addr);
-    // TODO: REmove 'real'
     const submission = await repCycle.disputeRounds(round.toString(), index.toString());
     // console.log(submission);
     const firstDisagreeIdx = new BN(submission[8].toString());
@@ -384,7 +382,6 @@ class ReputationMiningClient {
       this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationSiblings,
       { from: this.minerAddress, gas: 4000000 }
     );
-    // console.log('respondToChallengeReal done')
   }
 
   // async update(colonyAddress, skillId, userAddress, reputationScore){
@@ -404,10 +401,6 @@ class ReputationMiningClient {
     return `0x${new BN(reputationState.toString(), 16).toString(16, 64)}${new BN(nNodes.toString()).toString(16, 64)}`;
   }
 
-  // function getNode(bytes32 hash) public view returns (Data.Node n);
-  // function getProof(bytes key) public view returns (uint branchMask, bytes32[] _siblings);
-  // function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool);
-  // function insert(bytes key, bytes value) public;
   async insert(_colonyAddress, skillId, _userAddress, reputationScore, index) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
@@ -466,7 +459,6 @@ class ReputationMiningClient {
 
   async getRootHash() {
     return this.reputationTree.getRootHash();
-    // return this.reputationTree.root();
   }
 
   async getProof(key) {
