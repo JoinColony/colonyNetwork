@@ -7,11 +7,8 @@ import {Bits} from "./Bits.sol";
 import "./IPatriciaTree.sol";
 
 
-/*
- * Patricia tree implementation.
- *
- * More info at: https://github.com/chriseth/patricia-trie
- */
+/// @title Patricia tree implementation
+/// @notice More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTree is IPatriciaTree {
 
   using Data for Data.Tree;
