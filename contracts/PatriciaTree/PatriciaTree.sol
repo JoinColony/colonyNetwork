@@ -19,27 +19,18 @@ contract PatriciaTree is IPatriciaTree {
 
   Data.Tree internal tree;
 
-  // Get the root hash.
   function getRootHash() public view returns (bytes32) {
     return tree.root;
   }
 
-  // Get the root edge.
   function getRootEdge() public view returns (Data.Edge e) {
     e = tree.rootEdge;
   }
 
-  // Get the node with the given key. The key needs to be
-  // the keccak256 hash of the actual key.
   function getNode(bytes32 hash) public view returns (Data.Node n) {
     n = tree.nodes[hash];
   }
 
-  // Returns the Merkle-proof for the given key
-  // Proof format should be:
-  // - uint branchMask - bitmask with high bits at the positions in the key
-  //          where we have branch nodes (bit in key denotes direction)
-  // - bytes32[] _siblings - hashes of sibling edges
   function getProof(bytes key) public view returns (uint branchMask, bytes32[] _siblings) {
     require(tree.root != 0);
     Data.Label memory k = Data.Label(keccak256(key), 256);
@@ -70,6 +61,12 @@ contract PatriciaTree is IPatriciaTree {
     }
   }
 
+  function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool) {
+    bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
+    require(rootHash == impliedHash);
+    return true;
+  }
+
   function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bytes32) { // solium-disable-line security/no-assign-params
     Data.Label memory k = Data.Label(keccak256(key), 256);
     Data.Edge memory e;
@@ -87,12 +84,6 @@ contract PatriciaTree is IPatriciaTree {
     }
     e.label = k;
     return e.edgeHash();
-  }
-
-  function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool) {
-    bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
-    require(rootHash == impliedHash);
-    return true;
   }
 
   function insert(bytes key, bytes value) public {
