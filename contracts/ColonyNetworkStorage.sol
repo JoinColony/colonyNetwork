@@ -27,8 +27,11 @@ import "./Token.sol";
 
 
 contract ColonyNetworkStorage is DSAuth {
+  // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver;
+  // Number of colonies in the network
   uint256 colonyCount;
+  // uint256 version number of the latest deployed Colony contract, used in creating new colonies
   uint256 currentColonyVersion;
   // TODO: We can probably do better than having three colony-related mappings
   mapping (uint256 => address) _coloniesIndex;
@@ -49,8 +52,11 @@ contract ColonyNetworkStorage is DSAuth {
     // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
     bool globalSkill;
   }
+  // Contains all global and local skills in the network, mapping skillId to Skill. Where skillId is 1-based unique identofier
   mapping (uint256 => Skill) skills;
+  // Number of skills in the network, including both global and local skills
   uint256 skillCount;
+  // skillId of the root global skills tree
   uint256 rootGlobalSkillId;
 
   struct ReputationLogEntry {
@@ -63,10 +69,14 @@ contract ColonyNetworkStorage is DSAuth {
   }
 
   mapping (uint => ReputationLogEntry[]) reputationUpdateLogs;
+  // Tracks whether updateLog 0 or 1 is the active log
   uint256 activeReputationUpdateLog;
-
-  bytes32 reputationRootHash;
-  mapping (address => uint) stakedBalances;
+  // Address of the currently active reputation mining cycle contract
   address reputationMiningCycle;
+    // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
+  bytes32 reputationRootHash;
+  // The number of nodes in the reputation state tree that was accepted at the end of the last mining cycle
   uint256 reputationRootHashNNodes;
+  // Mapping containing how much hash been staked by each user
+  mapping (address => uint) stakedBalances;
 }
