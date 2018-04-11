@@ -390,7 +390,7 @@ contract("ColonyNetworkStaking", accounts => {
       // can be wrong, so there's a much better chance that I've written this test poorly if it starts
       // failing - don't just dismiss it!
       for (i = 1; i < 1000; i += 1) {
-        const hash = await repCycle.getEntryHash(MAIN_ACCOUNT, i, "0x12345678"); // eslint-disable-line no-await-in-loop
+        const hash = await repCycle.getEntryHash.call(MAIN_ACCOUNT, i, "0x12345678"); // eslint-disable-line no-await-in-loop
         if (parseInt(hash.substring(2, 4), 16) < 0xfb) {
           break;
         }
