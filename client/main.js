@@ -56,79 +56,6 @@ class ReputationMiningClient {
     this.colonyNetwork = ColonyNetwork.at(address);
   }
 
-  async getNewestReputationInformation() {
-    let newestReputationKey = Object.keys(this.reputations)[this.nReputations - 1];
-    let newestReputationValue;
-    if (!newestReputationKey) {
-      newestReputationKey = 0x0;
-      newestReputationValue = `0x${new BN("0").toString(16, 64)}`;
-    } else {
-      newestReputationValue = this.reputations[newestReputationKey];
-    }
-    const [newestReputationBranchMask, newestReputationSiblings] = await this.reputationTree.getProof(newestReputationKey);
-    return [newestReputationKey, newestReputationValue, newestReputationBranchMask, newestReputationSiblings];
-  }
-
-  snapshotTree() {
-    this.snapshottedReputations = Object.assign({}, this.reputations);
-    this.snapshottedNReputations = this.nReputations;
-    return new Promise((resolve, reject) => {
-      this.ganacheProvider.sendAsync(
-        {
-          jsonrpc: "2.0",
-          method: "evm_snapshot",
-          params: [],
-          id: 0
-        },
-        (err, res) => {
-          if (err !== null) return reject(err);
-          this.lastSnapshotId = res.result;
-          return resolve(res);
-        }
-      );
-    });
-  }
-
-  revertTree() {
-    this.reputations = Object.assign({}, this.snapshottedReputations);
-    this.nReputations = this.snapshottedNReputations;
-    return new Promise((resolve, reject) => {
-      this.ganacheProvider.sendAsync(
-        {
-          jsonrpc: "2.0",
-          method: "evm_revert",
-          params: [this.lastSnapshotId],
-          id: 0
-        },
-        (err, res) => {
-          if (err !== null) return reject(err);
-          return resolve(res);
-        }
-      );
-    });
-  }
-
-  async submitJustificationRootHash() {
-    const jrh = await this.justificationTree.getRootHash();
-    const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
-    const nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
-    const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = ReputationMiningCycle.at(addr);
-
-    const [round, index] = await this.getMySubmissionRoundAndIndex();
-    await repCycle.submitJRH(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
-      from: this.minerAddress,
-      gas: 6000000
-    });
-  }
-
-  // The version of this function in malicious.js uses `this`, but not here.
-  // eslint-disable-next-line class-methods-use-this
-  getScore(i, logEntry) {
-    return logEntry[1];
-  }
-
   async addLogContentsToReputationTree() {
     const makeJustificationTree = true;
     // Snapshot the current state, in case we get in to a dispute, and have to roll back
@@ -259,6 +186,109 @@ class ReputationMiningClient {
     // console.log(this.justificationHashes);
   }
 
+  getJRHEntryValueAsBytes(_reputationState, nNodes) { //eslint-disable-line
+    let reputationState = _reputationState.toString(16);
+    if (reputationState.substring(0, 2) === "0x") {
+      reputationState = reputationState.slice(2);
+    }
+    return `0x${new BN(reputationState.toString(), 16).toString(16, 64)}${new BN(nNodes.toString()).toString(16, 64)}`;
+  }
+
+  snapshotTree() {
+    this.snapshottedReputations = Object.assign({}, this.reputations);
+    this.snapshottedNReputations = this.nReputations;
+    return new Promise((resolve, reject) => {
+      this.ganacheProvider.sendAsync(
+        {
+          jsonrpc: "2.0",
+          method: "evm_snapshot",
+          params: [],
+          id: 0
+        },
+        (err, res) => {
+          if (err !== null) return reject(err);
+          this.lastSnapshotId = res.result;
+          return resolve(res);
+        }
+      );
+    });
+  }
+
+  revertTree() {
+    this.reputations = Object.assign({}, this.snapshottedReputations);
+    this.nReputations = this.snapshottedNReputations;
+    return new Promise((resolve, reject) => {
+      this.ganacheProvider.sendAsync(
+        {
+          jsonrpc: "2.0",
+          method: "evm_revert",
+          params: [this.lastSnapshotId],
+          id: 0
+        },
+        (err, res) => {
+          if (err !== null) return reject(err);
+          return resolve(res);
+        }
+      );
+    });
+  }
+
+  // The version of this function in malicious.js uses `this`, but not here.
+  // eslint-disable-next-line class-methods-use-this
+  getScore(i, logEntry) {
+    return logEntry[1];
+  }
+
+  getValueAsBytes(reputation, uid) { //eslint-disable-line
+    return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
+  }
+
+  async getNewestReputationInformation() {
+    let newestReputationKey = Object.keys(this.reputations)[this.nReputations - 1];
+    let newestReputationValue;
+    if (!newestReputationKey) {
+      newestReputationKey = 0x0;
+      newestReputationValue = `0x${new BN("0").toString(16, 64)}`;
+    } else {
+      newestReputationValue = this.reputations[newestReputationKey];
+    }
+    const [newestReputationBranchMask, newestReputationSiblings] = await this.reputationTree.getProof(newestReputationKey);
+    return [newestReputationKey, newestReputationValue, newestReputationBranchMask, newestReputationSiblings];
+  }
+
+  async submitRootHash() {
+    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
+    const repCycle = ReputationMiningCycle.at(addr);
+    const hash = await this.getRootHash();
+    // TODO: Work out what entry we should use when we submit
+    const gas = await repCycle.submitNewHash.estimateGas(hash, this.nReputations, 1, { from: this.minerAddress });
+    await repCycle.submitNewHash(hash, this.nReputations, 1, { from: this.minerAddress, gas: gas * 2 });
+  }
+
+  async getRootHash() {
+    return this.reputationTree.getRootHash();
+  }
+
+  async getProof(key) {
+    const res = await this.reputationTree.getProof(key);
+    return res;
+  }
+
+  async submitJustificationRootHash() {
+    const jrh = await this.justificationTree.getRootHash();
+    const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
+    const nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
+    const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
+    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
+    const repCycle = ReputationMiningCycle.at(addr);
+
+    const [round, index] = await this.getMySubmissionRoundAndIndex();
+    await repCycle.submitJRH(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
+      from: this.minerAddress,
+      gas: 6000000
+    });
+  }
+
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
@@ -384,23 +414,6 @@ class ReputationMiningClient {
     );
   }
 
-  // async update(colonyAddress, skillId, userAddress, reputationScore){
-  //   // TODO: If this User + colony + skill id already exists, then update, don't just insert.
-  //   return this.insert(colonyAddress, skillId, userAddress, reputationScore);
-  // }
-
-  getValueAsBytes(reputation, uid) { //eslint-disable-line
-    return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
-  }
-
-  getJRHEntryValueAsBytes(_reputationState, nNodes) { //eslint-disable-line
-    let reputationState = _reputationState.toString(16);
-    if (reputationState.substring(0, 2) === "0x") {
-      reputationState = reputationState.slice(2);
-    }
-    return `0x${new BN(reputationState.toString(), 16).toString(16, 64)}${new BN(nNodes.toString()).toString(16, 64)}`;
-  }
-
   async insert(_colonyAddress, skillId, _userAddress, reputationScore, index) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
@@ -448,23 +461,10 @@ class ReputationMiningClient {
     return true;
   }
 
-  async submitRootHash() {
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = ReputationMiningCycle.at(addr);
-    const hash = await this.getRootHash();
-    // TODO: Work out what entry we should use when we submit
-    const gas = await repCycle.submitNewHash.estimateGas(hash, this.nReputations, 1, { from: this.minerAddress });
-    await repCycle.submitNewHash(hash, this.nReputations, 1, { from: this.minerAddress, gas: gas * 2 });
-  }
-
-  async getRootHash() {
-    return this.reputationTree.getRootHash();
-  }
-
-  async getProof(key) {
-    const res = await this.reputationTree.getProof(key);
-    return res;
-  }
+  // async update(colonyAddress, skillId, userAddress, reputationScore){
+  //   // TODO: If this User + colony + skill id already exists, then update, don't just insert.
+  //   return this.insert(colonyAddress, skillId, userAddress, reputationScore);
+  // }
 }
 
 export default ReputationMiningClient;
