@@ -69,7 +69,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   // Otherwise, people could keep submitting the same entry.
   mapping (bytes32 => mapping(address => mapping(uint256 => bool))) submittedEntries;
 
-  modifier onlyFinalRoundWhenComplete(uint roundNumber) {
+  modifier finalDisputeRoundCompleted(uint roundNumber) {
     require (nSubmittedHashes - nInvalidatedHashes == 1);
     require (disputeRounds[roundNumber].length == 1); //i.e. this is the final round
     // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
@@ -174,7 +174,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   }
 
   function confirmNewHash(uint256 roundNumber) public
-  onlyFinalRoundWhenComplete(roundNumber)
+  finalDisputeRoundCompleted(roundNumber)
   {
     // TODO: Require some amount of time to have passed (i.e. people have had a chance to submit other hashes)
     Submission storage submission = disputeRounds[roundNumber][0];
