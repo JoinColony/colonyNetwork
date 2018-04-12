@@ -177,8 +177,8 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   onlyFinalRoundWhenComplete(roundNumber)
   {
     // TODO: Require some amount of time to have passed (i.e. people have had a chance to submit other hashes)
-    Submission storage reputationRootHash = disputeRounds[roundNumber][0];
-    IColonyNetwork(colonyNetworkAddress).setReputationRootHash(reputationRootHash.hash, reputationRootHash.nNodes, submittedHashes[disputeRounds[roundNumber][0].hash][disputeRounds[roundNumber][0].nNodes]);
+    Submission storage submission = disputeRounds[roundNumber][0];
+    IColonyNetwork(colonyNetworkAddress).setReputationRootHash(submission.hash, submission.nNodes, submittedHashes[submission.hash][submission.nNodes]);
     selfdestruct(colonyNetworkAddress);
   }
 
