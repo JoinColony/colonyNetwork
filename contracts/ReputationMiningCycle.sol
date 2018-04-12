@@ -78,6 +78,34 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     _;
   }
 
+  modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entry) {
+    // Check the ticket is an eligible one for them to claim
+    // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
+    require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
+    require(entry > 0);
+    if (reputationHashSubmissions[msg.sender].hash != 0x0) {           // If this user has submitted before during this round...
+      require(newHash == reputationHashSubmissions[msg.sender].hash);  // ...require that they are submitting the same hash ...
+      require(nNodes == reputationHashSubmissions[msg.sender].nNodes); // ...require that they are submitting the same number of nodes for that hash ...
+      require (submittedEntries[newHash][msg.sender][entry] == false); // ... but not this exact entry
+    }
+    _;
+  }
+
+  // A submission will only be accepted from a miner if `keccak256(address, N, hash) < target`
+  // At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
+  modifier withinTarget(bytes32 newHash, uint256 entry) {
+    // Check the ticket is a winning one.
+    // TODO Figure out how to uncomment the next line, but not break tests sporadically.
+    // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
+    // x = floor(uint((2**256 - 1) / 3600)
+    if (now - reputationMiningWindowOpenTimestamp <= 3600) {
+      uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
+      uint256 target = (now - reputationMiningWindowOpenTimestamp ) * x;
+      require(uint256(getEntryHash(msg.sender, entry, newHash)) < target);
+    }
+    _;
+  }
+
   function ReputationMiningCycle() public {
     colonyNetworkAddress = msg.sender;
     reputationMiningWindowOpenTimestamp = now;
@@ -87,28 +115,16 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     return keccak256(submitter, entry, newHash);
   }
 
-  function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry) public {
-    // Check the ticket is an eligible one for them to claim
-    require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
-    require(entry > 0);
-    if (reputationHashSubmissions[msg.sender].hash != 0x0) {           // If this user has submitted before during this round...
-      require(newHash == reputationHashSubmissions[msg.sender].hash);  // ...require that they are submitting the same hash ...
-      require(nNodes == reputationHashSubmissions[msg.sender].nNodes); // ...require that they are submitting the same number of nodes for that hash ...
-      require (submittedEntries[newHash][msg.sender][entry] == false); // ... but not this exact entry
-    }
-    // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
-    // Check the ticket is a winning one.
-    // TODO Figure out how to uncomment the next line, but not break tests sporadically.
-    // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
-    // x = floor(uint((2**256 - 1) / 3600)
-    if (now-reputationMiningWindowOpenTimestamp <= 3600) {
-      uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
-      uint256 target = (now - reputationMiningWindowOpenTimestamp ) * x;
-      require(uint256(getEntryHash(msg.sender, entry, newHash)) < target);
-    }
-
-    // We only allow this submission if there's still room
-    // Check there is still room.
+  /// @notice Submit a new reputation root hash
+  /// @param newHash The proposed new reputation root hash
+  /// @param nNodes Number of nodes in tree with root `newHash`
+  /// @param entry The entry number for the given `newHash` and `nNodes`
+  function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry) 
+  entryQualifies(newHash, nNodes, entry)
+  withinTarget(newHash, entry)
+  public 
+  {
+    // Limit the total number of miners allowed to submit a specific hash to 12
     require (submittedHashes[newHash][nNodes].length < 12);
 
     // If this is a new hash, increment nSubmittedHashes as such.
