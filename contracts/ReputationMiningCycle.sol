@@ -334,7 +334,15 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
 
     // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
     if (u[__REQUIRE_REPUTATION_CHECK__]==1) {
-      checkPreviousReputationInState(u, _reputationKey, reputationSiblings, agreeStateReputationValue, agreeStateSiblings, previousNewReputationKey, previousNewReputationValue, previousNewReputationSiblings);
+      checkPreviousReputationInState(
+        u,
+        _reputationKey,
+        reputationSiblings,
+        agreeStateReputationValue,
+        agreeStateSiblings,
+        previousNewReputationKey,
+        previousNewReputationValue,
+        previousNewReputationSiblings);
       saveProvedReputation(u, previousNewReputationValue);
     }
 
