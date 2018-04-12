@@ -47,7 +47,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   // explicitly complete the pairings. But if they get the tokens that were staked in order to make the submission, maybe
   // that's okay...?
 
-  // Numner of unique hashes submitted
+  // Number of unique hashes submitted
   uint256 public nSubmittedHashes = 0;
   uint256 public nInvalidatedHashes = 0;
 
@@ -167,9 +167,9 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
       intermediateReputationNNodes: 0,
       provedPreviousReputationUID: 0
     });
-    //And add the miner to the array list of submissions here
+    // And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes].push(msg.sender);
-    //Note that they submitted it.
+    // Note that they submitted it.
     submittedEntries[newHash][msg.sender][entry] = true;
   }
 
