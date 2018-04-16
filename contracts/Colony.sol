@@ -140,7 +140,6 @@ contract Colony is ColonyStorage {
     reviewers[_sig] = _reviewers;
   }
 
-  // TODO: Not sure where to put these functions
   function verifyKey(bytes key) internal view returns (bool) {
     uint256 colonyAddress;
     uint256 skillid;

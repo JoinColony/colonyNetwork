@@ -42,7 +42,7 @@ const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const oneHourLater = async () => forwardTime(3600, this);
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("All", () => {
+contract("All", accounts => {
   const gasPrice = 20e9;
 
   let colony;
@@ -158,9 +158,9 @@ contract("All", () => {
 
     it("when working with staking", async () => {
       // TODO: Should stakers be part of the constants?
-      const STAKER1 = EVALUATOR;
-      const STAKER2 = WORKER;
-      const STAKER3 = MANAGER;
+      const STAKER1 = accounts[0];
+      const STAKER2 = accounts[1];
+      const STAKER3 = accounts[2];
 
       // Setup the stakers balance
       const bigStr = "1000000000000000000";

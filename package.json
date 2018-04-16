@@ -76,7 +76,6 @@
     "web3-utils": "^1.0.0-beta.34"
   },
   "dependencies": {
-    "solidity-sha3": "^0.4.1",
     "truffle-contract": "^3.0.2",
     "web3": "0.20.6"
   }

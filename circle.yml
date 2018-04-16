@@ -25,12 +25,12 @@ dependencies:
     - sed -i "s/yyyyy/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
     - sed -i "s/zzzzz/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
     # Compile contracts so artifacts are present for eslint
-    - ./node_modules/truffle/build/cli.bundled.js compile
+    - ./node_modules/.bin/truffle compile
 
 test:
   pre:
     - greenkeeper-lockfile-update
-    
+
   override:
     - yarn run eslint
     - yarn run solium
@@ -39,7 +39,7 @@ test:
     - yarn run test:contracts:upgrade
     - yarn run test:contracts:coverage
     - yarn run test:contracts:gasCosts
-    
+
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload
