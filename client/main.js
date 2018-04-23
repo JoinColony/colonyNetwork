@@ -236,45 +236,6 @@ class ReputationMiningClient {
     return `0x${new BN(reputationState.toString(), 16).toString(16, 64)}${new BN(nNodes.toString()).toString(16, 64)}`;
   }
 
-  snapshotTree() {
-    this.snapshottedReputations = Object.assign({}, this.reputations);
-    this.snapshottedNReputations = this.nReputations;
-    return new Promise((resolve, reject) => {
-      this.ganacheProvider.sendAsync(
-        {
-          jsonrpc: "2.0",
-          method: "evm_snapshot",
-          params: [],
-          id: 0
-        },
-        (err, res) => {
-          if (err !== null) return reject(err);
-          this.lastSnapshotId = res.result;
-          return resolve(res);
-        }
-      );
-    });
-  }
-
-  revertTree() {
-    this.reputations = Object.assign({}, this.snapshottedReputations);
-    this.nReputations = this.snapshottedNReputations;
-    return new Promise((resolve, reject) => {
-      this.ganacheProvider.sendAsync(
-        {
-          jsonrpc: "2.0",
-          method: "evm_revert",
-          params: [this.lastSnapshotId],
-          id: 0
-        },
-        (err, res) => {
-          if (err !== null) return reject(err);
-          return resolve(res);
-        }
-      );
-    });
-  }
-
   // The version of this function in malicious.js uses `this`, but not here.
   // eslint-disable-next-line class-methods-use-this
   getScore(i, logEntry) {
@@ -502,11 +463,6 @@ class ReputationMiningClient {
     this.reputations[key] = value;
     return true;
   }
-
-  // async update(colonyAddress, skillId, userAddress, reputationScore){
-  //   // TODO: If this User + colony + skill id already exists, then update, don't just insert.
-  //   return this.insert(colonyAddress, skillId, userAddress, reputationScore);
-  // }
 }
 
 export default ReputationMiningClient;
