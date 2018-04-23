@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.21;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 

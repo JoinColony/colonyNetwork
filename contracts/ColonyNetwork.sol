@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.21;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
@@ -96,7 +96,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (!active) {
       logIdx = (logIdx + 1) % 2;
     }
-    ReputationLogEntry storage x = ReputationUpdateLogs[logIdx][_id];
+    ReputationLogEntry storage x = reputationUpdateLogs[logIdx][_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
 
@@ -111,15 +111,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function createColony(bytes32 _name, address _tokenAddress) public
   colonyKeyUnique(_name)
   {
-    var etherRouter = new EtherRouter();
-    var resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
+    EtherRouter etherRouter = new EtherRouter();
+    address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
 
-    var colony = IColony(etherRouter);
+    IColony colony = IColony(etherRouter);
     colony.setToken(_tokenAddress);
 
-    var authority = new Authority(colony);
-    var dsauth = DSAuth(etherRouter);
+    Authority authority = new Authority(colony);
+    DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
@@ -141,7 +141,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _isColony[colony] = true;
 
     colony.initialiseColony(this);
-    ColonyAdded(colonyCount);
+    emit ColonyAdded(colonyCount);
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -227,7 +227,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
       treeWalkingCounter += 1;
     }
 
-    SkillAdded(skillCount, _parentSkillId);
+    emit SkillAdded(skillCount, _parentSkillId);
     return skillCount;
   }
 
@@ -245,17 +245,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
   calledByColony
   skillExists(_skillId)
   {
-    uint reputationUpdateLogLength = ReputationUpdateLogs[activeReputationUpdateLog].length;
+    uint reputationUpdateLogLength = reputationUpdateLogs[activeReputationUpdateLog].length;
     uint nPreviousUpdates = 0;
     if (reputationUpdateLogLength > 0) {
-      nPreviousUpdates = ReputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nPreviousUpdates + ReputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nUpdates;
+      nPreviousUpdates = reputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nPreviousUpdates + reputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nUpdates;
     }
     uint nUpdates = (skills[_skillId].nParents + 1) * 2;
     if (_amount < 0) {
       //TODO: Never true currently. _amount needs to be an int.
       nUpdates += 2 * skills[_skillId].nChildren;
     }
-    ReputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
+    reputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
       _user,
       _amount,
       _skillId,
@@ -269,6 +269,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (!active) {
       logIdx = (logIdx + 1 ) % 2;
     }
-    return ReputationUpdateLogs[logIdx].length;
+    return reputationUpdateLogs[logIdx].length;
   }
 }

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.21;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
@@ -129,7 +129,7 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     pots[potCount].taskId = taskCount;
 
-    TaskAdded(taskCount);
+    emit TaskAdded(taskCount);
   }
 
   function getTaskCount() public view returns (uint256) {
@@ -152,7 +152,9 @@ contract ColonyTask is ColonyStorage, DSMath {
     require(_sigR.length == 2);
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
 
-    var (sig, taskId) = deconstructCall(_data);
+    bytes4 sig;
+    uint256 taskId;
+    (sig, taskId) = deconstructCall(_data);
     Task storage task = tasks[taskId];
     require(!task.finalized);
     

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.21;
 pragma experimental "v0.5.0";
 pragma experimental "ABIEncoderV2";
 
@@ -59,7 +59,7 @@ contract Token is DSAuth, DSMath, ERC20Extended {
     _balances[msg.sender] = sub(_balances[msg.sender], wad);
     _balances[dst] = add(_balances[dst], wad);
 
-    Transfer(msg.sender, dst, wad);
+    emit Transfer(msg.sender, dst, wad);
 
     return true;
   }
@@ -72,7 +72,7 @@ contract Token is DSAuth, DSMath, ERC20Extended {
     _balances[src] = sub(_balances[src], wad);
     _balances[dst] = add(_balances[dst], wad);
 
-    Transfer(src, dst, wad);
+    emit Transfer(src, dst, wad);
 
     return true;
   }
@@ -80,7 +80,7 @@ contract Token is DSAuth, DSMath, ERC20Extended {
   function approve(address guy, uint256 wad) public returns (bool) {
     _approvals[msg.sender][guy] = wad;
 
-    Approval(msg.sender, guy, wad);
+    emit Approval(msg.sender, guy, wad);
 
     return true;
   }
