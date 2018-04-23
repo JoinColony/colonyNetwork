@@ -17,7 +17,7 @@ class MaliciousReputationMiningClient3 extends ReputationMiningClient {
       newestReputationKey = Object.keys(this.reputations)[this.nReputations - 1];
     }
     const newestReputationValue = this.reputations[newestReputationKey];
-    const [newestReputationBranchMask, newestReputationSiblings] = await this.reputationTree.getProof(newestReputationKey);
+    const [newestReputationBranchMask, newestReputationSiblings] = await this.getProof(newestReputationKey);
     return [newestReputationKey, newestReputationValue, newestReputationBranchMask, newestReputationSiblings];
   }
 

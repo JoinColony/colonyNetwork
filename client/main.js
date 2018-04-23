@@ -2,28 +2,65 @@ import BN from "bn.js";
 import web3Utils from "web3-utils";
 
 const ganache = require("ganache-core");
-const contract = require("truffle-contract");
 const ReputationMiningCycleJSON = require("../build/contracts/ReputationMiningCycle.json");
 const ColonyNetworkJSON = require("../build/contracts/IColonyNetwork.json");
 const PatriciaTreeJSON = require("../build/contracts/PatriciaTree.json");
-
-const ReputationMiningCycle = contract(ReputationMiningCycleJSON);
 
 const jsonfile = require("jsonfile");
 
 const file = "./reputations.json";
 
-const Web3 = require("web3");
+const ethers = require("ethers");
 
-const ColonyNetwork = contract(ColonyNetworkJSON);
-const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
+// We don't need the account address right now for this secret key, but I'm leaving it in in case we
+// do in the future.
+// const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
+const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
+
+// Adapted from https://github.com/ethers-io/ethers.js/issues/59
+// ===================================
+function MetamaskSigner(minerAddress, provider) {
+  this.address = minerAddress;
+  this.provider = provider;
+  const signer = this;
+  this.sendTransaction = function sendTransaction(transaction) {
+    const tx = this.buildTx(transaction);
+    return signer.provider.send("eth_sendTransaction", [tx]);
+  };
+
+  this.estimateGas = async function estimateGas(transaction) {
+    const tx = this.buildTx(transaction);
+    const res = await signer.provider.send("eth_estimateGas", [tx]);
+    return ethers.utils.bigNumberify(res);
+  };
+
+  this.buildTx = function buildTx(transaction) {
+    const tx = {
+      from: this.address
+    };
+    ["to", "data"].forEach(key => {
+      if (transaction[key] != null) {
+        tx[key] = transaction[key];
+      }
+    });
+    ["gasPrice", "nonce", "value"].forEach(key => {
+      if (transaction[key] != null) {
+        tx[key] = ethers.utils.hexlify(transaction[key]);
+      }
+    });
+    if (transaction.gasLimit != null) {
+      tx.gas = ethers.utils.hexlify(transaction.gasLimit);
+    }
+    return tx;
+  };
+}
+
+// ===================================
 
 class ReputationMiningClient {
   constructor(minerAddress, realProviderPort = 8545) {
-    this.web3 = new Web3();
     this.minerAddress = minerAddress;
-    this.PatriciaTree = contract(PatriciaTreeJSON);
-    this.ganacheProvider = ganache.provider({
+    const ganacheProvider = ganache.provider({
       network_id: 515,
       vmErrorsOnRPCResponse: false,
       locked: false,
@@ -31,14 +68,16 @@ class ReputationMiningClient {
       accounts: [
         {
           balance: "0x10000000000000000000000000",
-          secretKey: "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7"
+          secretKey
         }
       ]
     });
-    this.PatriciaTree.setProvider(this.ganacheProvider);
-    this.realProvider = new Web3.providers.HttpProvider(`http://localhost:${realProviderPort}`);
-    ColonyNetwork.setProvider(this.realProvider);
-    ReputationMiningCycle.setProvider(this.realProvider);
+    this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
+    this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
+
+    this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
+    this.realWallet = new MetamaskSigner(minerAddress, this.realProvider);
+
     try {
       this.reputations = jsonfile.readFileSync(file);
     } catch (err) {
@@ -47,13 +86,15 @@ class ReputationMiningClient {
   }
 
   async initialise(colonyNetworkAddress) {
-    this.reputationTree = await this.PatriciaTree.new({ from: accountAddress, gas: 4000000 });
+    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(PatriciaTreeJSON.bytecode, PatriciaTreeJSON.abi);
+    const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
+    this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
     this.nReputations = 0;
     this.setColonyNetworkAddress(colonyNetworkAddress);
   }
 
   async setColonyNetworkAddress(address) {
-    this.colonyNetwork = ColonyNetwork.at(address);
+    this.colonyNetwork = new ethers.Contract(address, ColonyNetworkJSON.abi, this.realWallet);
   }
 
   async addLogContentsToReputationTree() {
@@ -63,8 +104,11 @@ class ReputationMiningClient {
     let justUpdatedProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
     let nextUpdateProof = { value: this.getValueAsBytes(0, 0), branchMask: 0, siblings: [] };
 
-    // await this.snapshotTree();
-    this.justificationTree = await this.PatriciaTree.new({ from: accountAddress, gas: 4000000 });
+    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(PatriciaTreeJSON.bytecode, PatriciaTreeJSON.abi);
+
+    const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
+    this.justificationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
+
     this.justificationHashes = {};
 
     let nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
@@ -101,7 +145,7 @@ class ReputationMiningClient {
           justUpdatedProof.value = this.reputations[prevKey];
           justUpdatedProof.key = prevKey;
           justUpdatedProof.nNodes = this.nReputations;
-          [justUpdatedProof.branchMask, justUpdatedProof.siblings] = await this.reputationTree.getProof(prevKey); // eslint-disable-line no-await-in-loop
+          [justUpdatedProof.branchMask, justUpdatedProof.siblings] = await this.getProof(prevKey); // eslint-disable-line no-await-in-loop
 
           [
             newestReputationKey,
@@ -110,9 +154,7 @@ class ReputationMiningClient {
             newestReputationSiblings
           ] = await this.getNewestReputationInformation(i); // eslint-disable-line no-await-in-loop
         }
-        // console.log(jhLeafValue);
-        await this.justificationTree.insert(`0x${i.toString(16, 64)}`, jhLeafValue, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
-
+        await this.justificationTree.insert(`0x${i.toString(16, 64)}`, jhLeafValue, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
         const colonyAddress = logEntry[3].slice(2);
         const skillId = logEntry[2];
         const userAddress = logEntry[0].slice(2);
@@ -125,7 +167,7 @@ class ReputationMiningClient {
         let value;
 
         try {
-          [branchMask, siblings] = await this.reputationTree.getProof(key); // eslint-disable-line no-await-in-loop
+          [branchMask, siblings] = await this.getProof(key); // eslint-disable-line no-await-in-loop
           value = this.reputations[key];
         } catch (err) {
           // Doesn't exist yet.
@@ -133,7 +175,7 @@ class ReputationMiningClient {
           siblings = [];
           value = this.getValueAsBytes(0, 0);
         }
-        nextUpdateProof = { branchMask, siblings, key, value, nNodes: this.nReputations };
+        nextUpdateProof = { branchMask: `0x${branchMask.toString(16)}`, siblings, key, value, nNodes: this.nReputations };
         this.justificationHashes[`0x${i.toString(16, 64)}`] = JSON.parse(
           JSON.stringify({
             interimHash,
@@ -160,12 +202,12 @@ class ReputationMiningClient {
     if (makeJustificationTree) {
       justUpdatedProof = nextUpdateProof;
       nextUpdateProof = {};
-      interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+      interimHash = await this.reputationTree.getRootHash();
       jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
 
-      await this.justificationTree.insert(`0x${nLogEntries.toString(16, 64)}`, jhLeafValue, { from: accountAddress, gas: 4000000 }); // eslint-disable-line no-await-in-loop
+      await this.justificationTree.insert(`0x${nLogEntries.toString(16, 64)}`, jhLeafValue, { gasLimit: 4000000 });
       if (nLogEntries.gtn(0)) {
-        const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(nLogEntries.subn(1).toString(), false); // eslint-disable-line no-await-in-loop
+        const prevLogEntry = await this.colonyNetwork.getReputationUpdateLogEntry(nLogEntries.subn(1).toString(), false);
         const prevColonyAddress = prevLogEntry[3].slice(2);
         const prevSkillId = prevLogEntry[2];
         const prevUserAddress = prevLogEntry[0].slice(2);
@@ -252,17 +294,18 @@ class ReputationMiningClient {
     } else {
       newestReputationValue = this.reputations[newestReputationKey];
     }
-    const [newestReputationBranchMask, newestReputationSiblings] = await this.reputationTree.getProof(newestReputationKey);
+    const [newestReputationBranchMask, newestReputationSiblings] = await this.getProof(newestReputationKey);
     return [newestReputationKey, newestReputationValue, newestReputationBranchMask, newestReputationSiblings];
   }
 
   async submitRootHash() {
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = ReputationMiningCycle.at(addr);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+
     const hash = await this.getRootHash();
     // TODO: Work out what entry we should use when we submit
-    const gas = await repCycle.submitNewHash.estimateGas(hash, this.nReputations, 1, { from: this.minerAddress });
-    await repCycle.submitNewHash(hash, this.nReputations, 1, { from: this.minerAddress, gas: gas * 2 });
+    const gas = await repCycle.estimate.submitNewHash(hash, this.nReputations, 1);
+    await repCycle.submitNewHash(hash, this.nReputations, 1, { gasLimit: `0x${gas.mul(2).toString()}` });
   }
 
   async getRootHash() {
@@ -270,8 +313,9 @@ class ReputationMiningClient {
   }
 
   async getProof(key) {
-    const res = await this.reputationTree.getProof(key);
-    return res;
+    const [branchMask, siblings] = await this.reputationTree.getProof(key);
+    const retBranchMask = branchMask.toHexString();
+    return [retBranchMask, siblings];
   }
 
   async submitJustificationRootHash() {
@@ -280,19 +324,18 @@ class ReputationMiningClient {
     const nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = ReputationMiningCycle.at(addr);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
 
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     await repCycle.submitJRH(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
-      from: this.minerAddress,
-      gas: 6000000
+      gasLimit: 6000000
     });
   }
 
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = ReputationMiningCycle.at(addr);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
 
     let index = new BN("-1");
     const round = new BN("0");
@@ -312,29 +355,28 @@ class ReputationMiningClient {
   async respondToBinarySearchForChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = ReputationMiningCycle.at(addr);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
     let submission = await repCycle.disputeRounds(round.toString(), index.toString());
     const targetNode = new BN(
       submission[8]
-        .plus(submission[9])
+        .add(submission[9])
         .div(2)
-        .floor()
         .toString()
     );
     const intermediateReputationHash = this.justificationHashes[`0x${targetNode.toString(16, 64)}`].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(`0x${targetNode.toString(16, 64)}`);
 
-    await repCycle.binarySearchForChallenge(round.toString(), index.toString(), intermediateReputationHash, branchMask, siblings, {
-      from: this.minerAddress,
-      gas: 1000000
+    const tx = await repCycle.binarySearchForChallenge(round.toString(), index.toString(), intermediateReputationHash, branchMask, siblings, {
+      gasLimit: 1000000
     });
     submission = await repCycle.disputeRounds(round.toString(), index.toString());
+    return tx;
   }
 
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = ReputationMiningCycle.at(addr);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
     const submission = await repCycle.disputeRounds(round.toString(), index.toString());
     // console.log(submission);
     const firstDisagreeIdx = new BN(submission[8].toString());
@@ -388,16 +430,15 @@ class ReputationMiningClient {
     // console.log('intermediatRootHash2', impliedRoot3);
     // console.log('implied jrh from irh2', impliedRoot4);
     // console.log('about to respondToChallengeReal')
-
-    return repCycle.respondToChallenge(
+    const tx = await repCycle.respondToChallenge(
       [
         round.toString(),
         index.toString(),
         this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask,
         this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes,
-        agreeStateBranchMask,
+        agreeStateBranchMask.toHexString(),
         this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes,
-        disagreeStateBranchMask,
+        disagreeStateBranchMask.toHexString(),
         this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationBranchMask,
         0
       ],
@@ -410,8 +451,9 @@ class ReputationMiningClient {
       this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationKey,
       this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationValue,
       this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationSiblings,
-      { from: this.minerAddress, gas: 4000000 }
+      { gasLimit: 4000000 }
     );
+    return tx;
   }
 
   async insert(_colonyAddress, skillId, _userAddress, reputationScore, index) {
@@ -448,14 +490,14 @@ class ReputationMiningClient {
       // Look up value from our JSON.
       value = this.reputations[key];
       // Extract uid
-      const uid = this.web3.toBigNumber(`0x${value.slice(-64)}`);
-      const existingValue = this.web3.toBigNumber(`0x${value.slice(2, 66)}`);
+      const uid = ethers.utils.bigNumberify(`0x${value.slice(-64)}`);
+      const existingValue = ethers.utils.bigNumberify(`0x${value.slice(2, 66)}`);
       value = this.getValueAsBytes(existingValue.add(reputationScore), uid, index);
     } else {
       value = this.getValueAsBytes(reputationScore, this.nReputations + 1, index);
       this.nReputations += 1;
     }
-    await this.reputationTree.insert(key, value, { from: accountAddress, gas: 4000000 });
+    await this.reputationTree.insert(key, value, { gasLimit: 4000000 });
     // If successful, add to our JSON.
     this.reputations[key] = value;
     return true;

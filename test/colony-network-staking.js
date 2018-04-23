@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { forwardTime, checkErrorRevert } from "../helpers/test-helper";
+import { forwardTime, checkErrorRevert, web3GetTransactionReceipt } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 import ReputationMiningClient from "../client/main";
 import MaliciousReputationMiningClient from "../client/malicious";
@@ -95,16 +95,14 @@ contract("ColonyNetworkStaking", accounts => {
       // Binary search will error when it is complete.
       let noError = true;
       while (noError) {
-        try {
-          await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-        } catch (err) {
-          // console.log(err);
+        let txHash = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        let tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
+        if (tx.status === "0x00") {
           noError = false;
         }
-        try {
-          await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-        } catch (err) {
-          // console.log(err);
+        txHash = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
+        if (tx.status === "0x00") {
           noError = false;
         }
       }
@@ -112,18 +110,9 @@ contract("ColonyNetworkStaking", accounts => {
       // If both work, then the starting reputation is 0 and one client is lying
       // about whether the key already exists.
       noError = true;
-      try {
-        await client1.respondToChallenge();
-      } catch (err) {
-        // console.log(err);
-        // We are expecting an error here or below, but we don't need to do anything about it.
-      }
-      try {
-        await client2.respondToChallenge();
-      } catch (err) {
-        // console.log(err);
-        // We are expecting an error here or above, but we don't need to do anything about it.
-      }
+      await client1.respondToChallenge();
+      await client2.respondToChallenge();
+
       // Work out which submission is to be invalidated.
       const submission1 = await repCycle.disputeRounds(round1.toString(), idx1.toString());
       const challengeStepsCompleted1 = new BN(submission1[3].toString());
