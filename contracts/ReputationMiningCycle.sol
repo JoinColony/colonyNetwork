@@ -130,10 +130,10 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   /// @param newHash The proposed new reputation root hash
   /// @param nNodes Number of nodes in tree with root `newHash`
   /// @param entry The entry number for the given `newHash` and `nNodes`
-  function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry) 
+  function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry)
   entryQualifies(newHash, nNodes, entry)
   withinTarget(newHash, entry)
-  public 
+  public
   {
     // Limit the total number of miners allowed to submit a specific hash to 12
     require (submittedHashes[newHash][nNodes].length < 12);
@@ -313,9 +313,6 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     challengeOpen(u[__ROUND__], u[__IDX__])
   {
     u[__REQUIRE_REPUTATION_CHECK__] = 0;
-    Bytes32("0x11223344");
-    Bytes(agreeStateReputationValue);
-    Bytes(disagreeStateReputationValue);
     // TODO: More checks that this is an appropriate time to respondToChallenge (maybe in modifier);
     /* bytes32 jrh = disputeRounds[round][idx].jrh; */
     // The contract knows
@@ -418,8 +415,6 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
 
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx, uint256 targetNode) internal {
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
-    Bytes32(disputeRounds[round][idx].intermediateReputationHash);
-    Bytes32(disputeRounds[round][opponentIdx].intermediateReputationHash);
     if (
       disputeRounds[round][opponentIdx].intermediateReputationHash == disputeRounds[round][idx].intermediateReputationHash &&
       disputeRounds[round][opponentIdx].intermediateReputationNNodes == disputeRounds[round][idx].intermediateReputationNNodes
@@ -477,8 +472,6 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     }
   }
 
-  event Bytes(bytes a);
-  event Bytes32(bytes32 a);
   function proveBeforeReputationValue(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings) internal {
     bytes32 jrh = disputeRounds[u[__ROUND__]][u[__IDX__]].jrh;
     uint256 lastAgreeIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before.
@@ -530,9 +523,6 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
       mstore(add(jhLeafValue, 0x40), x)
       mstore(add(firstDisagreeIdxBytes, 0x20), firstDisagreeIdx)
     }
-    Bytes32(jrh);
-    Bytes(firstDisagreeIdxBytes);
-    Bytes(jhLeafValue);
 
     verifyProof(jrh, firstDisagreeIdxBytes, jhLeafValue, u[__DISAGREE_STATE_BRANCH_MASK__], disagreeStateSiblings);
   }

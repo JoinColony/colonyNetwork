@@ -88,7 +88,11 @@ library Data {
   // Private functions
   function insertAtEdge(Tree storage self, Edge e, Label key, bytes32 value) private returns (Edge) {
     assert(key.length >= e.label.length);
-    var (prefix, suffix) = splitCommonPrefix(key, e.label);
+    Label memory prefix;
+    Label memory suffix;
+    (prefix, suffix) = splitCommonPrefix(key, e.label);
+    uint256 head;
+    Label memory tail;
     bytes32 newNodeHash;
     if (suffix.length == 0) {
       // Full match with the key, update operation
@@ -97,7 +101,7 @@ library Data {
       // Partial match, just follow the path
       assert(suffix.length > 1);
       Node memory n = self.nodes[e.node];
-      var (head, tail) = chopFirstBit(suffix);
+      (head, tail) = chopFirstBit(suffix);
       n.children[head] = insertAtEdge(self, n.children[head], tail, value);
       delete self.nodes[e.node];
       newNodeHash = insertNode(self, n);

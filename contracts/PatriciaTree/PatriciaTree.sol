@@ -38,7 +38,9 @@ contract PatriciaTree is IPatriciaTree {
     uint length;
     uint numSiblings;
     while (true) {
-      var (prefix, suffix) = k.splitCommonPrefix(e.label);
+      Data.Label memory prefix;
+      Data.Label memory suffix;
+      (prefix, suffix) = k.splitCommonPrefix(e.label);
       assert(prefix.length == e.label.length);
       if (suffix.length == 0) {
         // Found it
@@ -47,7 +49,9 @@ contract PatriciaTree is IPatriciaTree {
       length += prefix.length;
       branchMask |= uint(1) << 255 - length;
       length += 1;
-      var (head, tail) = suffix.chopFirstBit();
+      uint256 head;
+      Data.Label memory tail;
+      (head, tail) = suffix.chopFirstBit();
       siblings[numSiblings++] = tree.nodes[e.node].children[1 - head].edgeHash();
       e = tree.nodes[e.node].children[head];
       k = tail;
