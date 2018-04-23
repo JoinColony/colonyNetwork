@@ -2,9 +2,12 @@ import BN from "bn.js";
 import web3Utils from "web3-utils";
 
 const ganache = require("ganache-core");
-const ReputationMiningCycleJSON = require("../build/contracts/ReputationMiningCycle.json");
-const ColonyNetworkJSON = require("../build/contracts/IColonyNetwork.json");
-const PatriciaTreeJSON = require("../build/contracts/PatriciaTree.json");
+
+// We disable the import/no-unresolved rule for these lines because when ESLint is run on Circle, the contracts haven't
+// been compiled yet and so would fail here.
+const ReputationMiningCycleJSON = require("../build/contracts/ReputationMiningCycle.json"); // eslint-disable-line import/no-unresolved
+const ColonyNetworkJSON = require("../build/contracts/IColonyNetwork.json"); // eslint-disable-line import/no-unresolved
+const PatriciaTreeJSON = require("../build/contracts/PatriciaTree.json"); // eslint-disable-line import/no-unresolved
 
 const jsonfile = require("jsonfile");
 

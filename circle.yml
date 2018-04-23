@@ -24,8 +24,6 @@ dependencies:
     - sed -i "s/xxxxx/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
     - sed -i "s/yyyyy/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
     - sed -i "s/zzzzz/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
-    # Compile contracts so artifacts are present for eslint
-    - ./node_modules/.bin/truffle compile
 
 test:
   pre:
