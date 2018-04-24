@@ -100,19 +100,24 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     _;
   }
 
-  /// @notice A modifier that checks if the proposed entry is eligible
+  /// @notice A modifier that checks if the proposed entry is eligible. The more CLNY a user stakes, the more
+  /// potential entries they have in a reputation mining cycle. This is effectively restricting the nonce range
+  /// that is allowable from a given user when searching for a submission that will pass `withinTarget`. A user
+  /// is allowed to use multiple entries in a single cycle, but each entry can only be used once per cycle, and
+  /// if there are multiple entries they must all be for the same proposed Reputation State Root Hash with the
+  /// same number of nodes.
   /// @param newHash The hash being submitted
   /// @param nNodes The number of nodes in the reputation tree that `newHash` is the root hash of
-  /// @param entry The number of the entry the submitter hash asked us to consider.
-  modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entry) {
-    // Check the ticket is an eligible one for them to claim
+  /// @param entryIndex The number of the entry the submitter hash asked us to consider.
+  modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
     // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
-    require(entry <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
-    require(entry > 0);
-    if (reputationHashSubmissions[msg.sender].hash != 0x0) {           // If this user has submitted before during this round...
-      require(newHash == reputationHashSubmissions[msg.sender].hash);  // ...require that they are submitting the same hash ...
-      require(nNodes == reputationHashSubmissions[msg.sender].nNodes); // ...require that they are submitting the same number of nodes for that hash ...
-      require (submittedEntries[newHash][msg.sender][entry] == false); // ... but not this exact entry
+    // Here, the minimum stake is 10**15.
+    require(entryIndex <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
+    require(entryIndex > 0);
+    if (reputationHashSubmissions[msg.sender].hash != 0x0) {                // If this user has submitted before during this round...
+      require(newHash == reputationHashSubmissions[msg.sender].hash);       // ...require that they are submitting the same hash ...
+      require(nNodes == reputationHashSubmissions[msg.sender].nNodes);      // ...require that they are submitting the same number of nodes for that hash ...
+      require (submittedEntries[newHash][msg.sender][entryIndex] == false); // ... but not this exact entry
     }
     _;
   }
@@ -120,7 +125,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   /// @notice A modifier that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
-  modifier withinTarget(bytes32 newHash, uint256 entry) {
+  modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
     // Check the ticket is a winning one.
     // TODO Figure out how to uncomment the next line, but not break tests sporadically.
     // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
@@ -128,14 +133,14 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     if (now - reputationMiningWindowOpenTimestamp <= 3600) {
       uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
       uint256 target = (now - reputationMiningWindowOpenTimestamp ) * x;
-      require(uint256(getEntryHash(msg.sender, entry, newHash)) < target);
+      require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target);
     }
     _;
   }
 
   /// @notice Get the hash for the corresponding entry.
-  function getEntryHash(address submitter, uint256 entry, bytes32 newHash) public pure returns (bytes32) {
-    return keccak256(submitter, entry, newHash);
+  function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
+    return keccak256(submitter, entryIndex, newHash);
   }
 
   /// @notice Constructor for this contract.
@@ -147,10 +152,10 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
   /// @notice Submit a new reputation root hash
   /// @param newHash The proposed new reputation root hash
   /// @param nNodes Number of nodes in tree with root `newHash`
-  /// @param entry The entry number for the given `newHash` and `nNodes`
-  function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entry)
-  entryQualifies(newHash, nNodes, entry)
-  withinTarget(newHash, entry)
+  /// @param entryIndex The entry number for the given `newHash` and `nNodes`
+  function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex)
+  entryQualifies(newHash, nNodes, entryIndex)
+  withinTarget(newHash, entryIndex)
   public
   {
     // Limit the total number of miners allowed to submit a specific hash to 12
@@ -199,7 +204,7 @@ contract ReputationMiningCycle is PatriciaTree, DSMath {
     // And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes].push(msg.sender);
     // Note that they submitted it.
-    submittedEntries[newHash][msg.sender][entry] = true;
+    submittedEntries[newHash][msg.sender][entryIndex] = true;
   }
 
   /// @notice Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
