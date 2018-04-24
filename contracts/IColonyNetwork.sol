@@ -31,7 +31,7 @@ contract IColonyNetwork {
   /// @notice Event logged when a new skill is added
   /// @dev Emitted from `IColonyNetwork.addSkill` function
   /// @param skillId The skill id
-  /// @param parentSkillId The id of the parent skill under which this new skill is added 
+  /// @param parentSkillId The id of the parent skill under which this new skill is added
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
   /// @notice Event logged when a new auction is created and started
@@ -71,7 +71,7 @@ contract IColonyNetwork {
   function isGlobalSkill(uint256 _skillId) public view returns (bool);
 
   /// @notice Adds a reputation update entry to log
-  /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or 
+  /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or
   /// @param _user The address of the user for the reputation update
   /// @param _amount The amount of reputation change for the update, this can be a negative as well as a positive value
   /// @param _skillId The skill for the reputation update
@@ -138,29 +138,29 @@ contract IColonyNetwork {
   /// @return Address of the `Resolver` contract
   function getColonyVersionResolver(uint256 _version) public view returns (address);
 
-  /// @notice Get the `ReputationLogEntry` at index `_id` for either the currently active or inactive reputation update log 
+  /// @notice Get the `ReputationLogEntry` at index `_id` for either the currently active or inactive reputation update log
   /// @param _id The reputation log members array index of the entry to get
   /// @param activeLog True for the active log, false otherwise
-  /// @return user
-  /// @return amount
-  /// @return skillId
-  /// @return colony
-  /// @return nUpdates
-  /// @return nPreviousUpdates
+  /// @return user The address of the user having their reputation changed by this log entry
+  /// @return amount The amount by which the user's reputation is going to change
+  /// @return skillId The skillId of the reputation being affected
+  /// @return colony The address of the colony the reputation is being affected in
+  /// @return nUpdates The number of updates this log entry implies (including updates to parents, children and colony-wide totals thereof)
+  /// @return nPreviousUpdates The number of updates all previous entries in the log imply (including reputation decays, updates to parents, children, and colony-wide totals thereof)
   function getReputationUpdateLogEntry(uint256 _id, bool activeLog) public view returns (address, int, uint256, address, uint256, uint256);
-  
+
   /// @notice Allow a reputation miner to stake an `_amount` of CLNY tokens, which is required
   /// before they can submit a new reputation root hash via `ReputationMiningCycle.submitNewHash`
   /// @dev The Colony Network has to be authorised to transfer the `_amount` on behalf of the user prior to this call
   /// @param _amount Number of CLNY tokens to stake
   function deposit(uint256 _amount) public;
-  
+
   /// @notice Allow a user who has staked CLNY tokens to withdraw them
   /// @dev Errors if the user has submitted a new reputation root hash or backed one someone else submitted in the current mining cycle
   /// @param amount CLNY tokens amount to withdraw
   function withdraw(uint256 amount) public;
 
-  /// @notice Get the amount of staked CLNY tokens for user `_user` 
+  /// @notice Get the amount of staked CLNY tokens for user `_user`
   /// @param _user Address of the user whose balance we want to get
   /// @return User stake balance
   function getStakedBalance(address _user) public view returns (uint256);
@@ -171,24 +171,26 @@ contract IColonyNetwork {
   /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
   function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public;
 
-  /// @notice Starts a new Reputation Mining cycle. Explicitely called only the first time,
+  /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`
   function startNextCycle() public;
 
-  /// @notice 
+  /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect
+  /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
   /// @param stakers Array of the addresses of stakers to punish
   function punishStakers(address[] stakers) public;
 
-  /// @notice 
-  /// @return 
+  /// @notice Function that returns the address of the currently active ReputationMiningCycle contract
+  /// @return address Address of the active ReputationMiningCycle contract
   function getReputationMiningCycle() public view returns (address);
 
-  /// @notice
-  /// @return 
+  /// @notice Get the root hash of the current reputation state tree
+  /// @return bytes32 The current Reputation Root Hash
   function getReputationRootHash() public view returns (bytes32);
 
-  /// @notice
-  /// @return 
+  /// @notice Get the number of nodes in the current reputation state tree.
+  /// @dev I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution
+  /// @return uint256 The number of nodes in the state tree
   function getReputationRootHashNNodes() public view returns (uint256);
 
   /// @notice Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network

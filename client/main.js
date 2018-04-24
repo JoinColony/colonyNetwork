@@ -57,10 +57,14 @@ function MetamaskSigner(minerAddress, provider) {
     return tx;
   };
 }
-
 // ===================================
 
 class ReputationMiningClient {
+  /**
+   * Constructor for ReputationMiningClient
+   * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
+   * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
+   */
   constructor(minerAddress, realProviderPort = 8545) {
     this.minerAddress = minerAddress;
     const ganacheProvider = ganache.provider({
@@ -88,6 +92,11 @@ class ReputationMiningClient {
     }
   }
 
+  /**
+   * Initialises the mining client so that it knows where to find the `ColonyNetwork` contract
+   * @param  {string}  colonyNetworkAddress The address of the current `ColonyNetwork` contract
+   * @return {Promise}
+   */
   async initialise(colonyNetworkAddress) {
     const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(PatriciaTreeJSON.bytecode, PatriciaTreeJSON.abi);
     const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
@@ -99,7 +108,11 @@ class ReputationMiningClient {
   async setColonyNetworkAddress(address) {
     this.colonyNetwork = new ethers.Contract(address, ColonyNetworkJSON.abi, this.realWallet);
   }
-
+  /**
+   * When called, adds the entire contents of the current (inactive) log to its reputation tree. It also builds a Justification Tree as it does so
+   * in case a dispute is called which would require it.
+   * @return {Promise}
+   */
   async addLogContentsToReputationTree() {
     const makeJustificationTree = true;
     // Snapshot the current state, in case we get in to a dispute, and have to roll back
@@ -231,6 +244,12 @@ class ReputationMiningClient {
     // console.log(this.justificationHashes);
   }
 
+  /**
+   * Formats `_reputationState` and `nNodes` in to the format used for the Justification Tree
+   * @param  {bigNumber or string} _reputationState The reputation state root hashes
+   * @param  {bigNumber or string} nNodes           The number of nodes in the reputation state Tree
+   * @return {string}                               The correctly formatted hex string for inclusion in the justification tree
+   */
   getJRHEntryValueAsBytes(_reputationState, nNodes) { //eslint-disable-line
     let reputationState = _reputationState.toString(16);
     if (reputationState.substring(0, 2) === "0x") {
@@ -239,16 +258,33 @@ class ReputationMiningClient {
     return `0x${new BN(reputationState.toString(), 16).toString(16, 64)}${new BN(nNodes.toString()).toString(16, 64)}`;
   }
 
-  // The version of this function in malicious.js uses `this`, but not here.
+  /**
+   * Formats `reputation` and `uid` in to the format used for the Reputation Tree
+   * @param  {bigNumber or string} reputation The reputation score
+   * @param  {bigNumber or string} uid        The global UID assigned to this reputation
+   * @return {string}            Appropriately formatted hex string
+   */
+  getValueAsBytes(reputation, uid) { //eslint-disable-line
+    return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
+  }
+
+  /**
+   * Get the reputation change from the supplied logEntry
+   * @param  {Number} i        The number of the log entry. Not used here, but is in malicious.js to know whether to lie
+   * @param  {Array} logEntry The log entry
+   * @return {BigNumber}        The entry's reputation change
+   * @dev The version of this function in malicious.js uses `this`, but not this version.
+   */
   // eslint-disable-next-line class-methods-use-this
   getScore(i, logEntry) {
     return logEntry[1];
   }
 
-  getValueAsBytes(reputation, uid) { //eslint-disable-line
-    return `0x${new BN(reputation.toString()).toString(16, 64)}${new BN(uid.toString()).toString(16, 64)}`;
-  }
-
+  /**
+   * Get the key and value of the most recently added reputation (i.e. the one with the highest UID),
+   * and proof (branchMask and siblings) that it exists in the current reputation state.
+   * @return {Promise}    The returned promise will resolve to `[key, value, branchMask, siblings]`
+   */
   async getNewestReputationInformation() {
     let newestReputationKey = Object.keys(this.reputations)[this.nReputations - 1];
     let newestReputationValue;
@@ -262,6 +298,10 @@ class ReputationMiningClient {
     return [newestReputationKey, newestReputationValue, newestReputationBranchMask, newestReputationSiblings];
   }
 
+  /**
+   * Submit what the client believes should be the next reputation state root hash to the `ReputationMiningCycle` contract
+   * @return {Promise}
+   */
   async submitRootHash() {
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
     const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
@@ -272,16 +312,29 @@ class ReputationMiningClient {
     await repCycle.submitNewHash(hash, this.nReputations, 1, { gasLimit: `0x${gas.mul(2).toString()}` });
   }
 
+  /**
+   * Get what the client believes should be the next reputation state root hash.
+   * @return {Promise}      Resolves to the root hash
+   */
   async getRootHash() {
     return this.reputationTree.getRootHash();
   }
 
+  /**
+   * Get a Merkle proof for `key` in the current (local) reputation state.
+   * @param  {string}  key The reputation key the proof is being asked for
+   * @return {Promise}     Resolves to [branchMask, siblings]
+   */
   async getProof(key) {
     const [branchMask, siblings] = await this.reputationTree.getProof(key);
     const retBranchMask = branchMask.toHexString();
     return [retBranchMask, siblings];
   }
 
+  /**
+   * Submit the Justification Root Hash (JRH) for the hash that (presumably) we submitted this round
+   * @return {Promise}
+   */
   async submitJustificationRootHash() {
     const jrh = await this.justificationTree.getRootHash();
     const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
@@ -296,6 +349,10 @@ class ReputationMiningClient {
     });
   }
 
+  /**
+   * Returns the round and index that our submission is currently at in the dispute cycle.
+   * @return {Promise} Resolves to [round, index] which are `BigNumber`.
+   */
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
@@ -316,6 +373,11 @@ class ReputationMiningClient {
     return [round, index];
   }
 
+  /**
+   * Respond to the next stage in the binary search occurring on `ReputationMiningCycle` contract in order to find
+   * the first log entry where our submitted hash and the hash we are paired off against differ.
+   * @return {Promise} Resolves to the tx hash of the response
+   */
   async respondToBinarySearchForChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
@@ -337,6 +399,11 @@ class ReputationMiningClient {
     return tx;
   }
 
+  /**
+   * Respond to a specific challenge over the effect of a specific log entry once the binary search has been completed to establish
+   * the log entry where the two submitted hashes differ.
+   * @return {Promise} Resolves to tx hash of the response
+   */
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle.call();
@@ -420,6 +487,15 @@ class ReputationMiningClient {
     return tx;
   }
 
+  /**
+   * Insert (or update) the reputation for a user in the local reputation tree
+   * @param  {string}  _colonyAddress  Hex address of the colony in which the reputation is being updated
+   * @param  {Number or BigNumber or String}  skillId        The id of the skill being updated
+   * @param  {string}  _userAddress    Hex address of the user who is having their reputation being updated
+   * @param  {Number of BigNumber or String}  reputationScore The new reputation value
+   * @param  {Number or BigNumber}  index           The index of the log entry being considered
+   * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
+   */
   async insert(_colonyAddress, skillId, _userAddress, reputationScore, index) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
