@@ -187,10 +187,9 @@ contract("All", accounts => {
       const goodClient = new ReputationMiningClient(STAKER1, realProviderPort);
       const badClient = new MaliciousReputationMiningClient(STAKER2, realProviderPort, 1, 0xfffffffff);
       const badClient2 = new MaliciousReputationMiningClient(STAKER3, realProviderPort, 2, 0xfffffffff);
-      goodClient.initialise(colonyNetwork.address);
-      badClient.initialise(colonyNetwork.address);
-      badClient2.initialise(colonyNetwork.address);
-
+      await goodClient.initialise(colonyNetwork.address);
+      await badClient.initialise(colonyNetwork.address);
+      await badClient2.initialise(colonyNetwork.address);
       // Submit hashes
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
