@@ -15,7 +15,7 @@ contract IPatriciaTree {
   function getRootHash() public view returns (bytes32);
 
   /// @notice Get the root edge
-  /// @return The root `Data.Edge` 
+  /// @return The root `Data.Edge`
   function getRootEdge() public view returns (Data.Edge e);
 
   /// @notice Get the node with the given key
@@ -32,8 +32,8 @@ contract IPatriciaTree {
   /// @param rootHash RootHash to use is check
   /// @return `true` if the proof is correct, throws otherwise
   function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool);
-  
-  /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings` 
+
+  /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings`
   /// @return The calculated hash
   function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bytes32);
 

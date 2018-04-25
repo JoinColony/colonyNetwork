@@ -65,11 +65,6 @@ library Data {
     return keccak256(self.node, self.label.length, self.label.data);
   }
 
-  function replaceNode(Tree storage self, bytes32 oldHash, Node memory n) internal returns (bytes32 newHash) {
-    delete self.nodes[oldHash];
-    return insertNode(self, n);
-  }
-
   function insert(Tree storage self, bytes key, bytes value) internal {
     Label memory k = Label(keccak256(key), 256);
     bytes32 valueHash = keccak256(value);

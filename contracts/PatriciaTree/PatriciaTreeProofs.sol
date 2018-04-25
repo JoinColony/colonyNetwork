@@ -7,7 +7,8 @@ import {Bits} from "./Bits.sol";
 import "./IPatriciaTree.sol";
 import "./PatriciaTreeProofs.sol";
 
-
+/// @title Patricia tree implementation
+/// @notice More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeProofs {
   using Bits for uint;
   using Data for Data.Edge;
