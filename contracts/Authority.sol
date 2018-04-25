@@ -26,7 +26,7 @@ contract Authority is DSRoles {
   uint8 ownerRole = 0;
   uint8 adminRole = 1;
 
-  function Authority(address colony) public {
+  constructor(address colony) public {
     bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32,uint256)"));
     setRoleCapability(ownerRole, colony, makeTaskSig, true);
     setRoleCapability(adminRole, colony, makeTaskSig, true);

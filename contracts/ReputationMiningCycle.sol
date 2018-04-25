@@ -50,7 +50,7 @@ contract ReputationMiningCycle {
     _;
   }
 
-  function ReputationMiningCycle() public {
+  constructor() public {
     colonyNetworkAddress = msg.sender;
     reputationMiningWindowOpenTimestamp = now;
   }

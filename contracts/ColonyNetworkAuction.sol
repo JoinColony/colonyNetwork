@@ -100,7 +100,7 @@ contract DutchAuction is DSMath {
   event AuctionClaim(address indexed _recipient, uint _sentAmount);
   event AuctionFinalized(uint _finalPrice);
 
-  function DutchAuction(address _clnyToken, address _token) public {
+  constructor(address _clnyToken, address _token) public {
     colonyNetwork = msg.sender;
     require(_clnyToken != 0x0 && _token != 0x0);
     assert(_token != _clnyToken);
