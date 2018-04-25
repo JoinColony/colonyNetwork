@@ -52,7 +52,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   uint256 public nInvalidatedHashes = 0;
 
   struct Submission {
-    bytes32 hash;                         // The hash that the submitter is proposing as the next reputation hash
+    bytes32 proposedNewRootHash;          // The hash that the submitter is proposing as the next reputation hash
     uint256 nNodes;                       // The number of nodes in the reputation tree being proposed as the next reputation hash
     uint256 lastResponseTimestamp;        // If nonzero, the last time that a valid response was received corresponding to this
                                           // submission during the challenge process - either binary searching for the challenge,
@@ -114,8 +114,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // Here, the minimum stake is 10**15.
     require(entryIndex <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
     require(entryIndex > 0);
-    if (reputationHashSubmissions[msg.sender].hash != 0x0) {                // If this user has submitted before during this round...
-      require(newHash == reputationHashSubmissions[msg.sender].hash);       // ...require that they are submitting the same hash ...
+    if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {                // If this user has submitted before during this round...
+      require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash);       // ...require that they are submitting the same hash ...
       require(nNodes == reputationHashSubmissions[msg.sender].nNodes);      // ...require that they are submitting the same number of nodes for that hash ...
       require (submittedEntries[newHash][msg.sender][entryIndex] == false); // ... but not this exact entry
     }
@@ -167,7 +167,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       // And add it to the first disputeRound
       // NB if no other hash is submitted, no dispute resolution will be required.
       disputeRounds[0].push(Submission({
-        hash: newHash,
+        proposedNewRootHash: newHash,
         jrh: 0x0,
         nNodes: nNodes,
         lastResponseTimestamp: 0,
@@ -189,7 +189,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
 
     reputationHashSubmissions[msg.sender] = Submission({
-      hash: newHash,
+      proposedNewRootHash: newHash,
       jrh: 0x0,
       nNodes: nNodes,
       lastResponseTimestamp: 0,
@@ -215,7 +215,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   {
     // TODO: Require some amount of time to have passed (i.e. people have had a chance to submit other hashes)
     Submission storage submission = disputeRounds[roundNumber][0];
-    IColonyNetwork(colonyNetworkAddress).setReputationRootHash(submission.hash, submission.nNodes, submittedHashes[submission.hash][submission.nNodes]);
+    IColonyNetwork(colonyNetworkAddress).setReputationRootHash(submission.proposedNewRootHash, submission.nNodes, submittedHashes[submission.proposedNewRootHash][submission.nNodes]);
     selfdestruct(colonyNetworkAddress);
   }
 
@@ -255,7 +255,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       }
     } else {
       require(disputeRounds[round].length > opponentIdx);
-      require(disputeRounds[round][opponentIdx].hash != "");
+      require(disputeRounds[round][opponentIdx].proposedNewRootHash != "");
 
       // Require that this is not better than its opponent.
       require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted);
@@ -287,14 +287,14 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
         // Our opponent completed the same number of challenge rounds, and both have now timed out.
         nInvalidatedHashes += 2;
         // Punish the people who proposed our opponent
-        IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][opponentIdx].hash][disputeRounds[round][opponentIdx].nNodes]);
+        IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes]);
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
       nHashesCompletedChallengeRound[round] += 2;
 
       // Punish the people who proposed the hash that was rejected
-      IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].hash][disputeRounds[round][idx].nNodes]);
+      IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes]);
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
@@ -691,7 +691,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint256 nUpdates = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogLength(false);
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
-    bytes32 submittedHash = disputeRounds[round][index].hash;
+    bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;
     uint256 submittedHashNNodes = disputeRounds[round][index].nNodes;
     bytes memory jhLeafValue = new bytes(64);
     assembly {

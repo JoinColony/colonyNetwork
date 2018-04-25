@@ -117,14 +117,14 @@ library Data {
   }
 
   function insertNode(Tree storage tree, Node memory n) private returns (bytes32 newHash) {
-    bytes32 h = hash(n);
+    bytes32 h = nodeEncodingHash(n);
     tree.nodes[h].children[0] = n.children[0];
     tree.nodes[h].children[1] = n.children[1];
     return h;
   }
 
   // Returns the hash of the encoding of a node.
-  function hash(Node memory self) private pure returns (bytes32) {
+  function nodeEncodingHash(Node memory self) private pure returns (bytes32) {
     return keccak256(edgeHash(self.children[0]), edgeHash(self.children[1]));
   }
 
