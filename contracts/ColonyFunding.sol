@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "../lib/dappsys/math.sol";
@@ -59,7 +59,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
   taskFinalized(_id)
   {
     Task storage task = tasks[_id];
-    require(task.roles[_role].user == msg.sender);
+    require(task.roles[_role].user == msg.sender, "colony-claim-payout-access-denied");
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
     task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
@@ -92,12 +92,12 @@ contract ColonyFunding is ColonyStorage, DSMath {
   auth
   {
     // Prevent people moving funds from the pot for paying out token holders
-    require(_fromPot > 0);
+    require(_fromPot > 0, "colony-funding-cannot-move-funds-from-pot-0");
     // TODO Only allow sending from created pots - perhaps not necessary explicitly, but if not, note as such here.
-    require(_toPot <= potCount); // Only allow sending to created pots
+    require(_toPot <= potCount, "colony-funding-nonexistent-pot"); // Only allow sending to created pots
     if (pots[_fromPot].taskId > 0) {
       Task storage task = tasks[pots[_fromPot].taskId];
-      require(task.finalized == false || task.totalPayouts[_token] == 0);
+      require(task.finalized == false || task.totalPayouts[_token] == 0, "colony-funding-bad-state");
       // i.e. if this pot is associated with a task, prevent money being taken from the pot if the task
       // has been finalized, unless everyone has been paid out.
     }
