@@ -1425,7 +1425,7 @@ contract("ColonyNetworkStaking", accounts => {
       const value = client.reputations[key];
       const proof = await client.getProof(key);
       const [branchMask, siblings] = proof;
-      const validProof = await commonColony.verifyProof(`${key}`, `${value}`, branchMask, siblings);
+      const validProof = await commonColony.verifyReputationProof(`${key}`, `${value}`, branchMask, siblings);
       assert.equal(validProof, true);
     });
 

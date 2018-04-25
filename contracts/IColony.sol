@@ -97,7 +97,7 @@ contract IColony {
   /// @notice Get the number of domains in the colony
   /// @return The domain count. Min 1 as the root domain is created at the same time as the colony
   function getDomainCount() public view returns (uint256);
-  function verifyProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool);
+  function verifyReputationProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members

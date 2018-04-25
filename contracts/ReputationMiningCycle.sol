@@ -25,13 +25,13 @@ import "./EtherRouter.sol";
 import "./ERC20Extended.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IColonyNetwork.sol";
-import "./PatriciaTree/PatriciaTree.sol";
+import "./PatriciaTree/PatriciaTreeProofs.sol";
 
 
 // TODO: Can we handle all possible disputes regarding the very first hash that should be set?
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
 // A possible workaround would be to 'kick off' reputation mining with a known dummy state...
-contract ReputationMiningCycle is PatriciaTree, DSMath {
+contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   address colonyNetworkAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
