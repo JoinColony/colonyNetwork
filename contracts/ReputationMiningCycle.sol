@@ -153,7 +153,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @param newHash The proposed new reputation root hash
   /// @param nNodes Number of nodes in tree with root `newHash`
   /// @param entryIndex The entry number for the given `newHash` and `nNodes`
-  function submitNewHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex)
+  function submitRootHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex)
   entryQualifies(newHash, nNodes, entryIndex)
   withinTarget(newHash, entryIndex)
   public
@@ -305,7 +305,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
   /// @param branchMask The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
-  function binarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public {
+  function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public {
     // TODO: Check this challenge is active.
     // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
     require(disputeRounds[round][idx].lowerBound!=disputeRounds[round][idx].upperBound);
@@ -431,7 +431,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @param branchMask2 The branchmask for the Merkle proof that the proposed new reputation state is at the key corresponding to the number of transactions expected in this update in the submitted JRH. This key should be the number of decay transactions plus the number of transactions the log indicates are to happen.
   /// @param siblings2 The siblings for the same Merkle proof
   /// @dev The majority of calls to this function will have `round` equal to `0`. The one exception to this is when a submitted hash is given a bye in the first round, in which case `round` will be equal to `1`.
-  function submitJRH(
+  function submitJustificationRootHash(
     uint256 round,
     uint256 index,
     bytes32 jrh,

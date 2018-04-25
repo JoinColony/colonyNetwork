@@ -303,8 +303,8 @@ class ReputationMiningClient {
 
     const hash = await this.getRootHash();
     // TODO: Work out what entry we should use when we submit
-    const gas = await repCycle.estimate.submitNewHash(hash, this.nReputations, 1);
-    await repCycle.submitNewHash(hash, this.nReputations, 1, { gasLimit: `0x${gas.mul(2).toString()}` });
+    const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, 1);
+    await repCycle.submitRootHash(hash, this.nReputations, 1, { gasLimit: `0x${gas.mul(2).toString()}` });
   }
 
   /**
@@ -339,7 +339,7 @@ class ReputationMiningClient {
     const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
 
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    await repCycle.submitJRH(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
+    await repCycle.submitJustificationRootHash(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
       gasLimit: 6000000
     });
   }
@@ -387,9 +387,16 @@ class ReputationMiningClient {
     const intermediateReputationHash = this.justificationHashes[`0x${targetNode.toString(16, 64)}`].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(`0x${targetNode.toString(16, 64)}`);
 
-    const tx = await repCycle.binarySearchForChallenge(round.toString(), index.toString(), intermediateReputationHash, branchMask, siblings, {
-      gasLimit: 1000000
-    });
+    const tx = await repCycle.respondToBinarySearchForChallenge(
+      round.toString(),
+      index.toString(),
+      intermediateReputationHash,
+      branchMask,
+      siblings,
+      {
+        gasLimit: 1000000
+      }
+    );
     submission = await repCycle.disputeRounds(round.toString(), index.toString());
     return tx;
   }
