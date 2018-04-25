@@ -2,9 +2,9 @@
 import { forwardTime, checkErrorRevert, web3GetTransactionReceipt } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 import ReputationMiningClient from "../client/main";
-import MaliciousReputationMiningClient from "../client/malicious";
-import MaliciousReputationMiningClient2 from "../client/malicious2";
-import MaliciousReputationMiningClient3 from "../client/malicious3";
+import MaliciousReputationMiningClient from "../client/test/malicious";
+import MaliciousReputationMiningClient2 from "../client/test/malicious2";
+import MaliciousReputationMiningClient3 from "../client/test/malicious3";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");

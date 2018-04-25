@@ -24,7 +24,7 @@ import { getRandomString, getTokenArgs, currentBlockTime, createSignatures, forw
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/test-data-generator";
 import ReputationMiningClient from "../client/main";
-import MaliciousReputationMiningClient from "../client/malicious";
+import MaliciousReputationMiningClient from "../client/test/malicious";
 
 const BN = require("bn.js");
 

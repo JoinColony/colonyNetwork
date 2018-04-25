@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import ReputationMiningClient from "./main";
+import ReputationMiningClient from "./../main";
 
 class MaliciousReputationMiningClient3 extends ReputationMiningClient {
   // This client will reuse a UID for a reputation

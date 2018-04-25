@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import ReputationMiningClient from "./main";
+import ReputationMiningClient from "./../main";
 
 class MaliciousReputationMiningClient2 extends ReputationMiningClient {
   // This client uses the wrong UID for a reputation (even an existing one)

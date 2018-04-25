@@ -1,4 +1,4 @@
-import ReputationMiningClient from "./main";
+import ReputationMiningClient from "./../main";
 
 class MaliciousReputationMiningClient extends ReputationMiningClient {
   // Only difference between this and the 'real' client should be that it adds some extra
