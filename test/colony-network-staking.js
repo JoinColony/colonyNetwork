@@ -1213,8 +1213,9 @@ contract("ColonyNetworkStaking", accounts => {
   describe("Intended ('happy path') behaviours", () => {
     it("should cope with many hashes being submitted and eliminated before a winner is assigned", async function manySubmissionTest() {
       this.timeout(100000000);
+      const nClients = Math.min(accounts.length, 7);
       // TODO: This test probably needs to be written more carefully to make sure all possible edge cases are dealt with
-      for (let i = 0; i < accounts.length; i += 1) {
+      for (let i = 0; i < nClients; i += 1) {
         await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], "1000000000000000000"); // eslint-disable-line no-await-in-loop
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
         // right taskId, so if they're all created at once it messes up.
@@ -1227,7 +1228,7 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.submitRootHash("0x0", 0, 10);
       await repCycle.confirmNewHash(0);
       const clients = await Promise.all(
-        accounts.map(async (addr, index) => {
+        accounts.slice(0, nClients).map(async (addr, index) => {
           const client = new MaliciousReputationMiningClient(addr, realProviderPort, accounts.length - index, index);
           // Each client will get a different reputation update entry wrong by a different amount, apart from the first one which
           // will submit a correct hash.
