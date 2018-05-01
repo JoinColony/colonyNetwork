@@ -5639,9 +5639,9 @@ solidity-coverage@0.5.0:
     solidity-parser-sc "0.4.8"
     web3 "^0.18.4"
 
-solidity-parser-antlr@^0.2.8:
-  version "0.2.8"
-  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.2.8.tgz#8eb8547a88dfeaf6cf4c7811e3824084214244d4"
+solidity-parser-antlr@^0.2.10:
+  version "0.2.10"
+  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.2.10.tgz#6bc9e48faf49c1bf7bb49562cc1900f25153171c"
 
 solidity-parser-sc@0.4.8:
   version "0.4.8"
