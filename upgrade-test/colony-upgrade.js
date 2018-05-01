@@ -1,5 +1,6 @@
 /* globals artifacts */
-import { getRandomString, getTokenArgs, hexToUtf8 } from "../helpers/test-helper";
+import { hexToUtf8 } from "web3-utils";
+import { getRandomString, getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");

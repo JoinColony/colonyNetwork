@@ -15,9 +15,8 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
-pragma experimental "ABIEncoderV2";
 
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
@@ -41,7 +40,7 @@ contract Colony is ColonyStorage {
   }
 
   function initialiseColony(address _address) public {
-    require(colonyNetworkAddress == 0x0);
+    require(colonyNetworkAddress == 0x0, "colony-initialise-bad-address");
     colonyNetworkAddress = _address;
     potCount = 1;
 
@@ -65,10 +64,10 @@ contract Colony is ColonyStorage {
   auth
   isInBootstrapPhase
   {
-    require(_users.length == _amounts.length);
+    require(_users.length == _amounts.length, "colony-bootstrap-bad-inputs");
 
     for (uint i = 0; i < _users.length; i++) {
-      require(_amounts[i] >= 0);
+      require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
 
       token.transfer(_users[i], uint(_amounts[i]));
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
@@ -82,8 +81,8 @@ contract Colony is ColonyStorage {
   }
 
   function mintTokensForColonyNetwork(uint _wad) public {
-    require(msg.sender == colonyNetworkAddress); // Only the colony Network can call this function
-    require(this == IColonyNetwork(colonyNetworkAddress).getColony("Common Colony")); // Function only valid on the Common Colony
+    require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed"); // Only the colony Network can call this function
+    require(this == IColonyNetwork(colonyNetworkAddress).getColony("Common Colony"), "colony-access-denied-only-common-colony-allowed"); // Function only valid on the Common Colony
     token.mint(_wad);
     token.transfer(colonyNetworkAddress, _wad);
   }
@@ -103,7 +102,7 @@ contract Colony is ColonyStorage {
     // Instead check that the parent skill id belongs to this colony own domain
     // Get the local skill id of the root domain
     uint256 rootDomainSkillId = domains[1].skillId;
-    require(_parentSkillId == rootDomainSkillId);
+    require(_parentSkillId == rootDomainSkillId, "colony-parent-skill-not-root");
 
     // Setup new local skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);

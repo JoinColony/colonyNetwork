@@ -87,7 +87,7 @@ contract("Colony Funding", () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await colony.makeTask(SPECIFICATION_HASH, 1);
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(0, 2, 1, otherToken.address));
+      await checkErrorRevert(colony.moveFundsBetweenPots(0, 2, 1, otherToken.address), "colonyFunding-cannot-move-funds-from-pot-0");
       const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
       const colonyRewardPotBalance = await colony.getPotBalance.call(0, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);

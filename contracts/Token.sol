@@ -15,9 +15,8 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
-pragma experimental "ABIEncoderV2";
 
 
 import "../lib/dappsys/auth.sol";
@@ -35,7 +34,7 @@ contract Token is DSAuth, DSMath, ERC20Extended {
   mapping (address => uint256) _balances;
   mapping (address => mapping (address => uint256)) _approvals;
 
-  function Token(bytes32 _name, bytes32 _symbol, uint256 _decimals) public {
+  constructor(bytes32 _name, bytes32 _symbol, uint256 _decimals) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;

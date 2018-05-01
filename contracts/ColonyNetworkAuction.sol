@@ -15,9 +15,8 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
-pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/math.sol";
 import "./ColonyNetworkStorage.sol";
@@ -100,7 +99,7 @@ contract DutchAuction is DSMath {
   event AuctionClaim(address indexed _recipient, uint _sentAmount);
   event AuctionFinalized(uint _finalPrice);
 
-  function DutchAuction(address _clnyToken, address _token) public {
+  constructor(address _clnyToken, address _token) public {
     colonyNetwork = msg.sender;
     require(_clnyToken != 0x0 && _token != 0x0);
     assert(_token != _clnyToken);

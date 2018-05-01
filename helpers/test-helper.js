@@ -68,7 +68,7 @@ export function web3GetCode(a) {
   });
 }
 
-async function checkError(promise, isAssert) {
+async function checkError(promise, errMsg, isAssert) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
   // (still making a valid transaction and returning a txid). For the explanation of why
@@ -82,6 +82,7 @@ async function checkError(promise, isAssert) {
     tx = await promise;
     receipt = await web3GetTransactionReceipt(tx);
   } catch (err) {
+    // TODO: Check errMsg == err.Error or wherever truffle decides ot put this
     ({ tx, receipt } = err);
   }
 
@@ -99,12 +100,12 @@ async function checkError(promise, isAssert) {
   }
 }
 
-export async function checkErrorRevert(promise) {
-  return checkError(promise, false);
+export async function checkErrorRevert(promise, errMsg) {
+  return checkError(promise, errMsg, false);
 }
 
-export async function checkErrorAssert(promise) {
-  return checkError(promise, true);
+export async function checkErrorAssert(promise, errMsg) {
+  return checkError(promise, errMsg, true);
 }
 
 export function checkErrorNonPayableFunction(tx) {
@@ -125,10 +126,6 @@ export function getRandomString(_length) {
 
 export function getTokenArgs() {
   return [getRandomString(5), getRandomString(3), 18];
-}
-
-export function hexToUtf8(text) {
-  return web3.toAscii(text).replace(/\u0000/g, "");
 }
 
 export async function currentBlockTime() {

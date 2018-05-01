@@ -15,9 +15,8 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
-pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/roles.sol";
 
@@ -26,7 +25,7 @@ contract Authority is DSRoles {
   uint8 ownerRole = 0;
   uint8 adminRole = 1;
 
-  function Authority(address colony) public {
+  constructor(address colony) public {
     bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32,uint256)"));
     setRoleCapability(ownerRole, colony, makeTaskSig, true);
     setRoleCapability(adminRole, colony, makeTaskSig, true);
