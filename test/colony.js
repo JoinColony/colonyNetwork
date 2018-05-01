@@ -1,6 +1,6 @@
 /* globals artifacts */
 
-import { toBN } from "web3-utils";
+import { hexToUtf8, toBN } from "web3-utils";
 
 import {
   MANAGER,
@@ -27,7 +27,6 @@ import {
   getTokenArgs,
   web3GetBalance,
   checkErrorRevert,
-  hexToUtf8,
   expectEvent,
   currentBlockTime,
   createSignatures

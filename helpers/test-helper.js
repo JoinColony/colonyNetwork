@@ -128,10 +128,6 @@ export function getTokenArgs() {
   return [getRandomString(5), getRandomString(3), 18];
 }
 
-export function hexToUtf8(text) {
-  return web3.toAscii(text).replace(/\u0000/g, "");
-}
-
 export async function currentBlockTime() {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock("latest", (err, res) => {
