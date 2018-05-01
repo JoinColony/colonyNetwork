@@ -31,6 +31,7 @@ contract("ColonyNetworkAuction", accounts => {
 
     const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     metaColony = IColony.at(metaColonyAddress);
+    await colonyNetwork.startNextCycle();
   });
 
   beforeEach(async () => {

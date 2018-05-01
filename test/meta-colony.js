@@ -36,6 +36,7 @@ contract("Meta Colony", () => {
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
+    await colonyNetwork.startNextCycle();
 
     metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(metaColonyToken.address);

@@ -542,8 +542,8 @@ contract("ColonyNetworkStaking", accounts => {
     it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
 
-      const addr = await colonyNetwork.getReputationMiningCycle.call();
-      const repCycle = ReputationMiningCycle.at(addr);
+      let addr = await colonyNetwork.getReputationMiningCycle.call();
+      let repCycle = ReputationMiningCycle.at(addr);
       await forwardTime(3600, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.submitRootHash("0x12345678", 10, 9);
@@ -555,8 +555,11 @@ contract("ColonyNetworkStaking", accounts => {
       const balance1Updated = await colonyNetwork.getStakedBalance(MAIN_ACCOUNT);
       assert.equal(balance1Updated.toString(), new BN("3").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
 
+      addr = await colonyNetwork.getNextReputationMiningCycle.call();
+      repCycle = ReputationMiningCycle.at(addr);
+
       // Check that they will be getting the reputation owed to them.
-      let repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
+      let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -564,7 +567,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
 
-      repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(1, true);
+      repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(1);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -572,7 +575,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
 
-      const reputationUpdateLogLength = await colonyNetwork.getReputationUpdateLogLength(true);
+      const reputationUpdateLogLength = await repCycle.getReputationUpdateLogLength();
       assert.equal(reputationUpdateLogLength.toString(), 2);
     });
 
@@ -654,9 +657,9 @@ contract("ColonyNetworkStaking", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
 
-      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      let addr = await colonyNetwork.getReputationMiningCycle.call();
       await forwardTime(3600, this);
-      const repCycle = ReputationMiningCycle.at(addr);
+      let repCycle = ReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.submitRootHash("0x12345678", 10, 8, { from: OTHER_ACCOUNT });
       await repCycle.confirmNewHash(0);
@@ -667,8 +670,11 @@ contract("ColonyNetworkStaking", accounts => {
       const balance2Updated = await colonyNetwork.getStakedBalance(OTHER_ACCOUNT);
       assert.equal(balance2Updated.toString(), new BN("2").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
 
+      addr = await colonyNetwork.getNextReputationMiningCycle.call();
+      repCycle = ReputationMiningCycle.at(addr);
+
       // Check that they will be getting the reputation owed to them.
-      let repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
+      let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -676,7 +682,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
 
-      repLogEntryMiner = await colonyNetwork.getReputationUpdateLogEntry.call(1, true);
+      repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(1);
       assert.equal(repLogEntryMiner[0], OTHER_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
@@ -684,7 +690,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
 
-      const reputationUpdateLogLength = await colonyNetwork.getReputationUpdateLogLength(true);
+      const reputationUpdateLogLength = await repCycle.getReputationUpdateLogLength();
       assert.equal(reputationUpdateLogLength.toString(), 2);
     });
   });
@@ -731,7 +737,7 @@ contract("ColonyNetworkStaking", accounts => {
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for three task completions (manager, worker, evaluator);
       // That's seven in total.
-      const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
       await goodClient.addLogContentsToReputationTree();
@@ -791,7 +797,7 @@ contract("ColonyNetworkStaking", accounts => {
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for three task completions (manager, worker (skill and domain), evaluator);
       // That's thirteen in total.
-      const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
       await goodClient.addLogContentsToReputationTree();
@@ -917,7 +923,7 @@ contract("ColonyNetworkStaking", accounts => {
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for three task completions (manager, worker (skill and domain), evaluator);
       // That's thirteen in total.
-      const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
       await goodClient.addLogContentsToReputationTree();
@@ -990,7 +996,7 @@ contract("ColonyNetworkStaking", accounts => {
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for three task completions (manager, worker (skill and domain), evaluator);
       // That's thirteen in total.
-      const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
       await goodClient.addLogContentsToReputationTree();
@@ -1147,7 +1153,7 @@ contract("ColonyNetworkStaking", accounts => {
       const submission = await repCycle.disputeRounds(0, 0);
       const firstDisagreeIdx = submission[8];
 
-      const logEntry = await colonyNetwork.getReputationUpdateLogEntry.call(firstDisagreeIdx - 1, false);
+      const logEntry = await repCycle.getReputationUpdateLogEntry.call(firstDisagreeIdx - 1);
       const colonyAddress = logEntry[3].slice(2);
       const userAddress = logEntry[0].slice(2);
       const skillId = logEntry[2];
@@ -1274,6 +1280,38 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.confirmNewHash(cycle);
     });
 
+    it("should be able to process a large reputation update log", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
+      for (let i = 0; i < 30; i += 1) {
+        const taskId = await setupRatedTask( // eslint-disable-line
+          {
+            colonyNetwork,
+            colony: metaColony,
+            colonyToken: clny,
+            workerRating: 20,
+            managerPayout: 1,
+            evaluatorPayout: 1,
+            workerPayout: 1
+          }
+        );
+        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
+      }
+      // Complete this reputation cycle
+
+      let addr = await colonyNetwork.getReputationMiningCycle.call();
+      await forwardTime(3600, this);
+      let repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+      // Do it again
+      addr = await colonyNetwork.getReputationMiningCycle.call();
+      await forwardTime(3600, this);
+      repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+    });
+
     it("should allow submitted hashes to go through multiple responses to a challenge", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
@@ -1307,22 +1345,30 @@ contract("ColonyNetworkStaking", accounts => {
     it("should keep reputation updates that occur during one update window for the next window", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
 
-      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      let addr = await colonyNetwork.getReputationMiningCycle.call();
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await fundColonyWithTokens(metaColony, clny, "350000000000000000000");
       const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId1); // Creates an entry in the reputation log for the worker and manager
-      const initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(true);
+      addr = await colonyNetwork.getNextReputationMiningCycle.call();
+      let nextReputationMiningCycle = ReputationMiningCycle.at(addr);
+
+      const initialRepLogLength = await nextReputationMiningCycle.getReputationUpdateLogLength.call();
       await repCycle.confirmNewHash(0);
       // This confirmation should freeze the reputation log that we added the above task entries to
       // and move it to the inactive rep log
-      const finalRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(false);
+      const addr2 = await colonyNetwork.getReputationMiningCycle.call();
+      assert.equal(addr, addr2);
+      const reputationMiningCycle = ReputationMiningCycle.at(addr2);
+      const finalRepLogLength = await reputationMiningCycle.getReputationUpdateLogLength.call();
       assert.equal(finalRepLogLength.toNumber(), initialRepLogLength.toNumber());
       // Check the active log now has one entry in it (which will be the rewards for the miner who submitted
       // the accepted hash.
-      const activeRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(true);
+      addr = await colonyNetwork.getNextReputationMiningCycle.call();
+      nextReputationMiningCycle = ReputationMiningCycle.at(addr);
+      const activeRepLogLength = await nextReputationMiningCycle.getReputationUpdateLogLength.call();
       assert.equal(activeRepLogLength.toNumber(), 1);
     });
 
@@ -1347,7 +1393,9 @@ contract("ColonyNetworkStaking", accounts => {
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for three task completions (manager, worker (domain and skill), evalutator);
       // That's thirteen in total.
-      const nInactiveLogEntries = await colonyNetwork.getReputationUpdateLogLength(false);
+      addr = await colonyNetwork.getReputationMiningCycle.call();
+      repCycle = ReputationMiningCycle.at(addr);
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
       const client = new ReputationMiningClient(MAIN_ACCOUNT, realProviderPort);

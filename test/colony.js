@@ -44,6 +44,7 @@ const Token = artifacts.require("Token");
 const Authority = artifacts.require("Authority");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
+const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 contract("Colony", addresses => {
   let colony;
@@ -65,6 +66,8 @@ contract("Colony", addresses => {
 
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
+
+    await colonyNetwork.startNextCycle();
   });
 
   beforeEach(async () => {
@@ -205,11 +208,12 @@ contract("Colony", addresses => {
 
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
-
-      const numberOfReputationLogs = await colonyNetwork.getReputationUpdateLogLength(true);
+      const nextReputationMiningCycleAddress = await colonyNetwork.getNextReputationMiningCycle();
+      const nextReputationMiningCycle = ReputationMiningCycle.at(nextReputationMiningCycleAddress);
+      const numberOfReputationLogs = await nextReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
 
-      const updateLog = await colonyNetwork.getReputationUpdateLogEntry(0, true);
+      const updateLog = await nextReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(updateLog[0], INITIAL_ADDRESSES[0]);
       assert.equal(updateLog[1].toString(), INITIAL_REPUTATIONS[0]);
       assert.equal(updateLog[2].toString(), skillCount.toNumber());

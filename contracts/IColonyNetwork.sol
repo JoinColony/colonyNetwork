@@ -131,26 +131,19 @@ contract IColonyNetwork {
   /// @return Skill Id of the requested child skill
   function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) public view returns (uint256);
 
-  /// @notice Get the length the the reputation update log for either the current active or inactive log
-  /// @param activeLog True for the active log, false otherwise
-  /// @return Reputation update log array length
-  function getReputationUpdateLogLength(bool activeLog) public view returns (uint256);
+  /// @notice Get the address of the reputation mining cycle that is current being processed by reputation miners.
+  /// @return address of ReputationMiningCycle currently being processed.
+  function getReputationMiningCycle() public view returns (address);
+
+  /// @notice Get the address of the reputation mining cycle that will be the next processed by reputation miners, and
+  /// is currently having log entries added to it.
+  /// @return address of ReputationMiningCycle next to be processed.
+  function getNextReputationMiningCycle() public view returns (address);
 
   /// @notice Get the `Resolver` address for Colony contract version `_version`
   /// @param _version The Colony contract version
   /// @return Address of the `Resolver` contract
   function getColonyVersionResolver(uint256 _version) public view returns (address);
-
-  /// @notice Get the `ReputationLogEntry` at index `_id` for either the currently active or inactive reputation update log
-  /// @param _id The reputation log members array index of the entry to get
-  /// @param activeLog True for the active log, false otherwise
-  /// @return user The address of the user having their reputation changed by this log entry
-  /// @return amount The amount by which the user's reputation is going to change
-  /// @return skillId The skillId of the reputation being affected
-  /// @return colony The address of the colony the reputation is being affected in
-  /// @return nUpdates The number of updates this log entry implies (including updates to parents, children and colony-wide totals thereof)
-  /// @return nPreviousUpdates The number of updates all previous entries in the log imply (including reputation decays, updates to parents, children, and colony-wide totals thereof)
-  function getReputationUpdateLogEntry(uint256 _id, bool activeLog) public view returns (address, int, uint256, address, uint256, uint256);
 
   /// @notice Allow a reputation miner to stake an `_amount` of CLNY tokens, which is required
   /// before they can submit a new reputation root hash via `ReputationMiningCycle.submitNewHash`
@@ -185,7 +178,7 @@ contract IColonyNetwork {
 
   /// @notice Function that returns the address of the currently active ReputationMiningCycle contract
   /// @return address Address of the active ReputationMiningCycle contract
-  function getReputationMiningCycle() public view returns (address);
+  /* function getReputationMiningCycle() public view returns (address); */
 
   /// @notice Get the root hash of the current reputation state tree
   /// @return bytes32 The current Reputation Root Hash

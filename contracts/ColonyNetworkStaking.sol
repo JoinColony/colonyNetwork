@@ -32,7 +32,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
-    require(msg.sender == reputationMiningCycle);
+    require(msg.sender == currentReputationMiningCycle);
     _;
   }
 
@@ -52,7 +52,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     uint256 balance = stakedBalances[msg.sender];
     require(balance >= _amount);
     bytes32 submittedHash;
-    (submittedHash, ) = ReputationMiningCycle(reputationMiningCycle).reputationHashSubmissions(msg.sender);
+    (submittedHash, ) = ReputationMiningCycle(currentReputationMiningCycle).reputationHashSubmissions(msg.sender);
     bool hasRequesterSubmitted = submittedHash == 0x0 ? false : true;
     require(hasRequesterSubmitted==false);
     stakedBalances[msg.sender] -= _amount;
@@ -69,24 +69,29 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
   {
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
-    // Clear out the inactive reputation log. We're setting a new root hash, so we're done with it.
-    delete reputationUpdateLogs[(activeReputationUpdateLog + 1) % 2];
-    // The active reputation update log is now switched to be the one we've just cleared out.
-    // The old activeReputationUpdateLog will be used for the next reputation mining cycle
-    activeReputationUpdateLog = (activeReputationUpdateLog + 1) % 2;
     // Reward stakers
-    rewardStakers(stakers);
-    reputationMiningCycle = 0x0;
+    currentReputationMiningCycle = 0x0;
     startNextCycle();
+    rewardStakers(stakers);
   }
 
   function startNextCycle() public {
-    require(reputationMiningCycle == 0x0);
-    reputationMiningCycle = new ReputationMiningCycle();
+    require(currentReputationMiningCycle == 0x0);
+    currentReputationMiningCycle = nextReputationMiningCycle;
+    if (currentReputationMiningCycle == 0x0) {
+      // This will only be true the very first time that this is run, to kick off the whole reputation mining process
+      currentReputationMiningCycle = new ReputationMiningCycle();
+    }
+    ReputationMiningCycle(currentReputationMiningCycle).resetWindow();
+    nextReputationMiningCycle = new ReputationMiningCycle();
   }
 
   function getReputationMiningCycle() public view returns(address) {
-    return reputationMiningCycle;
+    return currentReputationMiningCycle;
+  }
+
+  function getNextReputationMiningCycle() public view returns (address) {
+    return nextReputationMiningCycle;
   }
 
   function punishStakers(address[] stakers) public
@@ -119,19 +124,12 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     // Something like the above cap is an adequate short-term solution, but at the very least need to double check the limits
     // (which I've fingered-in-the-air, but could easily have an OBOE hiding inside).
     assert(reward < uint256(int256(-1))); // We do a cast later, so make sure we don't overflow.
-    IColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
-    for (uint256 i = 0; i < stakers.length; i++) {
-      // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
-      // the AppendReputationUpdateLog function
-      reputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
-        stakers[i], //The staker getting the reward
-        int256(reward),
-        0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
-        metaColony, // They earn this reputation in the meta colony.
-        4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
-        i*4)//We're zero indexed, so this is the number of updates that came before in the reputation log.
-      );
 
+    IColony(metaColonyAddress).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
+
+    ReputationMiningCycle(nextReputationMiningCycle).rewardStakersWithReputation(stakers, commonColonyAddress, reward); // This gives them reputation in the next update cycle.
+
+    for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.
       // We reinvest here as it's much easier (gas-wise).
       stakedBalances[stakers[i]] += reward;

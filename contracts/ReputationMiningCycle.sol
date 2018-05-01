@@ -27,6 +27,15 @@ import "./PatriciaTree/PatriciaTreeProofs.sol";
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
 // A possible workaround would be to 'kick off' reputation mining with a known dummy state...
 contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
+  ReputationLogEntry[] reputationUpdateLog;
+  struct ReputationLogEntry {
+    address user;
+    int amount;
+    uint256 skillId;
+    address colony;
+    uint256 nUpdates;
+    uint256 nPreviousUpdates;
+  }
   address colonyNetworkAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
@@ -121,6 +130,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
   modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
+    require(reputationMiningWindowOpenTimestamp > 0);
     // Check the ticket is a winning one.
     // TODO Figure out how to uncomment the next line, but not break tests sporadically.
     // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
@@ -141,6 +151,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @notice Constructor for this contract.
   constructor() public {
     colonyNetworkAddress = msg.sender;
+  }
+
+  function resetWindow() public {
+    require(msg.sender == colonyNetworkAddress);
     reputationMiningWindowOpenTimestamp = now;
   }
 
@@ -456,6 +470,76 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
   }
 
+  /// @notice Add a new entry to the reputation update log
+  /// @param _user The address of the user having their reputation changed by this log entry
+  /// @param _amount The amount by which the user's reputation is going to change. Can be positive or negative
+  /// @param _skillId The skillId of the reputation being affected
+  /// @param _colonyAddress The address of the colony the reputation is being affected in
+  /// @param _nParents The number of parent skills the skill defined by the skillId has
+  /// @param _nChildren The number of child skills the skill defined by the skillId has
+  function appendReputationUpdateLog(address _user, int _amount, uint _skillId, address _colonyAddress, uint _nParents, uint _nChildren) public {
+    require(colonyNetworkAddress == msg.sender);
+    uint reputationUpdateLogLength = reputationUpdateLog.length;
+    uint nPreviousUpdates = 0;
+    if (reputationUpdateLogLength > 0) {
+      nPreviousUpdates = reputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + reputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
+    }
+    uint nUpdates = (_nParents + 1) * 2;
+    if (_amount < 0) {
+      //TODO: Never true currently. _amount needs to be an int.
+      nUpdates += 2 * _nChildren;
+    }
+    reputationUpdateLog.push(ReputationLogEntry(
+      _user,
+      _amount,
+      _skillId,
+      _colonyAddress,
+      nUpdates,
+      nPreviousUpdates));
+  }
+
+
+  function getReputationUpdateLogLength() public view returns (uint) {
+    return reputationUpdateLog.length;
+  }
+
+  /// @notice Get the `ReputationLogEntry` at index `_id`
+  /// @param _id The reputation log members array index of the entry to get
+  /// @return user The address of the user having their reputation changed by this log entry
+  /// @return amount The amount by which the user's reputation is going to change
+  /// @return skillId The skillId of the reputation being affected
+  /// @return colony The address of the colony the reputation is being affected in
+  /// @return nUpdates The number of updates this log entry implies (including updates to parents, children and colony-wide totals thereof)
+  /// @return nPreviousUpdates The number of updates all previous entries in the log imply (including reputation decays, updates to parents, children, and colony-wide totals thereof)
+  function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int256, uint256, address, uint256, uint256) {
+    ReputationLogEntry storage x = reputationUpdateLog[_id];
+    return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+  }
+
+  /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
+  /// @param stakers The array of stakers addresses to receive the reward.
+  /// @param commonColonyAddress The address of the common colony, which the special mining skill is earned in
+  /// @param reward The amount of reputation to be rewarded to each staker
+  /// @dev Only callable by colonyNetwork
+  /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
+  /// same address backed the same hash multiple times with different entries.
+  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward) public {
+    require(reputationUpdateLog.length==0);
+    require(msg.sender == colonyNetworkAddress);
+    for (uint256 i = 0; i < stakers.length; i++) {
+      // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
+      // the AppendReputationUpdateLog function
+      reputationUpdateLog.push(ReputationLogEntry(
+        stakers[i],
+        int256(reward),
+        0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
+        commonColonyAddress, // They earn this reputation in the common colony.
+        4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
+        i*4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
+      ));
+    }
+  }
+
   /////////////////////////
   // Internal functions
   /////////////////////////
@@ -529,14 +613,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     bool decayCalculation = false;
     if (decayCalculation) {
     } else {
-      address logUserAddress;
-      uint256 logSkillId;
-      address logColonyAddress;
-
-      (logUserAddress, , logSkillId, logColonyAddress, , ) = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogEntry(updateNumber, false);
-      require(logUserAddress == userAddress);
-      require(logColonyAddress == colonyAddress);
-      require(logSkillId == skillId);
+      require(reputationUpdateLog[updateNumber].user == userAddress);
+      require(reputationUpdateLog[updateNumber].colony == colonyAddress);
+      require(reputationUpdateLog[updateNumber].skillId == skillId);
     }
   }
 
@@ -628,10 +707,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       u[U_REQUIRE_REPUTATION_CHECK] = 1;
     }
 
-    (, amount, , , ,) = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogEntry(reputationTransitionIdx, false);
     // TODO: Is this safe? I think so, because even if there's over/underflows, they should
     // still be the same number.
-    require(int(agreeStateReputationValue)+amount == int(disagreeStateReputationValue));
+    require(int(agreeStateReputationValue)+reputationUpdateLog[reputationTransitionIdx].amount == int(disagreeStateReputationValue));
   }
 
   function checkPreviousReputationInState(
@@ -689,7 +767,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // key is the number of updates in the reputation update log (implemented)
     // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)
     // TODO: Account for decay calculations
-    uint256 nUpdates = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogLength(false);
+    uint256 nUpdates = reputationUpdateLog.length;
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;

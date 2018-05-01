@@ -16,12 +16,14 @@ const Colony = artifacts.require("Colony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
+const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 contract("Colony Reputation Updates", () => {
   let colonyNetwork;
   let metaColony;
   let resolverColonyNetworkDeployed;
   let colonyToken;
+  let nextReputationMiningCycle;
 
   before(async () => {
     resolverColonyNetworkDeployed = await Resolver.deployed();
@@ -36,6 +38,7 @@ contract("Colony Reputation Updates", () => {
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
+    await colonyNetwork.startNextCycle();
     const tokenArgs = getTokenArgs();
     colonyToken = await Token.new(...tokenArgs);
     await colonyNetwork.createMetaColony(colonyToken.address);
@@ -47,13 +50,16 @@ contract("Colony Reputation Updates", () => {
       .mul(new BN(1000))
       .toString();
     await fundColonyWithTokens(metaColony, colonyToken, amount);
+    const nextReputationMiningCycleAddress = await colonyNetwork.getNextReputationMiningCycle();
+    nextReputationMiningCycle = ReputationMiningCycle.at(nextReputationMiningCycleAddress);
   });
 
   describe("when added", () => {
     it("should be readable", async () => {
       const taskId = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId);
-      const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
+
+      const repLogEntryManager = await nextReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryManager[0], MANAGER);
       assert.equal(repLogEntryManager[1].toNumber(), 1000 * 1e18 / 50);
       assert.equal(repLogEntryManager[2].toNumber(), 2);
@@ -61,7 +67,7 @@ contract("Colony Reputation Updates", () => {
       assert.equal(repLogEntryManager[4].toNumber(), 2);
       assert.equal(repLogEntryManager[5].toNumber(), 0);
 
-      const repLogEntryEvaluator = await colonyNetwork.getReputationUpdateLogEntry.call(1, true);
+      const repLogEntryEvaluator = await nextReputationMiningCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryEvaluator[0], EVALUATOR);
       assert.equal(repLogEntryEvaluator[1].toNumber(), 50 * 1e18);
       assert.equal(repLogEntryEvaluator[2].toNumber(), 2);
@@ -69,7 +75,7 @@ contract("Colony Reputation Updates", () => {
       assert.equal(repLogEntryEvaluator[4].toNumber(), 2);
       assert.equal(repLogEntryEvaluator[5].toNumber(), 2);
 
-      const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2, true);
+      const repLogEntryWorker = await nextReputationMiningCycle.getReputationUpdateLogEntry(2);
       assert.equal(repLogEntryWorker[0], WORKER);
       assert.equal(repLogEntryWorker[1].toNumber(), 200 * 1e18);
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
@@ -145,7 +151,7 @@ contract("Colony Reputation Updates", () => {
         });
         await metaColony.finalizeTask(taskId);
 
-        const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
+        const repLogEntryManager = await nextReputationMiningCycle.getReputationUpdateLogEntry(0);
         assert.equal(repLogEntryManager[0], MANAGER);
         assert.equal(repLogEntryManager[1].toString(), rating.reputationChangeManager.toString());
         assert.equal(repLogEntryManager[2].toNumber(), 2);
@@ -153,7 +159,7 @@ contract("Colony Reputation Updates", () => {
         assert.equal(repLogEntryManager[4].toNumber(), 2);
         assert.equal(repLogEntryManager[5].toNumber(), 0);
 
-        const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2, true);
+        const repLogEntryWorker = await nextReputationMiningCycle.getReputationUpdateLogEntry(2);
         assert.equal(repLogEntryWorker[0], WORKER);
         assert.equal(repLogEntryWorker[1].toString(), rating.reputationChangeWorker.toString());
         assert.equal(repLogEntryWorker[2].toNumber(), 2);
@@ -164,25 +170,25 @@ contract("Colony Reputation Updates", () => {
     });
 
     it("should not be able to be appended by an account that is not a colony", async () => {
-      const lengthBefore = await colonyNetwork.getReputationUpdateLogLength.call(true);
+      const lengthBefore = await nextReputationMiningCycle.getReputationUpdateLogLength();
       await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2));
-      const lengthAfter = await colonyNetwork.getReputationUpdateLogLength.call(true);
+      const lengthAfter = await nextReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });
 
     it("should populate nPreviousUpdates correctly", async () => {
-      let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(true);
+      let initialRepLogLength = await nextReputationMiningCycle.getReputationUpdateLogLength();
       initialRepLogLength = initialRepLogLength.toNumber();
       const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId1);
-      let repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength, true);
+      let repLogEntry = await nextReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength);
       const nPrevious = repLogEntry[5].toNumber();
-      repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1, true);
+      repLogEntry = await nextReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
       assert.equal(repLogEntry[5].toNumber(), 2 + nPrevious);
 
       const taskId2 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId2);
-      repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 2, true);
+      repLogEntry = await nextReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength + 2);
       assert.equal(repLogEntry[5].toNumber(), 4 + nPrevious);
     });
 
@@ -197,8 +203,7 @@ contract("Colony Reputation Updates", () => {
         skill: 4
       });
       await metaColony.finalizeTask(taskId1);
-
-      let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(3, true);
+      let repLogEntryWorker = await nextReputationMiningCycle.getReputationUpdateLogEntry(3);
       const result = web3Utils.toBN("1").mul(WORKER_PAYOUT);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
@@ -209,7 +214,7 @@ contract("Colony Reputation Updates", () => {
         skill: 5
       });
       await metaColony.finalizeTask(taskId2);
-      repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(7, true);
+      repLogEntryWorker = await nextReputationMiningCycle.getReputationUpdateLogEntry(7);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 8); // Negative reputation change means children change as well.
     });
