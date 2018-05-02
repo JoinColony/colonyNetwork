@@ -430,7 +430,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @param siblings1 The siblings for the same Merkle proof
   /// @param branchMask2 The branchmask for the Merkle proof that the proposed new reputation state is at the key corresponding to the number of transactions expected in this update in the submitted JRH. This key should be the number of decay transactions plus the number of transactions the log indicates are to happen.
   /// @param siblings2 The siblings for the same Merkle proof
-  /// @dev The majority of calls to this function will have `round` equal to `0`. The one exception to this is when a submitted hash is given a bye in the first round, in which case `round` will be equal to `1`.
+  /// @dev The majority of calls to this function will have `round` equal to `0`. The exception to this is when a submitted hash is given a bye, in which case `round` will be nonzero.
+  /// @dev Note that it is possible for this function to be required to be called in every round - the hash getting the bye can wait until they will also be awarded the bye in the next round, if
+  /// one is going to exist. There is an incentive to do so from a gas-cost perspective, but they don't know for sure there's going to be a bye until the submission window has expired, so I think
+  /// this is okay.
   function submitJustificationRootHash(
     uint256 round,
     uint256 index,

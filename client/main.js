@@ -1,6 +1,5 @@
-import BN from "bn.js";
-import web3Utils from "web3-utils";
-
+const BN = require("bn.js");
+const web3Utils = require("web3-utils");
 const ganache = require("ganache-core");
 
 // We disable the import/no-unresolved rule for these lines because when ESLint is run on Circle, the contracts haven't
@@ -22,7 +21,7 @@ const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205
 
 // Adapted from https://github.com/ethers-io/ethers.js/issues/59
 // ===================================
-function MetamaskSigner(minerAddress, provider) {
+function RPCSigner(minerAddress, provider) {
   this.address = minerAddress;
   this.provider = provider;
   const signer = this;
@@ -83,7 +82,7 @@ class ReputationMiningClient {
     this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
 
     this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
-    this.realWallet = new MetamaskSigner(minerAddress, this.realProvider);
+    this.realWallet = new RPCSigner(minerAddress, this.realProvider);
 
     try {
       this.reputations = jsonfile.readFileSync(file);
@@ -102,12 +101,10 @@ class ReputationMiningClient {
     const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
     this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
     this.nReputations = 0;
+    this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, ColonyNetworkJSON.abi, this.realWallet);
     this.setColonyNetworkAddress(colonyNetworkAddress);
   }
 
-  async setColonyNetworkAddress(address) {
-    this.colonyNetwork = new ethers.Contract(address, ColonyNetworkJSON.abi, this.realWallet);
-  }
   /**
    * When called, adds the entire contents of the current (inactive) log to its reputation tree. It also builds a Justification Tree as it does so
    * in case a dispute is called which would require it.

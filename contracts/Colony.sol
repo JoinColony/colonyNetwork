@@ -134,7 +134,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     reviewers[_sig] = _reviewers;
   }
 
-  function verifyKey(bytes key) internal view returns (bool) {
+  modifier verifyKey(bytes key) {
     uint256 colonyAddress;
     uint256 skillid;
     uint256 userAddress;
@@ -148,11 +148,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Require that the user is proving their own reputation in this colony.
     require(address(colonyAddress) == address(this));
     require(address(userAddress) == msg.sender);
-    return true;
+    _;
   }
 
-  function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool) {  // solium-disable-line security/no-assign-params
-    require(verifyKey(key)==true);
+  function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
+  verifyKey(key)
+  public returns (bool)
+  {
     // Get roothash from colonynetwork
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     return verifyProof(rootHash, key, value, branchMask, siblings);
