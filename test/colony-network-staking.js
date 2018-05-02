@@ -1245,7 +1245,6 @@ contract("ColonyNetworkStaking", accounts => {
         // churning away at once, I *think* it's slower.
         await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
         await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
-        await clients[i].submitJustificationRootHash(); // eslint-disable-line no-await-in-loop
       }
 
       const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
