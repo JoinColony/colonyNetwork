@@ -144,7 +144,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   /// @notice Constructor for this contract.
-  function ReputationMiningCycle() public {
+  constructor() public {
     colonyNetworkAddress = msg.sender;
     reputationMiningWindowOpenTimestamp = now;
   }
