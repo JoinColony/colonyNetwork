@@ -267,7 +267,9 @@ class ReputationMiningClient {
    * and proof (branchMask and siblings) that it exists in the current reputation state.
    * @return {Promise}    The returned promise will resolve to `[key, value, branchMask, siblings]`
    */
-  async getNewestReputationProofObject() {
+  // eslint-disable-next-line no-unused-vars
+  async getNewestReputationProofObject(i) {
+    // i is unused here, but is used in the Malicious3 mining client.
     const key = Object.keys(this.reputations)[this.nReputations - 1];
     return this.getReputationProofObject(key);
   }

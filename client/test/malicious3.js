@@ -9,16 +9,14 @@ class MaliciousReputationMiningClient3 extends ReputationMiningClient {
     this.amountToFalsify = amountToFalsify.toString();
   }
 
-  async getNewestReputationInformation(logEntry) {
-    let newestReputationKey;
+  async getNewestReputationProofObject(logEntry) {
+    let key;
     if (logEntry.toString() === this.entryToFalsify.toString()) {
-      newestReputationKey = Object.keys(this.reputations)[this.nReputations - 1 - parseInt(this.amountToFalsify, 10)];
+      key = Object.keys(this.reputations)[this.nReputations - 1 - parseInt(this.amountToFalsify, 10)];
     } else {
-      newestReputationKey = Object.keys(this.reputations)[this.nReputations - 1];
+      key = Object.keys(this.reputations)[this.nReputations - 1];
     }
-    const newestReputationValue = this.reputations[newestReputationKey];
-    const [newestReputationBranchMask, newestReputationSiblings] = await this.getProof(newestReputationKey);
-    return [newestReputationKey, newestReputationValue, newestReputationBranchMask, newestReputationSiblings];
+    return this.getReputationProofObject(key);
   }
 
   getValueAsBytes(reputation, _uid, index) { //eslint-disable-line
