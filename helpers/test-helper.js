@@ -207,3 +207,16 @@ export async function createSignatures(colony, signers, value, data) {
 
   return { sigV, sigR, sigS };
 }
+
+export function bnSqrt(bn) {
+  let a = bn.add(web3Utils.toBN(1)).div(web3Utils.toBN(2));
+  let b = bn;
+  while (a.lt(b)) {
+    b = a;
+    a = bn
+      .div(a)
+      .add(a)
+      .div(web3Utils.toBN(2));
+  }
+  return b;
+}
