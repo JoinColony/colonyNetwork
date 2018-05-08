@@ -35,7 +35,7 @@ contract ColonyStorage is DSAuth {
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
   uint256 taskChangeNonce;
-  
+
   mapping (uint256 => Task) tasks;
 
   // Pots can be tied to tasks or domains, so giving them their own mapping.
@@ -43,6 +43,31 @@ contract ColonyStorage is DSAuth {
   // to anything yet, but has had some siphoned off in to the reward pot.
   // Pot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
   mapping (uint256 => Pot) pots;
+
+  struct RewardPayoutCycle {
+    // Reputation root hash at the time of reward payout creation
+    bytes32 reputationState;
+    // Total tokens at the time of reward payout creation
+    uint256 totalTokens;
+    // Amount alocated for reward payout
+    uint256 amount;
+    // Token in which a reward is paid out with
+    address tokenAddress;
+    // Time of creation (in seconds)
+    uint256 blockTimestamp;
+  }
+
+  // Keeps track of all reward payout cycles
+  mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles;
+  // Active payouts for particular token address. Assures that one token is used for only one active payout
+  mapping (address => bool) activeRewardPayouts;
+  // Incremented every time a reward payout is created. Used for comparing with `userRewardPayoutCount`
+  // to ensure that rewards are claimed in the right order.
+  // Can be used for iterating over all reward payouts (excluding index 0)
+  uint256 globalRewardPayoutCount;
+  // Keeps track of how many payouts are claimed by the particular user.
+  // Can be incremented either by waiving or claiming the reward.
+  mapping (address => uint256) userRewardPayoutCount;
 
   // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
@@ -74,7 +99,7 @@ contract ColonyStorage is DSAuth {
     uint256[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
-    mapping (uint256 => Role) roles; 
+    mapping (uint256 => Role) roles;
     // Maps a token to the sum of all payouts of it for this task
     mapping (address => uint256) totalPayouts;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion

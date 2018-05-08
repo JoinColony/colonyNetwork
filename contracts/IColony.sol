@@ -26,7 +26,11 @@ contract IColony {
   /// @notice Event logged when a new task is added
   /// @param id The newly added task id
   event TaskAdded(uint256 indexed id);
-  
+
+  /// @notice Event logged when a new reward payout cycle has started
+  /// @param id Payout id
+  event RewardPayoutCycleStarted(uint256 indexed id);
+
   // Implemented in DSAuth.sol
   /// @notice Get the `Authority` for the colony
   /// @return The `Authority` contract address
@@ -43,7 +47,7 @@ contract IColony {
   function version() public pure returns (uint256);
 
   /// @notice Set the colony token. Secured function to authorised members
-  /// @param _token Address of the token contract to use. 
+  /// @param _token Address of the token contract to use.
   /// Note that if the `mint` functionality is to be controlled through the colony,
   /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
@@ -108,18 +112,18 @@ contract IColony {
   /// @return The current task change nonce value
   function getTaskChangeNonce() public view returns (uint256);
 
-  /// @notice Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) 
+  /// @notice Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker)
   /// using the detached signatures for these users.
   /// @dev The Colony functions which require approval and the task roles to review these are set in `IColony.initialiseColony` at colony creation
   /// Upon successful execution the `taskChangeNonce` is incremented
   /// @param _sigV recovery id
-  /// @param _sigR r output of the ECDSA signature of the transaction 
-  /// @param _sigS s output of the ECDSA signature of the transaction 
-  /// @param _value The transaction value, i.e. number of wei to be sent when the transaction is executed 
+  /// @param _sigR r output of the ECDSA signature of the transaction
+  /// @param _sigS s output of the ECDSA signature of the transaction
+  /// @param _value The transaction value, i.e. number of wei to be sent when the transaction is executed
   /// Currently we only accept 0 value transactions but this is kept as a future option
   /// @param _data The transaction data
   function executeTaskChange(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint256 _value, bytes _data) public;
-  
+
   /// @notice Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`
   /// Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached
   /// Allowed only for evaluator to rate worker and for worker to rate manager performance
@@ -130,10 +134,10 @@ contract IColony {
   /// Can be generated via `IColony.generateSecret` helper function
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
 
-  /// @notice Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role` 
-  /// Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted 
+  /// @notice Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role`
+  /// Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted
   /// (via `IColony.submitTaskWorkRating`) or the 5 day rating period expiring
-  /// @dev Compares the `keccak256(_salt, _rating)` output with the previously submitted rating secret and if they match, 
+  /// @dev Compares the `keccak256(_salt, _rating)` output with the previously submitted rating secret and if they match,
   /// sets the task role properties `rated` to `true` and `rating` to `_rating`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
@@ -153,18 +157,18 @@ contract IColony {
 
   /// @notice Get the `ColonyStorage.RatingSecrets` for task `_id`
   /// @param _id Id of the task
-  /// @return Number of secrets 
+  /// @return Number of secrets
   /// @return Timestamp of the last submitted rating secret
   function getTaskWorkRatings(uint256 _id) public view returns (uint256, uint256);
 
-  /// @notice Get the rating secret submitted for role `_role` in task `_id` 
+  /// @notice Get the rating secret submitted for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @return Rating secret `bytes32` value
   function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32);
 
-  /// @notice Set the user for role `_role` in task `_id`. Only allowed before the task is `finalized`, as in 
-  // you cannot change the task contributors after the work is complete. Allowed before a task is finalized. 
+  /// @notice Set the user for role `_role` in task `_id`. Only allowed before the task is `finalized`, as in
+  // you cannot change the task contributors after the work is complete. Allowed before a task is finalized.
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _user Address of the user to assume role `_role`
@@ -211,8 +215,8 @@ contract IColony {
   /// @dev Set the `task.cancelled` property to true
   /// @param _id Id of the task
   function cancelTask(uint256 _id) public;
-  
-  /// @notice Get a task with id `_id` 
+
+  /// @notice Get a task with id `_id`
   /// @param _id Id of the task
   /// @return Task brief hash
   /// @return Task deliverable hash
@@ -225,8 +229,8 @@ contract IColony {
   /// @return Task domain id, default is root colony domain with id 1
   /// @return Array of global skill ids assigned to task
   function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256, uint256[]);
-  
-  /// @notice Get the `Role` properties back for role `_role` in task `_id` 
+
+  /// @notice Get the `Role` properties back for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @return Address of the user for the given role
@@ -243,31 +247,31 @@ contract IColony {
   /// @return The inverse of the reward
   function getRewardInverse() public pure returns (uint256);
 
-  /// @notice Get payout amount in `_token` denomination for role `_role` in task `_id` 
+  /// @notice Get payout amount in `_token` denomination for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Payout amount
   function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256);
-  
+
   /// @notice Set `_token` payout for manager in task `_id` to `_amount`
   /// @param _id Id of the task
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public;
-  
+
   /// @notice Set `_token` payout for evaluator in task `_id` to `_amount`
   /// @param _id Id of the task
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
   function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public;
-  
+
   /// @notice Set `_token` payout for worker in task `_id` to `_amount`
   /// @param _id Id of the task
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
   function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public;
-  
+
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
   /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
   /// Ether fees go straight to the Common Colony whereas Token fees go to the Network to be auctioned off.
@@ -275,26 +279,76 @@ contract IColony {
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimPayout(uint256 _id, uint256 _role, address _token) public;
-  
+
+  /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
+  /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
+  /// @param _token Addess of the token used for reward payout
+  function startNextRewardPayout(address _token) public returns (uint256);
+
+  /// @notice Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation
+  /// which will be proven via Merkle proof inside this function.
+  /// Can only be called if payout is active, i.e when 60 days have passed from its creation.
+  /// Can only be called if next in queue
+  /// @param _payoutId Id of the reward payout
+  /// @param squareRoots Square roots of values used in equation
+  /// 0 - square root of user reputation
+  /// 1 - square root of user tokens
+  /// 2 - square root of total reputation
+  /// 3 - square root of total tokens
+  /// 4 - square root of numerator (user reputation * user tokens)
+  /// 5 - square root of denominator (total reputation * total tokens)
+  /// 6 - square root of payout amount
+  /// @param _userReputation User reputation at the point of creation of reward payout cycle
+  /// @param _totalReputation Total reputation at the point of creation of reward payout cycle
+  function claimRewardPayout(uint256 _payoutId, uint256[7] squareRoots, uint256 _userReputation, uint256 _totalReputation) public;
+
+  /// @notice Waive reward payouts. This will unlock the sender's tokens and increment users reward payout counter,
+  /// allowing them to claim next reward payout
+  /// @param _numPayouts Number of payouts you want to waive
+  function waiveRewardPayouts(uint256 _numPayouts) public;
+
+  /// @notice Get useful information about specific reward payout
+  /// @param _payoutId Id of the reward payout
+  /// @return Reputation root hash at the time of creation
+  /// @return Total colony tokens at the time of creation
+  /// @return Total amount of tokens taken aside for reward payout
+  /// @return Remaining (unclaimed) amount of tokens
+  /// @return Token address
+  /// @return Block number at the time of creation
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, uint256, address, uint256);
+
+  /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
+  /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation
+  /// @param _payoutId Id of the reward payout
+  function finalizeRewardPayout(uint256 _payoutId) public;
+
+  /// @notice Get number of reward payout cycles
+  /// @return Number of reward payout cycles
+  function getGlobalRewardPayoutCount() public returns (uint256);
+
+  /// @notice Get number of claimed and waived reward payouts for `_user`
+  /// @return Number of claimed and waived reward payouts
+  function getUserRewardPayoutCount(address _user) public returns (uint256);
+
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Funding pot balance
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256);
-  
-  /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`. 
+
+  /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
   /// @param _amount Amount of funds
   /// @param _token Address of the token, `0x0` value indicates Ether
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public;
-  
+
   /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
   /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimColonyFunds(address _token) public;
-  
+
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Total amount of tokens in pots other than the rewards pot (id 0)

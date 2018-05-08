@@ -19,12 +19,16 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "../lib/dappsys/math.sol";
+import "./SafeMath.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 
 
 contract ColonyFunding is ColonyStorage, DSMath {
+  event RewardPayoutCycleStarted(uint256 indexed id);
+  event RewardPayoutCycleEnded(uint256 indexed id);
+
   function getFeeInverse() public pure returns (uint256) {
     // TODO: refer to ColonyNetwork
     return 100;
@@ -138,6 +142,105 @@ contract ColonyFunding is ColonyStorage, DSMath {
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
     return nonRewardPotsTotal[_token];
+  }
+
+  function getGlobalRewardPayoutCount() public view returns (uint256) {
+    return globalRewardPayoutCount;
+  }
+
+  function getUserRewardPayoutCount(address _user) public view returns (uint256) {
+    return userRewardPayoutCount[_user];
+  }
+
+  function startNextRewardPayout(address _token) public auth {
+    require(!activeRewardPayouts[_token], "colony-reward-payout-token-active");
+
+    uint256 totalTokens = sub(token.totalSupply(), token.balanceOf(address(this)));
+    require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
+
+    activeRewardPayouts[_token] = true;
+    globalRewardPayoutCount += 1;
+
+    //TODO: Lock everyones tokens
+
+    rewardPayoutCycles[globalRewardPayoutCount] = RewardPayoutCycle(
+      IColonyNetwork(colonyNetworkAddress).getReputationRootHash(),
+      totalTokens,
+      pots[0].balance[_token],
+      _token,
+      block.timestamp
+    );
+
+    emit RewardPayoutCycleStarted(globalRewardPayoutCount);
+  }
+
+  function claimRewardPayout(uint256 _payoutId, uint256[7] squareRoots, uint256 _userReputation, uint256 _totalReputation) public {
+    RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
+    require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
+    require(_payoutId - userRewardPayoutCount[msg.sender] == 1, "colony-reward-payout-bad-id");
+
+    //TODO: Prove that userReputation and totalReputation in reputationState are correct
+
+    uint256 userTokens = token.balanceOf(msg.sender);
+
+    require(_totalReputation > 0, "colony-reward-payout-invalid-total-reputation");
+    require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
+    require(_userReputation > 0, "colony-reward-payout-invalid-user-reputation");
+
+    // squareRoots[0] - square root of _userReputation
+    // squareRoots[1] - square root of userTokens
+    // squareRoots[2] - square root of _totalReputation
+    // squareRoots[3] - square root of totalTokens
+    // squareRoots[4] - square root of numerator
+    // squareRoots[5] - square root of denominator
+    // squareRoots[6] - square root of payout.amount
+
+    require(mul(squareRoots[0], squareRoots[0]) <= _userReputation, "colony-reward-payout-invalid-parametar-user-reputation");
+    require(mul(squareRoots[1], squareRoots[1]) <= userTokens, "colony-reward-payout-invalid-parametar-user-token");
+    require(mul(squareRoots[2], squareRoots[2]) <= _totalReputation, "colony-reward-payout-invalid-parametar-total-reputation");
+    require(mul(squareRoots[3], squareRoots[3]) <= payout.totalTokens, "colony-reward-payout-invalid-parametar-total-tokens");
+    require(mul(squareRoots[6], squareRoots[6]) <= payout.amount, "colony-reward-payout-invalid-parametar-amount");
+    uint256 numerator = mul(squareRoots[0], squareRoots[1]);
+    uint256 denominator = mul(squareRoots[2], squareRoots[3]);
+
+    require(mul(squareRoots[4], squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parametar-numerator");
+    require(mul(squareRoots[5], squareRoots[5]) <= denominator, "colony-reward-payout-invalid-parametar-denominator");
+
+    uint256 reward = (mul(squareRoots[4], squareRoots[6]) / (squareRoots[5] + 1)) ** 2;
+
+    pots[0].balance[payout.tokenAddress] = sub(pots[0].balance[payout.tokenAddress], reward);
+
+    userRewardPayoutCount[msg.sender] += 1;
+
+    // TODO: Unlock user tokens
+
+    ERC20Extended(payout.tokenAddress).transfer(msg.sender, reward);
+  }
+
+  function waiveRewardPayouts(uint256 _numPayouts) public {
+    require(add(userRewardPayoutCount[msg.sender], _numPayouts) <= globalRewardPayoutCount, "colony-reward-payout-invalid-num-payouts");
+
+    userRewardPayoutCount[msg.sender] += _numPayouts;
+
+    //TODO unlock user tokens
+  }
+
+  function finalizeRewardPayout(uint256 _payoutId) public {
+    require(_payoutId <= globalRewardPayoutCount, "colony-reward-payout-not-found");
+
+    RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
+
+    require(activeRewardPayouts[payout.tokenAddress], "colony-reward-payout-token-not-active");
+    require(block.timestamp - payout.blockTimestamp > 60 days, "colony-reward-payout-active");
+
+    activeRewardPayouts[payout.tokenAddress] = false;
+
+    emit RewardPayoutCycleEnded(_payoutId);
+  }
+
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, address, uint256) {
+    RewardPayoutCycle memory rewardPayoutInfo = rewardPayoutCycles[_payoutId];
+    return (rewardPayoutInfo.reputationState, rewardPayoutInfo.totalTokens, rewardPayoutInfo.amount, rewardPayoutInfo.tokenAddress, rewardPayoutInfo.blockTimestamp);
   }
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
