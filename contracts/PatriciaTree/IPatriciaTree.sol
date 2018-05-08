@@ -28,11 +28,6 @@ contract IPatriciaTree {
   /// @return _siblings Hashes of sibling edges
   function getProof(bytes key) public view returns (uint branchMask, bytes32[] _siblings);
 
-  /// @notice Compares that the `rootHash` matches the hash derived from `getImpliedRoot`
-  /// @param rootHash RootHash to use is check
-  /// @return `true` if the proof is correct, throws otherwise
-  function verifyProof(bytes32 rootHash, bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bool);
-
   /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings`
   /// @return The calculated hash
   function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bytes32);

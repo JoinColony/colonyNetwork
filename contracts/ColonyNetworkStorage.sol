@@ -77,6 +77,6 @@ contract ColonyNetworkStorage is DSAuth {
   bytes32 reputationRootHash;
   // The number of nodes in the reputation state tree that was accepted at the end of the last mining cycle
   uint256 reputationRootHashNNodes;
-  // Mapping containing how much hash been staked by each user
+  // Mapping containing how much has been staked by each user
   mapping (address => uint) stakedBalances;
 }

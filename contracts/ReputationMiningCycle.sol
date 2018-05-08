@@ -18,12 +18,7 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
-import "./Authority.sol";
-import "./IColony.sol";
-import "./EtherRouter.sol";
-import "./ERC20Extended.sol";
-import "./ColonyNetworkStorage.sol";
+import "../lib/dappsys/math.sol";
 import "./IColonyNetwork.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
 
@@ -318,21 +313,22 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       mstore(add(targetNodeBytes, 0x20), targetNode)
     }
 
-    verifyProof(jrh, targetNodeBytes, jhIntermediateValue, branchMask, siblings);
-    // If verifyProof hasn't thrown, proof is correct.
+    bytes32 impliedRoot = getImpliedRoot(targetNodeBytes, jhIntermediateValue, branchMask, siblings);
+    require(impliedRoot==jrh, "colony-invalid-binary-search-response");
+    // If require hasn't thrown, proof is correct.
     // Process the consequences
     processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode);
   }
 
-  uint constant __ROUND__ = 0;
-  uint constant __IDX__ = 1;
-  uint constant __REPUTATION_BRANCH_MASK__ = 2;
-  uint constant __AGREE_STATE_NNODES__ = 3;
-  uint constant __AGREE_STATE_BRANCH_MASK__ = 4;
-  uint constant __DISAGREE_STATE_NNODES__ = 5;
-  uint constant __DISAGREE_STATE_BRANCH_MASK__ = 6;
-  uint constant __PREVIOUS_NEW_REPUTATION_BRANCH_MASK__ = 7;
-  uint constant __REQUIRE_REPUTATION_CHECK__ = 8;
+  uint constant U_ROUND = 0;
+  uint constant U_IDX = 1;
+  uint constant U_REPUTATION_BRANCH_MASK = 2;
+  uint constant U_AGREE_STATE_NNODES = 3;
+  uint constant U_AGREE_STATE_BRANCH_MASK = 4;
+  uint constant U_DISAGREE_STATE_NNODES = 5;
+  uint constant U_DISAGREE_STATE_BRANCH_MASK = 6;
+  uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
+  uint constant U_REQUIRE_REPUTATION_CHECK = 8;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
   /// @param u A `uint256[9]` array. The elements of this array, in order are:
@@ -368,9 +364,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     bytes previousNewReputationValue,
     bytes32[] previousNewReputationSiblings
   ) public
-    challengeOpen(u[__ROUND__], u[__IDX__])
+    challengeOpen(u[U_ROUND], u[U_IDX])
   {
-    u[__REQUIRE_REPUTATION_CHECK__] = 0;
+    u[U_REQUIRE_REPUTATION_CHECK] = 0;
     // TODO: More checks that this is an appropriate time to respondToChallenge (maybe in modifier);
     /* bytes32 jrh = disputeRounds[round][idx].jrh; */
     // The contract knows
@@ -386,7 +382,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     //    that it's a decay calculation - not yet implemented.)
 
     // Check the supplied key is appropriate.
-    checkKey(u[__ROUND__], u[__IDX__], _reputationKey);
+    checkKey(u[U_ROUND], u[U_IDX], _reputationKey);
 
     // Prove the reputation's starting value is in some state, and that state is in the appropriate index in our JRH
     proveBeforeReputationValue(u, _reputationKey, reputationSiblings, agreeStateReputationValue, agreeStateSiblings);
@@ -399,7 +395,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     performReputationCalculation(u, agreeStateReputationValue, disagreeStateReputationValue, previousNewReputationValue);
 
     // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
-    if (u[__REQUIRE_REPUTATION_CHECK__]==1) {
+    if (u[U_REQUIRE_REPUTATION_CHECK]==1) {
       checkPreviousReputationInState(
         u,
         _reputationKey,
@@ -413,8 +409,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
 
     // If everthing checked out, note that we've responded to the challenge.
-    disputeRounds[u[__ROUND__]][u[__IDX__]].challengeStepCompleted += 1;
-    disputeRounds[u[__ROUND__]][u[__IDX__]].lastResponseTimestamp = now;
+    disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
+    disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
 
     // Safety net?
     /* if (disputeRounds[round][idx].challengeStepCompleted==disputeRounds[round][opponentIdx].challengeStepCompleted){
@@ -448,8 +444,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     require(disputeRounds[round][index].jrh == 0x0);
 
     // Check the proofs for the JRH
-    require(checkJRHProof1(jrh, branchMask1, siblings1));
-    require(checkJRHProof2(round, index, jrh, branchMask2, siblings2));
+    checkJRHProof1(jrh, branchMask1, siblings1);
+    checkJRHProof2(round, index, jrh, branchMask2, siblings2);
 
     // Store their JRH
     disputeRounds[round][index].jrh = jrh;
@@ -545,25 +541,25 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   function proveBeforeReputationValue(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings) internal {
-    bytes32 jrh = disputeRounds[u[__ROUND__]][u[__IDX__]].jrh;
-    uint256 lastAgreeIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before.
+    bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
+    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before.
     uint256 reputationValue;
     assembly {
         reputationValue := mload(add(agreeStateReputationValue, 32))
     }
 
-    bytes32 reputationRootHash = getImpliedRoot(_reputationKey, agreeStateReputationValue, u[__REPUTATION_BRANCH_MASK__], reputationSiblings);
+    bytes32 reputationRootHash = getImpliedRoot(_reputationKey, agreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
     bytes memory jhLeafValue = new bytes(64);
     bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
-      let x := mload(add(u, mul(32,3))) // 3 = __AGREE_STATE_NNODES__. Constants not supported by inline solidity
+      let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline solidity
       mstore(add(jhLeafValue, 0x40), x)
       mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
     // agree on.
-    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[__AGREE_STATE_BRANCH_MASK__], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
 
     if (reputationValue == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
@@ -574,16 +570,16 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // In the event that our opponent lied about this reputation not existing yet in the tree, they will both complete
     // a call to respondToChallenge, but we will have a higher challengeStepCompleted value, and so they will be the ones
     // eliminated.
-    disputeRounds[u[__ROUND__]][u[__IDX__]].challengeStepCompleted += 1;
+    disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
     // I think this trick can be used exactly once, and only because this is the last function to be called in the challege,
     // and I'm choosing to use it here. I *think* this is okay, because the only situation
     // where we don't prove anything with merkle proofs in this whole dance is here.
   }
 
   function proveAfterReputationValue(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes disagreeStateReputationValue, bytes32[] disagreeStateSiblings) internal {
-    bytes32 jrh = disputeRounds[u[__ROUND__]][u[__IDX__]].jrh;
-    uint256 firstDisagreeIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound;
-    bytes32 reputationRootHash = getImpliedRoot(_reputationKey, disagreeStateReputationValue, u[__REPUTATION_BRANCH_MASK__], reputationSiblings);
+    bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
+    uint256 firstDisagreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound;
+    bytes32 reputationRootHash = getImpliedRoot(_reputationKey, disagreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
     // agree on.
     bytes memory jhLeafValue = new bytes(64);
@@ -591,17 +587,18 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
 
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
-      let x := mload(add(u, mul(32,5))) // 5 = __DISAGREE_STATE_NNODES__. Constants not supported by inline solidity.
+      let x := mload(add(u, mul(32,5))) // 5 = U_DISAGREE_STATE_NNODES. Constants not supported by inline solidity.
       mstore(add(jhLeafValue, 0x40), x)
       mstore(add(firstDisagreeIdxBytes, 0x20), firstDisagreeIdx)
     }
 
-    verifyProof(jrh, firstDisagreeIdxBytes, jhLeafValue, u[__DISAGREE_STATE_BRANCH_MASK__], disagreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRoot(firstDisagreeIdxBytes, jhLeafValue, u[U_DISAGREE_STATE_BRANCH_MASK], disagreeStateSiblings);
+    require(jrh==impliedRoot, "colony-invalid-after-reputation-proof");
   }
 
   function performReputationCalculation(uint256[9] u, bytes agreeStateReputationValueBytes, bytes disagreeStateReputationValueBytes, bytes previousNewReputationValueBytes) internal {
     // TODO: Possibility of decay calculation
-    uint reputationTransitionIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound - 1;
+    uint reputationTransitionIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
     int256 amount;
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
@@ -628,7 +625,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       // Flag that we need to check that the reputation they supplied is in the 'agree' state.
       // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
       // this function, without adding a new variable to the stack in the parent function...
-      u[__REQUIRE_REPUTATION_CHECK__] = 1;
+      u[U_REQUIRE_REPUTATION_CHECK] = 1;
     }
 
     (, amount, , , ,) = IColonyNetwork(colonyNetworkAddress).getReputationUpdateLogEntry(reputationTransitionIdx, false);
@@ -648,20 +645,20 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     bytes32[] previousNewReputationSiblings)
   internal
   {
-    uint256 lastAgreeIdx = disputeRounds[u[__ROUND__]][u[__IDX__]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before
+    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before
 
-    bytes32 reputationRootHash = getImpliedRoot(previousNewReputationKey, previousNewReputationValue, u[__PREVIOUS_NEW_REPUTATION_BRANCH_MASK__], previousNewReputationSiblings);
+    bytes32 reputationRootHash = getImpliedRoot(previousNewReputationKey, previousNewReputationValue, u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK], previousNewReputationSiblings);
     bytes memory jhLeafValue = new bytes(64);
     bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
-      let x := mload(add(u, mul(32,3))) // 3 = __AGREE_STATE_NNODES__. Constants not supported by inline assembly
+      let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline assembly
       mstore(add(jhLeafValue, 0x40), x)
       mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[__AGREE_STATE_BRANCH_MASK__], agreeStateSiblings);
-    require(impliedRoot == disputeRounds[u[__ROUND__]][u[__IDX__]].jrh);
+    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh);
   }
 
   function saveProvedReputation(uint256[9] u, bytes previousNewReputationValue) internal {
@@ -670,10 +667,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       previousReputationUID := mload(add(previousNewReputationValue,0x40))
     }
     // Save the index for tiebreak scenarios later.
-    disputeRounds[u[__ROUND__]][u[__IDX__]].provedPreviousReputationUID = previousReputationUID;
+    disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
   }
 
-  function checkJRHProof1(bytes32 jrh, uint branchMask1, bytes32[] siblings1) internal returns (bool result) {
+  function checkJRHProof1(bytes32 jrh, uint branchMask1, bytes32[] siblings1) internal {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
@@ -683,10 +680,11 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       mstore(add(jhLeafValue, 0x40), reputationRootHashNNodes)
     }
-    return verifyProof(jrh, zero, jhLeafValue, branchMask1, siblings1);
+    bytes32 impliedRoot = getImpliedRoot(zero, jhLeafValue, branchMask1, siblings1);
+    require(jrh==impliedRoot, "colony-invalid-jrh-proof-1");
   }
 
-  function checkJRHProof2(uint round, uint index, bytes32 jrh, uint branchMask2, bytes32[] siblings2) internal returns (bool result) {
+  function checkJRHProof2(uint round, uint index, bytes32 jrh, uint branchMask2, bytes32[] siblings2) internal {
     // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
     // key is the number of updates in the reputation update log (implemented)
     // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)
@@ -702,7 +700,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       mstore(add(jhLeafValue, 0x40), submittedHashNNodes)
       mstore(add(nUpdatesBytes, 0x20), nUpdates)
     }
-    return verifyProof(jrh, nUpdatesBytes, jhLeafValue, branchMask2, siblings2);
+    bytes32 impliedRoot = getImpliedRoot(nUpdatesBytes, jhLeafValue, branchMask2, siblings2);
+    require(jrh==impliedRoot, "colony-invalid-jrh-proof-2");
+
   }
 
   function startMemberOfPair(uint256 roundNumber, uint256 index) internal {
