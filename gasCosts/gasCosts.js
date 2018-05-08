@@ -1,5 +1,8 @@
 /* globals artifacts */
 /* eslint-disable no-console */
+
+import { toBN } from "web3-utils";
+
 import {
   MANAGER,
   EVALUATOR,
@@ -17,9 +20,9 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime, createSignatures, forwardTime } from "../helpers/test-helper";
+import { getRandomString, getTokenArgs, currentBlockTime, createSignatures, forwardTime, bnSqrt } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
-import { giveUserCLNYTokens } from "../helpers/test-data-generator";
+import { giveUserCLNYTokens, fundColonyWithTokens } from "../helpers/test-data-generator";
 
 const BN = require("bn.js");
 
@@ -40,7 +43,9 @@ contract("All", () => {
   const gasPrice = 20e9;
 
   let colony;
+  let token;
   let tokenAddress;
+  let otherToken;
   let colonyTask;
   let colonyFunding;
   let commonColony;
@@ -57,7 +62,7 @@ contract("All", () => {
 
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
-    const token = await Token.new(...tokenArgs);
+    token = await Token.new(...tokenArgs);
     await colonyNetwork.createColony("Antz", token.address);
     const address = await colonyNetwork.getColony.call("Antz");
     await token.setOwner(address);
@@ -69,14 +74,17 @@ contract("All", () => {
 
     const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
     commonColony = await IColony.at(commonColonyAddress);
+
+    const otherTokenArgs = getTokenArgs();
+    otherToken = await Token.new(...otherTokenArgs);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe("Gas costs", () => {
     it("when working with the Colony Network", async () => {
       const tokenArgs = getTokenArgs();
-      const token = await Token.new(...tokenArgs);
-      await colonyNetwork.createColony("Test", token.address);
+      const colonyToken = await Token.new(...tokenArgs);
+      await colonyNetwork.createColony("Test", colonyToken.address);
     });
 
     it("when working with the Common Colony", async () => {
@@ -202,6 +210,76 @@ contract("All", () => {
 
       // withdraw
       await colonyNetwork.withdraw(lessBigStr, { from: STAKER3 });
+    });
+
+    it("when working with reward payouts", async () => {
+      const totalReputation = toBN(350 * 1e18);
+      const workerReputation = toBN(200 * 1e18);
+      const managerReputation = toBN(100 * 1e18);
+      const initialFunding = toBN(360 * 1e18);
+
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+      const name = getRandomString(5);
+      await colonyNetwork.createColony(name, newToken.address);
+
+      const address = await colonyNetwork.getColony.call(name);
+      const newColony = IColony.at(address);
+      await newToken.setOwner(address);
+
+      await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());
+      await fundColonyWithTokens(newColony, newToken, initialFunding.toString());
+
+      await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
+
+      const tx = await newColony.startNextRewardPayout(otherToken.address);
+      const payoutId = tx.logs[0].args.id;
+
+      await newColony.waiveRewardPayouts(1, {
+        from: MANAGER
+      });
+
+      const workerReputationSqrt = bnSqrt(workerReputation);
+      const totalReputationSqrt = bnSqrt(workerReputation.add(managerReputation));
+      const numeratorSqrt = bnSqrt(workerReputationSqrt.mul(workerReputationSqrt));
+      const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalReputationSqrt));
+
+      const info = await newColony.getRewardPayoutInfo.call(payoutId);
+
+      const amountSqrt = bnSqrt(info[2]);
+
+      const squareRoots = [
+        workerReputationSqrt.toString(),
+        workerReputationSqrt.toString(),
+        totalReputationSqrt.toString(),
+        totalReputationSqrt.toString(),
+        numeratorSqrt.toString(),
+        denominatorSqrt.toString(),
+        amountSqrt.toString()
+      ];
+
+      await newColony.claimRewardPayout(payoutId, squareRoots, workerReputation.toString(), totalReputation.toString(), {
+        from: WORKER
+      });
+
+      await forwardTime(5184001);
+      await newColony.finalizeRewardPayout(payoutId);
+
+      await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());
+
+      const tx2 = await newColony.startNextRewardPayout(otherToken.address);
+      const payoutId2 = tx2.logs[0].args.id;
+
+      await newColony.waiveRewardPayouts(1, {
+        from: MANAGER
+      });
+
+      await newColony.claimRewardPayout(payoutId2, squareRoots, workerReputation.toString(), totalReputation.toString(), {
+        from: WORKER
+      });
+
+      await forwardTime(5184001);
+      await newColony.finalizeRewardPayout(payoutId2);
     });
   });
 });
