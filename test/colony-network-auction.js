@@ -263,8 +263,9 @@ contract("ColonyNetworkAuction", accounts => {
       await tokenAuction.bid(amount, { from: BIDDER_1 });
       const receivedTotal = await tokenAuction.receivedTotal.call();
       const bid = await tokenAuction.bids.call(BIDDER_1);
-      assert.equal(bid.toString(), totalToEndAuction.toString());
-      assert.equal(receivedTotal.toString(), totalToEndAuction.toString());
+      assert(bid.lte(totalToEndAuction));
+      assert(receivedTotal.lte(totalToEndAuction));
+      assert.equal(receivedTotal.toString(), bid.toString());
     });
 
     it("after target is sold, bid is rejected", async () => {
