@@ -161,13 +161,14 @@ contract IColony {
   function getTaskCount() public view returns (uint256);
 
   /// @notice Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call
+  /// @param _id Id of the task
   /// @return The current task change nonce value
-  function getTaskChangeNonce() public view returns (uint256);
+  function getTaskChangeNonce(uint256 _id) public view returns (uint256);
 
   /// @notice Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker)
   /// using the detached signatures for these users.
   /// @dev The Colony functions which require approval and the task roles to review these are set in `IColony.initialiseColony` at colony creation
-  /// Upon successful execution the `taskChangeNonce` is incremented
+  /// Upon successful execution the respective `taskChangeNonces` is incremented
   /// @param _sigV recovery id
   /// @param _sigR r output of the ECDSA signature of the transaction
   /// @param _sigS s output of the ECDSA signature of the transaction

@@ -142,12 +142,12 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskCount;
   }
 
-  function getTaskChangeNonce() public view returns (uint256) {
-    return taskChangeNonce;
+  function getTaskChangeNonce(uint256 _id) public view returns (uint256) {
+    return taskChangeNonces[_id];
   }
 
   function getSignedMessageHash(uint256 _value, bytes _data, uint8 _mode) private returns (bytes32 txHash) {
-    bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonce));
+    bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonce[taskId]));
     if (_mode==0) {
       // 'Normal' mode - geth, etc.
       return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
@@ -192,7 +192,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     require(task.roles[r1].user == reviewerAddresses[0] || task.roles[r1].user == reviewerAddresses[1]);
     require(task.roles[r2].user == reviewerAddresses[0] || task.roles[r2].user == reviewerAddresses[1]);
 
-    taskChangeNonce = taskChangeNonce + 1;
+    taskChangeNonces[taskId]++;
     require(address(this).call.value(_value)(_data));
   }
 

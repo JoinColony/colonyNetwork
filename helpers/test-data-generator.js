@@ -45,7 +45,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   }
   const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDateTimestamp);
   const signers = [MANAGER, worker];
-  const sigs = await createSignatures(colony, signers, 0, txData);
+  const sigs = await createSignatures(colony, taskId, signers, 0, txData);
   await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
   return taskId;
 }
@@ -84,11 +84,11 @@ export async function setupFundedTask({
   await colony.setTaskManagerPayout(taskId, tokenAddress, managerPayout.toString());
 
   txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
-  sigs = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData);
+  sigs = await createSignatures(colony, taskId, [MANAGER, EVALUATOR], 0, txData);
   await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
   txData = await colony.contract.setTaskWorkerPayout.getData(taskId, tokenAddress, workerPayout.toString());
-  sigs = await createSignatures(colony, [MANAGER, worker], 0, txData);
+  sigs = await createSignatures(colony, taskId, [MANAGER, worker], 0, txData);
   await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
   return taskId;
 }
