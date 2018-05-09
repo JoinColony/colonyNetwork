@@ -22,9 +22,11 @@ import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./IColony.sol";
 import "./ColonyStorage.sol";
+import "./PatriciaTree/PatriciaTreeProofs.sol";
 
 
-contract Colony is ColonyStorage {
+contract Colony is ColonyStorage, PatriciaTreeProofs {
+
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
@@ -125,11 +127,38 @@ contract Colony is ColonyStorage {
   function getDomainCount() public view returns (uint256) {
     return domainCount;
   }
-
   function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
   private
   {
     uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
     reviewers[_sig] = _reviewers;
+  }
+
+  modifier verifyKey(bytes key) {
+    uint256 colonyAddress;
+    uint256 skillid;
+    uint256 userAddress;
+    assembly {
+        colonyAddress := mload(add(key,32))
+        skillid := mload(add(key,52)) // Colony address was 20 bytes long, so add 20 bytes
+        userAddress := mload(add(key,84)) // Skillid was 32 bytes long, so add 32 bytes
+    }
+    colonyAddress >>= 96;
+    userAddress >>= 96;
+    // Require that the user is proving their own reputation in this colony.
+    require(address(colonyAddress) == address(this));
+    require(address(userAddress) == msg.sender);
+    _;
+  }
+
+  function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
+  verifyKey(key)
+  public returns (bool)
+  {
+    // Get roothash from colonynetwork
+    bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
+    bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
+    require(rootHash==impliedHash, "colony-invalid-reputation-proof");
+    return true;
   }
 }

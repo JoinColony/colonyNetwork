@@ -28,7 +28,7 @@ dependencies:
 test:
   pre:
     - greenkeeper-lockfile-update
-    
+
   override:
     - yarn run eslint
     - yarn run solium
@@ -37,7 +37,8 @@ test:
     - yarn run test:contracts:upgrade
     - yarn run test:contracts:coverage
     - yarn run test:contracts:gasCosts
-    
+
   post:
     - mv ./test-results.xml $CIRCLE_TEST_REPORTS/truffle.xml
     - greenkeeper-lockfile-upload
+    - mv ./coverage/ $CIRCLE_ARTIFACTS/coverage/

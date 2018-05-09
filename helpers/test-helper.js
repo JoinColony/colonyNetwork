@@ -94,8 +94,9 @@ async function checkError(promise, errMsg, isAssert) {
     const transaction = await web3GetTransaction(tx);
     if (network !== "coverage") {
       // When a transaction `throws`, all the gas sent is spent. So let's check that we spent all the gas that we sent.
-      // When using EtherRouter not all sent gas is spent, it is 73000 gas less than the total.
-      assert.closeTo(transaction.gas, receipt.gasUsed, 73000, "didnt fail - didn't throw and use all gas");
+      // TODO: Properly account for EIP150 and passing only 63/64 gas on CALL.
+      // See https://github.com/JoinColony/colonyNetwork/issues/194 for details.
+      assert.closeTo(transaction.gas, receipt.gasUsed, 95000, "didnt fail - didn't throw and use all gas");
     }
   }
 }
@@ -160,23 +161,41 @@ export async function expectEvent(tx, eventName) {
 
 export async function forwardTime(seconds, test) {
   const client = await web3GetClient();
-  if (client.indexOf("TestRPC") === -1) {
-    test.skip();
-  } else {
-    // console.log(`Forwarding time with ${seconds}s ...`);
-    await web3.currentProvider.send({
-      jsonrpc: "2.0",
-      method: "evm_increaseTime",
-      params: [seconds],
-      id: 0
-    });
-    await web3.currentProvider.send({
-      jsonrpc: "2.0",
-      method: "evm_mine",
-      params: [],
-      id: 0
-    });
-  }
+  const p = new Promise((resolve, reject) => {
+    if (client.indexOf("TestRPC") === -1) {
+      resolve(test.skip());
+    } else {
+      console.log(`Forwarding time with ${seconds}s ...`);
+      web3.currentProvider.send(
+        {
+          jsonrpc: "2.0",
+          method: "evm_increaseTime",
+          params: [seconds],
+          id: 0
+        },
+        err => {
+          if (err) {
+            return reject(err);
+          }
+          return web3.currentProvider.send(
+            {
+              jsonrpc: "2.0",
+              method: "evm_mine",
+              params: [],
+              id: 0
+            },
+            (err2, res) => {
+              if (err2) {
+                return reject(err2);
+              }
+              return resolve(res);
+            }
+          );
+        }
+      );
+    }
+  });
+  return p;
 }
 
 export async function createSignatures(colony, signers, value, data) {

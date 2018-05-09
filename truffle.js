@@ -5,14 +5,14 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      gas: 4700000,
+      gas: 7000000,
       gasPrice: 0,
       network_id: "*"
     },
     integration: {
       host: "localhost",
       port: 8545,
-      gas: 4700000,
+      gas: 7000000,
       gasPrice: 0,
       network_id: "integration"
     },

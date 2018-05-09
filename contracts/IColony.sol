@@ -98,6 +98,18 @@ contract IColony {
   /// @return The domain count. Min 1 as the root domain is created at the same time as the colony
   function getDomainCount() public view returns (uint256);
 
+  /// @notice Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
+  /// @param key The key of the element the proof is for.
+  /// @param value The value of the element that the proof is for.
+  /// @param branchMask The branchmask of the proof
+  /// @param siblings The siblings of the proof
+  /// @return True if the proof is valid, false otherwise.
+  /// @dev For more detail about branchMask and siblings, examine the PatriciaTree implementation
+  /// While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own
+  /// reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function
+  /// is not currently exposed on the Colony's EtherRouter.
+  function verifyReputationProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool);
+
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
   /// @param _specificationHash Database identifier where the task specification is stored
