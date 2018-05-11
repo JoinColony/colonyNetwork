@@ -139,6 +139,21 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskChangeNonce;
   }
 
+  // Follows ERC191 signature scheme: https://github.com/ethereum/EIPs/issues/191
+  function getERC191Hash(uint256 _value, bytes _data) private view returns (bytes32 txHash) {
+    bytes memory prefix = "\x19Ethereum Signed Message:\n174";
+    return keccak256(
+      prefix,
+      byte(0x19),
+      byte(0),
+      address(this),
+      address(this),
+      _value,
+      _data,
+      taskChangeNonce
+    );
+  }
+
   function executeTaskChange(
     uint8[] _sigV,
     bytes32[] _sigR,
@@ -156,32 +171,24 @@ contract ColonyTask is ColonyStorage, DSMath {
     (sig, taskId) = deconstructCall(_data);
     Task storage task = tasks[taskId];
     require(!task.finalized);
-    
+
     uint8[2] storage _reviewers = reviewers[sig];
     uint8 r1 = _reviewers[0];
     uint8 r2 = _reviewers[1];
     // Prevent calls to non registered /arbitrary function on the contract
     // Checks at least one of the two reviewers registered is different to the task manager
     require(r1 != MANAGER || r2 != MANAGER);
-    
-    // Follows ERC191 signature scheme: https://github.com/ethereum/EIPs/issues/191
-    bytes32 txHash = keccak256(
-      byte(0x19),
-      byte(0),
-      address(this),
-      address(this),
-      _value,
-      _data,
-      taskChangeNonce);
+
+    bytes32 txHash = getERC191Hash(_value, _data);
 
     address[] memory reviewerAddresses = new address[](2);
     for (uint i = 0; i < 2; i++) {
-      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]); 
+      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
     }
 
     require(task.roles[r1].user == reviewerAddresses[0] || task.roles[r1].user == reviewerAddresses[1]);
     require(task.roles[r2].user == reviewerAddresses[0] || task.roles[r2].user == reviewerAddresses[1]);
-    
+
     taskChangeNonce = taskChangeNonce + 1;
     require(address(this).call.value(_value)(_data));
   }
@@ -199,7 +206,7 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public
   taskWorkRatingRevealOpen(_id)
-  { 
+  {
     // MAYBE: we should hash these the other way around, i.e. generateSecret(_rating, _salt)
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id].secret[_role]);

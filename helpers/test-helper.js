@@ -208,7 +208,6 @@ export async function createSignatures(colony, signers, value, data) {
     "64",
     "0"
   )}${data.slice(2)}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
-  const msgHash = web3Utils.soliditySha3(input);
 
   const sigV = [];
   const sigR = [];
@@ -217,7 +216,8 @@ export async function createSignatures(colony, signers, value, data) {
   for (let i = 0; i < signers.length; i += 1) {
     const user = signers[i].toString();
     const privKey = accountsJson.private_keys[user];
-    const sig = ethUtils.ecsign(Buffer.from(msgHash.slice(2), "hex"), Buffer.from(privKey, "hex"));
+    const prefixedMessage = ethUtils.hashPersonalMessage(Buffer.from(input.slice(2), "hex"));
+    const sig = ethUtils.ecsign(prefixedMessage, Buffer.from(privKey, "hex"));
 
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);
