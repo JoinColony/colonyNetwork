@@ -174,7 +174,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
     emit RewardPayoutCycleStarted(globalRewardPayoutCount);
   }
 
-  function claimRewardPayout(uint256 _payoutId, uint256[7] squareRoots, uint256 _userReputation, uint256 _totalReputation) public {
+  function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public {
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
     require(_payoutId - userRewardPayoutCount[msg.sender] == 1, "colony-reward-payout-bad-id");
@@ -195,18 +195,18 @@ contract ColonyFunding is ColonyStorage, DSMath {
     // squareRoots[5] - square root of denominator
     // squareRoots[6] - square root of payout.amount
 
-    require(mul(squareRoots[0], squareRoots[0]) <= _userReputation, "colony-reward-payout-invalid-parametar-user-reputation");
-    require(mul(squareRoots[1], squareRoots[1]) <= userTokens, "colony-reward-payout-invalid-parametar-user-token");
-    require(mul(squareRoots[2], squareRoots[2]) <= _totalReputation, "colony-reward-payout-invalid-parametar-total-reputation");
-    require(mul(squareRoots[3], squareRoots[3]) <= payout.totalTokens, "colony-reward-payout-invalid-parametar-total-tokens");
-    require(mul(squareRoots[6], squareRoots[6]) <= payout.amount, "colony-reward-payout-invalid-parametar-amount");
-    uint256 numerator = mul(squareRoots[0], squareRoots[1]);
-    uint256 denominator = mul(squareRoots[2], squareRoots[3]);
+    require(mul(_squareRoots[0], _squareRoots[0]) <= _userReputation, "colony-reward-payout-invalid-parametar-user-reputation");
+    require(mul(_squareRoots[1], _squareRoots[1]) <= userTokens, "colony-reward-payout-invalid-parametar-user-token");
+    require(mul(_squareRoots[2], _squareRoots[2]) <= _totalReputation, "colony-reward-payout-invalid-parametar-total-reputation");
+    require(mul(_squareRoots[3], _squareRoots[3]) <= payout.totalTokens, "colony-reward-payout-invalid-parametar-total-tokens");
+    require(mul(_squareRoots[6], _squareRoots[6]) <= payout.amount, "colony-reward-payout-invalid-parametar-amount");
+    uint256 numerator = mul(_squareRoots[0], _squareRoots[1]);
+    uint256 denominator = mul(_squareRoots[2], _squareRoots[3]);
 
-    require(mul(squareRoots[4], squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parametar-numerator");
-    require(mul(squareRoots[5], squareRoots[5]) <= denominator, "colony-reward-payout-invalid-parametar-denominator");
+    require(mul(_squareRoots[4], _squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parametar-numerator");
+    require(mul(_squareRoots[5], _squareRoots[5]) <= denominator, "colony-reward-payout-invalid-parametar-denominator");
 
-    uint256 reward = (mul(squareRoots[4], squareRoots[6]) / (squareRoots[5] + 1)) ** 2;
+    uint256 reward = (mul(_squareRoots[4], _squareRoots[6]) / (_squareRoots[5] + 1)) ** 2;
 
     pots[0].balance[payout.tokenAddress] = sub(pots[0].balance[payout.tokenAddress], reward);
 

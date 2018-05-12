@@ -300,20 +300,20 @@ contract IColony {
 
   /// @notice Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation
   /// which will be proven via Merkle proof inside this function.
-  /// Can only be called if payout is active, i.e when 60 days have passed from its creation.
+  /// Can only be called if payout is active, i.e if 60 days have not passed from its creation.
   /// Can only be called if next in queue
   /// @param _payoutId Id of the reward payout
-  /// @param squareRoots Square roots of values used in equation
-  /// 0 - square root of user reputation
-  /// 1 - square root of user tokens
-  /// 2 - square root of total reputation
-  /// 3 - square root of total tokens
-  /// 4 - square root of numerator (user reputation * user tokens)
-  /// 5 - square root of denominator (total reputation * total tokens)
-  /// 6 - square root of payout amount
+  /// @param _squareRoots Square roots of values used in equation
+  /// _squareRoots[0] - square root of user reputation
+  /// _squareRoots[1] - square root of user tokens
+  /// _squareRoots[2] - square root of total reputation
+  /// _squareRoots[3] - square root of total tokens
+  /// _squareRoots[4] - square root of numerator (user reputation * user tokens)
+  /// _squareRoots[5] - square root of denominator (total reputation * total tokens)
+  /// _squareRoots[6] - square root of payout amount
   /// @param _userReputation User reputation at the point of creation of reward payout cycle
   /// @param _totalReputation Total reputation at the point of creation of reward payout cycle
-  function claimRewardPayout(uint256 _payoutId, uint256[7] squareRoots, uint256 _userReputation, uint256 _totalReputation) public;
+  function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public;
 
   /// @notice Waive reward payouts. This will unlock the sender's tokens and increment users reward payout counter,
   /// allowing them to claim next reward payout
