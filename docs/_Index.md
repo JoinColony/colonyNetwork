@@ -1,5 +1,6 @@
 ---
-logo: img/colonyNetwork.svg
+github: https://github.com/JoinColony/colonyNetwork
+logo: /img/colonyNetwork.svg
 section: index
 sectionOrder:
   - Docs
