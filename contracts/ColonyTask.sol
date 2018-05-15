@@ -139,23 +139,30 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskChangeNonce;
   }
 
-  function getSignedMessageHash(uint256 _value, bytes _data) private returns (bytes32 txHash) {
-    return keccak256(
-      "\x19Ethereum Signed Message:\n32",
-      keccak256(
-        address(this),
-        address(this),
-        _value,
-        _data,
-        taskChangeNonce
-      )
+
+  function getSignedMessageHash(uint256 _value, bytes _data, uint8 _mode) private returns (bytes32 txHash) {
+    bytes32 hash = keccak256(
+      address(this),
+      address(this),
+      _value,
+      _data,
+      taskChangeNonce
     );
+    if (_mode==0) {
+      // 'Normal' mode - geth, etc.
+      return keccak256("\x19Ethereum Signed Message:\n32", hash);
+    } else {
+      // Trezor mode
+      // Correct incantation helpfull cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
+      return keccak256("\x19Ethereum Signed Message:\n\x20", hash);
+    }
   }
 
   function executeTaskChange(
     uint8[] _sigV,
     bytes32[] _sigR,
     bytes32[] _sigS,
+    uint8[] _mode,
     uint256 _value,
     bytes _data) public
   {
@@ -177,12 +184,11 @@ contract ColonyTask is ColonyStorage, DSMath {
     // Checks at least one of the two reviewers registered is different to the task manager
     require(r1 != MANAGER || r2 != MANAGER);
 
-    bytes32 txHash = getSignedMessageHash(_value, _data);
-
     address[] memory reviewerAddresses = new address[](2);
     for (uint i = 0; i < 2; i++) {
-      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
+      reviewerAddresses[i] = ecrecover(getSignedMessageHash(_value, _data, _mode[i]), _sigV[i], _sigR[i], _sigS[i]);
     }
+
     require(task.roles[r1].user == reviewerAddresses[0] || task.roles[r1].user == reviewerAddresses[1]);
     require(task.roles[r2].user == reviewerAddresses[0] || task.roles[r2].user == reviewerAddresses[1]);
 

@@ -299,7 +299,7 @@ contract("Colony", addresses => {
       let txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
       const signers = [MANAGER, WORKER];
       let sigs = await createSignatures(colony, signers, 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
       let taskChangeNonce = await colony.getTaskChangeNonce.call();
       assert.equal(taskChangeNonce, 1);
@@ -308,7 +308,7 @@ contract("Colony", addresses => {
       const dueDate = await currentBlockTime();
       txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       sigs = await createSignatures(colony, signers, 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
       taskChangeNonce = await colony.getTaskChangeNonce.call();
       assert.equal(taskChangeNonce, 2);
@@ -320,7 +320,7 @@ contract("Colony", addresses => {
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
       const signers = [MANAGER, WORKER];
       const sigs = await createSignatures(colony, signers, 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
       const task = await colony.getTask.call(1);
       assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
     });
@@ -333,7 +333,7 @@ contract("Colony", addresses => {
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
       const signers = [MANAGER, WORKER];
       const sigs = await createSignatures(colony, signers, 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
       const task = await colony.getTask.call(1);
       assert.equal(task[4], dueDate);
@@ -352,7 +352,7 @@ contract("Colony", addresses => {
       const signers = [MANAGER, OTHER];
       const sigs = await createSignatures(colony, signers, 0, txData);
 
-      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData));
     });
 
     it("should fail update of task brief signed by manager and evaluator", async () => {
@@ -364,7 +364,7 @@ contract("Colony", addresses => {
       const signers = [MANAGER, EVALUATOR];
       const sigs = await createSignatures(colony, signers, 0, txData);
 
-      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData));
     });
 
     it("should fail to execute task change for a non-registered function signature", async () => {
@@ -373,7 +373,7 @@ contract("Colony", addresses => {
       const signers = [MANAGER, EVALUATOR];
       const sigs = await createSignatures(colony, signers, 0, txData);
 
-      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData));
     });
 
     it("should fail to execute change of task brief, using an invalid task id", async () => {
@@ -382,7 +382,7 @@ contract("Colony", addresses => {
       const signers = [MANAGER, EVALUATOR];
       const sigs = await createSignatures(colony, signers, 0, txData);
 
-      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData));
     });
 
     it("should fail to execute task change, if the task is already finalized", async () => {
@@ -394,7 +394,7 @@ contract("Colony", addresses => {
       const signers = [MANAGER, EVALUATOR];
       const sigs = await createSignatures(colony, signers, 0, txData);
 
-      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData));
+      await checkErrorRevert(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData));
     });
   });
 
@@ -581,21 +581,21 @@ contract("Colony", addresses => {
       // Set the evaluator payout as 1000 ethers
       const txData1 = await colony.contract.setTaskEvaluatorPayout.getData(1, 0x0, 1000);
       const sigs = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData1);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, 0, txData1);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData1);
 
       // Set the evaluator payout as 40 colony tokens
       const txData2 = await colony.contract.setTaskEvaluatorPayout.getData(1, token.address, 40);
       const sigs2 = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData2);
-      await colony.executeTaskChange(sigs2.sigV, sigs2.sigR, sigs2.sigS, 0, txData2);
+      await colony.executeTaskChange(sigs2.sigV, sigs2.sigR, sigs2.sigS, [0, 0], 0, txData2);
 
       // Set the worker payout as 98000 wei and 200 colony tokens
       const txData3 = await colony.contract.setTaskWorkerPayout.getData(1, 0x0, 98000);
       const sigs3 = await createSignatures(colony, [MANAGER, WORKER], 0, txData3);
-      await colony.executeTaskChange(sigs3.sigV, sigs3.sigR, sigs3.sigS, 0, txData3);
+      await colony.executeTaskChange(sigs3.sigV, sigs3.sigR, sigs3.sigS, [0, 0], 0, txData3);
 
       const txData4 = await colony.contract.setTaskWorkerPayout.getData(1, token.address, 200);
       const sigs4 = await createSignatures(colony, [MANAGER, WORKER], 0, txData4);
-      await colony.executeTaskChange(sigs4.sigV, sigs4.sigR, sigs4.sigS, 0, txData4);
+      await colony.executeTaskChange(sigs4.sigV, sigs4.sigR, sigs4.sigS, [0, 0], 0, txData4);
 
       const taskPayoutManager1 = await colony.getTaskPayout.call(1, MANAGER_ROLE, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);

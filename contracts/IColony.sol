@@ -131,10 +131,11 @@ contract IColony {
   /// @param _sigV recovery id
   /// @param _sigR r output of the ECDSA signature of the transaction
   /// @param _sigS s output of the ECDSA signature of the transaction
+  /// @param _mode How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
   /// @param _value The transaction value, i.e. number of wei to be sent when the transaction is executed
   /// Currently we only accept 0 value transactions but this is kept as a future option
   /// @param _data The transaction data
-  function executeTaskChange(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint256 _value, bytes _data) public;
+  function executeTaskChange(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint8[] _mode, uint256 _value, bytes _data) public;
 
   /// @notice Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`
   /// Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached
