@@ -139,18 +139,16 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskChangeNonce;
   }
 
-  // Follows ERC191 signature scheme: https://github.com/ethereum/EIPs/issues/191
-  function getERC191Hash(uint256 _value, bytes _data) private view returns (bytes32 txHash) {
-    bytes memory prefix = "\x19Ethereum Signed Message:\n174";
+  function getSignedMessageHash(uint256 _value, bytes _data) private returns (bytes32 txHash) {
     return keccak256(
-      prefix,
-      byte(0x19),
-      byte(0),
-      address(this),
-      address(this),
-      _value,
-      _data,
-      taskChangeNonce
+      "\x19Ethereum Signed Message:\n32",
+      keccak256(
+        address(this),
+        address(this),
+        _value,
+        _data,
+        taskChangeNonce
+      )
     );
   }
 
@@ -179,13 +177,12 @@ contract ColonyTask is ColonyStorage, DSMath {
     // Checks at least one of the two reviewers registered is different to the task manager
     require(r1 != MANAGER || r2 != MANAGER);
 
-    bytes32 txHash = getERC191Hash(_value, _data);
+    bytes32 txHash = getSignedMessageHash(_value, _data);
 
     address[] memory reviewerAddresses = new address[](2);
     for (uint i = 0; i < 2; i++) {
       reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
     }
-
     require(task.roles[r1].user == reviewerAddresses[0] || task.roles[r1].user == reviewerAddresses[1]);
     require(task.roles[r2].user == reviewerAddresses[0] || task.roles[r2].user == reviewerAddresses[1]);
 
