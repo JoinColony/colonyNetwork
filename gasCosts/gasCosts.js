@@ -51,7 +51,7 @@ contract("All", accounts => {
   let otherToken;
   let colonyTask;
   let colonyFunding;
-  let commonColony;
+  let metaColony;
   let authority;
   let colonyNetwork;
 
@@ -75,8 +75,8 @@ contract("All", accounts => {
     authority = await Authority.at(authorityAddress);
     await IColony.defaults({ gasPrice });
 
-    const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
-    commonColony = await IColony.at(commonColonyAddress);
+    const metaColonyAddress = await colonyNetwork.getColony.call("Meta Colony");
+    metaColony = await IColony.at(metaColonyAddress);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
@@ -90,11 +90,11 @@ contract("All", accounts => {
       await colonyNetwork.createColony("Test", colonyToken.address);
     });
 
-    it("when working with the Common Colony", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(5);
-      await commonColony.addGlobalSkill(6);
-      await commonColony.addGlobalSkill(7);
+    it("when working with the Meta Colony", async () => {
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill(6);
+      await metaColony.addGlobalSkill(7);
     });
 
     it("when working with a Colony", async () => {

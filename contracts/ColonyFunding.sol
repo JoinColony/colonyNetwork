@@ -74,13 +74,13 @@ contract ColonyFunding is ColonyStorage, DSMath {
     if (_token == 0x0) {
       // Payout ether
       task.roles[_role].user.transfer(remainder);
-      // Fee goes directly to Common Colony
+      // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      address commonColonyAddress = colonyNetworkContract.getColony("Common Colony");
-      commonColonyAddress.transfer(fee);
+      address metaColonyAddress = colonyNetworkContract.getColony("Meta Colony");
+      metaColonyAddress.transfer(fee);
     } else {
       // Payout token
-      // TODO: If it's a whitelisted token, it goes straight to the commonColony
+      // TODO: If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
       payoutToken.transfer(task.roles[_role].user, remainder);

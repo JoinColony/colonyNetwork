@@ -30,12 +30,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
   event ColonyAdded(uint256 indexed id);
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
-  // Common Colony allowed to manage Global skills
+  // Meta Colony allowed to manage Global skills
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
     if (globalSkill) {
-      address commonColony = getColony("Common Colony");
-      require(msg.sender == commonColony);
+      address metaColony = getColony("Meta Colony");
+      require(msg.sender == metaColony);
     } else {
       require(_isColony[msg.sender]);
     }
@@ -123,14 +123,14 @@ contract ColonyNetwork is ColonyNetworkStorage {
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
 
-    // For the Common Colony add the root global skill
-    if (_name == "Common Colony") {
+    // For the Meta Colony add the root global skill
+    if (_name == "Meta Colony") {
       skillCount += 1;
       Skill memory rootGlobalSkill;
       rootGlobalSkill.globalSkill = true;
       skills[skillCount] = rootGlobalSkill;
       rootGlobalSkillId = skillCount;
-      // TODO: add the special 'mining' skill, which is local to the common Colony.
+      // TODO: add the special 'mining' skill, which is local to the meta Colony.
     }
 
     // For all colonies initialise the root (domain) local skill with defaults by just incrementing the skillCount

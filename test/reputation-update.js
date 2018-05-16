@@ -19,7 +19,7 @@ const Token = artifacts.require("Token");
 
 contract("Colony Reputation Updates", () => {
   let colonyNetwork;
-  let commonColony;
+  let metaColony;
   let resolverColonyNetworkDeployed;
   let colonyToken;
 
@@ -38,42 +38,66 @@ contract("Colony Reputation Updates", () => {
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     colonyToken = await Token.new(...tokenArgs);
-    await colonyNetwork.createColony("Common Colony", colonyToken.address);
-    const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
-    await colonyToken.setOwner(commonColonyAddress);
-    commonColony = await IColony.at(commonColonyAddress);
+    await colonyNetwork.createColony("Meta Colony", colonyToken.address);
+    const metaColonyAddress = await colonyNetwork.getColony.call("Meta Colony");
+    await colonyToken.setOwner(metaColonyAddress);
+    metaColony = await IColony.at(metaColonyAddress);
     const amount = new BN(10)
       .pow(new BN(18))
       .mul(new BN(1000))
       .toString();
-    await fundColonyWithTokens(commonColony, colonyToken, amount);
+    await fundColonyWithTokens(metaColony, colonyToken, amount);
   });
 
   describe("when added", () => {
     it("should be readable", async () => {
-      const taskId = await setupRatedTask({ colonyNetwork, colony: commonColony });
-      await commonColony.finalizeTask(taskId);
+      const taskId = await setupRatedTask({ colonyNetwork, colony: metaColony });
+      await metaColony.finalizeTask(taskId);
       const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
       assert.equal(repLogEntryManager[0], MANAGER);
       assert.equal(repLogEntryManager[1].toNumber(), 1000 * 1e18 / 50);
+<<<<<<< HEAD
       assert.equal(repLogEntryManager[2].toNumber(), 2);
       assert.equal(repLogEntryManager[3], commonColony.address);
+||||||| merged common ancestors
+      assert.equal(repLogEntryManager[2].toNumber(), 1);
+      assert.equal(repLogEntryManager[3], commonColony.address);
+=======
+      assert.equal(repLogEntryManager[2].toNumber(), 1);
+      assert.equal(repLogEntryManager[3], metaColony.address);
+>>>>>>> Rename Common Colony to Meta Colony
       assert.equal(repLogEntryManager[4].toNumber(), 2);
       assert.equal(repLogEntryManager[5].toNumber(), 0);
 
       const repLogEntryEvaluator = await colonyNetwork.getReputationUpdateLogEntry.call(1, true);
       assert.equal(repLogEntryEvaluator[0], EVALUATOR);
       assert.equal(repLogEntryEvaluator[1].toNumber(), 50 * 1e18);
+<<<<<<< HEAD
       assert.equal(repLogEntryEvaluator[2].toNumber(), 2);
       assert.equal(repLogEntryEvaluator[3], commonColony.address);
+||||||| merged common ancestors
+      assert.equal(repLogEntryEvaluator[2].toNumber(), 1);
+      assert.equal(repLogEntryEvaluator[3], commonColony.address);
+=======
+      assert.equal(repLogEntryEvaluator[2].toNumber(), 1);
+      assert.equal(repLogEntryEvaluator[3], metaColony.address);
+>>>>>>> Rename Common Colony to Meta Colony
       assert.equal(repLogEntryEvaluator[4].toNumber(), 2);
       assert.equal(repLogEntryEvaluator[5].toNumber(), 2);
 
       const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2, true);
       assert.equal(repLogEntryWorker[0], WORKER);
       assert.equal(repLogEntryWorker[1].toNumber(), 200 * 1e18);
+<<<<<<< HEAD
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
       assert.equal(repLogEntryWorker[3], commonColony.address);
+||||||| merged common ancestors
+      assert.equal(repLogEntryWorker[2].toNumber(), 1);
+      assert.equal(repLogEntryWorker[3], commonColony.address);
+=======
+      assert.equal(repLogEntryWorker[2].toNumber(), 1);
+      assert.equal(repLogEntryWorker[3], metaColony.address);
+>>>>>>> Rename Common Colony to Meta Colony
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
       assert.equal(repLogEntryWorker[5].toNumber(), 4);
     });
@@ -139,25 +163,41 @@ contract("Colony Reputation Updates", () => {
       it(`should set the correct reputation change amount in log for rating ${rating.worker}`, async () => {
         const taskId = await setupRatedTask({
           colonyNetwork,
-          colony: commonColony,
+          colony: metaColony,
           managerRating: rating.manager,
           workerRating: rating.worker
         });
-        await commonColony.finalizeTask(taskId);
+        await metaColony.finalizeTask(taskId);
 
         const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
         assert.equal(repLogEntryManager[0], MANAGER);
         assert.equal(repLogEntryManager[1].toString(), rating.reputationChangeManager.toString());
+<<<<<<< HEAD
         assert.equal(repLogEntryManager[2].toNumber(), 2);
         assert.equal(repLogEntryManager[3], commonColony.address);
+||||||| merged common ancestors
+        assert.equal(repLogEntryManager[2].toNumber(), 1);
+        assert.equal(repLogEntryManager[3], commonColony.address);
+=======
+        assert.equal(repLogEntryManager[2].toNumber(), 1);
+        assert.equal(repLogEntryManager[3], metaColony.address);
+>>>>>>> Rename Common Colony to Meta Colony
         assert.equal(repLogEntryManager[4].toNumber(), 2);
         assert.equal(repLogEntryManager[5].toNumber(), 0);
 
         const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2, true);
         assert.equal(repLogEntryWorker[0], WORKER);
         assert.equal(repLogEntryWorker[1].toString(), rating.reputationChangeWorker.toString());
+<<<<<<< HEAD
         assert.equal(repLogEntryWorker[2].toNumber(), 2);
         assert.equal(repLogEntryWorker[3], commonColony.address);
+||||||| merged common ancestors
+        assert.equal(repLogEntryWorker[2].toNumber(), 1);
+        assert.equal(repLogEntryWorker[3], commonColony.address);
+=======
+        assert.equal(repLogEntryWorker[2].toNumber(), 1);
+        assert.equal(repLogEntryWorker[3], metaColony.address);
+>>>>>>> Rename Common Colony to Meta Colony
         assert.equal(repLogEntryWorker[4].toNumber(), 2);
         assert.equal(repLogEntryWorker[5].toNumber(), 4);
       });
@@ -173,30 +213,30 @@ contract("Colony Reputation Updates", () => {
     it("should populate nPreviousUpdates correctly", async () => {
       let initialRepLogLength = await colonyNetwork.getReputationUpdateLogLength.call(true);
       initialRepLogLength = initialRepLogLength.toNumber();
-      const taskId1 = await setupRatedTask({ colonyNetwork, colony: commonColony });
-      await commonColony.finalizeTask(taskId1);
+      const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
+      await metaColony.finalizeTask(taskId1);
       let repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength, true);
       const nPrevious = repLogEntry[5].toNumber();
       repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 1, true);
       assert.equal(repLogEntry[5].toNumber(), 2 + nPrevious);
 
-      const taskId2 = await setupRatedTask({ colonyNetwork, colony: commonColony });
-      await commonColony.finalizeTask(taskId2);
+      const taskId2 = await setupRatedTask({ colonyNetwork, colony: metaColony });
+      await metaColony.finalizeTask(taskId2);
       repLogEntry = await colonyNetwork.getReputationUpdateLogEntry.call(initialRepLogLength + 2, true);
       assert.equal(repLogEntry[5].toNumber(), 4 + nPrevious);
     });
 
     it("should calculate nUpdates correctly when making a log", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(3);
-      await commonColony.addGlobalSkill(4);
-      await commonColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(3);
+      await metaColony.addGlobalSkill(4);
+      await metaColony.addGlobalSkill(5);
       const taskId1 = await setupRatedTask({
         colonyNetwork,
-        colony: commonColony,
+        colony: metaColony,
         skill: 4
       });
-      await commonColony.finalizeTask(taskId1);
+      await metaColony.finalizeTask(taskId1);
 
       let repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(3, true);
       const result = web3Utils.toBN("1").mul(WORKER_PAYOUT);
@@ -205,10 +245,10 @@ contract("Colony Reputation Updates", () => {
 
       const taskId2 = await setupRatedTask({
         colonyNetwork,
-        colony: commonColony,
+        colony: metaColony,
         skill: 5
       });
-      await commonColony.finalizeTask(taskId2);
+      await metaColony.finalizeTask(taskId2);
       repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(7, true);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 8); // Negative reputation change means children change as well.
@@ -220,14 +260,14 @@ contract("Colony Reputation Updates", () => {
         .pow(new BN(255))
         .sub(new BN(1))
         .toString(10);
-      await fundColonyWithTokens(commonColony, colonyToken, maxUIntNumber);
+      await fundColonyWithTokens(metaColony, colonyToken, maxUIntNumber);
       // Split the tokens as payouts between the manager and worker
       const managerPayout = new BN("2");
       const evaluatorPayout = new BN("1");
       const workerPayout = new BN(maxUIntNumber).sub(managerPayout).sub(evaluatorPayout);
       const taskId = await setupRatedTask({
         colonyNetwork,
-        colony: commonColony,
+        colony: metaColony,
         token: colonyToken,
         managerPayout,
         evaluatorPayout,
@@ -236,10 +276,10 @@ contract("Colony Reputation Updates", () => {
       });
 
       // Check the task pot is correctly funded with the max amount
-      const taskPotBalance = await commonColony.getPotBalance.call(2, colonyToken.address);
+      const taskPotBalance = await metaColony.getPotBalance.call(2, colonyToken.address);
       assert.isTrue(taskPotBalance.equals(maxUIntNumber));
 
-      await checkErrorRevert(commonColony.finalizeTask(taskId));
+      await checkErrorRevert(metaColony.finalizeTask(taskId));
     });
   });
 });

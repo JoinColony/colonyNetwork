@@ -14,11 +14,11 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
 
-contract("Common Colony", () => {
+contract("Meta Colony", () => {
   let COLONY_KEY;
   let TOKEN_ARGS;
-  let commonColony;
-  let commonColonyToken;
+  let metaColony;
+  let metaColonyToken;
   let colony;
   let token;
   let colonyNetwork;
@@ -38,32 +38,32 @@ contract("Common Colony", () => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await upgradableContracts.setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
 
-    commonColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createColony("Common Colony", commonColonyToken.address);
-    const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
-    commonColony = await IColony.at(commonColonyAddress);
+    metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
+    await colonyNetwork.createColony("Meta Colony", metaColonyToken.address);
+    const metaColonyAddress = await colonyNetwork.getColony.call("Meta Colony");
+    metaColony = await IColony.at(metaColonyAddress);
   });
 
-  describe("when working with ERC20 properties of Common Colony token", () => {
+  describe("when working with ERC20 properties of Meta Colony token", () => {
     it("token `symbol` property is correct", async () => {
-      const tokenSymbol = await commonColonyToken.symbol();
+      const tokenSymbol = await metaColonyToken.symbol();
       assert.equal(web3.toUtf8(tokenSymbol), "CLNY");
     });
 
     it("token `decimals` property is correct", async () => {
-      const tokenDecimals = await commonColonyToken.decimals.call();
+      const tokenDecimals = await metaColonyToken.decimals.call();
       assert.equal(tokenDecimals.toString(), "18");
     });
 
     it("token `name` property is correct", async () => {
-      const tokenName = await commonColonyToken.name.call();
+      const tokenName = await metaColonyToken.name.call();
       assert.equal(web3.toUtf8(tokenName), "Colony Network Token");
     });
   });
 
   describe("when adding a new global skill", () => {
     it("should be able to add a new skill as a child to the root skill", async () => {
-      await commonColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
@@ -82,9 +82,9 @@ contract("Common Colony", () => {
     });
 
     it("should be able to add multiple child skills to the root global skill", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 5);
@@ -116,10 +116,10 @@ contract("Common Colony", () => {
 
     it("should be able to add child skills a few levels down the skills tree", async () => {
       // Add 2 skill nodes to root skill
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
       // Add a child skill to skill id 3
-      await commonColony.addGlobalSkill(3);
+      await metaColony.addGlobalSkill(3);
 
       const newDeepSkill = await colonyNetwork.getSkill.call(5);
       assert.equal(newDeepSkill[0].toNumber(), 2);
@@ -134,27 +134,27 @@ contract("Common Colony", () => {
 
     it("should NOT be able to add a child skill for a non existent parent", async () => {
       // Add 2 skill nodes to root skill
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
 
-      await checkErrorRevert(commonColony.addGlobalSkill(5));
+      await checkErrorRevert(metaColony.addGlobalSkill(5));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 4);
     });
 
     it("should NOT be able to add a child skill to a local skill parent", async () => {
-      await checkErrorRevert(commonColony.addGlobalSkill(2));
+      await checkErrorRevert(metaColony.addGlobalSkill(2));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
     });
 
     it("should be able to add skills in the middle of the skills tree", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(4);
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(3);
-      await commonColony.addGlobalSkill(4);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(4);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(3);
+      await metaColony.addGlobalSkill(4);
 
       const rootSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(rootSkill[0].toNumber(), 0);
@@ -222,15 +222,15 @@ contract("Common Colony", () => {
     });
 
     it("when N parents are there, should record parent skill ids for N = integer powers of 2", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(3);
-      await commonColony.addGlobalSkill(4);
-      await commonColony.addGlobalSkill(5);
-      await commonColony.addGlobalSkill(6);
-      await commonColony.addGlobalSkill(7);
-      await commonColony.addGlobalSkill(8);
-      await commonColony.addGlobalSkill(9);
-      await commonColony.addGlobalSkill(10);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(3);
+      await metaColony.addGlobalSkill(4);
+      await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill(6);
+      await metaColony.addGlobalSkill(7);
+      await metaColony.addGlobalSkill(8);
+      await metaColony.addGlobalSkill(9);
+      await metaColony.addGlobalSkill(10);
 
       const skill11 = await colonyNetwork.getSkill.call(11);
       assert.equal(skill11[0].toNumber(), 9);
@@ -247,23 +247,23 @@ contract("Common Colony", () => {
     });
 
     it("should NOT be able to add a new root global skill", async () => {
-      await checkErrorRevert(commonColony.addGlobalSkill(0));
+      await checkErrorRevert(metaColony.addGlobalSkill(0));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
     });
   });
 
-  describe("when adding domains in the common colony", () => {
+  describe("when adding domains in the meta colony", () => {
     it("should be able to add new domains as children to the root domain", async () => {
-      await commonColony.addDomain(2);
+      await metaColony.addDomain(2);
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
-      const domainCount = await commonColony.getDomainCount.call();
+      const domainCount = await metaColony.getDomainCount.call();
       assert.equal(domainCount.toNumber(), 2);
 
-      const newDomain = await commonColony.getDomain.call(1);
+      const newDomain = await metaColony.getDomain.call(1);
       assert.equal(newDomain[0].toNumber(), 2);
       assert.equal(newDomain[1].toNumber(), 1);
 
@@ -277,12 +277,12 @@ contract("Common Colony", () => {
     });
 
     it("should NOT be able to add a child local skill more than one level from the root local skill", async () => {
-      await commonColony.addDomain(2);
-      await checkErrorRevert(commonColony.addDomain(3));
+      await metaColony.addDomain(2);
+      await checkErrorRevert(metaColony.addDomain(3));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 3);
-      const domainCount = await commonColony.getDomainCount.call();
+      const domainCount = await metaColony.getDomainCount.call();
       assert.equal(domainCount.toNumber(), 2);
     });
   });
@@ -407,8 +407,8 @@ contract("Common Colony", () => {
     });
 
     it("should be able to set global skill on task", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(4);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(4);
 
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskSkill(1, 5);
@@ -421,8 +421,8 @@ contract("Common Colony", () => {
     });
 
     it("should NOT be able to set global skill on finalized task", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(4);
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(4);
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony });
       await colony.finalizeTask(taskId);

@@ -66,7 +66,7 @@ contract("Colony", addresses => {
     await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
 
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createColony("Common Colony", clnyToken.address);
+    await colonyNetwork.createColony("Meta Colony", clnyToken.address);
   });
 
   beforeEach(async () => {
@@ -696,14 +696,14 @@ contract("Colony", addresses => {
         workerPayout: 200
       });
       await colony.finalizeTask(taskId);
-      const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
+      const metaColonyAddress = await colonyNetwork.getColony.call("Meta Colony");
       const balanceBefore = await web3GetBalance(MANAGER);
-      const commonBalanceBefore = await web3GetBalance(commonColonyAddress);
+      const metaBalanceBefore = await web3GetBalance(metaColonyAddress);
       await colony.claimPayout(taskId, MANAGER_ROLE, 0x0, { gasPrice: 0 });
       const balanceAfter = await web3GetBalance(MANAGER);
-      const commonBalanceAfter = await web3GetBalance(commonColonyAddress);
+      const metaBalanceAfter = await web3GetBalance(metaColonyAddress);
       assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 99);
-      assert.equal(commonBalanceAfter.minus(commonBalanceBefore).toNumber(), 1);
+      assert.equal(metaBalanceAfter.minus(metaBalanceBefore).toNumber(), 1);
       const potBalance = await colony.getPotBalance.call(2, 0x0);
       assert.equal(potBalance.toNumber(), 250);
     });

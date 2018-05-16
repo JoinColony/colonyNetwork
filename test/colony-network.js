@@ -124,9 +124,9 @@ contract("ColonyNetwork", accounts => {
       assert.equal(colonyCount.toNumber(), 7);
     });
 
-    it("when common colony is created, should have the root global and local skills initialised", async () => {
+    it("when meta colony is created, should have the root global and local skills initialised", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await colonyNetwork.createColony("Common Colony", token.address);
+      await colonyNetwork.createColony("Meta Colony", token.address);
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 2);
       const rootGlobalSkill = await colonyNetwork.getSkill.call(1);
@@ -272,7 +272,7 @@ contract("ColonyNetwork", accounts => {
       await token.setOwner(colony);
     });
 
-    it("should not be able to add a global skill, by an address that is not the common colony ", async () => {
+    it("should not be able to add a global skill, by an address that is not the meta colony ", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1, true));
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);

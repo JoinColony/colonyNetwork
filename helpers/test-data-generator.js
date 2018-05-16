@@ -30,7 +30,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
-    if (rootGlobalSkill.toNumber() === 0) throw new Error("Common Colony is not setup and therefore the root global skill does not exist");
+    if (rootGlobalSkill.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
     await colony.setTaskSkill(taskId, rootGlobalSkill);
   } else {
     await colony.setTaskSkill(taskId, skill);
@@ -133,24 +133,24 @@ export async function setupRatedTask({
 }
 
 export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
-  const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
-  const commonColony = IColony.at(commonColonyAddress);
-  const clnyAddress = await commonColony.getToken.call();
+  const metaColonyAddress = await colonyNetwork.getColony("Meta Colony");
+  const metaColony = IColony.at(metaColonyAddress);
+  const clnyAddress = await metaColony.getToken.call();
   const clny = Token.at(clnyAddress);
   const amount = new BN(_amount);
   const mainStartingBalance = await clny.balanceOf.call(MANAGER);
   const targetStartingBalance = await clny.balanceOf.call(address);
-  await commonColony.mintTokens(amount * 3);
-  await commonColony.claimColonyFunds(clny.address);
+  await metaColony.mintTokens(amount * 3);
+  await metaColony.claimColonyFunds(clny.address);
   const taskId = await setupRatedTask({
     colonyNetwork,
-    colony: commonColony,
+    colony: metaColony,
     managerPayout: amount.mul(new BN("2")),
     evaluatorPayout: new BN("0"),
     workerPayout: new BN("0")
   });
-  await commonColony.finalizeTask(taskId);
-  await commonColony.claimPayout(taskId, 0, clny.address);
+  await metaColony.finalizeTask(taskId);
+  await metaColony.claimPayout(taskId, 0, clny.address);
 
   let mainBalance = await clny.balanceOf.call(MANAGER);
   await clny.transfer(
@@ -170,9 +170,9 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
 }
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount) {
-  const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
-  const commonColony = IColony.at(commonColonyAddress);
-  const clnyAddress = await commonColony.getToken.call();
+  const metaColonyAddress = await colonyNetwork.getColony("Meta Colony");
+  const metaColony = IColony.at(metaColonyAddress);
+  const clnyAddress = await metaColony.getToken.call();
   const clny = Token.at(clnyAddress);
 
   await giveUserCLNYTokens(colonyNetwork, address, _amount);

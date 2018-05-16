@@ -51,7 +51,7 @@ contract IColonyNetwork {
   function getColonyCount() public view returns (uint256);
 
   /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`
-  /// Only the Common Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
+  /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
   /// Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`
   /// @dev Errors if the parent skill does not exist or if this is called by an unauthorised sender
   /// @param _parentSkillId Id of the skill under which the new skill will be added
@@ -82,7 +82,7 @@ contract IColonyNetwork {
   function getSkillCount() public view returns (uint256);
 
   /// @notice Get the id of the root global skill
-  /// @dev This is set once when the Common Colony is created
+  /// @dev This is set once when the Meta Colony is created
   /// @return The root global skill id
   function getRootGlobalSkillId() public view returns (uint256);
 
@@ -92,7 +92,7 @@ contract IColonyNetwork {
   /// @param _name A unique key for the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
-  /// Support for `mint` in mandatory only for the Common Colony Token
+  /// Support for `mint` in mandatory only for the Meta Colony Token
   function createColony(bytes32 _name, address _tokenAddress) public;
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members

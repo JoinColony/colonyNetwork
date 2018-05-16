@@ -15,7 +15,7 @@ contract("ColonyNetworkAuction", accounts => {
   const BIDDER_2 = accounts[2];
   const BIDDER_3 = accounts[3];
 
-  let commonColony;
+  let metaColony;
   let colonyNetwork;
   let tokenAuction;
   let quantity;
@@ -29,14 +29,14 @@ contract("ColonyNetworkAuction", accounts => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = IColonyNetwork.at(etherRouter.address);
 
-    const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
-    commonColony = IColony.at(commonColonyAddress);
+    const metaColonyAddress = await colonyNetwork.getColony("Meta Colony");
+    metaColony = IColony.at(metaColonyAddress);
   });
 
   beforeEach(async () => {
     clny = await Token.new("Colony Network Token", "CLNY", 18);
-    await commonColony.setToken(clny.address);
-    await clny.setOwner(commonColony.address);
+    await metaColony.setToken(clny.address);
+    await clny.setOwner(metaColony.address);
 
     const args = getTokenArgs();
     token = await Token.new(...args);
@@ -438,7 +438,7 @@ contract("ColonyNetworkAuction", accounts => {
     it("should fail if there are CLNY tokens left owned by the auction", async () => {
       await tokenAuction.finalize();
       await tokenAuction.claim({ from: BIDDER_1 });
-      await commonColony.mintTokens(100);
+      await metaColony.mintTokens(100);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 100);
       await clny.transfer(tokenAuction.address, 100, { from: BIDDER_1 });
       await checkErrorRevert(tokenAuction.close());
