@@ -5083,14 +5083,14 @@ mkdirp@0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.3.0.tgz#1bbf5ab1ba827af23575143490426455f481fe1e"
 
-mocha-circleci-reporter@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/mocha-circleci-reporter/-/mocha-circleci-reporter-0.0.2.tgz#6cbb3f1a1911ce2365e79461a156370b63790c7e"
+mocha-circleci-reporter@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/mocha-circleci-reporter/-/mocha-circleci-reporter-0.0.3.tgz#5303d722cdb0390c2e03632517055c06146df6a0"
   dependencies:
-    mocha "^3.0.0"
-    mocha-junit-reporter "^1.12.0"
+    mocha "^5.1.1"
+    mocha-junit-reporter "^1.17.0"
 
-mocha-junit-reporter@^1.12.0:
+mocha-junit-reporter@^1.17.0:
   version "1.17.0"
   resolved "https://registry.yarnpkg.com/mocha-junit-reporter/-/mocha-junit-reporter-1.17.0.tgz#2e5149ed40fc5d2e3ca71e42db5ab1fec9c6d85c"
   dependencies:
@@ -5115,7 +5115,7 @@ mocha@^2.4.5:
     supports-color "1.2.0"
     to-iso-string "0.0.2"
 
-mocha@^3.0.0, mocha@^3.4.2, mocha@^3.5.3:
+mocha@^3.4.2, mocha@^3.5.3:
   version "3.5.3"
   resolved "https://registry.yarnpkg.com/mocha/-/mocha-3.5.3.tgz#1e0480fe36d2da5858d1eb6acc38418b26eaa20d"
   dependencies:
