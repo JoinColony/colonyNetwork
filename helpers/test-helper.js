@@ -225,6 +225,32 @@ export async function createSignatures(colony, signers, value, data) {
   return { sigV, sigR, sigS };
 }
 
+export async function createSignaturesTrezor(colony, signers, value, data) {
+  const sourceAddress = colony.address;
+  const destinationAddress = colony.address;
+  const nonce = await colony.getTaskChangeNonce.call();
+  const accountsJson = JSON.parse(fs.readFileSync("./test-accounts.json", "utf8"));
+  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
+    2
+  )}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
+  const sigV = [];
+  const sigR = [];
+  const sigS = [];
+  const msgHash = web3Utils.soliditySha3(input);
+
+  for (let i = 0; i < signers.length; i += 1) {
+    const user = signers[i].toString();
+    const privKey = accountsJson.private_keys[user];
+    const prefixedMessageHash = web3Utils.soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
+    const sig = ethUtils.ecsign(Buffer.from(prefixedMessageHash.slice(2), "hex"), Buffer.from(privKey, "hex"));
+    sigV.push(sig.v);
+    sigR.push(`0x${sig.r.toString("hex")}`);
+    sigS.push(`0x${sig.s.toString("hex")}`);
+  }
+
+  return { sigV, sigR, sigS };
+}
+
 export function bnSqrt(bn) {
   let a = bn.add(web3Utils.toBN(1)).div(web3Utils.toBN(2));
   let b = bn;

@@ -139,9 +139,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskChangeNonce;
   }
 
-
   function getSignedMessageHash(uint256 _value, bytes _data, uint8 _mode) private returns (bytes32 txHash) {
-    bytes32 hash = keccak256(
+    bytes32 msgHash = keccak256(
       address(this),
       address(this),
       _value,
@@ -150,11 +149,11 @@ contract ColonyTask is ColonyStorage, DSMath {
     );
     if (_mode==0) {
       // 'Normal' mode - geth, etc.
-      return keccak256("\x19Ethereum Signed Message:\n32", hash);
+      return keccak256("\x19Ethereum Signed Message:\n32", msgHash);
     } else {
       // Trezor mode
-      // Correct incantation helpfull cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
-      return keccak256("\x19Ethereum Signed Message:\n\x20", hash);
+      // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
+      return keccak256("\x19Ethereum Signed Message:\n\x20", msgHash);
     }
   }
 

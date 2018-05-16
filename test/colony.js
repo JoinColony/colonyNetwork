@@ -29,7 +29,8 @@ import {
   checkErrorRevert,
   expectEvent,
   currentBlockTime,
-  createSignatures
+  createSignatures,
+  createSignaturesTrezor
 } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, setupAssignedTask, setupFundedTask } from "../helpers/test-data-generator";
 
@@ -323,6 +324,57 @@ contract("Colony", addresses => {
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
       const task = await colony.getTask.call(1);
       assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
+    });
+
+    it("should allow update of task brief signed by manager and worker using Trezor-style signatures", async () => {
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
+      const signers = [MANAGER, WORKER];
+      const sigs = await createSignaturesTrezor(colony, signers, 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [1, 1], 0, txData);
+      const task = await colony.getTask.call(1);
+      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
+    });
+
+    it("should allow update of task brief signed by manager and worker if one uses Trezor-style signatures and the other does not", async () => {
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
+      const signers = [MANAGER, WORKER];
+      const sigs = await createSignatures(colony, signers, 0, txData);
+      const trezorSigs = await createSignaturesTrezor(colony, signers, 0, txData);
+      await colony.executeTaskChange(
+        [sigs.sigV[0], trezorSigs.sigV[1]],
+        [sigs.sigR[0], trezorSigs.sigR[1]],
+        [sigs.sigS[0], trezorSigs.sigS[1]],
+        [0, 1],
+        0,
+        txData
+      );
+      const task = await colony.getTask.call(1);
+      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
+    });
+
+    it("should not allow update of task brief signed by manager twice, with two different signature styles", async () => {
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
+      const signers = [MANAGER, WORKER];
+      const sigs = await createSignatures(colony, signers, 0, txData);
+      const trezorSigs = await createSignaturesTrezor(colony, signers, 0, txData);
+      await checkErrorRevert(
+        colony.executeTaskChange(
+          [sigs.sigV[0], trezorSigs.sigV[0]],
+          [sigs.sigR[0], trezorSigs.sigR[0]],
+          [sigs.sigS[0], trezorSigs.sigS[0]],
+          [0, 1],
+          0,
+          txData
+        )
+      );
+      const task = await colony.getTask.call(1);
+      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH);
     });
 
     it("should allow update of task due date signed by manager and worker", async () => {
