@@ -40,7 +40,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
   mapping (address => Submission) public reputationHashSubmissions;
-  uint256 reputationMiningWindowOpenTimestamp;
+  uint256 public reputationMiningWindowOpenTimestamp;
   mapping (uint256 => Submission[]) public disputeRounds;
 
   // Tracks the number of submissions in each round that have completed their challenge, one way or the other.

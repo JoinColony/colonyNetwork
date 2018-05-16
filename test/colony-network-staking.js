@@ -258,6 +258,28 @@ contract("ColonyNetworkStaking", accounts => {
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes.call();
       assert(rootHashNNodes.equals(10));
     });
+
+    it("should not allow someone who is not ColonyNetwork to appendReputationUpdateLog", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+
+      const addr = await colonyNetwork.getNextReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      const nLogEntriesBefore = repCycle.getReputationUpdateLogLength();
+      checkErrorRevert(repCycle.appendReputationUpdateLog(MAIN_ACCOUNT, 100, 0, commonColony.address, 0, 1));
+      const nLogEntriesAfter = repCycle.getReputationUpdateLogLength();
+      assert.equal(nLogEntriesBefore.toString(), nLogEntriesAfter.toString());
+    });
+
+    it("should not allow someone who is not ColonyNetwork to reset the ReputationMiningCycle window", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      const windowOpenTimestampBefore = await repCycle.reputationMiningWindowOpenTimestamp();
+      await checkErrorRevert(repCycle.resetWindow());
+      const windowOpenTimestampAfter = await repCycle.reputationMiningWindowOpenTimestamp();
+      assert.equal(windowOpenTimestampBefore.toString(), windowOpenTimestampAfter.toString());
+    });
   });
 
   describe("Elimination of submissions", () => {
@@ -478,6 +500,16 @@ contract("ColonyNetworkStaking", accounts => {
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 10));
       const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
       assert(nSubmittedHashes.equals(0));
+    });
+
+    it("should not allow someone to submit a new reputation hash to the next ReputationMiningCycle", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+
+      const addr = await colonyNetwork.getNextReputationMiningCycle.call();
+      const repCycle = ReputationMiningCycle.at(addr);
+      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 10));
+      const nSubmittedHashes = await repCycle.nSubmittedHashes.call();
+      assert.equal(nSubmittedHashes.toString(), "0");
     });
 
     it("should allow someone to submit a new reputation hash if they are eligible inside the window", async () => {
@@ -761,6 +793,10 @@ contract("ColonyNetworkStaking", accounts => {
       await forwardTime(10, this); // This is just to ensure that the timestamps checked below will be different if JRH was submitted.
 
       await goodClient.submitJustificationRootHash();
+
+      // Check that we can't re-submit a JRH
+      await checkErrorRevert(goodClient.submitJustificationRootHash());
+
       const submissionAfterJRHSubmitted = await repCycle.disputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
       assert.equal(submissionAfterJRHSubmitted[4], jrh);

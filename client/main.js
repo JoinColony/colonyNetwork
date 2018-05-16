@@ -328,7 +328,7 @@ class ReputationMiningClient {
 
     const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    await repCycle.submitJustificationRootHash(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
+    return repCycle.submitJustificationRootHash(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
       gasLimit: 6000000
     });
   }
