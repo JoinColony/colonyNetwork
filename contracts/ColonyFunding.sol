@@ -76,7 +76,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
       task.roles[_role].user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      address metaColonyAddress = colonyNetworkContract.getColony("Meta Colony");
+      address metaColonyAddress = colonyNetworkContract.getMetaColony();
       metaColonyAddress.transfer(fee);
     } else {
       // Payout token

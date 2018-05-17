@@ -38,8 +38,8 @@ contract("Colony Reputation Updates", () => {
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     colonyToken = await Token.new(...tokenArgs);
-    await colonyNetwork.createColony("Meta Colony", colonyToken.address);
-    const metaColonyAddress = await colonyNetwork.getColony.call("Meta Colony");
+    await colonyNetwork.createMetaColony(colonyToken.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     await colonyToken.setOwner(metaColonyAddress);
     metaColony = await IColony.at(metaColonyAddress);
     const amount = new BN(10)

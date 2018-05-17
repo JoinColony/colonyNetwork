@@ -13,7 +13,7 @@ import {
   WORKER_PAYOUT,
   INITIAL_FUNDING
 } from "../helpers/constants";
-import { getRandomString, getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, bnSqrt } from "../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, bnSqrt } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -22,7 +22,6 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 
 contract("Colony Funding", addresses => {
-  let COLONY_KEY;
   let colony;
   let token;
   let otherToken;
@@ -34,13 +33,12 @@ contract("Colony Funding", addresses => {
   });
 
   beforeEach(async () => {
-    COLONY_KEY = getRandomString(7);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
-    await colonyNetwork.createColony(COLONY_KEY, token.address);
-    const address = await colonyNetwork.getColony.call(COLONY_KEY);
-    await token.setOwner(address);
-    colony = await IColony.at(address);
+    const { logs } = await colonyNetwork.createColony(token.address);
+    const { colonyAddress } = logs[0].args;
+    await token.setOwner(colonyAddress);
+    colony = await IColony.at(colonyAddress);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
   });
@@ -715,13 +713,12 @@ contract("Colony Funding", addresses => {
       it(`should calculate fairly precise reward payout for:
         user reputation/tokens: ${data.totalReputation.div(toBN(3)).toString()}
         total reputation/tokens: ${data.totalReputation.toString()}`, async () => {
-        const colonyName = getRandomString(7);
         const tokenArgs = getTokenArgs();
         const newToken = await Token.new(...tokenArgs);
-        await colonyNetwork.createColony(colonyName, newToken.address);
-        const address = await colonyNetwork.getColony.call(colonyName);
-        await newToken.setOwner(address);
-        const newColony = await IColony.at(address);
+        let { logs } = await colonyNetwork.createColony(newToken.address);
+        const { colonyAddress } = logs[0].args;
+        await newToken.setOwner(colonyAddress);
+        const newColony = await IColony.at(colonyAddress);
 
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await Token.new(...payoutTokenArgs);
@@ -734,7 +731,7 @@ contract("Colony Funding", addresses => {
           [userReputation.toString(), userReputation.toString(), userReputation.toString()]
         );
 
-        const { logs } = await newColony.startNextRewardPayout(payoutToken.address);
+        ({ logs } = await newColony.startNextRewardPayout(payoutToken.address));
         const payoutId = logs[0].args.id.toNumber();
 
         const rewardPayoutInfo = await newColony.getRewardPayoutInfo(payoutId);

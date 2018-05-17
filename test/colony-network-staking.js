@@ -29,7 +29,7 @@ contract("ColonyNetworkStaking", accounts => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    const metaColonyAddress = await colonyNetwork.getColony("Meta Colony");
+    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     metaColony = IColony.at(metaColonyAddress);
     clny = await Token.new("Colony Network Token", "CLNY", 18);
     await metaColony.setToken(clny.address);

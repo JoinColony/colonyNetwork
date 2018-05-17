@@ -29,7 +29,7 @@ contract("ColonyNetworkAuction", accounts => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = IColonyNetwork.at(etherRouter.address);
 
-    const metaColonyAddress = await colonyNetwork.getColony("Meta Colony");
+    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     metaColony = IColony.at(metaColonyAddress);
   });
 

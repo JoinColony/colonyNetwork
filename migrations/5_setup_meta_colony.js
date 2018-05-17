@@ -20,14 +20,13 @@ module.exports = deployer => {
     })
     .then(tokenInstance => {
       token = tokenInstance;
-      return colonyNetwork.createColony("Meta Colony", token.address);
+      return colonyNetwork.createMetaColony(token.address);
     })
     .then(() => colonyNetwork.getSkillCount.call())
     .then(skillCount => {
       assert.equal(skillCount.toNumber(), 2);
-      return colonyNetwork.getColony.call("Meta Colony");
+      return colonyNetwork.getMetaColony.call();
     })
-    .then(() => colonyNetwork.getColony.call("Meta Colony"))
     .then(metaColonyAddress => {
       token.setOwner(metaColonyAddress);
       console.log("### Meta Colony created at", metaColonyAddress);

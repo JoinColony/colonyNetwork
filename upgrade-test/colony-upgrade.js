@@ -1,6 +1,6 @@
 /* globals artifacts */
 import { hexToUtf8 } from "web3-utils";
-import { getRandomString, getTokenArgs } from "../helpers/test-helper";
+import { getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -20,14 +20,12 @@ contract("Colony contract upgrade", accounts => {
   const specificationHash = "9bb76d8e6c89b524d34a454b3140df28";
   const newSpecificationHash = "9bb76d8e6c89b524d34a454b3140df29";
 
-  let COLONY_KEY;
   let colony;
   let colonyTask;
   let colonyFunding;
   let authority;
   let token;
   let colonyNetwork;
-  let etherRouter;
   let updatedColony;
   let updatedColonyVersion;
 
@@ -35,12 +33,11 @@ contract("Colony contract upgrade", accounts => {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
 
-    COLONY_KEY = getRandomString(7);
     const tokenArgs = getTokenArgs();
     const colonyToken = await Token.new(...tokenArgs);
-    await colonyNetwork.createColony(COLONY_KEY, colonyToken.address);
-    etherRouter = await colonyNetwork.getColony(COLONY_KEY);
-    colony = await IColony.at(etherRouter);
+    const { logs } = await colonyNetwork.createColony(colonyToken.address);
+    const { colonyId, colonyAddress } = logs[0].args;
+    colony = await IColony.at(colonyAddress);
     colonyTask = await ColonyTask.new();
     colonyFunding = await ColonyFunding.new();
     const authorityAddress = await colony.authority.call();
@@ -60,8 +57,8 @@ contract("Colony contract upgrade", accounts => {
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
 
     // Upgrade our existing colony
-    await colonyNetwork.upgradeColony(COLONY_KEY, updatedColonyVersion.toNumber());
-    updatedColony = await IUpdatedColony.at(etherRouter);
+    await colonyNetwork.upgradeColony(colonyId, updatedColonyVersion.toNumber());
+    updatedColony = await IUpdatedColony.at(colonyAddress);
   });
 
   describe("when upgrading Colony contract", () => {

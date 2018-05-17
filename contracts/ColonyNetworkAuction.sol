@@ -28,7 +28,6 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
   event AuctionCreated(address auction, address token, uint256 quantity);
 
   function startTokenAuction(address _token) public {
-    address metaColony = _colonies["Meta Colony"];
     address clny = IColony(metaColony).getToken();
     DutchAuction auction = new DutchAuction(clny, _token);
     uint availableTokens = ERC20Extended(_token).balanceOf(this);

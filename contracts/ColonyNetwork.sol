@@ -27,23 +27,17 @@ import "./ColonyNetworkStorage.sol";
 
 
 contract ColonyNetwork is ColonyNetworkStorage {
-  event ColonyAdded(uint256 indexed id);
+  event ColonyAdded(uint256 indexed id, address indexed colonyAddress);
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
   // Meta Colony allowed to manage Global skills
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
     if (globalSkill) {
-      address metaColony = getColony("Meta Colony");
       require(msg.sender == metaColony);
     } else {
       require(_isColony[msg.sender]);
     }
-    _;
-  }
-
-  modifier colonyKeyUnique(bytes32 _key) {
-    require(_colonies[_key] == address(0x0));
     _;
   }
 
@@ -64,6 +58,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function getCurrentColonyVersion() public view returns (uint256) {
     return currentColonyVersion;
+  }
+
+  function getMetaColony() public view returns (address) {
+    return metaColony;
   }
 
   function getColonyCount() public view returns (uint256) {
@@ -107,9 +105,20 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNNodes;
   }
 
-  function createColony(bytes32 _name, address _tokenAddress) public
-  colonyKeyUnique(_name)
-  {
+  // TODO secure
+  function createMetaColony(address _tokenAddress) public {
+    // Add the root global skill
+    skillCount += 1;
+    Skill memory rootGlobalSkill;
+    rootGlobalSkill.globalSkill = true;
+    skills[skillCount] = rootGlobalSkill;
+    rootGlobalSkillId = skillCount;
+    // TODO: add the special 'mining' skill, which is local to the meta Colony.
+    
+    metaColony = createColony(_tokenAddress);
+  }
+  
+  function createColony(address _tokenAddress) public returns (address) {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
@@ -123,25 +132,16 @@ contract ColonyNetwork is ColonyNetworkStorage {
     authority.setRootUser(msg.sender, true);
     authority.setOwner(msg.sender);
 
-    // For the Meta Colony add the root global skill
-    if (_name == "Meta Colony") {
-      skillCount += 1;
-      Skill memory rootGlobalSkill;
-      rootGlobalSkill.globalSkill = true;
-      skills[skillCount] = rootGlobalSkill;
-      rootGlobalSkillId = skillCount;
-      // TODO: add the special 'mining' skill, which is local to the meta Colony.
-    }
-
-    // For all colonies initialise the root (domain) local skill with defaults by just incrementing the skillCount
+    // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
     colonyCount += 1;
     _coloniesIndex[colonyCount] = colony;
-    _colonies[_name] = colony;
     _isColony[colony] = true;
 
     colony.initialiseColony(this);
-    emit ColonyAdded(colonyCount);
+    emit ColonyAdded(colonyCount, etherRouter);
+
+    return etherRouter;
   }
 
   function addColonyVersion(uint _version, address _resolver) public
@@ -153,16 +153,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
   }
 
-  function getColony(bytes32 _name) public view returns (address) {
-    return _colonies[_name];
-  }
-
   function getColonyAt(uint _idx) public view returns (address) {
     return _coloniesIndex[_idx];
   }
 
-  function upgradeColony(bytes32 _name, uint _newVersion) public {
-    address etherRouter = _colonies[_name];
+  function upgradeColony(uint256 _id, uint _newVersion) public {
+    address etherRouter = _coloniesIndex[_id];
     // Check the calling user is authorised
     DSAuth auth = DSAuth(etherRouter);
     DSAuthority authority = auth.authority();

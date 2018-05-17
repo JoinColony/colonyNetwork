@@ -1,6 +1,6 @@
 /* globals artifacts */
 import { SPECIFICATION_HASH, INITIAL_FUNDING } from "../helpers/constants";
-import { checkErrorRevert, getRandomString, getTokenArgs } from "../helpers/test-helper";
+import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
 
 const upgradableContracts = require("../helpers/upgradable-contracts");
@@ -15,7 +15,6 @@ const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
 
 contract("Meta Colony", () => {
-  let COLONY_KEY;
   let TOKEN_ARGS;
   let metaColony;
   let metaColonyToken;
@@ -39,8 +38,8 @@ contract("Meta Colony", () => {
     await upgradableContracts.setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
 
     metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createColony("Meta Colony", metaColonyToken.address);
-    const metaColonyAddress = await colonyNetwork.getColony.call("Meta Colony");
+    await colonyNetwork.createMetaColony(metaColonyToken.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     metaColony = await IColony.at(metaColonyAddress);
   });
 
@@ -289,12 +288,11 @@ contract("Meta Colony", () => {
 
   describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
-      COLONY_KEY = getRandomString(7);
       TOKEN_ARGS = getTokenArgs();
       const newToken = await Token.new(...TOKEN_ARGS);
-      await colonyNetwork.createColony(COLONY_KEY, newToken.address);
-      const address = await colonyNetwork.getColony.call(COLONY_KEY);
-      colony = await IColony.at(address);
+      const { logs } = await colonyNetwork.createColony(newToken.address);
+      const { colonyAddress } = logs[0].args;
+      colony = await IColony.at(colonyAddress);
       const tokenAddress = await colony.getToken.call();
       token = await Token.at(tokenAddress);
     });
@@ -370,13 +368,12 @@ contract("Meta Colony", () => {
 
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
-      COLONY_KEY = getRandomString(7);
       TOKEN_ARGS = getTokenArgs();
       token = await Token.new(...TOKEN_ARGS);
-      await colonyNetwork.createColony(COLONY_KEY, token.address);
-      const address = await colonyNetwork.getColony.call(COLONY_KEY);
-      await token.setOwner(address);
-      colony = await IColony.at(address);
+      const { logs } = await colonyNetwork.createColony(token.address);
+      const { colonyAddress } = logs[0].args;
+      await token.setOwner(colonyAddress);
+      colony = await IColony.at(colonyAddress);
     });
 
     it("should be able to set domain on task", async () => {

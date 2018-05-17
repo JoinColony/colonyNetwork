@@ -133,7 +133,7 @@ export async function setupRatedTask({
 }
 
 export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
-  const metaColonyAddress = await colonyNetwork.getColony("Meta Colony");
+  const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = IColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken.call();
   const clny = Token.at(clnyAddress);
@@ -170,7 +170,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
 }
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount) {
-  const metaColonyAddress = await colonyNetwork.getColony("Meta Colony");
+  const metaColonyAddress = await colonyNetwork.getMetaColony.call();
   const metaColony = IColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken.call();
   const clny = Token.at(clnyAddress);
