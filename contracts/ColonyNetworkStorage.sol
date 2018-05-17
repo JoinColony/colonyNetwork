@@ -35,8 +35,8 @@ contract ColonyNetworkStorage is DSAuth {
   uint256 currentColonyVersion;
   // Address of the Meta Colony
   address metaColony;
-  
-  mapping (uint256 => address) _coloniesIndex;
+  // Maps index to colony address
+  mapping (uint256 => address) colonies;
   mapping (address => bool) _isColony;
   // Maps colony contract versions to respective resolvers
   mapping (uint256 => address) colonyVersionResolver;

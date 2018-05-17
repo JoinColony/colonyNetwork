@@ -165,12 +165,12 @@ contract("ColonyNetwork", accounts => {
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
-      const colonyAddress = await colonyNetwork.getColonyAt.call(3);
+      const colonyAddress = await colonyNetwork.getColony.call(3);
       assert.notEqual(colonyAddress, "0x0000000000000000000000000000000000000000");
     });
 
     it("should return an empty address if there is no colony for the index provided", async () => {
-      const colonyAddress = await colonyNetwork.getColonyAt.call(15);
+      const colonyAddress = await colonyNetwork.getColony.call(15);
       assert.equal(colonyAddress, "0x0000000000000000000000000000000000000000");
     });
 

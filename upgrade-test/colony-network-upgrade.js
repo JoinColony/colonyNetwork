@@ -43,10 +43,10 @@ contract("ColonyNetwork contract upgrade", () => {
     });
 
     it("should return correct colonies by index", async () => {
-      const colony1 = await updatedColonyNetwork.getColonyAt(2);
+      const colony1 = await updatedColonyNetwork.getColony(2);
       assert.equal(colony1, colonyAddress1);
 
-      const colony2 = await updatedColonyNetwork.getColonyAt(3);
+      const colony2 = await updatedColonyNetwork.getColony(3);
       assert.equal(colony2, colonyAddress2);
     });
   });

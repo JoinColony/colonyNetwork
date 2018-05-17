@@ -105,9 +105,9 @@ contract IColonyNetwork {
   function addColonyVersion(uint256 _version, address _resolver) public;
 
   /// @notice Get a colony address by its Id in the network
-  /// @param _idx Id of the colony to get
+  /// @param _id Id of the colony to get
   /// @return The colony address, if no colony was found, returns 0x0
-  function getColonyAt(uint256 _idx) public view returns (address);
+  function getColony(uint256 _id) public view returns (address);
 
   /// @notice Returns the latest Colony contract version. This is the version used to create all new colonies
   /// @return The current / latest Colony contract version

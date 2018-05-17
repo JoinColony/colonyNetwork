@@ -135,7 +135,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
     colonyCount += 1;
-    _coloniesIndex[colonyCount] = colony;
+    colonies[colonyCount] = colony;
     _isColony[colony] = true;
 
     colony.initialiseColony(this);
@@ -153,12 +153,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
   }
 
-  function getColonyAt(uint _idx) public view returns (address) {
-    return _coloniesIndex[_idx];
+  function getColony(uint256 _id) public view returns (address) {
+    return colonies[_id];
   }
 
   function upgradeColony(uint256 _id, uint _newVersion) public {
-    address etherRouter = _coloniesIndex[_id];
+    address etherRouter = colonies[_id];
     // Check the calling user is authorised
     DSAuth auth = DSAuth(etherRouter);
     DSAuthority authority = auth.authority();
