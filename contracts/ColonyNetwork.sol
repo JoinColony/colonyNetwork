@@ -105,8 +105,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNNodes;
   }
 
-  // TODO secure
-  function createMetaColony(address _tokenAddress) public {
+  function createMetaColony(address _tokenAddress) public 
+  auth
+  {
     // Add the root global skill
     skillCount += 1;
     Skill memory rootGlobalSkill;
