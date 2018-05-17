@@ -108,6 +108,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function createMetaColony(address _tokenAddress) public 
   auth
   {
+    require(metaColony == 0);
     // Add the root global skill
     skillCount += 1;
     Skill memory rootGlobalSkill;

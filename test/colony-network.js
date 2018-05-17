@@ -122,6 +122,16 @@ contract("ColonyNetwork", accounts => {
       assert.equal(rootGlobalSkillId, 1);
     });
 
+    it("should fail to create meta colony if it already exists", async () => {
+      const token = await Token.new(...TOKEN_ARGS);
+      await colonyNetwork.createMetaColony(token.address);
+      const metaColonyAddress1 = await colonyNetwork.getMetaColony.call();
+
+      await checkErrorRevert(colonyNetwork.createMetaColony(token.address));
+      const metaColonyAddress2 = await colonyNetwork.getMetaColony.call();
+      assert.equal(metaColonyAddress1, metaColonyAddress2);
+    });
+
     it("when any colony is created, should have the root local skill initialised", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
