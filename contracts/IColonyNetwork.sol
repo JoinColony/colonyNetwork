@@ -91,7 +91,6 @@ contract IColonyNetwork {
   function createMetaColony(address _tokenAddress) public;
 
   /// @notice Creates a new colony in the network
-  /// @dev Errors if there is already a colony with the specified `_name`
   /// Note that the token ownership (if there is one) has to be transferred to the newly created colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
@@ -113,7 +112,7 @@ contract IColonyNetwork {
   /// @return The current / latest Colony contract version
   function getCurrentColonyVersion() public view returns (uint256);
 
-  /// @notice Upgrades a colony with key identifier: `_name` to a new Colony contract version `_newVersion`
+  /// @notice Upgrades a colony with identifier: `_id` to a new Colony contract version `_newVersion`
   /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version
   /// @param _id The colony identifier in the network
   /// @param _newVersion The target version for the upgrade
