@@ -56,48 +56,24 @@ contract("Colony Reputation Updates", () => {
       const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
       assert.equal(repLogEntryManager[0], MANAGER);
       assert.equal(repLogEntryManager[1].toNumber(), 1000 * 1e18 / 50);
-<<<<<<< HEAD
       assert.equal(repLogEntryManager[2].toNumber(), 2);
-      assert.equal(repLogEntryManager[3], commonColony.address);
-||||||| merged common ancestors
-      assert.equal(repLogEntryManager[2].toNumber(), 1);
-      assert.equal(repLogEntryManager[3], commonColony.address);
-=======
-      assert.equal(repLogEntryManager[2].toNumber(), 1);
       assert.equal(repLogEntryManager[3], metaColony.address);
->>>>>>> Rename Common Colony to Meta Colony
       assert.equal(repLogEntryManager[4].toNumber(), 2);
       assert.equal(repLogEntryManager[5].toNumber(), 0);
 
       const repLogEntryEvaluator = await colonyNetwork.getReputationUpdateLogEntry.call(1, true);
       assert.equal(repLogEntryEvaluator[0], EVALUATOR);
       assert.equal(repLogEntryEvaluator[1].toNumber(), 50 * 1e18);
-<<<<<<< HEAD
       assert.equal(repLogEntryEvaluator[2].toNumber(), 2);
-      assert.equal(repLogEntryEvaluator[3], commonColony.address);
-||||||| merged common ancestors
-      assert.equal(repLogEntryEvaluator[2].toNumber(), 1);
-      assert.equal(repLogEntryEvaluator[3], commonColony.address);
-=======
-      assert.equal(repLogEntryEvaluator[2].toNumber(), 1);
       assert.equal(repLogEntryEvaluator[3], metaColony.address);
->>>>>>> Rename Common Colony to Meta Colony
       assert.equal(repLogEntryEvaluator[4].toNumber(), 2);
       assert.equal(repLogEntryEvaluator[5].toNumber(), 2);
 
       const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2, true);
       assert.equal(repLogEntryWorker[0], WORKER);
       assert.equal(repLogEntryWorker[1].toNumber(), 200 * 1e18);
-<<<<<<< HEAD
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
-      assert.equal(repLogEntryWorker[3], commonColony.address);
-||||||| merged common ancestors
-      assert.equal(repLogEntryWorker[2].toNumber(), 1);
-      assert.equal(repLogEntryWorker[3], commonColony.address);
-=======
-      assert.equal(repLogEntryWorker[2].toNumber(), 1);
       assert.equal(repLogEntryWorker[3], metaColony.address);
->>>>>>> Rename Common Colony to Meta Colony
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
       assert.equal(repLogEntryWorker[5].toNumber(), 4);
     });
@@ -172,32 +148,16 @@ contract("Colony Reputation Updates", () => {
         const repLogEntryManager = await colonyNetwork.getReputationUpdateLogEntry.call(0, true);
         assert.equal(repLogEntryManager[0], MANAGER);
         assert.equal(repLogEntryManager[1].toString(), rating.reputationChangeManager.toString());
-<<<<<<< HEAD
         assert.equal(repLogEntryManager[2].toNumber(), 2);
-        assert.equal(repLogEntryManager[3], commonColony.address);
-||||||| merged common ancestors
-        assert.equal(repLogEntryManager[2].toNumber(), 1);
-        assert.equal(repLogEntryManager[3], commonColony.address);
-=======
-        assert.equal(repLogEntryManager[2].toNumber(), 1);
         assert.equal(repLogEntryManager[3], metaColony.address);
->>>>>>> Rename Common Colony to Meta Colony
         assert.equal(repLogEntryManager[4].toNumber(), 2);
         assert.equal(repLogEntryManager[5].toNumber(), 0);
 
         const repLogEntryWorker = await colonyNetwork.getReputationUpdateLogEntry.call(2, true);
         assert.equal(repLogEntryWorker[0], WORKER);
         assert.equal(repLogEntryWorker[1].toString(), rating.reputationChangeWorker.toString());
-<<<<<<< HEAD
         assert.equal(repLogEntryWorker[2].toNumber(), 2);
-        assert.equal(repLogEntryWorker[3], commonColony.address);
-||||||| merged common ancestors
-        assert.equal(repLogEntryWorker[2].toNumber(), 1);
-        assert.equal(repLogEntryWorker[3], commonColony.address);
-=======
-        assert.equal(repLogEntryWorker[2].toNumber(), 1);
         assert.equal(repLogEntryWorker[3], metaColony.address);
->>>>>>> Rename Common Colony to Meta Colony
         assert.equal(repLogEntryWorker[4].toNumber(), 2);
         assert.equal(repLogEntryWorker[5].toNumber(), 4);
       });
