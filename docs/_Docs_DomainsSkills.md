@@ -27,7 +27,11 @@ Tasks are tagged with a `DomainId` that specifies which domain they belong to. W
 A well-organized domain hierarchy is one way to isolate and compartmentalize work within a colony: Reputation mediates the flow of funding from parent domains to their children (see [pots](./docs-pots) for more about funding), which may in turn direct funding toward smaller and more specialized or specific child domains or tasks.
 
 ## Skills
+<<<<<<< 108d69f0d798fc7b3a6a32da8228345c56b2b27c
 Skills do not exist within a particular colony, but instead are a single structure available to all colonies on the network. The global skill hierarchy is maintained by [The Meta Colony](../docs-metacolony).
+=======
+Skills do not exist within a particular colony, but instead are a single structure available to all colonies on the network. The global skill hierarchy is maintained by [The Meta Colony](../docs-the-meta-colony-and-clny).
+>>>>>>> Fix linking and img hosting issues.
 
 Tasks are tagged with a `SkillId` that specifies a skill from the global skill hierarchy. When a member of a colony earns native tokens for completing a task, they earn reputation in the skill, as well as all parent skills. They do not earn any reputation in child skills.
 
