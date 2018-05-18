@@ -30,7 +30,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
-    if (rootGlobalSkill === 0) throw new Error("Common Colony is not setup and therefore the root global skill does not exist");
+    if (rootGlobalSkill.toNumber() === 0) throw new Error("Common Colony is not setup and therefore the root global skill does not exist");
     await colony.setTaskSkill(taskId, rootGlobalSkill);
   } else {
     await colony.setTaskSkill(taskId, skill);

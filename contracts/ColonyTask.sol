@@ -312,22 +312,23 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   function finalizeTask(uint256 _id) public
   auth
-  taskExists(_id)
   taskWorkRatingsAssigned(_id)
   taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
 
+    task.finalized = true;
+
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
       uint payout = task.payouts[roleId][token];
       Role storage role = task.roles[roleId];
 
       uint8 rating = (roleId == EVALUATOR) ? 50 : role.rating;
-      int divider = (roleId == WORKER) ? 30 : 50;
+      uint8 divider = (roleId == WORKER) ? 30 : 50;
 
       int reputation = SafeMath.mulInt(int(payout), (int(rating)*2 - 50)) / divider;
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.domainId);
+      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
 
       if (roleId == WORKER) {
         colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
@@ -338,8 +339,6 @@ contract ColonyTask is ColonyStorage, DSMath {
         }
       }
     }
-
-    task.finalized = true;
   }
 
   function cancelTask(uint256 _id) public

@@ -429,20 +429,20 @@ contract("Colony Funding", addresses => {
       const totalReputationSqrt = bnSqrt(totalReputation);
       const totalTokensSqrt = bnSqrt(userReputation1.add(userReputation2));
 
-      const numerator1 = bnSqrt(userReputation1Sqrt.mul(userReputation1Sqrt));
-      const numerator2 = bnSqrt(userReputation2Sqrt.mul(userReputation2Sqrt));
-      const denominator = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt));
+      const numerator1Sqrt = bnSqrt(userReputation1Sqrt.mul(userReputation1Sqrt));
+      const numerator2Sqrt = bnSqrt(userReputation2Sqrt.mul(userReputation2Sqrt));
+      const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt));
 
-      const totalAmount = bnSqrt(initialFunding.div(toBN(100)));
+      const totalAmountSqrt = bnSqrt(initialFunding.div(toBN(100)));
 
       initialSquareRoots1 = [
         userReputation1Sqrt.toString(),
         userReputation1Sqrt.toString(),
         totalReputationSqrt.toString(),
         totalTokensSqrt.toString(),
-        numerator1.toString(),
-        denominator.toString(),
-        totalAmount.toString()
+        numerator1Sqrt.toString(),
+        denominatorSqrt.toString(),
+        totalAmountSqrt.toString()
       ];
 
       initialSquareRoots2 = [
@@ -450,9 +450,9 @@ contract("Colony Funding", addresses => {
         userReputation2Sqrt.toString(),
         totalReputationSqrt.toString(),
         totalTokensSqrt.toString(),
-        numerator2.toString(),
-        denominator.toString(),
-        totalAmount.toString()
+        numerator2Sqrt.toString(),
+        denominatorSqrt.toString(),
+        totalAmountSqrt.toString()
       ];
     });
 
@@ -515,7 +515,7 @@ contract("Colony Funding", addresses => {
       const totalReputation3 = userReputation1.add(userReputation2).add(userReputation3);
       const totalReputationSqrt = bnSqrt(totalReputation3);
       const totalTokensSqrt = bnSqrt(userReputation1.add(userReputation2));
-      const denominator = bnSqrt(totalReputation.mul(totalReputation3));
+      const denominatorSqrt = bnSqrt(totalReputation.mul(totalReputation3));
       const info = await colony.getRewardPayoutInfo(payoutId);
       const amountSqrt = bnSqrt(info[2]);
 
@@ -525,7 +525,7 @@ contract("Colony Funding", addresses => {
         totalReputationSqrt.toString(),
         totalTokensSqrt.toString(),
         0,
-        denominator.toString(),
+        denominatorSqrt.toString(),
         amountSqrt.toString()
       ];
 
@@ -547,7 +547,7 @@ contract("Colony Funding", addresses => {
       const userTokens3Sqrt = bnSqrt(userTokens3);
       const totalReputationSqrt = bnSqrt(totalReputation);
       const totalTokensSqrt = bnSqrt(userReputation1.add(userReputation2).add(userTokens3));
-      const denominator = bnSqrt(totalReputation.mul(totalTokensSqrt));
+      const denominatorSqrt = bnSqrt(totalReputation.mul(totalTokensSqrt));
       const info = await colony.getRewardPayoutInfo(payoutId);
       const amountSqrt = bnSqrt(info[2]);
 
@@ -557,7 +557,7 @@ contract("Colony Funding", addresses => {
         totalReputationSqrt.toString(),
         totalTokensSqrt.toString(),
         0,
-        denominator.toString(),
+        denominatorSqrt.toString(),
         amountSqrt.toString()
       ];
 
@@ -751,14 +751,22 @@ contract("Colony Funding", addresses => {
         const a = numerator.mul(factor).div(denominator);
         const reward = amount.mul(a).div(factor);
 
+        const userReputationSqrt = bnSqrt(userReputation);
+        const userTokensSqrt = bnSqrt(userTokens);
+        const totalReputationSqrt = bnSqrt(data.totalReputation);
+        const totalTokensSqrt = bnSqrt(totalTokens);
+        const numeratorSqrt = bnSqrt(numerator);
+        const denominatorSqrt = bnSqrt(denominator);
+        const amountSqrt = bnSqrt(amount);
+
         const squareRoots = [
-          bnSqrt(userReputation).toString(),
-          userTokens.sqrt().toString(),
-          bnSqrt(data.totalReputation).toString(),
-          totalTokens.sqrt().toString(),
-          numerator.sqrt().toString(),
-          denominator.sqrt().toString(),
-          amount.sqrt().toString()
+          userReputationSqrt.toString(),
+          userTokensSqrt.toString(),
+          totalReputationSqrt.toString(),
+          totalTokensSqrt.toString(),
+          numeratorSqrt.toString(),
+          denominatorSqrt.toString(),
+          amountSqrt.toString()
         ];
 
         await newColony.claimRewardPayout(payoutId, squareRoots, userReputation.toString(), data.totalReputation.toString(), {
