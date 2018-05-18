@@ -1,6 +1,6 @@
 ---
 Title: The Colony Network
-Section: Docs
+Section: api
 Order: 0
 ---
 
