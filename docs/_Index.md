@@ -7,11 +7,10 @@ sectionOrder:
   - API
 ---
 
-![logo](/img/colony-js.png)
+![logo](./img/colonyNetwork_combomark.svg)
 
 **Colony Network**
 
-Contracts for running the Colony Network as defined in the Colony White Paper.
+The contracts that comprise the Colony Network provide a standard framework for the creation of decentralized organizations as described in the [Colony Whitepaper](https://colony.io/whitepaper.pdf).
 
-
-[Read the docs](docs-quickstart/ "Docs")
+[Read the docs](./docs-colonyprotocol/)
