@@ -9,7 +9,7 @@ sectionOrder:
 
 ![logo](https://raw.githubusercontent.com/JoinColony/colonyNetwork/develop/docs/img/colonyNetwork_combomark.svg?sanitize=true)
 
-**Colony Network**
+**A platform for open organizations.**
 
 The contracts that comprise the Colony Network provide a standard framework for the creation of decentralized organizations as described in the [Colony Whitepaper](https://colony.io/whitepaper.pdf).
 
