@@ -107,9 +107,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
     rootGlobalSkill.globalSkill = true;
     skills[skillCount] = rootGlobalSkill;
     rootGlobalSkillId = skillCount;
-    // TODO: add the special 'mining' skill, which is local to the meta Colony.
 
     metaColony = createColony(_tokenAddress);
+
+    // Add mining skill
+    skillCount += 1;
+    Skill memory miningSkill;
+    miningSkill.nParents = 1;
+    skills[skillCount] = miningSkill;
+    skills[skillCount].parents.push(skillCount-1);
   }
 
   function createColony(address _tokenAddress) public returns (address) {
