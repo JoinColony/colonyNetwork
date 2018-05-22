@@ -12,7 +12,7 @@ There is intentionally no further prescription for how a task is meant to be use
 
 ### Task structure
 
-This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For an exact reference to the `Task` structure implementation including all variables, please see the API(link).
+This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For a more exact description, please refer to the [colonyJS API](../../colonyjs/api-colonyclient/) or [IColony.sol](https://github.com/JoinColony/colonyNetwork/blob/develop/contracts/IColony.sol).
 
 | component | description |
 |------------|---------|
@@ -24,7 +24,7 @@ This is a general description of the Task as it functions in the current Colony 
 |Skill tags |Any skills associated with the task.|
 
 ### Roles
-Every task has three roles associated with it which determine permissions for editing the task, submitting work, and ratings for performance. In the `colonyNetwork` contracts, the roles are represented as 8 bit numbers to keep permission logic simple.
+Every task has three roles associated with it which determine permissions for editing the task, submitting work, and ratings for performance. In the `colonyNetwork` contracts, the roles are represented as 8-bit numbers to keep permission logic simple.
 
 | Role [`role Id`]| Description |
 |------|------|

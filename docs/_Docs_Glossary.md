@@ -16,7 +16,7 @@ An objection to an objection triggers a dispute, which must be resolved through 
 A category for organizing tasks, skills, and pots within a Colony. Domains can be thought of as 'departments' or 'divisions' within the larger organizational whole.
 
 ### Meta Colony
-The Meta Colony is “the Colony colony” — it’s remit is to develop, support, and grow the Colony Network. Every colony on the public network needs the Meta Colony, and everyone may be a member.
+The Meta Colony is “the Colony colony” — its remit is to develop, support, and grow the Colony Network. Every colony on the public network needs the Meta Colony, and everyone may be a member.
 
 ### Native Token
 A token chosen by a colony which confers reputation when paid out as a task bounty. The Native token together with reputation is used for vote-weighting and calculating rewards payouts.

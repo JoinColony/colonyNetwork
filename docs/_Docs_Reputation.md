@@ -43,10 +43,9 @@ If an objection is escalated to a dispute, a reputation-weighted vote is called 
 See [Objections and Disputes](./docs-disputes/) for more information about reputation-weighted voting and the dispute resolution process.
 
 ### Reputation Bootstrapping
-After a colony is created, reputation can only be gained and lost through normal interactions within a colony. But at the colony's beginning, we are presented
-with a bootstrapping problem: When a colony is new, no-one has yet completed any work in it and so nobody will have earned any reputation.
+After a colony is created, reputation can only be gained and lost through normal interactions within a colony. But at the colony's beginning, we are presented with a bootstrapping problem: When a colony is new, no-one has yet completed any work in it and so nobody will have earned any reputation.
 
-During a colony's creation, the creator of the colony is granted the ability to designate an initial set of addresses to receive native tokens and an equivalent amount of reputation. Users receiving reputation are presumably the colony creator and their colleagues, and this starting reputation should be seen as a representation of the existing trust which exists within the team.
+During a colony's creation, the creator of the colony is granted the ability to designate an initial set of addresses to receive native tokens and an equivalent amount of reputation. Users receiving reputation are presumably the colony creator and their colleagues, and this starting reputation should be seen as a representation of the existing trust within the team.
 
 ## Reputation Decay
 One of the unique characteristics of reputation is that it decays over time. This is meant to incentivise frequent and consistent contributions to a colony, and to ensure that reputation represents _recent_ contributions.

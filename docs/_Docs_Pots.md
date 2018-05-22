@@ -5,7 +5,7 @@ order: 4
 ---
 All funding within a colony resides in pots. To each pot, a colony can associate any number of unassigned tokens it holds. Pots can be thought of as 'earmarked' funds for a specific purpose, and depending on context, might be called a bounty, a budget, working capital, or rewards.
 
-Assinging funding to pots is purely a bookeeping mechanism for a colony. From the perspective of the blockchain, ether and tokens are held by the colony contract until they are paid out when a task is completed.
+Assigning funding to pots is purely a bookkeeping mechanism for a colony. From the perspective of the blockchain, ether and tokens are held by the colony contract until they are paid out when a task is completed.
 
 ==TOC==
 
