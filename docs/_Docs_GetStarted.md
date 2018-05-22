@@ -56,5 +56,23 @@ After your Ganache instance is running, deploy the colonyNetwork contracts:
 
 ## Install and configure a contract loader like TrufflePig
 
+```
+yarn global add trufflepig
+```
 
-See [TrufflePig](https://github.com/JoinColony/trufflepig).
+Start TrufflePig and point it to your Ganache accounts:
+```
+~$ trufflepig --ganacheKeyFile ganache-accounts.json
+```
+
+Once running, TrufflePig will serve the accounts and contracts over http:
+```
+http://localhost:3030/accounts
+```
+```
+http://localhost:3030/contracts?name=MyContractName
+```
+
+See [TrufflePig](https://github.com/JoinColony/trufflepig) for more details setting up TrufflePig.
+
+Refer to the [Loaders](/colonyjs/docs-loaders/) documentation for how to integrate with your colonyJS project.
