@@ -13,4 +13,4 @@ sectionOrder:
 
 The contracts that comprise the Colony Network provide a standard framework for the creation of decentralized organizations as described in the [Colony Whitepaper](https://colony.io/whitepaper.pdf).
 
-[Read the docs](/colonynetwork/docs-colony/ "Docs")
+[Read colonyNetwork docs](/colonynetwork/docs-colony/ "Docs")
