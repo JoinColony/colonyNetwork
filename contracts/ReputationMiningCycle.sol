@@ -458,7 +458,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       reputationUpdateLog.push(ReputationLogEntry(
         stakers[i],
         int256(reward),
-        0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
+        miningSkillId, //This should be the special 'mining' skill.
         commonColonyAddress, // They earn this reputation in the common colony.
         4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
         i*4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
