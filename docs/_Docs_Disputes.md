@@ -5,7 +5,7 @@ order: 5
 ---
 The solution to collective decision making is usually voting, but Colony is designed for day to day operation of an organisation. Voting on every decision is wholly impractical.
 
-Colony is designed to be permissive. The [reputation system](./docs-reputation) mediates the extent to which members may influence a colony, but beyond that constraint, members are free to take executive action with most colony matters without any aproval from a management authority.
+Colony is designed to be permissive. The [reputation system](/colonynetwork/docs-reputation/) mediates the extent to which members may influence a colony, but beyond that constraint, members are free to take executive action with most colony matters without any aproval from a management authority.
 
 In the event of disagreement, the Dispute system allows colony members to signal disapproval and potentially force a vote on decisions and actions that would otherwise have proceeded unimpeded.
 

@@ -26,7 +26,7 @@ There is intentionally no further prescription for how a task is meant to be use
 
 At a minimum, a newly created task must be assigned a `domainId` and reference a specification for the task's completion, i.e. a description of the work to be done and how that work will be evaluated.
 
-[More about Tasks](../docs-tasks)
+[More about Tasks](/colonynetwork/docs-tasks/)
 
 
 ## `Reputation and Tokens`
@@ -44,7 +44,7 @@ Within a colony, both tokens and reputation are required in order to create task
 
 Its up to each colony to decide how they use their token. Creators of a colony get to determine an initial `TokenSupplyCeiling` and `TokenIssuanceRate`. Depending on how these parameters are set and what the colony does, tokens could be valuable and bought/sold for a hefty price, or they could be ubiquitous and more of a symbolic gesture -- like an upvote.
 
-[More about Reputation and Tokens](../docs-reputation/)
+[More about Reputation and Tokens](/colonynetwork/docs-reputation/)
 
 ## Domains and Skills
 Domains and Skills are concepts that define a colony's organizational structure in a decentralized context, and allow for the division of labor without a strict management hierarchy.
@@ -53,7 +53,7 @@ Domains are a structure for compartmentalizing the work and shared resources of 
 
 Skills are a similar structure that categorize the _type_ of work done, independent of the domain or colony in which the work took place.
 
-[More about Domains and Skills](../docs-domainsskills)
+[More about Domains and Skills](/colonynetwork/docs-domains-and-skills/)
 
 ## Pots
 All funding within a colony resides in pots. Pots can be thought of as 'earmarked' funds for a specific purpose, and depending on context, might be called a bounty, a budget, working capital, or rewards.  A colony will have many pots, but at a minimum will have one pot for rewards ( `pots[0]` ) and one for working capital ( `pots[1]` ).
@@ -62,4 +62,4 @@ When domains (and tasks within those domains) are created, they each are assigne
 
 Every colony has a special pot, `pots[0]`, which accrues funds by taking a small percentage of colony revenue. Members of the colony may claim rewards from this pot based on the number of colony tokens they have.
 
-[More about Pots](../docs-pots)
+[More about Pots](/colonynetwork/docs-pots-and-funding/)

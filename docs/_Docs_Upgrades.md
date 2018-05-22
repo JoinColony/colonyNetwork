@@ -18,7 +18,7 @@ This pattern uses two contracts in addition to the contract(s) providing their i
 
 Whenever a transaction is received by the `EtherRouter` contract, it looks up the contract that implements that function (if any) in the `Resolver`, and then `delegatecall`s that contract.
 
-![EtherRouter](https://raw.githubusercontent.com/JoinColony/colonyNetwork/feature/add-docs/docs/img/EtherRouter.svg?sanitize=true)
+![EtherRouter](https://raw.githubusercontent.com/JoinColony/colonyNetwork/develop/docs/img/EtherRouter.svg?sanitize=true)
 
 In order to upgrade, new contracts are deployed with new functionality, and then contracts that the `Resolver` contract points to must be changed to point to these new contracts.
 
