@@ -1,7 +1,7 @@
 ---
 title: Upgrades to the Colony Network
 section: Docs
-order: 8
+order: 9
 ---
 
 Improvements to the Colony Network are expected to be continuously developed and periodically deployed.

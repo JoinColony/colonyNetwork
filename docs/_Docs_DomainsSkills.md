@@ -1,7 +1,7 @@
 ---
 title: Domains and Skills
 section: Docs
-order: 3
+order: 4
 ---
 
 Domains and Skills are concepts that define a colony's organizational structure in a decentralized context, and allow for the division of labor without a strict management hierarchy.

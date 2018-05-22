@@ -1,7 +1,7 @@
 ---
 title: The Meta Colony and CLNY
 section: Docs
-order: 6
+order: 7
 ---
 
 The Meta Colony is “the Colony colony” — its remit is to develop, support, and grow the Colony Network. Every colony on the public network needs the Meta Colony, and everyone may be a member.

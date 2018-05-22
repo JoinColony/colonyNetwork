@@ -1,7 +1,7 @@
 ---
 title: Objections and Disputes
 section: Docs
-order: 5
+order: 6
 ---
 The solution to collective decision making is usually voting, but Colony is designed for day to day operation of an organisation. Voting on every decision is wholly impractical.
 

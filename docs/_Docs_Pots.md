@@ -1,7 +1,7 @@
 ---
 title: Pots and Funding
 section: Docs
-order: 4
+order: 5
 ---
 All funding within a colony resides in pots. To each pot, a colony can associate any number of unassigned tokens it holds. Pots can be thought of as 'earmarked' funds for a specific purpose, and depending on context, might be called a bounty, a budget, working capital, or rewards.
 
