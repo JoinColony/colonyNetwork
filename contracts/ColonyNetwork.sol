@@ -110,12 +110,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     metaColony = createColony(_tokenAddress);
 
-    // Add mining skill
+    // Add the special mining skill
     skillCount += 1;
     Skill memory miningSkill;
     miningSkill.nParents = 1;
     skills[skillCount] = miningSkill;
     skills[skillCount].parents.push(skillCount-1);
+    // Add it as a child of the parent
+    skills[skillCount-1].nChildren += 1;
+    skills[skillCount-1].children.push(skillCount);
   }
 
   function createColony(address _tokenAddress) public returns (address) {

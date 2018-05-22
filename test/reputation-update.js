@@ -158,13 +158,13 @@ contract("Colony Reputation Updates", () => {
 
     it("should calculate nUpdates correctly when making a log", async () => {
       await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(3);
       await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill(6);
       const taskId1 = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 4
+        skill: 5
       });
       await metaColony.finalizeTask(taskId1);
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
@@ -178,7 +178,7 @@ contract("Colony Reputation Updates", () => {
       const taskId2 = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 5
+        skill: 6
       });
       await metaColony.finalizeTask(taskId2);
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(7);
