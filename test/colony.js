@@ -208,7 +208,7 @@ contract("Colony", addresses => {
 
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
-      const nextReputationMiningCycleAddress = await colonyNetwork.getNextReputationMiningCycle();
+      const nextReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const nextReputationMiningCycle = ReputationMiningCycle.at(nextReputationMiningCycleAddress);
       const numberOfReputationLogs = await nextReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);

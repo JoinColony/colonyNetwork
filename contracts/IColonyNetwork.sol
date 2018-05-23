@@ -131,14 +131,11 @@ contract IColonyNetwork {
   /// @return Skill Id of the requested child skill
   function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) public view returns (uint256);
 
-  /// @notice Get the address of the reputation mining cycle that is current being processed by reputation miners.
-  /// @return address of ReputationMiningCycle currently being processed.
-  function getReputationMiningCycle() public view returns (address);
-
-  /// @notice Get the address of the reputation mining cycle that will be the next processed by reputation miners, and
-  /// is currently having log entries added to it.
-  /// @return address of ReputationMiningCycle next to be processed.
-  function getNextReputationMiningCycle() public view returns (address);
+  /// @notice Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle
+  /// is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to
+  /// @param _active Whether the user wants the active or inactive reputation mining cycle
+  /// @return address of active or inactive ReputationMiningCycle
+  function getReputationMiningCycle(bool _active) public view returns (address);
 
   /// @notice Get the `Resolver` address for Colony contract version `_version`
   /// @param _version The Colony contract version
@@ -175,10 +172,6 @@ contract IColonyNetwork {
   /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
   /// @param stakers Array of the addresses of stakers to punish
   function punishStakers(address[] stakers) public;
-
-  /// @notice Function that returns the address of the currently active ReputationMiningCycle contract
-  /// @return address Address of the active ReputationMiningCycle contract
-  /* function getReputationMiningCycle() public view returns (address); */
 
   /// @notice Get the root hash of the current reputation state tree
   /// @return bytes32 The current Reputation Root Hash

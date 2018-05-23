@@ -173,7 +173,7 @@ contract("All", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER2, big);
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER3, big);
 
-      let repCycleAddr = await colonyNetwork.getReputationMiningCycle.call();
+      let repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
 
       await oneHourLater();
       let repCycle = ReputationMiningCycle.at(repCycleAddr);
@@ -181,7 +181,7 @@ contract("All", accounts => {
       await repCycle.confirmNewHash(0);
       await oneHourLater();
 
-      repCycleAddr = await colonyNetwork.getReputationMiningCycle.call();
+      repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = ReputationMiningCycle.at(repCycleAddr);
 
       const goodClient = new ReputationMiningClient(STAKER1, realProviderPort);

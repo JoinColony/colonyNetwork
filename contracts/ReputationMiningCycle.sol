@@ -143,7 +143,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     _;
   }
 
-  /// @notice Get the hash for the corresponding entry.
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
     return keccak256(submitter, entryIndex, newHash);
   }
@@ -158,10 +157,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     reputationMiningWindowOpenTimestamp = now;
   }
 
-  /// @notice Submit a new reputation root hash
-  /// @param newHash The proposed new reputation root hash
-  /// @param nNodes Number of nodes in tree with root `newHash`
-  /// @param entryIndex The entry number for the given `newHash` and `nNodes`
   function submitRootHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex)
   entryQualifies(newHash, nNodes, entryIndex)
   withinTarget(newHash, entryIndex)
@@ -216,9 +211,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     submittedEntries[newHash][msg.sender][entryIndex] = true;
   }
 
-  /// @notice Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
-  /// or the last one standing after all others have been proved wrong.
-  /// @param roundNumber The round number that the hash being confirmed is in as the only contendender. If only one hash was submitted, then this is zero.
   function confirmNewHash(uint256 roundNumber) public
   finalDisputeRoundCompleted(roundNumber)
   {
@@ -228,10 +220,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     selfdestruct(colonyNetworkAddress);
   }
 
-  /// @notice Invalidate a hash that has timed out relative to its opponent its current challenge step. Note that this can be called to 'invalidate'
-  /// a nonexistent hash, if the round has an odd number of entrants and so the last hash is being given a bye to the next round.
-  /// @param round The round number the hash being invalidated is in
-  /// @param idx The index in the round that the hash being invalidated is in
   function invalidateHash(uint256 round, uint256 idx) public {
     // What we do depends on our opponent, so work out which index it was at in disputeRounds[round]
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
@@ -308,12 +296,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
-  /// @notice Respond to a binary search step, to eventually discover where two submitted hashes differ in their Justification trees.
-  /// @param round The round number the hash we are responding on behalf of is in
-  /// @param idx The index in the round that the hash we are responding on behalf of is in
-  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
-  /// @param branchMask The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
-  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public {
     // TODO: Check this challenge is active.
     // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
@@ -344,28 +326,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
   uint constant U_REQUIRE_REPUTATION_CHECK = 8;
 
-  /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
-  /// @param u A `uint256[9]` array. The elements of this array, in order are:
-  /// * 1. The current round of the hash being responded on behalf of
-  /// * 2. The current index in the round of the hash being responded on behalf of
-  /// * 3. The branchMask of the proof that the reputation is in the reputation state tree for the reputation with the disputed change
-  /// * 4. The number of nodes in the last reputation state that both submitted hashes agree on
-  /// * 5. The branchMask of the proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
-  /// * 6. The number of nodes this hash considers to be present in the first reputation state the two hashes in this challenge disagree on
-  /// * 7. The branchMask of the proof that reputation root hash of the first reputation state the two hashes in this challenge disagree on is in this submitted hash's justification tree
-  /// * 8. The branchMask of the proof for the most recently added reputation state in this hash's state tree in the last reputation state the two hashes in this challenge agreed on
-  /// * 9. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
-  /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
-  /// @param agreeStateReputationValue The value of the reputation at key `_reputationKey` in the last reputation state the submitted hashes agreed on
-  /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
-  /// @param disagreeStateReputationValue The value of the reputation at key `_reputationKey` in the first reputation state the submitted hashes disagree on
-  /// @param disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
-  /// @param previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @param previousNewReputationValue The value of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @param previousNewReputationSiblings The siblings of the Merkle proof of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
-  /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
     uint256[9] u, //An array of 9 UINT Params, ordered as given above.
     bytes _reputationKey,
@@ -432,18 +392,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     } */
 
   }
-  /// @notice Submit the Justification Root Hash (JRH) for a submitted reputation hash.
-  /// @param round The round that the hash is currently in.
-  /// @param index The index in the round that the hash is currently in
-  /// @param jrh The JRH being submitted
-  /// @param branchMask1 The branchmask for the Merkle proof that the currently accepted reputation state (given by `ColonyNetwork.getReputationRootHash()` + `ColonyNetwork.getReputationRootHashNNodes()`, where `+` is concatenation) is at key 0x000..000 in the submitted JRH
-  /// @param siblings1 The siblings for the same Merkle proof
-  /// @param branchMask2 The branchmask for the Merkle proof that the proposed new reputation state is at the key corresponding to the number of transactions expected in this update in the submitted JRH. This key should be the number of decay transactions plus the number of transactions the log indicates are to happen.
-  /// @param siblings2 The siblings for the same Merkle proof
-  /// @dev The majority of calls to this function will have `round` equal to `0`. The exception to this is when a submitted hash is given a bye, in which case `round` will be nonzero.
-  /// @dev Note that it is possible for this function to be required to be called in every round - the hash getting the bye can wait until they will also be awarded the bye in the next round, if
-  /// one is going to exist. There is an incentive to do so from a gas-cost perspective, but they don't know for sure there's going to be a bye until the submission window has expired, so I think
-  /// this is okay.
+
   function submitJustificationRootHash(
     uint256 round,
     uint256 index,
@@ -470,13 +419,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
   }
 
-  /// @notice Add a new entry to the reputation update log
-  /// @param _user The address of the user having their reputation changed by this log entry
-  /// @param _amount The amount by which the user's reputation is going to change. Can be positive or negative
-  /// @param _skillId The skillId of the reputation being affected
-  /// @param _colonyAddress The address of the colony the reputation is being affected in
-  /// @param _nParents The number of parent skills the skill defined by the skillId has
-  /// @param _nChildren The number of child skills the skill defined by the skillId has
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId, address _colonyAddress, uint _nParents, uint _nChildren) public {
     require(colonyNetworkAddress == msg.sender);
     uint reputationUpdateLogLength = reputationUpdateLog.length;
@@ -498,31 +440,15 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       nPreviousUpdates));
   }
 
-
   function getReputationUpdateLogLength() public view returns (uint) {
     return reputationUpdateLog.length;
   }
 
-  /// @notice Get the `ReputationLogEntry` at index `_id`
-  /// @param _id The reputation log members array index of the entry to get
-  /// @return user The address of the user having their reputation changed by this log entry
-  /// @return amount The amount by which the user's reputation is going to change
-  /// @return skillId The skillId of the reputation being affected
-  /// @return colony The address of the colony the reputation is being affected in
-  /// @return nUpdates The number of updates this log entry implies (including updates to parents, children and colony-wide totals thereof)
-  /// @return nPreviousUpdates The number of updates all previous entries in the log imply (including reputation decays, updates to parents, children, and colony-wide totals thereof)
   function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int256, uint256, address, uint256, uint256) {
     ReputationLogEntry storage x = reputationUpdateLog[_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
 
-  /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
-  /// @param stakers The array of stakers addresses to receive the reward.
-  /// @param commonColonyAddress The address of the common colony, which the special mining skill is earned in
-  /// @param reward The amount of reputation to be rewarded to each staker
-  /// @dev Only callable by colonyNetwork
-  /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
-  /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward) public {
     require(reputationUpdateLog.length==0);
     require(msg.sender == colonyNetworkAddress);

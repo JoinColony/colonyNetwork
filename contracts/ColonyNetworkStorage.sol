@@ -61,9 +61,9 @@ contract ColonyNetworkStorage is DSAuth {
   uint256 rootGlobalSkillId;
 
   // Address of the currently active reputation mining cycle contract
-  address currentReputationMiningCycle;
+  address activeReputationMiningCycle;
   // Address of the next active reputation mining cycle contract, which is where new reputation updates are put.
-  address nextReputationMiningCycle;
+  address inactiveReputationMiningCycle;
     // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
   bytes32 reputationRootHash;
   // The number of nodes in the reputation state tree that was accepted at the end of the last mining cycle

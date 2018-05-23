@@ -32,7 +32,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
-    require(msg.sender == currentReputationMiningCycle);
+    require(msg.sender == activeReputationMiningCycle);
     _;
   }
 
@@ -52,7 +52,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     uint256 balance = stakedBalances[msg.sender];
     require(balance >= _amount);
     bytes32 submittedHash;
-    (submittedHash, ) = ReputationMiningCycle(currentReputationMiningCycle).reputationHashSubmissions(msg.sender);
+    (submittedHash, ) = ReputationMiningCycle(activeReputationMiningCycle).reputationHashSubmissions(msg.sender);
     bool hasRequesterSubmitted = submittedHash == 0x0 ? false : true;
     require(hasRequesterSubmitted==false);
     stakedBalances[msg.sender] -= _amount;
@@ -70,28 +70,28 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
     // Reward stakers
-    currentReputationMiningCycle = 0x0;
+    activeReputationMiningCycle = 0x0;
     startNextCycle();
     rewardStakers(stakers);
   }
 
   function startNextCycle() public {
-    require(currentReputationMiningCycle == 0x0);
-    currentReputationMiningCycle = nextReputationMiningCycle;
-    if (currentReputationMiningCycle == 0x0) {
+    require(activeReputationMiningCycle == 0x0);
+    activeReputationMiningCycle = inactiveReputationMiningCycle;
+    if (activeReputationMiningCycle == 0x0) {
       // This will only be true the very first time that this is run, to kick off the whole reputation mining process
-      currentReputationMiningCycle = new ReputationMiningCycle();
+      activeReputationMiningCycle = new ReputationMiningCycle();
     }
-    ReputationMiningCycle(currentReputationMiningCycle).resetWindow();
-    nextReputationMiningCycle = new ReputationMiningCycle();
+    ReputationMiningCycle(activeReputationMiningCycle).resetWindow();
+    inactiveReputationMiningCycle = new ReputationMiningCycle();
   }
 
-  function getReputationMiningCycle() public view returns(address) {
-    return currentReputationMiningCycle;
-  }
-
-  function getNextReputationMiningCycle() public view returns (address) {
-    return nextReputationMiningCycle;
+  function getReputationMiningCycle(bool _active) public view returns(address) {
+    if (_active) {
+      return activeReputationMiningCycle;
+    } else {
+      return inactiveReputationMiningCycle;
+    }
   }
 
   function punishStakers(address[] stakers) public
@@ -127,7 +127,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
 
     IColony(metaColonyAddress).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
 
-    ReputationMiningCycle(nextReputationMiningCycle).rewardStakersWithReputation(stakers, commonColonyAddress, reward); // This gives them reputation in the next update cycle.
+    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, commonColonyAddress, reward); // This gives them reputation in the next update cycle.
 
     for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.
