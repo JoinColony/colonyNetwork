@@ -5,9 +5,6 @@ echo "Current Colony contract version is $version"
 updated_version=$(($version + 1))
 echo "Updating version to $updated_version"
 
-cp ./contracts/Token.sol ./contracts/UpdatedToken.sol
-sed -i.bak "s/Token/UpdatedToken/g" ./contracts/UpdatedToken.sol
-sed -i.bak "s/function mint/function isUpdated() public pure returns(bool) {return true;} function mint/g" ./contracts/UpdatedToken.sol
 cp ./contracts/Resolver.sol ./contracts/UpdatedResolver.sol
 sed -i.bak "s/Resolver/UpdatedResolver/g" ./contracts/UpdatedResolver.sol
 sed -i.bak "s/function stringToSig/function isUpdated() public pure returns(bool) {return true;} function stringToSig/g" ./contracts/UpdatedResolver.sol
