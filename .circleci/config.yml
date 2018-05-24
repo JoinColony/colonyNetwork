@@ -1,0 +1,99 @@
+version: 2
+
+jobs:
+  lint-and-unit-test:
+    docker:
+      - image: circleci/node:9.1.0
+    working_directory: ~/colonyNetwork
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "yarn.lock" }}
+            - node-modules-
+      - run:
+          name: "Set up global packages"
+          command: |
+            yarn global add greenkeeper-lockfile@1
+            yarn --pure-lockfile
+            git submodule update --init
+      - run:
+          name: "Setup parity"
+          command: |
+            wget https://parity-downloads-mirror.parity.io/v1.8.3/x86_64-unknown-linux-gnu/parity_1.8.3_amd64.deb
+            sudo dpkg -i parity_1.8.3_amd64.deb
+            echo "password" > parityPassword
+            cp ./parity-genesis.template.json ./parity-genesis.json
+            sed -i "s/wwwww/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
+            sed -i "s/xxxxx/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
+            sed -i "s/yyyyy/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
+            sed -i "s/zzzzz/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
+      - save_cache:
+          paths:
+            - node_modules
+          key: node-modules-{{ checksum "yarn.lock" }}
+      - run: 
+          name: "Install lsof"
+          command: |
+            sudo apt-get update
+            sudo apt-get install lsof
+      - run:
+          name: "Greenkeeper lockfile update"
+          command: $HOME/.config/yarn/global/node_modules/.bin/greenkeeper-lockfile-update
+      - run:
+          name: "Linting JavaScript"
+          command: yarn run eslint
+      - run:
+          name: "Linting Solidity"
+          command: yarn run solium
+      - run:
+          name: "Checking contract storage variables"
+          command: yarn run check:storagevars
+      - run:
+          name: "Running unit tests"
+          command: yarn run test:contracts
+      - run:
+          name: "Running upgrade tests"
+          command: yarn run test:contracts:upgrade
+      - run:
+          name: "Running gas cost tests"
+          command: yarn run test:contracts:gasCosts
+      - run:
+          name: "Greenkeeper uploading lockfile"
+          command: $HOME/.config/yarn/global/node_modules/.bin/greenkeeper-lockfile-upload
+      # Save test results
+      - store_test_results:
+          path: test-results.xml
+      - store_artifacts:
+          path: test-results.xml
+
+  test-coverage:
+    docker:
+      - image: circleci/node:9.1.0
+    working_directory: ~/colonyNetwork
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - node-modules-{{ checksum "yarn.lock" }}
+            - node-modules-
+      - run:
+          name: "Set up global packages"
+          command: |
+            yarn global add greenkeeper-lockfile@1
+            yarn --pure-lockfile
+            git submodule update --init
+      - run:
+          name: "Running unit tests with coverage"
+          command: yarn run test:contracts:coverage
+    
+      # Save coverage artifacts
+      - store_artifacts:
+          path: coverage
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - lint-and-unit-test
+      - test-coverage
