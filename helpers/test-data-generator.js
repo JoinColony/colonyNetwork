@@ -15,7 +15,8 @@ import {
   RATING_2_SALT,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
-  WORKER_ROLE
+  WORKER_ROLE,
+  SPECIFICATION_HASH
 } from "../helpers/constants";
 import { currentBlockTime, createSignatures } from "../helpers/test-helper";
 
@@ -23,18 +24,12 @@ const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
-  // By using a random specification hash rather than SPECIFICATION_HASH, we can create tasks in parallel and pick up
-  // the correct taskID afterwards.
-  const specificationHash = web3Utils.randomHex(32);
+  const specificationHash = SPECIFICATION_HASH;
   let taskId = await colony.getTaskCount.call();
   taskId = taskId.minus(1);
-  await colony.makeTask(specificationHash, domain);
-  let task = [0, 0]; // Dummy starting value for task
-  while (task[0] !== specificationHash) {
-    taskId = taskId.add(1);
-    task = await colony.getTask(taskId); // eslint-disable-line no-await-in-loop
-  }
-  taskId = taskId.toNumber();
+  const tx = await colony.makeTask(specificationHash, domain);
+  // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
+  taskId = tx.logs[0].args.id.toNumber();
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();

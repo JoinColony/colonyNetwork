@@ -125,9 +125,9 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     // (which I've fingered-in-the-air, but could easily have an OBOE hiding inside).
     assert(reward < uint256(int256(-1))); // We do a cast later, so make sure we don't overflow.
 
-    IColony(metaColonyAddress).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
+    IColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
 
-    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, commonColonyAddress, reward); // This gives them reputation in the next update cycle.
+    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward); // This gives them reputation in the next update cycle.
 
     for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.

@@ -18,7 +18,7 @@ contract("ColonyNetworkStaking", accounts => {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
 
-  let metaColony;
+  let commonColony;
   let colonyNetwork;
   let clny;
   let goodClient;
@@ -29,11 +29,11 @@ contract("ColonyNetworkStaking", accounts => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
-    metaColony = IColony.at(metaColonyAddress);
+    const commonColonyAddress = await colonyNetwork.getColony("Common Colony");
+    commonColony = IColony.at(commonColonyAddress);
     clny = await Token.new("Colony Network Token", "CLNY", 18);
-    await metaColony.setToken(clny.address);
-    await clny.setOwner(metaColony.address);
+    await commonColony.setToken(clny.address);
+    await clny.setOwner(commonColony.address);
     await colonyNetwork.startNextCycle();
   });
 
@@ -595,7 +595,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
-      assert.equal(repLogEntryMiner[3], metaColony.address);
+      assert.equal(repLogEntryMiner[3], commonColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
 
@@ -603,7 +603,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
-      assert.equal(repLogEntryMiner[3], metaColony.address);
+      assert.equal(repLogEntryMiner[3], commonColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
 
@@ -710,7 +710,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
-      assert.equal(repLogEntryMiner[3], metaColony.address);
+      assert.equal(repLogEntryMiner[3], commonColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
 
@@ -718,7 +718,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(repLogEntryMiner[0], OTHER_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
       assert.equal(repLogEntryMiner[2].toString(), "0");
-      assert.equal(repLogEntryMiner[3], metaColony.address);
+      assert.equal(repLogEntryMiner[3], commonColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
 
@@ -1323,7 +1323,7 @@ contract("ColonyNetworkStaking", accounts => {
         const taskId = await setupRatedTask( // eslint-disable-line
           {
             colonyNetwork,
-            colony: metaColony,
+            colony: commonColony,
             colonyToken: clny,
             workerRating: 20,
             managerPayout: 1,
@@ -1331,7 +1331,7 @@ contract("ColonyNetworkStaking", accounts => {
             workerPayout: 1
           }
         );
-        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
+        await commonColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
       }
       // Complete this reputation cycle
 
@@ -1385,13 +1385,13 @@ contract("ColonyNetworkStaking", accounts => {
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
-      await fundColonyWithTokens(metaColony, clny, "350000000000000000000");
-      const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
-      await metaColony.finalizeTask(taskId1); // Creates an entry in the reputation log for the worker and manager
+      await fundColonyWithTokens(commonColony, clny, "350000000000000000000");
+      const taskId1 = await setupRatedTask({ colonyNetwork, colony: commonColony });
+      await commonColony.finalizeTask(taskId1); // Creates an entry in the reputation log for the worker and manager
       addr = await colonyNetwork.getReputationMiningCycle.call(false);
-      let nextReputationMiningCycle = ReputationMiningCycle.at(addr);
+      let inactiveReputationMiningCycle = ReputationMiningCycle.at(addr);
 
-      const initialRepLogLength = await nextReputationMiningCycle.getReputationUpdateLogLength.call();
+      const initialRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength.call();
       await repCycle.confirmNewHash(0);
       // This confirmation should freeze the reputation log that we added the above task entries to
       // and move it to the inactive rep log
@@ -1403,8 +1403,8 @@ contract("ColonyNetworkStaking", accounts => {
       // Check the active log now has one entry in it (which will be the rewards for the miner who submitted
       // the accepted hash.
       addr = await colonyNetwork.getReputationMiningCycle.call(false);
-      nextReputationMiningCycle = ReputationMiningCycle.at(addr);
-      const activeRepLogLength = await nextReputationMiningCycle.getReputationUpdateLogLength.call();
+      inactiveReputationMiningCycle = ReputationMiningCycle.at(addr);
+      const activeRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength.call();
       assert.equal(activeRepLogLength.toNumber(), 1);
     });
 
@@ -1444,7 +1444,7 @@ contract("ColonyNetworkStaking", accounts => {
       // These should be:
       // 1. Reputation reward for MAIN_ACCOUNT for submitting the previous reputaiton hash
       //   (currently skill 0, needs to change to indicate a special mining skill)
-      let key1 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
+      let key1 = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
       key1 += `${new BN("0").toString(16, 64)}`; // SkillId as uint256
       key1 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
       assert.equal(
@@ -1452,7 +1452,7 @@ contract("ColonyNetworkStaking", accounts => {
         "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001"
       );
       // 2. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
-      let key2 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      let key2 = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`;
       key2 += `${new BN("2").toString(16, 64)}`;
       key2 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
       assert.equal(
@@ -1460,7 +1460,7 @@ contract("ColonyNetworkStaking", accounts => {
         "0x00000000000000000000000000000000000000000000000010a741a4627800000000000000000000000000000000000000000000000000000000000000000002"
       );
       // 3. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
-      let key3 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      let key3 = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`;
       key3 += `${new BN("2").toString(16, 64)}`;
       key3 += `${new BN(OTHER_ACCOUNT.slice(2), 16).toString(16, 40)}`;
       assert.equal(
@@ -1469,7 +1469,7 @@ contract("ColonyNetworkStaking", accounts => {
       );
       // 4. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
-      let key4 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      let key4 = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`;
       key4 += `${new BN("2").toString(16, 64)}`;
       key4 += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
       assert.equal(
@@ -1503,14 +1503,14 @@ contract("ColonyNetworkStaking", accounts => {
       repCycle = ReputationMiningCycle.at(addr);
       await repCycle.submitRootHash(newRootHash, 10, 10);
       await repCycle.confirmNewHash(0);
-      let key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
+      let key = `0x${new BN(commonColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
       key += `${new BN("2").toString(16, 64)}`; // SkillId as uint256
       key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
 
       const value = client.reputations[key];
       const proof = await client.getProof(key);
       const [branchMask, siblings] = proof;
-      const validProof = await metaColony.verifyReputationProof(`${key}`, `${value}`, branchMask, siblings);
+      const validProof = await commonColony.verifyReputationProof(`${key}`, `${value}`, branchMask, siblings);
       assert.equal(validProof, true);
     });
 
