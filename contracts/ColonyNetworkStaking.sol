@@ -38,7 +38,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
 
   function deposit(uint256 _amount) public {
     // Get CLNY address
-    ERC20Extended clny = ERC20Extended(IColony(_colonies["Common Colony"]).getToken());
+    ERC20Extended clny = ERC20Extended(IColony(metaColony).getToken());
     uint256 networkBalance = clny.balanceOf(this);
     // Move some over.
     clny.transferFrom(msg.sender, this, _amount);
@@ -56,7 +56,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     bool hasRequesterSubmitted = submittedHash == 0x0 ? false : true;
     require(hasRequesterSubmitted==false);
     stakedBalances[msg.sender] -= _amount;
-    ERC20Extended clny = ERC20Extended(IColony(_colonies["Common Colony"]).getToken());
+    ERC20Extended clny = ERC20Extended(IColony(metaColony).getToken());
     clny.transfer(msg.sender, _amount);
   }
 
@@ -111,7 +111,6 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     // TODO: Actually think about this function
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.confirmNewHash;
-    address commonColonyAddress = _colonies["Common Colony"];
     uint256 reward = 10**18; //TODO: Actually work out how much reputation they earn, based on activity elsewhere in the colony.
     if (reward >= uint256(int256(-1))/2) {
       reward = uint256(int256(-1))/2;
@@ -120,7 +119,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
     // Something like the above cap is an adequate short-term solution, but at the very least need to double check the limits
     // (which I've fingered-in-the-air, but could easily have an OBOE hiding inside).
     assert(reward < uint256(int256(-1))); // We do a cast later, so make sure we don't overflow.
-    IColony(commonColonyAddress).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
+    IColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
     for (uint256 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
@@ -128,7 +127,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
         stakers[i], //The staker getting the reward
         int256(reward),
         0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
-        commonColonyAddress, // They earn this reputation in the common colony.
+        metaColony, // They earn this reputation in the meta colony.
         4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
         i*4)//We're zero indexed, so this is the number of updates that came before in the reputation log.
       );

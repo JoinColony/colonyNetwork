@@ -33,9 +33,10 @@ contract ColonyNetworkStorage is DSAuth {
   uint256 colonyCount;
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
   uint256 currentColonyVersion;
-  // TODO: We can probably do better than having three colony-related mappings
-  mapping (uint256 => address) _coloniesIndex;
-  mapping (bytes32 => address) _colonies;
+  // Address of the Meta Colony
+  address metaColony;
+  // Maps index to colony address
+  mapping (uint256 => address) colonies;
   mapping (address => bool) _isColony;
   // Maps colony contract versions to respective resolvers
   mapping (uint256 => address) colonyVersionResolver;

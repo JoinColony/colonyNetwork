@@ -25,8 +25,9 @@ contract IColonyNetwork {
 
   /// @notice Event logged when a new colony is added
   /// @dev Emitted from `IColonyNetwork.createColony` function
-  /// @param id The colony id in the network
-  event ColonyAdded(uint256 indexed id);
+  /// @param colonyId The colony id in the network
+  /// @param colonyAddress The colony address in the network
+  event ColonyAdded(uint256 indexed colonyId, address indexed colonyAddress);
 
   /// @notice Event logged when a new skill is added
   /// @dev Emitted from `IColonyNetwork.addSkill` function
@@ -41,17 +42,16 @@ contract IColonyNetwork {
   /// @param quantity Quantity of `token` to auction
   event AuctionCreated(address auction, address token, uint256 quantity);
 
-  /// @notice Get the colony address by its `key`
-  /// @param key The unique key of the required colony
-  /// @return The colony address, if no colony was found, returns 0x0
-  function getColony(bytes32 key) public view returns (address);
+  /// @notice Get the Meta Colony address
+  /// @return The Meta colony address, if no colony was found, returns 0x0
+  function getMetaColony() public view returns (address);
 
   /// @notice Get the number of colonies in the network
   /// @return The colony count
   function getColonyCount() public view returns (uint256);
 
   /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`
-  /// Only the Common Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
+  /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
   /// Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`
   /// @dev Errors if the parent skill does not exist or if this is called by an unauthorised sender
   /// @param _parentSkillId Id of the skill under which the new skill will be added
@@ -82,18 +82,21 @@ contract IColonyNetwork {
   function getSkillCount() public view returns (uint256);
 
   /// @notice Get the id of the root global skill
-  /// @dev This is set once when the Common Colony is created
+  /// @dev This is set once when the Meta Colony is created
   /// @return The root global skill id
   function getRootGlobalSkillId() public view returns (uint256);
 
+  /// @notice Create the Meta Colony, same as a normal colony plus the root skill
+  /// @param _tokenAddress Address of the CLNY token
+  function createMetaColony(address _tokenAddress) public;
+
   /// @notice Creates a new colony in the network
-  /// @dev Errors if there is already a colony with the specified `_name`
   /// Note that the token ownership (if there is one) has to be transferred to the newly created colony
-  /// @param _name A unique key for the new colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
-  /// Support for `mint` in mandatory only for the Common Colony Token
-  function createColony(bytes32 _name, address _tokenAddress) public;
+  /// Support for `mint` in mandatory only for the Meta Colony Token
+  /// @return Address of the newly created colony
+  function createColony(address _tokenAddress) public returns (address);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
   /// @param _version The new Colony contract version
@@ -101,19 +104,19 @@ contract IColonyNetwork {
   function addColonyVersion(uint256 _version, address _resolver) public;
 
   /// @notice Get a colony address by its Id in the network
-  /// @param _idx Id of the colony to get
+  /// @param _id Id of the colony to get
   /// @return The colony address, if no colony was found, returns 0x0
-  function getColonyAt(uint256 _idx) public view returns (address);
+  function getColony(uint256 _id) public view returns (address);
 
   /// @notice Returns the latest Colony contract version. This is the version used to create all new colonies
   /// @return The current / latest Colony contract version
   function getCurrentColonyVersion() public view returns (uint256);
 
-  /// @notice Upgrades a colony with key identifier: `_name` to a new Colony contract version `_newVersion`
+  /// @notice Upgrades a colony with identifier: `_id` to a new Colony contract version `_newVersion`
   /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version
-  /// @param _name The unique colony identifier in the network
+  /// @param _id The colony identifier in the network
   /// @param _newVersion The target version for the upgrade
-  function upgradeColony(bytes32 _name, uint256 _newVersion) public;
+  function upgradeColony(uint256 _id, uint _newVersion) public;
 
   /// @notice Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_skillId`
   /// @param _skillId Id of the skill

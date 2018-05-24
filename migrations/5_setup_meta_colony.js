@@ -8,7 +8,7 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const Token = artifacts.require("./Token");
 
 module.exports = deployer => {
-  // Create the common colony
+  // Create the meta colony
   let colonyNetwork;
   let token;
   deployer
@@ -20,17 +20,16 @@ module.exports = deployer => {
     })
     .then(tokenInstance => {
       token = tokenInstance;
-      return colonyNetwork.createColony("Common Colony", token.address);
+      return colonyNetwork.createMetaColony(token.address);
     })
     .then(() => colonyNetwork.getSkillCount.call())
     .then(skillCount => {
       assert.equal(skillCount.toNumber(), 2);
-      return colonyNetwork.getColony.call("Common Colony");
+      return colonyNetwork.getMetaColony.call();
     })
-    .then(() => colonyNetwork.getColony.call("Common Colony"))
-    .then(commonColonyAddress => {
-      token.setOwner(commonColonyAddress);
-      console.log("### Common Colony created at", commonColonyAddress);
+    .then(metaColonyAddress => {
+      token.setOwner(metaColonyAddress);
+      console.log("### Meta Colony created at", metaColonyAddress);
     })
     .catch(err => {
       console.log("### Error occurred ", err);

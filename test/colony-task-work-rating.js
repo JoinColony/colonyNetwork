@@ -18,7 +18,7 @@ import {
   INITIAL_FUNDING,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getRandomString, getTokenArgs, currentBlockTime, checkErrorRevert, forwardTime } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, checkErrorRevert, forwardTime } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupAssignedTask, setupRatedTask } from "../helpers/test-data-generator";
 
 const IColony = artifacts.require("IColony");
@@ -27,7 +27,6 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
 
 contract("Colony Task Work Rating", () => {
-  let COLONY_KEY;
   let colony;
   let colonyNetwork;
   let token;
@@ -38,12 +37,11 @@ contract("Colony Task Work Rating", () => {
   });
 
   beforeEach(async () => {
-    COLONY_KEY = getRandomString(7);
     const tokenArgs = getTokenArgs();
     const colonyToken = await Token.new(...tokenArgs);
-    await colonyNetwork.createColony(COLONY_KEY, colonyToken.address);
-    const address = await colonyNetwork.getColony.call(COLONY_KEY);
-    colony = await IColony.at(address);
+    const { logs } = await colonyNetwork.createColony(colonyToken.address);
+    const { colonyAddress } = logs[0].args;
+    colony = await IColony.at(colonyAddress);
     const otherTokenArgs = getTokenArgs();
     token = await Token.new(...otherTokenArgs);
   });

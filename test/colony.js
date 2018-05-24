@@ -23,7 +23,6 @@ import {
   RATING_2_SECRET
 } from "../helpers/constants";
 import {
-  getRandomString,
   getTokenArgs,
   web3GetBalance,
   checkErrorRevert,
@@ -47,7 +46,6 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 
 contract("Colony", addresses => {
-  let COLONY_KEY;
   let colony;
   let token;
   let otherToken;
@@ -66,17 +64,16 @@ contract("Colony", addresses => {
     await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
 
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createColony("Common Colony", clnyToken.address);
+    await colonyNetwork.createMetaColony(clnyToken.address);
   });
 
   beforeEach(async () => {
-    COLONY_KEY = getRandomString(7);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
-    await colonyNetwork.createColony(COLONY_KEY, token.address);
-    const address = await colonyNetwork.getColony.call(COLONY_KEY);
-    await token.setOwner(address);
-    colony = await IColony.at(address);
+    const { logs } = await colonyNetwork.createColony(token.address);
+    const { colonyAddress } = logs[0].args;
+    await token.setOwner(colonyAddress);
+    colony = await IColony.at(colonyAddress);
     const authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
     const otherTokenArgs = getTokenArgs();
@@ -696,14 +693,14 @@ contract("Colony", addresses => {
         workerPayout: 200
       });
       await colony.finalizeTask(taskId);
-      const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
+      const metaColonyAddress = await colonyNetwork.getMetaColony.call();
       const balanceBefore = await web3GetBalance(MANAGER);
-      const commonBalanceBefore = await web3GetBalance(commonColonyAddress);
+      const metaBalanceBefore = await web3GetBalance(metaColonyAddress);
       await colony.claimPayout(taskId, MANAGER_ROLE, 0x0, { gasPrice: 0 });
       const balanceAfter = await web3GetBalance(MANAGER);
-      const commonBalanceAfter = await web3GetBalance(commonColonyAddress);
+      const metaBalanceAfter = await web3GetBalance(metaColonyAddress);
       assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 99);
-      assert.equal(commonBalanceAfter.minus(commonBalanceBefore).toNumber(), 1);
+      assert.equal(metaBalanceAfter.minus(metaBalanceBefore).toNumber(), 1);
       const potBalance = await colony.getPotBalance.call(2, 0x0);
       assert.equal(potBalance.toNumber(), 250);
     });

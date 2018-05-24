@@ -71,13 +71,13 @@ contract IColony {
   /// @param _wad Amount to mint
   function mintTokens(uint256 _wad) public;
 
-  /// @notice Mints CLNY in the Common Colony and transfers them to the colony network
-  /// Only allowed to be called on the Common Colony by the colony network
+  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network
+  /// Only allowed to be called on the Meta Colony by the colony network
   /// @param _wad Amount to mint and transfer to the colony network
   function mintTokensForColonyNetwork(uint256 _wad) public;
 
   /// @notice Add a new global skill, under skill `_parentSkillId`
-  /// Can only be called from the Common Colony
+  /// Can only be called from the Meta Colony
   /// @dev Calls `IColonyNetwork.addSkill`
   /// @param _parentSkillId Id of the skill under which the new skill will be added
   /// @return Id of the added skill
@@ -287,7 +287,7 @@ contract IColony {
 
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
   /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
-  /// Ether fees go straight to the Common Colony whereas Token fees go to the Network to be auctioned off.
+  /// Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether

@@ -20,7 +20,7 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getRandomString, getTokenArgs, currentBlockTime, createSignatures, forwardTime, bnSqrt } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, createSignatures, forwardTime, bnSqrt } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/test-data-generator";
 import ReputationMiningClient from "../client/main";
@@ -51,7 +51,7 @@ contract("All", accounts => {
   let otherToken;
   let colonyTask;
   let colonyFunding;
-  let commonColony;
+  let metaColony;
   let authority;
   let colonyNetwork;
 
@@ -66,17 +66,17 @@ contract("All", accounts => {
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
-    await colonyNetwork.createColony("Antz", token.address);
-    const address = await colonyNetwork.getColony.call("Antz");
-    await token.setOwner(address);
-    colony = await IColony.at(address);
+    const { logs } = await colonyNetwork.createColony(token.address);
+    const { colonyAddress } = logs[0].args;
+    await token.setOwner(colonyAddress);
+    colony = await IColony.at(colonyAddress);
     tokenAddress = await colony.getToken.call();
     const authorityAddress = await colony.authority.call();
     authority = await Authority.at(authorityAddress);
     await IColony.defaults({ gasPrice });
 
-    const commonColonyAddress = await colonyNetwork.getColony.call("Common Colony");
-    commonColony = await IColony.at(commonColonyAddress);
+    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
+    metaColony = await IColony.at(metaColonyAddress);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
@@ -87,14 +87,14 @@ contract("All", accounts => {
     it("when working with the Colony Network", async () => {
       const tokenArgs = getTokenArgs();
       const colonyToken = await Token.new(...tokenArgs);
-      await colonyNetwork.createColony("Test", colonyToken.address);
+      await colonyNetwork.createColony(colonyToken.address);
     });
 
-    it("when working with the Common Colony", async () => {
-      await commonColony.addGlobalSkill(1);
-      await commonColony.addGlobalSkill(5);
-      await commonColony.addGlobalSkill(6);
-      await commonColony.addGlobalSkill(7);
+    it("when working with the Meta Colony", async () => {
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill(6);
+      await metaColony.addGlobalSkill(7);
     });
 
     it("when working with a Colony", async () => {
@@ -255,12 +255,10 @@ contract("All", accounts => {
 
       const tokenArgs = getTokenArgs();
       const newToken = await Token.new(...tokenArgs);
-      const name = getRandomString(5);
-      await colonyNetwork.createColony(name, newToken.address);
-
-      const address = await colonyNetwork.getColony.call(name);
-      const newColony = IColony.at(address);
-      await newToken.setOwner(address);
+      const { logs } = await colonyNetwork.createColony(newToken.address);
+      const { colonyAddress } = logs[0].args;
+      const newColony = IColony.at(colonyAddress);
+      await newToken.setOwner(colonyAddress);
 
       await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());
       await fundColonyWithTokens(newColony, newToken, initialFunding.toString());

@@ -84,7 +84,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function mintTokensForColonyNetwork(uint _wad) public {
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed"); // Only the colony Network can call this function
-    require(this == IColonyNetwork(colonyNetworkAddress).getColony("Common Colony"), "colony-access-denied-only-common-colony-allowed"); // Function only valid on the Common Colony
+    require(this == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed"); // Function only valid on the Meta Colony
     token.mint(_wad);
     token.transfer(colonyNetworkAddress, _wad);
   }
