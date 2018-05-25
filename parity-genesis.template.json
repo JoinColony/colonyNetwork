@@ -12,7 +12,8 @@
         "eip658Transition": "0x0",
         "eip140Transition": "0x0",
         "eip211Transition": "0x0",
-        "eip214Transition": "0x0"
+        "eip214Transition": "0x0",
+        "eip150Transition": "0x0"
     },
     "genesis": {
         "seal": {
