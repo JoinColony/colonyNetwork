@@ -68,7 +68,8 @@ export function web3GetCode(a) {
   });
 }
 
-async function checkError(promise, errMsg, isAssert) {
+// eslint-disable-next-line no-unused-vars
+export async function checkErrorRevert(promise, errMsg) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
   // (still making a valid transaction and returning a txid). For the explanation of why
@@ -88,25 +89,6 @@ async function checkError(promise, errMsg, isAssert) {
 
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00);
-
-  if (isAssert) {
-    const network = await web3GetNetwork();
-    const transaction = await web3GetTransaction(tx);
-    if (network !== "coverage") {
-      // When a transaction `throws`, all the gas sent is spent. So let's check that we spent all the gas that we sent.
-      // TODO: Properly account for EIP150 and passing only 63/64 gas on CALL.
-      // See https://github.com/JoinColony/colonyNetwork/issues/194 for details.
-      assert.closeTo(transaction.gas, receipt.gasUsed, 95000, "didnt fail - didn't throw and use all gas");
-    }
-  }
-}
-
-export async function checkErrorRevert(promise, errMsg) {
-  return checkError(promise, errMsg, false);
-}
-
-export async function checkErrorAssert(promise, errMsg) {
-  return checkError(promise, errMsg, true);
 }
 
 export function checkErrorNonPayableFunction(tx) {
