@@ -24,6 +24,7 @@ import "./IColony.sol";
 import "./EtherRouter.sol";
 import "./Token.sol";
 import "./ColonyNetworkStorage.sol";
+import "./IReputationMiningCycle.sol";
 
 
 contract ColonyNetwork is ColonyNetworkStorage {
@@ -86,15 +87,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function isGlobalSkill(uint256 _skillId) public view returns (bool) {
     return skills[_skillId].globalSkill;
-  }
-
-  function getReputationUpdateLogEntry(uint256 _id, bool active) public view returns (address, int256, uint256, address, uint256, uint256) {
-    uint logIdx = activeReputationUpdateLog;
-    if (!active) {
-      logIdx = (logIdx + 1) % 2;
-    }
-    ReputationLogEntry storage x = reputationUpdateLogs[logIdx][_id];
-    return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
 
   function getReputationRootHash() public view returns (bytes32) {
@@ -243,30 +235,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
   calledByColony
   skillExists(_skillId)
   {
-    uint reputationUpdateLogLength = reputationUpdateLogs[activeReputationUpdateLog].length;
-    uint nPreviousUpdates = 0;
-    if (reputationUpdateLogLength > 0) {
-      nPreviousUpdates = reputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nPreviousUpdates + reputationUpdateLogs[activeReputationUpdateLog][reputationUpdateLogLength-1].nUpdates;
-    }
-    uint nUpdates = (skills[_skillId].nParents + 1) * 2;
-    if (_amount < 0) {
-      //TODO: Never true currently. _amount needs to be an int.
-      nUpdates += 2 * skills[_skillId].nChildren;
-    }
-    reputationUpdateLogs[activeReputationUpdateLog].push(ReputationLogEntry(
-      _user,
-      _amount,
-      _skillId,
-      msg.sender,
-      nUpdates,
-      nPreviousUpdates));
-  }
-
-  function getReputationUpdateLogLength(bool active) public view returns (uint) {
-    uint logIdx = activeReputationUpdateLog;
-    if (!active) {
-      logIdx = (logIdx + 1 ) % 2;
-    }
-    return reputationUpdateLogs[logIdx].length;
+    uint nParents = skills[_skillId].nParents;
+    // TODO: Is it cheaper to check if _amount is <0, and if not, just set nChildren to 0, because children won't be updated for such an update?
+    uint nChildren = skills[_skillId].nChildren;
+    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(_user, _amount, _skillId, msg.sender, nParents, nChildren);
   }
 }

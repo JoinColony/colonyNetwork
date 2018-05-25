@@ -4,7 +4,7 @@ const ganache = require("ganache-core");
 
 // We disable the import/no-unresolved rule for these lines because when ESLint is run on Circle, the contracts haven't
 // been compiled yet and so would fail here.
-const ReputationMiningCycleJSON = require("../build/contracts/ReputationMiningCycle.json"); // eslint-disable-line import/no-unresolved
+const ReputationMiningCycleJSON = require("../build/contracts/IReputationMiningCycle.json"); // eslint-disable-line import/no-unresolved
 const ColonyNetworkJSON = require("../build/contracts/IColonyNetwork.json"); // eslint-disable-line import/no-unresolved
 const PatriciaTreeJSON = require("../build/contracts/PatriciaTree.json"); // eslint-disable-line import/no-unresolved
 
@@ -116,8 +116,10 @@ class ReputationMiningClient {
     this.justificationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
 
     this.justificationHashes = {};
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
 
-    let nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
+    let nLogEntries = await repCycle.getReputationUpdateLogLength();
     nLogEntries = new BN(nLogEntries.toString());
     for (let i = new BN("0"); i.lte(nLogEntries); i.iadd(new BN("1"))) {
       await this.addSingleLogEntry(i, i.eq(nLogEntries)); // eslint-disable-line no-await-in-loop
@@ -143,7 +145,9 @@ class ReputationMiningClient {
     // console.log(jhLeafValue);
     let logEntry;
     if (!last) {
-      logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i.toString(), false); // eslint-disable-line no-await-in-loop
+      const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+      logEntry = await repCycle.getReputationUpdateLogEntry(i.toString()); // eslint-disable-line no-await-in-loop
     } else {
       logEntry = ["0x", 0, 0, "0x", 0];
     }
@@ -215,7 +219,10 @@ class ReputationMiningClient {
    * @return {Promise}   A promise that resolves to the key of the corresponding reputation.
    */
   async getKeyForLogEntry(i) {
-    const logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(i, false); // eslint-disable-line no-await-in-loop
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+
+    const logEntry = await repCycle.getReputationUpdateLogEntry(i); // eslint-disable-line no-await-in-loop
     const colonyAddress = logEntry[3].slice(2);
     const skillId = logEntry[2];
     const userAddress = logEntry[0].slice(2);
@@ -279,7 +286,7 @@ class ReputationMiningClient {
    * @return {Promise}
    */
   async submitRootHash() {
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
 
     const hash = await this.getRootHash();
@@ -314,13 +321,14 @@ class ReputationMiningClient {
   async submitJustificationRootHash() {
     const jrh = await this.justificationTree.getRootHash();
     const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
-    const nLogEntries = await this.colonyNetwork.getReputationUpdateLogLength(false);
-    const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
 
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const nLogEntries = await repCycle.getReputationUpdateLogLength();
+
+    const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    await repCycle.submitJustificationRootHash(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
+    return repCycle.submitJustificationRootHash(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
       gasLimit: 6000000
     });
   }
@@ -331,7 +339,7 @@ class ReputationMiningClient {
    */
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
 
     let index = new BN("-1");
@@ -356,7 +364,7 @@ class ReputationMiningClient {
    */
   async respondToBinarySearchForChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
     let submission = await repCycle.disputeRounds(round.toString(), index.toString());
     const targetNode = new BN(
@@ -389,14 +397,14 @@ class ReputationMiningClient {
    */
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call();
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
     const submission = await repCycle.disputeRounds(round.toString(), index.toString());
     // console.log(submission);
     const firstDisagreeIdx = new BN(submission[8].toString());
     const lastAgreeIdx = firstDisagreeIdx.subn(1);
     // console.log('getReputationUPdateLogEntry', lastAgreeIdx);
-    const logEntry = await this.colonyNetwork.getReputationUpdateLogEntry(lastAgreeIdx.toString(), false);
+    const logEntry = await repCycle.getReputationUpdateLogEntry(lastAgreeIdx.toString());
     // console.log('getReputationUPdateLogEntry done');
     const colonyAddress = logEntry[3];
     const skillId = logEntry[2];

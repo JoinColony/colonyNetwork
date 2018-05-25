@@ -60,20 +60,10 @@ contract ColonyNetworkStorage is DSAuth {
   // skillId of the root global skills tree
   uint256 rootGlobalSkillId;
 
-  struct ReputationLogEntry {
-    address user;
-    int amount;
-    uint256 skillId;
-    address colony;
-    uint256 nUpdates;
-    uint256 nPreviousUpdates;
-  }
-
-  mapping (uint => ReputationLogEntry[]) reputationUpdateLogs;
-  // Tracks whether updateLog 0 or 1 is the active log
-  uint256 activeReputationUpdateLog;
   // Address of the currently active reputation mining cycle contract
-  address reputationMiningCycle;
+  address activeReputationMiningCycle;
+  // Address of the next active reputation mining cycle contract, which is where new reputation updates are put.
+  address inactiveReputationMiningCycle;
     // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
   bytes32 reputationRootHash;
   // The number of nodes in the reputation state tree that was accepted at the end of the last mining cycle

@@ -24,9 +24,10 @@ const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
-  await colony.makeTask(SPECIFICATION_HASH, domain);
-  let taskId = await colony.getTaskCount.call();
-  taskId = taskId.toNumber();
+  const specificationHash = SPECIFICATION_HASH;
+  const tx = await colony.makeTask(specificationHash, domain);
+  // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
+  const taskId = tx.logs[0].args.id.toNumber();
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
