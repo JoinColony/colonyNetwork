@@ -1182,6 +1182,7 @@ contract("ColonyNetworkStaking", accounts => {
         await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
         await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
         await clients[i].submitJustificationRootHash(); // eslint-disable-line no-await-in-loop
+        console.log(`Client ${i} submitted JRH`);
       }
 
       await forwardTime(3600, this);
