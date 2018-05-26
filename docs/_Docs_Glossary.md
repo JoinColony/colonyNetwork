@@ -1,7 +1,7 @@
 ---
 title: Glossary of Terms
 section: Docs
-order: 10
+order: 11
 ---
 
 ==TOC==

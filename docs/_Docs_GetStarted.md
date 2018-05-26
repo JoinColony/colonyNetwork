@@ -1,7 +1,7 @@
 ---
 title: Get Started
 section: Docs
-order: 1
+order: 2
 ---
 
 The Colony Network contracts are moving toward being live on `testnet`, but in the mean time you will need to run your own version for testing and development.

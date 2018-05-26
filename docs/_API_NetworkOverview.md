@@ -1,7 +1,7 @@
 ---
-Title: The Colony Network
-Section: API
-Order: 0
+title: The Colony Network
+section: Docs
+order: 0
 ---
 
 The Colony Network, at a high level, is a collection of smart contracts on the Ethereum blockchain.
@@ -19,6 +19,4 @@ The full collection of Colony Network contracts can be inspected on [GitHub](htt
 
 * `IColony.sol` contains the functions that pertain to a particular colony, including the creation of tasks, funding, and work ratings.
 
-* `IColonyNetwork.sol` contains the functions that pertain to the network as a whole, such as the global heirarchy of skill tags and interactions with the reputation mining client.
-
-You can inspect both interfaces in the (API documentation coming soon, in the mean time check the GitHub :)
+* `IColonyNetwork.sol` contains the functions that pertain to the network as a whole, such as the global hierarchy of skill tags and interactions with the reputation mining client.

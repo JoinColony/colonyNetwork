@@ -1,7 +1,7 @@
 ---
 title: Tasks
 section: Docs
-order: 2
+order: 3
 ---
 The smallest conceptual unit within a Colony is a **task**. A task is a discrete unit of work which requires no further subdivision or delegation, and which can be evaluated as complete or incomplete based on some set of criteria.
 

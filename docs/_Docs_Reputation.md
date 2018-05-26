@@ -1,7 +1,7 @@
 ---
 title: Reputation
 section: Docs
-order: 3
+order: 4
 ---
 
 In an organization of any type, reputation is an essential heuristic for people to keep track of each other's perceived merit in an environment of limited information. Reputation within Colony is meant stay close to the concept of reputation as it is commonly understood. Reputation is a representation of _merit_, which in Colony implies an immutable record of contributions to a shared goal.
