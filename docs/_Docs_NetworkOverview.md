@@ -1,7 +1,7 @@
 ---
 title: The Colony Network
 section: Docs
-order: 0
+order: 1
 ---
 
 The Colony Network, at a high level, is a collection of smart contracts on the Ethereum blockchain.

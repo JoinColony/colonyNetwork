@@ -1,7 +1,7 @@
 ---
 title: Colony
 section: Docs
-order: 1
+order: 0
 ---
 
 Colony is a protocol for a new type of open, meritocratic organization that operates via software rather than paperwork and management hierarchy.
