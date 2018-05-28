@@ -58,8 +58,8 @@ Task payouts are determined by work rating, which is currently implemented as "5
 
 Because work ratings are on-chain, they follow a _*Commit* and *Reveal*_ pattern in which ratings are obscured to prevent them from influencing each other.
 
-* During the *Commit* period, hidden ratings are submitted to the blockchain. The commit period lasts 5 days.
-* During the *Reveal* period, users submit a transaction to reveal their rating.
+* During the *Commit* period, hidden ratings are submitted to the blockchain. The commit period lasts at most 5 days, but completes earlier if all parties commit.
+* During the *Reveal* period, users submit a transaction to reveal their rating. The reveal period also lasts at most 5 days, but completes earlier if all parties reveal. 
 
 During the rating period, if either party fails to commit or reveal their rating, their counterpart is given the highest possible rating, and their own rating is penalized.
 
