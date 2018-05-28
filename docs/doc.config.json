@@ -1,0 +1,6 @@
+{
+    "logo": "img/colonyNetwork_combomark.svg",
+    "logoSmall": "img/colonyNetwork_wordmark.svg",
+    "sectionOrder": ["Docs", "API"],
+    "description": "The contracts that comprise the Colony Network provide a standard framework for the creation of decentralized organizations as described in the Colony Whitepaper."
+}
