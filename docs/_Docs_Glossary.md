@@ -15,6 +15,9 @@ An objection to an objection triggers a dispute, which must be resolved through 
 ### Domain
 A category for organizing tasks, skills, and pots within a Colony. Domains can be thought of as 'departments' or 'divisions' within the larger organizational whole.
 
+### Funding Pots
+All funding within a colony resides in pots. Pots can be thought of as 'earmarked' funds for a specific purpose, and depending on context, might be called a bounty, a budget, working capital, or rewards.  A colony will have many pots, but at a minimum will have one pot for rewards ( `pots[0]` ) and one for working capital ( `pots[1]` ).
+
 ### Meta Colony
 The Meta Colony is “the Colony colony” — its remit is to develop, support, and grow the Colony Network. Every colony on the public network needs the Meta Colony, and everyone may be a member.
 
@@ -23,9 +26,6 @@ A token chosen by a colony which confers reputation when paid out as a task boun
 
 ### Objection
 A statement by a member of a colony that proposes some variable in the contracts of the colony should be changed to another state. To raise an objection, a colony member is required to put up a stake of native tokens. If another member opposes an objection, they may stake tokens to elevate the objection to become a dispute. Otherwise, the objection will pass automatically after a defined period of time.
-
-### Pots
-All funding within a colony resides in pots. Pots can be thought of as 'earmarked' funds for a specific purpose, and depending on context, might be called a bounty, a budget, working capital, or rewards.  A colony will have many pots, but at a minimum will have one pot for rewards ( `pots[0]` ) and one for working capital ( `pots[1]` ).
 
 ### Reputation
 A number associated with an account which attempts to quantify the merit of a user’s recent contributions to a colony. Reputation is used to weight a user’s influence in decisions related to the expertise they have demonstrated, and to determine amounts owed to a colony’s members when rewards are disbursed.
@@ -36,7 +36,7 @@ Unlike tokens, reputation cannot be transferred between addresses; it must be ea
 The calculations involved in maintaining the entire state of reputation amongst all accounts on the Colony Network are far too complex to be performed on-chain. Instead, reputation is calculated off-chain and periodically put on-chain by CLNY holders in a process resembling a proof-of-stake blockchain protocol -- engaging in the process of updating the global state of reputation for the Colony Network is called "Reputation Mining".
 
 ### Rewards
-When a colony earns Ether or other currencies as revenue, the revenue distribution system allocates some of them to be claimed as rewards. In particular, the special triggering transaction takes any such revenue that has accumulated since the last such transaction, and makes 90% available to the colony as working capital, while the remaining 10% is used to pay out rewards to users that hold both colony tokens and reputation in the colony.
+When a colony earns Ether or other currencies as revenue, the revenue distribution system allocates some of them to be claimed as rewards. In particular, the special triggering transaction takes any such revenue that has accumulated since the last such transaction, and makes 99% available to the colony as working capital, while the remaining 1% is used to pay out rewards to users that hold both colony tokens and reputation in the colony.
 
 ### Role
 A task has 3 roles associated with it:

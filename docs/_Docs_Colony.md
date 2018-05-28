@@ -30,15 +30,15 @@ At a minimum, a newly created task must be assigned a `domainId` and reference a
 
 
 ## `Reputation and Tokens`
-In an organization of any type, reputation is an essential heuristic for people to keep track of each other's perceived merit in an environment of limited information. Reputation within Colony is meant stay as close as possible to the concept of reputation as it is commonly understood. Reputation is a representation of _merit_, which in Colony implies an immutable record of contributions to a shared goal.
+In an organization of any type, reputation is an essential heuristic for people to keep track of each other's perceived merit in an environment of limited information. Reputation within Colony is meant to stay as close as possible to the concept of reputation as it is commonly understood. Reputation is a representation of _merit_, which in Colony implies an immutable record of contributions to a shared goal.
 
 In the Colony Protocol, **reputation** is a number that quantifies a particular individual’s influence, calculated from the sum of work that has been completed within the colony.
 
-Every Colony has its own **native token** which complements reputation. Tokens, when earned as a task payout, create reputation for the recipient at a 1:1 ratio.
+Every Colony has its own **native token** which complements reputation. Tokens, when earned as a task payout, create reputation for the recipient.
 
 Tasks are expected to be funded with native tokens (thus awarding reputation), and/or payment tokens (which do not confer reputation). When a task is funded, the task awaits work completion and approval before paying out to a worker.
 
-Unlike a token, reputation cannot be transacted between accounts, and can only be gained or lost through the completion of tasks, or the resolution of disputes. Reputation decays over time due to encourage frequent and regular engagement-- it has a half-life of ~3.5 months.
+Unlike a token, reputation cannot be transacted between accounts, and can only be gained or lost through the completion of tasks, the resolution of disputes, or participating in the reputation mining process. Reputation decays over time due to encourage frequent and regular engagement-- it has a half-life of ~3.5 months.
 
 Within a colony, both tokens and reputation are required in order to create tasks and domains, to raise objections or disputes, and to vote on the collective actions/decisions of the colony.
 

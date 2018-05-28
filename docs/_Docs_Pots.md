@@ -15,7 +15,7 @@ A colony will have many pots, but at a minimum will have one pot for rewards ( `
 ### Rewards
 Every colony has a special pot, `pots[0]`, which accrues funds by taking a small percentage of colony revenue. Members of the colony may claim rewards from this pot based on the number of colony tokens they have.
 
-When funds are sent to a colony as revenue, they must be put into the working capital pot before they can be further distributed to relevant sub-domains. In doing so, 10% of the revenue is siphoned off and put into the _rewards_ pot.
+When funds are sent to a colony as revenue, they must be put into the working capital pot before they can be further distributed to relevant sub-domains. In doing so, 1% of the revenue is siphoned off and put into the _rewards_ pot.
 
 When triggered, the rewards pot disburses to all members of the colony that have *both* tokens and reputation. Rewards are limited to the (normalized) geometric average of token holdings and reputation score (read more about the rewards formula in section 10.2 of the colony whitepaper).
 
@@ -30,21 +30,9 @@ Each task created within a domain also has its own pot, which is funded from the
 ## Funding Proposals
 Funding proposals are the mechanism that mediates the flow of funds between pots. Funding proposals are created by any user with sufficient reputation to stake in the relevant domain.
 
-A funding proposal consists of the following variables:
-* `Creator` - The individual that created the proposal
-* `From` - Pot funds are coming from
-* `To` - Pot funds are going to
-* `TokenType` - The token contract address
-* `CurrentState` - The state of the proposal (`inactive`, `active`, `completed`, or `cancelled`)
-* `TotalPaid` - How much has been transferred along this funding proposal so far.
-* `TotalRequested` - The maximum amount to transfer after which this funding proposal is considered `completed`.
-* `LastUpdated` - The time when the funding proposal was last updated
-* `Rate` - the rate of funding
-* `PunishCreator` - Whether the creator should be punished upon completion.
-
 Funding proposals can be one of two types: Basic Funding Proposals (BFPs), or Priority Funding Proposals (PFPs).
 
-_Basic Funding Proposals_ are immediately `active` upon creation, but are restricted to funding pots which are direct descendants of the source. In other words, the `From` pot must be a parent of the `To` pot. BFPs also have an upper limit on the `Rate` funds can be moved.
+_Basic Funding Proposals_ are immediately active upon creation, but are restricted to funding pots which are direct descendants of the source. In other words, the `From` pot must be a parent of the `To` pot. BFPs also have an upper limit on the rate funds can be moved.
 
 _Priority Funding Proposals_ must be explicitly voted on before it starts directing funds, but may move funds from any pot to any other pot within a colony, at any rate, so long as there is consensus in the relevant domain.
 

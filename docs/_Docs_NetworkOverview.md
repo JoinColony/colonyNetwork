@@ -20,3 +20,15 @@ The full collection of Colony Network contracts can be inspected on [GitHub](htt
 * `IColony.sol` contains the functions that pertain to a particular colony, including the creation of tasks, funding, and work ratings.
 
 * `IColonyNetwork.sol` contains the functions that pertain to the network as a whole, such as the global hierarchy of skill tags and interactions with the reputation mining client.
+
+* `IReputationMiningCycle.sol` contains the functions that pertain to the reputation mining system, such as submission of a reputation root hash, staking, and initiating the challenge process.
+
+## First Version
+The first deployed version of the Colony Network will have a more modest functionality than what is described in these pages and in the whitepaper. This is intended to allow further development for finished contracts to be informed by real user experiences and testing while new features are being developed for future iterations of the network.
+
+The major differences between the planned first release and the system described in the whitepaper are:
+
+* Domains within a colony will be restricted to a single level.
+* Voting, Objections, and Dispute resolution will not be included.
+
+Subsequent versions of the Colony Network will add functionality (working toward a complete implementation of the whitepaper), and all deprecated versions will remain fully supported by the network after an upgrade. See [upgrades](/colonynetwork/docs-upgrades-to-the-colony-network/) for more information.

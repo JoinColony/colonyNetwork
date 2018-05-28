@@ -9,6 +9,8 @@ The Colony Network contracts are moving toward being live on `testnet`, but in t
 ## Set Up and Deploy the colonyNetwork contracts
 
 ### Install
+See the colonyNetwork [README.md](https://github.com/JoinColony/colonyNetwork#install) for detailed instructions.
+
 You'll need the latest versions of all the colonyNetwork contracts ready to deploy:
 
 ```
