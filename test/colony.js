@@ -743,6 +743,18 @@ contract("Colony", addresses => {
       const taskPayoutWorker2 = await colony.getTaskPayout.call(1, WORKER_ROLE, token.address);
       assert.equal(taskPayoutWorker2.toNumber(), 200);
     });
+
+    it("should log a TaskWorkerPayoutChanged event, if the task's worker's payout changed", async () => {
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+      await colony.mintTokens(100);
+
+      // Set the evaluator payout as 1000 ethers
+      const txData = await colony.contract.setTaskWorkerPayout.getData(1, 0x0, 98000);
+      const sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+
+      await expectEvent(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData), "TaskWorkerPayoutChanged");
+    });
   });
 
   describe("when claiming payout for a task", () => {

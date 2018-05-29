@@ -53,6 +53,12 @@ contract IColony {
   /// @param user User that fulfills the designated role
   event TaskRoleUserChanged(uint256 indexed id, uint8 role, address user);
 
+  /// @notice Event logged when a task's worker funding changes
+  /// @param id Id of the task
+  /// @param token Token of the payout funding
+  /// @param amount Amount of the payout funding
+  event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
+
   /// @notice Event logged when a task has been finalized
   /// @param id Id of the finalized task
   event TaskFinalized(uint256 indexed id);

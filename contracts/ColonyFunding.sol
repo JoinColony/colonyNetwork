@@ -28,6 +28,7 @@ import "./ColonyStorage.sol";
 contract ColonyFunding is ColonyStorage, DSMath {
   event RewardPayoutCycleStarted(uint256 indexed id);
   event RewardPayoutCycleEnded(uint256 indexed id);
+  event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
 
   function getFeeInverse() public pure returns (uint256) {
     // TODO: refer to ColonyNetwork
@@ -49,6 +50,8 @@ contract ColonyFunding is ColonyStorage, DSMath {
 
   function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public self {
     setTaskPayout(_id, WORKER, _token, _amount);
+
+    emit TaskWorkerPayoutChanged(_id, _token, _amount);
   }
 
   // To get all payouts for a task iterate over roles.length
