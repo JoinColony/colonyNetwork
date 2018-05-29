@@ -120,6 +120,10 @@ contract("Colony Reputation Updates", () => {
         assert.equal(repLogEntryManager[1].toString(), rating.reputationChangeManager.toString());
         assert.equal(repLogEntryManager[2].toNumber(), 2);
         assert.equal(repLogEntryManager[3], metaColony.address);
+        // If the rating is less than 25, then we also subtract reputation from all child skills. In the case
+        // of the metaColony here, the task was created in the root domain of the metaColony, and a child of the
+        // root skill is the mining skill. So the number we expect here differs depending on whether it's a reputation
+        // gain or loss that we're logging.
         if (rating.manager >= 25) {
           assert.equal(repLogEntryManager[4].toNumber(), 2);
         } else {
@@ -137,6 +141,8 @@ contract("Colony Reputation Updates", () => {
         } else {
           assert.equal(repLogEntryWorker[4].toNumber(), 4);
         }
+        // This last entry in the log entry is nPreviousUpdates, which depends on whether the manager was given a reputation
+        // gain or loss.
         if (rating.manager >= 25) {
           assert.equal(repLogEntryWorker[5].toNumber(), 4);
         } else {
