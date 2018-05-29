@@ -1502,44 +1502,94 @@ contract("ColonyNetworkStaking", accounts => {
       const client = new ReputationMiningClient(MAIN_ACCOUNT, realProviderPort);
       await client.initialise(colonyNetwork.address);
       await client.addLogContentsToReputationTree();
+      // Check the client's tree has eight entries. In order these were added (and therefore in order of reputation UID),
+      // these are:
+      // 1. Colony-wide total reputation for metaColony's root skill
+      // 2. Colony-wide total reputation for mining skill
+      // 3. Miner's reputation for metaColony's root skill
+      // 4. Miner's reputation for mining skill
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // x. Manager reputation for metaColony's root skill (same as 3, by virtue of Manage and miner being MAIN_ACCOUNT)
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // 5. Evaluator reputation for metaColony's root skill
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // 6. Worker reputation for metacolony's root skill
+      // 7. Colony-wide total reputation for global skill task was in
+      // 8. Worker reputation for global skill task was in
+      //
 
-      // Check the client's tree has four entries.
-      // manager, worker (domain skill and task skill), evalutator + last log used for disputes
-      assert.equal(Object.keys(client.reputations).length, 5);
+      assert.equal(Object.keys(client.reputations).length, 8);
       // These should be:
-      // 1. Reputation reward for MAIN_ACCOUNT for submitting the previous reputaiton hash
+      // 1. Colony-wide total reputation for metacolony's root skill
+      let key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(0, 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000001e87f85809dc00000000000000000000000000000000000000000000000000000000000000000001"
+      );
+
+      // 2. Colony-wide total reputation for mining skill
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("3").toString(16, 64)}`;
+      key += `${new BN(0, 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000002"
+      );
+
+      // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000001e87f85809dc00000000000000000000000000000000000000000000000000000000000000000003"
+      );
+
+      // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputaiton hash
       //   (currently skill 0, needs to change to indicate a special mining skill)
-      let key1 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
-      key1 += `${new BN("0").toString(16, 64)}`; // SkillId as uint256
-      key1 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
+      key += `${new BN("3").toString(16, 64)}`; // SkillId as uint256
+      key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
       assert.equal(
-        client.reputations[key1],
-        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001"
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000004"
       );
-      // 2. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
-      let key2 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key2 += `${new BN("2").toString(16, 64)}`;
-      key2 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
+      // 5. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(OTHER_ACCOUNT.slice(2), 16).toString(16, 40)}`;
       assert.equal(
-        client.reputations[key2],
-        "0x00000000000000000000000000000000000000000000000010a741a4627800000000000000000000000000000000000000000000000000000000000000000002"
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005"
       );
-      // 3. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
-      let key3 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key3 += `${new BN("2").toString(16, 64)}`;
-      key3 += `${new BN(OTHER_ACCOUNT.slice(2), 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key3],
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003"
-      );
-      // 4. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
+      // 6. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
-      let key4 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key4 += `${new BN("2").toString(16, 64)}`;
-      key4 += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
       assert.equal(
-        client.reputations[key4],
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004"
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006"
+      );
+
+      // 7. Colony-wide total reputation for global skill task was in
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("1").toString(16, 64)}`;
+      key += `${new BN(0, 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007"
+      );
+
+      // 8. Worker reputation for global skill task was in
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("1").toString(16, 64)}`;
+      key += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008"
       );
     });
 
