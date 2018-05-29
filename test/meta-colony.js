@@ -398,7 +398,9 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT allow a non-manager to set domain on task", async () => {
-      await colony.addDomain(3);
+      const colonyRootDomain = await colony.getDomain(1);
+      await colony.addDomain(colonyRootDomain[0].toString());
+
       await makeTask({ colony });
       await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);
@@ -448,7 +450,7 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(4);
 
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colony.setTaskSkill(1, 6, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);
       assert.equal(task[9][0].toNumber(), 0);
     });

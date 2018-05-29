@@ -120,7 +120,11 @@ contract("Colony Reputation Updates", () => {
         assert.equal(repLogEntryManager[1].toString(), rating.reputationChangeManager.toString());
         assert.equal(repLogEntryManager[2].toNumber(), 2);
         assert.equal(repLogEntryManager[3], metaColony.address);
-        assert.equal(repLogEntryManager[4].toNumber(), 2);
+        if (rating.manager >= 25) {
+          assert.equal(repLogEntryManager[4].toNumber(), 2);
+        } else {
+          assert.equal(repLogEntryManager[4].toNumber(), 4);
+        }
         assert.equal(repLogEntryManager[5].toNumber(), 0);
 
         const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
@@ -128,8 +132,16 @@ contract("Colony Reputation Updates", () => {
         assert.equal(repLogEntryWorker[1].toString(), rating.reputationChangeWorker.toString());
         assert.equal(repLogEntryWorker[2].toNumber(), 2);
         assert.equal(repLogEntryWorker[3], metaColony.address);
-        assert.equal(repLogEntryWorker[4].toNumber(), 2);
-        assert.equal(repLogEntryWorker[5].toNumber(), 4);
+        if (rating.worker >= 25) {
+          assert.equal(repLogEntryWorker[4].toNumber(), 2);
+        } else {
+          assert.equal(repLogEntryWorker[4].toNumber(), 4);
+        }
+        if (rating.manager >= 25) {
+          assert.equal(repLogEntryWorker[5].toNumber(), 4);
+        } else {
+          assert.equal(repLogEntryWorker[5].toNumber(), 6);
+        }
       });
     });
 
