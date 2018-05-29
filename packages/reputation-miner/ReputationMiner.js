@@ -180,7 +180,7 @@ class ReputationMiner {
    */
   async addSingleLogEntry(i) {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const logEntry = await repCycle.getReputationUpdateLogEntry(i.toString()); // eslint-disable-line no-await-in-loop
 
     const nUpdates = new BN(logEntry[4].toString());
@@ -319,7 +319,7 @@ class ReputationMiner {
   async getLogEntryNumberForUpdateNumber(_i) {
     const updateNumber = new BN(_i.toString());
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
     let lower = new BN("0");
     let upper = new BN(nLogEntries.toString()).subn(1);
@@ -347,7 +347,7 @@ class ReputationMiner {
     const updateNumber = new BN(_i.toString());
     const logEntryNumber = await this.getLogEntryNumberForUpdateNumber(updateNumber);
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber.toString());
 
@@ -510,7 +510,7 @@ class ReputationMiner {
     const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
 
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, repCycleContractDef.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     let nLogEntries = await repCycle.getReputationUpdateLogLength();
     nLogEntries = new BN(nLogEntries.toString());
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1).toString());
