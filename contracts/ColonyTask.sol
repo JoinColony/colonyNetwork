@@ -30,6 +30,13 @@ contract ColonyTask is ColonyStorage, DSMath {
   uint256 constant RATING_REVEAL_TIMEOUT = 432000;
 
   event TaskAdded(uint256 indexed id);
+  event TaskBriefChanged(uint256 indexed id, bytes32 specificationHash);
+  event TaskDueDateChanged(uint256 indexed id, uint256 dueDate);
+  event TaskDomainChanged(uint256 indexed id, uint256 domainId);
+  event TaskSkillChanged(uint256 indexed id, uint256 skillId);
+  event TaskRoleUserChanged(uint256 indexed id, uint8 role, address user);
+  event TaskFinalized(uint256 indexed id);
+  event TaskCanceled(uint256 indexed id);
 
   modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
     Role storage role = tasks[_id].roles[_role];
@@ -257,6 +264,8 @@ contract ColonyTask is ColonyStorage, DSMath {
       rated: false,
       rating: 0
     });
+
+    emit TaskRoleUserChanged(_id, _role, _user);
   }
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
@@ -266,6 +275,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   {
     require(tasks[_id].roles[MANAGER].user == msg.sender);
     tasks[_id].domainId = _domainId;
+
+    emit TaskDomainChanged(_id, _domainId);
   }
 
   // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
@@ -279,6 +290,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     require(tasks[_id].roles[MANAGER].user == msg.sender);
 
     tasks[_id].skills[0] = _skillId;
+
+    emit TaskSkillChanged(_id, _skillId);
   }
 
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
@@ -287,6 +300,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   {
     tasks[_id].specificationHash = _specificationHash;
+
+    emit TaskBriefChanged(_id, _specificationHash);
   }
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
@@ -295,6 +310,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   {
     tasks[_id].dueDate = _dueDate;
+
+    emit TaskDueDateChanged(_id, _dueDate);
   }
 
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
@@ -337,6 +354,8 @@ contract ColonyTask is ColonyStorage, DSMath {
         }
       }
     }
+
+    emit TaskFinalized(_id);
   }
 
   function cancelTask(uint256 _id) public
@@ -345,6 +364,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   {
     tasks[_id].cancelled = true;
+
+    emit TaskCanceled(_id);
   }
 
   function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256, uint256[]) {
