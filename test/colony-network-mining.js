@@ -11,6 +11,7 @@ import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 import MaliciousReputationMinerWrongUID from "../packages/reputation-miner/test/MaliciousReputationMinerWrongUID";
 import MaliciousReputationMinerReuseUID from "../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
+import MaliciousReputationMinerWrongProofLogEntry from "../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -1351,6 +1352,73 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
+
+    [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 9, badClient2Argument: -1 }].forEach(
+      async args => {
+        it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
+          is too ${args.word}`, async () => {
+          await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+          await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+          const addr = await colonyNetwork.getReputationMiningCycle.call(true);
+          await forwardTime(3600, this);
+          const repCycle = ReputationMiningCycle.at(addr);
+
+          badClient = new MaliciousReputationMinerExtraRep(
+            { loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+            args.badClient1Argument,
+            10
+          );
+
+          badClient2 = new MaliciousReputationMinerWrongProofLogEntry(
+            { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+            args.badClient2Argument
+          );
+
+          await goodClient.initialise(colonyNetwork.address);
+          await goodClient.addLogContentsToReputationTree();
+          await badClient.initialise(colonyNetwork.address);
+          await badClient.addLogContentsToReputationTree();
+          await badClient2.initialise(colonyNetwork.address);
+          await badClient2.addLogContentsToReputationTree();
+
+          let righthash = await badClient.getRootHash();
+          let wronghash = await badClient2.getRootHash();
+          righthash = await badClient.getRootHash();
+          wronghash = await badClient2.getRootHash();
+          assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+          await forwardTime(3600, this);
+
+          await badClient.submitRootHash();
+          await badClient2.submitRootHash();
+
+          await badClient2.submitJustificationRootHash();
+          await badClient.submitJustificationRootHash();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+          await checkErrorRevert(badClient2.respondToChallenge());
+
+          // Cleanup
+          await goodClient.respondToChallenge();
+          await forwardTime(600, this);
+          await repCycle.invalidateHash(0, 0);
+          await repCycle.confirmNewHash(1);
+        });
+      }
+    );
   });
 
   describe("Intended ('happy path') behaviours", () => {
