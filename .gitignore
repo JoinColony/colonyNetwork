@@ -10,6 +10,6 @@ parityPassword
 coverage
 coverage.json
 lib/dappsys
-test-accounts.json
+ganache-accounts.json
 .vscode/
 yarn-error.log
