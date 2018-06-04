@@ -1,4 +1,4 @@
-<img align="center" src="./img/colonyNetwork_combomark.svg" /> 
+<img align="center" src="./img/colonyNetwork_combomark.svg" />
 
 # The Colony Network
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/JoinColony/colonyNetwork)
@@ -16,7 +16,7 @@ git submodule update --init
 ```
 
 ## Contracts
-The contract upgradability is using the EtherRouter pattern, see "Token Upgradability" section in https://medium.com/p/3da67d833087 for implementation details.
+The contract upgradability is using the EtherRouter pattern, see [Upgrades to the Colony Network](https://joincolony.github.io/colonynetwork/docs-upgrades-to-the-colony-network/) in the documentation for implementation details.
 
 The `math`, `erc20`, `auth`, `roles` and a significant part of the `token` contract have been reused from the [Dappsys library](https://github.com/dapphub/dappsys-monolithic).
 
