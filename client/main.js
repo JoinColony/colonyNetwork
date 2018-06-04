@@ -8,10 +8,6 @@ const ReputationMiningCycleJSON = require("../build/contracts/IReputationMiningC
 const ColonyNetworkJSON = require("../build/contracts/IColonyNetwork.json"); // eslint-disable-line import/no-unresolved
 const PatriciaTreeJSON = require("../build/contracts/PatriciaTree.json"); // eslint-disable-line import/no-unresolved
 
-const jsonfile = require("jsonfile");
-
-const file = "./reputations.json";
-
 const ethers = require("ethers");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
@@ -83,12 +79,6 @@ class ReputationMiningClient {
 
     this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
     this.realWallet = new RPCSigner(minerAddress, this.realProvider);
-
-    try {
-      this.reputations = jsonfile.readFileSync(file);
-    } catch (err) {
-      this.reputations = {};
-    }
   }
 
   /**
@@ -101,6 +91,7 @@ class ReputationMiningClient {
     const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
     this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
     this.nReputations = 0;
+    this.reputations = {};
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, ColonyNetworkJSON.abi, this.realWallet);
   }
 
@@ -121,10 +112,12 @@ class ReputationMiningClient {
 
     let nLogEntries = await repCycle.getReputationUpdateLogLength();
     nLogEntries = new BN(nLogEntries.toString());
+    if (nLogEntries.eqn(0)) {
+      return;
+    }
     for (let i = new BN("0"); i.lt(nLogEntries); i.iadd(new BN("1"))) {
       await this.addSingleLogEntry(i); // eslint-disable-line no-await-in-loop
     }
-
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1).toString());
     const nUpdates = new BN(lastLogEntry[4].add(lastLogEntry[5]).toString());
     const prevKey = await this.getKeyForUpdateNumber(nUpdates.subn(1));
@@ -180,7 +173,6 @@ class ReputationMiningClient {
     interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
     jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     const updateNumber = new BN(logEntry[5].add(j).toString());
-    const score = this.getScore(updateNumber, logEntry);
 
     if (updateNumber.toString() === "0") {
       // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
@@ -209,6 +201,7 @@ class ReputationMiningClient {
     );
 
     const [skillId, skillAddress] = await this.getSkillIdAndAddressForUpdateInLogEntry(j, logEntry); // eslint-disable-line no-await-in-loop
+    const score = await this.getScore(updateNumber, logEntry, skillId);
 
     // TODO: Include updates for all child skills if x.amount is negative
     // We update colonywide sums first (children, parents, skill)
@@ -236,6 +229,34 @@ class ReputationMiningClient {
       value = this.getValueAsBytes(0, 0);
     }
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, nNodes: this.nReputations };
+  }
+
+  static async getKey(_colonyAddress, _skillId, _userAddress) {
+    let colonyAddress = _colonyAddress;
+    let userAddress = _userAddress;
+
+    let isAddress = web3Utils.isAddress(colonyAddress);
+    // TODO should we return errors here?
+    if (!isAddress) {
+      return false;
+    }
+    isAddress = web3Utils.isAddress(userAddress);
+    if (!isAddress) {
+      return false;
+    }
+    if (colonyAddress.substring(0, 2) === "0x") {
+      colonyAddress = colonyAddress.slice(2);
+    }
+    if (userAddress.substring(0, 2) === "0x") {
+      userAddress = userAddress.slice(2);
+    }
+    colonyAddress = colonyAddress.toLowerCase();
+    userAddress = userAddress.toLowerCase();
+    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(_skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
+      16,
+      40
+    )}`;
+    return key;
   }
 
   /**
@@ -330,7 +351,6 @@ class ReputationMiningClient {
       // Following the destructuring rule, this line would be [skillAddress] = logEntry, which I think is very misleading
     }
     const nUpdates = new BN(logEntry[4].toString());
-    const score = this.getScore(updateNumber, logEntry);
 
     let [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
     nParents = new BN(nParents.toString());
@@ -338,7 +358,7 @@ class ReputationMiningClient {
     // NB This is not necessarily the same as nChildren. However, this is the number of child updates
     // that this entry in the log was expecting at the time it was created.
     let nChildUpdates;
-    if (score.gte(new BN("0"))) {
+    if (logEntry[1].gte(new BN("0"))) {
       nChildUpdates = new BN("0");
     } else {
       nChildUpdates = nUpdates
@@ -617,7 +637,7 @@ class ReputationMiningClient {
    * @param  {string}  _colonyAddress  Hex address of the colony in which the reputation is being updated
    * @param  {Number or BigNumber or String}  skillId        The id of the skill being updated
    * @param  {string}  _userAddress    Hex address of the user who is having their reputation being updated
-   * @param  {Number of BigNumber or String}  reputationScore The new reputation value
+   * @param  {Number of BigNumber or String}  reputationScore The amount the reputation changes by
    * @param  {Number or BigNumber}  index           The index of the log entry being considered
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
@@ -669,4 +689,4 @@ class ReputationMiningClient {
   }
 }
 
-export default ReputationMiningClient;
+module.exports = ReputationMiningClient;

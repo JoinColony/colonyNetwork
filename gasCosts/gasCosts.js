@@ -80,8 +80,6 @@ contract("All", accounts => {
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
-
-    await colonyNetwork.startNextCycle();
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.

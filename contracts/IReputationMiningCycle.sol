@@ -150,4 +150,6 @@ contract IReputationMiningCycle {
   /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public;
+
+  function reputationMiningWindowOpenTimestamp() public view returns (uint);
 }
