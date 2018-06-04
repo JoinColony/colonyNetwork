@@ -212,7 +212,6 @@ contract("Colony", addresses => {
       const inactiveReputationMiningCycle = ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
-
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(updateLog[0], INITIAL_ADDRESSES[0]);
       assert.equal(updateLog[1].toString(), INITIAL_REPUTATIONS[0]);

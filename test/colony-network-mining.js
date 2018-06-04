@@ -34,7 +34,6 @@ contract("ColonyNetworkStaking", accounts => {
     clny = await Token.new("Colony Network Token", "CLNY", 18);
     await metaColony.setToken(clny.address);
     await clny.setOwner(metaColony.address);
-    await colonyNetwork.startNextCycle();
   });
 
   beforeEach(async () => {
@@ -286,11 +285,9 @@ contract("ColonyNetworkStaking", accounts => {
     it("should allow a new reputation hash to be set if all but one submitted have been eliminated", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
-
       const addr = await colonyNetwork.getReputationMiningCycle.call(true);
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
-
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
 

@@ -8,10 +8,6 @@ const ReputationMiningCycleJSON = require("../build/contracts/IReputationMiningC
 const ColonyNetworkJSON = require("../build/contracts/IColonyNetwork.json"); // eslint-disable-line import/no-unresolved
 const PatriciaTreeJSON = require("../build/contracts/PatriciaTree.json"); // eslint-disable-line import/no-unresolved
 
-const jsonfile = require("jsonfile");
-
-const file = "./reputations.json";
-
 const ethers = require("ethers");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
@@ -83,12 +79,6 @@ class ReputationMiningClient {
 
     this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
     this.realWallet = new RPCSigner(minerAddress, this.realProvider);
-
-    try {
-      this.reputations = jsonfile.readFileSync(file);
-    } catch (err) {
-      this.reputations = {};
-    }
   }
 
   /**
@@ -101,6 +91,7 @@ class ReputationMiningClient {
     const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
     this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
     this.nReputations = 0;
+    this.reputations = {};
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, ColonyNetworkJSON.abi, this.realWallet);
   }
 
@@ -211,6 +202,34 @@ class ReputationMiningClient {
       value = this.getValueAsBytes(0, 0);
     }
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, nNodes: this.nReputations };
+  }
+
+  static async getKey(_colonyAddress, _skillId, _userAddress) {
+    let colonyAddress = _colonyAddress;
+    let userAddress = _userAddress;
+
+    let isAddress = web3Utils.isAddress(colonyAddress);
+    // TODO should we return errors here?
+    if (!isAddress) {
+      return false;
+    }
+    isAddress = web3Utils.isAddress(userAddress);
+    if (!isAddress) {
+      return false;
+    }
+    if (colonyAddress.substring(0, 2) === "0x") {
+      colonyAddress = colonyAddress.slice(2);
+    }
+    if (userAddress.substring(0, 2) === "0x") {
+      userAddress = userAddress.slice(2);
+    }
+    colonyAddress = colonyAddress.toLowerCase();
+    userAddress = userAddress.toLowerCase();
+    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(_skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
+      16,
+      40
+    )}`;
+    return key;
   }
 
   /**
@@ -483,7 +502,7 @@ class ReputationMiningClient {
    * @param  {string}  _colonyAddress  Hex address of the colony in which the reputation is being updated
    * @param  {Number or BigNumber or String}  skillId        The id of the skill being updated
    * @param  {string}  _userAddress    Hex address of the user who is having their reputation being updated
-   * @param  {Number of BigNumber or String}  reputationScore The new reputation value
+   * @param  {Number of BigNumber or String}  reputationScore The amount the reputation changes by
    * @param  {Number or BigNumber}  index           The index of the log entry being considered
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
@@ -535,4 +554,4 @@ class ReputationMiningClient {
   }
 }
 
-export default ReputationMiningClient;
+module.exports = ReputationMiningClient;
