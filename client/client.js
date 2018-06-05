@@ -56,9 +56,10 @@ class UsefulReputationMiningClient extends ReputationMiningClient {
 
     try {
       this.reputations = jsonfile.readFileSync(file);
+      console.log("💾 Restored from JSON file");
     } catch (err) {
-      console.log(err);
       this.reputations = {};
+      console.log("No existing reputations found - starting from scratch");
     }
     this.nReputations = Object.keys(this.reputations).length;
 
@@ -84,7 +85,6 @@ class UsefulReputationMiningClient extends ReputationMiningClient {
         const key = Object.keys(this.reputations)[i];
         await this.reputationTree.insert(key, this.reputations[key], { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
       }
-      console.log("💾 Restored from JSON file");
     }
 
     console.log("🏁 Initialised");
