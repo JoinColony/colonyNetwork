@@ -88,8 +88,7 @@ class ReputationMinerClient extends ReputationMiner {
     }
 
     console.log("🏁 Initialised");
-    const that = this;
-    setTimeout(() => that.checkSubmissionWindow(), 0);
+    setTimeout(() => this.checkSubmissionWindow(), 0);
   }
 
   async addLogContentsToReputationTree() {
@@ -122,14 +121,12 @@ class ReputationMinerClient extends ReputationMiner {
       // Confirm hash
       const tx = await repCycle.confirmNewHash(0, { gasLimit: 3500000 });
       console.log("✅ New reputation hash confirmed, via TXID", tx);
-      const that = this;
-      // setTimeout(() => that.checkSubmissionWindow(), 3600000);
-      setTimeout(() => that.checkSubmissionWindow(), 10000);
+      // setTimeout(() => this.checkSubmissionWindow(), 3600000);
+      setTimeout(() => this.checkSubmissionWindow(), 10000);
     } else {
       // Set a timeout for 3601 - (now - windowOpened)
-      const that = this;
-      setTimeout(() => that.checkSubmissionWindow(), 10000);
-      // setTimeout(() => that.checkSubmissionWindow(), 3601000 - (now - windowOpened) * 1000);
+      setTimeout(() => this.checkSubmissionWindow(), 10000);
+      // setTimeout(() => this.checkSubmissionWindow(), 3601000 - (now - windowOpened) * 1000);
     }
   }
 }

@@ -1,4 +1,5 @@
 /* globals artifacts */
+
 import { forwardTime, checkErrorRevert, web3GetTransactionReceipt } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 
