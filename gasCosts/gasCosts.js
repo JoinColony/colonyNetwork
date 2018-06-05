@@ -80,8 +80,6 @@ contract("All", accounts => {
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
-
-    await colonyNetwork.startNextCycle();
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
@@ -94,9 +92,9 @@ contract("All", accounts => {
 
     it("when working with the Meta Colony", async () => {
       await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(5);
       await metaColony.addGlobalSkill(6);
       await metaColony.addGlobalSkill(7);
+      await metaColony.addGlobalSkill(8);
     });
 
     it("when working with a Colony", async () => {
@@ -218,12 +216,18 @@ contract("All", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
       // We now know where they disagree
       await goodClient.respondToChallenge();
       // badClient will fail this if we try
       // await badClient.respondToChallenge();
       await oneHourLater();
       await repCycle.invalidateHash(0, 1);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient2.respondToBinarySearchForChallenge();
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient2.respondToBinarySearchForChallenge();

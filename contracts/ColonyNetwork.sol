@@ -97,7 +97,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNNodes;
   }
 
-  function createMetaColony(address _tokenAddress) public 
+  function createMetaColony(address _tokenAddress) public
   auth
   {
     require(metaColony == 0);
@@ -107,11 +107,20 @@ contract ColonyNetwork is ColonyNetworkStorage {
     rootGlobalSkill.globalSkill = true;
     skills[skillCount] = rootGlobalSkill;
     rootGlobalSkillId = skillCount;
-    // TODO: add the special 'mining' skill, which is local to the meta Colony.
-    
+
     metaColony = createColony(_tokenAddress);
+
+    // Add the special mining skill
+    skillCount += 1;
+    Skill memory miningSkill;
+    miningSkill.nParents = 1;
+    skills[skillCount] = miningSkill;
+    skills[skillCount].parents.push(skillCount-1);
+    // Add it as a child of the parent
+    skills[skillCount-1].nChildren += 1;
+    skills[skillCount-1].children.push(skillCount);
   }
-  
+
   function createColony(address _tokenAddress) public returns (address) {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];

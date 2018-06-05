@@ -156,7 +156,15 @@ contract("Colony Reputation Updates", () => {
         assert.equal(repLogEntryManager[1].toString(), rating.reputationChangeManager.toString());
         assert.equal(repLogEntryManager[2].toNumber(), 2);
         assert.equal(repLogEntryManager[3], metaColony.address);
-        assert.equal(repLogEntryManager[4].toNumber(), 2);
+        // If the rating is less than 25, then we also subtract reputation from all child skills. In the case
+        // of the metaColony here, the task was created in the root domain of the metaColony, and a child of the
+        // root skill is the mining skill. So the number we expect here differs depending on whether it's a reputation
+        // gain or loss that we're logging.
+        if (rating.manager >= 25) {
+          assert.equal(repLogEntryManager[4].toNumber(), 2);
+        } else {
+          assert.equal(repLogEntryManager[4].toNumber(), 4);
+        }
         assert.equal(repLogEntryManager[5].toNumber(), 0);
 
         const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
@@ -164,8 +172,18 @@ contract("Colony Reputation Updates", () => {
         assert.equal(repLogEntryWorker[1].toString(), rating.reputationChangeWorker.toString());
         assert.equal(repLogEntryWorker[2].toNumber(), 2);
         assert.equal(repLogEntryWorker[3], metaColony.address);
-        assert.equal(repLogEntryWorker[4].toNumber(), 2);
-        assert.equal(repLogEntryWorker[5].toNumber(), 4);
+        if (rating.worker >= 25) {
+          assert.equal(repLogEntryWorker[4].toNumber(), 2);
+        } else {
+          assert.equal(repLogEntryWorker[4].toNumber(), 4);
+        }
+        // This last entry in the log entry is nPreviousUpdates, which depends on whether the manager was given a reputation
+        // gain or loss.
+        if (rating.manager >= 25) {
+          assert.equal(repLogEntryWorker[5].toNumber(), 4);
+        } else {
+          assert.equal(repLogEntryWorker[5].toNumber(), 6);
+        }
       });
     });
 
@@ -194,13 +212,13 @@ contract("Colony Reputation Updates", () => {
 
     it("should calculate nUpdates correctly when making a log", async () => {
       await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(3);
       await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill(6);
       const taskId1 = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 4
+        skill: 5
       });
       await metaColony.finalizeTask(taskId1);
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
@@ -211,7 +229,7 @@ contract("Colony Reputation Updates", () => {
       const taskId2 = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 5
+        skill: 6
       });
       await metaColony.finalizeTask(taskId2);
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(7);

@@ -5,6 +5,7 @@ import ReputationMiningClient from "../client/main";
 import MaliciousReputationMiningClient from "../client/test/malicious";
 import MaliciousReputationMiningClient2 from "../client/test/malicious2";
 import MaliciousReputationMiningClient3 from "../client/test/malicious3";
+import MaliciousReputationMiningClient4 from "../client/test/malicious4";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -34,7 +35,6 @@ contract("ColonyNetworkStaking", accounts => {
     clny = await Token.new("Colony Network Token", "CLNY", 18);
     await metaColony.setToken(clny.address);
     await clny.setOwner(metaColony.address);
-    await colonyNetwork.startNextCycle();
   });
 
   beforeEach(async () => {
@@ -286,11 +286,9 @@ contract("ColonyNetworkStaking", accounts => {
     it("should allow a new reputation hash to be set if all but one submitted have been eliminated", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
-
       const addr = await colonyNetwork.getReputationMiningCycle.call(true);
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
-
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
 
@@ -594,7 +592,7 @@ contract("ColonyNetworkStaking", accounts => {
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
-      assert.equal(repLogEntryMiner[2].toString(), "0");
+      assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
@@ -602,7 +600,7 @@ contract("ColonyNetworkStaking", accounts => {
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(1);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
-      assert.equal(repLogEntryMiner[2].toString(), "0");
+      assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
@@ -709,7 +707,7 @@ contract("ColonyNetworkStaking", accounts => {
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
-      assert.equal(repLogEntryMiner[2].toString(), "0");
+      assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "0");
@@ -717,7 +715,7 @@ contract("ColonyNetworkStaking", accounts => {
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry.call(1);
       assert.equal(repLogEntryMiner[0], OTHER_ACCOUNT);
       assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
-      assert.equal(repLogEntryMiner[2].toString(), "0");
+      assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
       assert.equal(repLogEntryMiner[5].toString(), "4");
@@ -809,6 +807,49 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
+    // correctly. Unsure if I should force them to be run every time.
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(async badIndex => {
+      it.skip(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
+        await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+        await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+        let addr = await colonyNetwork.getReputationMiningCycle.call();
+        let repCycle = ReputationMiningCycle.at(addr);
+        await forwardTime(3600, this);
+        await repCycle.submitRootHash("0x12345678", 10, 10);
+        await repCycle.confirmNewHash(0);
+
+        await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+        addr = await colonyNetwork.getReputationMiningCycle.call();
+        repCycle = ReputationMiningCycle.at(addr);
+        await forwardTime(3600, this);
+        await repCycle.submitRootHash("0x0", 0, 10);
+        await repCycle.confirmNewHash(0);
+        addr = await colonyNetwork.getReputationMiningCycle.call();
+        repCycle = ReputationMiningCycle.at(addr);
+
+        await goodClient.addLogContentsToReputationTree();
+
+        badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, realProviderPort, badIndex, "0xfffffffff");
+        await badClient.initialise(colonyNetwork.address);
+        await badClient.addLogContentsToReputationTree();
+
+        let righthash = await goodClient.getRootHash();
+        let wronghash = await badClient.getRootHash();
+        righthash = await goodClient.getRootHash();
+        wronghash = await badClient.getRootHash();
+        assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+        await forwardTime(3600, this);
+        await goodClient.submitRootHash();
+        await badClient.submitRootHash();
+
+        await forwardTime(3600, this);
+        await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+        await repCycle.confirmNewHash(1);
+      });
+    });
+
     it("In the event of a disagreement, allows a binary search between opponents to take place to find their first disagreement", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
@@ -838,7 +879,7 @@ contract("ColonyNetworkStaking", accounts => {
 
       await goodClient.addLogContentsToReputationTree();
 
-      badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, realProviderPort, 5, "0xfffffffff");
+      badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, realProviderPort, 12, "0xfffffffff");
       await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
@@ -869,55 +910,64 @@ contract("ColonyNetworkStaking", accounts => {
       let badSubmission = await repCycle.disputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 1); // Challenge steps completed
       assert.equal(goodSubmission[8].toNumber(), 0); // Lower bound for binary search
-      assert.equal(goodSubmission[9].toNumber(), 14); // Upper bound for binary search
+      assert.equal(goodSubmission[9].toNumber(), 29); // Upper bound for binary search
       assert.equal(badSubmission[3].toNumber(), 1);
       assert.equal(badSubmission[8].toNumber(), 0);
-      assert.equal(badSubmission[9].toNumber(), 14);
+      assert.equal(badSubmission[9].toNumber(), 29);
       await goodClient.respondToBinarySearchForChallenge();
 
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 2);
       assert.equal(goodSubmission[8].toNumber(), 0);
-      assert.equal(goodSubmission[9].toNumber(), 14);
+      assert.equal(goodSubmission[9].toNumber(), 29);
       assert.equal(badSubmission[3].toNumber(), 1);
       assert.equal(badSubmission[8].toNumber(), 0);
-      assert.equal(badSubmission[9].toNumber(), 14);
+      assert.equal(badSubmission[9].toNumber(), 29);
 
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
       assert.equal(goodSubmission[8].toNumber(), 0);
-      assert.equal(goodSubmission[9].toNumber(), 7);
+      assert.equal(goodSubmission[9].toNumber(), 14);
       assert.equal(badSubmission[8].toNumber(), 0);
-      assert.equal(badSubmission[9].toNumber(), 7);
+      assert.equal(badSubmission[9].toNumber(), 14);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmission[8].toNumber(), 4);
-      assert.equal(goodSubmission[9].toNumber(), 7);
-      assert.equal(badSubmission[8].toNumber(), 4);
-      assert.equal(badSubmission[9].toNumber(), 7);
+      assert.equal(goodSubmission[8].toNumber(), 8);
+      assert.equal(goodSubmission[9].toNumber(), 14);
+      assert.equal(badSubmission[8].toNumber(), 8);
+      assert.equal(badSubmission[9].toNumber(), 14);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmission[8].toNumber(), 6);
-      assert.equal(goodSubmission[9].toNumber(), 7);
-      assert.equal(badSubmission[8].toNumber(), 6);
-      assert.equal(badSubmission[9].toNumber(), 7);
+      assert.equal(goodSubmission[8].toNumber(), 12);
+      assert.equal(goodSubmission[9].toNumber(), 14);
+      assert.equal(badSubmission[8].toNumber(), 12);
+      assert.equal(badSubmission[9].toNumber(), 14);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.disputeRounds(0, 0);
       badSubmission = await repCycle.disputeRounds(0, 1);
-      assert.equal(goodSubmission[8].toNumber(), 6);
-      assert.equal(goodSubmission[9].toNumber(), 6);
-      assert.equal(badSubmission[8].toNumber(), 6);
-      assert.equal(badSubmission[9].toNumber(), 6);
+      assert.equal(goodSubmission[8].toNumber(), 12);
+      assert.equal(goodSubmission[9].toNumber(), 13);
+      assert.equal(badSubmission[8].toNumber(), 12);
+      assert.equal(badSubmission[9].toNumber(), 13);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmission = await repCycle.disputeRounds(0, 0);
+      badSubmission = await repCycle.disputeRounds(0, 1);
+      assert.equal(goodSubmission[8].toNumber(), 13);
+      assert.equal(goodSubmission[9].toNumber(), 13);
+      assert.equal(badSubmission[8].toNumber(), 13);
+      assert.equal(badSubmission[9].toNumber(), 13);
 
       // TODO: Split off in to  another test here, but can't be bothered to refactor right now.
       await goodClient.respondToChallenge();
@@ -964,7 +1014,7 @@ contract("ColonyNetworkStaking", accounts => {
 
       await goodClient.addLogContentsToReputationTree();
 
-      badClient = new MaliciousReputationMiningClient2(OTHER_ACCOUNT, realProviderPort, 5, "0xfffffffff");
+      badClient = new MaliciousReputationMiningClient2(OTHER_ACCOUNT, realProviderPort, 12, "0xfffffffff");
       await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
@@ -980,6 +1030,9 @@ contract("ColonyNetworkStaking", accounts => {
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
@@ -1066,6 +1119,9 @@ contract("ColonyNetworkStaking", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
       await goodClient.respondToChallenge();
       await badClient.respondToChallenge();
 
@@ -1124,6 +1180,7 @@ contract("ColonyNetworkStaking", accounts => {
         await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
         await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
         await clients[i].submitJustificationRootHash(); // eslint-disable-line no-await-in-loop
+        console.log(`Client ${i} submitted JRH`);
       }
 
       await forwardTime(3600, this);
@@ -1184,6 +1241,8 @@ contract("ColonyNetworkStaking", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
 
       // Get the log entry we're arguing over.
       const submission = await repCycle.disputeRounds(0, 0);
@@ -1238,6 +1297,8 @@ contract("ColonyNetworkStaking", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
 
       await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], 0x0, [], 0x0, [], 0x0, [], 0, 0, []));
 
@@ -1250,6 +1311,65 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
+
+    [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 9, badClient2Argument: -1 }].forEach(
+      async args => {
+        it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
+          is too ${args.word}`, async () => {
+          await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+          await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+          const addr = await colonyNetwork.getReputationMiningCycle.call(true);
+          await forwardTime(3600, this);
+          const repCycle = ReputationMiningCycle.at(addr);
+
+          badClient = new MaliciousReputationMiningClient(MAIN_ACCOUNT, realProviderPort, args.badClient1Argument, 10);
+          badClient2 = new MaliciousReputationMiningClient4(OTHER_ACCOUNT, realProviderPort, args.badClient2Argument);
+
+          await goodClient.initialise(colonyNetwork.address);
+          await goodClient.addLogContentsToReputationTree();
+          await badClient.initialise(colonyNetwork.address);
+          await badClient.addLogContentsToReputationTree();
+          await badClient2.initialise(colonyNetwork.address);
+          await badClient2.addLogContentsToReputationTree();
+
+          let righthash = await badClient.getRootHash();
+          let wronghash = await badClient2.getRootHash();
+          righthash = await badClient.getRootHash();
+          wronghash = await badClient2.getRootHash();
+          assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+          await forwardTime(3600, this);
+
+          await badClient.submitRootHash();
+          await badClient2.submitRootHash();
+
+          await badClient2.submitJustificationRootHash();
+          await badClient.submitJustificationRootHash();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+
+          await badClient2.respondToBinarySearchForChallenge();
+          await badClient.respondToBinarySearchForChallenge();
+          await checkErrorRevert(badClient2.respondToChallenge());
+
+          // Cleanup
+          await goodClient.respondToChallenge();
+          await forwardTime(600, this);
+          await repCycle.invalidateHash(0, 0);
+          await repCycle.confirmNewHash(1);
+        });
+      }
+    );
   });
 
   describe("Intended ('happy path') behaviours", () => {
@@ -1371,6 +1491,8 @@ contract("ColonyNetworkStaking", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
 
       await forwardTime(600, this);
       await goodClient.respondToChallenge();
@@ -1437,44 +1559,94 @@ contract("ColonyNetworkStaking", accounts => {
       const client = new ReputationMiningClient(MAIN_ACCOUNT, realProviderPort);
       await client.initialise(colonyNetwork.address);
       await client.addLogContentsToReputationTree();
+      // Check the client's tree has eight entries. In order these were added (and therefore in order of reputation UID),
+      // these are:
+      // 1. Colony-wide total reputation for metaColony's root skill
+      // 2. Colony-wide total reputation for mining skill
+      // 3. Miner's reputation for metaColony's root skill
+      // 4. Miner's reputation for mining skill
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // x. Manager reputation for metaColony's root skill (same as 3, by virtue of Manage and miner being MAIN_ACCOUNT)
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // 5. Evaluator reputation for metaColony's root skill
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // 6. Worker reputation for metacolony's root skill
+      // 7. Colony-wide total reputation for global skill task was in
+      // 8. Worker reputation for global skill task was in
+      //
 
-      // Check the client's tree has four entries.
-      // manager, worker (domain skill and task skill), evalutator + last log used for disputes
-      assert.equal(Object.keys(client.reputations).length, 5);
+      assert.equal(Object.keys(client.reputations).length, 8);
       // These should be:
-      // 1. Reputation reward for MAIN_ACCOUNT for submitting the previous reputaiton hash
+      // 1. Colony-wide total reputation for metacolony's root skill
+      let key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(0, 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000001e87f85809dc00000000000000000000000000000000000000000000000000000000000000000001"
+      );
+
+      // 2. Colony-wide total reputation for mining skill
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("3").toString(16, 64)}`;
+      key += `${new BN(0, 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000002"
+      );
+
+      // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000001e87f85809dc00000000000000000000000000000000000000000000000000000000000000000003"
+      );
+
+      // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputaiton hash
       //   (currently skill 0, needs to change to indicate a special mining skill)
-      let key1 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
-      key1 += `${new BN("0").toString(16, 64)}`; // SkillId as uint256
-      key1 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
+      key += `${new BN("3").toString(16, 64)}`; // SkillId as uint256
+      key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
       assert.equal(
-        client.reputations[key1],
-        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001"
+        client.reputations[key],
+        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000004"
       );
-      // 2. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
-      let key2 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key2 += `${new BN("2").toString(16, 64)}`;
-      key2 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
+      // 5. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(OTHER_ACCOUNT.slice(2), 16).toString(16, 40)}`;
       assert.equal(
-        client.reputations[key2],
-        "0x00000000000000000000000000000000000000000000000010a741a4627800000000000000000000000000000000000000000000000000000000000000000002"
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000005"
       );
-      // 3. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
-      let key3 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key3 += `${new BN("2").toString(16, 64)}`;
-      key3 += `${new BN(OTHER_ACCOUNT.slice(2), 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key3],
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003"
-      );
-      // 4. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
+      // 6. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
-      let key4 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key4 += `${new BN("2").toString(16, 64)}`;
-      key4 += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("2").toString(16, 64)}`;
+      key += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
       assert.equal(
-        client.reputations[key4],
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004"
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006"
+      );
+
+      // 7. Colony-wide total reputation for global skill task was in
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("1").toString(16, 64)}`;
+      key += `${new BN(0, 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000007"
+      );
+
+      // 8. Worker reputation for global skill task was in
+      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
+      key += `${new BN("1").toString(16, 64)}`;
+      key += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
+      assert.equal(
+        client.reputations[key],
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008"
       );
     });
 

@@ -127,7 +127,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
 
     IColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
 
-    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward); // This gives them reputation in the next update cycle.
+    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward, rootGlobalSkillId + 2); // This gives them reputation in the next update cycle.
 
     for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.
