@@ -184,7 +184,7 @@ export async function createSignatures(colony, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce.call();
-  const accountsJson = JSON.parse(fs.readFileSync("./test-accounts.json", "utf8"));
+  const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
     2
   )}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
@@ -211,7 +211,7 @@ export async function createSignaturesTrezor(colony, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce.call();
-  const accountsJson = JSON.parse(fs.readFileSync("./test-accounts.json", "utf8"));
+  const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
     2
   )}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
