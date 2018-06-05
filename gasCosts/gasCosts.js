@@ -23,8 +23,8 @@ import {
 import { getTokenArgs, currentBlockTime, createSignatures, forwardTime, bnSqrt } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/test-data-generator";
-import ReputationMiningClient from "../client/main";
-import MaliciousReputationMiningClient from "../client/test/malicious";
+import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
+import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
 const BN = require("bn.js");
 
@@ -182,9 +182,9 @@ contract("All", accounts => {
       repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = ReputationMiningCycle.at(repCycleAddr);
 
-      const goodClient = new ReputationMiningClient(STAKER1, realProviderPort);
-      const badClient = new MaliciousReputationMiningClient(STAKER2, realProviderPort, 1, 0xfffffffff);
-      const badClient2 = new MaliciousReputationMiningClient(STAKER3, realProviderPort, 2, 0xfffffffff);
+      const goodClient = new ReputationMiner(STAKER1, realProviderPort);
+      const badClient = new MaliciousReputationMinerExtraRep(STAKER2, realProviderPort, 1, 0xfffffffff);
+      const badClient2 = new MaliciousReputationMinerExtraRep(STAKER3, realProviderPort, 2, 0xfffffffff);
       await goodClient.initialise(colonyNetwork.address);
       await badClient.initialise(colonyNetwork.address);
       await badClient2.initialise(colonyNetwork.address);

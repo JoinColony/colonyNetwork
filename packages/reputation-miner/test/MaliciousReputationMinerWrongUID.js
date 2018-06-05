@@ -1,7 +1,7 @@
 import BN from "bn.js";
-import ReputationMiningClient from "./../main";
+import ReputationMiner from "../ReputationMiner";
 
-class MaliciousReputationMiningClient2 extends ReputationMiningClient {
+class MaliciousReputationMinerWrongUID extends ReputationMiner {
   // This client uses the wrong UID for a reputation (even an existing one)
   constructor(minerAddress, realProviderPort, entryToFalsify, amountToFalsify) {
     super(minerAddress, realProviderPort);
@@ -20,4 +20,4 @@ class MaliciousReputationMiningClient2 extends ReputationMiningClient {
   }
 }
 
-export default MaliciousReputationMiningClient2;
+export default MaliciousReputationMinerWrongUID;

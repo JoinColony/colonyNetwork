@@ -2,7 +2,7 @@ const { argv } = require("yargs");
 
 // We disable the import/no-unresolved rule for these lines because when ESLint is run on Circle, the contracts haven't
 // been compiled yet and so would fail here.
-const ReputationMiningCycleJSON = require("../build/contracts/IReputationMiningCycle.json"); // eslint-disable-line import/no-unresolved
+const ReputationMiningCycleJSON = require("../../build/contracts/IReputationMiningCycle.json"); // eslint-disable-line import/no-unresolved
 
 const jsonfile = require("jsonfile");
 
@@ -12,13 +12,13 @@ const ethers = require("ethers");
 
 const express = require("express");
 
-const ReputationMiningClient = require("./main");
+const ReputationMiner = require("./ReputationMiner");
 
 let client;
 
-class UsefulReputationMiningClient extends ReputationMiningClient {
+class ReputationMinerClient extends ReputationMiner {
   /**
-   * Constructor for ReputationMiningClient
+   * Constructor for ReputationMiner
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
@@ -29,7 +29,7 @@ class UsefulReputationMiningClient extends ReputationMiningClient {
 
     this._app = express();
     this._app.get("/:colonyAddress/:skillId/:userAddress", async (req, res) => {
-      const key = await ReputationMiningClient.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+      const key = await ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
       if (key) {
         const proof = await this.getReputationProofObject(key);
         delete proof.nNodes;
@@ -139,5 +139,5 @@ if (!argv.minerAddress || !argv.colonyNetworkAddress || !argv.file) {
   process.exit();
 }
 
-client = new UsefulReputationMiningClient(argv.minerAddress);
+client = new ReputationMinerClient(argv.minerAddress);
 client.initialise(argv.colonyNetworkAddress);
