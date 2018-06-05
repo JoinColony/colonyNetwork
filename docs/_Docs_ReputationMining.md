@@ -9,7 +9,7 @@ This is an overview of the process by which Reputation scores in Colony are main
 For a complete description of the Reputation Mining process, see the [whitepaper](https://colony.io/whitepaper.pdf)
 
 # Rationale for off-chain Reputation
-Events in Colony that affect reputation are numerous and expected to be frequent. The calculations for global reputation updates would exceed Ethereum's gas limit, and cannot be performed on-chain. However, Reputation doesn't *need* to be on-chain, because reputation is entirely deterministic and calculated from on-chain events.
+Events in Colony that affect reputation are numerous and expected to be frequent. The calculations for global reputation updates would be unreasonable to perform on-chain. However, Reputation doesn't *need* to be on-chain, because reputation is entirely deterministic and calculated from on-chain events.
 
 So, rather than calculating reputation scores on-chain, users submit to the colony contract a transaction  which contains their score, together with a proof that the score is consistent with the global state of reputation.
 
