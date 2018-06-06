@@ -106,7 +106,7 @@ async-eventemitter@^0.2.2:
   dependencies:
     async "^2.4.0"
 
-"async-eventemitter@github:ahultgren/async-eventemitter#fa06e39e56786ba541c180061dbf2c0a5bbf951c":
+async-eventemitter@ahultgren/async-eventemitter#fa06e39e56786ba541c180061dbf2c0a5bbf951c:
   version "0.2.3"
   resolved "https://codeload.github.com/ahultgren/async-eventemitter/tar.gz/fa06e39e56786ba541c180061dbf2c0a5bbf951c"
   dependencies:
@@ -1508,9 +1508,9 @@ ethereumjs-wallet@~0.6.0:
     utf8 "^2.1.1"
     uuid "^2.0.1"
 
-ethers@^3.0.19:
-  version "3.0.19"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-3.0.19.tgz#10ec4624e21f77b404291294c0c768b8c96f33a4"
+ethers@^3.0.20:
+  version "3.0.20"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-3.0.20.tgz#b906ff116978eb132da8a9205c811d84fed2c039"
   dependencies:
     aes-js "3.0.0"
     bn.js "^4.4.0"

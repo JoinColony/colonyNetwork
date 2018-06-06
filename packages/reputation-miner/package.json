@@ -1,5 +1,5 @@
 {
-  "name": "reputation-miner",
+  "name": "@colony/reputation-miner",
   "version": "0.1.0",
   "description": "Colony",
   "main": "ReputationMinerClient.js",
@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "bn.js": "^4.11.8",
-    "ethers": "^3.0.19",
+    "ethers": "^3.0.20",
     "express": "^4.16.3",
     "ganache-core": "^2.1.0",
     "jsonfile": "^4.0.0",

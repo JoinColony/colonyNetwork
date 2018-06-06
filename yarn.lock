@@ -2793,9 +2793,9 @@ ethereumjs-wallet@~0.6.0:
     utf8 "^2.1.1"
     uuid "^2.0.1"
 
-ethers@^3.0.12:
-  version "3.0.15"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-3.0.15.tgz#7cdea4e23025681f69f575bf481b227315e0e7ab"
+ethers@^3.0.20:
+  version "3.0.20"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-3.0.20.tgz#b906ff116978eb132da8a9205c811d84fed2c039"
   dependencies:
     aes-js "3.0.0"
     bn.js "^4.4.0"
@@ -2883,7 +2883,7 @@ expand-tilde@^2.0.0, expand-tilde@^2.0.2:
   dependencies:
     homedir-polyfill "^1.0.1"
 
-express@^4.14.0:
+express@^4.14.0, express@^4.16.3:
   version "4.16.3"
   resolved "https://registry.yarnpkg.com/express/-/express-4.16.3.tgz#6af8a502350db3246ecc4becf6b5a34d22f7ed53"
   dependencies:
@@ -3253,7 +3253,7 @@ ganache-cli@6.1.0:
     source-map-support "^0.5.3"
     webpack-cli "^2.0.9"
 
-ganache-core@^2.0.2:
+ganache-core@^2.0.2, ganache-core@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/ganache-core/-/ganache-core-2.1.0.tgz#afe4ac8d5a2b5ed3622dd82d530acced78d5fb94"
   dependencies:
@@ -8080,6 +8080,23 @@ yargs@^10.0.3:
     which-module "^2.0.0"
     y18n "^3.2.1"
     yargs-parser "^8.1.0"
+
+yargs@^11.0.0:
+  version "11.0.0"
+  resolved "https://registry.yarnpkg.com/yargs/-/yargs-11.0.0.tgz#c052931006c5eee74610e5fc0354bedfd08a201b"
+  dependencies:
+    cliui "^4.0.0"
+    decamelize "^1.1.1"
+    find-up "^2.1.0"
+    get-caller-file "^1.0.1"
+    os-locale "^2.0.0"
+    require-directory "^2.1.1"
+    require-main-filename "^1.0.1"
+    set-blocking "^2.0.0"
+    string-width "^2.0.0"
+    which-module "^2.0.0"
+    y18n "^3.2.1"
+    yargs-parser "^9.0.2"
 
 yargs@^11.1.0:
   version "11.1.0"

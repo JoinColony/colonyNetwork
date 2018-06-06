@@ -75,7 +75,9 @@
     "truffle": "^4.1.11",
     "web3-utils": "^1.0.0-beta.34"
   },
-  "dependencies": {
-    "ethers": "^3.0.12"
-  }
+  "dependencies": {},
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
 }
