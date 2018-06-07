@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 
 import { toBN } from "web3-utils";
+import BN from "bn.js";
 
 import {
   MANAGER,
@@ -27,8 +28,6 @@ import { giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/tes
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
-const BN = require("bn.js");
-
 const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
@@ -41,7 +40,7 @@ const Authority = artifacts.require("Authority");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const oneHourLater = async () => forwardTime(3600, this);
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 contract("All", accounts => {
   const gasPrice = 20e9;
@@ -183,9 +182,9 @@ contract("All", accounts => {
       repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = ReputationMiningCycle.at(repCycleAddr);
 
-      const goodClient = new ReputationMiner(STAKER1, realProviderPort);
-      const badClient = new MaliciousReputationMinerExtraRep(STAKER2, realProviderPort, 1, 0xfffffffff);
-      const badClient2 = new MaliciousReputationMinerExtraRep(STAKER3, realProviderPort, 2, 0xfffffffff);
+      const goodClient = new ReputationMiner({ minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
+      const badClient = new MaliciousReputationMinerExtraRep({ minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT }, 1, 0xfffffffff);
+      const badClient2 = new MaliciousReputationMinerExtraRep({ minerAddress: STAKER3, realProviderPort: REAL_PROVIDER_PORT }, 2, 0xfffffffff);
       await goodClient.initialise(colonyNetwork.address);
       await badClient.initialise(colonyNetwork.address);
       await badClient2.initialise(colonyNetwork.address);

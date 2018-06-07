@@ -60,7 +60,7 @@ class ReputationMiner {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor(minerAddress, realProviderPort = 8545) {
+  constructor({ minerAddress, realProviderPort = 8545 }) {
     this.minerAddress = minerAddress;
     const ganacheProvider = ganache.provider({
       network_id: 515,

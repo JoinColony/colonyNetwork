@@ -3,8 +3,8 @@ import ReputationMiner from "../ReputationMiner";
 
 class MaliciousReputationMinerReuseUID extends ReputationMiner {
   // This client will reuse a UID for a reputation
-  constructor(minerAddress, realProviderPort, entryToFalsify, amountToFalsify) {
-    super(minerAddress, realProviderPort);
+  constructor(opts, entryToFalsify, amountToFalsify) {
+    super(opts);
     this.entryToFalsify = entryToFalsify.toString();
     this.amountToFalsify = amountToFalsify.toString();
   }
