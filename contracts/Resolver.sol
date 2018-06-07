@@ -35,6 +35,6 @@ contract Resolver is DSAuth {
   }
 
   function stringToSig(string signature) public pure returns(bytes4) {
-    return bytes4(keccak256(signature));
+    return bytes4(keccak256(abi.encodePacked(signature)));
   }
 }

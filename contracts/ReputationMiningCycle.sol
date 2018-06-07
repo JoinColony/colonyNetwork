@@ -144,7 +144,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
-    return keccak256(submitter, entryIndex, newHash);
+    return keccak256(abi.encodePacked(submitter, entryIndex, newHash));
   }
 
   /// @notice Constructor for this contract.

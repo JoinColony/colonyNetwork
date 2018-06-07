@@ -140,20 +140,14 @@ contract ColonyTask is ColonyStorage, DSMath {
   }
 
   function getSignedMessageHash(uint256 _value, bytes _data, uint8 _mode) private returns (bytes32 txHash) {
-    bytes32 msgHash = keccak256(
-      address(this),
-      address(this),
-      _value,
-      _data,
-      taskChangeNonce
-    );
+    bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonce));
     if (_mode==0) {
       // 'Normal' mode - geth, etc.
-      return keccak256("\x19Ethereum Signed Message:\n32", msgHash);
+      return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
     } else {
       // Trezor mode
       // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
-      return keccak256("\x19Ethereum Signed Message:\n\x20", msgHash);
+      return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n\x20", msgHash));
     }
   }
 
@@ -240,7 +234,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   }
 
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
-    return keccak256(_salt, _value);
+    return keccak256(abi.encodePacked(_salt, _value));
   }
 
   function getTaskWorkRatings(uint256 _id) public view returns (uint256, uint256) {

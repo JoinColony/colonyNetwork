@@ -25,7 +25,7 @@ contract PatriciaTreeProofs {
       bytes32[2] memory edgeHashes;
       edgeHashes[bit] = e.edgeHash();
       edgeHashes[1 - bit] = siblings[siblings.length - i - 1];
-      e.node = keccak256(edgeHashes);
+      e.node = keccak256(abi.encodePacked(edgeHashes));
     }
     e.label = k;
     return e.edgeHash();
