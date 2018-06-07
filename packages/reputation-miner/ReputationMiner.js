@@ -152,7 +152,6 @@ class ReputationMiner {
       logEntry = ["0x", 0, 0, "0x", 0];
     }
     const score = this.getScore(i, logEntry);
-
     if (i.toString() === "0") {
       // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
       // This 'if' statement is only in for now to make tests easier to write.
@@ -431,9 +430,7 @@ class ReputationMiner {
     // console.log(submission);
     const firstDisagreeIdx = new BN(submission[8].toString());
     const lastAgreeIdx = firstDisagreeIdx.subn(1);
-    // console.log('getReputationUPdateLogEntry', lastAgreeIdx);
     const logEntry = await repCycle.getReputationUpdateLogEntry(lastAgreeIdx.toString());
-    // console.log('getReputationUPdateLogEntry done');
     const colonyAddress = logEntry[3];
     const skillId = logEntry[2];
     const userAddress = logEntry[0];
@@ -515,7 +512,7 @@ class ReputationMiner {
    * @param  {Number or BigNumber}  index           The index of the log entry being considered
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
-  async insert(_colonyAddress, skillId, _userAddress, reputationScore, index) {
+  async insert(_colonyAddress, skillId, _userAddress, _reputationScore, index) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
 
@@ -544,6 +541,7 @@ class ReputationMiner {
     // If we already have this key, then we lookup the unique identifier we assigned this key.
     // Otherwise, give it the new one.
     let value;
+    let newValue;
     const keyAlreadyExists = this.reputations[key] !== undefined;
     if (keyAlreadyExists) {
       // Look up value from our JSON.
@@ -551,9 +549,17 @@ class ReputationMiner {
       // Extract uid
       const uid = ethers.utils.bigNumberify(`0x${value.slice(-64)}`);
       const existingValue = ethers.utils.bigNumberify(`0x${value.slice(2, 66)}`);
-      value = this.getValueAsBytes(existingValue.add(reputationScore), uid, index);
+      newValue = existingValue.add(_reputationScore);
+      if (newValue.lt(new BN("0"))) {
+        newValue = new BN("0");
+      }
+      value = this.getValueAsBytes(newValue, uid, index);
     } else {
-      value = this.getValueAsBytes(reputationScore, this.nReputations + 1, index);
+      newValue = _reputationScore;
+      if (newValue.lt(new BN("0"))) {
+        newValue = new BN("0");
+      }
+      value = this.getValueAsBytes(newValue, this.nReputations + 1, index);
       this.nReputations += 1;
     }
     await this.reputationTree.insert(key, value, { gasLimit: 4000000 });

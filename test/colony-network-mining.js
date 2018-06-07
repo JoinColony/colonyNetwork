@@ -1417,6 +1417,94 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should cope if someone's existing reputation would go negative, setting it to zero instead", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        11,
+        0xffffffffffff
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await forwardTime(3600, this);
+      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      let repCycle = ReputationMiningCycle.at(addr);
+
+      const taskId = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000000,
+        workerPayout: 1000000000000,
+        managerRating: 10,
+        workerRating: 10
+      });
+      await metaColony.finalizeTask(taskId);
+      await repCycle.submitRootHash("0x0", 0, 10);
+      await repCycle.confirmNewHash(0);
+      await forwardTime(3600, this);
+
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should cope if someone's new reputation would be negative, setting it to zero instead", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        11,
+        0xffffffffffff
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await forwardTime(3600, this);
+      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      let repCycle = ReputationMiningCycle.at(addr);
+
+      const taskId = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        worker: accounts[4],
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000000,
+        workerPayout: 1000000000000,
+        managerRating: 10,
+        workerRating: 10
+      });
+      await metaColony.finalizeTask(taskId);
+
+      await repCycle.submitRootHash("0x0", 0, 10);
+      await repCycle.confirmNewHash(0);
+      await forwardTime(3600, this);
+
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should keep reputation updates that occur during one update window for the next window", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
 

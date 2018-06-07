@@ -633,9 +633,15 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       u[U_REQUIRE_REPUTATION_CHECK] = 1;
     }
 
-    // TODO: Is this safe? I think so, because even if there's over/underflows, they should
-    // still be the same number.
-    require(int(agreeStateReputationValue)+reputationUpdateLog[reputationTransitionIdx].amount == int(disagreeStateReputationValue));
+    // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
+    // i.e. a reputation can't be negative.
+    if (reputationUpdateLog[reputationTransitionIdx].amount < 0 && uint(reputationUpdateLog[reputationTransitionIdx].amount * -1) > agreeStateReputationValue ) {
+      require(disagreeStateReputationValue == 0);
+    } else {
+      // TODO: Is this safe? I think so, because even if there's over/underflows, they should
+      // still be the same number.
+      require(int(agreeStateReputationValue)+reputationUpdateLog[reputationTransitionIdx].amount == int(disagreeStateReputationValue));
+    }
   }
 
   function checkPreviousReputationInState(
