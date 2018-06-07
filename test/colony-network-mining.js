@@ -1,6 +1,8 @@
 /* globals artifacts */
 
+import path from "path";
 import BN from "bn.js";
+import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { forwardTime, checkErrorRevert, web3GetTransactionReceipt } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
@@ -15,6 +17,10 @@ const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
+
+const contractLoader = new TruffleLoader({
+  contractDir: path.resolve(__dirname, "..", "build", "contracts")
+});
 
 contract("ColonyNetworkStaking", accounts => {
   const MAIN_ACCOUNT = accounts[0];
@@ -39,11 +45,19 @@ contract("ColonyNetworkStaking", accounts => {
   });
 
   beforeEach(async () => {
-    goodClient = new ReputationMiner({ minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT });
+    goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT });
     // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
-    badClient = new MaliciousReputationMinerExtraRep({ minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT }, 1, 0xfffffffff);
+    badClient = new MaliciousReputationMinerExtraRep(
+      { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+      1,
+      0xfffffffff
+    );
     // Mess up the second calculation in a different way
-    badClient2 = new MaliciousReputationMinerExtraRep({ minerAddress: accounts[2], realProviderPort: REAL_PROVIDER_PORT }, 1, 0xeeeeeeeee);
+    badClient2 = new MaliciousReputationMinerExtraRep(
+      { loader: contractLoader, minerAddress: accounts[2], realProviderPort: REAL_PROVIDER_PORT },
+      1,
+      0xeeeeeeeee
+    );
     await goodClient.initialise(colonyNetwork.address);
     await badClient.initialise(colonyNetwork.address);
     await badClient2.initialise(colonyNetwork.address);
@@ -667,7 +681,11 @@ contract("ColonyNetworkStaking", accounts => {
       await forwardTime(3600, this);
 
       // We want badclient2 to submit the same hash as badclient for this test.
-      badClient2 = new MaliciousReputationMinerExtraRep({ minerAddress: accounts[2], realProviderPort: REAL_PROVIDER_PORT }, 1, "0xfffffffff");
+      badClient2 = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: accounts[2], realProviderPort: REAL_PROVIDER_PORT },
+        1,
+        "0xfffffffff"
+      );
       badClient2.initialise(colonyNetwork.address);
 
       await goodClient.addLogContentsToReputationTree();
@@ -839,7 +857,11 @@ contract("ColonyNetworkStaking", accounts => {
 
       await goodClient.addLogContentsToReputationTree();
 
-      badClient = new MaliciousReputationMinerExtraRep({ minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT }, 5, "0xfffffffff");
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        5,
+        "0xfffffffff"
+      );
       await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
@@ -965,7 +987,11 @@ contract("ColonyNetworkStaking", accounts => {
 
       await goodClient.addLogContentsToReputationTree();
 
-      badClient = new MaliciousReputationMinerWrongUID({ minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT }, 5, "0xfffffffff");
+      badClient = new MaliciousReputationMinerWrongUID(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        5,
+        "0xfffffffff"
+      );
       await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
@@ -1038,7 +1064,11 @@ contract("ColonyNetworkStaking", accounts => {
 
       await goodClient.addLogContentsToReputationTree();
 
-      badClient = new MaliciousReputationMinerReuseUID({ minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT }, 3, 1);
+      badClient = new MaliciousReputationMinerReuseUID(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        3,
+        1
+      );
       await badClient.initialise(colonyNetwork.address);
       await badClient.addLogContentsToReputationTree();
 
@@ -1109,7 +1139,7 @@ contract("ColonyNetworkStaking", accounts => {
       const clients = await Promise.all(
         accountsForTest.map(async (addr, index) => {
           const client = new MaliciousReputationMinerExtraRep(
-            { minerAddress: addr, realProviderPort: REAL_PROVIDER_PORT },
+            { loader: contractLoader, minerAddress: addr, realProviderPort: REAL_PROVIDER_PORT },
             accountsForTest.length - index,
             index
           );
@@ -1277,7 +1307,7 @@ contract("ColonyNetworkStaking", accounts => {
       const clients = await Promise.all(
         accounts.slice(0, nClients).map(async (addr, index) => {
           const client = new MaliciousReputationMinerExtraRep(
-            { minerAddress: addr, realProviderPort: REAL_PROVIDER_PORT },
+            { loader: contractLoader, minerAddress: addr, realProviderPort: REAL_PROVIDER_PORT },
             accounts.length - index,
             index
           );
@@ -1443,7 +1473,7 @@ contract("ColonyNetworkStaking", accounts => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      const client = new ReputationMiner({ minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT });
+      const client = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT });
       await client.initialise(colonyNetwork.address);
       await client.addLogContentsToReputationTree();
 
@@ -1502,7 +1532,7 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.submitRootHash("0x123456789", 10, 10);
       await repCycle.confirmNewHash(0);
 
-      const client = new ReputationMiner({ minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT });
+      const client = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT });
       await client.initialise(colonyNetwork.address);
       await client.addLogContentsToReputationTree();
       const newRootHash = await client.getRootHash();

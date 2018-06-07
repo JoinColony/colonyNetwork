@@ -1,8 +1,10 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 
+import path from "path";
 import { toBN } from "web3-utils";
 import BN from "bn.js";
+import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
   MANAGER,
@@ -41,6 +43,10 @@ const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const oneHourLater = async () => forwardTime(3600, this);
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+
+const contractLoader = new TruffleLoader({
+  contractDir: path.resolve(__dirname, "..", "build", "contracts")
+});
 
 contract("All", accounts => {
   const gasPrice = 20e9;
@@ -182,9 +188,17 @@ contract("All", accounts => {
       repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = ReputationMiningCycle.at(repCycleAddr);
 
-      const goodClient = new ReputationMiner({ minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
-      const badClient = new MaliciousReputationMinerExtraRep({ minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT }, 1, 0xfffffffff);
-      const badClient2 = new MaliciousReputationMinerExtraRep({ minerAddress: STAKER3, realProviderPort: REAL_PROVIDER_PORT }, 2, 0xfffffffff);
+      const goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
+      const badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT },
+        1,
+        0xfffffffff
+      );
+      const badClient2 = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: STAKER3, realProviderPort: REAL_PROVIDER_PORT },
+        2,
+        0xfffffffff
+      );
       await goodClient.initialise(colonyNetwork.address);
       await badClient.initialise(colonyNetwork.address);
       await badClient2.initialise(colonyNetwork.address);
