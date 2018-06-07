@@ -62,7 +62,7 @@ library Data {
   }
 
   function edgeHash(Edge memory self) internal pure returns (bytes32) {
-    return keccak256(self.node, self.label.length, self.label.data);
+    return keccak256(abi.encodePacked(self.node, self.label.length, self.label.data));
   }
 
   function insert(Tree storage self, bytes key, bytes value) internal {
@@ -120,7 +120,7 @@ library Data {
 
   // Returns the hash of the encoding of a node.
   function nodeEncodingHash(Node memory self) private pure returns (bytes32) {
-    return keccak256(edgeHash(self.children[0]), edgeHash(self.children[1]));
+    return keccak256(abi.encodePacked(edgeHash(self.children[0]), edgeHash(self.children[1])));
   }
 
   // Returns the result of removing a prefix of length `prefix` bits from the
