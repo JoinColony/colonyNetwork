@@ -6,6 +6,7 @@
   "directories": {
     "test": "test"
   },
+  "bin": "bin/index",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -13,6 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@colony/colony-js-contract-loader-fs": "^1.3.0",
     "bn.js": "^4.11.8",
     "ethers": "^3.0.15",
     "express": "^4.16.3",
