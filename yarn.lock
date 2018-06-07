@@ -6705,9 +6705,9 @@ solidity-coverage@0.5.4:
     tree-kill "^1.2.0"
     web3 "^0.18.4"
 
-solidity-parser-antlr@^0.2.10:
-  version "0.2.10"
-  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.2.10.tgz#6bc9e48faf49c1bf7bb49562cc1900f25153171c"
+solidity-parser-antlr@^0.2.11:
+  version "0.2.11"
+  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.2.11.tgz#b3e4d0aca0d15796e9b59da53a49137aab51c298"
 
 solidity-parser-sc@0.4.10:
   version "0.4.10"
