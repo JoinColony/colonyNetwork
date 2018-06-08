@@ -11,10 +11,9 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ file, minerAddress, loader, realProviderPort, seed }) {
-    // this.realProvider = new ethers.providers.InfuraProvider("kovan");
+  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider }) {
     this._loader = loader;
-    this._miner = new ReputationMiner({ minerAddress, loader, realProviderPort });
+    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort });
     this._seed = seed;
     this._file = path.resolve(process.cwd(), file);
 
