@@ -1,7 +1,10 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 
+import path from "path";
 import { toBN } from "web3-utils";
+import BN from "bn.js";
+import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
   MANAGER,
@@ -23,10 +26,9 @@ import {
 import { getTokenArgs, currentBlockTime, createSignatures, forwardTime, bnSqrt } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/test-data-generator";
-import ReputationMiningClient from "../client/main";
-import MaliciousReputationMiningClient from "../client/test/malicious";
 
-const BN = require("bn.js");
+import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
+import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
 const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
@@ -40,7 +42,11 @@ const Authority = artifacts.require("Authority");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const oneHourLater = async () => forwardTime(3600, this);
-const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+
+const contractLoader = new TruffleLoader({
+  contractDir: path.resolve(__dirname, "..", "build", "contracts")
+});
 
 contract("All", accounts => {
   const gasPrice = 20e9;
@@ -80,8 +86,6 @@ contract("All", accounts => {
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
-
-    await colonyNetwork.startNextCycle();
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
@@ -184,9 +188,17 @@ contract("All", accounts => {
       repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = ReputationMiningCycle.at(repCycleAddr);
 
-      const goodClient = new ReputationMiningClient(STAKER1, realProviderPort);
-      const badClient = new MaliciousReputationMiningClient(STAKER2, realProviderPort, 1, 0xfffffffff);
-      const badClient2 = new MaliciousReputationMiningClient(STAKER3, realProviderPort, 2, 0xfffffffff);
+      const goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
+      const badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT },
+        1,
+        0xfffffffff
+      );
+      const badClient2 = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: STAKER3, realProviderPort: REAL_PROVIDER_PORT },
+        2,
+        0xfffffffff
+      );
       await goodClient.initialise(colonyNetwork.address);
       await badClient.initialise(colonyNetwork.address);
       await badClient2.initialise(colonyNetwork.address);

@@ -78,6 +78,20 @@
     lodash "^4.2.0"
     to-fast-properties "^2.0.0"
 
+"@colony/colony-js-contract-loader-fs@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader-fs/-/colony-js-contract-loader-fs-1.3.0.tgz#dc32f03b9bd3501b3f67db89537a7fe542c09121"
+  dependencies:
+    "@colony/colony-js-contract-loader" "^1.3.0"
+    jsonfile "^4.0.0"
+
+"@colony/colony-js-contract-loader@^1.3.0":
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader/-/colony-js-contract-loader-1.3.0.tgz#280b406fd9da9232b0281e95672ce08deef5fc68"
+  dependencies:
+    assert "^1.4.1"
+    babel-runtime "^6.26.0"
+
 "@colony/eslint-config-colony@4.0.1":
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/@colony/eslint-config-colony/-/eslint-config-colony-4.0.1.tgz#74495655bf461ef196edc262983c471b42cf2d75"
@@ -389,7 +403,7 @@ assert-plus@1.0.0, assert-plus@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/assert-plus/-/assert-plus-1.0.0.tgz#f12e0f3c5d77b0b1cdd9146942e4e96c1e4dd525"
 
-assert@^1.1.1:
+assert@^1.1.1, assert@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/assert/-/assert-1.4.1.tgz#99912d591836b5a6f5b345c0f07eefc08fc65d91"
   dependencies:
@@ -2793,7 +2807,7 @@ ethereumjs-wallet@~0.6.0:
     utf8 "^2.1.1"
     uuid "^2.0.1"
 
-ethers@^3.0.12:
+ethers@^3.0.15:
   version "3.0.15"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-3.0.15.tgz#7cdea4e23025681f69f575bf481b227315e0e7ab"
   dependencies:
@@ -2883,7 +2897,7 @@ expand-tilde@^2.0.0, expand-tilde@^2.0.2:
   dependencies:
     homedir-polyfill "^1.0.1"
 
-express@^4.14.0:
+express@^4.14.0, express@^4.16.3:
   version "4.16.3"
   resolved "https://registry.yarnpkg.com/express/-/express-4.16.3.tgz#6af8a502350db3246ecc4becf6b5a34d22f7ed53"
   dependencies:
@@ -3253,7 +3267,7 @@ ganache-cli@6.1.0:
     source-map-support "^0.5.3"
     webpack-cli "^2.0.9"
 
-ganache-core@^2.0.2:
+ganache-core@^2.0.2, ganache-core@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/ganache-core/-/ganache-core-2.1.0.tgz#afe4ac8d5a2b5ed3622dd82d530acced78d5fb94"
   dependencies:
@@ -8080,6 +8094,23 @@ yargs@^10.0.3:
     which-module "^2.0.0"
     y18n "^3.2.1"
     yargs-parser "^8.1.0"
+
+yargs@^11.0.0:
+  version "11.0.0"
+  resolved "https://registry.yarnpkg.com/yargs/-/yargs-11.0.0.tgz#c052931006c5eee74610e5fc0354bedfd08a201b"
+  dependencies:
+    cliui "^4.0.0"
+    decamelize "^1.1.1"
+    find-up "^2.1.0"
+    get-caller-file "^1.0.1"
+    os-locale "^2.0.0"
+    require-directory "^2.1.1"
+    require-main-filename "^1.0.1"
+    set-blocking "^2.0.0"
+    string-width "^2.0.0"
+    which-module "^2.0.0"
+    y18n "^3.2.1"
+    yargs-parser "^9.0.2"
 
 yargs@^11.1.0:
   version "11.1.0"

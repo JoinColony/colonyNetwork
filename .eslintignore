@@ -5,3 +5,4 @@ contracts/*
 coverage/*
 keys/*
 lib/*
+packages/reputation-miner/node_modules/*

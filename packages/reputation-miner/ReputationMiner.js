@@ -1,17 +1,6 @@
 const BN = require("bn.js");
 const web3Utils = require("web3-utils");
 const ganache = require("ganache-core");
-
-// We disable the import/no-unresolved rule for these lines because when ESLint is run on Circle, the contracts haven't
-// been compiled yet and so would fail here.
-const ReputationMiningCycleJSON = require("../build/contracts/IReputationMiningCycle.json"); // eslint-disable-line import/no-unresolved
-const ColonyNetworkJSON = require("../build/contracts/IColonyNetwork.json"); // eslint-disable-line import/no-unresolved
-const PatriciaTreeJSON = require("../build/contracts/PatriciaTree.json"); // eslint-disable-line import/no-unresolved
-
-const jsonfile = require("jsonfile");
-
-const file = "./reputations.json";
-
 const ethers = require("ethers");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
@@ -58,13 +47,14 @@ function RPCSigner(minerAddress, provider) {
 }
 // ===================================
 
-class ReputationMiningClient {
+class ReputationMiner {
   /**
-   * Constructor for ReputationMiningClient
+   * Constructor for ReputationMiner
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor(minerAddress, realProviderPort = 8545) {
+  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545 }) {
+    this.loader = loader;
     this.minerAddress = minerAddress;
     const ganacheProvider = ganache.provider({
       network_id: 515,
@@ -81,13 +71,18 @@ class ReputationMiningClient {
     this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
     this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
 
-    this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
-    this.realWallet = new RPCSigner(minerAddress, this.realProvider);
+    if (provider) {
+      this.realProvider = provider;
+    } else {
+      this.realProvider = new ethers.providers.JsonRpcProvider(`http://localhost:${realProviderPort}`);
+    }
 
-    try {
-      this.reputations = jsonfile.readFileSync(file);
-    } catch (err) {
-      this.reputations = {};
+    if (minerAddress) {
+      this.realWallet = new RPCSigner(minerAddress, this.realProvider);
+    } else {
+      this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
+      // TODO: Check that this wallet can stake?
+      console.log("Transactions will be signed from ", this.realWallet.address);
     }
   }
 
@@ -97,11 +92,16 @@ class ReputationMiningClient {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
-    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(PatriciaTreeJSON.bytecode, PatriciaTreeJSON.abi);
+    this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+    this.colonyNetworkContractDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
+    this.repCycleContractDef = await this.loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
+
+    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
     const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
-    this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
+    this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
     this.nReputations = 0;
-    this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, ColonyNetworkJSON.abi, this.realWallet);
+    this.reputations = {};
+    this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
   }
 
   /**
@@ -110,14 +110,14 @@ class ReputationMiningClient {
    * @return {Promise}
    */
   async addLogContentsToReputationTree() {
-    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(PatriciaTreeJSON.bytecode, PatriciaTreeJSON.abi);
+    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
 
     const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
-    this.justificationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), PatriciaTreeJSON.abi, this.ganacheWallet);
+    this.justificationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
 
     this.justificationHashes = {};
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     let nLogEntries = await repCycle.getReputationUpdateLogLength();
     nLogEntries = new BN(nLogEntries.toString());
@@ -146,7 +146,7 @@ class ReputationMiningClient {
     let logEntry;
     if (!last) {
       const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+      const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
       logEntry = await repCycle.getReputationUpdateLogEntry(i.toString()); // eslint-disable-line no-await-in-loop
     } else {
       logEntry = ["0x", 0, 0, "0x", 0];
@@ -213,6 +213,34 @@ class ReputationMiningClient {
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, nNodes: this.nReputations };
   }
 
+  static async getKey(_colonyAddress, _skillId, _userAddress) {
+    let colonyAddress = _colonyAddress;
+    let userAddress = _userAddress;
+
+    let isAddress = web3Utils.isAddress(colonyAddress);
+    // TODO should we return errors here?
+    if (!isAddress) {
+      return false;
+    }
+    isAddress = web3Utils.isAddress(userAddress);
+    if (!isAddress) {
+      return false;
+    }
+    if (colonyAddress.substring(0, 2) === "0x") {
+      colonyAddress = colonyAddress.slice(2);
+    }
+    if (userAddress.substring(0, 2) === "0x") {
+      userAddress = userAddress.slice(2);
+    }
+    colonyAddress = colonyAddress.toLowerCase();
+    userAddress = userAddress.toLowerCase();
+    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(_skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
+      16,
+      40
+    )}`;
+    return key;
+  }
+
   /**
    * For the supplied log entry, return the key in the reputation log that is affected by the update.
    * @param  {[type]}  i The index of the entry of interest in the reputation log.
@@ -220,7 +248,7 @@ class ReputationMiningClient {
    */
   async getKeyForLogEntry(i) {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     const logEntry = await repCycle.getReputationUpdateLogEntry(i); // eslint-disable-line no-await-in-loop
     const colonyAddress = logEntry[3].slice(2);
@@ -287,7 +315,7 @@ class ReputationMiningClient {
    */
   async submitRootHash() {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     const hash = await this.getRootHash();
     // TODO: Work out what entry we should use when we submit
@@ -323,7 +351,7 @@ class ReputationMiningClient {
     const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
 
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
 
     const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${new BN(nLogEntries.toString()).toString(16, 64)}`);
@@ -340,7 +368,7 @@ class ReputationMiningClient {
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     let index = new BN("-1");
     const round = new BN("0");
@@ -365,7 +393,7 @@ class ReputationMiningClient {
   async respondToBinarySearchForChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     let submission = await repCycle.disputeRounds(round.toString(), index.toString());
     const targetNode = new BN(
       submission[8]
@@ -398,7 +426,7 @@ class ReputationMiningClient {
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, ReputationMiningCycleJSON.abi, this.realWallet);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const submission = await repCycle.disputeRounds(round.toString(), index.toString());
     // console.log(submission);
     const firstDisagreeIdx = new BN(submission[8].toString());
@@ -483,7 +511,7 @@ class ReputationMiningClient {
    * @param  {string}  _colonyAddress  Hex address of the colony in which the reputation is being updated
    * @param  {Number or BigNumber or String}  skillId        The id of the skill being updated
    * @param  {string}  _userAddress    Hex address of the user who is having their reputation being updated
-   * @param  {Number of BigNumber or String}  reputationScore The new reputation value
+   * @param  {Number of BigNumber or String}  reputationScore The amount the reputation changes by
    * @param  {Number or BigNumber}  index           The index of the log entry being considered
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
@@ -535,4 +563,4 @@ class ReputationMiningClient {
   }
 }
 
-export default ReputationMiningClient;
+module.exports = ReputationMiner;
