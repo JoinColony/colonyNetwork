@@ -344,10 +344,10 @@ contract("Colony", addresses => {
       const sigs2 = await createSignatures(colony, 2, signers, 0, txData2);
 
       // Execute the above 2 changes
-      await colony.executeTaskChange(sigs1.sigV, sigs1.sigR, sigs1.sigS, 0, txData1);
+      await colony.executeTaskChange(sigs1.sigV, sigs1.sigR, sigs1.sigS, [0, 0], 0, txData1);
       let taskChangeNonce = await colony.getTaskChangeNonce.call(1);
       assert.equal(taskChangeNonce, 1);
-      await colony.executeTaskChange(sigs2.sigV, sigs2.sigR, sigs2.sigS, 0, txData2);
+      await colony.executeTaskChange(sigs2.sigV, sigs2.sigR, sigs2.sigS, [0, 0], 0, txData2);
       taskChangeNonce = await colony.getTaskChangeNonce.call(2);
       assert.equal(taskChangeNonce, 1);
 
@@ -356,9 +356,18 @@ contract("Colony", addresses => {
       const txData3 = await colony.contract.setTaskDueDate.getData(2, dueDate);
       const sigs3 = await createSignatures(colony, 2, signers, 0, txData3);
 
-      await colony.executeTaskChange(sigs3.sigV, sigs3.sigR, sigs3.sigS, 0, txData3);
+      await colony.executeTaskChange(sigs3.sigV, sigs3.sigR, sigs3.sigS, [0, 0], 0, txData3);
       taskChangeNonce = await colony.getTaskChangeNonce.call(2);
       assert.equal(taskChangeNonce, 2);
+    });
+
+    it("should allow update of task brief signed by manager only when worker has not been assigned", async () => {
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
+      const sigs = await createSignatures(colony, 1, [MANAGER], 0, txData);
+      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0], 0, txData);
+      const task = await colony.getTask.call(1);
+      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
     });
 
     it("should allow update of task brief signed by manager and worker", async () => {
@@ -377,7 +386,7 @@ contract("Colony", addresses => {
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
       const signers = [MANAGER, WORKER];
-      const sigs = await createSignaturesTrezor(colony, signers, 0, txData);
+      const sigs = await createSignaturesTrezor(colony, 1, signers, 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [1, 1], 0, txData);
       const task = await colony.getTask.call(1);
       assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
@@ -387,13 +396,12 @@ contract("Colony", addresses => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      const signers = [MANAGER, WORKER];
-      const sigs = await createSignatures(colony, signers, 0, txData);
-      const trezorSigs = await createSignaturesTrezor(colony, signers, 0, txData);
+      const sigs = await createSignatures(colony, 1, [MANAGER], 0, txData);
+      const trezorSigs = await createSignaturesTrezor(colony, 1, [WORKER], 0, txData);
       await colony.executeTaskChange(
-        [sigs.sigV[0], trezorSigs.sigV[1]],
-        [sigs.sigR[0], trezorSigs.sigR[1]],
-        [sigs.sigS[0], trezorSigs.sigS[1]],
+        [sigs.sigV[0], trezorSigs.sigV[0]],
+        [sigs.sigR[0], trezorSigs.sigR[0]],
+        [sigs.sigS[0], trezorSigs.sigS[0]],
         [0, 1],
         0,
         txData
@@ -406,9 +414,8 @@ contract("Colony", addresses => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      const signers = [MANAGER, WORKER];
-      const sigs = await createSignatures(colony, signers, 0, txData);
-      const trezorSigs = await createSignaturesTrezor(colony, signers, 0, txData);
+      const sigs = await createSignatures(colony, 1, [MANAGER], 0, txData);
+      const trezorSigs = await createSignaturesTrezor(colony, 1, [MANAGER], 0, txData);
       await checkErrorRevert(
         colony.executeTaskChange(
           [sigs.sigV[0], trezorSigs.sigV[0]],

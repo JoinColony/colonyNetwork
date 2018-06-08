@@ -207,7 +207,7 @@ export async function createSignatures(colony, taskId, signers, value, data) {
   return { sigV, sigR, sigS };
 }
 
-export async function createSignaturesTrezor(colony, signers, value, data) {
+export async function createSignaturesTrezor(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce.call(taskId);

@@ -168,7 +168,7 @@ contract IColony {
   /// @notice Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker)
   /// using the detached signatures for these users.
   /// @dev The Colony functions which require approval and the task roles to review these are set in `IColony.initialiseColony` at colony creation
-  /// Upon successful execution the respective `taskChangeNonces` is incremented
+  /// Upon successful execution the `taskChangeNonces` entry for the task is incremented
   /// @param _sigV recovery id
   /// @param _sigR r output of the ECDSA signature of the transaction
   /// @param _sigS s output of the ECDSA signature of the transaction
