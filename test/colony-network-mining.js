@@ -1505,6 +1505,55 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should cope if someone's reputation would be overflow, setting it to the maximum value instead", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        12,
+        new BN("-1000000000000000000000000000000000000000000")
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await forwardTime(3600, this);
+      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      let repCycle = ReputationMiningCycle.at(addr);
+      const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
+
+      await goodClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
+      await badClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
+      const rootHash = await goodClient.getRootHash();
+      const taskId = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        worker: MAIN_ACCOUNT,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000000,
+        workerPayout: 1000000000000,
+        managerRating: 50,
+        workerRating: 50
+      });
+      await metaColony.finalizeTask(taskId);
+
+      await repCycle.submitRootHash(rootHash, 1, 10);
+      await repCycle.confirmNewHash(0);
+      await forwardTime(3600, this);
+
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should keep reputation updates that occur during one update window for the next window", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
 

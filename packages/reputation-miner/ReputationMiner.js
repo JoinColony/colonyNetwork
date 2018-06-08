@@ -553,12 +553,16 @@ class ReputationMiner {
       if (newValue.lt(new BN("0"))) {
         newValue = new BN("0");
       }
+      if (newValue.gt(new BN("2").pow(new BN("256")).subn(1))) {
+        newValue = new BN("2").pow(new BN("256")).subn(1);
+      }
       value = this.getValueAsBytes(newValue, uid, index);
     } else {
       newValue = _reputationScore;
       if (newValue.lt(new BN("0"))) {
         newValue = new BN("0");
       }
+      // A new value can never overflow, so we don't need a 'capping' check here
       value = this.getValueAsBytes(newValue, this.nReputations + 1, index);
       this.nReputations += 1;
     }

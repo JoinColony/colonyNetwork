@@ -637,6 +637,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // i.e. a reputation can't be negative.
     if (reputationUpdateLog[reputationTransitionIdx].amount < 0 && uint(reputationUpdateLog[reputationTransitionIdx].amount * -1) > agreeStateReputationValue ) {
       require(disagreeStateReputationValue == 0);
+    } else if (uint(reputationUpdateLog[reputationTransitionIdx].amount) + agreeStateReputationValue < agreeStateReputationValue) {
+      // We also don't allow reputation to overflow
+      require(disagreeStateReputationValue == 2**256 - 1);
     } else {
       // TODO: Is this safe? I think so, because even if there's over/underflows, they should
       // still be the same number.
