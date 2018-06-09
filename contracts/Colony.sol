@@ -89,8 +89,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token.transfer(colonyNetworkAddress, _wad);
   }
 
-  //TODO: Secure this function
+  //TODO: Secure this function 'properly'
   function addGlobalSkill(uint _parentSkillId) public
+  auth
   returns (uint256)
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
@@ -98,6 +99,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function addDomain(uint256 _parentSkillId) public
+  auth
   localSkill(_parentSkillId)
   {
     // Note: remove that when we start allowing more domain hierarchy levels

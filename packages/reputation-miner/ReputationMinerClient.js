@@ -2,6 +2,7 @@ const path = require("path");
 const jsonfile = require("jsonfile");
 const ethers = require("ethers");
 const express = require("express");
+const BN = require("bn.js");
 
 const ReputationMiner = require("./ReputationMiner");
 
@@ -20,7 +21,7 @@ class ReputationMinerClient {
     this._app = express();
     this._app.get("/:colonyAddress/:skillId/:userAddress", async (req, res) => {
       const key = await ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
-      if (key) {
+      if (this._miner.reputations[key]) {
         const proof = await this._miner.getReputationProofObject(key);
         delete proof.nNodes;
         proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
@@ -64,13 +65,13 @@ class ReputationMinerClient {
       const ADDRESS3 = "0x2b183746bd1403cdec8e4fe45139339da20bcf3d";
       const ADDRESS4 = "0xcd0751d4181acda4f8edb2f3b33b915f91abeef0";
       const ADDRESS0 = "0x0000000000000000000000000000000000000000";
-      await this.insert(ADDRESS1, 1, ADDRESS2, "999999999");
-      await this.insert(ADDRESS1, 1, ADDRESS0, "999999999");
-      await this.insert(ADDRESS1, 2, ADDRESS2, "888888888888888");
-      await this.insert(ADDRESS1, 2, ADDRESS0, "888888888888888");
-      await this.insert(ADDRESS3, 1, ADDRESS2, "100000000");
-      await this.insert(ADDRESS3, 1, ADDRESS4, "100000000");
-      await this.insert(ADDRESS3, 1, ADDRESS0, "200000000");
+      await this._miner.insert(ADDRESS1, 1, ADDRESS2, new BN("999999999"));
+      await this._miner.insert(ADDRESS1, 1, ADDRESS0, new BN("999999999"));
+      await this._miner.insert(ADDRESS1, 2, ADDRESS2, new BN("888888888888888"));
+      await this._miner.insert(ADDRESS1, 2, ADDRESS0, new BN("888888888888888"));
+      await this._miner.insert(ADDRESS3, 1, ADDRESS2, new BN("100000000"));
+      await this._miner.insert(ADDRESS3, 1, ADDRESS4, new BN("100000000"));
+      await this._miner.insert(ADDRESS3, 1, ADDRESS0, new BN("200000000"));
       console.log("💾 Writing initialised state with dummy data to JSON file");
 
       jsonfile.writeFileSync(this._file, this._miner.reputations);
