@@ -14,8 +14,10 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
 
-contract("Meta Colony", () => {
+contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
+  const OTHER_ACCOUNT = accounts[1];
+
   let metaColony;
   let metaColonyToken;
   let colony;
@@ -79,6 +81,10 @@ contract("Meta Colony", () => {
       // Check rootSkill.children first element is the id of the new skill
       const rootSkillChild = await colonyNetwork.getChildSkillId.call(1, 0);
       assert.equal(rootSkillChild.toNumber(), 3);
+    });
+
+    it("should not allow a non-owner of the metacolony to add a global skill", async () => {
+      await checkErrorRevert(metaColony.addGlobalSkill(1, { from: OTHER_ACCOUNT }));
     });
 
     it("should be able to add multiple child skills to the root global skill", async () => {
@@ -298,6 +304,10 @@ contract("Meta Colony", () => {
       token = await Token.at(tokenAddress);
     });
 
+    it("someone who is not the colony owner should not be able to add domains", async () => {
+      await checkErrorRevert(colony.addDomain(3, { from: OTHER_ACCOUNT }));
+    });
+
     it("should be able to add new domains as children to the root domain", async () => {
       await colony.addDomain(3);
       await colony.addDomain(3);
@@ -385,6 +395,14 @@ contract("Meta Colony", () => {
       assert.equal(task[8].toNumber(), 2);
     });
 
+    it("should NOT allow a non-manager to set domain on task", async () => {
+      await colony.addDomain(3);
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }));
+      const task = await colony.getTask.call(1);
+      assert.equal(task[8].toNumber(), 1);
+    });
+
     it("should NOT be able to set a domain on nonexistent task", async () => {
       await checkErrorRevert(colony.setTaskDomain(10, 3));
     });
@@ -412,6 +430,16 @@ contract("Meta Colony", () => {
       await colony.setTaskSkill(1, 5);
       const task = await colony.getTask.call(1);
       assert.equal(task[9][0].toNumber(), 5);
+    });
+
+    it("should not allow a non-manager to set global skill on task", async () => {
+      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill(4);
+
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }));
+      const task = await colony.getTask.call(1);
+      assert.equal(task[9][0].toNumber(), 0);
     });
 
     it("should NOT be able to set global skill on nonexistent task", async () => {

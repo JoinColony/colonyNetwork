@@ -292,6 +292,17 @@ contract("Colony", addresses => {
       assert.equal(worker[0], WORKER);
     });
 
+    it("should not allow the worker or evaluator roles to be assigned by an address that is not the manager", async () => {
+      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await checkErrorRevert(colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR, { from: OTHER }));
+      const evaluator = await colony.getTaskRole.call(1, EVALUATOR_ROLE);
+      assert.equal(evaluator[0], "0x0000000000000000000000000000000000000000");
+
+      await checkErrorRevert(colony.setTaskRoleUser(1, WORKER_ROLE, WORKER, { from: OTHER }));
+      const worker = await colony.getTaskRole.call(1, WORKER_ROLE);
+      assert.equal(worker[0], "0x0000000000000000000000000000000000000000");
+    });
+
     it("should correctly increment `taskChangeNonce`", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
