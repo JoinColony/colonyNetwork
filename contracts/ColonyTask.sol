@@ -251,6 +251,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskExists(_id)
   taskNotFinalized(_id)
   {
+    require(tasks[_id].roles[MANAGER].user == msg.sender);
     tasks[_id].roles[_role] = Role({
       user: _user,
       rated: false,
@@ -263,6 +264,7 @@ contract ColonyTask is ColonyStorage, DSMath {
   taskNotFinalized(_id)
   domainExists(_domainId)
   {
+    require(tasks[_id].roles[MANAGER].user == msg.sender);
     tasks[_id].domainId = _domainId;
   }
 
@@ -274,6 +276,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   skillExists(_skillId)
   globalSkill(_skillId)
   {
+    require(tasks[_id].roles[MANAGER].user == msg.sender);
+
     tasks[_id].skills[0] = _skillId;
   }
 
