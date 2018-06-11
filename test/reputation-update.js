@@ -61,7 +61,7 @@ contract("Colony Reputation Updates", () => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryManager[0], MANAGER);
-      assert.equal(repLogEntryManager[1].toNumber(), 1000 * 1e18 / 50);
+      assert.equal(repLogEntryManager[1].toNumber(), 100 * 1e18);
       assert.equal(repLogEntryManager[2].toNumber(), 2);
       assert.equal(repLogEntryManager[3], metaColony.address);
       assert.equal(repLogEntryManager[4].toNumber(), 2);
@@ -77,7 +77,7 @@ contract("Colony Reputation Updates", () => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       assert.equal(repLogEntryWorker[0], WORKER);
-      assert.equal(repLogEntryWorker[1].toNumber(), 200 * 1e18);
+      assert.equal(repLogEntryWorker[1].toNumber(), 300 * 1e18);
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
       assert.equal(repLogEntryWorker[3], metaColony.address);
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
@@ -168,7 +168,10 @@ contract("Colony Reputation Updates", () => {
       });
       await metaColony.finalizeTask(taskId1);
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      const result = web3Utils.toBN("1").mul(WORKER_PAYOUT);
+      const result = web3Utils
+        .toBN(WORKER_PAYOUT)
+        .muln(3)
+        .divn(2);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
