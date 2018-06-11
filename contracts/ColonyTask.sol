@@ -162,12 +162,12 @@ contract ColonyTask is ColonyStorage, DSMath {
     (sig, taskId) = deconstructCall(_data);
     require(!tasks[taskId].finalized);
 
-    // Checks the two reviewers differ
-    require(tasks[taskId].roles[reviewers[sig][0]].user != tasks[taskId].roles[reviewers[sig][1]].user);
-
     uint8 nSignaturesRequired;
-    // If one of the roles is not set, allow the other one to execute a change with just its signature
     if (tasks[taskId].roles[reviewers[sig][0]].user == address(0) || tasks[taskId].roles[reviewers[sig][1]].user == address(0)) {
+      // When one of the roles is not set, allow the other one to execute a change with just their signature
+      nSignaturesRequired = 1;
+    } else if (tasks[taskId].roles[reviewers[sig][0]].user == tasks[taskId].roles[reviewers[sig][1]].user) {
+      // We support roles being assumed by the same user, in this case, allow them to execute a change with just their signature
       nSignaturesRequired = 1;
     } else {
       nSignaturesRequired = 2;
