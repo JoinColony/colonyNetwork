@@ -34,9 +34,7 @@ contract ColonyStorage is DSAuth {
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
-
-  // Mapping task id to current "active" nonce for executing task changes
-  mapping (uint256 => uint256) taskChangeNonces;
+  uint256 taskChangeNonce; // Made obsolete in #203
   
   mapping (uint256 => Task) tasks;
 
@@ -87,6 +85,9 @@ contract ColonyStorage is DSAuth {
   uint8 constant MANAGER = 0;
   uint8 constant EVALUATOR = 1;
   uint8 constant WORKER = 2;
+
+  // Mapping task id to current "active" nonce for executing task changes
+  mapping (uint256 => uint256) taskChangeNonces;
 
   struct Task {
     bytes32 specificationHash;
