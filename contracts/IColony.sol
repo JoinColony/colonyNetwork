@@ -27,6 +27,46 @@ contract IColony {
   /// @param id The newly added task id
   event TaskAdded(uint256 indexed id);
 
+  /// @notice Event logged when a task's specification hash changes
+  /// @param id Id of the task
+  /// @param specificationHash New specification hash of the task
+  event TaskBriefChanged(uint256 indexed id, bytes32 specificationHash);
+
+  /// @notice Event logged when a task's due date changes
+  /// @param id Id of the task
+  /// @param dueDate New due date of the task
+  event TaskDueDateChanged(uint256 indexed id, uint256 dueDate);
+
+  /// @notice Event logged when a task's domain changes
+  /// @param id Id of the task
+  /// @param domainId New domain id of the task
+  event TaskDomainChanged(uint256 indexed id, uint256 domainId);
+
+  /// @notice Event logged when a task's skill changes
+  /// @param id Id of the task
+  /// @param skillId New skill id of the task
+  event TaskSkillChanged(uint256 indexed id, uint256 skillId);
+
+  /// @notice Event logged when a task's role user changes
+  /// @param id Id of the task
+  /// @param role Role of the user
+  /// @param user User that fulfills the designated role
+  event TaskRoleUserChanged(uint256 indexed id, uint8 role, address user);
+
+  /// @notice Event logged when a task's worker funding changes
+  /// @param id Id of the task
+  /// @param token Token of the payout funding
+  /// @param amount Amount of the payout funding
+  event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
+
+  /// @notice Event logged when a task has been finalized
+  /// @param id Id of the finalized task
+  event TaskFinalized(uint256 indexed id);
+
+  /// @notice Event logged when a task has been canceled
+  /// @param id Id of the canceled task
+  event TaskCanceled(uint256 indexed id);
+
   /// @notice Event logged when a new reward payout cycle has started
   /// @param id Payout id
   event RewardPayoutCycleStarted(uint256 indexed id);
