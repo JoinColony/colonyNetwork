@@ -199,7 +199,15 @@ contract ColonyTask is ColonyStorage, DSMath {
     }
     
     taskChangeNonces[taskId]++;
-    require(address(this).call.value(_value)(_data));
+    require(executeCall(address(this), _value, _data));
+  }
+
+  // The address.call() syntax is no longer recommended, see:
+  // https://github.com/ethereum/solidity/issues/2884
+  function executeCall(address to, uint256 value, bytes data) internal returns (bool success) {
+    assembly {
+      success := call(gas, to, value, add(data, 0x20), mload(data), 0, 0)
+      }
   }
 
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
