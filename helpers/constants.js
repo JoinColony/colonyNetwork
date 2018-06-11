@@ -18,8 +18,9 @@ const INITIAL_FUNDING = 360 * 1e18;
 const MANAGER_PAYOUT = web3Utils.toBN(100 * 1e18);
 const EVALUATOR_PAYOUT = web3Utils.toBN(50 * 1e18);
 const WORKER_PAYOUT = web3Utils.toBN(200 * 1e18);
-const MANAGER_RATING = 30;
-const WORKER_RATING = 40;
+const MANAGER_RATING = 2;
+const WORKER_RATING = 3;
+const RATING_MULTIPLIER = { 1: -1, 2: 1, 3: 1.5 };
 const SECONDS_PER_DAY = 86400;
 const RATING_1_SALT = web3Utils.soliditySha3(getRandomString(10));
 const RATING_2_SALT = web3Utils.soliditySha3(getRandomString(10));
@@ -44,6 +45,7 @@ module.exports = {
   WORKER_PAYOUT,
   MANAGER_RATING,
   WORKER_RATING,
+  RATING_MULTIPLIER,
   RATING_1_SALT,
   RATING_2_SALT,
   RATING_1_SECRET,

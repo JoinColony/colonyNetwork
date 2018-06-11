@@ -1364,7 +1364,7 @@ contract("ColonyNetworkStaking", accounts => {
             colonyNetwork,
             colony: metaColony,
             colonyToken: clny,
-            workerRating: 20,
+            workerRating: 1,
             managerPayout: 1,
             evaluatorPayout: 1,
             workerPayout: 1
@@ -1437,8 +1437,8 @@ contract("ColonyNetworkStaking", accounts => {
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
-        managerRating: 10,
-        workerRating: 10
+        managerRating: 1,
+        workerRating: 1
       });
       await metaColony.finalizeTask(taskId);
       await repCycle.submitRootHash("0x0", 0, 10);
@@ -1481,8 +1481,8 @@ contract("ColonyNetworkStaking", accounts => {
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
-        managerRating: 10,
-        workerRating: 10
+        managerRating: 1,
+        workerRating: 1
       });
       await metaColony.finalizeTask(taskId);
 
@@ -1530,8 +1530,8 @@ contract("ColonyNetworkStaking", accounts => {
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
-        managerRating: 50,
-        workerRating: 50
+        managerRating: 3,
+        workerRating: 3
       });
       await metaColony.finalizeTask(taskId);
 
