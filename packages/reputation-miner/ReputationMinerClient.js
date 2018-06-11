@@ -110,19 +110,29 @@ class ReputationMinerClient {
       console.log("#️⃣ Submitting new reputation hash");
 
       // Submit hash
-      await this._miner.submitRootHash();
+      let tx = await this._miner.submitRootHash();
+      if (!tx.nonce) {
+        // Assume we've been given back the tx hash.
+        tx = await this._miner.realProvider.getTransaction(tx);
+      }
 
       console.log("Confirming new reputation hash...");
 
       // Confirm hash
-      const tx = await repCycle.confirmNewHash(0, { gasLimit: 3500000 });
-      console.log("✅ New reputation hash confirmed, via TXID", tx);
-      // setTimeout(() => this.checkSubmissionWindow(), 3600000);
+      // We explicitly use the previous nonce +1, in case we're using Infura and we end up
+      // querying a node that hasn't had the above transaction propagate to it yet.
+      tx = await repCycle.confirmNewHash(0, { gasLimit: 3500000, nonce: tx.nonce + 1 });
+
+      console.log("✅ New reputation hash confirmed, via TX", tx);
+      // setTimeout(() => this.checkSubmissionWindow(), 3660000);
+      // console.log("⌛️ will next check in one hour and one minute");
       setTimeout(() => this.checkSubmissionWindow(), 10000);
     } else {
-      // Set a timeout for 3601 - (now - windowOpened)
+      // Set a timeout for 3610 - (now - windowOpened)
       setTimeout(() => this.checkSubmissionWindow(), 10000);
-      // setTimeout(() => this.checkSubmissionWindow(), 3601000 - (now - windowOpened) * 1000);
+      // const timeout = Math.max(3610 - (now - windowOpened), 10);
+      // console.log("⌛️ will next check in ", timeout, "seconds");
+      // setTimeout(() => this.checkSubmissionWindow(), timeout * 1000);
     }
   }
 }
