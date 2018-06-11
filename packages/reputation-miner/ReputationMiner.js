@@ -319,7 +319,7 @@ class ReputationMiner {
     const hash = await this.getRootHash();
     // TODO: Work out what entry we should use when we submit
     const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, 1);
-    await repCycle.submitRootHash(hash, this.nReputations, 1, { gasLimit: `0x${gas.mul(2).toString()}` });
+    return repCycle.submitRootHash(hash, this.nReputations, 1, { gasLimit: `0x${gas.mul(2).toString()}` });
   }
 
   /**
