@@ -11,8 +11,9 @@ When making a larger change, please consult with the team on [Colony Network Git
 To report an issue, use the [GitHub issues tracker](https://github.com/JoinColony/colonyNetwork/issues).
 
 ## Workflow for Pull Requests
-
 In order to contribute, please fork off of the `develop` branch and make your changes there. Keep your branch up to date with develop using `rebase` instead of `merge`.
+
+We use PR-specific labels to indicate PR current status, that is: `in-progress` / `ready-for-review` / `under-review`
 
 ### Branch naming 
 Use the following naming schema for your PR branch: [feature/fix/maintenance/...]/[issue-#]-[a-meaningful-description-in-kebab-case] e.g. `feature/84-voting-on-disputes`
