@@ -504,33 +504,21 @@ contract("Colony", addresses => {
 
     it("should log a TaskBriefChanged event, if the task brief gets changed", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-
-      // Change the task brief
-      const signers = [MANAGER, WORKER];
       const txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH_UPDATED);
-      const sigs = await createSignatures(colony, signers, 0, txData);
-
-      await expectEvent(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData), "TaskBriefChanged");
+      const sigs = await createSignatures(colony, 1, [MANAGER], 0, txData);
+      await expectEvent(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0], 0, txData), "TaskBriefChanged");
     });
 
     it("should log a TaskDueDateChanged event, if the task due date gets changed", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-
-      // Change the due date
       const dueDate = await currentBlockTime();
-      const signers = [MANAGER, WORKER];
       const txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
-      const sigs = await createSignatures(colony, signers, 0, txData);
-
+      const sigs = await createSignatures(colony, 1, [MANAGER], 0, txData);
       await expectEvent(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData), "TaskDueDateChanged");
     });
 
     it("should log a TaskSkillChanged event, if the task skill gets changed", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-
       // Acquire meta colony, create new global skill, assign new task's skill
       const metaColonyAddress = await colonyNetwork.getMetaColony.call();
       const metaColony = await IColony.at(metaColonyAddress);
@@ -542,8 +530,6 @@ contract("Colony", addresses => {
 
     it("should log a TaskDomainChanged event, if the task domain gets changed", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-
       // Create a domain, change task's domain
       const skillCount = await colonyNetwork.getSkillCount.call();
       await colony.addDomain(skillCount.toNumber());
@@ -793,7 +779,7 @@ contract("Colony", addresses => {
 
       // Set the evaluator payout as 1000 ethers
       const txData = await colony.contract.setTaskWorkerPayout.getData(1, 0x0, 98000);
-      const sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+      const sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
 
       await expectEvent(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData), "TaskWorkerPayoutChanged");
     });
