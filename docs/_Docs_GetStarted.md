@@ -52,7 +52,7 @@ Start the mining client with:
 node packages/reputation-miner/bin/index.js --file ./reputations.json --colonyNetworkAddress 0x76d508fa65654654ffdb334a3023353587112e09 --minerAddress 0xb77d57f4959eafa0339424b83fcfaf9c15407461
 ```
 
-This will use the first account in `ganache-accounts.json` as the Reputation miner.
+The `minerAddress` in the execution above is the first account in `ganache-accounts.json`
 
 ### Force Reputation Updates
 The client is set to provide a reputation update once per hour. For testing, you'll likely want to 'fast-forward' your network through a few submissions to see usable reputation.
@@ -74,7 +74,7 @@ The mining client will answer queries for Reputation scores locally over HTTP:
 http://127.0.0.1:3000/{colonyAddress}/{skillId}/{userAddress}
 ```
 
-For example, you can get the reputation score of the miner using the address of the Meta Colony, the skill tag of `0`, and the address of the miner:
+For example, you can get the reputation score of the miner using the address of the Meta Colony (`0xdb8fe93a3a9c97f04f5c862f52a84f992bd331df`), the skill tag of `0`, and the address of the miner (0xb77d57f4959eafa0339424b83fcfaf9c15407461):
 ```
 http://127.0.0.1:3000/0xdb8fe93a3a9c97f04f5c862f52a84f992bd331df/0/0xb77d57f4959eafa0339424b83fcfaf9c15407461
 ```
