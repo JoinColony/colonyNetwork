@@ -142,20 +142,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskCount;
   }
 
-  function getTaskChangeNonce() public view returns (uint256) {
-    return taskChangeNonce;
-  }
-
-  function getSignedMessageHash(uint256 _value, bytes _data, uint8 _mode) private returns (bytes32 txHash) {
-    bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonce));
-    if (_mode==0) {
-      // 'Normal' mode - geth, etc.
-      return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
-    } else {
-      // Trezor mode
-      // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
-      return keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n\x20", msgHash));
-    }
+  function getTaskChangeNonce(uint256 _id) public view returns (uint256) {
+    return taskChangeNonces[_id];
   }
 
   function executeTaskChange(
@@ -167,33 +155,59 @@ contract ColonyTask is ColonyStorage, DSMath {
     bytes _data) public
   {
     require(_value == 0);
-    // Allow for 2 reviewers
-    require(_sigR.length == 2);
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
 
     bytes4 sig;
     uint256 taskId;
     (sig, taskId) = deconstructCall(_data);
-    Task storage task = tasks[taskId];
-    require(!task.finalized);
+    require(!tasks[taskId].finalized);
 
-    uint8[2] storage _reviewers = reviewers[sig];
-    uint8 r1 = _reviewers[0];
-    uint8 r2 = _reviewers[1];
-    // Prevent calls to non registered /arbitrary function on the contract
-    // Checks at least one of the two reviewers registered is different to the task manager
-    require(r1 != MANAGER || r2 != MANAGER);
+    uint8 nSignaturesRequired;
+    if (tasks[taskId].roles[reviewers[sig][0]].user == address(0) || tasks[taskId].roles[reviewers[sig][1]].user == address(0)) {
+      // When one of the roles is not set, allow the other one to execute a change with just their signature
+      nSignaturesRequired = 1;
+    } else if (tasks[taskId].roles[reviewers[sig][0]].user == tasks[taskId].roles[reviewers[sig][1]].user) {
+      // We support roles being assumed by the same user, in this case, allow them to execute a change with just their signature
+      nSignaturesRequired = 1;
+    } else {
+      nSignaturesRequired = 2;
+    }
+    
+    require(_sigR.length == nSignaturesRequired);
 
-    address[] memory reviewerAddresses = new address[](2);
-    for (uint i = 0; i < 2; i++) {
-      reviewerAddresses[i] = ecrecover(getSignedMessageHash(_value, _data, _mode[i]), _sigV[i], _sigR[i], _sigS[i]);
+    bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
+    address[] memory reviewerAddresses = new address[](nSignaturesRequired);
+    for (uint i = 0; i < nSignaturesRequired; i++) {
+      // 0 'Normal' mode - geth, etc. 
+      // >0 'Trezor' mode
+      // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
+      bytes32 txHash;
+      if (_mode[i] == 0) {
+        txHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
+      } else {
+        txHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n\x20", msgHash));
+      }
+    
+      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
     }
 
-    require(task.roles[r1].user == reviewerAddresses[0] || task.roles[r1].user == reviewerAddresses[1]);
-    require(task.roles[r2].user == reviewerAddresses[0] || task.roles[r2].user == reviewerAddresses[1]);
+    require(reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][0]].user || reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user);
+    
+    if (nSignaturesRequired == 2) {
+      require(reviewerAddresses[0] != reviewerAddresses[1]);
+      require(reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][0]].user || reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][1]].user);
+    }
+    
+    taskChangeNonces[taskId]++;
+    require(executeCall(address(this), _value, _data));
+  }
 
-    taskChangeNonce = taskChangeNonce + 1;
-    require(address(this).call.value(_value)(_data));
+  // The address.call() syntax is no longer recommended, see:
+  // https://github.com/ethereum/solidity/issues/2884
+  function executeCall(address to, uint256 value, bytes data) internal returns (bool success) {
+    assembly {
+      success := call(gas, to, value, add(data, 0x20), mload(data), 0, 0)
+      }
   }
 
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public

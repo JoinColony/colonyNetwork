@@ -180,10 +180,10 @@ export async function forwardTime(seconds, test) {
   return p;
 }
 
-export async function createSignatures(colony, signers, value, data) {
+export async function createSignatures(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
-  const nonce = await colony.getTaskChangeNonce.call();
+  const nonce = await colony.getTaskChangeNonce.call(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
     2
@@ -207,10 +207,10 @@ export async function createSignatures(colony, signers, value, data) {
   return { sigV, sigR, sigS };
 }
 
-export async function createSignaturesTrezor(colony, signers, value, data) {
+export async function createSignaturesTrezor(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
-  const nonce = await colony.getTaskChangeNonce.call();
+  const nonce = await colony.getTaskChangeNonce.call(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
   const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
     2

@@ -44,9 +44,10 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
     dueDateTimestamp = await currentBlockTime();
   }
   const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDateTimestamp);
-  const signers = [MANAGER, worker];
-  const sigs = await createSignatures(colony, signers, 0, txData);
-  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
+  const signers = MANAGER === worker ? [MANAGER] : [MANAGER, worker];
+  const sigs = await createSignatures(colony, taskId, signers, 0, txData);
+  const signatureTypes = Array.from({ length: signers.length }, () => 0);
+  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, signatureTypes, 0, txData);
   return taskId;
 }
 
@@ -84,12 +85,16 @@ export async function setupFundedTask({
   await colony.setTaskManagerPayout(taskId, tokenAddress, managerPayout.toString());
 
   txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
-  sigs = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData);
-  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
+  let signers = MANAGER === evaluator ? [MANAGER] : [MANAGER, evaluator];
+  sigs = await createSignatures(colony, taskId, signers, 0, txData);
+  let signatureTypes = Array.from({ length: signers.length }, () => 0);
+  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, signatureTypes, 0, txData);
 
   txData = await colony.contract.setTaskWorkerPayout.getData(taskId, tokenAddress, workerPayout.toString());
-  sigs = await createSignatures(colony, [MANAGER, worker], 0, txData);
-  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
+  signers = MANAGER === worker ? [MANAGER] : [MANAGER, worker];
+  sigs = await createSignatures(colony, taskId, signers, 0, txData);
+  signatureTypes = Array.from({ length: signers.length }, () => 0);
+  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, signatureTypes, 0, txData);
   return taskId;
 }
 

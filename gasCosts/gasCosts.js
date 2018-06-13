@@ -121,14 +121,14 @@ contract("All", accounts => {
 
       // setTaskBrief
       txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH);
-      sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+      sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
       // setTaskDueDate
       let dueDate = await currentBlockTime();
       dueDate += SECONDS_PER_DAY * 5;
       txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
-      sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+      sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
       // moveFundsBetweenPots
@@ -139,12 +139,12 @@ contract("All", accounts => {
 
       // setTaskEvaluatorPayout
       txData = await colony.contract.setTaskEvaluatorPayout.getData(1, tokenAddress, 40);
-      sigs = await createSignatures(colony, [MANAGER, EVALUATOR], 0, txData);
+      sigs = await createSignatures(colony, 1, [MANAGER, EVALUATOR], 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
       // setTaskWorkerPayout
       txData = await colony.contract.setTaskWorkerPayout.getData(1, tokenAddress, 100);
-      sigs = await createSignatures(colony, [MANAGER, WORKER], 0, txData);
+      sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
 
       // submitTaskDeliverable
