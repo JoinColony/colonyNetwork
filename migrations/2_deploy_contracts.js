@@ -2,7 +2,6 @@
 /* eslint-disable no-undef, no-console */
 
 const SafeMath = artifacts.require("./SafeMath");
-const ColonyFunding = artifacts.require("./ColonyFunding");
 const ColonyTask = artifacts.require("./ColonyTask");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkStaking = artifacts.require("./ColonyNetworkStaking");
@@ -19,7 +18,6 @@ artifacts.require("./ReputationMiningCycle");
 module.exports = (deployer, network) => {
   console.log(`## ${network} network ##`);
   deployer.deploy([SafeMath]);
-  deployer.link(SafeMath, ColonyFunding);
   deployer.link(SafeMath, ColonyTask);
   deployer.deploy([ColonyNetwork]);
   deployer.deploy([ColonyNetworkStaking]);
