@@ -8,10 +8,12 @@ let OTHER;
 const MANAGER_ROLE = 0;
 const EVALUATOR_ROLE = 1;
 const WORKER_ROLE = 2;
-// The base58 decoded, bytes32 converted value of the task ipfsHash
-const SPECIFICATION_HASH = "9bb76d8e6c89b524d34a454b3140df28";
-const SPECIFICATION_HASH_UPDATED = "9bb76d8e6c89b524d34a454b3140df29";
-const DELIVERABLE_HASH = "9cc89e3e3d12a672d67a424b3640ce34";
+// The base58 decoded, bytes32 converted hex value of a test task ipfsHash "QmNSUYVKDSvPUnRLKmuxk9diJ6yS96r1TrAXzjTiBcCLAL"
+const SPECIFICATION_HASH = "0x017dfd85d4f6cb4dcd715a88101f7b1f06cd1e009b2327a0809d01eb9c91f231";
+// The above bytes32 hash where the last raw byte was changed from 1 -> 2
+const SPECIFICATION_HASH_UPDATED = "0x017dfd85d4f6cb4dcd715a88101f7b1f06cd1e009b2327a0809d01eb9c91f232";
+// The base58 decoded, bytes32 converted hex value of a test task ipfsHash "qmv8ndh7ageh9b24zngaextmuhj7aiuw3scc8hkczvjkww"
+const DELIVERABLE_HASH = "0xfb027a4d64f29d83e27769cb05d945e67ef7396fa1bd73ef53f065311fd3313e";
 const INITIAL_FUNDING = 360 * 1e18;
 const MANAGER_PAYOUT = web3Utils.toBN(100 * 1e18);
 const EVALUATOR_PAYOUT = web3Utils.toBN(50 * 1e18);

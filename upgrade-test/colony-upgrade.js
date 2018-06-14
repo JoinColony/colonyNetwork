@@ -1,7 +1,7 @@
 /* globals artifacts */
-import { hexToUtf8 } from "web3-utils";
 import { getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+import { SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -16,9 +16,6 @@ const Token = artifacts.require("Token");
 
 contract("Colony contract upgrade", accounts => {
   const ACCOUNT_TWO = accounts[1];
-  // The base58 decoded, bytes32 converted value of the task ipfsHash
-  const specificationHash = "9bb76d8e6c89b524d34a454b3140df28";
-  const newSpecificationHash = "9bb76d8e6c89b524d34a454b3140df29";
 
   let colony;
   let colonyTask;
@@ -46,8 +43,8 @@ contract("Colony contract upgrade", accounts => {
     token = await Token.at(tokenAddress);
 
     await authority.setUserRole(ACCOUNT_TWO, 0, true);
-    await colony.makeTask(specificationHash, 1);
-    await colony.makeTask(newSpecificationHash, 1);
+    await colony.makeTask(SPECIFICATION_HASH, 1);
+    await colony.makeTask(SPECIFICATION_HASH_UPDATED, 1);
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
@@ -79,14 +76,14 @@ contract("Colony contract upgrade", accounts => {
 
     it("should return correct tasks", async () => {
       const task1 = await updatedColony.getTask.call(1);
-      assert.equal(hexToUtf8(task1[0]), specificationHash);
+      assert.equal(task1[0], SPECIFICATION_HASH);
       assert.isFalse(task1[2]);
       assert.isFalse(task1[3]);
       assert.equal(task1[4].toNumber(), 0);
       assert.equal(task1[5].toNumber(), 0);
 
       const task2 = await updatedColony.getTask.call(2);
-      assert.equal(hexToUtf8(task2[0]), newSpecificationHash);
+      assert.equal(task2[0], SPECIFICATION_HASH_UPDATED);
       assert.isFalse(task2[2]);
       assert.isFalse(task2[3]);
       assert.equal(task2[4].toNumber(), 0);

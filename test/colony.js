@@ -1,6 +1,6 @@
 /* globals artifacts */
 
-import { hexToUtf8, toBN } from "web3-utils";
+import { toBN } from "web3-utils";
 
 import {
   MANAGER,
@@ -153,8 +153,8 @@ contract("Colony", addresses => {
     it("should allow admins to make task", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       const task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH);
-      assert.equal(hexToUtf8(task[1]), "");
+      assert.equal(task[0], SPECIFICATION_HASH);
+      assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
       assert.isFalse(task[2]);
       assert.isFalse(task[3]);
       assert.equal(task[4].toNumber(), 0);
@@ -367,7 +367,7 @@ contract("Colony", addresses => {
       const sigs = await createSignatures(colony, 1, [MANAGER], 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0], 0, txData);
       const task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
+      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
     it("should allow update of task brief signed by manager and worker", async () => {
@@ -378,7 +378,7 @@ contract("Colony", addresses => {
       const sigs = await createSignatures(colony, 1, signers, 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
       const task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
+      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
     it("should allow update of task brief signed by manager and worker using Trezor-style signatures", async () => {
@@ -389,7 +389,7 @@ contract("Colony", addresses => {
       const sigs = await createSignaturesTrezor(colony, 1, signers, 0, txData);
       await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [1, 1], 0, txData);
       const task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
+      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
     it("should allow update of task brief signed by manager and worker if one uses Trezor-style signatures and the other does not", async () => {
@@ -407,7 +407,7 @@ contract("Colony", addresses => {
         txData
       );
       const task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH_UPDATED);
+      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
     it("should not allow update of task brief signed by manager twice, with two different signature styles", async () => {
@@ -427,7 +427,7 @@ contract("Colony", addresses => {
         )
       );
       const task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[0]), SPECIFICATION_HASH);
+      assert.equal(task[0], SPECIFICATION_HASH);
     });
 
     it("should allow update of task due date signed by manager and worker", async () => {
@@ -552,12 +552,12 @@ contract("Colony", addresses => {
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
       let task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[1]), "");
+      assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
 
       const currentTime = await currentBlockTime();
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
       task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[1]), DELIVERABLE_HASH);
+      assert.equal(task[1], DELIVERABLE_HASH);
       assert.closeTo(task[7].toNumber(), currentTime, 2);
     });
 
@@ -587,7 +587,7 @@ contract("Colony", addresses => {
 
       await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: WORKER }));
       const task = await colony.getTask.call(1);
-      assert.equal(hexToUtf8(task[1]), DELIVERABLE_HASH);
+      assert.equal(task[1], DELIVERABLE_HASH);
     });
 
     it("should fail if I try to submit work if I'm not the assigned worker", async () => {
@@ -597,7 +597,7 @@ contract("Colony", addresses => {
 
       await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }));
       const task = await colony.getTask.call(1);
-      assert.notEqual(hexToUtf8(task[1]), DELIVERABLE_HASH);
+      assert.notEqual(task[1], DELIVERABLE_HASH);
     });
   });
 
