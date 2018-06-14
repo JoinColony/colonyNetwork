@@ -5,8 +5,8 @@ import config from "../config.json";
 
 const NETWORKS = ["rinkeby"];
 const LATEST_VERSION = config.LATEST_CONTRACT_VERSION;
-const VERSIONED_CONTRACTS = ["IColony", "IColonyNetwork"];
-const STATIC_CONTRACTS = ["Authority", "EtherRouter", "Token"];
+const VERSIONED_CONTRACTS = ["IColony", "IColonyNetwork", "Authority"];
+const STATIC_CONTRACTS = ["EtherRouter", "Token"];
 
 const CONTRACTS = {};
 NETWORKS.forEach(network => {
