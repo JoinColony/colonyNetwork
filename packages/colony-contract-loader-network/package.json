@@ -6,7 +6,7 @@
   "scripts": {
     "build:lib": "babel src --out-dir lib --ignore __tests__ --source-maps",
     "clean": "shx rm -rf lib",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --config=jest.conf.json"
   },
   "author": "Christian Maniewski <chris@colony.io>",
   "license": "GPL-3.0",
@@ -17,6 +17,8 @@
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
+    "babel-jest": "^23.0.1",
+    "jest": "^23.1.0",
     "shx": "^0.3.0"
   }
 }
