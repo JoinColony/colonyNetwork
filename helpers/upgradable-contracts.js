@@ -95,3 +95,13 @@ export async function setupUpgradableColonyNetwork(etherRouter, resolver, colony
 
   await etherRouter.setResolver(resolver.address);
 }
+
+export async function setupUpgradableTokenLocking(etherRouter, resolver, tokenLocking) {
+  const deployedImplementations = {};
+  deployedImplementations.TokenLocking = tokenLocking.address;
+  await setupEtherRouter("ITokenLocking", deployedImplementations, resolver);
+
+  await etherRouter.setResolver(resolver.address);
+  const registeredResolver = await etherRouter.resolver.call();
+  assert.equal(registeredResolver, resolver.address);
+}
