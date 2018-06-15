@@ -109,8 +109,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   }
 
   modifier taskWorkRatingsAssigned(uint256 _id) {
-    require(tasks[_id].roles[WORKER].rated);
-    require(tasks[_id].roles[MANAGER].rated);
+    require(tasks[_id].roles[WORKER].rating != TaskRatings.None);
+    require(tasks[_id].roles[MANAGER].rating != TaskRatings.None);
     _;
   }
 
@@ -129,8 +129,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     tasks[taskCount] = task;
     tasks[taskCount].roles[MANAGER] = Role({
       user: msg.sender,
-      rated: false,
-      rating: 0
+      rateFail: false,
+      rating: TaskRatings.None
     });
 
     pots[potCount].taskId = taskCount;
@@ -228,29 +228,29 @@ contract ColonyTask is ColonyStorage, DSMath {
     bytes32 ratingSecret = generateSecret(_salt, _rating);
     require(ratingSecret == taskWorkRatings[_id].secret[_role]);
 
-    Role storage role = tasks[_id].roles[_role];
-    role.rated = true;
-    role.rating = _rating;
+    TaskRatings rating = TaskRatings(_rating);
+    require(rating != TaskRatings.None, "Cannot rate None!");
+    tasks[_id].roles[_role].rating = rating;
   }
 
   // In the event of a user not committing or revealing within the 10 day rating window,
   // their rating of their counterpart is assumed to be the highest possible
-  // and their own rating is decreased by 5 (e.g. 0.5 points)
+  // and they will receive a reputation penalty
   function assignWorkRating(uint256 _id) public
   taskWorkRatingsClosed(_id)
   {
     Role storage managerRole = tasks[_id].roles[MANAGER];
     Role storage workerRole = tasks[_id].roles[WORKER];
+    Role storage evaluatorRole = tasks[_id].roles[EVALUATOR];
 
-    if (!workerRole.rated) {
-      workerRole.rated = true;
-      workerRole.rating = 50;
+    if (workerRole.rating == TaskRatings.None) {
+      evaluatorRole.rateFail = true;
+      workerRole.rating = TaskRatings.Excellent;
     }
 
-    if (!managerRole.rated) {
-      managerRole.rated = true;
-      managerRole.rating = 50;
-      workerRole.rating = (workerRole.rating > 5) ? (workerRole.rating - 5) : 0;
+    if (managerRole.rating == TaskRatings.None) {
+      workerRole.rateFail = true;
+      managerRole.rating = TaskRatings.Excellent;
     }
   }
 
@@ -275,8 +275,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     require(tasks[_id].roles[MANAGER].user == msg.sender);
     tasks[_id].roles[_role] = Role({
       user: _user,
-      rated: false,
-      rating: 0
+      rateFail: false,
+      rating: TaskRatings.None
     });
 
     emit TaskRoleUserChanged(_id, _role, _user);
@@ -350,19 +350,18 @@ contract ColonyTask is ColonyStorage, DSMath {
     task.finalized = true;
 
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
-      uint payout = task.payouts[roleId][token];
       Role storage role = task.roles[roleId];
+      TaskRatings rating = (roleId == EVALUATOR) ? TaskRatings.Satisfactory : role.rating;
+      uint payout = task.payouts[roleId][token];
 
-      uint8 rating = (roleId == EVALUATOR) ? 50 : role.rating;
-      uint8 divider = (roleId == WORKER) ? 30 : 50;
+      int reputation = getReputation(int(payout), uint8(rating), role.rateFail);
 
-      int reputation = SafeMath.mulInt(int(payout), (int(rating)*2 - 50)) / divider;
       colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
 
       if (roleId == WORKER) {
         colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
 
-        if (rating <= 20) {
+        if (rating == TaskRatings.Unsatisfactory) {
           task.payouts[roleId][token] = 0;
           task.totalPayouts[token] = sub(task.totalPayouts[token], payout);
         }
@@ -389,7 +388,19 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8) {
     Role storage role = tasks[_id].roles[_role];
-    return (role.user, role.rated, role.rating);
+    return (role.user, role.rateFail, uint8(role.rating));
+  }
+
+  function getReputation(int payout, uint8 rating, bool rateFail) internal pure returns(int reputation) {
+    require(rating > 0 && rating <= 3, "Invalid rating");
+
+    // -1, 1, 1.5 multipliers, -0.5 penalty
+    int8[3] memory ratingMultipliers = [-2, 2, 3];
+    int8 ratingDivisor = 2;
+
+    reputation = SafeMath.mulInt(payout, ratingMultipliers[rating - 1]);
+    reputation = SafeMath.subInt(reputation, rateFail ? payout : 0); // Deduct penalty for not rating
+    reputation /= ratingDivisor; // We may lose one atom of reputation here :sad:
   }
 
   // Get the function signature and task id from the transaction bytes data

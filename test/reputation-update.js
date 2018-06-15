@@ -61,7 +61,7 @@ contract("Colony Reputation Updates", () => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryManager[0], MANAGER);
-      assert.equal(repLogEntryManager[1].toNumber(), 1000 * 1e18 / 50);
+      assert.equal(repLogEntryManager[1].toNumber(), 100 * 1e18);
       assert.equal(repLogEntryManager[2].toNumber(), 2);
       assert.equal(repLogEntryManager[3], metaColony.address);
       assert.equal(repLogEntryManager[4].toNumber(), 2);
@@ -77,7 +77,7 @@ contract("Colony Reputation Updates", () => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       assert.equal(repLogEntryWorker[0], WORKER);
-      assert.equal(repLogEntryWorker[1].toNumber(), 200 * 1e18);
+      assert.equal(repLogEntryWorker[1].toNumber(), 300 * 1e18);
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
       assert.equal(repLogEntryWorker[3], metaColony.address);
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
@@ -86,58 +86,22 @@ contract("Colony Reputation Updates", () => {
 
     const ratings = [
       {
-        manager: 0,
-        reputationChangeManager: MANAGER_PAYOUT.muln(50)
-          .neg()
-          .divn(50),
-        worker: 0,
-        reputationChangeWorker: WORKER_PAYOUT.muln(50)
-          .neg()
-          .divn(30)
+        manager: 1,
+        reputationChangeManager: MANAGER_PAYOUT.neg(),
+        worker: 1,
+        reputationChangeWorker: WORKER_PAYOUT.neg()
       },
       {
-        manager: 10,
-        reputationChangeManager: MANAGER_PAYOUT.muln(30)
-          .neg()
-          .divn(50),
-        worker: 10,
-        reputationChangeWorker: WORKER_PAYOUT.muln(30)
-          .neg()
-          .divn(30)
+        manager: 2,
+        reputationChangeManager: MANAGER_PAYOUT,
+        worker: 2,
+        reputationChangeWorker: WORKER_PAYOUT
       },
       {
-        manager: 20,
-        reputationChangeManager: MANAGER_PAYOUT.muln(10)
-          .neg()
-          .divn(50),
-        worker: 20,
-        reputationChangeWorker: WORKER_PAYOUT.muln(10)
-          .neg()
-          .divn(30)
-      },
-      {
-        manager: 25,
-        reputationChangeManager: MANAGER_PAYOUT.muln(0).divn(50),
-        worker: 25,
-        reputationChangeWorker: WORKER_PAYOUT.muln(0).divn(30)
-      },
-      {
-        manager: 30,
-        reputationChangeManager: MANAGER_PAYOUT.muln(10).divn(50),
-        worker: 30,
-        reputationChangeWorker: WORKER_PAYOUT.muln(10).divn(30)
-      },
-      {
-        manager: 40,
-        reputationChangeManager: MANAGER_PAYOUT.muln(30).divn(50),
-        worker: 40,
-        reputationChangeWorker: WORKER_PAYOUT.muln(30).divn(30)
-      },
-      {
-        manager: 50,
-        reputationChangeManager: MANAGER_PAYOUT.muln(50).divn(50),
-        worker: 50,
-        reputationChangeWorker: WORKER_PAYOUT.muln(50).divn(30)
+        manager: 3,
+        reputationChangeManager: MANAGER_PAYOUT.muln(3).divn(2),
+        worker: 3,
+        reputationChangeWorker: WORKER_PAYOUT.muln(3).divn(2)
       }
     ];
 
@@ -204,7 +168,10 @@ contract("Colony Reputation Updates", () => {
       });
       await metaColony.finalizeTask(taskId1);
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      const result = web3Utils.toBN("1").mul(WORKER_PAYOUT);
+      const result = web3Utils
+        .toBN(WORKER_PAYOUT)
+        .muln(3)
+        .divn(2);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
@@ -237,7 +204,7 @@ contract("Colony Reputation Updates", () => {
         managerPayout,
         evaluatorPayout,
         workerPayout,
-        workerRating: 20
+        workerRating: 1
       });
 
       // Check the task pot is correctly funded with the max amount

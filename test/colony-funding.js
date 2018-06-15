@@ -286,13 +286,13 @@ contract("Colony Funding", addresses => {
       assert.equal(colonyPotBalance.toNumber(), 0);
     });
 
-    it("should not allow user to claim payout if rating is less or equal than 2", async () => {
+    it("should not allow user to claim payout if rating is 1", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony,
         token,
-        workerRating: 20
+        workerRating: 1
       });
       await colony.finalizeTask(taskId);
       const payout = await colony.getTaskPayout.call(taskId, WORKER_ROLE, token.address);

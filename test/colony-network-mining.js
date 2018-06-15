@@ -1364,7 +1364,7 @@ contract("ColonyNetworkStaking", accounts => {
             colonyNetwork,
             colony: metaColony,
             colonyToken: clny,
-            workerRating: 20,
+            workerRating: 1,
             managerPayout: 1,
             evaluatorPayout: 1,
             workerPayout: 1
@@ -1437,8 +1437,8 @@ contract("ColonyNetworkStaking", accounts => {
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
-        managerRating: 10,
-        workerRating: 10
+        managerRating: 1,
+        workerRating: 1
       });
       await metaColony.finalizeTask(taskId);
       await repCycle.submitRootHash("0x0", 0, 10);
@@ -1481,8 +1481,8 @@ contract("ColonyNetworkStaking", accounts => {
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
-        managerRating: 10,
-        workerRating: 10
+        managerRating: 1,
+        workerRating: 1
       });
       await metaColony.finalizeTask(taskId);
 
@@ -1530,8 +1530,8 @@ contract("ColonyNetworkStaking", accounts => {
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
-        managerRating: 50,
-        workerRating: 50
+        managerRating: 3,
+        workerRating: 3
       });
       await metaColony.finalizeTask(taskId);
 
@@ -1603,7 +1603,7 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.confirmNewHash(0);
 
       // The update log should contain the person being rewarded for the previous
-      // update cycle, and reputation updates for three task completions (manager, worker (domain and skill), evalutator);
+      // update cycle, and reputation updates for three task completions (manager, worker (domain and skill), evaluator);
       // That's thirteen in total.
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = ReputationMiningCycle.at(addr);
@@ -1625,7 +1625,7 @@ contract("ColonyNetworkStaking", accounts => {
       key1 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
       assert.equal(
         client.reputations[key1],
-        "0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001"
+        `0x`+`0000000000000000000000000000000000000000000000000de0b6b3a7640000`+`0000000000000000000000000000000000000000000000000000000000000001` // eslint-disable-line
       );
       // 2. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
       let key2 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
@@ -1633,7 +1633,7 @@ contract("ColonyNetworkStaking", accounts => {
       key2 += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
       assert.equal(
         client.reputations[key2],
-        "0x00000000000000000000000000000000000000000000000010a741a4627800000000000000000000000000000000000000000000000000000000000000000002"
+        `0x`+`00000000000000000000000000000000000000000000000053444835ec580000`+`0000000000000000000000000000000000000000000000000000000000000002` // eslint-disable-line
       );
       // 3. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
       let key3 = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
@@ -1641,7 +1641,7 @@ contract("ColonyNetworkStaking", accounts => {
       key3 += `${new BN(OTHER_ACCOUNT.slice(2), 16).toString(16, 40)}`;
       assert.equal(
         client.reputations[key3],
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003"
+        `0x`+`0000000000000000000000000000000000000000000000000000000000000000`+`0000000000000000000000000000000000000000000000000000000000000003` // eslint-disable-line
       );
       // 4. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
@@ -1650,7 +1650,7 @@ contract("ColonyNetworkStaking", accounts => {
       key4 += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
       assert.equal(
         client.reputations[key4],
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004"
+        `0x`+`0000000000000000000000000000000000000000000000000000000000000000`+`0000000000000000000000000000000000000000000000000000000000000004` // eslint-disable-line
       );
     });
 

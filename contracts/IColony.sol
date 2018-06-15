@@ -288,7 +288,7 @@ contract IColony {
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @return Address of the user for the given role
-  /// @return Has the user work been rated
+  /// @return Whether the user failed to rate their counterpart
   /// @return Rating the user received
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8);
 
