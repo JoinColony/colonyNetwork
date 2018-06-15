@@ -117,12 +117,12 @@ contract("ColonyNetworkStaking", accounts => {
       while (noError) {
         let txHash = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
         let tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
-        if (tx.status === "0x00") {
+        if (parseInt(tx.status, 16) === 0) {
           noError = false;
         }
         txHash = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
         tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
-        if (tx.status === "0x00") {
+        if (parseInt(tx.status, 16) === 0) {
           noError = false;
         }
       }
@@ -281,9 +281,9 @@ contract("ColonyNetworkStaking", accounts => {
 
       const addr = await colonyNetwork.getReputationMiningCycle.call(false);
       const repCycle = ReputationMiningCycle.at(addr);
-      const nLogEntriesBefore = repCycle.getReputationUpdateLogLength();
-      checkErrorRevert(repCycle.appendReputationUpdateLog(MAIN_ACCOUNT, 100, 0, metaColony.address, 0, 1));
-      const nLogEntriesAfter = repCycle.getReputationUpdateLogLength();
+      const nLogEntriesBefore = await repCycle.getReputationUpdateLogLength();
+      await checkErrorRevert(repCycle.appendReputationUpdateLog(MAIN_ACCOUNT, 100, 0, metaColony.address, 0, 1));
+      const nLogEntriesAfter = await repCycle.getReputationUpdateLogLength();
       assert.equal(nLogEntriesBefore.toString(), nLogEntriesAfter.toString());
     });
 
@@ -304,6 +304,7 @@ contract("ColonyNetworkStaking", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
       const addr = await colonyNetwork.getReputationMiningCycle.call(true);
+
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
       await goodClient.addLogContentsToReputationTree();
@@ -1690,7 +1691,7 @@ contract("ColonyNetworkStaking", accounts => {
       assert.equal(validProof, true);
     });
 
-    it("The reputation mining clinent should calculate reputation decay correctly");
-    it("should abort if a deposit did not complete correctly");
+    it.skip("The reputation mining client should calculate reputation decay correctly");
+    it.skip("should abort if a deposit did not complete correctly");
   });
 });

@@ -39,7 +39,7 @@ jobs:
             sudo apt-get install lsof
       - run:
           name: "Greenkeeper lockfile update"
-          command: $HOME/.config/yarn/global/node_modules/.bin/greenkeeper-lockfile-update
+          command: $(yarn global bin)/greenkeeper-lockfile-update
       - run:
           name: "Linting JavaScript"
           command: yarn run eslint
@@ -63,7 +63,7 @@ jobs:
           command: cd packages/colony-contract-loader-network && yarn run test
       - run:
           name: "Greenkeeper uploading lockfile"
-          command: $HOME/.config/yarn/global/node_modules/.bin/greenkeeper-lockfile-upload
+          command: $(yarn global bin)/greenkeeper-lockfile-upload
       # Save test results
       - store_test_results:
           path: test-results.xml
