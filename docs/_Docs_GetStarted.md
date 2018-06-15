@@ -42,7 +42,7 @@ For more detailed instructions, and additional steps required to set up an envir
 
 ## Set Up Reputation Mining for Local Testing
 
-The Reputation Mining client is usable for testing, but has a limited functionality. There is currently no challenge-response process to accommodate multiple submitted Reputation Root Hashes. Still, it is possible to run a single miner instance for usable reputation scores on a testnet.
+The Reputation Mining client is usable for testing, but has a limited functionality. It currently has no support for the challenge-response process to accommodate multiple submitted Reputation Root Hashes. Still, it is possible to run a single miner instance for usable reputation scores on a testnet.
 
 ### Start the Mining Client
 
@@ -52,7 +52,10 @@ Start the mining client with:
 node packages/reputation-miner/bin/index.js --file ./reputations.json --colonyNetworkAddress 0x76d508fa65654654ffdb334a3023353587112e09 --minerAddress 0xb77d57f4959eafa0339424b83fcfaf9c15407461
 ```
 
-The `minerAddress` in the execution above is the first account in `ganache-accounts.json`
+The `minerAddress` in the execution above is the first account in `ganache-accounts.json`.
+
+The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrades-to-the-colony-network/) for more information about the EtherRouter design pattern.
+
 
 ### Force Reputation Updates
 The client is set to provide a reputation update once per hour. For testing, you'll likely want to 'fast-forward' your network through a few submissions to see usable reputation.
