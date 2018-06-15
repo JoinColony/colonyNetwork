@@ -50,7 +50,7 @@ contract IColonyNetwork {
   /// @return The colony count
   function getColonyCount() public view returns (uint256);
 
-  /// @notice Check if specific address is colony created on colony network
+  /// @notice Check if specific address is a colony created on colony network
   /// @param _colony Address of the colony
   /// @return true if specified address is a colony, otherwise false
   function isColony(address _colony) public view returns (bool);

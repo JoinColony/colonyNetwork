@@ -151,11 +151,10 @@ contract ColonyFunding is ColonyStorage, DSMath {
     return globalRewardPayoutCount;
   }
 
-  function getUserRewardPayoutCount(address _user) public view returns (uint256) {
-    return userRewardPayoutCount[_user];
-  }
-
   function startNextRewardPayout(address _token) public auth {
+    ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
+    tokenLocking.lockToken(address(token));
+
     require(!activeRewardPayouts[_token], "colony-reward-payout-token-active");
 
     uint256 totalTokens = sub(token.totalSupply(), token.balanceOf(address(this)));
@@ -163,8 +162,6 @@ contract ColonyFunding is ColonyStorage, DSMath {
 
     activeRewardPayouts[_token] = true;
     globalRewardPayoutCount += 1;
-
-    //TODO: Lock everyones tokens
 
     rewardPayoutCycles[globalRewardPayoutCount] = RewardPayoutCycle(
       IColonyNetwork(colonyNetworkAddress).getReputationRootHash(),
@@ -178,13 +175,20 @@ contract ColonyFunding is ColonyStorage, DSMath {
   }
 
   function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public {
+    require(!userRewardPayouts[msg.sender][_payoutId], "colony-reward-payout-already-claimed-or-waived");
+
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
+    // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
-    require(_payoutId - userRewardPayoutCount[msg.sender] == 1, "colony-reward-payout-bad-id");
 
-    //TODO: Prove that userReputation and totalReputation in reputationState are correct
+    //TODO: Prove that userReputation and totalReputation in reputationState (reputation root has at the start of the payout) are correct
 
-    uint256 userTokens = token.balanceOf(msg.sender);
+    ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
+
+    bool locked = tokenLocking.usersTokensLocked(address(token), msg.sender);
+    require(locked, "colony-reward-payout-invalid-token-lock");
+
+    uint256 userTokens = tokenLocking.getUserDepositedBalance(address(token), msg.sender);
 
     require(_totalReputation > 0, "colony-reward-payout-invalid-total-reputation");
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
@@ -213,19 +217,19 @@ contract ColonyFunding is ColonyStorage, DSMath {
 
     pots[0].balance[payout.tokenAddress] = sub(pots[0].balance[payout.tokenAddress], reward);
 
-    userRewardPayoutCount[msg.sender] += 1;
-
-    // TODO: Unlock user tokens
+    userRewardPayouts[msg.sender][_payoutId] = true;
+    tokenLocking.unlockTokenForUser(address(token), msg.sender);
 
     ERC20Extended(payout.tokenAddress).transfer(msg.sender, reward);
   }
 
-  function waiveRewardPayouts(uint256 _numPayouts) public {
-    require(add(userRewardPayoutCount[msg.sender], _numPayouts) <= globalRewardPayoutCount, "colony-reward-payout-invalid-num-payouts");
+  function waiveRewardPayout(uint256 _payoutId) public {
+    require(_payoutId <= globalRewardPayoutCount, "colony-reward-payout-invalid-id");
+    require(!userRewardPayouts[msg.sender][_payoutId], "colony-reward-payout-already-claimed-or-waived");
+    userRewardPayouts[msg.sender][_payoutId] = true;
 
-    userRewardPayoutCount[msg.sender] += _numPayouts;
-
-    //TODO unlock user tokens
+    ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
+    tokenLocking.unlockTokenForUser(address(token), msg.sender);
   }
 
   function finalizeRewardPayout(uint256 _payoutId) public {

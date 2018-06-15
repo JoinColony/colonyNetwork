@@ -339,10 +339,9 @@ contract IColony {
   /// @param _token Addess of the token used for reward payout
   function startNextRewardPayout(address _token) public returns (uint256);
 
-  /// @notice Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation
+  /// @notice Claim payout with id of `_payoutId`. User needs to provide their reputation and colony-wide reputation
   /// which will be proven via Merkle proof inside this function.
   /// Can only be called if payout is active, i.e if 60 days have not passed from its creation.
-  /// Can only be called if next in queue
   /// @param _payoutId Id of the reward payout
   /// @param _squareRoots Square roots of values used in equation
   /// _squareRoots[0] - square root of user reputation
@@ -356,20 +355,18 @@ contract IColony {
   /// @param _totalReputation Total reputation at the point of creation of reward payout cycle
   function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public;
 
-  /// @notice Waive reward payouts. This will unlock the sender's tokens and increment users reward payout counter,
-  /// allowing them to claim next reward payout
-  /// @param _numPayouts Number of payouts you want to waive
-  function waiveRewardPayouts(uint256 _numPayouts) public;
+  /// @notice Waive reward payout. Unlocks users tokens once
+  /// @param _payoutId Id of the payout
+  function waiveRewardPayout(uint256 _payoutId) public;
 
   /// @notice Get useful information about specific reward payout
   /// @param _payoutId Id of the reward payout
   /// @return Reputation root hash at the time of creation
   /// @return Total colony tokens at the time of creation
   /// @return Total amount of tokens taken aside for reward payout
-  /// @return Remaining (unclaimed) amount of tokens
   /// @return Token address
   /// @return Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, uint256, address, uint256);
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, address, uint256);
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation
@@ -379,10 +376,6 @@ contract IColony {
   /// @notice Get number of reward payout cycles
   /// @return Number of reward payout cycles
   function getGlobalRewardPayoutCount() public returns (uint256);
-
-  /// @notice Get number of claimed and waived reward payouts for `_user`
-  /// @return Number of claimed and waived reward payouts
-  function getUserRewardPayoutCount(address _user) public returns (uint256);
 
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot

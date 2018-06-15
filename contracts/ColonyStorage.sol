@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/auth.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
+import "./ITokenLocking.sol";
 
 
 contract ColonyStorage is DSAuth {
@@ -61,13 +62,13 @@ contract ColonyStorage is DSAuth {
   mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles;
   // Active payouts for particular token address. Assures that one token is used for only one active payout
   mapping (address => bool) activeRewardPayouts;
-  // Incremented every time a reward payout is created. Used for comparing with `userRewardPayoutCount`
-  // to ensure that rewards are claimed in the right order.
+  // Incremented every time a reward payout is created. Used for indexing the reward payout
   // Can be used for iterating over all reward payouts (excluding index 0)
   uint256 globalRewardPayoutCount;
-  // Keeps track of how many payouts are claimed by the particular user.
-  // Can be incremented either by waiving or claiming the reward.
-  mapping (address => uint256) userRewardPayoutCount;
+
+  // Keeps track if user claimed or waived specific reward payout.
+  // Used for ensuring that user cannot claim or waive the reward twice
+  mapping (address => mapping(uint256 => bool)) userRewardPayouts;
 
   // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
