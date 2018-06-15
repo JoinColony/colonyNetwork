@@ -38,18 +38,19 @@ class NetworkLoader extends ContractLoader {
   }
   async _load(query = {}, requiredProps) {
     const { contractName = "", version = LATEST_VERSION } = query;
+    const networkQuery = Object.assign({}, query, { network: this._network });
 
     assert(!!contractName, "A `contractName` option must be provided");
     assert(!!version, "A valid `version` option must be provided");
 
     if (STATIC_CONTRACTS[contractName]) {
-      return this._transform(STATIC_CONTRACTS[contractName], query, requiredProps);
+      return this._transform(STATIC_CONTRACTS[contractName], networkQuery, requiredProps);
     } else if (
       VERSIONED_CONTRACTS[contractName] &&
       VERSIONED_CONTRACTS[contractName][this._network] &&
       VERSIONED_CONTRACTS[contractName][this._network][version]
     ) {
-      return this._transform(VERSIONED_CONTRACTS[contractName][this._network][version], query, requiredProps);
+      return this._transform(VERSIONED_CONTRACTS[contractName][this._network][version], networkQuery, requiredProps);
     }
     throw new Error(`Contract ${contractName} with version ${version} not found in ${this._network}`);
   }
