@@ -117,12 +117,12 @@ contract("ColonyNetworkStaking", accounts => {
       while (noError) {
         let txHash = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
         let tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
-        if (tx.status === "0x00") {
+        if (parseInt(tx.status, 16) === 0) {
           noError = false;
         }
         txHash = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
         tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
-        if (tx.status === "0x00") {
+        if (parseInt(tx.status, 16) === 0) {
           noError = false;
         }
       }
