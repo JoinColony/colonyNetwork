@@ -10,7 +10,7 @@ yarn add @colony/colony-js-contract-loader-network
 
 ## Usage
 
-Please see [the full documentation](https://joincolony.github.io/colonyjs/api-loaders/#networkloader).
+Please see [the full documentation](https://docs.colony.io/colonyjs/api-loaders/#networkloader).
 
 
 ## Contributing
