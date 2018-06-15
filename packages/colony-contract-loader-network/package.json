@@ -2,7 +2,7 @@
   "name": "@colony/colony-contract-loader-network",
   "version": "1.0.0",
   "description": "Load the Colony contract ABIs directly from this package",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build:lib": "babel src --out-dir lib --ignore __tests__ --source-maps",
     "clean": "shx rm -rf lib",
