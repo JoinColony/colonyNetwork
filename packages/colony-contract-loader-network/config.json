@@ -1,3 +1,4 @@
 {
-  "LATEST_CONTRACT_VERSION": "1"
+  "VERSIONS": ["1"],
+  "LATEST_VERSION": "1"
 }
