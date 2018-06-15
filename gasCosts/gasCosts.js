@@ -39,6 +39,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const Authority = artifacts.require("Authority");
+const ITokenLocking = artifacts.require("ITokenLocking");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const oneHourLater = async () => forwardTime(3600, this);
@@ -60,6 +61,7 @@ contract("All", accounts => {
   let metaColony;
   let authority;
   let colonyNetwork;
+  let tokenLocking;
 
   before(async () => {
     colony = await Colony.new();
@@ -72,6 +74,10 @@ contract("All", accounts => {
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
+
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
+    tokenLocking = ITokenLocking.at(tokenLockingAddress);
+
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
@@ -260,9 +266,9 @@ contract("All", accounts => {
     });
 
     it("when working with reward payouts", async () => {
-      const totalReputation = toBN(350 * 1e18);
-      const workerReputation = toBN(200 * 1e18);
-      const managerReputation = toBN(100 * 1e18);
+      const totalAmount = toBN(350 * 1e18);
+      const workerAmount = toBN(200 * 1e18);
+      const managerAmount = toBN(100 * 1e18);
       const initialFunding = toBN(360 * 1e18);
 
       const tokenArgs = getTokenArgs();
@@ -275,17 +281,24 @@ contract("All", accounts => {
       await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());
       await fundColonyWithTokens(newColony, newToken, initialFunding.toString());
 
-      await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
+      await newColony.bootstrapColony([WORKER, MANAGER], [workerAmount.toString(), managerAmount.toString()]);
+
+      await newToken.approve(tokenLocking.address, workerAmount.toString(), {
+        from: WORKER
+      });
+      await tokenLocking.deposit(newToken.address, workerAmount.toString(), {
+        from: WORKER
+      });
 
       const tx = await newColony.startNextRewardPayout(otherToken.address);
       const payoutId = tx.logs[0].args.id;
 
-      await newColony.waiveRewardPayouts(1, {
+      await newColony.waiveRewardPayout(payoutId, {
         from: MANAGER
       });
 
-      const workerReputationSqrt = bnSqrt(workerReputation);
-      const totalReputationSqrt = bnSqrt(workerReputation.add(managerReputation));
+      const workerReputationSqrt = bnSqrt(workerAmount);
+      const totalReputationSqrt = bnSqrt(workerAmount.add(managerAmount));
       const numeratorSqrt = bnSqrt(workerReputationSqrt.mul(workerReputationSqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalReputationSqrt));
 
@@ -303,7 +316,7 @@ contract("All", accounts => {
         amountSqrt.toString()
       ];
 
-      await newColony.claimRewardPayout(payoutId, squareRoots, workerReputation.toString(), totalReputation.toString(), {
+      await newColony.claimRewardPayout(payoutId, squareRoots, workerAmount.toString(), totalAmount.toString(), {
         from: WORKER
       });
 
@@ -315,11 +328,11 @@ contract("All", accounts => {
       const tx2 = await newColony.startNextRewardPayout(otherToken.address);
       const payoutId2 = tx2.logs[0].args.id;
 
-      await newColony.waiveRewardPayouts(1, {
+      await newColony.waiveRewardPayout(payoutId2, {
         from: MANAGER
       });
 
-      await newColony.claimRewardPayout(payoutId2, squareRoots, workerReputation.toString(), totalReputation.toString(), {
+      await newColony.claimRewardPayout(payoutId2, squareRoots, workerAmount.toString(), totalAmount.toString(), {
         from: WORKER
       });
 

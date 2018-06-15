@@ -23,6 +23,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/Resolver.sol",
       "contracts/ReputationMiningCycle.sol", // Does not use EtherRouter
       "contracts/Token.sol", // Not directly used by any colony contracts
+      "contracts/TokenLockingStorage.sol",
       "contracts/PatriciaTree/PatriciaTree.sol", // Used by ReputationMiningCycle, which does not use EtherRouter
       "contracts/gnosis/MultiSigWallet.sol" // Not directly used by any colony contracts
     ].indexOf(contractName) > -1

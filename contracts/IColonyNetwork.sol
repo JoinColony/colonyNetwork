@@ -50,6 +50,11 @@ contract IColonyNetwork {
   /// @return The colony count
   function getColonyCount() public view returns (uint256);
 
+  /// @notice Check if specific address is a colony created on colony network
+  /// @param _colony Address of the colony
+  /// @return true if specified address is a colony, otherwise false
+  function isColony(address _colony) public view returns (bool);
+
   /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`
   /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
   /// Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`
@@ -85,6 +90,14 @@ contract IColonyNetwork {
   /// @dev This is set once when the Meta Colony is created
   /// @return The root global skill id
   function getRootGlobalSkillId() public view returns (uint256);
+
+  /// @notice Sets the token locking address
+  /// @param _tokenLockingAddress Address of the locking contract
+  function setTokenLocking(address _tokenLockingAddress) public;
+
+  /// @notice Get token locking contract address
+  /// @return Token locking contract address
+  function getTokenLocking() public view returns (address);
 
   /// @notice Create the Meta Colony, same as a normal colony plus the root skill
   /// @param _tokenAddress Address of the CLNY token

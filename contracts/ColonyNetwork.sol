@@ -57,6 +57,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _;
   }
 
+  function isColony(address _colony) public view returns (bool) {
+    return _isColony[_colony];
+  }
+
   function getCurrentColonyVersion() public view returns (uint256) {
     return currentColonyVersion;
   }
@@ -97,7 +101,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNNodes;
   }
 
-  function createMetaColony(address _tokenAddress) public 
+  function setTokenLocking(address _tokenLocking) public
+  auth
+  {
+    tokenLocking = _tokenLocking;
+  }
+
+  function getTokenLocking() public view returns (address) {
+    return tokenLocking;
+  }
+
+  function createMetaColony(address _tokenAddress) public
   auth
   {
     require(metaColony == 0);
@@ -108,10 +122,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     skills[skillCount] = rootGlobalSkill;
     rootGlobalSkillId = skillCount;
     // TODO: add the special 'mining' skill, which is local to the meta Colony.
-    
+
     metaColony = createColony(_tokenAddress);
   }
-  
+
   function createColony(address _tokenAddress) public returns (address) {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
