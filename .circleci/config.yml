@@ -32,7 +32,7 @@ jobs:
           paths:
             - node_modules
           key: node-modules-{{ checksum "yarn.lock" }}
-      - run: 
+      - run:
           name: "Install lsof"
           command: |
             sudo apt-get update
@@ -58,6 +58,9 @@ jobs:
       - run:
           name: "Running gas cost tests"
           command: yarn run test:contracts:gasCosts
+      - run:
+          name: "Running colony-contract-loader-network tests"
+          command: cd packages/colony-contract-loader-network && yarn run test
       - run:
           name: "Greenkeeper uploading lockfile"
           command: $HOME/.config/yarn/global/node_modules/.bin/greenkeeper-lockfile-upload
@@ -86,7 +89,7 @@ jobs:
       - run:
           name: "Running unit tests with coverage"
           command: yarn run test:contracts:coverage
-    
+
       # Save coverage artifacts
       - store_artifacts:
           path: coverage
