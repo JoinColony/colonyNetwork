@@ -20,7 +20,8 @@ import {
   RATING_1_SALT,
   RATING_2_SALT,
   RATING_1_SECRET,
-  RATING_2_SECRET
+  RATING_2_SECRET,
+  EVALUATOR_PAYOUT
 } from "../helpers/constants";
 import {
   getTokenArgs,
@@ -730,17 +731,25 @@ contract("Colony", addresses => {
   describe("when funding tasks", () => {
     it("should be able to set the task payouts for different roles", async () => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
+
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+      const txData0 = await colony.contract.setTaskDueDate.getData(1, dueDate);
+      const sigs0 = await createSignatures(colony, 1, [MANAGER], 0, txData0);
+      await colony.executeTaskChange(sigs0.sigV, sigs0.sigR, sigs0.sigS, [0], 0, txData0);
+
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
       await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
       await colony.mintTokens(100);
+
       // Set the manager payout as 5000 wei and 100 colony tokens
       await colony.setTaskManagerPayout(1, 0x0, 5000);
       await colony.setTaskManagerPayout(1, token.address, 100);
 
       // Set the evaluator payout as 1000 ethers
       const txData1 = await colony.contract.setTaskEvaluatorPayout.getData(1, 0x0, 1000);
-      const sigs = await createSignatures(colony, 1, [MANAGER, EVALUATOR], 0, txData1);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData1);
+      const sigs1 = await createSignatures(colony, 1, [MANAGER, EVALUATOR], 0, txData1);
+      await colony.executeTaskChange(sigs1.sigV, sigs1.sigR, sigs1.sigS, [0, 0], 0, txData1);
 
       // Set the evaluator payout as 40 colony tokens
       const txData2 = await colony.contract.setTaskEvaluatorPayout.getData(1, token.address, 40);
@@ -755,6 +764,14 @@ contract("Colony", addresses => {
       const txData4 = await colony.contract.setTaskWorkerPayout.getData(1, token.address, 200);
       const sigs4 = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData4);
       await colony.executeTaskChange(sigs4.sigV, sigs4.sigR, sigs4.sigS, [0, 0], 0, txData4);
+
+      // Run through the task flow
+      await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
+      await colony.submitTaskWorkRating(1, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(1, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.revealTaskWorkRating(1, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
+      await colony.revealTaskWorkRating(1, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
+      await colony.finalizeTask(1);
 
       const taskPayoutManager1 = await colony.getTaskPayout.call(1, MANAGER_ROLE, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);
@@ -825,6 +842,32 @@ contract("Colony", addresses => {
       assert.equal(metaBalanceAfter.minus(metaBalanceBefore).toNumber(), 1);
       const potBalance = await colony.getPotBalance.call(2, 0x0);
       assert.equal(potBalance.toNumber(), 250);
+    });
+
+    it("should disburse nothing for unsatisfactory work", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({
+        colonyNetwork,
+        colony,
+        token,
+        managerRating: 1,
+        workerRating: 1
+      });
+      await colony.finalizeTask(taskId);
+
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
+
+      const managerBalance = await token.balanceOf(MANAGER);
+      assert.equal(managerBalance.toNumber(), 0);
+
+      const workerBalance = await token.balanceOf(WORKER);
+      assert.equal(workerBalance.toNumber(), 0);
+
+      const evaluatorBalance = await token.balanceOf(EVALUATOR);
+      const evaluatorPayout = EVALUATOR_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      assert.equal(evaluatorBalance.toString(), evaluatorPayout.toString());
     });
 
     it("should return error when task is not finalized", async () => {

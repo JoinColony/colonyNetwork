@@ -3,7 +3,6 @@
 import { toBN } from "web3-utils";
 
 import {
-  MANAGER,
   EVALUATOR,
   WORKER,
   MANAGER_ROLE,
@@ -178,13 +177,11 @@ contract("Colony Funding", addresses => {
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by increasing payout (12)
       await colony.setTaskManagerPayout(1, otherToken.address, 80);
-
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 80
       // Pot was equal to payout, transition to being above by decreasing payout (6)
       await colony.setTaskManagerPayout(1, otherToken.address, 40);
-
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
       // Pot 80, Payout 40
@@ -295,25 +292,19 @@ contract("Colony Funding", addresses => {
         workerRating: 1
       });
       await colony.finalizeTask(taskId);
-      const payout = await colony.getTaskPayout.call(taskId, WORKER_ROLE, token.address);
-      assert.equal(payout.toNumber(), 0, "should have worker payout of 0");
+
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
 
       const taskInfo = await colony.getTask.call(taskId);
-      await colony.claimPayout(taskId, MANAGER_ROLE, token.address, {
-        from: MANAGER
-      });
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, {
-        from: EVALUATOR
-      });
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address, {
-        from: WORKER
-      });
-      const remainingPotBalance = await colony.getPotBalance(taskInfo[6].toNumber(), token.address);
+      const taskPotId = taskInfo[6].toNumber();
+      const remainingPotBalance = await colony.getPotBalance(taskPotId, token.address);
       assert.equal(remainingPotBalance.toString(), WORKER_PAYOUT.toString(), "should have remaining pot balance equal to worker payout");
 
-      await colony.moveFundsBetweenPots(taskInfo[6].toNumber(), 1, remainingPotBalance.toString(), token.address);
+      await colony.moveFundsBetweenPots(taskPotId, 1, remainingPotBalance.toString(), token.address);
 
-      const potBalance = await colony.getPotBalance(taskInfo[6].toNumber(), token.address);
+      const potBalance = await colony.getPotBalance(taskPotId, token.address);
       assert.equal(potBalance, 0, "should have pot balance of 0");
     });
   });

@@ -54,9 +54,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
   }
 
   // To get all payouts for a task iterate over roles.length
-  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view
-  returns (uint256)
-  {
+  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256) {
     Task storage task = tasks[_id];
     return task.payouts[_role][_token];
   }
@@ -66,13 +64,21 @@ contract ColonyFunding is ColonyStorage, DSMath {
   {
     Task storage task = tasks[_id];
     require(task.roles[_role].user == msg.sender, "colony-claim-payout-access-denied");
+
+    if (task.roles[_role].rating == TaskRatings.Unsatisfactory) {
+      return;
+    }
+
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
     task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
+
     pots[task.potId].balance[_token] = sub(pots[task.potId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
+
     uint fee = payout / getFeeInverse();
     uint remainder = sub(payout, fee);
+
     if (_token == 0x0) {
       // Payout ether
       task.roles[_role].user.transfer(remainder);
@@ -99,24 +105,48 @@ contract ColonyFunding is ColonyStorage, DSMath {
   {
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-pot-0");
+
     // TODO Only allow sending from created pots - perhaps not necessary explicitly, but if not, note as such here.
     require(_toPot <= potCount, "colony-funding-nonexistent-pot"); // Only allow sending to created pots
-    if (pots[_fromPot].taskId > 0) {
-      Task storage task = tasks[pots[_fromPot].taskId];
-      require(task.finalized == false || task.totalPayouts[_token] == 0, "colony-funding-bad-state");
-      // i.e. if this pot is associated with a task, prevent money being taken from the pot if the task
-      // has been finalized, unless everyone has been paid out.
+
+    uint fromTaskId = pots[_fromPot].taskId;
+    uint toTaskId = pots[_toPot].taskId;
+
+    // If this pot is associated with a task, prevent money being taken from the pot
+    // if the task  has been finalized, unless everyone has been paid out.
+    if (fromTaskId > 0) {
+      Task storage task = tasks[fromTaskId];
+      if (task.finalized) {
+        updateRemainingPayouts(fromTaskId, _token);
+      }
+      require(!task.finalized || task.totalPayouts[_token] == 0, "colony-funding-task-bad-state");
     }
-    // TODO: At some point, funds have to be unable to be removed from tasks (until everyone's been paid and
-    // extra funds can be reclaimed)
+
     uint fromPotPreviousAmount = pots[_fromPot].balance[_token];
     uint toPotPreviousAmount = pots[_toPot].balance[_token];
     pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
     pots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
-    uint fromTaskId = pots[_fromPot].taskId;
-    uint toTaskId = pots[_toPot].taskId;
+
     updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
     updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
+  }
+
+  function updateRemainingPayouts(uint256 _id, address _token) private
+  taskFinalized(_id)
+  {
+    Task storage task = tasks[_id];
+    uint payout;
+    uint totalPayouts;
+    for (uint8 roleId = 0; roleId <= 2; roleId++) {
+      payout = task.payouts[roleId][_token];
+      if (payout > 0 && task.roles[roleId].rating == TaskRatings.Unsatisfactory) {
+        task.payouts[roleId][_token] = 0;
+        task.totalPayouts[_token] = sub(task.totalPayouts[_token], payout);
+      } else {
+        totalPayouts = add(totalPayouts, payout);
+      }
+    }
+    assert(task.totalPayouts[_token] == totalPayouts);
   }
 
   function claimColonyFunds(address _token) public {
@@ -249,13 +279,13 @@ contract ColonyFunding is ColonyStorage, DSMath {
     Task storage task = tasks[_id];
     uint totalTokenPayout = task.totalPayouts[_token];
     uint tokenPot = pots[task.potId].balance[_token];
-    if (_prev >= totalTokenPayout) {                                   // If the old amount in the pot was enough to pay for the budget
-      if (tokenPot < totalTokenPayout) {                               // And the new amount in the pot is not enough to pay for the budget...
-        task.payoutsWeCannotMake += 1;                                  // Then this is a set of payouts we cannot make that we could before.
+    if (_prev >= totalTokenPayout) {                                  // If the old amount in the pot was enough to pay for the budget
+      if (tokenPot < totalTokenPayout) {                              // And the new amount in the pot is not enough to pay for the budget...
+        task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
       }
-    } else {                                                            // If this 'else' is running, then the old amount in the pot could not pay for the budget
+    } else {                                                          // If this 'else' is running, then the old amount in the pot could not pay for the budget
       if (tokenPot >= totalTokenPayout) {                             // And the new amount in the pot can pay for the budget
-        task.payoutsWeCannotMake -= 1;                                  // Then this is a set of payouts we can make that we could not before.
+        task.payoutsWeCannotMake -= 1;                                // Then this is a set of payouts we can make that we could not before.
       }
     }
   }
@@ -266,11 +296,11 @@ contract ColonyFunding is ColonyStorage, DSMath {
     uint tokenPot = pots[task.potId].balance[_token];
     if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
       if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
-        task.payoutsWeCannotMake += 1;                                 // Then this is a set of payouts we cannot make that we could before.
+        task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
       }
-    } else {                                                           // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
+    } else {                                                          // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
       if (tokenPot >= totalTokenPayout) {                             // And the amount is enough to pay for the new budget...
-        task.payoutsWeCannotMake -= 1;                                 // Then this is a set of payouts we can make that we could not before.
+        task.payoutsWeCannotMake -= 1;                                // Then this is a set of payouts we can make that we could not before.
       }
     }
   }
