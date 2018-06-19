@@ -5,5 +5,4 @@ contracts/*
 coverage/*
 keys/*
 lib/*
-packages/reputation-miner/node_modules/*
-packages/colony-contract-loader-network/node_modules/*
+packages/**/node_modules
