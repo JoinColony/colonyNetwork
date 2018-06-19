@@ -447,10 +447,10 @@ contract("Meta Colony", accounts => {
 
     it("should not allow a non-manager to set global skill on task", async () => {
       await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
+      await metaColony.addGlobalSkill(5);
 
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 6, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);
       assert.equal(task[9][0].toNumber(), 0);
     });

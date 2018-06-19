@@ -839,27 +839,29 @@ contract("ColonyNetworkStaking", accounts => {
         await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
         await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
-        let addr = await colonyNetwork.getReputationMiningCycle.call();
+        let addr = await colonyNetwork.getReputationMiningCycle(true);
         let repCycle = ReputationMiningCycle.at(addr);
         await forwardTime(3600, this);
         await repCycle.submitRootHash("0x12345678", 10, 10);
         await repCycle.confirmNewHash(0);
-
         await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-        addr = await colonyNetwork.getReputationMiningCycle.call();
+        addr = await colonyNetwork.getReputationMiningCycle(true);
         repCycle = ReputationMiningCycle.at(addr);
         await forwardTime(3600, this);
         await repCycle.submitRootHash("0x0", 0, 10);
         await repCycle.confirmNewHash(0);
-        addr = await colonyNetwork.getReputationMiningCycle.call();
+        addr = await colonyNetwork.getReputationMiningCycle(true);
         repCycle = ReputationMiningCycle.at(addr);
 
         await goodClient.addLogContentsToReputationTree();
 
-        badClient = new MaliciousReputationMiningClient(OTHER_ACCOUNT, realProviderPort, badIndex, "0xfffffffff");
+        badClient = new MaliciousReputationMinerExtraRep(
+          { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+          badIndex,
+          "0xfffffffff"
+        );
         await badClient.initialise(colonyNetwork.address);
         await badClient.addLogContentsToReputationTree();
-
         let righthash = await goodClient.getRootHash();
         let wronghash = await badClient.getRootHash();
         righthash = await goodClient.getRootHash();
