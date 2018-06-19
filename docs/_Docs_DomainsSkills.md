@@ -15,7 +15,7 @@ Skills are a similar structure that categorize the _type_ of work done, independ
 ## Domains
 Like a file system that contains files and sub-folders, any domain can contain tasks, sub-domains, or both.
 
-![Example Domains](https://raw.githubusercontent.com/JoinColony/colonyNetwork/develop/docs/img/domains_r1.svg?sanitize=true)
+![Example Domains](img/domains_r1.svg)
 
 With the exception of the top-level colony domain, which contains all tasks and sub-domains, every domain in a colony belongs to a larger parent domain.
 
