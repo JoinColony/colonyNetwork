@@ -1,6 +1,6 @@
 {
   "name": "@colony/colony-js-contract-loader-network",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Load the Colony contract ABIs directly from this package",
   "main": "lib/index.js",
   "scripts": {
