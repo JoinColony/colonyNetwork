@@ -60,7 +60,7 @@ jobs:
           command: yarn run test:contracts:gasCosts
       - run:
           name: "Running colony-contract-loader-network tests"
-          command: cd packages/colony-contract-loader-network && yarn run test
+          command: cd packages/colony-js-contract-loader-network && yarn run test
       - run:
           name: "Greenkeeper uploading lockfile"
           command: $(yarn global bin)/greenkeeper-lockfile-upload
