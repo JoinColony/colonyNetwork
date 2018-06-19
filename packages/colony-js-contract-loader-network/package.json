@@ -4,9 +4,10 @@
   "description": "Load the Colony contract ABIs directly from this package",
   "main": "lib/index.js",
   "scripts": {
-    "build:lib": "babel src --out-dir lib --ignore __tests__ --source-maps",
+    "build": "babel src --out-dir lib --ignore __tests__ --source-maps",
     "clean": "shx rm -rf lib",
-    "test": "jest --config=jest.conf.json"
+    "test": "jest --config=jest.conf.json",
+    "prepublish": "yarn run build"
   },
   "author": "Christian Maniewski <chris@colony.io>",
   "license": "GPL-3.0",
