@@ -21,6 +21,8 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET,
+  MANAGER_PAYOUT,
+  WORKER_PAYOUT,
   EVALUATOR_PAYOUT
 } from "../helpers/constants";
 import {
@@ -799,6 +801,15 @@ contract("Colony", addresses => {
       const sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
 
       await expectEvent(colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData), "TaskWorkerPayoutChanged");
+    });
+
+    it("should correctly return the current total payout", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
+
+      const totalTokenPayout = await colony.getTotalTaskPayout(taskId, token.address);
+      const totalTokenPayoutExpected = MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT);
+      assert.equal(totalTokenPayout.toString(), totalTokenPayoutExpected.toString());
     });
   });
 

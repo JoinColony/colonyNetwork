@@ -264,7 +264,7 @@ contract("Colony Funding", addresses => {
       await fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token: otherToken });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address));
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address), "colony-funding-task-bad-state");
       const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 350 * 1e18);
     });
@@ -364,18 +364,18 @@ contract("Colony Funding", addresses => {
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
 
       await colony.setTaskManagerPayout(1, 0x0, 40);
-
       let task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
+
       await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       await colony.moveFundsBetweenPots(2, 1, 30, 0x0);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
 
       await colony.setTaskManagerPayout(1, 0x0, 10);
-
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
     });
