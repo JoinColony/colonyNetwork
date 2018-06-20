@@ -1288,10 +1288,7 @@ contract("ColonyNetworkStaking", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
 
       // Get the log entry we're arguing over.
-      const submission = await repCycle.disputeRounds(0, 0);
-      const firstDisagreeIdx = submission[8];
-
-      const logEntry = await repCycle.getReputationUpdateLogEntry.call(firstDisagreeIdx - 1);
+      const logEntry = await repCycle.getReputationUpdateLogEntry.call(0);
       const colonyAddress = logEntry[3].slice(2);
       const userAddress = logEntry[0].slice(2);
       const skillId = logEntry[2];
@@ -1309,9 +1306,9 @@ contract("ColonyNetworkStaking", accounts => {
         40
       )}`;
 
-      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], wrongColonyKey, [], 0x0, [], 0x0, [], 0, 0, []));
-      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], wrongReputationKey, [], 0x0, [], 0x0, [], 0, 0, []));
-      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], wrongUserKey, [], 0x0, [], 0x0, [], 0, 0, []));
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], wrongColonyKey, [], 0x0, [], 0x0, [], 0, 0, []));
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], wrongReputationKey, [], 0x0, [], 0x0, [], 0, 0, []));
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], wrongUserKey, [], 0x0, [], 0x0, [], 0, 0, []));
 
       await forwardTime(600, this);
       await goodClient.respondToChallenge();
