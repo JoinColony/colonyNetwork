@@ -30,6 +30,7 @@ import {
   web3GetBalance,
   checkErrorRevert,
   expectEvent,
+  forwardTime,
   currentBlockTime,
   createSignatures,
   createSignaturesTrezor
@@ -855,7 +856,7 @@ contract("Colony", addresses => {
       assert.equal(potBalance.toNumber(), 250);
     });
 
-    it("should disburse nothing for unsatisfactory work", async () => {
+    it("should disburse nothing for unsatisfactory work, for manager and worker", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({
         colonyNetwork,
@@ -879,6 +880,29 @@ contract("Colony", addresses => {
       const evaluatorBalance = await token.balanceOf(EVALUATOR);
       const evaluatorPayout = EVALUATOR_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
       assert.equal(evaluatorBalance.toString(), evaluatorPayout.toString());
+    });
+
+    it("should disburse nothing for unsatisfactory work, for evaluator", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
+      await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
+      await colony.assignWorkRating(taskId);
+      await colony.finalizeTask(taskId);
+
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
+
+      const managerBalance = await token.balanceOf(MANAGER);
+      const managerPayout = MANAGER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      assert.equal(managerBalance.toString(), managerPayout.toString());
+
+      const workerBalance = await token.balanceOf(WORKER);
+      const workerPayout = WORKER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      assert.equal(workerBalance.toString(), workerPayout.toString());
+
+      const evaluatorBalance = await token.balanceOf(EVALUATOR);
+      assert.equal(evaluatorBalance.toNumber(), 0);
     });
 
     it("should return error when task is not finalized", async () => {

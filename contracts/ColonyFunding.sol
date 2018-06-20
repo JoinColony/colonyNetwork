@@ -53,6 +53,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
     emit TaskWorkerPayoutChanged(_id, _token, _amount);
   }
 
+  // To get all payouts for a task iterate over roles.length
   function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256) {
     Task storage task = tasks[_id];
     bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
@@ -297,6 +298,11 @@ contract ColonyFunding is ColonyStorage, DSMath {
   {
     uint currentTotalAmount = getTotalTaskPayout(_id, _token);
     tasks[_id].payouts[_role][_token] = _amount;
+
+    // This call functions as a guard to make sure the new total payout doesn't overflow
+    // If there is an overflow, the call will revert
+    getTotalTaskPayout(_id, _token);
+
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 }
