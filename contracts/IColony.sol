@@ -308,6 +308,12 @@ contract IColony {
   /// @return Payout amount
   function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256);
 
+  /// @notice Get total payout amount in `_token` denomination for task `_id`
+  /// @param _id Id of the task
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @return Payout amount
+  function getTotalTaskPayout(uint256 _id, address _token) public view returns (uint256);
+
   /// @notice Set `_token` payout for manager in task `_id` to `_amount`
   /// @param _id Id of the task
   /// @param _token Address of the token, `0x0` value indicates Ether
