@@ -120,18 +120,21 @@ contract ColonyFunding is ColonyStorage, DSMath {
     uint fromTaskId = pots[_fromPot].taskId;
     uint toTaskId = pots[_toPot].taskId;
 
-    // If this pot is associated with a task, prevent money being taken from the pot
-    // if the task  has been finalized, unless everyone has been paid out.
-    if (fromTaskId > 0) {
-      Task storage task = tasks[fromTaskId];
-      require(!task.finalized || getTotalTaskPayout(fromTaskId, _token) == 0, "colony-funding-task-bad-state");
-    }
-
     uint fromPotPreviousAmount = pots[_fromPot].balance[_token];
     uint toPotPreviousAmount = pots[_toPot].balance[_token];
+
+    // If this pot is associated with a task, prevent money being taken from the pot
+    // if the remaining balance is less than the amount needed for payouts,
+    // unless the task was cancelled.
+    if (fromTaskId > 0) {
+      Task storage task = tasks[fromTaskId];
+      uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
+      uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
+      require(task.cancelled || surplus >= _amount, "colony-funding-task-bad-state");
+    }
+
     pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
     pots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
-
     updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
     updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
   }

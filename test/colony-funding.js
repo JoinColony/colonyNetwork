@@ -146,99 +146,130 @@ contract("Colony Funding", addresses => {
       // NB We do not need to be this exhaustive when using ether, because this test is testing
       // that updateTaskPayoutsWeCannotMakeAfterPotChange and updateTaskPayoutsWeCannotMakeAfterBudgetChange
       // are correct, which are used in both cases.
+      //
+      // NB Also that since we can no longer reduce the pot to below the budget,
+      // scenarios 7, 9, 13 should revert.
       await fundColonyWithTokens(colony, otherToken, 100);
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
       await colony.setTaskManagerPayout(1, otherToken.address, 0);
       let task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1, 2, 0, otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being lower by increasing payout (8)
       await colony.setTaskManagerPayout(1, otherToken.address, 40);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
+
       // Pot 0, Payout 40
       // Pot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by increasing payout (12)
       await colony.setTaskManagerPayout(1, otherToken.address, 80);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 80, Payout 80
       // Pot was equal to payout, transition to being above by decreasing payout (6)
       await colony.setTaskManagerPayout(1, otherToken.address, 40);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2, 1, 40, otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to pot being below payout by changing pot (7)
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 20, otherToken.address), "colony-funding-task-bad-state");
+
+      // Remove 20 from pot
+      await colony.setTaskManagerPayout(1, otherToken.address, 20);
       await colony.moveFundsBetweenPots(2, 1, 20, otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      await colony.setTaskManagerPayout(1, otherToken.address, 40);
+
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1, 2, 60, otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 80, Payout 40
       // Pot was above payout, change to being below by changing pot (9)
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 60, otherToken.address), "colony-funding-task-bad-state");
+
+      // Remove 60 from pot
+      await colony.setTaskManagerPayout(1, otherToken.address, 20);
       await colony.moveFundsBetweenPots(2, 1, 60, otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      await colony.setTaskManagerPayout(1, otherToken.address, 40);
+
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing payout (4)
       await colony.setTaskManagerPayout(1, otherToken.address, 10);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 20, Payout 10
       // Pot was above, change to being above by changing payout (16)
       await colony.setTaskManagerPayout(1, otherToken.address, 5);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 20, Payout 5
       // Pot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 10, Payout 5
       // Pot was above payout, change to being below by changing payout (10)
       await colony.setTaskManagerPayout(1, otherToken.address, 40);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
+
       // Pot 10, Payout 40
       // Pot was below payout, change to being below by changing payout (14)
       await colony.setTaskManagerPayout(1, otherToken.address, 30);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 1);
+
       // Pot 10, Payout 30
       // Pot was below payout, change to being below by changing pot (13)
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 5, otherToken.address), "colony-funding-task-bad-state");
+
+      // Remove 5 from pot
+      await colony.setTaskManagerPayout(1, otherToken.address, 5);
       await colony.moveFundsBetweenPots(2, 1, 5, otherToken.address);
-      task = await colony.getTask.call(1);
-      assert.equal(task[5].toNumber(), 1);
+      await colony.setTaskManagerPayout(1, otherToken.address, 30);
+
       // Pot 5, Payout 30
       // Pot was below payout, change to being equal by changing payout (2)
       await colony.setTaskManagerPayout(1, otherToken.address, 5);
       task = await colony.getTask.call(1);
       assert.equal(task[5].toNumber(), 0);
+
       // Pot 5, Payout 5
     });
 
@@ -363,20 +394,35 @@ contract("Colony Funding", addresses => {
       await colony.makeTask(SPECIFICATION_HASH, 1);
       await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
 
+      // Set manager payout above pot value 40 > 0
       await colony.setTaskManagerPayout(1, 0x0, 40);
-      let task = await colony.getTask.call(1);
+      let task = await colony.getTask(1);
       assert.equal(task[5].toNumber(), 1);
 
+      // Fund the pot equal to manager payout 40 = 40
       await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
-      task = await colony.getTask.call(1);
+      task = await colony.getTask(1);
       assert.equal(task[5].toNumber(), 0);
 
-      await colony.moveFundsBetweenPots(2, 1, 30, 0x0);
-      task = await colony.getTask.call(1);
+      // Cannot bring pot balance below current payout
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, 0x0), "colony-funding-task-bad-state");
+
+      // Set manager payout above pot value 50 > 40
+      await colony.setTaskManagerPayout(1, 0x0, 50);
+      task = await colony.getTask(1);
       assert.equal(task[5].toNumber(), 1);
 
-      await colony.setTaskManagerPayout(1, 0x0, 10);
-      task = await colony.getTask.call(1);
+      // Fund the pot equal to manager payout, plus 10, 50 < 60
+      await colony.moveFundsBetweenPots(1, 2, 20, 0x0);
+      task = await colony.getTask(1);
+      assert.equal(task[5].toNumber(), 0);
+
+      // Cannot bring pot balance below current payout
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, 0x0), "colony-funding-task-bad-state");
+
+      // Can remove surplus 50 = 50
+      await colony.moveFundsBetweenPots(2, 1, 10, 0x0);
+      task = await colony.getTask(1);
       assert.equal(task[5].toNumber(), 0);
     });
 
