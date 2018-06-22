@@ -1,5 +1,5 @@
 import web3Utils from "web3-utils";
-import { getRandomString } from "../helpers/test-helper";
+import { getRandomString } from "./test-helper";
 
 let MANAGER;
 let EVALUATOR;
