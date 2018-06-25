@@ -17,8 +17,8 @@ import {
   EVALUATOR_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH
-} from "../helpers/constants";
-import { currentBlockTime, createSignatures } from "../helpers/test-helper";
+} from "./constants";
+import { currentBlockTime, createSignatures } from "./test-helper";
 
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");

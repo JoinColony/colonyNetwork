@@ -36,6 +36,7 @@ class NetworkLoader extends ContractLoader {
     super({ transform: truffleTransform });
     this._network = network;
   }
+
   async _load(query = {}, requiredProps) {
     const { contractName = "", version = LATEST_VERSION } = query;
     const networkQuery = Object.assign({}, query, { network: this._network });
@@ -45,7 +46,8 @@ class NetworkLoader extends ContractLoader {
 
     if (STATIC_CONTRACTS[contractName]) {
       return this._transform(STATIC_CONTRACTS[contractName], networkQuery, requiredProps);
-    } else if (
+    }
+    if (
       VERSIONED_CONTRACTS[contractName] &&
       VERSIONED_CONTRACTS[contractName][this._network] &&
       VERSIONED_CONTRACTS[contractName][this._network][version]
