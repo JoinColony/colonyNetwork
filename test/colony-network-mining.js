@@ -1278,8 +1278,8 @@ contract("ColonyNetworkStaking", accounts => {
       let nLogEntries = await repCycle.getReputationUpdateLogLength();
       nLogEntries = new BN(nLogEntries.toString());
       const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1).toString());
-      const nUpdates = new BN(lastLogEntry[4].toString()).add(new BN(lastLogEntry[5].toString()));
-      const [branchMask2, siblings2] = await goodClient.justificationTree.getProof(`0x${nUpdates.toString(16, 64)}`);
+      const totalnUpdates = new BN(lastLogEntry[4].toString()).add(new BN(lastLogEntry[5].toString()));
+      const [branchMask2, siblings2] = await goodClient.justificationTree.getProof(`0x${totalnUpdates.toString(16, 64)}`);
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
       await checkErrorRevert(
         repCycle.submitJustificationRootHash(round.toString(), index.toString(), jrh, "0", siblings1, branchMask2.toString(), siblings2, {

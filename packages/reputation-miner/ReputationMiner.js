@@ -126,7 +126,7 @@ class ReputationMiner {
   }
 
   /**
-   * When called, adds the entire contents of the current (inactive) log to its reputation tree. It also builds a Justification Tree as it does so
+   * When called, adds the entire contents of the current (active) log to its reputation tree. It also builds a Justification Tree as it does so
    * in case a dispute is called which would require it.
    * @return {Promise}
    */
@@ -145,21 +145,23 @@ class ReputationMiner {
 
     let nLogEntries = await repCycle.getReputationUpdateLogLength();
     nLogEntries = new BN(nLogEntries.toString());
+
     for (let i = new BN("0"); i.lt(nLogEntries); i.iadd(new BN("1"))) {
-      await this.addSingleLogEntry(i); // eslint-disable-line no-await-in-loop
+      const logEntry = await repCycle.getReputationUpdateLogEntry(i.toString()); // eslint-disable-line no-await-in-loop
+      await this.addSingleLogEntry(logEntry); // eslint-disable-line no-await-in-loop
     }
 
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1).toString());
-    const nUpdates = new BN(lastLogEntry[4].add(lastLogEntry[5]).toString());
-    const prevKey = await this.getKeyForUpdateNumber(nUpdates.subn(1));
+    const totalnUpdates = new BN(lastLogEntry[4].add(lastLogEntry[5]).toString());
+    const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.subn(1));
     const justUpdatedProof = await this.getReputationProofObject(prevKey);
-    const newestReputationProof = await this.getNewestReputationProofObject(nUpdates);
+    const newestReputationProof = await this.getNewestReputationProofObject(totalnUpdates);
     const interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
     const jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     const nextUpdateProof = {};
-    await this.justificationTree.insert(`0x${nUpdates.toString(16, 64)}`, jhLeafValue, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
+    await this.justificationTree.insert(`0x${totalnUpdates.toString(16, 64)}`, jhLeafValue, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
 
-    this.justificationHashes[`0x${nUpdates.toString(16, 64)}`] = JSON.parse(
+    this.justificationHashes[`0x${totalnUpdates.toString(16, 64)}`] = JSON.parse(
       JSON.stringify({
         interimHash,
         nNodes: this.nReputations,
@@ -174,15 +176,10 @@ class ReputationMiner {
   /**
    * Function called by `addLogContentsToReputationTree` to process a single log entry, updating the reputation tree and the justification tree
    * as it does so.
-   * @param  {Number}  i    The index of the log entry to process. Note that the final time this function is called, it is equal to the number of logs entries
-   *                        present, which could cause out-of-bounds errors if unchecke. In this case, `last` will be set to true to avoid errors.
+   * @param  {Object}  logEntry    The log entry to process.
    * @return {Promise}
    */
-  async addSingleLogEntry(i) {
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    const logEntry = await repCycle.getReputationUpdateLogEntry(i.toString()); // eslint-disable-line no-await-in-loop
-
+  async addSingleLogEntry(logEntry) {
     const nUpdates = new BN(logEntry[4].toString());
     for (let j = new BN("0"); j.lt(nUpdates); j.iadd(new BN("1"))) {
       await this.addSingleReputationUpdate(j, logEntry); // eslint-disable-line no-await-in-loop
@@ -514,8 +511,8 @@ class ReputationMiner {
     let nLogEntries = await repCycle.getReputationUpdateLogLength();
     nLogEntries = new BN(nLogEntries.toString());
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.subn(1).toString());
-    const nUpdates = new BN(lastLogEntry[4].toString()).add(new BN(lastLogEntry[5].toString()));
-    const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${nUpdates.toString(16, 64)}`);
+    const totalnUpdates = new BN(lastLogEntry[4].toString()).add(new BN(lastLogEntry[5].toString()));
+    const [branchMask2, siblings2] = await this.justificationTree.getProof(`0x${totalnUpdates.toString(16, 64)}`);
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const res = repCycle.submitJustificationRootHash(round.toString(), index.toString(), jrh, branchMask1, siblings1, branchMask2, siblings2, {
       gasLimit: 6000000
