@@ -38,7 +38,6 @@ const ColonyTask = artifacts.require("ColonyTask");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
-const Authority = artifacts.require("Authority");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const oneHourLater = async () => forwardTime(3600, this);
@@ -58,7 +57,6 @@ contract("All", accounts => {
   let colonyTask;
   let colonyFunding;
   let metaColony;
-  let authority;
   let colonyNetwork;
 
   before(async () => {
@@ -77,8 +75,6 @@ contract("All", accounts => {
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
     tokenAddress = await colony.getToken.call();
-    const authorityAddress = await colony.authority.call();
-    authority = await Authority.at(authorityAddress);
     await IColony.defaults({ gasPrice });
 
     const metaColonyAddress = await colonyNetwork.getMetaColony.call();
@@ -106,7 +102,7 @@ contract("All", accounts => {
     it("when working with a Colony", async () => {
       await colony.mintTokens(200);
       await colony.claimColonyFunds(tokenAddress);
-      await authority.setUserRole(EVALUATOR, 1, true);
+      await colony.setAdmin(EVALUATOR);
     });
 
     it("when working with a Task", async () => {

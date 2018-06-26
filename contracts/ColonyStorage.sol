@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/auth.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
+import "./Authority.sol";
 
 
 contract ColonyStorage is DSAuth {
@@ -85,6 +86,7 @@ contract ColonyStorage is DSAuth {
   uint256 potCount;
   uint256 domainCount;
 
+  uint8 constant ADMIN_ROLE = 1;
   uint8 constant MANAGER = 0;
   uint8 constant EVALUATOR = 1;
   uint8 constant WORKER = 2;
@@ -183,6 +185,11 @@ contract ColonyStorage is DSAuth {
 
   modifier isInBootstrapPhase() {
     require(taskCount == 0);
+    _;
+  }
+
+  modifier isAdmin(address _user) {
+    require(Authority(authority).hasUserRole(_user, ADMIN_ROLE));
     _;
   }
 

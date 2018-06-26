@@ -23,6 +23,7 @@ import "./IColonyNetwork.sol";
 import "./IColony.sol";
 import "./ColonyStorage.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
+import "./Authority.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
@@ -30,6 +31,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
+
+  function setAdmin(address _user) public auth {
+    Authority(authority).setUserRole(_user, ADMIN_ROLE, true);
+  }
+
+  // Can only be called by the owner.
+  function removeAdmin(address _user) public auth {
+    Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
+  }
 
   function setToken(address _token) public
   auth
@@ -84,7 +94,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token.transfer(colonyNetworkAddress, _wad);
   }
 
-  //TODO: Secure this function 'properly'
   function addGlobalSkill(uint _parentSkillId) public
   auth
   returns (uint256)

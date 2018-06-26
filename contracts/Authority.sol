@@ -22,28 +22,28 @@ import "../lib/dappsys/roles.sol";
 
 
 contract Authority is DSRoles {
-  uint8 ownerRole = 0;
   uint8 adminRole = 1;
 
   constructor(address colony) public {
-    bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32,uint256)"));
-    setRoleCapability(ownerRole, colony, makeTaskSig, true);
-    setRoleCapability(adminRole, colony, makeTaskSig, true);
-
-    bytes4 acceptTaskSig = bytes4(keccak256("finalizeTask(uint256)"));
-    setRoleCapability(ownerRole, colony, acceptTaskSig, true);
-    setRoleCapability(adminRole, colony, acceptTaskSig, true);
-
-    bytes4 setTaskDueDateSig = bytes4(keccak256("setTaskDueDate(uint256,uint256)"));
-    setRoleCapability(ownerRole, colony, setTaskDueDateSig, true);
-    setRoleCapability(adminRole, colony, setTaskDueDateSig, true);
-
-    bytes4 setTaskPayoutSig = bytes4(keccak256("setTaskPayout(uint256,uint256,address,uint256)"));
-    setRoleCapability(ownerRole, colony, setTaskPayoutSig, true);
-    setRoleCapability(adminRole, colony, setTaskPayoutSig, true);
-
     bytes4 moveFundsBetweenPotsSig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,address)"));
-    setRoleCapability(ownerRole, colony, moveFundsBetweenPotsSig, true);
+    bytes4 addDomainSig = bytes4(keccak256("addDomain(uint256)"));
+    bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32,uint256)"));
+    bytes4 startNextRewardPayoutSig = bytes4(keccak256("startNextRewardPayout(address)"));
+    bytes4 cancelTaskSig = bytes4(keccak256("cancelTask(uint256)"));
+    bytes4 setAdminSig = bytes4(keccak256("setAdmin(address)"));
+
+    // Admin
+    // Allocate funds
     setRoleCapability(adminRole, colony, moveFundsBetweenPotsSig, true);
+    // Add domain
+    setRoleCapability(adminRole, colony, addDomainSig, true);
+    // Add task
+    setRoleCapability(adminRole, colony, makeTaskSig, true);
+    // Start next reward payout
+    setRoleCapability(adminRole, colony, startNextRewardPayoutSig, true);
+    // Cancel task
+    setRoleCapability(adminRole, colony, cancelTaskSig, true);
+    // Set admin
+    setRoleCapability(adminRole, colony, setAdminSig, true);
   }
 }

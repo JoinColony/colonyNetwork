@@ -97,7 +97,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNNodes;
   }
 
-  function createMetaColony(address _tokenAddress) public 
+  function createMetaColony(address _tokenAddress) public
   auth
   {
     require(metaColony == 0);
@@ -108,10 +108,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     skills[skillCount] = rootGlobalSkill;
     rootGlobalSkillId = skillCount;
     // TODO: add the special 'mining' skill, which is local to the meta Colony.
-    
+
     metaColony = createColony(_tokenAddress);
   }
-  
+
   function createColony(address _tokenAddress) public returns (address) {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
@@ -120,11 +120,15 @@ contract ColonyNetwork is ColonyNetworkStorage {
     IColony colony = IColony(etherRouter);
     colony.setToken(_tokenAddress);
 
+    // Creating new instance of colony's authority
     Authority authority = new Authority(colony);
+
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
-    authority.setRootUser(msg.sender, true);
-    authority.setOwner(msg.sender);
+    dsauth.setOwner(msg.sender);
+
+    authority.setRootUser(address(this), true);
+    authority.setOwner(etherRouter);
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
@@ -155,8 +159,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     address etherRouter = colonies[_id];
     // Check the calling user is authorised
     DSAuth auth = DSAuth(etherRouter);
-    DSAuthority authority = auth.authority();
-    require(authority.canCall(msg.sender, etherRouter, 0x0e1f20b4));
+    require(msg.sender == auth.owner());
     // Upgrades can only go up in version
     IColony colony = IColony(etherRouter);
     uint currentVersion = colony.version();

@@ -34,7 +34,8 @@ import {
   forwardTime,
   currentBlockTime,
   createSignatures,
-  createSignaturesTrezor
+  createSignaturesTrezor,
+  getFunctionSignature
 } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, setupAssignedTask, setupFundedTask } from "../helpers/test-data-generator";
 
@@ -95,9 +96,9 @@ contract("Colony", addresses => {
       assert.equal(colonyBalance.toNumber(), 1);
     });
 
-    it("should take colony network as an owner", async () => {
+    it("should set creator of the colony to be owner", async () => {
       const owner = await colony.owner.call();
-      assert.equal(owner, colonyNetwork.address);
+      assert.equal(owner, addresses[0]);
     });
 
     it("should return zero task count", async () => {
@@ -142,30 +143,74 @@ contract("Colony", addresses => {
   });
 
   describe("when working with permissions", () => {
-    it("should be able to add a colony owner", async () => {
-      await authority.setUserRole(OTHER, 0, true);
-      const owner = await authority.hasUserRole.call(OTHER, 0);
-      assert.isTrue(owner);
+    it("should allow admin to assign colony admin role", async () => {
+      const adminRole = 1;
+
+      const user1 = addresses[1];
+      const user5 = addresses[5];
+
+      await colony.setAdmin(user1);
+
+      const functionSig = getFunctionSignature("setAdmin(address)");
+      const canCall = await authority.canCall(user1, colony.address, functionSig);
+      assert(canCall, `Address ${user1} can't call 'setAdmin' function`);
+
+      await colony.setAdmin(user5, {
+        from: user1
+      });
+
+      const hasRole = await authority.hasUserRole(user5, adminRole);
+      assert(hasRole, `Admin role not assigned to ${user5}`);
     });
 
-    it("should be able to add a colony admin", async () => {
-      await authority.setUserRole(OTHER, 1, true);
-      const admin = await authority.hasUserRole.call(OTHER, 1);
-      assert.isTrue(admin);
+    it("should allow owner to remove colony admin role", async () => {
+      const adminRole = 1;
+
+      const user1 = addresses[1];
+
+      await colony.setAdmin(user1);
+
+      let hasRole = await authority.hasUserRole(user1, adminRole);
+      assert(hasRole, `Admin role not assigned to ${user1}`);
+
+      await colony.removeAdmin(user1);
+
+      hasRole = await authority.hasUserRole(user1, adminRole);
+      assert(!hasRole, `Admin role not removed from ${user1}`);
     });
 
-    it("should be able to remove a colony owner", async () => {
-      await authority.setUserRole(OTHER, 0, true);
-      await authority.setUserRole(OTHER, 0, false);
-      const owner = await authority.hasUserRole.call(OTHER, 0);
-      assert.isFalse(owner);
-    });
+    it("should allow admin to call predetermined functions", async () => {
+      const user3 = addresses[3];
 
-    it("should be able to remove a colony admin", async () => {
-      await authority.setUserRole(OTHER, 1, true);
-      await authority.setUserRole(OTHER, 1, false);
-      const admin = await authority.hasUserRole.call(OTHER, 1);
-      assert.isFalse(admin);
+      await colony.setAdmin(user3);
+
+      let functionSig = getFunctionSignature("moveFundsBetweenPots(uint256,uint256,uint256,address)");
+      let canCall = await authority.canCall(user3, colony.address, functionSig);
+      assert.equal(canCall, true);
+
+      functionSig = getFunctionSignature("addDomain(uint256)");
+      canCall = await authority.canCall(user3, colony.address, functionSig);
+      assert.equal(canCall, true);
+
+      functionSig = getFunctionSignature("makeTask(bytes32,uint256)");
+      canCall = await authority.canCall(user3, colony.address, functionSig);
+      assert.equal(canCall, true);
+
+      functionSig = getFunctionSignature("startNextRewardPayout(address)");
+      canCall = await authority.canCall(user3, colony.address, functionSig);
+      assert.equal(canCall, true);
+
+      functionSig = getFunctionSignature("cancelTask(uint256)");
+      canCall = await authority.canCall(user3, colony.address, functionSig);
+      assert.equal(canCall, true);
+
+      functionSig = getFunctionSignature("bootstrapColony(address[],uint256[])");
+      canCall = await authority.canCall(user3, colony.address, functionSig);
+      assert.equal(canCall, false);
+
+      functionSig = getFunctionSignature("mintTokens(uint256)");
+      canCall = await authority.canCall(user3, colony.address, functionSig);
+      assert.equal(canCall, false);
     });
   });
 
