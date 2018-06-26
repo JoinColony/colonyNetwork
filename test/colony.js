@@ -150,6 +150,20 @@ contract("Colony", addresses => {
   });
 
   describe("when working with permissions", () => {
+    it("should allow current owner role to transfer role to another address", async () => {
+      const ownerRole = 0;
+      const currentOwner = addresses[0];
+      const futureOwner = addresses[2];
+
+      let hasRole = await authority.hasUserRole(currentOwner, ownerRole);
+      assert(hasRole, `${currentOwner} is not current owner`);
+
+      await colony.setOwnerRole(futureOwner);
+
+      hasRole = await authority.hasUserRole(futureOwner, ownerRole);
+      assert(hasRole, `Ownership not transfered to ${futureOwner}`);
+    });
+
     it("should allow admin to assign colony admin role", async () => {
       const adminRole = 1;
 

@@ -33,6 +33,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function version() public pure returns (uint256) { return 1; }
 
   function setOwnerRole(address _user) public auth {
+    // To allow only one owner at a time we have to remove current owner from their role
+    Authority(authority).setUserRole(msg.sender, OWNER_ROLE, false);
     Authority(authority).setUserRole(_user, OWNER_ROLE, true);
   }
 

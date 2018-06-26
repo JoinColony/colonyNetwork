@@ -31,6 +31,7 @@ contract Authority is DSRoles {
     bytes4 bootstrapColonySig = bytes4(keccak256("bootstrapColony(address[],int256[])"));
     bytes4 mintTokensSig = bytes4(keccak256("mintTokens(uint256)"));
     bytes4 addGlobalSkillSig = bytes4(keccak256("addGlobalSkill(uint256)"));
+    bytes4 setOwnerRoleSig = bytes4(keccak256("setOwnerRole(address)"));
     bytes4 removeAdminRoleSig = bytes4(keccak256("removeAdminRole(address)"));
 
     // functions for admin + owner role
@@ -49,6 +50,8 @@ contract Authority is DSRoles {
     setRoleCapability(ownerRole, colony, mintTokensSig, true);
     // Add global skill
     setRoleCapability(ownerRole, colony, addGlobalSkillSig, true);
+    // Transfer ownership
+    setRoleCapability(ownerRole, colony, setOwnerRoleSig, true);
     // Remove admin role
     setRoleCapability(ownerRole, colony, removeAdminRoleSig, true);
 
