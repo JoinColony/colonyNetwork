@@ -126,9 +126,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
 
-    authority.setRootUser(address(this), true);
     authority.setOwner(etherRouter);
-
     colony.setOwnerRole(msg.sender);
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
