@@ -30,6 +30,7 @@ import {
   web3GetBalance,
   checkErrorRevert,
   expectEvent,
+  expectAllEvents,
   forwardTime,
   currentBlockTime,
   createSignatures,
@@ -123,6 +124,21 @@ contract("Colony", addresses => {
       const ratingSecret2 = await colony.generateSecret.call(RATING_2_SALT, WORKER_RATING);
       assert.equal(ratingSecret2, RATING_2_SECRET);
     });
+
+    it("should initialise the root domain", async () => {
+      // There should be one domain (the root domain)
+      const domainCount = await colony.getDomainCount.call();
+      assert.equal(domainCount, 1);
+
+      const domain = await colony.getDomain.call(domainCount);
+
+      // The first pot should have been created and assigned to the domain
+      assert.equal(domain[1], 1);
+
+      // A root skill should have been created for the Colony
+      const rootLocalSkillId = await colonyNetwork.getSkillCount.call();
+      assert.equal(domain[0].toNumber(), rootLocalSkillId.toNumber());
+    });
   });
 
   describe("when working with permissions", () => {
@@ -150,6 +166,13 @@ contract("Colony", addresses => {
       await authority.setUserRole(OTHER, 1, false);
       const admin = await authority.hasUserRole.call(OTHER, 1);
       assert.isFalse(admin);
+    });
+  });
+
+  describe("when adding domains", () => {
+    it("should log DomainAdded and PotAdded events", async () => {
+      const skillCount = await colonyNetwork.getSkillCount.call();
+      await expectAllEvents(colony.addDomain(skillCount.toNumber()), ["DomainAdded", "PotAdded"]);
     });
   });
 
@@ -198,8 +221,8 @@ contract("Colony", addresses => {
       assert.equal(task[8].toNumber(), 2);
     });
 
-    it("should log a TaskAdded event", async () => {
-      await expectEvent(colony.makeTask(SPECIFICATION_HASH, 1), "TaskAdded");
+    it("should log TaskAdded and PotAdded events", async () => {
+      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1), ["TaskAdded", "PotAdded"]);
     });
   });
 

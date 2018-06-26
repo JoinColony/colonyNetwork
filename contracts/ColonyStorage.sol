@@ -28,6 +28,9 @@ contract ColonyStorage is DSAuth {
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
 
+  event DomainAdded(uint256 indexed id);
+  event PotAdded(uint256 indexed id);
+
   address resolver;
   address colonyNetworkAddress;
   ERC20Extended token;

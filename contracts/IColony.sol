@@ -71,6 +71,14 @@ contract IColony {
   /// @param id Payout id
   event RewardPayoutCycleStarted(uint256 indexed id);
 
+  /// @notice Event logged when a new Domain is added
+  /// @param id Id of the newly-created Domain
+  event DomainAdded(uint256 indexed id);
+
+  /// @notice Event logged when a new Pot is added
+  /// @param id Id of the newly-created Pot
+  event PotAdded(uint256 indexed id);
+
   // Implemented in DSAuth.sol
   /// @notice Get the `Authority` for the colony
   /// @return The `Authority` contract address
