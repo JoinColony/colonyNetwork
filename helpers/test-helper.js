@@ -141,6 +141,12 @@ export async function expectEvent(tx, eventName) {
   return assert.exists(event);
 }
 
+export async function expectAllEvents(tx, eventNames) {
+  const { logs } = await tx;
+  const events = eventNames.every(eventName => logs.find(e => e.event === eventName));
+  return assert.isTrue(events);
+}
+
 export async function forwardTime(seconds, test) {
   const client = await web3GetClient();
   const p = new Promise((resolve, reject) => {
