@@ -196,6 +196,18 @@ contract IColony {
   /// @param _data The transaction data
   function executeTaskChange(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint8[] _mode, uint256 _value, bytes _data) public;
 
+  /// @notice Executes a task role update transaction `_data` which is approved and signed by two of addresses
+  /// depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`.
+  /// Upon successful execution the `taskChangeNonces` entry for the task is incremented
+  /// @param _sigV recovery id
+  /// @param _sigR r output of the ECDSA signature of the transaction
+  /// @param _sigS s output of the ECDSA signature of the transaction
+  /// @param _mode How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
+  /// @param _value The transaction value, i.e. number of wei to be sent when the transaction is executed
+  /// Currently we only accept 0 value transactions but this is kept as a future option
+  /// @param _data The transaction data
+  function executeTaskRoleAssignment(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint8[] _mode, uint256 _value, bytes _data) public;
+
   /// @notice Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`
   /// Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached
   /// Allowed only for evaluator to rate worker and for worker to rate manager performance
@@ -239,12 +251,37 @@ contract IColony {
   /// @return Rating secret `bytes32` value
   function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32);
 
-  /// @notice Set the user for role `_role` in task `_id`. Only allowed before the task is `finalized`, as in
-  // you cannot change the task contributors after the work is complete. Allowed before a task is finalized.
+  /// @notice Assigning manager role
+  /// Current manager and user we want to assign role to both need to agree
+  /// User we want to set here also needs to be an admin
   /// @param _id Id of the task
-  /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
-  /// @param _user Address of the user to assume role `_role`
-  function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public;
+  /// @param _user Address of the user we want to give a manager role to
+  function setTaskManagerRole(uint256 _id, address _user) public;
+
+  /// @notice Assigning evaluator role
+  /// Can only be set if there is no one currently assigned to be an evaluator
+  /// Manager of the task and user we want to assign role to both need to agree
+  /// Managers can assign themselves to this role, if there is no one currently assigned to it
+  /// @param _id Id of the task
+  /// @param _user Address of the user we want to give a evaluator role to
+  function setTaskEvaluatorRole(uint256 _id, address _user) public;
+
+  /// @notice Assigning worker role
+  /// Can only be set if there is no one currently assigned to be a worker
+  /// Manager of the task and user we want to assign role to both need to agree
+  /// @param _id Id of the task
+  /// @param _user Address of the user we want to give a worker role to
+  function setTaskWorkerRole(uint256 _id, address _user) public;
+
+  /// @notice Removing evaluator role
+  /// Agreed between manager and currently assigned evaluator
+  /// @param _id Id of the task
+  function removeTaskEvaluatorRole(uint256 _id) public;
+
+  /// @notice Removing worker role
+  /// Agreed between manager and currently assigned worker
+  /// @param _id Id of the task
+  function removeTaskWorkerRole(uint256 _id) public;
 
   /// @notice Set the skill for task `_id`
   /// @dev Currently we only allow one skill per task although we have provisioned for an array of skills in `Task` struct

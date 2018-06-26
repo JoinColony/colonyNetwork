@@ -56,10 +56,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyNetworkAddress = _address;
 
     // Initialise the task update reviewers
-    setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
-    setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
-    setFunctionReviewers(0x6fb0794f, 0, 1); // setTaskEvaluatorPayout => manager, evaluator
-    setFunctionReviewers(0x2cf62b39, 0, 2); // setTaskWorkerPayout => manager, worker
+    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), MANAGER, EVALUATOR);
+    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), MANAGER, EVALUATOR);
+    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), MANAGER, WORKER);
+
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address)")));
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
 
     // Initialise the root domain
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
@@ -133,6 +140,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
     reviewers[_sig] = _reviewers;
+  }
+
+  function setRoleAssignmentFunction(bytes4 _sig) private {
+    roleAssignmentSigs[_sig] = true;
   }
 
   modifier verifyKey(bytes key) {

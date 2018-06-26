@@ -39,7 +39,9 @@ contract ColonyFunding is ColonyStorage, DSMath {
     return 100;
   }
 
-  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public isManager(_id) {
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public
+  confirmTaskRoleIdentity(_id, MANAGER)
+  {
     setTaskPayout(_id, MANAGER, _token, _amount);
   }
 

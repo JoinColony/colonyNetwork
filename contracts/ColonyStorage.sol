@@ -39,6 +39,9 @@ contract ColonyStorage is DSAuth {
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
   uint256 taskChangeNonce; // Made obsolete in #203
+  // Role assignment functions require special type of sign-off.
+  // This keeps track of which functions are related to role assignment
+  mapping (bytes4 => bool) roleAssignmentSigs;
 
   mapping (uint256 => Task) tasks;
 
@@ -139,9 +142,9 @@ contract ColonyStorage is DSAuth {
     uint256 potId;
   }
 
-  modifier isManager(uint256 _id) {
-    Task storage task = tasks[_id];
-    require(task.roles[0].user == msg.sender);
+  modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
+    Role storage role = tasks[_id].roles[_role];
+    require(msg.sender == role.user);
     _;
   }
 

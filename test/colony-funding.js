@@ -3,6 +3,7 @@
 import { toBN } from "web3-utils";
 
 import {
+  MANAGER,
   EVALUATOR,
   WORKER,
   MANAGER_ROLE,
@@ -13,7 +14,7 @@ import {
   INITIAL_FUNDING
 } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, bnSqrt } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, executeSignedRoleAssignment } from "../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -150,9 +151,16 @@ contract("Colony Funding", addresses => {
       // NB Also that since we can no longer reduce the pot to below the budget,
       // scenarios 7, 9, 13 should revert.
       await fundColonyWithTokens(colony, otherToken, 100);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
-
+      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
+      const taskId = logs[0].args.id.toNumber();
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, WORKER]
+      });
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
       await colony.setTaskManagerPayout(1, otherToken.address, 0);
@@ -391,8 +399,16 @@ contract("Colony Funding", addresses => {
     it("should correctly track if we are able to make ether payouts", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
+      const taskId = logs[0].args.id.toNumber();
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, WORKER]
+      });
 
       // Set manager payout above pot value 40 > 0
       await colony.setTaskManagerPayout(1, 0x0, 40);

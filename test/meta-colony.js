@@ -1,7 +1,7 @@
 /* globals artifacts */
-import { SPECIFICATION_HASH, INITIAL_FUNDING } from "../helpers/constants";
+import { SPECIFICATION_HASH, INITIAL_FUNDING, MANAGER } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange } from "../helpers/test-data-generator";
 
 const upgradableContracts = require("../helpers/upgradable-contracts");
 
@@ -389,9 +389,12 @@ contract("Meta Colony", accounts => {
 
     it("should be able to set domain on task", async () => {
       await colony.addDomain(3);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskDomain(1, 2);
-      const task = await colony.getTask.call(1);
+      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
+      const taskId = logs[0].args.id.toNumber();
+
+      await colony.setTaskDomain(taskId, 2);
+
+      const task = await colony.getTask.call(taskId);
       assert.equal(task[8].toNumber(), 2);
     });
 
@@ -426,9 +429,19 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
 
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskSkill(1, 5);
-      const task = await colony.getTask.call(1);
+      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
+      const taskId = logs[0].args.id.toNumber();
+
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskSkill",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 5]
+      });
+
+      const task = await colony.getTask.call(taskId);
       assert.equal(task[9][0].toNumber(), 5);
     });
 

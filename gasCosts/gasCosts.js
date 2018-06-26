@@ -11,7 +11,6 @@ import {
   EVALUATOR,
   WORKER,
   MANAGER_ROLE,
-  EVALUATOR_ROLE,
   WORKER_ROLE,
   MANAGER_RATING,
   WORKER_RATING,
@@ -23,9 +22,14 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime, createSignatures, forwardTime, bnSqrt } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
-import { giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/test-data-generator";
+import {
+  giveUserCLNYTokensAndStake,
+  fundColonyWithTokens,
+  executeSignedTaskChange,
+  executeSignedRoleAssignment
+} from "../helpers/test-data-generator";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -106,56 +110,102 @@ contract("All", accounts => {
     });
 
     it("when working with a Task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskDomain(1, 1);
-      await colony.setTaskSkill(1, 7);
-      await colony.setTaskRoleUser(1, EVALUATOR_ROLE, EVALUATOR);
-      await colony.setTaskRoleUser(1, WORKER_ROLE, WORKER);
+      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
+      const taskId = logs[0].args.id.toNumber();
 
-      let txData;
-      let sigs;
+      // setTaskDomain
+      await colony.setTaskDomain(taskId, 1);
+
+      // setTaskSkill
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskSkill",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 7]
+      });
 
       // setTaskBrief
-      txData = await colony.contract.setTaskBrief.getData(1, SPECIFICATION_HASH);
-      sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskBrief",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, SPECIFICATION_HASH]
+      });
 
       // setTaskDueDate
       let dueDate = await currentBlockTime();
       dueDate += SECONDS_PER_DAY * 5;
-      txData = await colony.contract.setTaskDueDate.getData(1, dueDate);
-      sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
+
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskDueDate",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, dueDate]
+      });
 
       // moveFundsBetweenPots
       await colony.moveFundsBetweenPots(1, 2, 150, tokenAddress);
 
       // setTaskManagerPayout
-      await colony.setTaskManagerPayout(1, tokenAddress, 50);
+      await colony.setTaskManagerPayout(taskId, tokenAddress, 50);
 
       // setTaskEvaluatorPayout
-      txData = await colony.contract.setTaskEvaluatorPayout.getData(1, tokenAddress, 40);
-      sigs = await createSignatures(colony, 1, [MANAGER, EVALUATOR], 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskEvaluatorPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, tokenAddress, 40]
+      });
 
       // setTaskWorkerPayout
-      txData = await colony.contract.setTaskWorkerPayout.getData(1, tokenAddress, 100);
-      sigs = await createSignatures(colony, 1, [MANAGER, WORKER], 0, txData);
-      await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, [0, 0], 0, txData);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskWorkerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, tokenAddress, 100]
+      });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, EVALUATOR],
+        sigTypes: [0, 0],
+        args: [taskId, EVALUATOR]
+      });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, WORKER]
+      });
 
       // submitTaskDeliverable
-      await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER, gasPrice });
+      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER, gasPrice });
 
       // submitTaskWorkRating
-      await colony.submitTaskWorkRating(1, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR, gasPrice });
-      await colony.submitTaskWorkRating(1, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR, gasPrice });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
 
       // revealTaskWorkRating
-      await colony.revealTaskWorkRating(1, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR, gasPrice });
-      await colony.revealTaskWorkRating(1, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
+      await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR, gasPrice });
+      await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
 
       // finalizeTask
-      await colony.finalizeTask(1);
+      await colony.finalizeTask(taskId);
     });
 
     it("when working with staking", async () => {
