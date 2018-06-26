@@ -2,6 +2,7 @@
 import { getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
+import { makeTask } from "../helpers/test-data-generator";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -42,9 +43,8 @@ contract("Colony contract upgrade", accounts => {
     const tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
 
-    await authority.setUserRole(ACCOUNT_TWO, 0, true);
-    await colony.makeTask(SPECIFICATION_HASH, 1);
-    await colony.makeTask(SPECIFICATION_HASH_UPDATED, 1);
+    await makeTask({ colony });
+    await makeTask({ colony, hash: SPECIFICATION_HASH_UPDATED });
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();

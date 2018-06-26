@@ -42,7 +42,8 @@ import {
   setupAssignedTask,
   setupFundedTask,
   executeSignedTaskChange,
-  executeSignedRoleAssignment
+  executeSignedRoleAssignment,
+  makeTask
 } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
@@ -229,7 +230,7 @@ contract("Colony", addresses => {
 
   describe("when creating tasks", () => {
     it("should allow admins to make task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       const task = await colony.getTask.call(1);
       assert.equal(task[0], SPECIFICATION_HASH);
       assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
@@ -240,13 +241,18 @@ contract("Colony", addresses => {
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 1, { from: OTHER }));
+      await checkErrorRevert(
+        makeTask({
+          colony,
+          opts: { from: OTHER }
+        })
+      );
       const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount.toNumber(), 0);
     });
 
     it("should set the task manager as the creator", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount.toNumber(), 1);
       const taskManager = await colony.getTaskRole.call(1, MANAGER_ROLE);
@@ -254,11 +260,11 @@ contract("Colony", addresses => {
     });
 
     it("should return the correct number of tasks", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
+      await makeTask({ colony });
+      await makeTask({ colony });
+      await makeTask({ colony });
+      await makeTask({ colony });
       const taskCount = await colony.getTaskCount.call();
 
       assert.equal(taskCount.toNumber(), 5);
@@ -267,7 +273,7 @@ contract("Colony", addresses => {
     it("should set the task domain correctly", async () => {
       const skillCount = await colonyNetwork.getSkillCount.call();
       await colony.addDomain(skillCount.toNumber());
-      await colony.makeTask(SPECIFICATION_HASH, 2);
+      await makeTask({ colony, domainId: 2 });
       const task = await colony.getTask.call(1);
       assert.equal(task[8].toNumber(), 2);
     });
@@ -353,15 +359,14 @@ contract("Colony", addresses => {
 
     it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.bootstrapColony(INITIAL_REPUTATIONS, INITIAL_ADDRESSES));
     });
   });
 
   describe("when updating tasks", () => {
     it("should not be able to pass unallowed function signature to `executeTaskRoleAssignment`", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -376,8 +381,7 @@ contract("Colony", addresses => {
     });
 
     it("should not be able to send any ether while assigning a role", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       const sigTypes = [0, 0];
       const signers = [MANAGER, WORKER];
@@ -392,8 +396,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow the worker and evaluator roles to be assigned", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -421,8 +424,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow the worker or evaluator roles to be assigned only by manager", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -465,8 +467,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow role to be assigned if it is already assigned to somebody", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -510,8 +511,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow role to be unassigned, as long as the current assigned address agrees", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -539,8 +539,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow role to be unassigned, if current assigned address does not agree", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -567,8 +566,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow role to be assigned if passed address is not equal to one of the signers", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -586,8 +584,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow manager to assign himself as an evaluator", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -603,8 +600,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow anyone to assign himself as an evaluator with one signature except manager", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -622,8 +618,7 @@ contract("Colony", addresses => {
     });
 
     it("should be able to remove evaluator role", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -651,8 +646,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow different modes of signing when assigning roles", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -668,8 +662,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow role assignment if non of the signers is manager", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -687,8 +680,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow to change manager role if the user agrees", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await colony.setAdminRole(OTHER);
 
@@ -706,8 +698,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow assignment of manager role if the user does not agree", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await colony.setAdminRole(OTHER);
 
@@ -727,8 +718,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow assignment of manager role if user is not an admin", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -746,8 +736,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow removal of manager role", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await colony.setAdminRole(OTHER);
 
@@ -767,8 +756,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow assignment of manager role if current manager is not one of the signers", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await colony.setAdminRole(WORKER);
 
@@ -809,8 +797,7 @@ contract("Colony", addresses => {
     });
 
     it("should correctly increment `taskChangeNonce` for multiple updates on a single task", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       // Change the task brief
       await executeSignedTaskChange({
@@ -842,11 +829,8 @@ contract("Colony", addresses => {
     });
 
     it("should correctly increment `taskChangeNonce` for multiple updates on multiple tasks", async () => {
-      let { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId1 = logs[0].args.id;
-
-      ({ logs } = await colony.makeTask(SPECIFICATION_HASH, 1));
-      const taskId2 = logs[0].args.id;
+      const taskId1 = await makeTask({ colony });
+      const taskId2 = await makeTask({ colony });
 
       // Change the task1 brief
       await executeSignedTaskChange({
@@ -889,8 +873,8 @@ contract("Colony", addresses => {
     });
 
     it("should allow update of task brief signed by manager only when worker has not been assigned", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
+
       await executeSignedTaskChange({
         colony,
         functionName: "setTaskBrief",
@@ -904,8 +888,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow update of task brief signed by manager and worker", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -929,8 +912,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow update of task brief signed by manager and worker using Trezor-style signatures", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -954,8 +936,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow update of task brief signed by manager and worker if one uses Trezor-style signatures and the other does not", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -979,8 +960,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow update of task brief signed by manager twice, with two different signature styles", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -1008,8 +988,7 @@ contract("Colony", addresses => {
     it("should allow update of task due date signed by manager and worker", async () => {
       const dueDate = await currentBlockTime();
 
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -1034,13 +1013,12 @@ contract("Colony", addresses => {
     });
 
     it("should fail if a non-colony call is made to the task update functions", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }));
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -1064,8 +1042,7 @@ contract("Colony", addresses => {
     });
 
     it("should fail update of task brief signed by manager and evaluator", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
         colony,
@@ -1098,8 +1075,7 @@ contract("Colony", addresses => {
     });
 
     it("should fail to execute task change for a non-registered function signature", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -1114,8 +1090,7 @@ contract("Colony", addresses => {
     });
 
     it("should fail to execute change of task brief, using an invalid task id", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -1147,8 +1122,8 @@ contract("Colony", addresses => {
     });
 
     it("should log a TaskBriefChanged event, if the task brief gets changed", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
+
       await expectEvent(
         executeSignedTaskChange({
           colony,
@@ -1163,8 +1138,8 @@ contract("Colony", addresses => {
     });
 
     it("should log a TaskDueDateChanged event, if the task due date gets changed", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
+
       const dueDate = await currentBlockTime();
       await expectEvent(
         executeSignedTaskChange({
@@ -1180,8 +1155,8 @@ contract("Colony", addresses => {
     });
 
     it("should log a TaskSkillChanged event, if the task skill gets changed", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
+
       // Acquire meta colony, create new global skill, assign new task's skill
       const metaColonyAddress = await colonyNetwork.getMetaColony.call();
       const metaColony = await IColony.at(metaColonyAddress);
@@ -1203,8 +1178,8 @@ contract("Colony", addresses => {
     });
 
     it("should log a TaskDomainChanged event, if the task domain gets changed", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
+
       // Create a domain, change task's domain
       const skillCount = await colonyNetwork.getSkillCount.call();
       await colony.addDomain(skillCount.toNumber());
@@ -1213,8 +1188,7 @@ contract("Colony", addresses => {
     });
 
     it("should log a TaskRoleUserChanged event, if a task role's user gets changed", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       // Change the task role's user
       await expectEvent(
@@ -1415,8 +1389,7 @@ contract("Colony", addresses => {
 
   describe("when funding tasks", () => {
     it("should be able to set the task payouts for different roles", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
 
       let dueDate = await currentBlockTime();
       dueDate += SECONDS_PER_DAY * 7;
@@ -1516,8 +1489,8 @@ contract("Colony", addresses => {
     });
 
     it("should log a TaskWorkerPayoutChanged event, if the task's worker's payout changed", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id;
+      const taskId = await makeTask({ colony });
+
       await executeSignedRoleAssignment({
         colony,
         taskId,

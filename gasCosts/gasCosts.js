@@ -28,7 +28,8 @@ import {
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
   executeSignedTaskChange,
-  executeSignedRoleAssignment
+  executeSignedRoleAssignment,
+  makeTask
 } from "../helpers/test-data-generator";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
@@ -110,8 +111,7 @@ contract("All", accounts => {
     });
 
     it("when working with a Task", async () => {
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       // setTaskDomain
       await colony.setTaskDomain(taskId, 1);

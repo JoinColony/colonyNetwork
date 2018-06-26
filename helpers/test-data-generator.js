@@ -22,6 +22,12 @@ import { currentBlockTime, createSignatures, createSignaturesTrezor } from "./te
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 
+export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, opts }) {
+  const { logs } = await colony.makeTask(hash, domainId, opts);
+  // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
+  return logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
+}
+
 async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {
   const txData = await colony.contract[functionName].getData(...args);
   const sigsPromises = sigTypes.map((type, i) => {
@@ -48,10 +54,7 @@ export async function executeSignedRoleAssignment({ colony, functionName, taskId
 }
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
-  const specificationHash = SPECIFICATION_HASH;
-  const tx = await colony.makeTask(specificationHash, domain);
-  // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
-  const taskId = tx.logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
+  const taskId = await makeTask({ colony, domainId: domain });
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();

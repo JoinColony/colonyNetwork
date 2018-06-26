@@ -2,19 +2,9 @@
 
 import { toBN } from "web3-utils";
 
-import {
-  MANAGER,
-  EVALUATOR,
-  WORKER,
-  MANAGER_ROLE,
-  EVALUATOR_ROLE,
-  WORKER_ROLE,
-  SPECIFICATION_HASH,
-  WORKER_PAYOUT,
-  INITIAL_FUNDING
-} from "../helpers/constants";
+import { MANAGER, EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, bnSqrt } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask, executeSignedRoleAssignment } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, executeSignedRoleAssignment, makeTask } from "../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -74,7 +64,7 @@ contract("Colony Funding", addresses => {
 
     it("should let tokens be moved between pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 51, otherToken.address);
       const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
@@ -86,7 +76,7 @@ contract("Colony Funding", addresses => {
 
     it("should not let tokens be moved from the pot for payouts to token holders", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
 
       await checkErrorRevert(colony.moveFundsBetweenPots(0, 2, 1, otherToken.address), "colonyFunding-cannot-move-funds-from-pot-0");
       const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
@@ -101,7 +91,7 @@ contract("Colony Funding", addresses => {
 
     it("should not let tokens be moved by non-admins", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
 
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 2, 51, otherToken.address, { from: EVALUATOR }));
       const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
@@ -114,8 +104,8 @@ contract("Colony Funding", addresses => {
 
     it("should not allow more tokens to leave a pot than the pot has (even if the colony has that many)", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
+      await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
 
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, otherToken.address));
@@ -151,8 +141,7 @@ contract("Colony Funding", addresses => {
       // NB Also that since we can no longer reduce the pot to below the budget,
       // scenarios 7, 9, 13 should revert.
       await fundColonyWithTokens(colony, otherToken, 100);
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
       await executeSignedRoleAssignment({
         colony,
         taskId,
@@ -368,7 +357,7 @@ contract("Colony Funding", addresses => {
     it("should let ether be moved between pots", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 51, 0x0);
       const colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
       const colonyEtherBalance = await web3GetBalance(colony.address);
@@ -381,8 +370,8 @@ contract("Colony Funding", addresses => {
     it("should not allow more ether to leave a pot than the pot has (even if the colony has that many)", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
+      await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
 
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, 0x0));
@@ -399,8 +388,7 @@ contract("Colony Funding", addresses => {
     it("should correctly track if we are able to make ether payouts", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(0x0);
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
       await executeSignedRoleAssignment({
         colony,
         taskId,

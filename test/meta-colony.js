@@ -1,7 +1,7 @@
 /* globals artifacts */
-import { SPECIFICATION_HASH, INITIAL_FUNDING, MANAGER } from "../helpers/constants";
+import { INITIAL_FUNDING, MANAGER } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
 const upgradableContracts = require("../helpers/upgradable-contracts");
 
@@ -389,8 +389,7 @@ contract("Meta Colony", accounts => {
 
     it("should be able to set domain on task", async () => {
       await colony.addDomain(3);
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await colony.setTaskDomain(taskId, 2);
 
@@ -400,7 +399,7 @@ contract("Meta Colony", accounts => {
 
     it("should NOT allow a non-manager to set domain on task", async () => {
       await colony.addDomain(3);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);
       assert.equal(task[8].toNumber(), 1);
@@ -411,7 +410,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to set a nonexistent domain on task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskDomain(1, 20));
 
       const task = await colony.getTask.call(1);
@@ -429,8 +428,7 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
 
-      const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
-      const taskId = logs[0].args.id.toNumber();
+      const taskId = await makeTask({ colony });
 
       await executeSignedTaskChange({
         colony,
@@ -449,7 +447,7 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
 
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);
       assert.equal(task[9][0].toNumber(), 0);
@@ -472,12 +470,12 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskSkill(1, 5));
     });
 
     it("should NOT be able to set local skill on task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskSkill(1, 3));
     });
   });
