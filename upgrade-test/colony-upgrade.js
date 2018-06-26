@@ -16,7 +16,7 @@ const Authority = artifacts.require("Authority");
 const Token = artifacts.require("Token");
 
 contract("Colony contract upgrade", accounts => {
-  const ACCOUNT_TWO = accounts[1];
+  const ACCOUNT_ONE = accounts[0];
 
   let colony;
   let colonyTask;
@@ -91,7 +91,7 @@ contract("Colony contract upgrade", accounts => {
     });
 
     it("should return correct permissions", async () => {
-      const owner = await authority.hasUserRole.call(ACCOUNT_TWO, 0);
+      const owner = await authority.hasUserRole.call(ACCOUNT_ONE, 0);
       assert.isTrue(owner);
     });
 
