@@ -32,12 +32,16 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
 
-  function setAdmin(address _user) public auth {
+  function setOwnerRole(address _user) public auth {
+    Authority(authority).setUserRole(_user, OWNER_ROLE, true);
+  }
+
+  function setAdminRole(address _user) public auth {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, true);
   }
 
   // Can only be called by the owner.
-  function removeAdmin(address _user) public auth {
+  function removeAdminRole(address _user) public auth {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }
 

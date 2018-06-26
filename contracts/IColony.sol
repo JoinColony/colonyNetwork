@@ -100,15 +100,20 @@ contract IColony {
   /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
 
+  /// @notice Set new colony owner.
+  /// Can be called by colony network.
+  /// @param _user User we want to give an owner role to
+  function setOwnerRole(address _user) public;
+
   /// @notice Set new colony admin.
   /// Can be called by owner or admin.
   /// @param _user User we want to give an admin role to
-  function setAdmin(address _user) public;
+  function setAdminRole(address _user) public;
 
   /// @notice Remove colony admin.
   /// Can only be called by owner.
   /// @param _user User we want to remove admin role from
-  function removeAdmin(address _user) public;
+  function removeAdminRole(address _user) public;
 
   /// @notice Get the colony token
   /// @return Address of the token contract

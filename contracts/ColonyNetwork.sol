@@ -125,10 +125,11 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
-    dsauth.setOwner(msg.sender);
 
     authority.setRootUser(address(this), true);
     authority.setOwner(etherRouter);
+
+    colony.setOwnerRole(msg.sender);
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
@@ -159,7 +160,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     address etherRouter = colonies[_id];
     // Check the calling user is authorised
     DSAuth auth = DSAuth(etherRouter);
-    require(msg.sender == auth.owner());
+    address authority = auth.authority();
+    require(Authority(authority).hasUserRole(msg.sender, 0));
     // Upgrades can only go up in version
     IColony colony = IColony(etherRouter);
     uint currentVersion = colony.version();

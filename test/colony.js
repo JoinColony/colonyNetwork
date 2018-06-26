@@ -102,9 +102,9 @@ contract("Colony", addresses => {
       assert.equal(colonyBalance.toNumber(), 1);
     });
 
-    it("should set creator of the colony to be owner", async () => {
+    it("should set colony network to be owner", async () => {
       const owner = await colony.owner.call();
-      assert.equal(owner, addresses[0]);
+      assert.equal(owner, colonyNetwork.address);
     });
 
     it("should return zero task count", async () => {
@@ -155,13 +155,13 @@ contract("Colony", addresses => {
       const user1 = addresses[1];
       const user5 = addresses[5];
 
-      await colony.setAdmin(user1);
+      await colony.setAdminRole(user1);
 
-      const functionSig = getFunctionSignature("setAdmin(address)");
+      const functionSig = getFunctionSignature("setAdminRole(address)");
       const canCall = await authority.canCall(user1, colony.address, functionSig);
-      assert(canCall, `Address ${user1} can't call 'setAdmin' function`);
+      assert(canCall, `Address ${user1} can't call 'setAdminRole' function`);
 
-      await colony.setAdmin(user5, {
+      await colony.setAdminRole(user5, {
         from: user1
       });
 
@@ -174,12 +174,12 @@ contract("Colony", addresses => {
 
       const user1 = addresses[1];
 
-      await colony.setAdmin(user1);
+      await colony.setAdminRole(user1);
 
       let hasRole = await authority.hasUserRole(user1, adminRole);
       assert(hasRole, `Admin role not assigned to ${user1}`);
 
-      await colony.removeAdmin(user1);
+      await colony.removeAdminRole(user1);
 
       hasRole = await authority.hasUserRole(user1, adminRole);
       assert(!hasRole, `Admin role not removed from ${user1}`);
@@ -188,7 +188,7 @@ contract("Colony", addresses => {
     it("should allow admin to call predetermined functions", async () => {
       const user3 = addresses[3];
 
-      await colony.setAdmin(user3);
+      await colony.setAdminRole(user3);
 
       let functionSig = getFunctionSignature("moveFundsBetweenPots(uint256,uint256,uint256,address)");
       let canCall = await authority.canCall(user3, colony.address, functionSig);
@@ -690,7 +690,7 @@ contract("Colony", addresses => {
       const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
       const taskId = logs[0].args.id.toNumber();
 
-      await colony.setAdmin(OTHER);
+      await colony.setAdminRole(OTHER);
 
       await executeSignedRoleAssignment({
         colony,
@@ -709,7 +709,7 @@ contract("Colony", addresses => {
       const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
       const taskId = logs[0].args.id.toNumber();
 
-      await colony.setAdmin(OTHER);
+      await colony.setAdminRole(OTHER);
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -749,7 +749,7 @@ contract("Colony", addresses => {
       const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
       const taskId = logs[0].args.id.toNumber();
 
-      await colony.setAdmin(OTHER);
+      await colony.setAdminRole(OTHER);
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -770,7 +770,7 @@ contract("Colony", addresses => {
       const { logs } = await colony.makeTask(SPECIFICATION_HASH, 1);
       const taskId = logs[0].args.id.toNumber();
 
-      await colony.setAdmin(WORKER);
+      await colony.setAdminRole(WORKER);
 
       // Setting the worker
       await executeSignedRoleAssignment({

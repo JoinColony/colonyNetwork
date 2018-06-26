@@ -89,6 +89,7 @@ contract ColonyStorage is DSAuth {
   uint256 potCount;
   uint256 domainCount;
 
+  uint8 constant OWNER_ROLE = 0;
   uint8 constant ADMIN_ROLE = 1;
   uint8 constant MANAGER = 0;
   uint8 constant EVALUATOR = 1;

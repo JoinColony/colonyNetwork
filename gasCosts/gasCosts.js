@@ -106,7 +106,7 @@ contract("All", accounts => {
     it("when working with a Colony", async () => {
       await colony.mintTokens(200);
       await colony.claimColonyFunds(tokenAddress);
-      await colony.setAdmin(EVALUATOR);
+      await colony.setAdminRole(EVALUATOR);
     });
 
     it("when working with a Task", async () => {

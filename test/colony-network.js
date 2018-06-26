@@ -195,7 +195,7 @@ contract("ColonyNetwork", accounts => {
   });
 
   describe("when upgrading a colony", () => {
-    it("should be able to upgrade a colony, if a colony owner", async () => {
+    it("should be able to upgrade a colony, if a sender is colony network", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyId, colonyAddress } = logs[0].args;
@@ -209,6 +209,20 @@ contract("ColonyNetwork", accounts => {
       await colonyNetwork.upgradeColony(colonyId, newVersion);
       const colonyResolver = await colony.resolver.call();
       assert.equal(colonyResolver, sampleResolver);
+    });
+
+    it("should not be able to upgrade a colony, if a sender is not colony network", async () => {
+      const token = await Token.new(...TOKEN_ARGS);
+      const { logs } = await colonyNetwork.createColony(token.address);
+      const { colonyAddress } = logs[0].args;
+      const colony = await EtherRouter.at(colonyAddress);
+
+      const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
+      const newVersion = currentColonyVersion.add(1).toNumber();
+      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+
+      await checkErrorRevert(EtherRouter.at(colony.address).setResolver(sampleResolver));
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {

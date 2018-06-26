@@ -22,28 +22,53 @@ import "../lib/dappsys/roles.sol";
 
 
 contract Authority is DSRoles {
+  uint8 ownerRole = 0;
   uint8 adminRole = 1;
 
   constructor(address colony) public {
+    // functions for owner role
+    bytes4 setTokenSig = bytes4(keccak256("setToken(address)"));
+    bytes4 bootstrapColonySig = bytes4(keccak256("bootstrapColony(address[],int256[])"));
+    bytes4 mintTokensSig = bytes4(keccak256("mintTokens(uint256)"));
+    bytes4 addGlobalSkillSig = bytes4(keccak256("addGlobalSkill(uint256)"));
+    bytes4 removeAdminRoleSig = bytes4(keccak256("removeAdminRole(address)"));
+
+    // functions for admin + owner role
     bytes4 moveFundsBetweenPotsSig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,address)"));
     bytes4 addDomainSig = bytes4(keccak256("addDomain(uint256)"));
     bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32,uint256)"));
     bytes4 startNextRewardPayoutSig = bytes4(keccak256("startNextRewardPayout(address)"));
     bytes4 cancelTaskSig = bytes4(keccak256("cancelTask(uint256)"));
-    bytes4 setAdminSig = bytes4(keccak256("setAdmin(address)"));
+    bytes4 setAdminRoleSig = bytes4(keccak256("setAdminRole(address)"));
 
-    // Admin
+    // Set token
+    setRoleCapability(ownerRole, colony, setTokenSig, true);
+    // Bootstrap colony
+    setRoleCapability(ownerRole, colony, bootstrapColonySig, true);
+    // Mint tokens
+    setRoleCapability(ownerRole, colony, mintTokensSig, true);
+    // Add global skill
+    setRoleCapability(ownerRole, colony, addGlobalSkillSig, true);
+    // Remove admin role
+    setRoleCapability(ownerRole, colony, removeAdminRoleSig, true);
+
     // Allocate funds
     setRoleCapability(adminRole, colony, moveFundsBetweenPotsSig, true);
+    setRoleCapability(ownerRole, colony, moveFundsBetweenPotsSig, true);
     // Add domain
     setRoleCapability(adminRole, colony, addDomainSig, true);
+    setRoleCapability(ownerRole, colony, addDomainSig, true);
     // Add task
     setRoleCapability(adminRole, colony, makeTaskSig, true);
+    setRoleCapability(ownerRole, colony, makeTaskSig, true);
     // Start next reward payout
     setRoleCapability(adminRole, colony, startNextRewardPayoutSig, true);
+    setRoleCapability(ownerRole, colony, startNextRewardPayoutSig, true);
     // Cancel task
     setRoleCapability(adminRole, colony, cancelTaskSig, true);
+    setRoleCapability(ownerRole, colony, cancelTaskSig, true);
     // Set admin
-    setRoleCapability(adminRole, colony, setAdminSig, true);
+    setRoleCapability(adminRole, colony, setAdminRoleSig, true);
+    setRoleCapability(ownerRole, colony, setAdminRoleSig, true);
   }
 }
