@@ -135,6 +135,7 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     pots[potCount].taskId = taskCount;
 
+    emit PotAdded(potCount);
     emit TaskAdded(taskCount);
   }
 

@@ -44,7 +44,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function initialiseColony(address _address) public {
     require(colonyNetworkAddress == 0x0, "colony-initialise-bad-address");
     colonyNetworkAddress = _address;
-    potCount = 1;
 
     // Initialise the task update reviewers
     setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
@@ -53,13 +52,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(0x2cf62b39, 0, 2); // setTaskWorkerPayout => manager, worker
 
     // Initialise the root domain
-    domainCount += 1;
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 rootLocalSkill = colonyNetwork.getSkillCount();
-    domains[1] = Domain({
-      skillId: rootLocalSkill,
-      potId: 1
-    });
+    initialiseDomain(rootLocalSkill);
   }
 
   function bootstrapColony(address[] _users, int[] _amounts) public
@@ -113,12 +108,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     uint256 newLocalSkill = colonyNetwork.addSkill(_parentSkillId, false);
 
     // Add domain to local mapping
-    domainCount += 1;
-    potCount += 1;
-    domains[domainCount] = Domain({
-      skillId: newLocalSkill,
-      potId: potCount
-    });
+    initialiseDomain(newLocalSkill);
   }
 
   function getDomain(uint256 _id) public view returns (uint256, uint256) {
@@ -162,5 +152,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
     require(rootHash==impliedHash, "colony-invalid-reputation-proof");
     return true;
+  }
+
+  function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {
+    // Create a new pot
+    potCount += 1;
+
+    // Create a new domain with the given skill and new pot
+    domainCount += 1;
+    domains[domainCount] = Domain({
+      skillId: _skillId,
+      potId: potCount
+    });
+
+    emit DomainAdded(domainCount);
+    emit PotAdded(potCount);
   }
 }
