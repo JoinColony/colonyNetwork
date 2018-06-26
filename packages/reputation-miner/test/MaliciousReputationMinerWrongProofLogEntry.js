@@ -35,7 +35,8 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
         `0x${disagreeStateBranchMask.toString(16)}`,
         this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
         0,
-        logEntryNumber.toString()
+        logEntryNumber.toString(),
+        0
       ],
       reputationKey,
       this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,

@@ -1272,6 +1272,90 @@ contract("ColonyNetworkMining", accounts => {
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
     });
+
+    it(`If a reputation decay caluclation is wrong, it should be handled correctly`, async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = ReputationMiningCycle.at(addr);
+      await forwardTime(3600, this);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await forwardTime(3600, this);
+      await repCycle.submitRootHash("0x0", 0, 10);
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = ReputationMiningCycle.at(addr);
+
+      await goodClient.addLogContentsToReputationTree();
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        1,
+        "0xfffffffff"
+      );
+      await badClient.initialise(colonyNetwork.address);
+      await badClient.addLogContentsToReputationTree();
+      let righthash = await goodClient.getRootHash();
+      let wronghash = await badClient.getRootHash();
+      righthash = await goodClient.getRootHash();
+      wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      await forwardTime(3600, this);
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await forwardTime(3600, this);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+
+      await repCycle.confirmNewHash(1);
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        1,
+        "0xfffffffff"
+      );
+      await badClient.initialise(colonyNetwork.address);
+      const keys = Object.keys(goodClient.reputations);
+      for (let i = 0; i < keys.length; i += 1) {
+        const key = keys[i];
+        const colonyAddress = key.slice(0, 42);
+        const skillId = key.slice(42, 106);
+        const userAddress = key.slice(106);
+        const value = goodClient.reputations[key];
+        const score = new BN(value.slice(2, 66), 16);
+
+        await badClient.insert(colonyAddress, skillId, userAddress, score, 0); // eslint-disable-line no-await-in-loop
+      }
+
+      righthash = await goodClient.getRootHash();
+      wronghash = await badClient.getRootHash();
+      assert(righthash === wronghash, "Hashes from clients are not equal - not starting from the same state");
+
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+
+      await badClient.addLogContentsToReputationTree();
+      await goodClient.addLogContentsToReputationTree();
+
+      righthash = await goodClient.getRootHash();
+      wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      await forwardTime(3600, this);
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await forwardTime(3600, this);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
   });
 
   describe("Misbehaviour during dispute resolution", () => {
