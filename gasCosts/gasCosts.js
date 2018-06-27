@@ -153,7 +153,14 @@ contract("All", accounts => {
       await colony.moveFundsBetweenPots(1, 2, 150, tokenAddress);
 
       // setTaskManagerPayout
-      await colony.setTaskManagerPayout(taskId, tokenAddress, 50);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, tokenAddress, 50]
+      });
 
       // setTaskEvaluatorPayout
       await executeSignedTaskChange({

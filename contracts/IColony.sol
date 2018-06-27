@@ -100,13 +100,13 @@ contract IColony {
   /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
 
-  /// @notice Set new colony owner.
-  /// Can be called by colony network.
+  /// @notice Set new colony owner role.
+  /// Can be called by owner and owner role.
   /// @param _user User we want to give an owner role to
   function setOwnerRole(address _user) public;
 
-  /// @notice Set new colony admin.
-  /// Can be called by owner or admin.
+  /// @notice Set new colony admin role.
+  /// Can be called by owner, owner role or admin role.
   /// @param _user User we want to give an admin role to
   function setAdminRole(address _user) public;
 
@@ -259,6 +259,7 @@ contract IColony {
   /// @notice Assigning manager role
   /// Current manager and user we want to assign role to both need to agree
   /// User we want to set here also needs to be an admin
+  /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a manager role to
   function setTaskManagerRole(uint256 _id, address _user) public;
@@ -267,6 +268,7 @@ contract IColony {
   /// Can only be set if there is no one currently assigned to be an evaluator
   /// Manager of the task and user we want to assign role to both need to agree
   /// Managers can assign themselves to this role, if there is no one currently assigned to it
+  /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a evaluator role to
   function setTaskEvaluatorRole(uint256 _id, address _user) public;
@@ -274,6 +276,7 @@ contract IColony {
   /// @notice Assigning worker role
   /// Can only be set if there is no one currently assigned to be a worker
   /// Manager of the task and user we want to assign role to both need to agree
+  /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a worker role to
   function setTaskWorkerRole(uint256 _id, address _user) public;

@@ -177,8 +177,7 @@ contract ColonyTask is ColonyStorage, DSMath {
       _sigR,
       _sigS,
       _mode,
-      msgHash,
-      nSignaturesRequired
+      msgHash
     );
 
     require(reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][0]].user || reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user);
@@ -225,8 +224,7 @@ contract ColonyTask is ColonyStorage, DSMath {
       _sigR,
       _sigS,
       _mode,
-      msgHash,
-      nSignaturesRequired
+      msgHash
     );
 
     if (nSignaturesRequired == 1) {
@@ -391,7 +389,6 @@ contract ColonyTask is ColonyStorage, DSMath {
   }
 
   function finalizeTask(uint256 _id) public
-  confirmTaskRoleIdentity(_id, MANAGER)
   taskWorkRatingsAssigned(_id)
   taskNotFinalized(_id)
   {
@@ -459,12 +456,11 @@ contract ColonyTask is ColonyStorage, DSMath {
     bytes32[] _sigR,
     bytes32[] _sigS,
     uint8[] _mode,
-    bytes32 msgHash,
-    uint8 nSignaturesRequired
+    bytes32 msgHash
   ) internal pure returns (address[])
   {
-    address[] memory reviewerAddresses = new address[](nSignaturesRequired);
-    for (uint i = 0; i < nSignaturesRequired; i++) {
+    address[] memory reviewerAddresses = new address[](_sigR.length);
+    for (uint i = 0; i < _sigR.length; i++) {
       // 0 'Normal' mode - geth, etc.
       // >0 'Trezor' mode
       // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
@@ -497,6 +493,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     }
   }
 
+  // TODO: Check if we are changing a role before due date and before work has been submitted
   function setTaskRoleUser(uint256 _id, uint8 _role, address _user) private
   taskExists(_id)
   taskNotFinalized(_id)

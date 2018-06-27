@@ -148,7 +148,14 @@ export async function setupFundedTask({
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
   await colony.moveFundsBetweenPots(1, potId, totalPayouts.toString(), tokenAddress);
 
-  await colony.setTaskManagerPayout(taskId, tokenAddress, managerPayout.toString());
+  await executeSignedTaskChange({
+    colony,
+    functionName: "setTaskManagerPayout",
+    taskId,
+    signers: [MANAGER],
+    sigTypes: [0],
+    args: [taskId, tokenAddress, managerPayout.toString()]
+  });
 
   let signers = MANAGER === evaluator ? [MANAGER] : [MANAGER, evaluator];
   let sigTypes = Array.from({ length: signers.length }, () => 0);

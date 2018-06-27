@@ -34,8 +34,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function setOwnerRole(address _user) public auth {
     // To allow only one owner at a time we have to remove current owner from their role
-    Authority(authority).setUserRole(msg.sender, OWNER_ROLE, false);
-    Authority(authority).setUserRole(_user, OWNER_ROLE, true);
+    Authority colonyAuthority = Authority(authority);
+    colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
+    colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
   }
 
   function setAdminRole(address _user) public auth {
@@ -65,6 +66,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), MANAGER, MANAGER);
     setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), MANAGER, EVALUATOR);
     setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), MANAGER, EVALUATOR);

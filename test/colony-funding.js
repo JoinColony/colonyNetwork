@@ -4,7 +4,7 @@ import { toBN } from "web3-utils";
 
 import { MANAGER, EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, bnSqrt } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask, executeSignedRoleAssignment, makeTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, executeSignedRoleAssignment, makeTask } from "../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -152,50 +152,78 @@ contract("Colony Funding", addresses => {
       });
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
-      await colony.setTaskManagerPayout(1, otherToken.address, 0);
-      let task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 0]
+      });
+      let task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1, 2, 0, otherToken.address);
-      task = await colony.getTask.call(1);
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being lower by increasing payout (8)
-      await colony.setTaskManagerPayout(1, otherToken.address, 40);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 40]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Pot 0, Payout 40
       // Pot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
-      task = await colony.getTask.call(1);
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
-      task = await colony.getTask.call(1);
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by increasing payout (12)
-      await colony.setTaskManagerPayout(1, otherToken.address, 80);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 80]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 80
       // Pot was equal to payout, transition to being above by decreasing payout (6)
-      await colony.setTaskManagerPayout(1, otherToken.address, 40);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 40]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2, 1, 40, otherToken.address);
-      task = await colony.getTask.call(1);
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 40, Payout 40
@@ -203,14 +231,28 @@ contract("Colony Funding", addresses => {
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 20, otherToken.address), "colony-funding-task-bad-state");
 
       // Remove 20 from pot
-      await colony.setTaskManagerPayout(1, otherToken.address, 20);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 20]
+      });
       await colony.moveFundsBetweenPots(2, 1, 20, otherToken.address);
-      await colony.setTaskManagerPayout(1, otherToken.address, 40);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 40]
+      });
 
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1, 2, 60, otherToken.address);
-      task = await colony.getTask.call(1);
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 40
@@ -218,38 +260,80 @@ contract("Colony Funding", addresses => {
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 60, otherToken.address), "colony-funding-task-bad-state");
 
       // Remove 60 from pot
-      await colony.setTaskManagerPayout(1, otherToken.address, 20);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 20]
+      });
       await colony.moveFundsBetweenPots(2, 1, 60, otherToken.address);
-      await colony.setTaskManagerPayout(1, otherToken.address, 40);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 40]
+      });
 
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing payout (4)
-      await colony.setTaskManagerPayout(1, otherToken.address, 10);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 10]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 20, Payout 10
       // Pot was above, change to being above by changing payout (16)
-      await colony.setTaskManagerPayout(1, otherToken.address, 5);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 5]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 20, Payout 5
       // Pot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
-      task = await colony.getTask.call(1);
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 10, Payout 5
       // Pot was above payout, change to being below by changing payout (10)
-      await colony.setTaskManagerPayout(1, otherToken.address, 40);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 40]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Pot 10, Payout 40
       // Pot was below payout, change to being below by changing payout (14)
-      await colony.setTaskManagerPayout(1, otherToken.address, 30);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 30]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Pot 10, Payout 30
@@ -257,14 +341,35 @@ contract("Colony Funding", addresses => {
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 5, otherToken.address), "colony-funding-task-bad-state");
 
       // Remove 5 from pot
-      await colony.setTaskManagerPayout(1, otherToken.address, 5);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 5]
+      });
       await colony.moveFundsBetweenPots(2, 1, 5, otherToken.address);
-      await colony.setTaskManagerPayout(1, otherToken.address, 30);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 30]
+      });
 
       // Pot 5, Payout 30
       // Pot was below payout, change to being equal by changing payout (2)
-      await colony.setTaskManagerPayout(1, otherToken.address, 5);
-      task = await colony.getTask.call(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, otherToken.address, 5]
+      });
+      task = await colony.getTask.call(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 5, Payout 5
@@ -399,26 +504,40 @@ contract("Colony Funding", addresses => {
       });
 
       // Set manager payout above pot value 40 > 0
-      await colony.setTaskManagerPayout(1, 0x0, 40);
-      let task = await colony.getTask(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 0x0, 40]
+      });
+      let task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Fund the pot equal to manager payout 40 = 40
       await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
-      task = await colony.getTask(1);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Cannot bring pot balance below current payout
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, 0x0), "colony-funding-task-bad-state");
 
       // Set manager payout above pot value 50 > 40
-      await colony.setTaskManagerPayout(1, 0x0, 50);
-      task = await colony.getTask(1);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 0x0, 50]
+      });
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Fund the pot equal to manager payout, plus 10, 50 < 60
       await colony.moveFundsBetweenPots(1, 2, 20, 0x0);
-      task = await colony.getTask(1);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Cannot bring pot balance below current payout
@@ -426,7 +545,7 @@ contract("Colony Funding", addresses => {
 
       // Can remove surplus 50 = 50
       await colony.moveFundsBetweenPots(2, 1, 10, 0x0);
-      task = await colony.getTask(1);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
     });
 

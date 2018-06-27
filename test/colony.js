@@ -200,6 +200,30 @@ contract("Colony", addresses => {
       assert(!hasRole, `Admin role not removed from ${user1}`);
     });
 
+    it("should not allow admin to remove admin role", async () => {
+      const adminRole = 1;
+
+      const user1 = addresses[1];
+      const user2 = addresses[2];
+
+      await colony.setAdminRole(user1);
+      await colony.setAdminRole(user2);
+
+      let hasRole = await authority.hasUserRole(user1, adminRole);
+      assert(hasRole, `Admin role not assigned to ${user1}`);
+      hasRole = await authority.hasUserRole(user2, adminRole);
+      assert(hasRole, `Admin role not assigned to ${user2}`);
+
+      await checkErrorRevert(
+        colony.removeAdminRole(user1, {
+          from: user2
+        })
+      );
+
+      hasRole = await authority.hasUserRole(user1, adminRole);
+      assert(hasRole, `${user1} is removed from admin role from another admin`);
+    });
+
     it("should allow admin to call predetermined functions", async () => {
       const user3 = addresses[3];
 
@@ -255,12 +279,7 @@ contract("Colony", addresses => {
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
-      await checkErrorRevert(
-        makeTask({
-          colony,
-          opts: { from: OTHER }
-        })
-      );
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 1, { from: OTHER }));
       const taskCount = await colony.getTaskCount.call();
       assert.equal(taskCount.toNumber(), 0);
     });
@@ -1290,12 +1309,6 @@ contract("Colony", addresses => {
       await checkErrorRevert(colony.finalizeTask(taskId));
     });
 
-    it("should fail if a non-admin tries to accept the task", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await checkErrorRevert(colony.finalizeTask(taskId, { from: OTHER }));
-    });
-
     it("should fail if I try to accept a task that was finalized before", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
@@ -1436,8 +1449,23 @@ contract("Colony", addresses => {
       await colony.mintTokens(100);
 
       // Set the manager payout as 5000 wei and 100 colony tokens
-      await colony.setTaskManagerPayout(taskId, 0x0, 5000);
-      await colony.setTaskManagerPayout(taskId, token.address, 100);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 0x0, 5000]
+      });
+
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskManagerPayout",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, token.address, 100]
+      });
 
       // Set the evaluator payout as 1000 ethers
       await executeSignedTaskChange({
