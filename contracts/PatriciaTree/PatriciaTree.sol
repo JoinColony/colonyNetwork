@@ -42,7 +42,7 @@ contract PatriciaTree is IPatriciaTree, PatriciaTreeProofs {
       Data.Label memory prefix;
       Data.Label memory suffix;
       (prefix, suffix) = k.splitCommonPrefix(e.label);
-      assert(prefix.length == e.label.length);
+      assert(prefix.length == e.label.length); // I.e. never an unseen branch
       if (suffix.length == 0) {
         // Found it
         break;

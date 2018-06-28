@@ -92,7 +92,7 @@ library Data {
     if (suffix.length == 0) {
       // Full match with the key, update operation
       newNodeHash = value;
-    } else if (prefix.length >= e.label.length) {
+    } else if (prefix.length >= e.label.length) {  // NOTE: how could a common prefix be longer than either label?
       // Partial match, just follow the path
       assert(suffix.length > 1);
       Node memory n = self.nodes[e.node];
