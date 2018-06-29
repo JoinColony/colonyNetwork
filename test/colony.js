@@ -1327,6 +1327,19 @@ contract("Colony", addresses => {
       const task = await colony.getTask.call(1);
       assert.notEqual(task[1], DELIVERABLE_HASH);
     });
+
+    it("should log a TaskDeliverableSubmitted event", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 4;
+      await setupAssignedTask({ colonyNetwork, colony, dueDate });
+
+      await expectEvent(
+        colony.submitTaskDeliverable(1, DELIVERABLE_HASH, {
+          from: WORKER
+        }),
+        "TaskDeliverableSubmitted"
+      );
+    });
   });
 
   describe("when finalizing a task", () => {
