@@ -33,6 +33,7 @@ contract Authority is DSRoles {
     bytes4 addGlobalSkillSig = bytes4(keccak256("addGlobalSkill(uint256)"));
     bytes4 setOwnerRoleSig = bytes4(keccak256("setOwnerRole(address)"));
     bytes4 removeAdminRoleSig = bytes4(keccak256("removeAdminRole(address)"));
+    bytes4 upgradeSig = bytes4(keccak256("upgrade(uint256)"));
 
     // functions for admin + owner role
     bytes4 moveFundsBetweenPotsSig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,address)"));
@@ -54,6 +55,8 @@ contract Authority is DSRoles {
     setRoleCapability(ownerRole, colony, setOwnerRoleSig, true);
     // Remove admin role
     setRoleCapability(ownerRole, colony, removeAdminRoleSig, true);
+    // Upgrade colony
+    setRoleCapability(ownerRole, colony, upgradeSig, true);
 
     // Allocate funds
     setRoleCapability(adminRole, colony, moveFundsBetweenPotsSig, true);

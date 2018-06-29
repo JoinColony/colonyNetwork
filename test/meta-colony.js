@@ -83,7 +83,7 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChild.toNumber(), 3);
     });
 
-    it("should not allow a non-owner of the metacolony to add a global skill", async () => {
+    it("should not allow a non-owner role in the metacolony to add a global skill", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill(1, { from: OTHER_ACCOUNT }));
     });
 
@@ -304,7 +304,7 @@ contract("Meta Colony", accounts => {
       token = await Token.at(tokenAddress);
     });
 
-    it("someone who is not the colony owner should not be able to add domains", async () => {
+    it("someone who does not have owner role should not be able to add domains", async () => {
       await checkErrorRevert(colony.addDomain(3, { from: OTHER_ACCOUNT }));
     });
 

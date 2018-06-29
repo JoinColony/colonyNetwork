@@ -24,6 +24,7 @@ import "./IColony.sol";
 import "./ColonyStorage.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
 import "./Authority.sol";
+import "./EtherRouter.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
@@ -33,7 +34,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function version() public pure returns (uint256) { return 1; }
 
   function setOwnerRole(address _user) public auth {
-    // To allow only one owner at a time we have to remove current owner from their role
+    // To allow only one address to have owner role at a time, we have to remove current owner from their role
     Authority colonyAuthority = Authority(authority);
     colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
     colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
@@ -43,7 +44,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, true);
   }
 
-  // Can only be called by the owner.
+  // Can only be called by the owner role.
   function removeAdminRole(address _user) public auth {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }
@@ -66,6 +67,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), MANAGER, WORKER);
+    // We are setting a manager to both reviewers, but it will require just one signature from manager
     setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), MANAGER, MANAGER);
     setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), MANAGER, EVALUATOR);
     setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), MANAGER, WORKER);
@@ -180,6 +182,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
     require(rootHash==impliedHash, "colony-invalid-reputation-proof");
     return true;
+  }
+
+  function upgrade(uint256 _newVersion) public auth {
+    // Upgrades can only go up in version
+    uint256 currentVersion = version();
+    require(_newVersion > currentVersion);
+    // Requested version has to be registered
+    address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
+    require(newResolver != 0x0);
+    EtherRouter e = EtherRouter(address(this));
+    e.setResolver(newResolver);
   }
 
   function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {

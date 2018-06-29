@@ -34,7 +34,7 @@ contract("Colony contract upgrade", accounts => {
     const tokenArgs = getTokenArgs();
     const colonyToken = await Token.new(...tokenArgs);
     const { logs } = await colonyNetwork.createColony(colonyToken.address);
-    const { colonyId, colonyAddress } = logs[0].args;
+    const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
     colonyTask = await ColonyTask.new();
     colonyFunding = await ColonyFunding.new();
@@ -54,7 +54,7 @@ contract("Colony contract upgrade", accounts => {
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
 
     // Upgrade our existing colony
-    await colonyNetwork.upgradeColony(colonyId, updatedColonyVersion.toNumber());
+    await colony.upgrade(updatedColonyVersion.toNumber());
     updatedColony = await IUpdatedColony.at(colonyAddress);
   });
 

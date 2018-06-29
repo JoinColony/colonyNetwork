@@ -84,7 +84,8 @@ contract IColony {
   /// @return The `Authority` contract address
   function authority() public view returns (address);
 
-  /// @notice Get the colony `owner` address. Inherited from the DSAuth contract
+  /// @notice Get the colony `owner` address. This should be 0x0 at all times
+  /// @dev Used for testing.
   /// @return Address of the colony owner
   function owner() public view returns (address);
 
@@ -94,6 +95,11 @@ contract IColony {
   /// @return Version number
   function version() public pure returns (uint256);
 
+  /// @notice Upgrades a colony to a new Colony contract version `_newVersion`
+  /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version
+  /// @param _newVersion The target version for the upgrade
+  function upgrade(uint _newVersion) public;
+
   /// @notice Set the colony token. Secured function to authorised members
   /// @param _token Address of the token contract to use.
   /// Note that if the `mint` functionality is to be controlled through the colony,
@@ -101,17 +107,17 @@ contract IColony {
   function setToken(address _token) public;
 
   /// @notice Set new colony owner role.
-  /// Can be called by owner and owner role.
+  /// Can be called by owner role.
   /// @param _user User we want to give an owner role to
   function setOwnerRole(address _user) public;
 
   /// @notice Set new colony admin role.
-  /// Can be called by owner, owner role or admin role.
+  /// Can be called by owner role or admin role.
   /// @param _user User we want to give an admin role to
   function setAdminRole(address _user) public;
 
   /// @notice Remove colony admin.
-  /// Can only be called by owner.
+  /// Can only be called by owner role.
   /// @param _user User we want to remove admin role from
   function removeAdminRole(address _user) public;
 

@@ -103,9 +103,9 @@ contract("Colony", addresses => {
       assert.equal(colonyBalance.toNumber(), 1);
     });
 
-    it("should set colony network to be owner", async () => {
+    it("should not have owner", async () => {
       const owner = await colony.owner.call();
-      assert.equal(owner, colonyNetwork.address);
+      assert.equal(owner, "0x0000000000000000000000000000000000000000");
     });
 
     it("should return zero task count", async () => {
@@ -156,7 +156,7 @@ contract("Colony", addresses => {
       const futureOwner = addresses[2];
 
       let hasRole = await authority.hasUserRole(currentOwner, ownerRole);
-      assert(hasRole, `${currentOwner} is not current owner`);
+      assert(hasRole, `${currentOwner} does not have owner role`);
 
       await colony.setOwnerRole(futureOwner);
 
