@@ -484,17 +484,6 @@ contract("Colony", addresses => {
         })
       );
 
-      await checkErrorRevert(
-        executeSignedRoleAssignment({
-          colony,
-          taskId,
-          functionName: "setTaskWorkerRole",
-          signers: [MANAGER, MANAGER],
-          sigTypes: [0, 0],
-          args: [taskId, MANAGER]
-        })
-      );
-
       const worker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
       assert.equal(worker[0], "0x0000000000000000000000000000000000000000");
     });
@@ -616,7 +605,7 @@ contract("Colony", addresses => {
       assert.equal(workerInfo[0], "0x0000000000000000000000000000000000000000");
     });
 
-    it("should allow manager to assign himself as an evaluator", async () => {
+    it("should allow manager to assign himself to a role", async () => {
       const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
@@ -628,11 +617,23 @@ contract("Colony", addresses => {
         args: [taskId, MANAGER]
       });
 
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, MANAGER]
+      });
+
       const evaluatorInfo = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
       assert.equal(evaluatorInfo[0], MANAGER);
+
+      const workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      assert.equal(workerInfo[0], MANAGER);
     });
 
-    it("should not allow anyone to assign himself as an evaluator with one signature except manager", async () => {
+    it("should not allow anyone to assign himself to a role with one signature except manager", async () => {
       const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
@@ -640,14 +641,28 @@ contract("Colony", addresses => {
           colony,
           taskId,
           functionName: "setTaskEvaluatorRole",
+          signers: [EVALUATOR],
+          sigTypes: [0],
+          args: [taskId, EVALUATOR]
+        })
+      );
+
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId,
+          functionName: "setTaskWorkerRole",
           signers: [WORKER],
           sigTypes: [0],
-          args: [taskId, MANAGER]
+          args: [taskId, WORKER]
         })
       );
 
       const evaluatorInfo = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
       assert.equal(evaluatorInfo[0], "0x0000000000000000000000000000000000000000");
+
+      const workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      assert.equal(workerInfo[0], "0x0000000000000000000000000000000000000000");
     });
 
     it("should be able to remove evaluator role", async () => {
@@ -728,6 +743,26 @@ contract("Colony", addresses => {
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.equal(managerInfo[0], OTHER);
+    });
+
+    it("should not allow assignment of manager to other role with 1 signature if signer is not manager", async () => {
+      const taskId = await makeTask({ colony });
+
+      await colony.setAdminRole(OTHER);
+
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId,
+          functionName: "setTaskEvaluatorRole",
+          signers: [OTHER],
+          sigTypes: [0],
+          args: [taskId, MANAGER]
+        })
+      );
+
+      const managerInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+      assert.equal(managerInfo[0], "0x0000000000000000000000000000000000000000");
     });
 
     it("should not allow assignment of manager role if the user does not agree", async () => {

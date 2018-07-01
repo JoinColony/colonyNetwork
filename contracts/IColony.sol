@@ -107,6 +107,8 @@ contract IColony {
   function setToken(address _token) public;
 
   /// @notice Set new colony owner role.
+  /// @dev There can only be one address assigned to owner role at a time.
+  /// Whoever calls this function will lose their owner role
   /// Can be called by owner role.
   /// @param _user User we want to give an owner role to
   function setOwnerRole(address _user) public;

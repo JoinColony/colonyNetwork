@@ -235,7 +235,10 @@ contract ColonyTask is ColonyStorage, DSMath {
       require(reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user || reviewerAddresses[1] == tasks[taskId].roles[MANAGER].user);
       // One of the signers must be an address we want to set here
       require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1]);
-      // require that signatures are not from the same address
+      // Require that signatures are not from the same address
+      // This will never throw, because we require that manager is one of the signers,
+      // and if manager is both signers, then `userAddress` must also be a manager, and if
+      // `userAddress` is a manager, then we require 1 signature (will be kept for possible future changes)
       require(reviewerAddresses[0] != reviewerAddresses[1]);
     }
 
