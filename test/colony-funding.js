@@ -3,7 +3,7 @@
 import { toBN, sha3 } from "web3-utils";
 
 import { MANAGER, EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
-import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, bnSqrt } from "../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlockTime, bnSqrt } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, executeSignedRoleAssignment, makeTask } from "../helpers/test-data-generator";
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -1020,6 +1020,20 @@ contract("Colony Funding", addresses => {
         }),
         "colony-reward-payout-not-active"
       );
+    });
+
+    it("should return correct info about reward payout", async () => {
+      const { logs } = await colony.startNextRewardPayout(otherToken.address);
+      const payoutId = logs[0].args.id;
+
+      const balance = await colony.getPotBalance(0, otherToken.address);
+      const blockTimestamp = await currentBlockTime();
+
+      const info = await colony.getRewardPayoutInfo(payoutId);
+      assert.equal(info[1].toString(), userTokens.toString());
+      assert.equal(info[2].toString(), balance.toString());
+      assert.equal(info[3].toString(), otherToken.address);
+      assert.equal(info[4].toString(), blockTimestamp.toString());
     });
 
     const reputations = [
