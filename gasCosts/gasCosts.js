@@ -325,7 +325,7 @@ contract("All", accounts => {
     });
 
     it("when working with reward payouts", async () => {
-      const totalReputation = toBN(350 * 1e18);
+      const totalReputation = toBN(300 * 1e18);
       const workerReputation = toBN(200 * 1e18);
       const managerReputation = toBN(100 * 1e18);
       const initialFunding = toBN(360 * 1e18);
@@ -338,7 +338,7 @@ contract("All", accounts => {
       await newToken.setOwner(colonyAddress);
 
       await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());
-      await fundColonyWithTokens(newColony, newToken, initialFunding.toString());
+      await newColony.mintTokens(workerReputation.add(managerReputation).toString());
 
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
 
@@ -357,13 +357,12 @@ contract("All", accounts => {
       });
 
       const workerReputationSqrt = bnSqrt(workerReputation);
-      const totalReputationSqrt = bnSqrt(workerReputation.add(managerReputation));
+      const totalReputationSqrt = bnSqrt(workerReputation.add(managerReputation), true);
       const numeratorSqrt = bnSqrt(workerReputationSqrt.mul(workerReputationSqrt));
-      const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalReputationSqrt));
+      const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalReputationSqrt), true);
 
-      const info = await newColony.getRewardPayoutInfo.call(payoutId);
-
-      const amountSqrt = bnSqrt(info[2]);
+      const balance = await newColony.getPotBalance(0, otherToken.address);
+      const amountSqrt = bnSqrt(balance);
 
       const squareRoots = [
         workerReputationSqrt.toString(),
