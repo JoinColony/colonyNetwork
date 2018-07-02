@@ -112,12 +112,6 @@ contract IColonyNetwork {
   /// @return The current / latest Colony contract version
   function getCurrentColonyVersion() public view returns (uint256);
 
-  /// @notice Upgrades a colony with identifier: `_id` to a new Colony contract version `_newVersion`
-  /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version
-  /// @param _id The colony identifier in the network
-  /// @param _newVersion The target version for the upgrade
-  function upgradeColony(uint256 _id, uint _newVersion) public;
-
   /// @notice Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_skillId`
   /// @param _skillId Id of the skill
   /// @param _parentSkillIndex Index of the `skill.parents` array to get

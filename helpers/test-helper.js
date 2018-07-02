@@ -186,6 +186,10 @@ export async function forwardTime(seconds, test) {
   return p;
 }
 
+export function getFunctionSignature(sig) {
+  return web3Utils.sha3(sig).slice(0, 10);
+}
+
 export async function createSignatures(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;

@@ -2,6 +2,7 @@
 import { getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
+import { makeTask } from "../helpers/test-data-generator";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -15,7 +16,7 @@ const Authority = artifacts.require("Authority");
 const Token = artifacts.require("Token");
 
 contract("Colony contract upgrade", accounts => {
-  const ACCOUNT_TWO = accounts[1];
+  const ACCOUNT_ONE = accounts[0];
 
   let colony;
   let colonyTask;
@@ -33,7 +34,7 @@ contract("Colony contract upgrade", accounts => {
     const tokenArgs = getTokenArgs();
     const colonyToken = await Token.new(...tokenArgs);
     const { logs } = await colonyNetwork.createColony(colonyToken.address);
-    const { colonyId, colonyAddress } = logs[0].args;
+    const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
     colonyTask = await ColonyTask.new();
     colonyFunding = await ColonyFunding.new();
@@ -42,9 +43,8 @@ contract("Colony contract upgrade", accounts => {
     const tokenAddress = await colony.getToken.call();
     token = await Token.at(tokenAddress);
 
-    await authority.setUserRole(ACCOUNT_TWO, 0, true);
-    await colony.makeTask(SPECIFICATION_HASH, 1);
-    await colony.makeTask(SPECIFICATION_HASH_UPDATED, 1);
+    await makeTask({ colony });
+    await makeTask({ colony, hash: SPECIFICATION_HASH_UPDATED });
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
@@ -54,7 +54,7 @@ contract("Colony contract upgrade", accounts => {
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
 
     // Upgrade our existing colony
-    await colonyNetwork.upgradeColony(colonyId, updatedColonyVersion.toNumber());
+    await colony.upgrade(updatedColonyVersion.toNumber());
     updatedColony = await IUpdatedColony.at(colonyAddress);
   });
 
@@ -91,7 +91,7 @@ contract("Colony contract upgrade", accounts => {
     });
 
     it("should return correct permissions", async () => {
-      const owner = await authority.hasUserRole.call(ACCOUNT_TWO, 0);
+      const owner = await authority.hasUserRole.call(ACCOUNT_ONE, 0);
       assert.isTrue(owner);
     });
 

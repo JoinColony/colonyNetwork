@@ -97,7 +97,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return reputationRootHashNNodes;
   }
 
-  function createMetaColony(address _tokenAddress) public 
+  function createMetaColony(address _tokenAddress) public
   auth
   {
     require(metaColony == 0);
@@ -108,10 +108,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     skills[skillCount] = rootGlobalSkill;
     rootGlobalSkillId = skillCount;
     // TODO: add the special 'mining' skill, which is local to the meta Colony.
-    
+
     metaColony = createColony(_tokenAddress);
   }
-  
+
   function createColony(address _tokenAddress) public returns (address) {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
@@ -120,11 +120,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
     IColony colony = IColony(etherRouter);
     colony.setToken(_tokenAddress);
 
+    // Creating new instance of colony's authority
     Authority authority = new Authority(colony);
+
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
-    authority.setRootUser(msg.sender, true);
-    authority.setOwner(msg.sender);
+
+    authority.setOwner(etherRouter);
+    colony.setOwnerRole(msg.sender);
+
+    // Colony will not have owner
+    dsauth.setOwner(0x0);
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
@@ -149,23 +155,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function getColony(uint256 _id) public view returns (address) {
     return colonies[_id];
-  }
-
-  function upgradeColony(uint256 _id, uint _newVersion) public {
-    address etherRouter = colonies[_id];
-    // Check the calling user is authorised
-    DSAuth auth = DSAuth(etherRouter);
-    DSAuthority authority = auth.authority();
-    require(authority.canCall(msg.sender, etherRouter, 0x0e1f20b4));
-    // Upgrades can only go up in version
-    IColony colony = IColony(etherRouter);
-    uint currentVersion = colony.version();
-    require(_newVersion > currentVersion);
-    // Requested version has to be registered
-    address newResolver = colonyVersionResolver[_newVersion];
-    require(newResolver != 0x0);
-    EtherRouter e = EtherRouter(etherRouter);
-    e.setResolver(newResolver);
   }
 
   function addSkill(uint _parentSkillId, bool _globalSkill) public

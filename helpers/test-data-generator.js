@@ -14,40 +14,108 @@ import {
   RATING_1_SALT,
   RATING_2_SALT,
   MANAGER_ROLE,
-  EVALUATOR_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH
 } from "./constants";
-import { currentBlockTime, createSignatures } from "./test-helper";
+import { currentBlockTime, createSignatures, createSignaturesTrezor } from "./test-helper";
 
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
 
-export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
-  const specificationHash = SPECIFICATION_HASH;
-  const tx = await colony.makeTask(specificationHash, domain);
+export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, opts }) {
+  const { logs } = await colony.makeTask(hash, domainId, opts);
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
-  const taskId = tx.logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
+  return logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
+}
+
+async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {
+  const txData = await colony.contract[functionName].getData(...args);
+  const sigsPromises = sigTypes.map((type, i) => {
+    if (type === 0) {
+      return createSignatures(colony, taskId, [signers[i]], 0, txData);
+    }
+    return createSignaturesTrezor(colony, taskId, [signers[i]], 0, txData);
+  });
+  const sigs = await Promise.all(sigsPromises);
+  const sigV = sigs.map(sig => sig.sigV[0]);
+  const sigR = sigs.map(sig => sig.sigR[0]);
+  const sigS = sigs.map(sig => sig.sigS[0]);
+  return { sigV, sigR, sigS, txData };
+}
+
+export async function executeSignedTaskChange({ colony, functionName, taskId, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args });
+  return colony.executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
+}
+
+export async function executeSignedRoleAssignment({ colony, functionName, taskId, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args });
+  return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
+}
+
+export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
+  const taskId = await makeTask({ colony, domainId: domain });
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
     if (rootGlobalSkill.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
-    await colony.setTaskSkill(taskId, rootGlobalSkill);
+
+    await executeSignedTaskChange({
+      colony,
+      functionName: "setTaskSkill",
+      taskId,
+      signers: [MANAGER],
+      sigTypes: [0],
+      args: [taskId, rootGlobalSkill.toNumber()]
+    });
   } else {
-    await colony.setTaskSkill(taskId, skill);
+    await executeSignedTaskChange({
+      colony,
+      functionName: "setTaskSkill",
+      taskId,
+      signers: [MANAGER],
+      sigTypes: [0],
+      args: [taskId, skill]
+    });
   }
-  await colony.setTaskRoleUser(taskId, EVALUATOR_ROLE, evaluator);
-  await colony.setTaskRoleUser(taskId, WORKER_ROLE, worker);
+
+  let signers = MANAGER === evaluator ? [MANAGER] : [MANAGER, evaluator];
+  let sigTypes = Array.from({ length: signers.length }, () => 0);
+
+  await executeSignedRoleAssignment({
+    colony,
+    taskId,
+    functionName: "setTaskEvaluatorRole",
+    signers,
+    sigTypes,
+    args: [taskId, evaluator]
+  });
+
+  signers = MANAGER === worker ? [MANAGER] : [MANAGER, worker];
+  sigTypes = Array.from({ length: signers.length }, () => 0);
+
+  await executeSignedRoleAssignment({
+    colony,
+    taskId,
+    functionName: "setTaskWorkerRole",
+    signers,
+    sigTypes,
+    args: [taskId, worker]
+  });
 
   let dueDateTimestamp = dueDate;
   if (!dueDateTimestamp) {
     dueDateTimestamp = await currentBlockTime();
   }
-  const txData = await colony.contract.setTaskDueDate.getData(taskId, dueDateTimestamp);
-  const signers = MANAGER === worker ? [MANAGER] : [MANAGER, worker];
-  const sigs = await createSignatures(colony, taskId, signers, 0, txData);
-  const signatureTypes = Array.from({ length: signers.length }, () => 0);
-  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, signatureTypes, 0, txData);
+
+  await executeSignedTaskChange({
+    colony,
+    functionName: "setTaskDueDate",
+    taskId,
+    signers,
+    sigTypes,
+    args: [taskId, dueDateTimestamp]
+  });
   return taskId;
 }
 
@@ -65,8 +133,6 @@ export async function setupFundedTask({
   workerPayout = WORKER_PAYOUT
 }) {
   let tokenAddress;
-  let txData;
-  let sigs;
 
   if (token === undefined) {
     tokenAddress = await colony.getToken.call();
@@ -82,19 +148,38 @@ export async function setupFundedTask({
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
   await colony.moveFundsBetweenPots(1, potId, totalPayouts.toString(), tokenAddress);
 
-  await colony.setTaskManagerPayout(taskId, tokenAddress, managerPayout.toString());
+  await executeSignedTaskChange({
+    colony,
+    functionName: "setTaskManagerPayout",
+    taskId,
+    signers: [MANAGER],
+    sigTypes: [0],
+    args: [taskId, tokenAddress, managerPayout.toString()]
+  });
 
-  txData = await colony.contract.setTaskEvaluatorPayout.getData(taskId, tokenAddress, evaluatorPayout.toString());
   let signers = MANAGER === evaluator ? [MANAGER] : [MANAGER, evaluator];
-  sigs = await createSignatures(colony, taskId, signers, 0, txData);
-  let signatureTypes = Array.from({ length: signers.length }, () => 0);
-  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, signatureTypes, 0, txData);
+  let sigTypes = Array.from({ length: signers.length }, () => 0);
 
-  txData = await colony.contract.setTaskWorkerPayout.getData(taskId, tokenAddress, workerPayout.toString());
+  await executeSignedTaskChange({
+    colony,
+    functionName: "setTaskEvaluatorPayout",
+    taskId,
+    signers,
+    sigTypes,
+    args: [taskId, tokenAddress, evaluatorPayout.toString()]
+  });
+
   signers = MANAGER === worker ? [MANAGER] : [MANAGER, worker];
-  sigs = await createSignatures(colony, taskId, signers, 0, txData);
-  signatureTypes = Array.from({ length: signers.length }, () => 0);
-  await colony.executeTaskChange(sigs.sigV, sigs.sigR, sigs.sigS, signatureTypes, 0, txData);
+  sigTypes = Array.from({ length: signers.length }, () => 0);
+
+  await executeSignedTaskChange({
+    colony,
+    functionName: "setTaskWorkerPayout",
+    taskId,
+    signers,
+    sigTypes,
+    args: [taskId, tokenAddress, workerPayout.toString()]
+  });
   return taskId;
 }
 

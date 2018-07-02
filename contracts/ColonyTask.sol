@@ -38,12 +38,6 @@ contract ColonyTask is ColonyStorage, DSMath {
   event TaskFinalized(uint256 indexed id);
   event TaskCanceled(uint256 indexed id);
 
-  modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
-    Role storage role = tasks[_id].roles[_role];
-    require(msg.sender == role.user);
-    _;
-  }
-
   modifier userCanRateRole(uint256 _id, uint8 _role) {
     // Manager rated by worker
     // Worker rated by evaluator
@@ -162,6 +156,7 @@ contract ColonyTask is ColonyStorage, DSMath {
     uint256 taskId;
     (sig, taskId) = deconstructCall(_data);
     require(!tasks[taskId].finalized);
+    require(!roleAssignmentSigs[sig]);
 
     uint8 nSignaturesRequired;
     if (tasks[taskId].roles[reviewers[sig][0]].user == address(0) || tasks[taskId].roles[reviewers[sig][1]].user == address(0)) {
@@ -177,26 +172,74 @@ contract ColonyTask is ColonyStorage, DSMath {
     require(_sigR.length == nSignaturesRequired);
 
     bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
-    address[] memory reviewerAddresses = new address[](nSignaturesRequired);
-    for (uint i = 0; i < nSignaturesRequired; i++) {
-      // 0 'Normal' mode - geth, etc.
-      // >0 'Trezor' mode
-      // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
-      bytes32 txHash;
-      if (_mode[i] == 0) {
-        txHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
-      } else {
-        txHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n\x20", msgHash));
-      }
-
-      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
-    }
+    address[] memory reviewerAddresses = getReviewerAddresses(
+      _sigV,
+      _sigR,
+      _sigS,
+      _mode,
+      msgHash
+    );
 
     require(reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][0]].user || reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user);
 
     if (nSignaturesRequired == 2) {
       require(reviewerAddresses[0] != reviewerAddresses[1]);
       require(reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][0]].user || reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][1]].user);
+    }
+
+    taskChangeNonces[taskId]++;
+    require(executeCall(address(this), _value, _data));
+  }
+
+  function executeTaskRoleAssignment(
+    uint8[] _sigV,
+    bytes32[] _sigR,
+    bytes32[] _sigS,
+    uint8[] _mode,
+    uint256 _value,
+    bytes _data) public
+  {
+    require(_value == 0);
+    require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
+
+    bytes4 sig;
+    uint256 taskId;
+    address userAddress;
+    (sig, taskId, userAddress) = deconstructRoleChangeCall(_data);
+
+    require(roleAssignmentSigs[sig]);
+
+    uint8 nSignaturesRequired;
+    // If manager wants to set himself to a role
+    if (userAddress == tasks[taskId].roles[MANAGER].user) {
+      nSignaturesRequired = 1;
+    } else {
+      nSignaturesRequired = 2;
+    }
+    require(_sigR.length == nSignaturesRequired);
+
+    bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
+    address[] memory reviewerAddresses = getReviewerAddresses(
+      _sigV,
+      _sigR,
+      _sigS,
+      _mode,
+      msgHash
+    );
+
+    if (nSignaturesRequired == 1) {
+      // Since we want to set a manager as an evaluator, require just manager's signature
+      require(reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user);
+    } else {
+      // One of signers must be a manager
+      require(reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user || reviewerAddresses[1] == tasks[taskId].roles[MANAGER].user);
+      // One of the signers must be an address we want to set here
+      require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1]);
+      // Require that signatures are not from the same address
+      // This will never throw, because we require that manager is one of the signers,
+      // and if manager is both signers, then `userAddress` must also be a manager, and if
+      // `userAddress` is a manager, then we require 1 signature (will be kept for possible future changes)
+      require(reviewerAddresses[0] != reviewerAddresses[1]);
     }
 
     taskChangeNonces[taskId]++;
@@ -267,43 +310,51 @@ contract ColonyTask is ColonyStorage, DSMath {
     return taskWorkRatings[_id].secret[_role];
   }
 
-  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
-  // Note task assignment is agreed off-chain
-  function setTaskRoleUser(uint256 _id, uint8 _role, address _user) public
-  taskExists(_id)
-  taskNotFinalized(_id)
+  function setTaskManagerRole(uint256 _id, address _user) public
+  self()
+  isAdmin(_user)
   {
-    require(tasks[_id].roles[MANAGER].user == msg.sender);
-    tasks[_id].roles[_role] = Role({
-      user: _user,
-      rateFail: false,
-      rating: TaskRatings.None
-    });
+    setTaskRoleUser(_id, MANAGER, _user);
+  }
 
-    emit TaskRoleUserChanged(_id, _role, _user);
+  function setTaskEvaluatorRole(uint256 _id, address _user) public self {
+    // Can only assign role if no one is currently assigned to it
+    require(tasks[_id].roles[EVALUATOR].user == 0x0);
+    setTaskRoleUser(_id, EVALUATOR, _user);
+  }
+
+  function setTaskWorkerRole(uint256 _id, address _user) public self {
+    // Can only assign role if no one is currently assigned to it
+    require(tasks[_id].roles[WORKER].user == 0x0);
+    setTaskRoleUser(_id, WORKER, _user);
+  }
+
+  function removeTaskEvaluatorRole(uint256 _id) public self {
+    setTaskRoleUser(_id, EVALUATOR, 0x0);
+  }
+
+  function removeTaskWorkerRole(uint256 _id) public self {
+    setTaskRoleUser(_id, WORKER, 0x0);
   }
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
+  confirmTaskRoleIdentity(_id, MANAGER)
   taskExists(_id)
   taskNotFinalized(_id)
   domainExists(_domainId)
   {
-    require(tasks[_id].roles[MANAGER].user == msg.sender);
     tasks[_id].domainId = _domainId;
 
     emit TaskDomainChanged(_id, _domainId);
   }
 
-  // TODO: Restrict function visibility to whoever submits the approved Transaction from Client
-  // Maybe just the administrator is adequate for the skill?
   function setTaskSkill(uint256 _id, uint256 _skillId) public
+  self()
   taskExists(_id)
   taskNotFinalized(_id)
   skillExists(_skillId)
   globalSkill(_skillId)
   {
-    require(tasks[_id].roles[MANAGER].user == msg.sender);
-
     tasks[_id].skills[0] = _skillId;
 
     emit TaskSkillChanged(_id, _skillId);
@@ -341,29 +392,14 @@ contract ColonyTask is ColonyStorage, DSMath {
   }
 
   function finalizeTask(uint256 _id) public
-  auth
   taskWorkRatingsAssigned(_id)
   taskNotFinalized(_id)
   {
     Task storage task = tasks[_id];
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-
     task.finalized = true;
 
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
-      Role storage role = task.roles[roleId];
-
-      if (roleId == EVALUATOR) { // They had one job!
-        role.rating = role.rateFail ? TaskRatings.Unsatisfactory : TaskRatings.Satisfactory;
-      }
-
-      uint payout = task.payouts[roleId][token];
-      int reputation = getReputation(int(payout), uint8(role.rating), role.rateFail);
-
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
-      if (roleId == WORKER) {
-        colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
-      }
+      updateReputation(roleId, task);
     }
 
     emit TaskFinalized(_id);
@@ -389,6 +425,23 @@ contract ColonyTask is ColonyStorage, DSMath {
     return (role.user, role.rateFail, uint8(role.rating));
   }
 
+  function updateReputation(uint8 roleId, Task storage task) internal {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    Role storage role = task.roles[roleId];
+
+    if (roleId == EVALUATOR) { // They had one job!
+      role.rating = role.rateFail ? TaskRatings.Unsatisfactory : TaskRatings.Satisfactory;
+    }
+
+    uint payout = task.payouts[roleId][token];
+    int reputation = getReputation(int(payout), uint8(role.rating), role.rateFail);
+
+    colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
+    if (roleId == WORKER) {
+      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
+    }
+  }
+
   function getReputation(int payout, uint8 rating, bool rateFail) internal pure returns(int reputation) {
     require(rating > 0 && rating <= 3, "Invalid rating");
 
@@ -401,12 +454,59 @@ contract ColonyTask is ColonyStorage, DSMath {
     reputation /= ratingDivisor; // We may lose one atom of reputation here :sad:
   }
 
+  function getReviewerAddresses(
+    uint8[] _sigV,
+    bytes32[] _sigR,
+    bytes32[] _sigS,
+    uint8[] _mode,
+    bytes32 msgHash
+  ) internal pure returns (address[])
+  {
+    address[] memory reviewerAddresses = new address[](_sigR.length);
+    for (uint i = 0; i < _sigR.length; i++) {
+      // 0 'Normal' mode - geth, etc.
+      // >0 'Trezor' mode
+      // Correct incantation helpfully cribbed from https://github.com/trezor/trezor-mcu/issues/163#issuecomment-368435292
+      bytes32 txHash;
+      if (_mode[i] == 0) {
+        txHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
+      } else {
+        txHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n\x20", msgHash));
+      }
+
+      reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
+    }
+    return reviewerAddresses;
+  }
+
   // Get the function signature and task id from the transaction bytes data
   // Note: Relies on the encoded function's first parameter to be the uint256 taskId
   function deconstructCall(bytes _data) internal pure returns (bytes4 sig, uint256 taskId) {
     assembly {
       sig := mload(add(_data, 0x20))
-      taskId := mload(add(_data, add(0x20, 4))) // same as calldataload(72)
+      taskId := mload(add(_data, 0x24)) // same as calldataload(72)
     }
+  }
+
+  function deconstructRoleChangeCall(bytes _data) internal pure returns (bytes4 sig, uint256 taskId, address userAddress) {
+    assembly {
+      sig := mload(add(_data, 0x20))
+      taskId := mload(add(_data, 0x24)) // same as calldataload(72)
+      userAddress := mload(add(_data, 0x44))
+    }
+  }
+
+  // TODO: Check if we are changing a role before due date and before work has been submitted
+  function setTaskRoleUser(uint256 _id, uint8 _role, address _user) private
+  taskExists(_id)
+  taskNotFinalized(_id)
+  {
+    tasks[_id].roles[_role] = Role({
+      user: _user,
+      rateFail: false,
+      rating: TaskRatings.None
+    });
+
+    emit TaskRoleUserChanged(_id, _role, _user);
   }
 }

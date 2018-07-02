@@ -23,6 +23,8 @@ import "./IColonyNetwork.sol";
 import "./IColony.sol";
 import "./ColonyStorage.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
+import "./Authority.sol";
+import "./EtherRouter.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
@@ -30,6 +32,22 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
+
+  function setOwnerRole(address _user) public auth {
+    // To allow only one address to have owner role at a time, we have to remove current owner from their role
+    Authority colonyAuthority = Authority(authority);
+    colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
+    colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
+  }
+
+  function setAdminRole(address _user) public auth {
+    Authority(authority).setUserRole(_user, ADMIN_ROLE, true);
+  }
+
+  // Can only be called by the owner role.
+  function removeAdminRole(address _user) public auth {
+    Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
+  }
 
   function setToken(address _token) public
   auth
@@ -46,10 +64,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyNetworkAddress = _address;
 
     // Initialise the task update reviewers
-    setFunctionReviewers(0xda4db249, 0, 2); // setTaskBrief => manager, worker
-    setFunctionReviewers(0xcae960fe, 0, 2); // setTaskDueDate => manager, worker
-    setFunctionReviewers(0x6fb0794f, 0, 1); // setTaskEvaluatorPayout => manager, evaluator
-    setFunctionReviewers(0x2cf62b39, 0, 2); // setTaskWorkerPayout => manager, worker
+    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), MANAGER, WORKER);
+    // We are setting a manager to both reviewers, but it will require just one signature from manager
+    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), MANAGER, MANAGER);
+    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), MANAGER, EVALUATOR);
+    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), MANAGER, EVALUATOR);
+    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), MANAGER, WORKER);
+
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address)")));
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
 
     // Initialise the root domain
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
@@ -84,7 +111,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token.transfer(colonyNetworkAddress, _wad);
   }
 
-  //TODO: Secure this function 'properly'
   function addGlobalSkill(uint _parentSkillId) public
   auth
   returns (uint256)
@@ -126,6 +152,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     reviewers[_sig] = _reviewers;
   }
 
+  function setRoleAssignmentFunction(bytes4 _sig) private {
+    roleAssignmentSigs[_sig] = true;
+  }
+
   modifier verifyKey(bytes key) {
     uint256 colonyAddress;
     uint256 skillid;
@@ -152,6 +182,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
     require(rootHash==impliedHash, "colony-invalid-reputation-proof");
     return true;
+  }
+
+  function upgrade(uint256 _newVersion) public auth {
+    // Upgrades can only go up in version
+    uint256 currentVersion = version();
+    require(_newVersion > currentVersion);
+    // Requested version has to be registered
+    address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
+    require(newResolver != 0x0);
+    EtherRouter e = EtherRouter(address(this));
+    e.setResolver(newResolver);
   }
 
   function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {

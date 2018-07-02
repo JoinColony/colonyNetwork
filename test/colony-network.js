@@ -195,10 +195,27 @@ contract("ColonyNetwork", accounts => {
   });
 
   describe("when upgrading a colony", () => {
-    it("should be able to upgrade a colony, if a colony owner", async () => {
+    it("should be able to upgrade a colony, if a sender has owner role", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyId, colonyAddress } = logs[0].args;
+      const { colonyAddress } = logs[0].args;
+      const colonyEtherRouter = EtherRouter.at(colonyAddress);
+      const colony = Colony.at(colonyAddress);
+
+      const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
+      const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
+      const newVersion = currentColonyVersion.add(1).toNumber();
+      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+
+      await colony.upgrade(newVersion);
+      const colonyResolver = await colonyEtherRouter.resolver.call();
+      assert.equal(colonyResolver, sampleResolver);
+    });
+
+    it("should not be able to set colony resolver by directly calling `setResolver`", async () => {
+      const token = await Token.new(...TOKEN_ARGS);
+      const { logs } = await colonyNetwork.createColony(token.address);
+      const { colonyAddress } = logs[0].args;
       const colony = await EtherRouter.at(colonyAddress);
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
@@ -206,50 +223,50 @@ contract("ColonyNetwork", accounts => {
       const newVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      await colonyNetwork.upgradeColony(colonyId, newVersion);
-      const colonyResolver = await colony.resolver.call();
-      assert.equal(colonyResolver, sampleResolver);
+      await checkErrorRevert(EtherRouter.at(colony.address).setResolver(sampleResolver));
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyId, colonyAddress } = logs[0].args;
-      await Colony.at(colonyAddress);
+      const { colonyAddress } = logs[0].args;
+      const colony = Colony.at(colonyAddress);
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.sub(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      await checkErrorRevert(colonyNetwork.upgradeColony(colonyId, newVersion));
+      await checkErrorRevert(colony.upgrade(newVersion));
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
     it("should NOT be able to upgrade a colony to a nonexistent version", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyId } = logs[0].args;
+      const { colonyAddress } = logs[0].args;
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
+      const colony = Colony.at(colonyAddress);
 
-      await checkErrorRevert(colonyNetwork.upgradeColony(colonyId, newVersion));
+      await checkErrorRevert(colony.upgrade(newVersion));
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
-    it("should NOT be able to upgrade a colony if not a colony owner", async () => {
+    it("should NOT be able to upgrade a colony if sender don't have owner role", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyId, colonyAddress } = logs[0].args;
-      const colony = await EtherRouter.at(colonyAddress);
-      const colonyResolver = await colony.resolver.call();
+      const { colonyAddress } = logs[0].args;
+      const colonyEtherRouter = await EtherRouter.at(colonyAddress);
+      const colonyResolver = await colonyEtherRouter.resolver.call();
+      const colony = Colony.at(colonyAddress);
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.add(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      await checkErrorRevert(colonyNetwork.upgradeColony(colonyId, newVersion, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colony.upgrade(newVersion, { from: OTHER_ACCOUNT }));
       assert.notEqual(colonyResolver, sampleResolver);
     });
   });

@@ -1,7 +1,7 @@
 /* globals artifacts */
-import { SPECIFICATION_HASH, INITIAL_FUNDING } from "../helpers/constants";
+import { INITIAL_FUNDING, MANAGER } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
 const upgradableContracts = require("../helpers/upgradable-contracts");
 
@@ -83,7 +83,7 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChild.toNumber(), 3);
     });
 
-    it("should not allow a non-owner of the metacolony to add a global skill", async () => {
+    it("should not allow a non-owner role in the metacolony to add a global skill", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill(1, { from: OTHER_ACCOUNT }));
     });
 
@@ -304,7 +304,7 @@ contract("Meta Colony", accounts => {
       token = await Token.at(tokenAddress);
     });
 
-    it("someone who is not the colony owner should not be able to add domains", async () => {
+    it("someone who does not have owner role should not be able to add domains", async () => {
       await checkErrorRevert(colony.addDomain(3, { from: OTHER_ACCOUNT }));
     });
 
@@ -389,15 +389,17 @@ contract("Meta Colony", accounts => {
 
     it("should be able to set domain on task", async () => {
       await colony.addDomain(3);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskDomain(1, 2);
-      const task = await colony.getTask.call(1);
+      const taskId = await makeTask({ colony });
+
+      await colony.setTaskDomain(taskId, 2);
+
+      const task = await colony.getTask.call(taskId);
       assert.equal(task[8].toNumber(), 2);
     });
 
     it("should NOT allow a non-manager to set domain on task", async () => {
       await colony.addDomain(3);
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);
       assert.equal(task[8].toNumber(), 1);
@@ -408,7 +410,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to set a nonexistent domain on task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskDomain(1, 20));
 
       const task = await colony.getTask.call(1);
@@ -426,9 +428,18 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
 
-      await colony.makeTask(SPECIFICATION_HASH, 1);
-      await colony.setTaskSkill(1, 5);
-      const task = await colony.getTask.call(1);
+      const taskId = await makeTask({ colony });
+
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskSkill",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 5]
+      });
+
+      const task = await colony.getTask.call(taskId);
       assert.equal(task[9][0].toNumber(), 5);
     });
 
@@ -436,7 +447,7 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
 
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);
       assert.equal(task[9][0].toNumber(), 0);
@@ -459,12 +470,12 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskSkill(1, 5));
     });
 
     it("should NOT be able to set local skill on task", async () => {
-      await colony.makeTask(SPECIFICATION_HASH, 1);
+      await makeTask({ colony });
       await checkErrorRevert(colony.setTaskSkill(1, 3));
     });
   });
