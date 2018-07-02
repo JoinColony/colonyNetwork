@@ -117,6 +117,14 @@ contract IColony {
   /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
 
+  /// @notice Updates colony's token locking contract address
+  /// by taking the current token locking contract address from ColonyNetwork
+  function updateTokenLocking() public;
+
+  /// @notice Get the token locking address
+  /// @return Address of the token locking contract
+  function getTokenLocking() public view returns (address);
+
   /// @notice Set new colony owner role.
   /// @dev There can only be one address assigned to owner role at a time.
   /// Whoever calls this function will lose their owner role
@@ -444,11 +452,6 @@ contract IColony {
   /// @param _totalReputation Total reputation at the point of creation of reward payout cycle
   function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public;
 
-  /// @notice Waive reward payouts. This will unlock the sender's tokens and increment users reward payout counter,
-  /// allowing them to claim next reward payout
-  /// @param _numPayouts Number of payouts you want to waive
-  function waiveRewardPayouts(uint256 _numPayouts) public;
-
   /// @notice Get useful information about specific reward payout
   /// @param _payoutId Id of the reward payout
   /// @return Reputation root hash at the time of creation
@@ -463,14 +466,6 @@ contract IColony {
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation
   /// @param _payoutId Id of the reward payout
   function finalizeRewardPayout(uint256 _payoutId) public;
-
-  /// @notice Get number of reward payout cycles
-  /// @return Number of reward payout cycles
-  function getGlobalRewardPayoutCount() public returns (uint256);
-
-  /// @notice Get number of claimed and waived reward payouts for `_user`
-  /// @return Number of claimed and waived reward payouts
-  function getUserRewardPayoutCount(address _user) public returns (uint256);
 
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot

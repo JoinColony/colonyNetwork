@@ -57,6 +57,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _;
   }
 
+  function isColony(address _colony) public view returns (bool) {
+    return _isColony[_colony];
+  }
+
   function getCurrentColonyVersion() public view returns (uint256) {
     return currentColonyVersion;
   }
@@ -95,6 +99,16 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function getReputationRootHashNNodes() public view returns (uint256) {
     return reputationRootHashNNodes;
+  }
+
+  function setTokenLocking(address _tokenLocking) public
+  auth
+  {
+    tokenLocking = _tokenLocking;
+  }
+
+  function getTokenLocking() public view returns (address) {
+    return tokenLocking;
   }
 
   function createMetaColony(address _tokenAddress) public
