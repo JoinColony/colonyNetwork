@@ -113,9 +113,9 @@
     assert "^1.4.1"
     babel-runtime "^6.26.0"
 
-"@colony/eslint-config-colony@4.0.1":
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/@colony/eslint-config-colony/-/eslint-config-colony-4.0.1.tgz#74495655bf461ef196edc262983c471b42cf2d75"
+"@colony/eslint-config-colony@5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@colony/eslint-config-colony/-/eslint-config-colony-5.0.0.tgz#e466d019aebdf98104ddd542dd6709fdc96a2cc3"
 
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
