@@ -168,6 +168,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
   }
 
   function startNextRewardPayout(address _token) public auth {
+    ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(address(token));
 
     require(!activeRewardPayouts[_token], "colony-reward-payout-token-active");
@@ -195,6 +196,7 @@ contract ColonyFunding is ColonyStorage, DSMath {
 
     //TODO: Prove that userReputation and totalReputation in reputationState (reputation root hash at the start of the payout) are correct
 
+    ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 userTokens = tokenLocking.getUserDepositedBalance(address(token), msg.sender);
 
     require(_totalReputation > 0, "colony-reward-payout-invalid-total-reputation");

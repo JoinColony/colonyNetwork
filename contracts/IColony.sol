@@ -117,14 +117,6 @@ contract IColony {
   /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
 
-  /// @notice Updates colony's token locking contract address
-  /// by taking the current token locking contract address from ColonyNetwork
-  function updateTokenLocking() public;
-
-  /// @notice Get the token locking address
-  /// @return Address of the token locking contract
-  function getTokenLocking() public view returns (address);
-
   /// @notice Set new colony owner role.
   /// @dev There can only be one address assigned to owner role at a time.
   /// Whoever calls this function will lose their owner role

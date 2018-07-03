@@ -59,14 +59,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return token;
   }
 
-  function updateTokenLocking() public auth {
-    tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-  }
-
-  function getTokenLocking() public view returns (address) {
-    return tokenLocking;
-  }
-
   function initialiseColony(address _address) public {
     require(colonyNetworkAddress == 0x0, "colony-initialise-bad-address");
     colonyNetworkAddress = _address;
@@ -86,10 +78,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
 
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    tokenLocking = ITokenLocking(colonyNetwork.getTokenLocking());
-    uint256 rootLocalSkill = colonyNetwork.getSkillCount();
     // Initialise the root domain
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    uint256 rootLocalSkill = colonyNetwork.getSkillCount();
     initialiseDomain(rootLocalSkill);
   }
 

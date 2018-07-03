@@ -104,6 +104,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function setTokenLocking(address _tokenLocking) public
   auth
   {
+    // Token locking address can't be changed
+    require(tokenLocking == 0x0);
     tokenLocking = _tokenLocking;
   }
 

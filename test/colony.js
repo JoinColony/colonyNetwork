@@ -147,14 +147,6 @@ contract("Colony", addresses => {
       const rootLocalSkillId = await colonyNetwork.getSkillCount.call();
       assert.equal(domain[0].toNumber(), rootLocalSkillId.toNumber());
     });
-
-    it("should correctly update token locking address", async () => {
-      const sampleTokenLocking = "0xb3e2b6020926af4763d706b5657446b95795de57";
-      await colonyNetwork.setTokenLocking(sampleTokenLocking);
-      await colony.updateTokenLocking();
-      const tokenLocking = await colony.getTokenLocking();
-      assert.equal(tokenLocking, sampleTokenLocking);
-    });
   });
 
   describe("when working with permissions", () => {

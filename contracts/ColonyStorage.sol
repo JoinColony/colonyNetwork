@@ -20,7 +20,6 @@ pragma experimental "v0.5.0";
 
 import "../lib/dappsys/auth.sol";
 import "./ERC20Extended.sol";
-import "./ITokenLocking.sol";
 import "./IColonyNetwork.sol";
 import "./Authority.sol";
 
@@ -36,7 +35,6 @@ contract ColonyStorage is DSAuth {
   address resolver;
   address colonyNetworkAddress;
   ERC20Extended token;
-  ITokenLocking tokenLocking;
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
