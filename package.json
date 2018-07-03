@@ -17,6 +17,7 @@
     "test:contracts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test --network development",
     "test:contracts:upgrade": "npm run start:blockchain:client parity & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration",
     "test:contracts:gasCosts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development",
+    "test:contracts:patricia": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test packages/reputation-miner/patricia-test.js --network development",
     "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
@@ -24,7 +25,8 @@
     "pretest:contracts:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "posttest:contracts": "npm run stop:blockchain:client",
     "posttest:contracts:upgrade": "npm run clean:test:contracts | npm run stop:blockchain:client",
-    "posttest:contracts:gasCosts": "npm run stop:blockchain:client"
+    "posttest:contracts:gasCosts": "npm run stop:blockchain:client",
+    "posttest:contracts:patricia": "npm run stop:blockchain:client"
   },
   "pre-commit": [
     "eslint-staged",

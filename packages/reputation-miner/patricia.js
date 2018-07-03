@@ -99,32 +99,6 @@ function removePrefix(label, prefix) {
   return makeLabel(label.data.shln(prefix).maskn(256), label.length - prefix);
 }
 
-// function printBinary(hexString) {
-//   let out = "";
-//   let char;
-//   console.log(hexString.length, hexString);
-//   for (let i = 0; i < hexString.length; i += 1) {
-//     char = hexString[i];
-//     if (char === "0") out += "0000";
-//     if (char === "1") out += "0001";
-//     if (char === "2") out += "0010";
-//     if (char === "3") out += "0011";
-//     if (char === "4") out += "0100";
-//     if (char === "5") out += "0101";
-//     if (char === "6") out += "0110";
-//     if (char === "7") out += "0111";
-//     if (char === "8") out += "1000";
-//     if (char === "9") out += "1001";
-//     if (char === "a") out += "1010";
-//     if (char === "b") out += "1011";
-//     if (char === "c") out += "1100";
-//     if (char === "d") out += "1101";
-//     if (char === "e") out += "1110";
-//     if (char === "f") out += "1111";
-//   }
-//   console.log(out.length, out);
-// }
-
 // //////
 // Patricia Tree
 // //////////////////

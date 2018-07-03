@@ -2,7 +2,7 @@ const BN = require("bn.js");
 const web3Utils = require("web3-utils");
 const ganache = require("ganache-core");
 const ethers = require("ethers");
-const patriciaJs = require("../../helpers/patricia");
+const patriciaJs = require("./patricia");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -67,21 +67,24 @@ class ReputationMiner {
   constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false }) {
     this.loader = loader;
     this.minerAddress = minerAddress;
-    const ganacheProvider = ganache.provider({
-      network_id: 515,
-      vmErrorsOnRPCResponse: false,
-      locked: false,
-      verbose: true,
-      accounts: [
-        {
-          balance: "0x10000000000000000000000000",
-          secretKey
-        }
-      ]
-    });
-    this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
-    this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
+
     this.useJsTree = useJsTree;
+    if (!this.useJsTree) {
+      const ganacheProvider = ganache.provider({
+        network_id: 515,
+        vmErrorsOnRPCResponse: false,
+        locked: false,
+        verbose: true,
+        accounts: [
+          {
+            balance: "0x10000000000000000000000000",
+            secretKey
+          }
+        ]
+      });
+      this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
+      this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
+    }
 
     if (provider) {
       this.realProvider = provider;
