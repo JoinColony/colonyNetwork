@@ -17,7 +17,7 @@ import {
   INITIAL_FUNDING,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime, checkErrorRevert, forwardTime } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupAssignedTask, setupRatedTask } from "../helpers/test-data-generator";
 
 const IColony = artifacts.require("IColony");
@@ -218,6 +218,21 @@ contract("Colony Task Work Rating", () => {
 
       const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), 0);
+    });
+
+    it("should log a TaskWorkRatingRevealed event", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 8;
+
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+      await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
+
+      await expectEvent(
+        colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
+        "TaskWorkRatingRevealed"
+      );
     });
   });
 
