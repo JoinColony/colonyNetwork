@@ -863,7 +863,7 @@ contract("ColonyNetworkStaking", accounts => {
         await goodClient.addLogContentsToReputationTree();
 
         badClient = new MaliciousReputationMinerExtraRep(
-          { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+          { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
           badIndex,
           "0xfffffffff"
         );
@@ -914,7 +914,7 @@ contract("ColonyNetworkStaking", accounts => {
       await goodClient.addLogContentsToReputationTree();
 
       badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJSTree },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         12,
         "0xfffffffff"
       );
@@ -1214,7 +1214,7 @@ contract("ColonyNetworkStaking", accounts => {
       repCycle = ReputationMiningCycle.at(addr);
 
       badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         27,
         0xfffffffff
       );
@@ -1223,7 +1223,7 @@ contract("ColonyNetworkStaking", accounts => {
       // This client gets the same root hash as goodCleint, but will submit the wrong newest reputation hash when
       // it calls respondToChallenge.
       badClient2 = new MaliciousReputationMinerWrongNewestReputation(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         27,
         0xfffffffff
       );
@@ -1330,7 +1330,7 @@ contract("ColonyNetworkStaking", accounts => {
       repCycle = ReputationMiningCycle.at(addr);
 
       badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         27,
         0xfffffffff
       );
@@ -1371,9 +1371,9 @@ contract("ColonyNetworkStaking", accounts => {
             index.toString(),
             goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
             goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
-            agreeStateBranchMask.toHexString(),
+            `0x${agreeStateBranchMask.toString(16)}`,
             goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
-            disagreeStateBranchMask.toHexString(),
+            `0x${disagreeStateBranchMask.toString(16)}`,
             // This is the wrong line
             0,
             // This is the correct line, for future reference
@@ -1425,7 +1425,7 @@ contract("ColonyNetworkStaking", accounts => {
       repCycle = ReputationMiningCycle.at(addr);
 
       badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         24,
         0xfffffffff
       );
@@ -1467,11 +1467,11 @@ contract("ColonyNetworkStaking", accounts => {
             goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
             goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
             // This is the right line
-            // agreeStateBranchMask.toHexString(),
+            // `0x${agreeStateBranchMask.toString(16)}`,
             // This is the wrong line
             0,
             goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
-            disagreeStateBranchMask.toHexString(),
+            `0x${disagreeStateBranchMask.toString(16)}`,
             // This is the correct line, for future reference
             goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
             0,
@@ -1497,12 +1497,12 @@ contract("ColonyNetworkStaking", accounts => {
             index.toString(),
             goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
             goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
-            agreeStateBranchMask.toHexString(),
+            `0x${agreeStateBranchMask.toString(16)}`,
             goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
             // This is the wrong line
             0,
             // This is the right line
-            // disagreeStateBranchMask.toHexString(),
+            // `0x${disagreeStateBranchMask.toString(16)}`,
             // This is the correct line, for future reference
             goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
             0,
@@ -1634,7 +1634,7 @@ contract("ColonyNetworkStaking", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
       badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         3,
         0xffffffffffff
       );
@@ -1739,13 +1739,13 @@ contract("ColonyNetworkStaking", accounts => {
           const repCycle = ReputationMiningCycle.at(addr);
 
           badClient = new MaliciousReputationMinerExtraRep(
-            { loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+            { loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
             args.badClient1Argument,
             10
           );
 
           badClient2 = new MaliciousReputationMinerWrongProofLogEntry(
-            { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+            { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
             args.badClient2Argument
           );
 

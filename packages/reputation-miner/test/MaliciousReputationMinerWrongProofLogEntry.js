@@ -30,9 +30,9 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
         index.toString(),
         this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask,
         this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes,
-        agreeStateBranchMask.toHexString(),
+        `0x${agreeStateBranchMask.toString(16)}`,
         this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes,
-        disagreeStateBranchMask.toHexString(),
+        `0x${disagreeStateBranchMask.toString(16)}`,
         this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
         0,
         logEntryNumber.toString()
