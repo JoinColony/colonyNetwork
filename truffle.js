@@ -30,7 +30,8 @@ module.exports = {
       currency: "USD",
       gasPrice: 5,
       onlyCalledMethods: true
-    }
+    },
+    slow: 1000
   },
   solc: {
     optimizer: {
