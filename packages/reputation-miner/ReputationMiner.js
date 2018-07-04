@@ -2,6 +2,7 @@ const BN = require("bn.js");
 const web3Utils = require("web3-utils");
 const ganache = require("ganache-core");
 const ethers = require("ethers");
+const patriciaJs = require("./patricia");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -47,29 +48,43 @@ function RPCSigner(minerAddress, provider) {
 }
 // ===================================
 
+/**
+ * Convert number to 0x Hex encoding
+ * @param  {BN or BigNumber} bnLike
+ * @return {String} hexString
+ * @dev Used to provide standard interface for BN and BigNumber
+ */
+function toHexString(bnLike) {
+  return ethers.utils.bigNumberify(bnLike.toString()).toHexString();
+}
+
 class ReputationMiner {
   /**
    * Constructor for ReputationMiner
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545 }) {
+  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false }) {
     this.loader = loader;
     this.minerAddress = minerAddress;
-    const ganacheProvider = ganache.provider({
-      network_id: 515,
-      vmErrorsOnRPCResponse: false,
-      locked: false,
-      verbose: true,
-      accounts: [
-        {
-          balance: "0x10000000000000000000000000",
-          secretKey
-        }
-      ]
-    });
-    this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
-    this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
+
+    this.useJsTree = useJsTree;
+    if (!this.useJsTree) {
+      const ganacheProvider = ganache.provider({
+        network_id: 515,
+        vmErrorsOnRPCResponse: false,
+        locked: false,
+        verbose: true,
+        accounts: [
+          {
+            balance: "0x10000000000000000000000000",
+            secretKey
+          }
+        ]
+      });
+      this.ganacheProvider = new ethers.providers.Web3Provider(ganacheProvider);
+      this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
+    }
 
     if (provider) {
       this.realProvider = provider;
@@ -92,16 +107,22 @@ class ReputationMiner {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
-    this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
     this.colonyNetworkContractDef = await this.loader.load({ contractName: "IColonyNetwork" }, { abi: true, address: false });
     this.repCycleContractDef = await this.loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
 
-    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
-    const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
-    this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
+    this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
+
+    if (this.useJsTree) {
+      this.reputationTree = new patriciaJs.PatriciaTree();
+    } else {
+      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+      const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
+      const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
+      this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
+    }
+
     this.nReputations = 0;
     this.reputations = {};
-    this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
   }
 
   /**
@@ -110,10 +131,13 @@ class ReputationMiner {
    * @return {Promise}
    */
   async addLogContentsToReputationTree() {
-    const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
-
-    const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
-    this.justificationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
+    if (this.useJsTree) {
+      this.justificationTree = new patriciaJs.PatriciaTree();
+    } else {
+      const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
+      const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
+      this.justificationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
+    }
 
     this.justificationHashes = {};
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
@@ -337,7 +361,7 @@ class ReputationMiner {
    */
   async getProof(key) {
     const [branchMask, siblings] = await this.reputationTree.getProof(key);
-    const retBranchMask = branchMask.toHexString();
+    const retBranchMask = toHexString(branchMask);
     return [retBranchMask, siblings];
   }
 
@@ -483,9 +507,9 @@ class ReputationMiner {
         index.toString(),
         this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask,
         this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes,
-        agreeStateBranchMask.toHexString(),
+        toHexString(agreeStateBranchMask),
         this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes,
-        disagreeStateBranchMask.toHexString(),
+        toHexString(disagreeStateBranchMask),
         this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
         0
       ],

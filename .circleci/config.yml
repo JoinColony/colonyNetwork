@@ -59,6 +59,9 @@ jobs:
           name: "Running gas cost tests"
           command: yarn run test:contracts:gasCosts
       - run:
+          name: "Running patricia tree tests"
+          command: yarn run test:contracts:patricia
+      - run:
           name: "Running colony-contract-loader-network tests"
           command: cd packages/colony-js-contract-loader-network && yarn run test
       - run:
