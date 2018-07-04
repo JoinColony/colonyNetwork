@@ -59,6 +59,17 @@ contract IColony {
   /// @param amount Amount of the payout funding
   event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
 
+  /// @notice Event logged when a deliverable has been submitted for a task
+  /// @param id Id of the task
+  /// @param deliverableHash Hash of the work performed
+  event TaskDeliverableSubmitted(uint256 indexed id, bytes32 deliverableHash);
+
+  /// @notice Event logged when the rating of a role was revealed
+  /// @param id Id of the task
+  /// @param role Role that got rated
+  /// @param rating Rating the role received
+  event TaskWorkRatingRevealed(uint256 indexed id, uint8 role, uint8 rating);
+
   /// @notice Event logged when a task has been finalized
   /// @param id Id of the finalized task
   event TaskFinalized(uint256 indexed id);

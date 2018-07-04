@@ -35,6 +35,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   event TaskDomainChanged(uint256 indexed id, uint256 domainId);
   event TaskSkillChanged(uint256 indexed id, uint256 skillId);
   event TaskRoleUserChanged(uint256 indexed id, uint8 role, address user);
+  event TaskDeliverableSubmitted(uint256 indexed id, bytes32 deliverableHash);
+  event TaskWorkRatingRevealed(uint256 indexed id, uint8 role, uint8 rating);
   event TaskFinalized(uint256 indexed id);
   event TaskCanceled(uint256 indexed id);
 
@@ -275,6 +277,8 @@ contract ColonyTask is ColonyStorage, DSMath {
     TaskRatings rating = TaskRatings(_rating);
     require(rating != TaskRatings.None, "Cannot rate None!");
     tasks[_id].roles[_role].rating = rating;
+
+    emit TaskWorkRatingRevealed(_id, _role, _rating);
   }
 
   // In the event of a user not committing or revealing within the 10 day rating window,
@@ -389,6 +393,8 @@ contract ColonyTask is ColonyStorage, DSMath {
   {
     tasks[_id].deliverableHash = _deliverableHash;
     tasks[_id].deliverableTimestamp = now;
+
+    emit TaskDeliverableSubmitted(_id, _deliverableHash);
   }
 
   function finalizeTask(uint256 _id) public
