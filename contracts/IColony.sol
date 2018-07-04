@@ -218,7 +218,14 @@ contract IColony {
   /// @param _value The transaction value, i.e. number of wei to be sent when the transaction is executed
   /// Currently we only accept 0 value transactions but this is kept as a future option
   /// @param _data The transaction data
-  function executeTaskChange(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint8[] _mode, uint256 _value, bytes _data) public;
+  function executeTaskChange(
+    uint8[] _sigV,
+    bytes32[] _sigR,
+    bytes32[] _sigS,
+    uint8[] _mode,
+    uint256 _value,
+    bytes _data
+    ) public;
 
   /// @notice Executes a task role update transaction `_data` which is approved and signed by two of addresses
   /// depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`.
@@ -230,7 +237,14 @@ contract IColony {
   /// @param _value The transaction value, i.e. number of wei to be sent when the transaction is executed
   /// Currently we only accept 0 value transactions but this is kept as a future option
   /// @param _data The transaction data
-  function executeTaskRoleAssignment(uint8[] _sigV, bytes32[] _sigR, bytes32[] _sigS, uint8[] _mode, uint256 _value, bytes _data) public;
+  function executeTaskRoleAssignment(
+    uint8[] _sigV,
+    bytes32[] _sigR,
+    bytes32[] _sigS,
+    uint8[] _mode,
+    uint256 _value,
+    bytes _data
+    ) public;
 
   /// @notice Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`
   /// Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached

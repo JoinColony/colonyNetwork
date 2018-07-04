@@ -25,7 +25,19 @@ contract IReputationMiningCycle {
   /// @param round The dispute round to query
   /// @param index The index in the dispute round to query
   /// @return The elements of the Submission struct for the submission requested. See ReputationMiningCycle.sol for the full description
-  function disputeRounds(uint256 round, uint256 index) public view returns (bytes32 proposedNewRootHash, uint256 nNodes, uint256 lastResponseTimestamp, uint256 challengeStepCompleted, bytes32 jrh, bytes32 intermediateReputationHash, uint256 intermediateReputationNNodes, uint256 jrhNnodes, uint256 lowerBound, uint256 upperBound, uint256 providedPreviousReputationUID);
+  function disputeRounds(uint256 round, uint256 index) public view returns (
+    bytes32 proposedNewRootHash,
+    uint256 nNodes,
+    uint256 lastResponseTimestamp,
+    uint256 challengeStepCompleted,
+    bytes32 jrh,
+    bytes32 intermediateReputationHash,
+    uint256 intermediateReputationNNodes,
+    uint256 jrhNnodes,
+    uint256 lowerBound,
+    uint256 upperBound,
+    uint256 providedPreviousReputationUID
+    );
 
   /// @notice Get the hash for the corresponding entry.
   /// @param submitter The address that submitted the hash
@@ -126,7 +138,14 @@ contract IReputationMiningCycle {
   /// @param _colonyAddress The address of the colony the reputation is being affected in
   /// @param _nParents The number of parent skills the skill defined by the skillId has
   /// @param _nChildren The number of child skills the skill defined by the skillId has
-  function appendReputationUpdateLog(address _user, int _amount, uint _skillId, address _colonyAddress, uint _nParents, uint _nChildren) public;
+  function appendReputationUpdateLog(
+    address _user,
+    int _amount,
+    uint _skillId,
+    address _colonyAddress,
+    uint _nParents,
+    uint _nChildren
+    ) public;
 
   /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract
   /// @return nUpdates

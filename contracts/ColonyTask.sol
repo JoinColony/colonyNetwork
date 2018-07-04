@@ -19,7 +19,6 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "../lib/dappsys/math.sol";
-import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 import "./IColony.sol";
 import "./SafeMath.sol";
@@ -100,7 +99,8 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   modifier taskWorkRatingsClosed(uint256 _id) {
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT)); // More than 10 days from work submission have passed
+    // More than 10 days from work submission have passed
+    require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT));
     _;
   }
 
@@ -182,11 +182,17 @@ contract ColonyTask is ColonyStorage, DSMath {
       msgHash
     );
 
-    require(reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][0]].user || reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user);
+    require(
+      reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][0]].user ||
+      reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user
+    );
 
     if (nSignaturesRequired == 2) {
       require(reviewerAddresses[0] != reviewerAddresses[1]);
-      require(reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][0]].user || reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][1]].user);
+      require(
+        reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][0]].user ||
+        reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][1]].user
+      );
     }
 
     taskChangeNonces[taskId]++;
@@ -246,14 +252,6 @@ contract ColonyTask is ColonyStorage, DSMath {
 
     taskChangeNonces[taskId]++;
     require(executeCall(address(this), _value, _data));
-  }
-
-  // The address.call() syntax is no longer recommended, see:
-  // https://github.com/ethereum/solidity/issues/2884
-  function executeCall(address to, uint256 value, bytes data) internal returns (bool success) {
-    assembly {
-      success := call(gas, to, value, add(data, 0x20), mload(data), 0, 0)
-      }
   }
 
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
@@ -423,7 +421,18 @@ contract ColonyTask is ColonyStorage, DSMath {
 
   function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256, uint256[]) {
     Task storage t = tasks[_id];
-    return (t.specificationHash, t.deliverableHash, t.finalized, t.cancelled, t.dueDate, t.payoutsWeCannotMake, t.potId, t.deliverableTimestamp, t.domainId, t.skills);
+    return (
+      t.specificationHash,
+      t.deliverableHash,
+      t.finalized,
+      t.cancelled,
+      t.dueDate,
+      t.payoutsWeCannotMake,
+      t.potId,
+      t.deliverableTimestamp,
+      t.domainId,
+      t.skills
+    );
   }
 
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8) {
@@ -483,6 +492,14 @@ contract ColonyTask is ColonyStorage, DSMath {
       reviewerAddresses[i] = ecrecover(txHash, _sigV[i], _sigR[i], _sigS[i]);
     }
     return reviewerAddresses;
+  }
+
+  // The address.call() syntax is no longer recommended, see:
+  // https://github.com/ethereum/solidity/issues/2884
+  function executeCall(address to, uint256 value, bytes data) internal returns (bool success) {
+    assembly {
+      success := call(gas, to, value, add(data, 0x20), mload(data), 0, 0)
+      }
   }
 
   // Get the function signature and task id from the transaction bytes data

@@ -245,6 +245,13 @@ contract ColonyNetwork is ColonyNetworkStorage {
     uint nParents = skills[_skillId].nParents;
     // TODO: Is it cheaper to check if _amount is <0, and if not, just set nChildren to 0, because children won't be updated for such an update?
     uint nChildren = skills[_skillId].nChildren;
-    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(_user, _amount, _skillId, msg.sender, nParents, nChildren);
+    IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
+      _user,
+      _amount,
+      _skillId,
+      msg.sender,
+      nParents,
+      nChildren
+    );
   }
 }
