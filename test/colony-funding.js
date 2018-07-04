@@ -854,6 +854,22 @@ contract("Colony Funding", addresses => {
       await checkErrorRevert(colony.finalizeRewardPayout(10), "colony-reward-payout-not-found");
     });
 
+    it("should not be able to claim the same payout twice", async () => {
+      const tx = await colony.startNextRewardPayout(otherToken.address);
+      const payoutId = tx.logs[0].args.id;
+
+      await colony.claimRewardPayout(payoutId, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+        from: userAddress1
+      });
+
+      await checkErrorRevert(
+        colony.claimRewardPayout(payoutId, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+          from: userAddress1
+        }),
+        "token-locking-invalid-lock-id"
+      );
+    });
+
     it("should be able to collect payout from two colonies at the same time", async () => {
       // Setting up a new token and two colonies
       const tokenArgs = getTokenArgs();
@@ -907,6 +923,59 @@ contract("Colony Funding", addresses => {
       await colony2.claimRewardPayout(payoutId2.toString(), initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
         from: userAddress1
       });
+    });
+
+    it("should not be able to claim reward payout from a colony that didn't created it", async () => {
+      // Setting up a new token and two colonies
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+
+      let { logs } = await colonyNetwork.createColony(newToken.address);
+      let { colonyAddress } = logs[0].args;
+      const colony1 = IColony.at(colonyAddress);
+
+      ({ logs } = await colonyNetwork.createColony(newToken.address));
+      ({ colonyAddress } = logs[0].args);
+      const colony2 = IColony.at(colonyAddress);
+
+      // Giving both colonies the capability to call `mint` function
+      const adminRole = 1;
+      const newRoles = await DSRoles.new();
+      await newRoles.setUserRole(colony1.address, adminRole, true);
+      await newRoles.setUserRole(colony2.address, adminRole, true);
+      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(uint256)").slice(0, 10), true);
+      await newToken.setAuthority(newRoles.address);
+
+      await fundColonyWithTokens(colony1, otherToken, initialFunding.toString());
+      await fundColonyWithTokens(colony2, otherToken, initialFunding.toString());
+
+      // Minting the tokens so we can give them to users
+      await colony1.mintTokens(initialFunding.toString());
+      await colony2.mintTokens(initialFunding.toString());
+
+      // Giving the user colony's native tokens and reputation so they can participate in reward payout
+      await colony1.bootstrapColony([userAddress1, userAddress2], [userReputation1.toString(), userReputation2.toString()]);
+      await colony2.bootstrapColony([userAddress1, userAddress2], [userReputation1.toString(), userReputation2.toString()]);
+
+      // This will allow token locking contract to sent tokens on users behalf
+      await newToken.approve(tokenLocking.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
+      await tokenLocking.deposit(newToken.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
+      ({ logs } = await colony1.startNextRewardPayout(otherToken.address));
+      const payoutId1 = logs[0].args.id;
+      await colony2.startNextRewardPayout(otherToken.address);
+
+      await checkErrorRevert(
+        colony2.claimRewardPayout(payoutId1.toString(), initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+          from: userAddress1
+        }),
+        "colony-reward-payout-not-active"
+      );
     });
 
     const reputations = [

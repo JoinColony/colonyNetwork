@@ -58,6 +58,9 @@ contract("TokenLocking", addresses => {
       });
       const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
+
+      const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
+      assert.equal(tokenLockingContractBalance.toNumber(), usersTokens);
     });
 
     it("should not be able to deposit tokens if they are not approved", async () => {
@@ -69,22 +72,32 @@ contract("TokenLocking", addresses => {
       );
       const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
       assert.equal(userDepositedBalance.toNumber(), 0);
+      const userBalance = await token.balanceOf(userAddress);
+      assert.equal(userBalance.toNumber(), usersTokens);
     });
 
     it("should not be able to withdraw if specified amount is greated than deposited", async () => {
+      const otherUserTokens = 100;
+      await token.mint(otherUserTokens);
+      await token.approve(tokenLocking.address, otherUserTokens);
+      await tokenLocking.deposit(token.address, otherUserTokens);
+
       await token.approve(tokenLocking.address, usersTokens, {
         from: userAddress
       });
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
+
       await checkErrorRevert(
-        tokenLocking.withdraw(token.address, 10, {
+        tokenLocking.withdraw(token.address, otherUserTokens, {
           from: userAddress
         })
       );
       const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
+      const userBalance = await token.balanceOf(userAddress);
+      assert.equal(userBalance.toNumber(), 0);
     });
 
     it("should correctly withdraw tokens", async () => {
@@ -100,6 +113,8 @@ contract("TokenLocking", addresses => {
       });
       const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
       assert.equal(userDepositedBalance.toNumber(), 0);
+      const userBalance = await token.balanceOf(userAddress);
+      assert.equal(userBalance.toNumber(), usersTokens);
     });
 
     it("should not be able to deposit 0 tokens", async () => {
@@ -190,7 +205,7 @@ contract("TokenLocking", addresses => {
       await checkErrorRevert(tokenLocking.unlockTokenForUser(payoutId, token.address, userAddress), "token-locking-sender-not-colony");
     });
 
-    it("should be able to deposit tokens multiple times before if they are unlocked", async () => {
+    it("should be able to deposit tokens multiple times if they are unlocked", async () => {
       await token.approve(tokenLocking.address, usersTokens, {
         from: userAddress
       });
