@@ -25,11 +25,11 @@ import "./ERC20Extended.sol";
 
 
 contract Token is DSTokenBase(0), DSAuth, ERC20Extended {
-  bytes32 public symbol;
-  uint256 public decimals;
-  bytes32 public name;
+  uint8 public decimals;
+  string public symbol;
+  string public name;
 
-  constructor(bytes32 _name, bytes32 _symbol, uint256 _decimals) public {
+  constructor(string _name, string _symbol, uint8 _decimals) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -47,7 +47,8 @@ contract Token is DSTokenBase(0), DSAuth, ERC20Extended {
   function burn(uint wad) public {
     _balances[msg.sender] = sub(_balances[msg.sender], wad);
     _supply = sub(_supply, wad);
-    
+
     emit Burn(msg.sender, wad);
   }
 }
+
