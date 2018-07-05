@@ -92,6 +92,7 @@ contract IColonyNetwork {
   function getRootGlobalSkillId() public view returns (uint256);
 
   /// @notice Sets the token locking address
+  /// This is only set once, and can't be changed afterwards
   /// @param _tokenLockingAddress Address of the locking contract
   function setTokenLocking(address _tokenLockingAddress) public;
 

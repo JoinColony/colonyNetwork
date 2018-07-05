@@ -56,7 +56,8 @@ contract("TokenLocking", addresses => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
 
       const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
@@ -70,7 +71,8 @@ contract("TokenLocking", addresses => {
         }),
         "token-locking-transfer-failed"
       );
-      const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), 0);
       const userBalance = await token.balanceOf(userAddress);
       assert.equal(userBalance.toNumber(), usersTokens);
@@ -94,7 +96,8 @@ contract("TokenLocking", addresses => {
           from: userAddress
         })
       );
-      const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
       const userBalance = await token.balanceOf(userAddress);
       assert.equal(userBalance.toNumber(), 0);
@@ -111,7 +114,8 @@ contract("TokenLocking", addresses => {
       await tokenLocking.withdraw(token.address, usersTokens, {
         from: userAddress
       });
-      const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), 0);
       const userBalance = await token.balanceOf(userAddress);
       assert.equal(userBalance.toNumber(), usersTokens);
@@ -139,7 +143,8 @@ contract("TokenLocking", addresses => {
         })
       );
 
-      const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
     });
 
@@ -168,7 +173,8 @@ contract("TokenLocking", addresses => {
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, {
         from: userAddress
       });
-      const lockCount = await tokenLocking.getUserLockCount(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const lockCount = info[0];
       assert.equal(lockCount.toNumber(), 1);
     });
 
@@ -202,7 +208,7 @@ contract("TokenLocking", addresses => {
       });
       const { logs } = await colony.startNextRewardPayout(otherToken.address);
       const payoutId = logs[0].args.id;
-      await checkErrorRevert(tokenLocking.unlockTokenForUser(payoutId, token.address, userAddress), "token-locking-sender-not-colony");
+      await checkErrorRevert(tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId), "token-locking-sender-not-colony");
     });
 
     it("should be able to deposit tokens multiple times if they are unlocked", async () => {
@@ -215,7 +221,8 @@ contract("TokenLocking", addresses => {
       await tokenLocking.deposit(token.address, usersTokens / 2, {
         from: userAddress
       });
-      const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
     });
 
@@ -266,7 +273,8 @@ contract("TokenLocking", addresses => {
       await tokenLocking.withdraw(token.address, usersTokens, {
         from: userAddress
       });
-      const userDepositedBalance = await tokenLocking.getUserDepositedBalance.call(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance, 0);
     });
 
@@ -297,7 +305,8 @@ contract("TokenLocking", addresses => {
         from: userAddress
       });
 
-      const userLockCount = await tokenLocking.getUserLockCount(token.address, userAddress);
+      const info = await tokenLocking.getUserLock(token.address, userAddress);
+      const userLockCount = info[0];
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
 
       assert.equal(userLockCount.toString(), totalLockCount.toString());

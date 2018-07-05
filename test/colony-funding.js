@@ -923,6 +923,20 @@ contract("Colony Funding", addresses => {
       await colony2.claimRewardPayout(payoutId2.toString(), initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
         from: userAddress1
       });
+
+      let rewardPayoutInfo = await colony1.getRewardPayoutInfo(payoutId1);
+      const amountAvailableForPayout1 = rewardPayoutInfo[2];
+      rewardPayoutInfo = await colony2.getRewardPayoutInfo(payoutId2);
+      const amountAvailableForPayout2 = rewardPayoutInfo[2];
+
+      const rewardPotBalanceAfterClaimInPayout1 = await colony1.getPotBalance(0, otherToken.address);
+      const rewardPotBalanceAfterClaimInPayout2 = await colony2.getPotBalance(0, otherToken.address);
+
+      const claimInPayout1 = amountAvailableForPayout1.sub(rewardPotBalanceAfterClaimInPayout1);
+      const claimInPayout2 = amountAvailableForPayout2.sub(rewardPotBalanceAfterClaimInPayout2);
+
+      const userBalance = await otherToken.balanceOf(userAddress1);
+      assert.equal(userBalance.toString(), claimInPayout1.add(claimInPayout2).toString());
     });
 
     it("should not be able to claim reward payout from a colony that didn't created it", async () => {
@@ -1065,7 +1079,8 @@ contract("Colony Funding", addresses => {
         const totalTokens = totalSupply.sub(colonyTokens);
 
         // Get users locked token amount from token locking contract
-        const userLockedTokens = await tokenLocking.getUserDepositedBalance.call(newToken.address, userAddress1);
+        const info = await tokenLocking.getUserLock(newToken.address, userAddress1);
+        const userLockedTokens = info[1];
 
         // Calculating the reward payout for one user locally to check against on-chain result
         const numerator = userLockedTokens.mul(userReputation).sqrt();
@@ -1098,6 +1113,8 @@ contract("Colony Funding", addresses => {
         });
 
         const remainingAfterClaim1 = await newColony.getPotBalance(0, payoutToken.address);
+        const user1BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
+        assert.equal(user1BalanceAfterClaim.toString(), amount.sub(remainingAfterClaim1).toString());
 
         const solidityReward = amount.sub(remainingAfterClaim1);
         console.log("\nCorrect (Javascript): ", reward.toString());
@@ -1122,6 +1139,14 @@ contract("Colony Funding", addresses => {
         });
 
         const remainingAfterClaim2 = await newColony.getPotBalance(0, payoutToken.address);
+        const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
+        assert.equal(
+          user2BalanceAfterClaim.toString(),
+          amount
+            .sub(user1BalanceAfterClaim)
+            .sub(remainingAfterClaim2)
+            .toString()
+        );
 
         console.log("Remaining after claim 2: ", remainingAfterClaim2.toString());
 
@@ -1130,6 +1155,15 @@ contract("Colony Funding", addresses => {
         });
 
         const remainingAfterClaim3 = await newColony.getPotBalance(0, payoutToken.address);
+        const user3BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
+        assert.equal(
+          user3BalanceAfterClaim.toString(),
+          amount
+            .sub(user1BalanceAfterClaim)
+            .sub(user2BalanceAfterClaim)
+            .sub(remainingAfterClaim3)
+            .toString()
+        );
 
         console.log("Remaining after claim 3: ", remainingAfterClaim3.toString());
       })

@@ -23,7 +23,6 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     colonyNetwork = _colonyNetwork;
   }
 
-  // Used for testing purposes
   function getColonyNetwork() public view returns (address) {
     return colonyNetwork;
   }
@@ -50,7 +49,6 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   {
     require(_amount > 0, "token-locking-invalid-amount");
 
-    // If we transfer before we increment `depositedBalances`, user won't be able to take advantage of re-entrance
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "token-locking-transfer-failed");
 
     userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(userLocks[_token][msg.sender].balance, _amount));
@@ -70,11 +68,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return totalLockCount[_token];
   }
 
-  function getUserLockCount(address _token, address _user) public view returns (uint256) {
-    return userLocks[_token][_user].lockCount;
-  }
-
-  function getUserDepositedBalance(address _token, address _user) public view returns (uint256) {
-    return userLocks[_token][_user].balance;
+  function getUserLock(address _token, address _user) public view returns (uint256, uint256) {
+    return (userLocks[_token][_user].lockCount, userLocks[_token][_user].balance);
   }
 }

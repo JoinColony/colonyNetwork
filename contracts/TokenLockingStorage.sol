@@ -21,6 +21,6 @@ contract TokenLockingStorage is DSAuth {
 
   // Maps token to total token lock count. If user token lock count is the same as global, that means that their tokens are unlocked.
   // If user token lock count is less than global, that means that their tokens are locked.
-  // It must not happend that user lock count is greater than global lock count
+  // User's lock count should never be greater than total lock count.
   mapping (address => uint256) totalLockCount;
 }

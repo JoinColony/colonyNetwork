@@ -197,7 +197,8 @@ contract ColonyFunding is ColonyStorage, DSMath {
     //TODO: Prove that userReputation and totalReputation in reputationState (reputation root hash at the start of the payout) are correct
 
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    uint256 userTokens = tokenLocking.getUserDepositedBalance(address(token), msg.sender);
+    uint256 userTokens;
+    (, userTokens) = tokenLocking.getUserLock(address(token), msg.sender);
 
     require(_totalReputation > 0, "colony-reward-payout-invalid-total-reputation");
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");

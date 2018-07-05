@@ -14,15 +14,17 @@ contract ITokenLocking {
 
   /// @notice Locks everyones' tokens on `_token` address
   /// @param _token Address of the token we want to lock
-  /// @return Current total token lock count
+  /// @return Updated total token lock count
   function lockToken(address _token) public returns (uint256);
 
-  /// @notice Increments the lock counter for the `_user`. Can only be called by a colony
+  /// @notice Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1.
+  /// Can only be called by a colony
   /// @param _token Address of the token we want to unlock
   /// @param _user Address of the user
+  /// @param _lockId Id of the lock we want to increment to
   function unlockTokenForUser(address _token, address _user, uint256 _lockId) public;
 
-  /// @notice Increments senders lock count to `_lockId`.
+  /// @notice Increments sender's lock count to `_lockId`.
   /// @param _token Address of the token we want to increment lock count for
   /// @param _lockId Id of the lock user wants to increment to
   function incrementLockCounterTo(address _token, uint256 _lockId) public;
@@ -36,19 +38,15 @@ contract ITokenLocking {
   /// @param _amount Amount to withdraw
   function withdraw(address _token, uint256 _amount) public;
 
-  /// @notice Get deposited balance by `_user`
-  /// @param _user Address of the user
-  /// @return Users deposited amount
-  function getUserDepositedBalance(address _token, address _user) public view returns(uint256);
-
-  /// @notice Get global token lock count
+  /// @notice Get global lock count for a specific token
   /// @param _token Address of the token
   /// @return Global token lock count
   function getTotalLockCount(address _token) public view returns (uint256);
 
-  /// @notice Get user token lock count
+  /// @notice Get user token lock info (lock count and deposited amount)
   /// @param _token Address of the token
   /// @param _user Address of the user
-  /// @return User token lock count
-  function getUserLockCount(address _token, address _user) public view returns (uint256);
+  /// @return User's token lock count
+  /// @return User's deposited amount
+  function getUserLock(address _token, address _user) public view returns (uint256, uint256);
 }
