@@ -86,7 +86,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
 
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
-  modifier finalDisputeRoundCompleted(uint roundNumber) {
+  modifier finalDisputeRoundCompleted(uint256 roundNumber) {
     require (nSubmittedHashes - nInvalidatedHashes == 1);
     require (disputeRounds[roundNumber].length == 1); //i.e. this is the final round
     // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
@@ -296,7 +296,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
-  function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public {
+  function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 branchMask, bytes32[] siblings) public {
     // TODO: Check this challenge is active.
     // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
     require(disputeRounds[round][idx].lowerBound!=disputeRounds[round][idx].upperBound);
@@ -398,9 +398,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint256 round,
     uint256 index,
     bytes32 jrh,
-    uint branchMask1,
+    uint256 branchMask1,
     bytes32[] siblings1,
-    uint branchMask2,
+    uint256 branchMask2,
     bytes32[] siblings2
   ) public
   {
@@ -420,7 +420,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
   }
 
-  function appendReputationUpdateLog(address _user, int _amount, uint _skillId, address _colonyAddress, uint _nParents, uint _nChildren) public {
+  function appendReputationUpdateLog(address _user, int _amount, uint256 _skillId, address _colonyAddress, uint256 _nParents, uint256 _nChildren) public {
     require(colonyNetworkAddress == msg.sender);
     uint reputationUpdateLogLength = reputationUpdateLog.length;
     uint nPreviousUpdates = 0;
@@ -450,7 +450,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
 
-  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public {
+  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint256 reward, uint256 miningSkillId) public {
     require(reputationUpdateLog.length==0);
     require(msg.sender == colonyNetworkAddress);
     for (uint256 i = 0; i < stakers.length; i++) {
@@ -555,7 +555,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
   }
 
-  function getExpectedSkillIdAndAddress( ReputationLogEntry storage logEntry, uint updateNumber ) internal returns (uint256 expectedSkillId, address expectedAddress) {
+  function getExpectedSkillIdAndAddress( ReputationLogEntry storage logEntry, uint256 updateNumber ) internal returns (uint256 expectedSkillId, address expectedAddress) {
     // Work out the expected userAddress and skillId for this updateNumber in this logEntry.
     if ((updateNumber - logEntry.nPreviousUpdates + 1) <= logEntry.nUpdates / 2 ) {
       // Then we're updating a colony-wide total, so we expect an address of 0x0
@@ -727,7 +727,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
   }
 
-  function checkJRHProof1(bytes32 jrh, uint branchMask1, bytes32[] siblings1) internal {
+  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1) internal {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
@@ -741,7 +741,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     require(jrh==impliedRoot, "colony-invalid-jrh-proof-1");
   }
 
-  function checkJRHProof2(uint round, uint index, bytes32 jrh, uint branchMask2, bytes32[] siblings2) internal {
+  function checkJRHProof2(uint256 round, uint256 index, bytes32 jrh, uint256 branchMask2, bytes32[] siblings2) internal {
     // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
     // key is the number of updates implied by the contents of the reputation update log (implemented)
     // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)

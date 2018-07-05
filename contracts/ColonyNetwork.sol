@@ -37,7 +37,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (globalSkill) {
       require(msg.sender == metaColony);
     } else {
-      require(_isColony[msg.sender]);
+      require(_isColony[msg.sender] || msg.sender == address(this));
     }
     _;
   }
@@ -111,14 +111,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     metaColony = createColony(_tokenAddress);
 
     // Add the special mining skill
-    skillCount += 1;
-    Skill memory miningSkill;
-    miningSkill.nParents = 1;
-    skills[skillCount] = miningSkill;
-    skills[skillCount].parents.push(skillCount-1);
-    // Add it as a child of the parent
-    skills[skillCount-1].nChildren += 1;
-    skills[skillCount-1].children.push(skillCount);
+    this.addSkill(skillCount, false);
   }
 
   function createColony(address _tokenAddress) public returns (address) {
