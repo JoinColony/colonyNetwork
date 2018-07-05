@@ -103,11 +103,11 @@ contract("ColonyNetwork", accounts => {
       assert.equal(colonyCount.toNumber(), 7);
     });
 
-    it("when meta colony is created, should have the root global and local skills initialised", async () => {
+    it("when meta colony is created, should have the root global and local skills initialised, plus the local mining skill", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       await colonyNetwork.createMetaColony(token.address);
       const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 2);
+      assert.equal(skillCount.toNumber(), 3);
       const rootGlobalSkill = await colonyNetwork.getSkill.call(1);
       assert.equal(rootGlobalSkill[0].toNumber(), 0);
       assert.equal(rootGlobalSkill[1].toNumber(), 0);
@@ -117,6 +117,9 @@ contract("ColonyNetwork", accounts => {
 
       const globalSkill2 = await colonyNetwork.isGlobalSkill.call(2);
       assert.isFalse(globalSkill2);
+
+      const localSkill1 = await colonyNetwork.isGlobalSkill.call(3);
+      assert.isFalse(localSkill1);
 
       const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId.call();
       assert.equal(rootGlobalSkillId, 1);

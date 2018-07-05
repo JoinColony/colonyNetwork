@@ -86,7 +86,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
 
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
-  modifier finalDisputeRoundCompleted(uint roundNumber) {
+  modifier finalDisputeRoundCompleted(uint256 roundNumber) {
     require (nSubmittedHashes - nInvalidatedHashes == 1);
     require (disputeRounds[roundNumber].length == 1); //i.e. this is the final round
     // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
@@ -296,7 +296,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
-  function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public {
+  function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 branchMask, bytes32[] siblings) public {
     // TODO: Check this challenge is active.
     // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
     require(disputeRounds[round][idx].lowerBound!=disputeRounds[round][idx].upperBound);
@@ -325,9 +325,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   uint constant U_DISAGREE_STATE_BRANCH_MASK = 6;
   uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
   uint constant U_REQUIRE_REPUTATION_CHECK = 8;
+  uint constant U_LOG_ENTRY_NUMBER = 9;
 
   function respondToChallenge(
-    uint256[9] u, //An array of 9 UINT Params, ordered as given above.
+    uint256[10] u, //An array of 10 UINT Params, ordered as given above.
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes agreeStateReputationValue,
@@ -356,7 +357,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     //    that it's a decay calculation - not yet implemented.)
 
     // Check the supplied key is appropriate.
-    checkKey(u[U_ROUND], u[U_IDX], _reputationKey);
+    checkKey(u[U_ROUND], u[U_IDX], u[U_LOG_ENTRY_NUMBER], _reputationKey);
 
     // Prove the reputation's starting value is in some state, and that state is in the appropriate index in our JRH
     proveBeforeReputationValue(u, _reputationKey, reputationSiblings, agreeStateReputationValue, agreeStateSiblings);
@@ -397,9 +398,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint256 round,
     uint256 index,
     bytes32 jrh,
-    uint branchMask1,
+    uint256 branchMask1,
     bytes32[] siblings1,
-    uint branchMask2,
+    uint256 branchMask2,
     bytes32[] siblings2
   ) public
   {
@@ -419,7 +420,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
   }
 
-  function appendReputationUpdateLog(address _user, int _amount, uint _skillId, address _colonyAddress, uint _nParents, uint _nChildren) public {
+  function appendReputationUpdateLog(address _user, int _amount, uint256 _skillId, address _colonyAddress, uint256 _nParents, uint256 _nChildren) public {
     require(colonyNetworkAddress == msg.sender);
     uint reputationUpdateLogLength = reputationUpdateLog.length;
     uint nPreviousUpdates = 0;
@@ -449,7 +450,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
   }
 
-  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward) public {
+  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint256 reward, uint256 miningSkillId) public {
     require(reputationUpdateLog.length==0);
     require(msg.sender == colonyNetworkAddress);
     for (uint256 i = 0; i < stakers.length; i++) {
@@ -458,7 +459,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       reputationUpdateLog.push(ReputationLogEntry(
         stakers[i],
         int256(reward),
-        0, //TODO: Work out what skill this should be. This should be a special 'mining' skill.
+        miningSkillId, //This should be the special 'mining' skill.
         commonColonyAddress, // They earn this reputation in the common colony.
         4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
         i*4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
@@ -519,10 +520,19 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
   }
 
-  function checkKey( uint256 round, uint256 idx, bytes memory _reputationKey) internal {
+  function checkKey( uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition (TODO: not implemented)
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[round][idx].lowerBound - 1;
+    ReputationLogEntry storage logEntry = reputationUpdateLog[logEntryNumber];
+
+    // Check that the supplied log entry corresponds to this update number
+    require(updateNumber >= logEntry.nPreviousUpdates);
+    require(updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates);
+    uint expectedSkillId;
+    address expectedAddress;
+    (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(logEntry, updateNumber);
+
     bytes memory reputationKey = new bytes(20+32+20);
     reputationKey = _reputationKey;
     address colonyAddress;
@@ -539,13 +549,46 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     bool decayCalculation = false;
     if (decayCalculation) {
     } else {
-      require(reputationUpdateLog[updateNumber].user == userAddress);
-      require(reputationUpdateLog[updateNumber].colony == colonyAddress);
-      require(reputationUpdateLog[updateNumber].skillId == skillId);
+      require(expectedAddress == userAddress);
+      require(logEntry.colony == colonyAddress);
+      require(expectedSkillId == skillId);
     }
   }
 
-  function proveBeforeReputationValue(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings) internal {
+  function getExpectedSkillIdAndAddress( ReputationLogEntry storage logEntry, uint256 updateNumber ) internal returns (uint256 expectedSkillId, address expectedAddress) {
+    // Work out the expected userAddress and skillId for this updateNumber in this logEntry.
+    if ((updateNumber - logEntry.nPreviousUpdates + 1) <= logEntry.nUpdates / 2 ) {
+      // Then we're updating a colony-wide total, so we expect an address of 0x0
+      expectedAddress = 0x0;
+    } else {
+      // We're updating a user-specific total
+      expectedAddress = logEntry.user;
+    }
+
+    // Expected skill Id
+    // We update skills in the order children, then parents, then the skill listed in the log itself.
+    // If the amount in the log is positive, then no children are being updated.
+    uint nParents;
+    (nParents, ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
+    uint nChildUpdates;
+    if (logEntry.amount >= 0) {
+      // Then we have no child updates to consider
+    } else {
+      nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
+      // NB This is not necessarily the same as nChildren. However, this is the number of child updates
+      // that this entry in the log was expecting at the time it was created.
+    }
+    uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
+    if (relativeUpdateNumber < nChildUpdates) {
+      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, relativeUpdateNumber);
+    } else if (relativeUpdateNumber < (nChildUpdates+nParents)) {
+      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getParentSkillId(logEntry.skillId, relativeUpdateNumber - nChildUpdates);
+    } else {
+      expectedSkillId = logEntry.skillId;
+    }
+  }
+
+  function proveBeforeReputationValue(uint256[10] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings) internal {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before.
     uint256 reputationValue;
@@ -581,7 +624,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // where we don't prove anything with merkle proofs in this whole dance is here.
   }
 
-  function proveAfterReputationValue(uint256[9] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes disagreeStateReputationValue, bytes32[] disagreeStateSiblings) internal {
+  function proveAfterReputationValue(uint256[10] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes disagreeStateReputationValue, bytes32[] disagreeStateSiblings) internal {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     uint256 firstDisagreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound;
     bytes32 reputationRootHash = getImpliedRoot(_reputationKey, disagreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
@@ -601,9 +644,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     require(jrh==impliedRoot, "colony-invalid-after-reputation-proof");
   }
 
-  function performReputationCalculation(uint256[9] u, bytes agreeStateReputationValueBytes, bytes disagreeStateReputationValueBytes, bytes previousNewReputationValueBytes) internal {
+  function performReputationCalculation(uint256[10] u, bytes agreeStateReputationValueBytes, bytes disagreeStateReputationValueBytes, bytes previousNewReputationValueBytes) internal {
     // TODO: Possibility of decay calculation
-    uint reputationTransitionIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
+    // TODO: Possibility of reputation loss - child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is of the user's reputation in skill given by logEntry.skillId
+    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     int256 amount;
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
@@ -635,20 +679,20 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
-    if (reputationUpdateLog[reputationTransitionIdx].amount < 0 && uint(reputationUpdateLog[reputationTransitionIdx].amount * -1) > agreeStateReputationValue ) {
+    if (logEntry.amount < 0 && uint(logEntry.amount * -1) > agreeStateReputationValue ) {
       require(disagreeStateReputationValue == 0);
-    } else if (uint(reputationUpdateLog[reputationTransitionIdx].amount) + agreeStateReputationValue < agreeStateReputationValue) {
+    } else if (uint(logEntry.amount) + agreeStateReputationValue < agreeStateReputationValue) {
       // We also don't allow reputation to overflow
       require(disagreeStateReputationValue == 2**256 - 1);
     } else {
       // TODO: Is this safe? I think so, because even if there's over/underflows, they should
       // still be the same number.
-      require(int(agreeStateReputationValue)+reputationUpdateLog[reputationTransitionIdx].amount == int(disagreeStateReputationValue));
+      require(int(agreeStateReputationValue)+logEntry.amount == int(disagreeStateReputationValue));
     }
   }
 
   function checkPreviousReputationInState(
-    uint256[9] u,
+    uint256[10] u,
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes agreeStateReputationValue,
@@ -674,7 +718,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh);
   }
 
-  function saveProvedReputation(uint256[9] u, bytes previousNewReputationValue) internal {
+  function saveProvedReputation(uint256[10] u, bytes previousNewReputationValue) internal {
     uint256 previousReputationUID;
     assembly {
       previousReputationUID := mload(add(previousNewReputationValue,0x40))
@@ -683,7 +727,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
   }
 
-  function checkJRHProof1(bytes32 jrh, uint branchMask1, bytes32[] siblings1) internal {
+  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1) internal {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
@@ -697,12 +741,15 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     require(jrh==impliedRoot, "colony-invalid-jrh-proof-1");
   }
 
-  function checkJRHProof2(uint round, uint index, bytes32 jrh, uint branchMask2, bytes32[] siblings2) internal {
+  function checkJRHProof2(uint256 round, uint256 index, bytes32 jrh, uint256 branchMask2, bytes32[] siblings2) internal {
     // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
-    // key is the number of updates in the reputation update log (implemented)
+    // key is the number of updates implied by the contents of the reputation update log (implemented)
     // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)
     // TODO: Account for decay calculations
-    uint256 nUpdates = reputationUpdateLog.length;
+    uint256 nLogEntries = reputationUpdateLog.length;
+    // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
+    // of updates that log entry implies by itself.
+    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates + reputationUpdateLog[nLogEntries-1].nPreviousUpdates;
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;

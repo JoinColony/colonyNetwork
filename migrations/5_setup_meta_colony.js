@@ -30,7 +30,7 @@ module.exports = deployer => {
     .then(() => colonyNetwork.startNextCycle())
     .then(() => colonyNetwork.getSkillCount.call())
     .then(skillCount => {
-      assert.equal(skillCount.toNumber(), 2);
+      assert.equal(skillCount.toNumber(), 3);
       return colonyNetwork.getMetaColony.call();
     })
     .then(metaColonyAddress => {

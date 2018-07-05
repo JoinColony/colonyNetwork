@@ -63,7 +63,7 @@ contract IReputationMiningCycle {
   function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
-  /// @param u A `uint256[9]` array. The elements of this array, in order are:
+  /// @param u A `uint256[10]` array. The elements of this array, in order are:
   /// * 1. The current round of the hash being responded on behalf of
   /// * 2. The current index in the round of the hash being responded on behalf of
   /// * 3. The branchMask of the proof that the reputation is in the reputation state tree for the reputation with the disputed change
@@ -73,6 +73,8 @@ contract IReputationMiningCycle {
   /// * 7. The branchMask of the proof that reputation root hash of the first reputation state the two hashes in this challenge disagree on is in this submitted hash's justification tree
   /// * 8. The branchMask of the proof for the most recently added reputation state in this hash's state tree in the last reputation state the two hashes in this challenge agreed on
   /// * 9. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+  /// *10. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
+  ///      the log entry index corresponding to the update to avoid us having to iterate over the log.
   /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateReputationValue The value of the reputation at key `_reputationKey` in the last reputation state the submitted hashes agreed on
@@ -85,7 +87,7 @@ contract IReputationMiningCycle {
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[9] u, //An array of 9 UINT Params, ordered as given above.
+    uint256[10] u, //An array of 10 UINT Params, ordered as given above.
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes agreeStateReputationValue,
@@ -147,7 +149,7 @@ contract IReputationMiningCycle {
   /// @dev Only callable by colonyNetwork
   /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
-  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward) public;
+  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public;
 
   function reputationMiningWindowOpenTimestamp() public view returns (uint);
 }

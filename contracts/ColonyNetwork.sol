@@ -37,7 +37,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (globalSkill) {
       require(msg.sender == metaColony);
     } else {
-      require(_isColony[msg.sender]);
+      require(_isColony[msg.sender] || msg.sender == address(this));
     }
     _;
   }
@@ -107,9 +107,11 @@ contract ColonyNetwork is ColonyNetworkStorage {
     rootGlobalSkill.globalSkill = true;
     skills[skillCount] = rootGlobalSkill;
     rootGlobalSkillId = skillCount;
-    // TODO: add the special 'mining' skill, which is local to the meta Colony.
 
     metaColony = createColony(_tokenAddress);
+
+    // Add the special mining skill
+    this.addSkill(skillCount, false);
   }
 
   function createColony(address _tokenAddress) public returns (address) {
