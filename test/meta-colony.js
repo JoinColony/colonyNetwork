@@ -49,7 +49,7 @@ contract("Meta Colony", accounts => {
   describe("when working with ERC20 properties of Meta Colony token", () => {
     it("token `symbol` property is correct", async () => {
       const tokenSymbol = await metaColonyToken.symbol();
-      assert.equal(web3.toUtf8(tokenSymbol), "CLNY");
+      assert.equal(tokenSymbol, "CLNY");
     });
 
     it("token `decimals` property is correct", async () => {
@@ -59,7 +59,7 @@ contract("Meta Colony", accounts => {
 
     it("token `name` property is correct", async () => {
       const tokenName = await metaColonyToken.name.call();
-      assert.equal(web3.toUtf8(tokenName), "Colony Network Token");
+      assert.equal(tokenName, "Colony Network Token");
     });
   });
 
