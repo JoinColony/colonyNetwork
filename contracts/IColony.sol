@@ -167,8 +167,9 @@ contract IColony {
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
-  /// @param _parentSkillId Id of the local skill under which the new skill will be added
-  function addDomain(uint256 _parentSkillId) public;
+  /// @param _parentDomainId Id of the domain under which the new one will be added
+  /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1
+  function addDomain(uint256 _parentDomainId) public;
 
   /// @notice Get the domain's local skill and funding pot id
   /// @param _id Id of the domain which details to get
