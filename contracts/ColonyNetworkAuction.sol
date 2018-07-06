@@ -18,10 +18,7 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/math.sol";
 import "./ColonyNetworkStorage.sol";
-import "./ERC20Extended.sol";
-import "./IColony.sol";
 
 
 contract ColonyNetworkAuction is ColonyNetworkStorage {
@@ -49,7 +46,7 @@ contract DutchAuction is DSMath {
   uint public endTime;
   uint public minPrice;
   uint public constant TOKEN_MULTIPLIER = 10 ** 18;
-  
+
   // Keep track of all CLNY wei received
   uint public receivedTotal;
   uint public bidCount;
@@ -58,7 +55,7 @@ contract DutchAuction is DSMath {
   // Final price in CLNY per 10**18 Tokens (min 1, max 1e18)
   uint public finalPrice;
   bool public finalized;
-  
+
   mapping (address => uint256) public bids;
 
   modifier auctionNotStarted {
@@ -87,7 +84,7 @@ contract DutchAuction is DSMath {
   modifier auctionFinalized {
     require(finalized);
     _;
-  } 
+  }
 
   modifier allBidsClaimed  {
     require(claimCount == bidCount);
@@ -119,7 +116,7 @@ contract DutchAuction is DSMath {
     started = true;
   }
 
-  function totalToEndAuction() public view 
+  function totalToEndAuction() public view
   auctionStartedAndOpen
   returns (uint)
   {
@@ -156,7 +153,7 @@ contract DutchAuction is DSMath {
       amount = remainingToEndAuction;
       endTime = now;
     }
-    
+
     if (bids[msg.sender] == 0) {
       bidCount += 1;
     }
@@ -164,7 +161,7 @@ contract DutchAuction is DSMath {
     clnyToken.transferFrom(msg.sender, this, amount);
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
-    
+
     emit AuctionBid(msg.sender, amount, sub(remainingToEndAuction, amount));
   }
 
@@ -180,7 +177,7 @@ contract DutchAuction is DSMath {
     emit AuctionFinalized(finalPrice);
   }
 
-  function claim() public 
+  function claim() public
   auctionFinalized
   returns (bool)
   {
@@ -189,7 +186,7 @@ contract DutchAuction is DSMath {
 
     uint tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
     claimCount += 1;
-    
+
     // Set receiver bid to 0 before transferring the tokens
     bids[msg.sender] = 0;
     uint beforeClaimBalance = token.balanceOf(msg.sender);

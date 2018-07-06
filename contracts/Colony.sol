@@ -18,12 +18,8 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "./ERC20Extended.sol";
-import "./IColonyNetwork.sol";
-import "./IColony.sol";
 import "./ColonyStorage.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
-import "./Authority.sol";
 import "./EtherRouter.sol";
 
 

@@ -19,14 +19,12 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "../lib/dappsys/auth.sol";
-import "../lib/dappsys/roles.sol";
-import "./Authority.sol";
+import "../lib/dappsys/math.sol";
+import "./ERC20Extended.sol";
 import "./IColony.sol";
-import "./EtherRouter.sol";
-import "./Token.sol";
 
 
-contract ColonyNetworkStorage is DSAuth {
+contract ColonyNetworkStorage is DSAuth, DSMath {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver;
   // Number of colonies in the network
