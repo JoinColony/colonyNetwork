@@ -85,9 +85,17 @@ contract ColonyStorage is DSAuth, DSMath {
 
   uint8 constant OWNER_ROLE = 0;
   uint8 constant ADMIN_ROLE = 1;
+  uint8 constant RECOVERY_ROLE = 2;
   uint8 constant MANAGER = 0;
   uint8 constant EVALUATOR = 1;
   uint8 constant WORKER = 2;
+
+  // Variables for recovery mode
+  bool recoveryMode;
+  uint64 recoveryRolesCount;
+  uint64 recoveryApprovalCount;
+  uint256 recoveryEditedTimestamp;
+  mapping (address => uint256) recoveryApprovalTimestamps;
 
   // Mapping task id to current "active" nonce for executing task changes
   mapping (uint256 => uint256) taskChangeNonces;
@@ -184,6 +192,16 @@ contract ColonyStorage is DSAuth, DSMath {
 
   modifier isAdmin(address _user) {
     require(Authority(authority).hasUserRole(_user, ADMIN_ROLE));
+    _;
+  }
+
+  modifier recovery() {
+    require(recoveryMode, "not-in-recovery-mode");
+    _;
+  }
+
+  modifier normal() {
+    require(!recoveryMode, "in-recovery-mode");
     _;
   }
 
