@@ -283,7 +283,7 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChild.toNumber(), 4);
     });
 
-    it("should NOT be able to add a child local skill more than one level from the root local skill", async () => {
+    it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
       await metaColony.addDomain(1);
       await checkErrorRevert(metaColony.addDomain(2));
 
