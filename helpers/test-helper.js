@@ -253,9 +253,9 @@ export function bnSqrt(bn, isGreater) {
       .add(a)
       .div(web3Utils.toBN(2));
   }
-  // Do we need while loop? Not sure how precise the formula above is
-  while (isGreater && b.mul(b).lt(bn)) {
-    b = b.add(web3Utils.toBN(1));
+
+  if (isGreater && b.mul(b).lt(bn)) {
+    b = b.addn(1);
   }
   return b;
 }

@@ -357,7 +357,7 @@ contract("All", accounts => {
       });
 
       const workerReputationSqrt = bnSqrt(workerReputation);
-      const totalReputationSqrt = bnSqrt(workerReputation.add(managerReputation), true);
+      const totalReputationSqrt = bnSqrt(totalReputation, true);
       const numeratorSqrt = bnSqrt(workerReputationSqrt.mul(workerReputationSqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalReputationSqrt), true);
 
