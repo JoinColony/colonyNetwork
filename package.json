@@ -61,7 +61,7 @@
     "eslint-plugin-prettier": "^2.6.0",
     "eth-gas-reporter": "^0.1.2",
     "ethereumjs-util": "^5.2.0",
-    "ganache-cli": "6.1.4",
+    "ganache-cli": "6.1.5",
     "ganache-core": "^2.0.2",
     "istanbul": "^0.4.5",
     "jsonfile": "^4.0.0",
