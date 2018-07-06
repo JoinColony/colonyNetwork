@@ -1,6 +1,6 @@
 /* globals artifacts */
 
-import { toBN } from "web3-utils";
+import { toBN, sha3 } from "web3-utils";
 
 import { MANAGER, EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, bnSqrt } from "../helpers/test-helper";
@@ -10,16 +10,22 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
+const ITokenLocking = artifacts.require("ITokenLocking");
+const DSRoles = artifacts.require("DSRoles");
 
 contract("Colony Funding", addresses => {
   let colony;
   let token;
   let otherToken;
   let colonyNetwork;
+  let tokenLocking;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
+    tokenLocking = ITokenLocking.at(tokenLockingAddress);
   });
 
   beforeEach(async () => {
@@ -574,21 +580,26 @@ contract("Colony Funding", addresses => {
     const userAddress2 = addresses[1];
     const userAddress3 = addresses[2];
     let initialSquareRoots1;
-    let initialSquareRoots2;
 
     beforeEach(async () => {
       await fundColonyWithTokens(colony, otherToken, initialFunding.toString());
       await colony.mintTokens(initialFunding.toString());
       await colony.bootstrapColony([userAddress1, userAddress2], [userReputation1.toString(), userReputation2.toString()]);
 
+      await token.approve(tokenLocking.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
+      await tokenLocking.deposit(token.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
       const userReputation1Sqrt = bnSqrt(userReputation1);
-      const userReputation2Sqrt = bnSqrt(userReputation2);
 
       const totalReputationSqrt = bnSqrt(totalReputation);
       const totalTokensSqrt = bnSqrt(userReputation1.add(userReputation2));
 
       const numerator1Sqrt = bnSqrt(userReputation1Sqrt.mul(userReputation1Sqrt));
-      const numerator2Sqrt = bnSqrt(userReputation2Sqrt.mul(userReputation2Sqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt));
 
       const totalAmountSqrt = bnSqrt(initialFunding.div(toBN(100)));
@@ -602,35 +613,16 @@ contract("Colony Funding", addresses => {
         denominatorSqrt.toString(),
         totalAmountSqrt.toString()
       ];
-
-      initialSquareRoots2 = [
-        userReputation2Sqrt.toString(),
-        userReputation2Sqrt.toString(),
-        totalReputationSqrt.toString(),
-        totalTokensSqrt.toString(),
-        numerator2Sqrt.toString(),
-        denominatorSqrt.toString(),
-        totalAmountSqrt.toString()
-      ];
     });
 
-    it("should be able to get global reward payout count", async () => {
-      await colony.startNextRewardPayout(otherToken.address);
+    it("should not be able to start a reward payout if no one holds colony tokens", async () => {
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+      const { logs } = await colonyNetwork.createColony(newToken.address);
+      const { colonyAddress } = logs[0].args;
+      const newColony = IColony.at(colonyAddress);
 
-      const count = await colony.getGlobalRewardPayoutCount.call();
-      assert.equal(count.toNumber(), 1);
-    });
-
-    it("should be able to get user reward payout count", async () => {
-      const tx = await colony.startNextRewardPayout(otherToken.address);
-      const payoutId = tx.logs[0].args.id;
-
-      await colony.claimRewardPayout(payoutId, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
-        from: userAddress1
-      });
-
-      const count = await colony.getUserRewardPayoutCount.call(userAddress1);
-      assert.equal(count.toNumber(), 1);
+      await checkErrorRevert(newColony.startNextRewardPayout(otherToken.address), "colony-reward-payout-invalid-total-tokens");
     });
 
     it("should not be able to create parallel payouts of the same token", async () => {
@@ -657,6 +649,18 @@ contract("Colony Funding", addresses => {
       await colony.claimRewardPayout(payoutId2, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
         from: userAddress1
       });
+    });
+
+    it("should not be able to claim payout if colony-wide reputation is 0", async () => {
+      const { logs } = await colony.startNextRewardPayout(otherToken.address);
+      const payoutId = logs[0].args.id;
+
+      await checkErrorRevert(
+        colony.claimRewardPayout(payoutId.toString(), initialSquareRoots1, 0, 0, {
+          from: userAddress1
+        }),
+        "colony-reward-payout-invalid-total-reputation"
+      );
     });
 
     it("should not be able to claim tokens if user does not have any tokens", async () => {
@@ -697,7 +701,18 @@ contract("Colony Funding", addresses => {
 
     it("should not be able to claim tokens if user does not have any reputation", async () => {
       const userTokens3 = toBN(1e3);
-      await token.transfer(userAddress3, userTokens3.toString());
+
+      await token.transfer(userAddress3, userTokens3.toString(), {
+        from: userAddress2
+      });
+
+      await token.approve(tokenLocking.address, userTokens3.toString(), {
+        from: userAddress3
+      });
+
+      await tokenLocking.deposit(token.address, userTokens3.toString(), {
+        from: userAddress3
+      });
 
       const { logs } = await colony.startNextRewardPayout(otherToken.address);
       const payoutId = logs[0].args.id;
@@ -727,13 +742,7 @@ contract("Colony Funding", addresses => {
       );
     });
 
-    it.skip("should lock tokens when new payout cycle has started", async () => {
-      await colony.startNextRewardPayout(otherToken.address);
-
-      await checkErrorRevert(otherToken.transfer(userAddress1, 1e3));
-    });
-
-    it.skip("should be able to send tokens after claiming the reward", async () => {
+    it("should be able to withdraw tokens after claiming the reward", async () => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address);
       const payoutId = logs[0].args.id;
 
@@ -741,13 +750,12 @@ contract("Colony Funding", addresses => {
         from: userAddress1
       });
 
-      await colony.claimRewardPayout(payoutId, initialSquareRoots2, userReputation2.toString(), totalReputation.toString(), {
-        from: userAddress2
-      });
-
-      await otherToken.transfer(userAddress2, 1e3, {
+      await tokenLocking.withdraw(token.address, userReputation1.toString(), {
         from: userAddress1
       });
+
+      const balance = await token.balanceOf(userAddress1);
+      assert.equal(balance.toString(), userReputation1.toString());
     });
 
     it("should not be able to claim tokens after the payout period has expired", async () => {
@@ -767,39 +775,15 @@ contract("Colony Funding", addresses => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address);
       const payoutId = logs[0].args.id;
 
-      await colony.waiveRewardPayouts(1, {
+      await tokenLocking.incrementLockCounterTo(token.address, payoutId, {
         from: userAddress1
       });
-      await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
-          from: userAddress1
-        }),
-        "colony-reward-payout-bad-id"
-      );
-    });
-
-    it("should not be able to waive more payouts than there are unclaimed payouts", async () => {
-      await colony.startNextRewardPayout(otherToken.address);
 
       await checkErrorRevert(
-        colony.waiveRewardPayouts(2, {
+        colony.claimRewardPayout(payoutId.toString(), initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "colony-reward-payout-invalid-num-payouts"
-      );
-    });
-
-    it("should not be able to claim funds if previous payout is not claimed", async () => {
-      await colony.startNextRewardPayout(otherToken.address);
-
-      const { logs } = await colony.startNextRewardPayout(token.address);
-      const payoutId2 = logs[0].args.id;
-
-      await checkErrorRevert(
-        colony.claimRewardPayout(payoutId2, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
-          from: userAddress1
-        }),
-        "colony-reward-payout-bad-id"
+        "colony-reward-payout-already-claimed-or-waived"
       );
     });
 
@@ -842,6 +826,172 @@ contract("Colony Funding", addresses => {
       await colony.startNextRewardPayout(otherToken.address);
     });
 
+    it("should not be able to finalize the payout if payout is not active", async () => {
+      const tx = await colony.startNextRewardPayout(otherToken.address);
+      const payoutId = tx.logs[0].args.id;
+
+      await forwardTime(5184001, this);
+      await colony.finalizeRewardPayout(payoutId);
+
+      await checkErrorRevert(
+        colony.finalizeRewardPayout(payoutId, {
+          from: userAddress1
+        }),
+        "colony-reward-payout-token-not-active"
+      );
+    });
+
+    it("should not be able to finalize payout if payout is still active", async () => {
+      const tx = await colony.startNextRewardPayout(otherToken.address);
+      const payoutId = tx.logs[0].args.id;
+
+      await checkErrorRevert(colony.finalizeRewardPayout(payoutId), "colony-reward-payout-active");
+    });
+
+    it("should not be able to finalize payout if payoutId does not exist", async () => {
+      await colony.startNextRewardPayout(otherToken.address);
+
+      await checkErrorRevert(colony.finalizeRewardPayout(10), "colony-reward-payout-not-found");
+    });
+
+    it("should not be able to claim the same payout twice", async () => {
+      const tx = await colony.startNextRewardPayout(otherToken.address);
+      const payoutId = tx.logs[0].args.id;
+
+      await colony.claimRewardPayout(payoutId, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+        from: userAddress1
+      });
+
+      await checkErrorRevert(
+        colony.claimRewardPayout(payoutId, initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+          from: userAddress1
+        }),
+        "token-locking-invalid-lock-id"
+      );
+    });
+
+    it("should be able to collect payout from two colonies at the same time", async () => {
+      // Setting up a new token and two colonies
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+
+      let { logs } = await colonyNetwork.createColony(newToken.address);
+      let { colonyAddress } = logs[0].args;
+      const colony1 = IColony.at(colonyAddress);
+
+      ({ logs } = await colonyNetwork.createColony(newToken.address));
+      ({ colonyAddress } = logs[0].args);
+      const colony2 = IColony.at(colonyAddress);
+
+      // Giving both colonies the capability to call `mint` function
+      const adminRole = 1;
+      const newRoles = await DSRoles.new();
+      await newRoles.setUserRole(colony1.address, adminRole, true);
+      await newRoles.setUserRole(colony2.address, adminRole, true);
+      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(uint256)").slice(0, 10), true);
+      await newToken.setAuthority(newRoles.address);
+
+      await fundColonyWithTokens(colony1, otherToken, initialFunding.toString());
+      await fundColonyWithTokens(colony2, otherToken, initialFunding.toString());
+
+      // Minting the tokens so we can give them to users
+      await colony1.mintTokens(initialFunding.toString());
+      await colony2.mintTokens(initialFunding.toString());
+
+      // Giving the user colony's native tokens and reputation so they can participate in reward payout
+      await colony1.bootstrapColony([userAddress1, userAddress2], [userReputation1.toString(), userReputation2.toString()]);
+      await colony2.bootstrapColony([userAddress1, userAddress2], [userReputation1.toString(), userReputation2.toString()]);
+
+      // This will allow token locking contract to sent tokens on users behalf
+      await newToken.approve(tokenLocking.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
+      await tokenLocking.deposit(newToken.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
+      ({ logs } = await colony1.startNextRewardPayout(otherToken.address));
+      const payoutId1 = logs[0].args.id;
+      ({ logs } = await colony2.startNextRewardPayout(otherToken.address));
+      const payoutId2 = logs[0].args.id;
+
+      await colony1.claimRewardPayout(payoutId1.toString(), initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+        from: userAddress1
+      });
+
+      await colony2.claimRewardPayout(payoutId2.toString(), initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+        from: userAddress1
+      });
+
+      let rewardPayoutInfo = await colony1.getRewardPayoutInfo(payoutId1);
+      const amountAvailableForPayout1 = rewardPayoutInfo[2];
+      rewardPayoutInfo = await colony2.getRewardPayoutInfo(payoutId2);
+      const amountAvailableForPayout2 = rewardPayoutInfo[2];
+
+      const rewardPotBalanceAfterClaimInPayout1 = await colony1.getPotBalance(0, otherToken.address);
+      const rewardPotBalanceAfterClaimInPayout2 = await colony2.getPotBalance(0, otherToken.address);
+
+      const claimInPayout1 = amountAvailableForPayout1.sub(rewardPotBalanceAfterClaimInPayout1);
+      const claimInPayout2 = amountAvailableForPayout2.sub(rewardPotBalanceAfterClaimInPayout2);
+
+      const userBalance = await otherToken.balanceOf(userAddress1);
+      assert.equal(userBalance.toString(), claimInPayout1.add(claimInPayout2).toString());
+    });
+
+    it("should not be able to claim reward payout from a colony that didn't created it", async () => {
+      // Setting up a new token and two colonies
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+
+      let { logs } = await colonyNetwork.createColony(newToken.address);
+      let { colonyAddress } = logs[0].args;
+      const colony1 = IColony.at(colonyAddress);
+
+      ({ logs } = await colonyNetwork.createColony(newToken.address));
+      ({ colonyAddress } = logs[0].args);
+      const colony2 = IColony.at(colonyAddress);
+
+      // Giving both colonies the capability to call `mint` function
+      const adminRole = 1;
+      const newRoles = await DSRoles.new();
+      await newRoles.setUserRole(colony1.address, adminRole, true);
+      await newRoles.setUserRole(colony2.address, adminRole, true);
+      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(uint256)").slice(0, 10), true);
+      await newToken.setAuthority(newRoles.address);
+
+      await fundColonyWithTokens(colony1, otherToken, initialFunding.toString());
+      await fundColonyWithTokens(colony2, otherToken, initialFunding.toString());
+
+      // Minting the tokens so we can give them to users
+      await colony1.mintTokens(initialFunding.toString());
+      await colony2.mintTokens(initialFunding.toString());
+
+      // Giving the user colony's native tokens and reputation so they can participate in reward payout
+      await colony1.bootstrapColony([userAddress1, userAddress2], [userReputation1.toString(), userReputation2.toString()]);
+      await colony2.bootstrapColony([userAddress1, userAddress2], [userReputation1.toString(), userReputation2.toString()]);
+
+      // This will allow token locking contract to sent tokens on users behalf
+      await newToken.approve(tokenLocking.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
+      await tokenLocking.deposit(newToken.address, userReputation1.toString(), {
+        from: userAddress1
+      });
+
+      ({ logs } = await colony1.startNextRewardPayout(otherToken.address));
+      const payoutId1 = logs[0].args.id;
+      await colony2.startNextRewardPayout(otherToken.address);
+
+      await checkErrorRevert(
+        colony2.claimRewardPayout(payoutId1.toString(), initialSquareRoots1, userReputation1.toString(), totalReputation.toString(), {
+          from: userAddress1
+        }),
+        "colony-reward-payout-not-active"
+      );
+    });
+
     const reputations = [
       {
         totalReputation: toBN(3),
@@ -873,6 +1023,7 @@ contract("Colony Funding", addresses => {
       it(`should calculate fairly precise reward payout for:
         user reputation/tokens: ${data.totalReputation.div(toBN(3)).toString()}
         total reputation/tokens: ${data.totalReputation.toString()}`, async () => {
+        // Setting up a new token and colony
         const tokenArgs = getTokenArgs();
         const newToken = await Token.new(...tokenArgs);
         let { logs } = await colonyNetwork.createColony(newToken.address);
@@ -883,33 +1034,64 @@ contract("Colony Funding", addresses => {
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await Token.new(...payoutTokenArgs);
         await fundColonyWithTokens(newColony, payoutToken, data.totalAmount.toString());
+        // Minting colony's native token so they can be given to users
         await newColony.mintTokens(data.totalAmount.toString());
 
+        // Every user has equal amount of reputation and tokens (totalReputationAndTokens / 3)
         const userReputation = data.totalReputation.div(toBN(3));
+        // Giving colony's native tokens to 3 users.
         await newColony.bootstrapColony(
           [userAddress1, userAddress2, userAddress3],
           [userReputation.toString(), userReputation.toString(), userReputation.toString()]
         );
 
+        // This will allow token locking contract to sent tokens on users behalf
+        await newToken.approve(tokenLocking.address, userReputation.toString(), {
+          from: userAddress1
+        });
+        await newToken.approve(tokenLocking.address, userReputation.toString(), {
+          from: userAddress2
+        });
+        await newToken.approve(tokenLocking.address, userReputation.toString(), {
+          from: userAddress3
+        });
+
+        // Send tokens to token locking contract.
+        await tokenLocking.deposit(newToken.address, userReputation.toString(), {
+          from: userAddress1
+        });
+        await tokenLocking.deposit(newToken.address, userReputation.toString(), {
+          from: userAddress2
+        });
+        await tokenLocking.deposit(newToken.address, userReputation.toString(), {
+          from: userAddress3
+        });
+
         ({ logs } = await newColony.startNextRewardPayout(payoutToken.address));
         const payoutId = logs[0].args.id.toNumber();
 
+        // Getting total amount available for payout
         const rewardPayoutInfo = await newColony.getRewardPayoutInfo(payoutId);
         const amount = rewardPayoutInfo[2];
 
         const totalSupply = await newToken.totalSupply();
         const colonyTokens = await newToken.balanceOf(newColony.address);
         const totalTokens = totalSupply.sub(colonyTokens);
-        const userTokens = await newToken.balanceOf(userAddress1);
 
-        const numerator = userTokens.mul(userReputation).sqrt();
+        // Get users locked token amount from token locking contract
+        const info = await tokenLocking.getUserLock(newToken.address, userAddress1);
+        const userLockedTokens = info[1];
+
+        // Calculating the reward payout for one user locally to check against on-chain result
+        const numerator = userLockedTokens.mul(userReputation).sqrt();
         const denominator = totalTokens.mul(data.totalReputation).sqrt();
         const factor = toBN(10).pow(toBN(100));
         const a = numerator.mul(factor).div(denominator);
         const reward = amount.mul(a).div(factor);
 
+        // Calculating square roots locally, to avoid big gas costs. This can be proven on chain easily
         const userReputationSqrt = bnSqrt(userReputation);
-        const userTokensSqrt = bnSqrt(userTokens);
+        const userTokensSqrt = bnSqrt(userLockedTokens);
         const totalReputationSqrt = bnSqrt(data.totalReputation);
         const totalTokensSqrt = bnSqrt(totalTokens);
         const numeratorSqrt = bnSqrt(numerator);
@@ -931,6 +1113,8 @@ contract("Colony Funding", addresses => {
         });
 
         const remainingAfterClaim1 = await newColony.getPotBalance(0, payoutToken.address);
+        const user1BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
+        assert.equal(user1BalanceAfterClaim.toString(), amount.sub(remainingAfterClaim1).toString());
 
         const solidityReward = amount.sub(remainingAfterClaim1);
         console.log("\nCorrect (Javascript): ", reward.toString());
@@ -955,6 +1139,14 @@ contract("Colony Funding", addresses => {
         });
 
         const remainingAfterClaim2 = await newColony.getPotBalance(0, payoutToken.address);
+        const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
+        assert.equal(
+          user2BalanceAfterClaim.toString(),
+          amount
+            .sub(user1BalanceAfterClaim)
+            .sub(remainingAfterClaim2)
+            .toString()
+        );
 
         console.log("Remaining after claim 2: ", remainingAfterClaim2.toString());
 
@@ -963,6 +1155,15 @@ contract("Colony Funding", addresses => {
         });
 
         const remainingAfterClaim3 = await newColony.getPotBalance(0, payoutToken.address);
+        const user3BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
+        assert.equal(
+          user3BalanceAfterClaim.toString(),
+          amount
+            .sub(user1BalanceAfterClaim)
+            .sub(user2BalanceAfterClaim)
+            .sub(remainingAfterClaim3)
+            .toString()
+        );
 
         console.log("Remaining after claim 3: ", remainingAfterClaim3.toString());
       })

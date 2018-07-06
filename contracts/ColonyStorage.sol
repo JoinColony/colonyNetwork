@@ -68,13 +68,6 @@ contract ColonyStorage is DSAuth {
   mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles;
   // Active payouts for particular token address. Assures that one token is used for only one active payout
   mapping (address => bool) activeRewardPayouts;
-  // Incremented every time a reward payout is created. Used for comparing with `userRewardPayoutCount`
-  // to ensure that rewards are claimed in the right order.
-  // Can be used for iterating over all reward payouts (excluding index 0)
-  uint256 globalRewardPayoutCount;
-  // Keeps track of how many payouts are claimed by the particular user.
-  // Can be incremented either by waiving or claiming the reward.
-  mapping (address => uint256) userRewardPayoutCount;
 
   // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.

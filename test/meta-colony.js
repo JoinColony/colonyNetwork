@@ -3,7 +3,7 @@ import { INITIAL_FUNDING, MANAGER } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
-const upgradableContracts = require("../helpers/upgradable-contracts");
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -37,7 +37,7 @@ contract("Meta Colony", accounts => {
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await upgradableContracts.setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
     await colonyNetwork.startNextCycle();
 
     metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);

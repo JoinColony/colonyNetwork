@@ -43,6 +43,7 @@ const ColonyTask = artifacts.require("ColonyTask");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
+const ITokenLocking = artifacts.require("ITokenLocking");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 const oneHourLater = async () => forwardTime(3600, this);
@@ -63,6 +64,7 @@ contract("All", accounts => {
   let colonyFunding;
   let metaColony;
   let colonyNetwork;
+  let tokenLocking;
 
   before(async () => {
     colony = await Colony.new();
@@ -75,6 +77,10 @@ contract("All", accounts => {
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
+
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
+    tokenLocking = ITokenLocking.at(tokenLockingAddress);
+
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
@@ -336,10 +342,17 @@ contract("All", accounts => {
 
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
 
+      await newToken.approve(tokenLocking.address, workerReputation.toString(), {
+        from: WORKER
+      });
+      await tokenLocking.deposit(newToken.address, workerReputation.toString(), {
+        from: WORKER
+      });
+
       const tx = await newColony.startNextRewardPayout(otherToken.address);
       const payoutId = tx.logs[0].args.id;
 
-      await newColony.waiveRewardPayouts(1, {
+      await tokenLocking.incrementLockCounterTo(newToken.address, payoutId, {
         from: MANAGER
       });
 
@@ -374,7 +387,7 @@ contract("All", accounts => {
       const tx2 = await newColony.startNextRewardPayout(otherToken.address);
       const payoutId2 = tx2.logs[0].args.id;
 
-      await newColony.waiveRewardPayouts(1, {
+      await tokenLocking.incrementLockCounterTo(newToken.address, payoutId2, {
         from: MANAGER
       });
 
