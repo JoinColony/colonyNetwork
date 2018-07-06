@@ -40,6 +40,8 @@ jobs:
       - run:
           name: "Greenkeeper lockfile update"
           command: $(yarn global bin)/greenkeeper-lockfile-update
+          environment:
+            GK_LOCK_YARN_OPTS: "--ignore-workspace-root-check"
       - run:
           name: "Linting JavaScript"
           command: yarn run eslint
