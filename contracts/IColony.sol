@@ -449,10 +449,9 @@ contract IColony {
   /// @return Reputation root hash at the time of creation
   /// @return Total colony tokens at the time of creation
   /// @return Total amount of tokens taken aside for reward payout
-  /// @return Remaining (unclaimed) amount of tokens
   /// @return Token address
   /// @return Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, uint256, address, uint256);
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, address, uint256);
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation

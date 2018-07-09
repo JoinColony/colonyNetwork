@@ -212,18 +212,18 @@ contract ColonyFunding is ColonyStorage, DSMath {
     // squareRoots[5] - square root of denominator
     // squareRoots[6] - square root of payout.amount
 
-    require(mul(_squareRoots[0], _squareRoots[0]) <= _userReputation, "colony-reward-payout-invalid-parametar-user-reputation");
-    require(mul(_squareRoots[1], _squareRoots[1]) <= userTokens, "colony-reward-payout-invalid-parametar-user-token");
-    require(mul(_squareRoots[2], _squareRoots[2]) <= _totalReputation, "colony-reward-payout-invalid-parametar-total-reputation");
-    require(mul(_squareRoots[3], _squareRoots[3]) <= payout.totalTokens, "colony-reward-payout-invalid-parametar-total-tokens");
-    require(mul(_squareRoots[6], _squareRoots[6]) <= payout.amount, "colony-reward-payout-invalid-parametar-amount");
+    require(mul(_squareRoots[0], _squareRoots[0]) <= _userReputation, "colony-reward-payout-invalid-parameter-user-reputation");
+    require(mul(_squareRoots[1], _squareRoots[1]) <= userTokens, "colony-reward-payout-invalid-parameter-user-token");
+    require(mul(_squareRoots[2], _squareRoots[2]) >= _totalReputation, "colony-reward-payout-invalid-parameter-total-reputation");
+    require(mul(_squareRoots[3], _squareRoots[3]) >= payout.totalTokens, "colony-reward-payout-invalid-parameter-total-tokens");
+    require(mul(_squareRoots[6], _squareRoots[6]) <= payout.amount, "colony-reward-payout-invalid-parameter-amount");
     uint256 numerator = mul(_squareRoots[0], _squareRoots[1]);
     uint256 denominator = mul(_squareRoots[2], _squareRoots[3]);
 
-    require(mul(_squareRoots[4], _squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parametar-numerator");
-    require(mul(_squareRoots[5], _squareRoots[5]) <= denominator, "colony-reward-payout-invalid-parametar-denominator");
+    require(mul(_squareRoots[4], _squareRoots[4]) <= numerator, "colony-reward-payout-invalid-parameter-numerator");
+    require(mul(_squareRoots[5], _squareRoots[5]) >= denominator, "colony-reward-payout-invalid-parameter-denominator");
 
-    uint256 reward = (mul(_squareRoots[4], _squareRoots[6]) / (_squareRoots[5] + 1)) ** 2;
+    uint256 reward = (mul(_squareRoots[4], _squareRoots[6]) / _squareRoots[5]) ** 2;
 
     tokenLocking.unlockTokenForUser(address(token), msg.sender, _payoutId);
 

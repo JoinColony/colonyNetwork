@@ -243,7 +243,7 @@ export async function createSignaturesTrezor(colony, taskId, signers, value, dat
   return { sigV, sigR, sigS };
 }
 
-export function bnSqrt(bn) {
+export function bnSqrt(bn, isGreater) {
   let a = bn.add(web3Utils.toBN(1)).div(web3Utils.toBN(2));
   let b = bn;
   while (a.lt(b)) {
@@ -252,6 +252,10 @@ export function bnSqrt(bn) {
       .div(a)
       .add(a)
       .div(web3Utils.toBN(2));
+  }
+
+  if (isGreater && b.mul(b).lt(bn)) {
+    b = b.addn(1);
   }
   return b;
 }
