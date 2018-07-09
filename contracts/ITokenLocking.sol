@@ -10,12 +10,12 @@ contract ITokenLocking {
 
   /// @notice Get ColonyNetwork address
   /// @return ColonyNetwork address
-  function getColonyNetwork() public view returns (address);
+  function getColonyNetwork() public view returns (address networkAddress);
 
   /// @notice Locks everyones' tokens on `_token` address
   /// @param _token Address of the token we want to lock
   /// @return Updated total token lock count
-  function lockToken(address _token) public returns (uint256);
+  function lockToken(address _token) public returns (uint256 lockCount);
 
   /// @notice Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1.
   /// Can only be called by a colony
@@ -41,12 +41,12 @@ contract ITokenLocking {
   /// @notice Get global lock count for a specific token
   /// @param _token Address of the token
   /// @return Global token lock count
-  function getTotalLockCount(address _token) public view returns (uint256);
+  function getTotalLockCount(address _token) public view returns (uint256 lockCount);
 
   /// @notice Get user token lock info (lock count and deposited amount)
   /// @param _token Address of the token
   /// @param _user Address of the user
   /// @return User's token lock count
   /// @return User's deposited amount
-  function getUserLock(address _token, address _user) public view returns (uint256, uint256);
+  function getUserLock(address _token, address _user) public view returns (uint256 lockCount, uint256 amount);
 }

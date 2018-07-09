@@ -12,7 +12,7 @@ contract IPatriciaTree {
   /// @notice Get the root hash
   /// @dev This value is a keccak256 hash of the rootEdge: `keccak256(Edge.node, Edge.label.length, Edge.label.data)`
   /// @return The `bytes32` hash value
-  function getRootHash() public view returns (bytes32);
+  function getRootHash() public view returns (bytes32 rootHash);
 
   /// @notice Get the root edge
   /// @return The root `Data.Edge`
@@ -30,7 +30,7 @@ contract IPatriciaTree {
 
   /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings`
   /// @return The calculated hash
-  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public pure returns (bytes32);
+  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public pure returns (bytes32 rootHash);
 
   /// @notice Insert the `key`/`value`in the appropriate place in the tree
   function insert(bytes key, bytes value) public;

@@ -44,16 +44,16 @@ contract IColonyNetwork {
 
   /// @notice Get the Meta Colony address
   /// @return The Meta colony address, if no colony was found, returns 0x0
-  function getMetaColony() public view returns (address);
+  function getMetaColony() public view returns (address colonyAddress);
 
   /// @notice Get the number of colonies in the network
   /// @return The colony count
-  function getColonyCount() public view returns (uint256);
+  function getColonyCount() public view returns (uint256 count);
 
   /// @notice Check if specific address is a colony created on colony network
   /// @param _colony Address of the colony
   /// @return true if specified address is a colony, otherwise false
-  function isColony(address _colony) public view returns (bool);
+  function isColony(address _colony) public view returns (bool isColony);
 
   /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`
   /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
@@ -62,18 +62,18 @@ contract IColonyNetwork {
   /// @param _parentSkillId Id of the skill under which the new skill will be added
   /// @param _globalSkill true if the new skill is global, false if it is local
   /// @return Id of the added skill
-  function addSkill(uint256 _parentSkillId, bool _globalSkill) public returns (uint256);
+  function addSkill(uint256 _parentSkillId, bool _globalSkill) public returns (uint256 skillId);
 
   /// @notice Get the `nParents` and `nChildren` of skill with id `_skillId`
   /// @param _skillId Id of the skill
   /// @return uint256 `skill.nParents` i.e. the number of parent skills of skill with id `_skillId`
   /// @return uint256 `skill.nChildren` i.e. the number of child skills of skill with id `_skillId`
-  function getSkill(uint256 _skillId) public view returns (uint256, uint256);
+  function getSkill(uint256 _skillId) public view returns (uint256 nParents, uint256 nChildren);
 
   /// @notice Checks if skill with id `_skillId` is a global skill
   /// @param _skillId Id of the skill
   /// @return true if skill with id `_skillId` is a global skill, false otherwise
-  function isGlobalSkill(uint256 _skillId) public view returns (bool);
+  function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
 
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or
@@ -84,12 +84,12 @@ contract IColonyNetwork {
 
   /// @notice Get the number of skills in the network including both global and local skills
   /// @return The skill count
-  function getSkillCount() public view returns (uint256);
+  function getSkillCount() public view returns (uint256 count);
 
   /// @notice Get the id of the root global skill
   /// @dev This is set once when the Meta Colony is created
   /// @return The root global skill id
-  function getRootGlobalSkillId() public view returns (uint256);
+  function getRootGlobalSkillId() public view returns (uint256 skillId);
 
   /// @notice Sets the token locking address
   /// This is only set once, and can't be changed afterwards
@@ -98,7 +98,7 @@ contract IColonyNetwork {
 
   /// @notice Get token locking contract address
   /// @return Token locking contract address
-  function getTokenLocking() public view returns (address);
+  function getTokenLocking() public view returns (address lockingAddress);
 
   /// @notice Create the Meta Colony, same as a normal colony plus the root skill
   /// @param _tokenAddress Address of the CLNY token
@@ -110,7 +110,7 @@ contract IColonyNetwork {
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
   /// Support for `mint` in mandatory only for the Meta Colony Token
   /// @return Address of the newly created colony
-  function createColony(address _tokenAddress) public returns (address);
+  function createColony(address _tokenAddress) public returns (address colonyAddress);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
   /// @param _version The new Colony contract version
@@ -120,35 +120,35 @@ contract IColonyNetwork {
   /// @notice Get a colony address by its Id in the network
   /// @param _id Id of the colony to get
   /// @return The colony address, if no colony was found, returns 0x0
-  function getColony(uint256 _id) public view returns (address);
+  function getColony(uint256 _id) public view returns (address colonyAddress);
 
   /// @notice Returns the latest Colony contract version. This is the version used to create all new colonies
   /// @return The current / latest Colony contract version
-  function getCurrentColonyVersion() public view returns (uint256);
+  function getCurrentColonyVersion() public view returns (uint256 version);
 
   /// @notice Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_skillId`
   /// @param _skillId Id of the skill
   /// @param _parentSkillIndex Index of the `skill.parents` array to get
   /// Note that not all parent skill ids are stored here. See `Skill.parents` member for definition on which parents are stored
   /// @return Skill Id of the requested parent skill
-  function getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex) public view returns (uint256);
+  function getParentSkillId(uint256 _skillId, uint256 _parentSkillIndex) public view returns (uint256 skillId);
 
   /// @notice Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`
   /// @param _skillId Id of the skill
   /// @param _childSkillIndex Index of the `skill.children` array to get
   /// @return Skill Id of the requested child skill
-  function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) public view returns (uint256);
+  function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) public view returns (uint256 skillId);
 
   /// @notice Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle
   /// is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to
   /// @param _active Whether the user wants the active or inactive reputation mining cycle
   /// @return address of active or inactive ReputationMiningCycle
-  function getReputationMiningCycle(bool _active) public view returns (address);
+  function getReputationMiningCycle(bool _active) public view returns (address repMiningCycleAddress);
 
   /// @notice Get the `Resolver` address for Colony contract version `_version`
   /// @param _version The Colony contract version
   /// @return Address of the `Resolver` contract
-  function getColonyVersionResolver(uint256 _version) public view returns (address);
+  function getColonyVersionResolver(uint256 _version) public view returns (address resolverAddress);
 
   /// @notice Allow a reputation miner to stake an `_amount` of CLNY tokens, which is required
   /// before they can submit a new reputation root hash via `ReputationMiningCycle.submitNewHash`
@@ -164,7 +164,7 @@ contract IColonyNetwork {
   /// @notice Get the amount of staked CLNY tokens for user `_user`
   /// @param _user Address of the user whose balance we want to get
   /// @return User stake balance
-  function getStakedBalance(address _user) public view returns (uint256);
+  function getStakedBalance(address _user) public view returns (uint256 balance);
 
   /// @notice Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
   /// @param newHash The reputation root hash
@@ -183,12 +183,12 @@ contract IColonyNetwork {
 
   /// @notice Get the root hash of the current reputation state tree
   /// @return bytes32 The current Reputation Root Hash
-  function getReputationRootHash() public view returns (bytes32);
+  function getReputationRootHash() public view returns (bytes32 rootHash);
 
   /// @notice Get the number of nodes in the current reputation state tree.
   /// @dev I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution
   /// @return uint256 The number of nodes in the state tree
-  function getReputationRootHashNNodes() public view returns (uint256);
+  function getReputationRootHashNNodes() public view returns (uint256 nNodes);
 
   /// @notice Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network
   /// @param _token Address of the token held by the network to be auctioned

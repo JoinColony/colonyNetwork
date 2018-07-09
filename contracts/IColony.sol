@@ -93,18 +93,18 @@ contract IColony {
   // Implemented in DSAuth.sol
   /// @notice Get the `Authority` for the colony
   /// @return The `Authority` contract address
-  function authority() public view returns (address);
+  function authority() public view returns (address authority);
 
   /// @notice Get the colony `owner` address. This should be 0x0 at all times
   /// @dev Used for testing.
   /// @return Address of the colony owner
-  function owner() public view returns (address);
+  function owner() public view returns (address owner);
 
   // Implemented in Colony.sol
   /// @notice Get the Colony contract version
   /// Starts from 1 and is incremented with every deployed contract change
   /// @return Version number
-  function version() public pure returns (uint256);
+  function version() public pure returns (uint256 version);
 
   /// @notice Upgrades a colony to a new Colony contract version `_newVersion`
   /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version
@@ -136,7 +136,7 @@ contract IColony {
 
   /// @notice Get the colony token
   /// @return Address of the token contract
-  function getToken() public view returns (address);
+  function getToken() public view returns (address tokenAddress);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
   /// @param _network Address of the colony network
@@ -163,7 +163,7 @@ contract IColony {
   /// @dev Calls `IColonyNetwork.addSkill`
   /// @param _parentSkillId Id of the skill under which the new skill will be added
   /// @return Id of the added skill
-  function addGlobalSkill(uint256 _parentSkillId) public returns (uint256);
+  function addGlobalSkill(uint256 _parentSkillId) public returns (uint256 skillId);
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
@@ -174,11 +174,11 @@ contract IColony {
   /// @param _id Id of the domain which details to get
   /// @return The domain "local" skill id
   /// @return The domain's funding pot id
-  function getDomain(uint256 _id) public view returns (uint256, uint256);
+  function getDomain(uint256 _id) public view returns (uint256 skillId, uint256 potId);
 
   /// @notice Get the number of domains in the colony
   /// @return The domain count. Min 1 as the root domain is created at the same time as the colony
-  function getDomainCount() public view returns (uint256);
+  function getDomainCount() public view returns (uint256 count);
 
   /// @notice Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
   /// @param key The key of the element the proof is for.
@@ -190,7 +190,7 @@ contract IColony {
   /// While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own
   /// reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function
   /// is not currently exposed on the Colony's EtherRouter.
-  function verifyReputationProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool);
+  function verifyReputationProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool isValid);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
@@ -200,12 +200,12 @@ contract IColony {
 
   /// @notice Get the number of tasks in the colony
   /// @return The task count
-  function getTaskCount() public view returns (uint256);
+  function getTaskCount() public view returns (uint256 count);
 
   /// @notice Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call
   /// @param _id Id of the task
   /// @return The current task change nonce value
-  function getTaskChangeNonce(uint256 _id) public view returns (uint256);
+  function getTaskChangeNonce(uint256 _id) public view returns (uint256 nonce);
 
   /// @notice Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker)
   /// using the detached signatures for these users.
@@ -275,19 +275,19 @@ contract IColony {
   /// @param _salt Salt value
   /// @param _value Value to hide
   /// @return `keccak256` hash of joint _salt and _value
-  function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32);
+  function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32 secret);
 
   /// @notice Get the `ColonyStorage.RatingSecrets` for task `_id`
   /// @param _id Id of the task
   /// @return Number of secrets
   /// @return Timestamp of the last submitted rating secret
-  function getTaskWorkRatings(uint256 _id) public view returns (uint256, uint256);
+  function getTaskWorkRatings(uint256 _id) public view returns (uint256 nSecrets, uint256 lastSubmittedAt);
 
   /// @notice Get the rating secret submitted for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @return Rating secret `bytes32` value
-  function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32);
+  function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32 secret);
 
   /// @notice Assigning manager role
   /// Current manager and user we want to assign role to both need to agree
@@ -378,7 +378,7 @@ contract IColony {
   /// @return Deliverable submission timestamp
   /// @return Task domain id, default is root colony domain with id 1
   /// @return Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256, uint256[]);
+  function getTask(uint256 _id) public view returns (bytes32 specificationHash, bytes32 deliverableHash, bool finalized, bool cancelled, uint256 dueDate, uint256 payoutsWeCannotMake, uint256 potId, uint256 deliverableTimestamp, uint256 domainId, uint256[] skillIds);
 
   /// @notice Get the `Role` properties back for role `_role` in task `_id`
   /// @param _id Id of the task
@@ -386,29 +386,29 @@ contract IColony {
   /// @return Address of the user for the given role
   /// @return Whether the user failed to rate their counterpart
   /// @return Rating the user received
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8);
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
 
   // Implemented in ColonyFunding.sol
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
   /// @return The inverse of the network fee
-  function getFeeInverse() public pure returns (uint256);
+  function getFeeInverse() public pure returns (uint256 feeInverse);
 
   /// @notice Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100
   /// @return The inverse of the reward
-  function getRewardInverse() public pure returns (uint256);
+  function getRewardInverse() public pure returns (uint256 rewardInverse);
 
   /// @notice Get payout amount in `_token` denomination for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Payout amount
-  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256);
+  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256 amount);
 
   /// @notice Get total payout amount in `_token` denomination for task `_id`
   /// @param _id Id of the task
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Payout amount
-  function getTotalTaskPayout(uint256 _id, address _token) public view returns (uint256);
+  function getTotalTaskPayout(uint256 _id, address _token) public view returns (uint256 amount);
 
   /// @notice Set `_token` payout for manager in task `_id` to `_amount`
   /// @param _id Id of the task
@@ -465,7 +465,7 @@ contract IColony {
   /// @return Total amount of tokens taken aside for reward payout
   /// @return Token address
   /// @return Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, address, uint256);
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32 reputationState, uint256 totalTokens, uint256 amount, address tokenAddress, uint256 blockTimestamp);
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation
@@ -476,7 +476,7 @@ contract IColony {
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Funding pot balance
-  function getPotBalance(uint256 _potId, address _token) public view returns (uint256);
+  function getPotBalance(uint256 _potId, address _token) public view returns (uint256 balance);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members
@@ -494,5 +494,5 @@ contract IColony {
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return Total amount of tokens in pots other than the rewards pot (id 0)
-  function getNonRewardPotsTotal(address _token) public view returns (uint256);
+  function getNonRewardPotsTotal(address _token) public view returns (uint256 amount);
 }
