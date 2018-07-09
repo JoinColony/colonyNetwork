@@ -18,17 +18,11 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
-import "./Authority.sol";
-import "./IColony.sol";
-import "./EtherRouter.sol";
-import "./ERC20Extended.sol";
 import "./ColonyNetworkStorage.sol";
-import "./IColonyNetwork.sol";
 import "./ReputationMiningCycle.sol";
 
 
-contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
+contract ColonyNetworkStaking is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {

@@ -18,13 +18,11 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/math.sol";
 import "./ColonyStorage.sol";
-import "./IColony.sol";
 import "./SafeMath.sol";
 
 
-contract ColonyTask is ColonyStorage, DSMath {
+contract ColonyTask is ColonyStorage {
   uint256 constant RATING_COMMIT_TIMEOUT = 432000;
   uint256 constant RATING_REVEAL_TIMEOUT = 432000;
 
