@@ -102,7 +102,7 @@ function removePrefix(label, prefix) {
 // //////
 // Patricia Tree
 // //////////////////
-exports.PatriciaTree = function() {
+exports.PatriciaTree = function PatriciaTree() {
   // Label: { data, length } (data is the path, length says how many bits are used)
   // Edge: { nodeHash, label }
   // Node: [leftEdge, rightEdge] (no actual node)
@@ -150,6 +150,7 @@ exports.PatriciaTree = function() {
     let length = 0;
     let branchMask = new BN(0, 16);
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       const [prefix, suffix] = splitCommonPrefix(label, edge.label);
 

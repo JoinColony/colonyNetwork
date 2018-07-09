@@ -18,12 +18,8 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "./ERC20Extended.sol";
-import "./IColonyNetwork.sol";
-import "./IColony.sol";
 import "./ColonyStorage.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
-import "./Authority.sol";
 import "./EtherRouter.sol";
 
 
@@ -105,8 +101,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function mintTokensForColonyNetwork(uint _wad) public {
-    require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed"); // Only the colony Network can call this function
-    require(this == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed"); // Function only valid on the Meta Colony
+    // Only the colony Network can call this function
+    require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
+    // Function only valid on the Meta Colony
+    require(this == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
     token.mint(_wad);
     token.transfer(colonyNetworkAddress, _wad);
   }
@@ -145,16 +143,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function getDomainCount() public view returns (uint256) {
     return domainCount;
   }
-  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
-  private
-  {
-    uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
-    reviewers[_sig] = _reviewers;
-  }
-
-  function setRoleAssignmentFunction(bytes4 _sig) private {
-    roleAssignmentSigs[_sig] = true;
-  }
 
   modifier verifyKey(bytes key) {
     uint256 colonyAddress;
@@ -175,7 +163,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
   verifyKey(key)
-  public returns (bool)
+  public view returns (bool)
   {
     // Get roothash from colonynetwork
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
@@ -193,6 +181,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(newResolver != 0x0);
     EtherRouter e = EtherRouter(address(this));
     e.setResolver(newResolver);
+  }
+
+  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
+  private
+  {
+    uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
+    reviewers[_sig] = _reviewers;
+  }
+
+  function setRoleAssignmentFunction(bytes4 _sig) private {
+    roleAssignmentSigs[_sig] = true;
   }
 
   function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {

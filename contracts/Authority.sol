@@ -26,55 +26,48 @@ contract Authority is DSRoles {
   uint8 adminRole = 1;
 
   constructor(address colony) public {
-    // functions for owner role
-    bytes4 setTokenSig = bytes4(keccak256("setToken(address)"));
-    bytes4 bootstrapColonySig = bytes4(keccak256("bootstrapColony(address[],int256[])"));
-    bytes4 mintTokensSig = bytes4(keccak256("mintTokens(uint256)"));
-    bytes4 addGlobalSkillSig = bytes4(keccak256("addGlobalSkill(uint256)"));
-    bytes4 setOwnerRoleSig = bytes4(keccak256("setOwnerRole(address)"));
-    bytes4 removeAdminRoleSig = bytes4(keccak256("removeAdminRole(address)"));
-    bytes4 upgradeSig = bytes4(keccak256("upgrade(uint256)"));
-
-    // functions for admin + owner role
-    bytes4 moveFundsBetweenPotsSig = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,address)"));
-    bytes4 addDomainSig = bytes4(keccak256("addDomain(uint256)"));
-    bytes4 makeTaskSig = bytes4(keccak256("makeTask(bytes32,uint256)"));
-    bytes4 startNextRewardPayoutSig = bytes4(keccak256("startNextRewardPayout(address)"));
-    bytes4 cancelTaskSig = bytes4(keccak256("cancelTask(uint256)"));
-    bytes4 setAdminRoleSig = bytes4(keccak256("setAdminRole(address)"));
-
     // Set token
-    setRoleCapability(ownerRole, colony, setTokenSig, true);
+    setOwnerRoleCapability(colony, "setToken(address)");
     // Bootstrap colony
-    setRoleCapability(ownerRole, colony, bootstrapColonySig, true);
+    setOwnerRoleCapability(colony, "bootstrapColony(address[],int256[])");
     // Mint tokens
-    setRoleCapability(ownerRole, colony, mintTokensSig, true);
+    setOwnerRoleCapability(colony, "mintTokens(uint256)");
     // Add global skill
-    setRoleCapability(ownerRole, colony, addGlobalSkillSig, true);
+    setOwnerRoleCapability(colony, "addGlobalSkill(uint256)");
     // Transfer ownership
-    setRoleCapability(ownerRole, colony, setOwnerRoleSig, true);
+    setOwnerRoleCapability(colony, "setOwnerRole(address)");
     // Remove admin role
-    setRoleCapability(ownerRole, colony, removeAdminRoleSig, true);
+    setOwnerRoleCapability(colony, "removeAdminRole(address)");
     // Upgrade colony
-    setRoleCapability(ownerRole, colony, upgradeSig, true);
+    setOwnerRoleCapability(colony, "upgrade(uint256)");
 
     // Allocate funds
-    setRoleCapability(adminRole, colony, moveFundsBetweenPotsSig, true);
-    setRoleCapability(ownerRole, colony, moveFundsBetweenPotsSig, true);
+    setAdminRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");
+    setOwnerRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");
     // Add domain
-    setRoleCapability(adminRole, colony, addDomainSig, true);
-    setRoleCapability(ownerRole, colony, addDomainSig, true);
+    setAdminRoleCapability(colony, "addDomain(uint256)");
+    setOwnerRoleCapability(colony, "addDomain(uint256)");
     // Add task
-    setRoleCapability(adminRole, colony, makeTaskSig, true);
-    setRoleCapability(ownerRole, colony, makeTaskSig, true);
+    setAdminRoleCapability(colony, "makeTask(bytes32,uint256)");
+    setOwnerRoleCapability(colony, "makeTask(bytes32,uint256)");
     // Start next reward payout
-    setRoleCapability(adminRole, colony, startNextRewardPayoutSig, true);
-    setRoleCapability(ownerRole, colony, startNextRewardPayoutSig, true);
+    setAdminRoleCapability(colony, "startNextRewardPayout(address)");
+    setOwnerRoleCapability(colony, "startNextRewardPayout(address)");
     // Cancel task
-    setRoleCapability(adminRole, colony, cancelTaskSig, true);
-    setRoleCapability(ownerRole, colony, cancelTaskSig, true);
+    setAdminRoleCapability(colony, "cancelTask(uint256)");
+    setOwnerRoleCapability(colony, "cancelTask(uint256)");
     // Set admin
-    setRoleCapability(adminRole, colony, setAdminRoleSig, true);
-    setRoleCapability(ownerRole, colony, setAdminRoleSig, true);
+    setAdminRoleCapability(colony, "setAdminRole(address)");
+    setOwnerRoleCapability(colony, "setAdminRole(address)");
+  }
+
+  function setOwnerRoleCapability(address colony, bytes sig) private {
+    bytes4 functionSig = bytes4(keccak256(sig));
+    setRoleCapability(ownerRole, colony, functionSig, true);
+  }
+
+  function setAdminRoleCapability(address colony, bytes sig) private {
+    bytes4 functionSig = bytes4(keccak256(sig));
+    setRoleCapability(adminRole, colony, functionSig, true);
   }
 }

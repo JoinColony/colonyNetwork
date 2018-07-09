@@ -14,7 +14,8 @@
     "max-len": [2, { "code": 150, "ignoreComments": true }],
     "prettier/prettier": ["error", {"printWidth": 150}],
     "flowtype/require-valid-file-annotation": "off",
-    "import/named": "off"
+    "import/named": "off",
+    "no-console": "off"
   },
   "parserOptions": {
     "ecmaVersion": 2017

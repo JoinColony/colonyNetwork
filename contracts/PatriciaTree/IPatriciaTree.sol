@@ -30,7 +30,7 @@ contract IPatriciaTree {
 
   /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings`
   /// @return The calculated hash
-  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bytes32);
+  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public pure returns (bytes32);
 
   /// @notice Insert the `key`/`value`in the appropriate place in the tree
   function insert(bytes key, bytes value) public;

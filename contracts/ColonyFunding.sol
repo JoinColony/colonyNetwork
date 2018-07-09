@@ -18,14 +18,11 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/math.sol";
-import "./ERC20Extended.sol";
-import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 import "./ITokenLocking.sol";
 
 
-contract ColonyFunding is ColonyStorage, DSMath {
+contract ColonyFunding is ColonyStorage {
   event RewardPayoutCycleStarted(uint256 indexed id);
   event RewardPayoutCycleEnded(uint256 indexed id);
   event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
@@ -245,7 +242,13 @@ contract ColonyFunding is ColonyStorage, DSMath {
 
   function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, address, uint256) {
     RewardPayoutCycle memory rewardPayoutInfo = rewardPayoutCycles[_payoutId];
-    return (rewardPayoutInfo.reputationState, rewardPayoutInfo.totalTokens, rewardPayoutInfo.amount, rewardPayoutInfo.tokenAddress, rewardPayoutInfo.blockTimestamp);
+    return (
+      rewardPayoutInfo.reputationState,
+      rewardPayoutInfo.totalTokens,
+      rewardPayoutInfo.amount,
+      rewardPayoutInfo.tokenAddress,
+      rewardPayoutInfo.blockTimestamp
+    );
   }
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {

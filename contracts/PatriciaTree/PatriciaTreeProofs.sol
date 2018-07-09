@@ -5,6 +5,7 @@ pragma experimental "ABIEncoderV2";
 import {Data} from "./Data.sol";
 import {Bits} from "./Bits.sol";
 
+
 /// @title Functions related to checking Patricia Tree proofs
 /// @notice More info at: https://github.com/chriseth/patricia-trie
 contract PatriciaTreeProofs {
@@ -12,7 +13,9 @@ contract PatriciaTreeProofs {
   using Data for Data.Edge;
   using Data for Data.Label;
 
-  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view returns (bytes32) { // solium-disable-line security/no-assign-params
+  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public // solium-disable-line security/no-assign-params
+  pure returns (bytes32)
+  {
     Data.Label memory k = Data.Label(keccak256(key), 256);
     Data.Edge memory e;
     e.node = keccak256(value);

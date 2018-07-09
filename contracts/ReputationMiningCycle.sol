@@ -118,9 +118,12 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // Here, the minimum stake is 10**15.
     require(entryIndex <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
     require(entryIndex > 0);
-    if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {                // If this user has submitted before during this round...
-      require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash);       // ...require that they are submitting the same hash ...
-      require(nNodes == reputationHashSubmissions[msg.sender].nNodes);      // ...require that they are submitting the same number of nodes for that hash ...
+    // If this user has submitted before during this round...
+    if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
+      // ...require that they are submitting the same hash ...
+      require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash);
+      // ...require that they are submitting the same number of nodes for that hash ...
+      require(nNodes == reputationHashSubmissions[msg.sender].nNodes);
       require (submittedEntries[newHash][msg.sender][entryIndex] == false); // ... but not this exact entry
     }
     _;
@@ -143,13 +146,13 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     _;
   }
 
-  function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
-    return keccak256(abi.encodePacked(submitter, entryIndex, newHash));
-  }
-
   /// @notice Constructor for this contract.
   constructor() public {
     colonyNetworkAddress = msg.sender;
+  }
+
+  function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked(submitter, entryIndex, newHash));
   }
 
   function resetWindow() public {
@@ -216,7 +219,11 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   {
     // TODO: Require some amount of time to have passed (i.e. people have had a chance to submit other hashes)
     Submission storage submission = disputeRounds[roundNumber][0];
-    IColonyNetwork(colonyNetworkAddress).setReputationRootHash(submission.proposedNewRootHash, submission.nNodes, submittedHashes[submission.proposedNewRootHash][submission.nNodes]);
+    IColonyNetwork(colonyNetworkAddress).setReputationRootHash(
+      submission.proposedNewRootHash,
+      submission.nNodes,
+      submittedHashes[submission.proposedNewRootHash][submission.nNodes]
+    );
     selfdestruct(colonyNetworkAddress);
   }
 
@@ -296,12 +303,22 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
 
-  function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 branchMask, bytes32[] siblings) public {
+  function respondToBinarySearchForChallenge(
+    uint256 round,
+    uint256 idx,
+    bytes jhIntermediateValue,
+    uint256 branchMask,
+    bytes32[] siblings
+  ) public
+  {
     // TODO: Check this challenge is active.
     // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
     require(disputeRounds[round][idx].lowerBound!=disputeRounds[round][idx].upperBound);
 
-    uint256 targetNode = add(disputeRounds[round][idx].lowerBound, sub(disputeRounds[round][idx].upperBound, disputeRounds[round][idx].lowerBound) / 2);
+    uint256 targetNode = add(
+      disputeRounds[round][idx].lowerBound,
+      sub(disputeRounds[round][idx].upperBound, disputeRounds[round][idx].lowerBound) / 2
+    );
     bytes32 jrh = disputeRounds[round][idx].jrh;
 
     bytes memory targetNodeBytes = new bytes(32);
@@ -373,9 +390,6 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     if (u[U_REQUIRE_REPUTATION_CHECK]==1) {
       checkPreviousReputationInState(
         u,
-        _reputationKey,
-        reputationSiblings,
-        agreeStateReputationValue,
         agreeStateSiblings,
         previousNewReputationKey,
         previousNewReputationValue,
@@ -420,7 +434,15 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
   }
 
-  function appendReputationUpdateLog(address _user, int _amount, uint256 _skillId, address _colonyAddress, uint256 _nParents, uint256 _nChildren) public {
+  function appendReputationUpdateLog(
+    address _user,
+    int _amount,
+    uint256 _skillId,
+    address _colonyAddress,
+    uint256 _nParents,
+    uint256 _nChildren
+  ) public
+  {
     require(colonyNetworkAddress == msg.sender);
     uint reputationUpdateLogLength = reputationUpdateLog.length;
     uint nPreviousUpdates = 0;
@@ -520,7 +542,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
   }
 
-  function checkKey( uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal {
+  function checkKey(uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal view {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition (TODO: not implemented)
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[round][idx].lowerBound - 1;
@@ -547,7 +569,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
                                               // Not sure what the alternative would be anyway.
     }
     bool decayCalculation = false;
-    if (decayCalculation) {
+    if (decayCalculation) { // solium-disable-line no-empty-blocks, whitespace
     } else {
       require(expectedAddress == userAddress);
       require(logEntry.colony == colonyAddress);
@@ -555,7 +577,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
   }
 
-  function getExpectedSkillIdAndAddress( ReputationLogEntry storage logEntry, uint256 updateNumber ) internal returns (uint256 expectedSkillId, address expectedAddress) {
+  function getExpectedSkillIdAndAddress(ReputationLogEntry storage logEntry, uint256 updateNumber) internal view
+  returns (uint256 expectedSkillId, address expectedAddress)
+  {
     // Work out the expected userAddress and skillId for this updateNumber in this logEntry.
     if ((updateNumber - logEntry.nPreviousUpdates + 1) <= logEntry.nUpdates / 2 ) {
       // Then we're updating a colony-wide total, so we expect an address of 0x0
@@ -571,7 +595,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint nParents;
     (nParents, ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
     uint nChildUpdates;
-    if (logEntry.amount >= 0) {
+    if (logEntry.amount >= 0) { // solium-disable-line no-empty-blocks, whitespace
       // Then we have no child updates to consider
     } else {
       nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
@@ -588,9 +612,17 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
   }
 
-  function proveBeforeReputationValue(uint256[10] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes agreeStateReputationValue, bytes32[] agreeStateSiblings) internal {
+  function proveBeforeReputationValue(
+    uint256[10] u,
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes agreeStateReputationValue,
+    bytes32[] agreeStateSiblings
+  ) internal
+  {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
-    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before.
+    // We binary searched to the first disagreement, so the last agreement is the one before.
+    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
     uint256 reputationValue;
     assembly {
         reputationValue := mload(add(agreeStateReputationValue, 32))
@@ -624,7 +656,14 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // where we don't prove anything with merkle proofs in this whole dance is here.
   }
 
-  function proveAfterReputationValue(uint256[10] u, bytes _reputationKey, bytes32[] reputationSiblings, bytes disagreeStateReputationValue, bytes32[] disagreeStateSiblings) internal {
+  function proveAfterReputationValue(
+    uint256[10] u,
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes disagreeStateReputationValue,
+    bytes32[] disagreeStateSiblings
+  ) internal view
+  {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     uint256 firstDisagreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound;
     bytes32 reputationRootHash = getImpliedRoot(_reputationKey, disagreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
@@ -644,11 +683,16 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     require(jrh==impliedRoot, "colony-invalid-after-reputation-proof");
   }
 
-  function performReputationCalculation(uint256[10] u, bytes agreeStateReputationValueBytes, bytes disagreeStateReputationValueBytes, bytes previousNewReputationValueBytes) internal {
+  function performReputationCalculation(
+    uint256[10] u,
+    bytes agreeStateReputationValueBytes,
+    bytes disagreeStateReputationValueBytes,
+    bytes previousNewReputationValueBytes
+  ) internal view
+  {
     // TODO: Possibility of decay calculation
     // TODO: Possibility of reputation loss - child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is of the user's reputation in skill given by logEntry.skillId
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
-    int256 amount;
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
     uint256 agreeStateReputationUID;
@@ -693,18 +737,21 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
 
   function checkPreviousReputationInState(
     uint256[10] u,
-    bytes _reputationKey,
-    bytes32[] reputationSiblings,
-    bytes agreeStateReputationValue,
     bytes32[] agreeStateSiblings,
     bytes previousNewReputationKey,
     bytes previousNewReputationValue,
-    bytes32[] previousNewReputationSiblings)
-  internal
+    bytes32[] previousNewReputationSiblings
+    ) internal view
   {
-    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1; // We binary searched to the first disagreement, so the last agreement is the one before
+    // We binary searched to the first disagreement, so the last agreement is the one before
+    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes32 reputationRootHash = getImpliedRoot(previousNewReputationKey, previousNewReputationValue, u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK], previousNewReputationSiblings);
+    bytes32 reputationRootHash = getImpliedRoot(
+      previousNewReputationKey,
+      previousNewReputationValue,
+      u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK],
+      previousNewReputationSiblings
+    );
     bytes memory jhLeafValue = new bytes(64);
     bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
@@ -727,7 +774,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
   }
 
-  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1) internal {
+  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1) internal view {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();

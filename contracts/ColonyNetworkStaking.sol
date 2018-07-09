@@ -18,17 +18,11 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
-import "./Authority.sol";
-import "./IColony.sol";
-import "./EtherRouter.sol";
-import "./ERC20Extended.sol";
 import "./ColonyNetworkStorage.sol";
-import "./IColonyNetwork.sol";
 import "./ReputationMiningCycle.sol";
 
 
-contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
+contract ColonyNetworkStaking is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
@@ -127,7 +121,8 @@ contract ColonyNetworkStaking is ColonyNetworkStorage, DSMath {
 
     IColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
 
-    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward, rootGlobalSkillId + 2); // This gives them reputation in the next update cycle.
+    // This gives them reputation in the next update cycle.
+    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward, rootGlobalSkillId + 2);
 
     for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.
