@@ -14,8 +14,7 @@ contract PatriciaTreeProofs {
   using Data for Data.Label;
 
   function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public // solium-disable-line security/no-assign-params
-  view
-  returns (bytes32)
+  pure returns (bytes32)
   {
     Data.Label memory k = Data.Label(keccak256(key), 256);
     Data.Edge memory e;

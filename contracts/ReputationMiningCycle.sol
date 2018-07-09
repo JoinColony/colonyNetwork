@@ -569,7 +569,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
                                               // Not sure what the alternative would be anyway.
     }
     bool decayCalculation = false;
-    if (decayCalculation) {
+    if (decayCalculation) { // solium-disable-line no-empty-blocks, whitespace
     } else {
       require(expectedAddress == userAddress);
       require(logEntry.colony == colonyAddress);
@@ -577,9 +577,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
   }
 
-  function getExpectedSkillIdAndAddress(ReputationLogEntry storage logEntry, uint256 updateNumber)
-  internal
-  view
+  function getExpectedSkillIdAndAddress(ReputationLogEntry storage logEntry, uint256 updateNumber) internal view
   returns (uint256 expectedSkillId, address expectedAddress)
   {
     // Work out the expected userAddress and skillId for this updateNumber in this logEntry.
@@ -597,7 +595,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint nParents;
     (nParents, ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
     uint nChildUpdates;
-    if (logEntry.amount >= 0) {
+    if (logEntry.amount >= 0) { // solium-disable-line no-empty-blocks, whitespace
       // Then we have no child updates to consider
     } else {
       nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
