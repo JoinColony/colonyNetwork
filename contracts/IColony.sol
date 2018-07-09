@@ -438,8 +438,8 @@ contract IColony {
 
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
-  /// @param _token Addess of the token used for reward payout
-  function startNextRewardPayout(address _token) public returns (uint256);
+  /// @param _token Address of the token used for reward payout
+  function startNextRewardPayout(address _token) public;
 
   /// @notice Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation
   /// which will be proven via Merkle proof inside this function.
