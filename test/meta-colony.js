@@ -262,7 +262,8 @@ contract("Meta Colony", accounts => {
 
   describe("when adding domains in the meta colony", () => {
     it("should be able to add new domains as children to the root domain", async () => {
-      await metaColony.addDomain(2);
+      await metaColony.addDomain(1);
+
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 4);
       const domainCount = await metaColony.getDomainCount.call();
@@ -282,9 +283,9 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChild.toNumber(), 4);
     });
 
-    it("should NOT be able to add a child local skill more than one level from the root local skill", async () => {
-      await metaColony.addDomain(2);
-      await checkErrorRevert(metaColony.addDomain(4));
+    it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
+      await metaColony.addDomain(1);
+      await checkErrorRevert(metaColony.addDomain(2));
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 4);
@@ -305,13 +306,13 @@ contract("Meta Colony", accounts => {
     });
 
     it("someone who does not have owner role should not be able to add domains", async () => {
-      await checkErrorRevert(colony.addDomain(3, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colony.addDomain(1, { from: OTHER_ACCOUNT }));
     });
 
     it("should be able to add new domains as children to the root domain", async () => {
-      await colony.addDomain(4);
-      await colony.addDomain(4);
-      await colony.addDomain(4);
+      await colony.addDomain(1);
+      await colony.addDomain(1);
+      await colony.addDomain(1);
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 7);
@@ -342,25 +343,6 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChild3.toNumber(), 7);
     });
 
-    it("should NOT be able to add a child local skill more than one level from the root local skill", async () => {
-      await colony.addDomain(4);
-      await checkErrorRevert(colony.addDomain(5));
-
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 5);
-      const domainCount = await colony.getDomainCount.call();
-      assert.equal(domainCount.toNumber(), 2);
-    });
-
-    it("should NOT be able to add a child local skill to a global skill parent", async () => {
-      await checkErrorRevert(colony.addDomain(1));
-
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 4);
-      const domainCount = await colony.getDomainCount.call();
-      assert.equal(domainCount.toNumber(), 1);
-    });
-
     it("should NOT be able to add a new local skill by anyone but a Colony", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(2, false));
 
@@ -369,10 +351,13 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a new root local skill", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(0, false));
+      const skillCountBefore = await colonyNetwork.getSkillCount.call();
+      const rootDomain = await colony.getDomain(1);
+      const rootLocalSkillId = rootDomain[0].toNumber();
+      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false));
+      const skillCountAfter = await colonyNetwork.getSkillCount.call();
 
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 4);
+      assert.equal(skillCountBefore.toNumber(), skillCountAfter.toNumber());
     });
   });
 
@@ -387,8 +372,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should be able to set domain on task", async () => {
-      const colonyRootDomain = await colony.getDomain(1);
-      await colony.addDomain(colonyRootDomain[0].toString());
+      await colony.addDomain(1);
       const taskId = await makeTask({ colony });
 
       await colony.setTaskDomain(taskId, 2);
@@ -398,9 +382,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT allow a non-manager to set domain on task", async () => {
-      const colonyRootDomain = await colony.getDomain(1);
-      await colony.addDomain(colonyRootDomain[0].toString());
-
+      await colony.addDomain(1);
       await makeTask({ colony });
       await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }));
       const task = await colony.getTask.call(1);

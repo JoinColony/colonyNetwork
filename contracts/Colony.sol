@@ -117,19 +117,18 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addSkill(_parentSkillId, true);
   }
 
-  function addDomain(uint256 _parentSkillId) public
+  function addDomain(uint256 _parentDomainId) public
+  domainExists(_parentDomainId)
   auth
-  localSkill(_parentSkillId)
   {
-    // Note: remove that when we start allowing more domain hierarchy levels
-    // Instead check that the parent skill id belongs to this colony own domain
-    // Get the local skill id of the root domain
-    uint256 rootDomainSkillId = domains[1].skillId;
-    require(_parentSkillId == rootDomainSkillId, "colony-parent-skill-not-root");
+    // Note: Remove when we want to allow more domain hierarchy levels
+    require(_parentDomainId == 1, "colony-parent-skill-not-root");
+
+    uint256 parentSkillId = domains[_parentDomainId].skillId;
 
     // Setup new local skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    uint256 newLocalSkill = colonyNetwork.addSkill(_parentSkillId, false);
+    uint256 newLocalSkill = colonyNetwork.addSkill(parentSkillId, false);
 
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);

@@ -261,8 +261,7 @@ contract("Colony", addresses => {
 
   describe("when adding domains", () => {
     it("should log DomainAdded and PotAdded events", async () => {
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      await expectAllEvents(colony.addDomain(skillCount.toNumber()), ["DomainAdded", "PotAdded"]);
+      await expectAllEvents(colony.addDomain(1), ["DomainAdded", "PotAdded"]);
     });
   });
 
@@ -304,8 +303,7 @@ contract("Colony", addresses => {
     });
 
     it("should set the task domain correctly", async () => {
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      await colony.addDomain(skillCount.toNumber());
+      await colony.addDomain(1);
       await makeTask({ colony, domainId: 2 });
       const task = await colony.getTask.call(1);
       assert.equal(task[8].toNumber(), 2);
@@ -1247,11 +1245,7 @@ contract("Colony", addresses => {
 
     it("should log a TaskDomainChanged event, if the task domain gets changed", async () => {
       const taskId = await makeTask({ colony });
-
-      // Create a domain, change task's domain
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      await colony.addDomain(skillCount.toNumber());
-
+      await colony.addDomain(1);
       await expectEvent(colony.setTaskDomain(taskId, 2), "TaskDomainChanged");
     });
 
