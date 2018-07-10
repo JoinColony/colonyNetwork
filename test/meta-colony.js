@@ -351,10 +351,13 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a new root local skill", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(0, false));
+      const skillCountBefore = await colonyNetwork.getSkillCount.call();
+      const rootDomain = await colony.getDomain(1);
+      const rootLocalSkillId = rootDomain[0].toNumber();
+      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false));
+      const skillCountAfter = await colonyNetwork.getSkillCount.call();
 
-      const skillCount = await colonyNetwork.getSkillCount.call();
-      assert.equal(skillCount.toNumber(), 4);
+      assert.equal(skillCountBefore.toNumber(), skillCountAfter.toNumber());
     });
   });
 
