@@ -43,7 +43,8 @@ contract IReputationMiningCycle {
   /// @param submitter The address that submitted the hash
   /// @param entryIndex The index of the entry that they used to submit the hash
   /// @param newHash The hash that they submitted
-  function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32);
+  /// @return entryHash The hash for the corresponding entry
+  function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32 entryHash);
 
   /// @notice Resets the timestamp that the submission window opens to `now`
   /// @dev only allowed to be called by ColonyNetwork
@@ -149,7 +150,7 @@ contract IReputationMiningCycle {
 
   /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract
   /// @return nUpdates
-  function getReputationUpdateLogLength() public view returns (uint);
+  function getReputationUpdateLogLength() public view returns (uint nUpdates);
 
   /// @notice Get the `ReputationLogEntry` at index `_id`
   /// @param _id The reputation log members array index of the entry to get
@@ -159,7 +160,7 @@ contract IReputationMiningCycle {
   /// @return colony The address of the colony the reputation is being affected in
   /// @return nUpdates The number of updates this log entry implies (including updates to parents, children and colony-wide totals thereof)
   /// @return nPreviousUpdates The number of updates all previous entries in the log imply (including reputation decays, updates to parents, children, and colony-wide totals thereof)
-  function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int256, uint256, address, uint256, uint256);
+  function getReputationUpdateLogEntry(uint256 _id) public view returns (address user, int256 amount, uint256 skillId, address colony, uint256 nUpdates, uint256 nPreviousUpdates);
 
   /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
   /// @param stakers The array of stakers addresses to receive the reward.
@@ -170,5 +171,5 @@ contract IReputationMiningCycle {
   /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public;
 
-  function reputationMiningWindowOpenTimestamp() public view returns (uint);
+  function reputationMiningWindowOpenTimestamp() public view returns (uint timestamp);
 }
