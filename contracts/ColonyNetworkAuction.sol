@@ -25,10 +25,14 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
   event AuctionCreated(address auction, address token, uint256 quantity);
 
   function startTokenAuction(address _token) public {
+    uint lastAuctionTimestamp = recentAuctions[_token];
+    require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
     address clny = IColony(metaColony).getToken();
     DutchAuction auction = new DutchAuction(clny, _token);
     uint availableTokens = ERC20Extended(_token).balanceOf(this);
     ERC20Extended(_token).transfer(auction, availableTokens);
+    auction.start();
+    recentAuctions[_token] = now;
     emit AuctionCreated(address(auction), _token, availableTokens);
   }
 }

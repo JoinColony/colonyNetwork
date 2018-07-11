@@ -70,4 +70,7 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   uint256 reputationRootHashNNodes;
   // Mapping containing how much has been staked by each user
   mapping (address => uint) stakedBalances;
+
+  // Mapping containing the last auction start timestamp for a token address
+  mapping (address => uint) recentAuctions;
 }
