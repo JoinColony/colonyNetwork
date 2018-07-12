@@ -27,7 +27,7 @@ const contractLoader = new TruffleLoader({
 
 const useJsTree = true;
 
-contract("ColonyNetworkStaking", accounts => {
+contract("ColonyNetworkMining", accounts => {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
 

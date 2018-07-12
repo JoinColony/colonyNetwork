@@ -23,7 +23,7 @@ import "./ReputationMiningCycle.sol";
 import "./ERC20Extended.sol";
 
 
-contract ColonyNetworkStaking is ColonyNetworkStorage {
+contract ColonyNetworkMining is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
