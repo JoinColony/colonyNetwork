@@ -2122,8 +2122,8 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        27,
-        new BN("-1000000000000000000000000000000000000000000")
+        29,
+        new BN("-10").pow(new BN("75")).muln(2)
       );
       await badClient.initialise(colonyNetwork.address);
 
@@ -2132,22 +2132,37 @@ contract("ColonyNetworkMining", accounts => {
       let repCycle = ReputationMiningCycle.at(addr);
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
 
+      await goodClient.insert(
+        metaColony.address,
+        rootGlobalSkill,
+        "0x0000000000000000000000000000000000000000",
+        new BN("2").pow(new BN("256")).subn(2),
+        0
+      );
       await goodClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
+      await badClient.insert(
+        metaColony.address,
+        rootGlobalSkill,
+        "0x0000000000000000000000000000000000000000",
+        new BN("2").pow(new BN("256")).subn(2),
+        0
+      );
       await badClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
       const rootHash = await goodClient.getRootHash();
+      await fundColonyWithTokens(metaColony, clny, new BN("4").mul(new BN("10").pow(new BN("75"))).toString());
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
         worker: MAIN_ACCOUNT,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000000,
-        workerPayout: 1000000000000,
+        managerPayout: new BN("10").pow(new BN("75")).toString(),
+        evaluatorPayout: new BN("10").pow(new BN("75")).toString(),
+        workerPayout: new BN("10").pow(new BN("75")).toString(),
         managerRating: 3,
         workerRating: 3
       });
       await metaColony.finalizeTask(taskId);
 
-      await repCycle.submitRootHash(rootHash, 1, 10);
+      await repCycle.submitRootHash(rootHash, 2, 10);
       await repCycle.confirmNewHash(0);
       await forwardTime(3600, this);
 

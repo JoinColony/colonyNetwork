@@ -642,7 +642,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   function checkKeyLogEntry(uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal {
-    uint256 updateNumber = disputeRounds[round][idx].lowerBound - 1;
+    uint256 updateNumber = disputeRounds[round][idx].lowerBound - 1 - IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
 
     ReputationLogEntry storage logEntry = reputationUpdateLog[logEntryNumber];
 
@@ -892,8 +892,11 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // TODO: Account for decay calculations
     uint256 nLogEntries = reputationUpdateLog.length;
     // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
-    // of updates that log entry implies by itself.
-    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates + reputationUpdateLog[nLogEntries-1].nPreviousUpdates;
+    // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
+    // TODO: we're calling this twice during submitJRH. Should only need to call once.
+    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
+
+    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates + reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;
