@@ -4,12 +4,14 @@
 const assert = require("assert");
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
+const ITokenLocking = artifacts.require("./ITokenLocking");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Token = artifacts.require("./Token");
 
 module.exports = deployer => {
   // Create the meta colony
   let colonyNetwork;
+  let tokenLocking;
   let token;
   deployer
     .then(() => EtherRouter.deployed())
@@ -25,8 +27,12 @@ module.exports = deployer => {
     // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
     // but is useful when playing around with the network to get reputation mining going.
     .then(() => colonyNetwork.createMetaColony(token.address))
-    .then(() => token.approve(colonyNetwork.address, "10000000000000000"))
-    .then(() => colonyNetwork.deposit("10000000000000000"))
+    .then(() => colonyNetwork.getTokenLocking())
+    .then(address => {
+      tokenLocking = address;
+      return token.approve(tokenLocking, "10000000000000000");
+    })
+    .then(() => ITokenLocking.at(tokenLocking).deposit(token.address, "10000000000000000"))
     .then(() => colonyNetwork.startNextCycle())
     .then(() => colonyNetwork.getSkillCount.call())
     .then(skillCount => {

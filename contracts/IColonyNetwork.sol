@@ -146,22 +146,6 @@ contract IColonyNetwork {
   /// @return resolverAddress Address of the `Resolver` contract
   function getColonyVersionResolver(uint256 _version) public view returns (address resolverAddress);
 
-  /// @notice Allow a reputation miner to stake an `_amount` of CLNY tokens, which is required
-  /// before they can submit a new reputation root hash via `ReputationMiningCycle.submitNewHash`
-  /// @dev The Colony Network has to be authorised to transfer the `_amount` on behalf of the user prior to this call
-  /// @param _amount Number of CLNY tokens to stake
-  function deposit(uint256 _amount) public;
-
-  /// @notice Allow a user who has staked CLNY tokens to withdraw them
-  /// @dev Errors if the user has submitted a new reputation root hash or backed one someone else submitted in the current mining cycle
-  /// @param amount CLNY tokens amount to withdraw
-  function withdraw(uint256 amount) public;
-
-  /// @notice Get the amount of staked CLNY tokens for user `_user`
-  /// @param _user Address of the user whose balance we want to get
-  /// @return balance User stake balance
-  function getStakedBalance(address _user) public view returns (uint256 balance);
-
   /// @notice Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
   /// @param newHash The reputation root hash
   /// @param newNNodes The updated nodes count value
@@ -171,11 +155,6 @@ contract IColonyNetwork {
   /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`
   function startNextCycle() public;
-
-  /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect
-  /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
-  /// @param stakers Array of the addresses of stakers to punish
-  function punishStakers(address[] stakers) public;
 
   /// @notice Get the root hash of the current reputation state tree
   /// @return rootHash bytes32 The current Reputation Root Hash

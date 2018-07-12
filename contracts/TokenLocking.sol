@@ -2,6 +2,8 @@ pragma solidity ^0.4.23;
 
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
+import "./IColony.sol";
+import "./IReputationMiningCycle.sol";
 import "./TokenLockingStorage.sol";
 import "../lib/dappsys/math.sol";
 
@@ -9,6 +11,11 @@ import "../lib/dappsys/math.sol";
 contract TokenLocking is TokenLockingStorage, DSMath {
   modifier onlyColony() {
     require(IColonyNetwork(colonyNetwork).isColony(msg.sender), "token-locking-sender-not-colony");
+    _;
+  }
+
+  modifier onlyReputationMiningCycle() {
+    require(msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true));
     _;
   }
 
@@ -59,9 +66,30 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   {
     require(_amount > 0, "token-locking-invalid-amount");
 
+    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    if (_token == clnyToken) {
+      bytes32 submittedHash;
+      (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).reputationHashSubmissions(msg.sender);
+      require(submittedHash == 0x0);
+    }
+
     userLocks[_token][msg.sender].balance = sub(userLocks[_token][msg.sender].balance, _amount);
 
     require(ERC20Extended(_token).transfer(msg.sender, _amount), "token-locking-transfer-failed");
+  }
+
+  function punishStakers(address[] _users) public onlyReputationMiningCycle {
+    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
+    // it in ReputationMiningCycle.invalidateHash;
+    for (uint256 i = 0; i < _users.length; i++) {
+      // This is pretty harsh! Are we happy with this?
+      // Alternative: lose more than they would have gained for backing the right hash.
+      userLocks[clnyToken][_users[i]].balance = 0;
+      // TODO: Where do these staked tokens go? Maybe split between the person who did the 'invalidate' transaction
+      // and the colony network?
+      // TODO: Lose rep?
+    }
   }
 
   function getTotalLockCount(address _token) public view returns (uint256) {

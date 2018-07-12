@@ -21,6 +21,8 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/math.sol";
 import "./IColonyNetwork.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
+import "./ITokenLocking.sol";
+import "./IColony.sol";
 
 
 // TODO: Can we handle all possible disputes regarding the very first hash that should be set?
@@ -37,6 +39,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint256 nPreviousUpdates;
   }
   address colonyNetworkAddress;
+  address tokenLockingAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
   mapping (address => Submission) public reputationHashSubmissions;
@@ -116,7 +119,11 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
     // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
     // Here, the minimum stake is 10**15.
-    require(entryIndex <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    address clnyToken = IColony(colonyNetwork.getMetaColony()).getToken();
+    uint256 balance;
+    (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyToken, msg.sender);
+    require(entryIndex <= balance / 10**15);
     require(entryIndex > 0);
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
@@ -147,8 +154,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   /// @notice Constructor for this contract.
-  constructor() public {
+  constructor(address _tokenLockingAddress) public {
     colonyNetworkAddress = msg.sender;
+    tokenLockingAddress = _tokenLockingAddress;
   }
 
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
@@ -291,14 +299,18 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
         // Our opponent completed the same number of challenge rounds, and both have now timed out.
         nInvalidatedHashes += 2;
         // Punish the people who proposed our opponent
-        IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes]);
+        ITokenLocking(tokenLockingAddress).punishStakers(
+          submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes]
+        );
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
       nHashesCompletedChallengeRound[round] += 2;
 
       // Punish the people who proposed the hash that was rejected
-      IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes]);
+      ITokenLocking(tokenLockingAddress).punishStakers(
+        submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes]
+      );
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }

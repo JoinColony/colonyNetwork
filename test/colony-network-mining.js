@@ -17,6 +17,7 @@ import MaliciousReputationMinerWrongNewestReputation from "../packages/reputatio
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
@@ -32,6 +33,7 @@ contract("ColonyNetworkStaking", accounts => {
 
   let metaColony;
   let colonyNetwork;
+  let tokenLocking;
   let clny;
   let goodClient;
   let badClient;
@@ -41,6 +43,8 @@ contract("ColonyNetworkStaking", accounts => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+    tokenLocking = ITokenLocking.at(tokenLockingAddress);
     const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     metaColony = IColony.at(metaColonyAddress);
     clny = await Token.new("Colony Network Token", "CLNY", 18);
@@ -80,8 +84,9 @@ contract("ColonyNetworkStaking", accounts => {
 
     // Finally, we discard the staked tokens we used to get to this point so that `MAIN_ACCOUNT` has no
     // tokens staked, just like all other accounts, at the start of each test.
-    const stakedBalance = await colonyNetwork.getStakedBalance.call(MAIN_ACCOUNT);
-    await colonyNetwork.withdraw(stakedBalance.toNumber());
+    const info = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
+    const stakedBalance = info[1];
+    await tokenLocking.withdraw(clny.address, stakedBalance.toNumber());
     const userBalance = await clny.balanceOf.call(MAIN_ACCOUNT);
     await clny.transfer(0x0, userBalance, { from: MAIN_ACCOUNT });
   });
@@ -181,9 +186,10 @@ contract("ColonyNetworkStaking", accounts => {
     // Actually do the withdrawal.
     await Promise.all(
       accounts.map(async address => {
-        const stakedBalance = await colonyNetwork.getStakedBalance.call(address);
+        const info = await tokenLocking.getUserLock(clny.address, address);
+        const stakedBalance = info[1];
         if (stakedBalance.toNumber() > 0) {
-          await colonyNetwork.withdraw(stakedBalance.toNumber(), { from: address });
+          await tokenLocking.withdraw(clny.address, stakedBalance.toNumber(), { from: address });
         }
         const userBalance = await clny.balanceOf.call(address);
         return clny.transfer(0x0, userBalance, { from: address });
@@ -194,36 +200,40 @@ contract("ColonyNetworkStaking", accounts => {
   describe("Basic Functionality - no client used", () => {
     it("should allow miners to stake CLNY", async () => {
       await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, 9000);
-      await clny.approve(colonyNetwork.address, 5000, { from: OTHER_ACCOUNT });
-      await colonyNetwork.deposit(5000, { from: OTHER_ACCOUNT });
+      await clny.approve(tokenLocking.address, 5000, { from: OTHER_ACCOUNT });
+      await tokenLocking.deposit(clny.address, 5000, { from: OTHER_ACCOUNT });
       const userBalance = await clny.balanceOf.call(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 4000);
-      const stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
+      const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
+      const stakedBalance = info[1];
       assert.equal(stakedBalance.toNumber(), 5000);
     });
 
     it("should allow miners to withdraw staked CLNY", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, 5000);
-      await colonyNetwork.withdraw(5000, { from: OTHER_ACCOUNT });
-      const stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
+      await tokenLocking.withdraw(clny.address, 5000, { from: OTHER_ACCOUNT });
+      const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
+      const stakedBalance = info[1];
       assert.equal(stakedBalance.toNumber(), 0);
     });
 
     it("should not allow miners to deposit more CLNY than they have", async () => {
       await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, 9000);
-      await clny.approve(colonyNetwork.address, 10000, { from: OTHER_ACCOUNT });
-      await checkErrorRevert(colonyNetwork.deposit(10000, { from: OTHER_ACCOUNT }));
+      await clny.approve(tokenLocking.address, 10000, { from: OTHER_ACCOUNT });
+      await checkErrorRevert(tokenLocking.deposit(clny.address, 10000, { from: OTHER_ACCOUNT }));
       const userBalance = await clny.balanceOf.call(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 9000);
-      const stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
+      const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
+      const stakedBalance = info[1];
       assert.equal(stakedBalance.toNumber(), 0);
     });
 
     it("should not allow miners to withdraw more CLNY than they staked, even if enough has been staked total", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, 9000);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, 9000);
-      await checkErrorRevert(colonyNetwork.withdraw(10000, { from: OTHER_ACCOUNT }));
-      const stakedBalance = await colonyNetwork.getStakedBalance.call(OTHER_ACCOUNT);
+      await checkErrorRevert(tokenLocking.withdraw(clny.address, 10000, { from: OTHER_ACCOUNT }));
+      const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
+      const stakedBalance = info[1];
       assert.equal(stakedBalance.toNumber(), 9000);
       const userBalance = await clny.balanceOf.call(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 0);
@@ -256,9 +266,9 @@ contract("ColonyNetworkStaking", accounts => {
       await forwardTime(3600, this);
       const repCycle = ReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
-      let stakedBalance = await colonyNetwork.getStakedBalance.call(MAIN_ACCOUNT);
-      await checkErrorRevert(colonyNetwork.withdraw(stakedBalance.toNumber(), { from: MAIN_ACCOUNT }));
-      stakedBalance = await colonyNetwork.getStakedBalance.call(MAIN_ACCOUNT);
+      let [, stakedBalance] = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
+      await checkErrorRevert(tokenLocking.withdraw(clny.address, stakedBalance.toNumber(), { from: MAIN_ACCOUNT }));
+      [, stakedBalance] = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
       assert(stakedBalance.equals("1000000000000000000"));
     });
 
@@ -603,9 +613,9 @@ contract("ColonyNetworkStaking", accounts => {
       assert(nSubmittedHashes.equals(1));
       await repCycle.confirmNewHash(0);
 
-      // Check that they have had their staked balance increase
-      const balance1Updated = await colonyNetwork.getStakedBalance(MAIN_ACCOUNT);
-      assert.equal(balance1Updated.toString(), new BN("3").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
+      // Check that they received the reward
+      const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
+      assert.equal(balance1Updated.toString(), new BN("2").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
 
       addr = await colonyNetwork.getReputationMiningCycle.call(false);
       repCycle = ReputationMiningCycle.at(addr);
@@ -678,9 +688,9 @@ contract("ColonyNetworkStaking", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
 
-      let balance = await colonyNetwork.getStakedBalance(OTHER_ACCOUNT);
+      let [, balance] = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
       assert(balance.equals("1000000000000000000"));
-      let balance2 = await colonyNetwork.getStakedBalance(accounts[2]);
+      let [, balance2] = await tokenLocking.getUserLock(clny.address, accounts[2]);
       assert(balance.equals("1000000000000000000"));
 
       await forwardTime(3600, this);
@@ -702,9 +712,9 @@ contract("ColonyNetworkStaking", accounts => {
       await badClient2.submitRootHash();
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
-      balance = await colonyNetwork.getStakedBalance(OTHER_ACCOUNT);
+      [, balance] = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
       assert.equal(balance.toString(), "0", "Account was not punished properly");
-      balance2 = await colonyNetwork.getStakedBalance(accounts[2]);
+      [, balance2] = await tokenLocking.getUserLock(clny.address, accounts[2]);
       assert.equal(balance2.toString(), "0", "Account was not punished properly");
     });
 
@@ -721,10 +731,10 @@ contract("ColonyNetworkStaking", accounts => {
       await repCycle.confirmNewHash(0);
 
       // Check that they have had their staked balance increase
-      const balance1Updated = await colonyNetwork.getStakedBalance(MAIN_ACCOUNT);
-      assert.equal(balance1Updated.toString(), new BN("2").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
-      const balance2Updated = await colonyNetwork.getStakedBalance(OTHER_ACCOUNT);
-      assert.equal(balance2Updated.toString(), new BN("2").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
+      const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
+      assert.equal(balance1Updated.toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
+      const balance2Updated = await clny.balanceOf(OTHER_ACCOUNT);
+      assert.equal(balance2Updated.toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
 
       addr = await colonyNetwork.getReputationMiningCycle.call(false);
       repCycle = ReputationMiningCycle.at(addr);
@@ -754,10 +764,6 @@ contract("ColonyNetworkStaking", accounts => {
   describe("Function permissions", () => {
     it('should not allow "setReputationRootHash" to be called from an account that is not not reputationMiningCycle', async () => {
       await checkErrorRevert(colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]));
-    });
-
-    it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(colonyNetwork.punishStakers([accounts[0], accounts[1]]));
     });
 
     it('should not allow "startNextCycle" to be called if a cycle is in progress', async () => {
