@@ -6,6 +6,8 @@ const ColonyTask = artifacts.require("./ColonyTask");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
+const ColonyNetworkRegistrar = artifacts.require("./ColonyNetworkRegistrar");
+const ENSRegistry = artifacts.require("./ENSRegistry");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
@@ -22,6 +24,8 @@ module.exports = (deployer, network) => {
   deployer.deploy([ColonyNetwork]);
   deployer.deploy([ColonyNetworkMining]);
   deployer.deploy([ColonyNetworkAuction]);
+  deployer.deploy([ColonyNetworkRegistrar]);
+  deployer.deploy([ENSRegistry]);
   deployer.deploy([EtherRouter]);
   deployer.deploy([Resolver]);
 };

@@ -109,6 +109,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token.transfer(colonyNetworkAddress, _wad);
   }
 
+  function registerColonyLabel(bytes32 _subnode) public auth {
+    IColonyNetwork(colonyNetworkAddress).registerColonyLabel(_subnode);
+  }
+
   function addGlobalSkill(uint _parentSkillId) public
   auth
   returns (uint256)
