@@ -43,14 +43,16 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function startNextCycle() public {
+    address clnyToken = IColony(metaColony).getToken();
+    require(clnyToken != 0x0);
     require(activeReputationMiningCycle == 0x0);
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     if (activeReputationMiningCycle == 0x0) {
       // This will only be true the very first time that this is run, to kick off the whole reputation mining process
-      activeReputationMiningCycle = new ReputationMiningCycle(tokenLocking, IColony(metaColony).getToken());
+      activeReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
     }
     ReputationMiningCycle(activeReputationMiningCycle).resetWindow();
-    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, IColony(metaColony).getToken());
+    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
   }
 
   function getReputationMiningCycle(bool _active) public view returns(address) {
@@ -83,7 +85,6 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
     for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.
-      // We reinvest here as it's much easier (gas-wise).
       ERC20Extended(IColony(metaColony).getToken()).transfer(stakers[i], reward);
     }
   }

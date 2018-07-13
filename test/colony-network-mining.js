@@ -730,7 +730,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.submitRootHash("0x12345678", 10, 8, { from: OTHER_ACCOUNT });
       await repCycle.confirmNewHash(0);
 
-      // Check that they have had their staked balance increase
+      // Check that they have had their balance increase
       const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
       assert.equal(balance1Updated.toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
       const balance2Updated = await clny.balanceOf(OTHER_ACCOUNT);
