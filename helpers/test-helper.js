@@ -311,7 +311,7 @@ export function makeReputationKey(colonyAddress, skill, accountAddress = undefin
 }
 
 // Note: value can be anything with a `.toString()` method -- a string, number, or BN.
-export function makeReputationValue(value, repuationId) {
+export function makeReputationValue(value, reputationId) {
   return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(repuationId)).toString(16, 64)}`; // eslint-disable-line
 }
 
