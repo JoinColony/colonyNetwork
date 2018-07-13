@@ -22,7 +22,6 @@ import "../lib/dappsys/math.sol";
 import "./IColonyNetwork.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
 import "./ITokenLocking.sol";
-import "./IColony.sol";
 
 
 // TODO: Can we handle all possible disputes regarding the very first hash that should be set?
@@ -40,6 +39,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
   address colonyNetworkAddress;
   address tokenLockingAddress;
+  address clnyTokenAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
   mapping (address => Submission) public reputationHashSubmissions;
@@ -119,10 +119,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
     // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
     // Here, the minimum stake is 10**15.
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    address clnyToken = IColony(colonyNetwork.getMetaColony()).getToken();
     uint256 balance;
-    (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyToken, msg.sender);
+    (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
     require(entryIndex <= balance / 10**15);
     require(entryIndex > 0);
     // If this user has submitted before during this round...
@@ -154,9 +152,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   /// @notice Constructor for this contract.
-  constructor(address _tokenLockingAddress) public {
+  constructor(address _tokenLockingAddress, address _clnyTokenAddress) public {
     colonyNetworkAddress = msg.sender;
     tokenLockingAddress = _tokenLockingAddress;
+    clnyTokenAddress = _clnyTokenAddress;
   }
 
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {

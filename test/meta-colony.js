@@ -38,12 +38,13 @@ contract("Meta Colony", accounts => {
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
-    await colonyNetwork.startNextCycle();
 
     metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(metaColonyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     metaColony = await IColony.at(metaColonyAddress);
+
+    await colonyNetwork.startNextCycle();
   });
 
   describe("when working with ERC20 properties of Meta Colony token", () => {

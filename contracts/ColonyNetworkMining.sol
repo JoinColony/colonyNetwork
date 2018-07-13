@@ -47,10 +47,10 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     if (activeReputationMiningCycle == 0x0) {
       // This will only be true the very first time that this is run, to kick off the whole reputation mining process
-      activeReputationMiningCycle = new ReputationMiningCycle(tokenLocking);
+      activeReputationMiningCycle = new ReputationMiningCycle(tokenLocking, IColony(metaColony).getToken());
     }
     ReputationMiningCycle(activeReputationMiningCycle).resetWindow();
-    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking);
+    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, IColony(metaColony).getToken());
   }
 
   function getReputationMiningCycle(bool _active) public view returns(address) {
