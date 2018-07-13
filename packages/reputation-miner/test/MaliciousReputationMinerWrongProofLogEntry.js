@@ -22,7 +22,7 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
     // console.log('get justification tree');
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-    const logEntryNumber = await this.getLogEntryNumberForUpdateNumber(lastAgreeIdx.toString());
+    const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
     logEntryNumber.iadd(this.amountToFalsify);
     const tx = await repCycle.respondToChallenge(
       [

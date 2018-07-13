@@ -191,7 +191,6 @@ class ReputationMiner {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
-    let newestReputationProof;
     interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
     jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     let logEntry;
@@ -203,7 +202,7 @@ class ReputationMiner {
       logEntry = [undefined, reputationChange, undefined, key.slice(2, 42)];
     } else {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
-      const logEntryNumber = await this.getLogEntryNumberForUpdateNumber(logEntryUpdateNumber);
+      const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber);
 
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
     }
@@ -222,8 +221,8 @@ class ReputationMiner {
     } else {
       const prevKey = await this.getKeyForUpdateNumber(updateNumber.subn(1));
       justUpdatedProof = await this.getReputationProofObject(prevKey);
-      newestReputationProof = await this.getNewestReputationProofObject(updateNumber);
     }
+    const newestReputationProof = await this.getNewestReputationProofObject(updateNumber);
     await this.justificationTree.insert(`0x${updateNumber.toString(16, 64)}`, jhLeafValue, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
 
     const key = await this.getKeyForUpdateNumber(updateNumber);
@@ -299,11 +298,12 @@ class ReputationMiner {
 
   /**
    * For update `_i` in the reputationUpdateLog currently under consideration, return the log entry that contains that update. Note that these
-   * are not the same number because each entry in the log implies multiple reputation updates.
+   * are not the same number because each entry in the log implies multiple reputation updates. Note that the update number passed here is just
+   * the update number in the log, NOT including any decays that may have happened.
    * @param  {Number}  _i The update number we wish to determine which log entry in the reputationUpdateLog creates
    * @return {Promise}   A promise that resolves to the number of the corresponding log entry.
    */
-  async getLogEntryNumberForUpdateNumber(_i) {
+  async getLogEntryNumberForLogUpdateNumber(_i) {
     const updateNumber = new BN(_i.toString());
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
@@ -337,7 +337,7 @@ class ReputationMiner {
       return Object.keys(this.reputations)[updateNumber.toNumber()];
     }
     // Else it's from a log entry
-    const logEntryNumber = await this.getLogEntryNumberForUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog));
+    const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog));
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
@@ -600,7 +600,10 @@ class ReputationMiner {
     // console.log('get justification tree');
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-    const logEntryNumber = await this.getLogEntryNumberForUpdateNumber(lastAgreeIdx.toString());
+    let logEntryNumber = 0;
+    if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
+      logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(new BN(lastAgreeIdx.toString()).sub(this.nReputationsBeforeLatestLog));
+    }
     // console.log('get justification tree done');
 
     // These comments can help with debugging. This implied root is the intermediate root hash that is implied
@@ -636,7 +639,6 @@ class ReputationMiner {
     // );
     // console.log('intermediatRootHash2', impliedRoot3);
     // console.log('implied jrh from irh2', impliedRoot4);
-
     const tx = await repCycle.respondToChallenge(
       [
         round.toString(),

@@ -854,9 +854,50 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should cope if the wrong reputation transition is the first transition", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = ReputationMiningCycle.at(addr);
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await forwardTime(3600, this);
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        0,
+        "0xfffffffff"
+      );
+      badClient.entryToFalsify = "-1";
+      await badClient.initialise(colonyNetwork.address);
+      await badClient.addLogContentsToReputationTree();
+      badClient.entryToFalsify = "0";
+
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = ReputationMiningCycle.at(addr);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      await forwardTime(3600, this);
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await forwardTime(3600, this);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
     // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
     // correctly. Unsure if I should force them to be run every time.
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].forEach(async badIndex => {
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].forEach(async badIndex => {
       it.skip(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
         await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
         await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
@@ -872,22 +913,25 @@ contract("ColonyNetworkMining", accounts => {
         addr = await colonyNetwork.getReputationMiningCycle(true);
         repCycle = ReputationMiningCycle.at(addr);
         await forwardTime(3600, this);
-        await repCycle.submitRootHash("0x0", 0, 10);
-        await repCycle.confirmNewHash(0);
-
-        addr = await colonyNetwork.getReputationMiningCycle(true);
-        repCycle = ReputationMiningCycle.at(addr);
-
         await goodClient.addLogContentsToReputationTree();
+        await goodClient.submitRootHash();
 
         badClient = new MaliciousReputationMinerExtraRep(
           { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
           badIndex,
           "0xfffffffff"
         );
+        badClient.entryToFalsify = "-1";
         await badClient.initialise(colonyNetwork.address);
         await badClient.addLogContentsToReputationTree();
+        badClient.entryToFalsify = badIndex.toString();
 
+        await repCycle.confirmNewHash(0);
+        addr = await colonyNetwork.getReputationMiningCycle(true);
+        repCycle = ReputationMiningCycle.at(addr);
+
+        await goodClient.addLogContentsToReputationTree();
+        await badClient.addLogContentsToReputationTree();
         const righthash = await goodClient.getRootHash();
         const wronghash = await badClient.getRootHash();
         assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
@@ -1273,7 +1317,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it(`If a reputation decay caluclation is wrong, it should be handled correctly`, async () => {
+    it(`If a reputation decay calculation is wrong, it should be handled correctly`, async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
@@ -1463,7 +1507,7 @@ contract("ColonyNetworkMining", accounts => {
       const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
       const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
       const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-      const logEntryNumber = await goodClient.getLogEntryNumberForUpdateNumber(lastAgreeIdx.toString());
+      const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [
@@ -1484,6 +1528,111 @@ contract("ColonyNetworkMining", accounts => {
           reputationKey,
           goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,
           goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value,
+          agreeStateSiblings,
+          goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.value,
+          disagreeStateSiblings,
+          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.key,
+          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.value,
+          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.siblings,
+          { gasLimit: 4000000 }
+        ),
+        "colony-invalid-newest-reputation-proof"
+      );
+
+      // Cleanup
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should correctly check the UID of the reputation if the reputation update being disputed is a decay", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      const taskId = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000000,
+        workerPayout: 1000000000000,
+        managerRating: 3,
+        workerRating: 3,
+        worker: accounts[3]
+      });
+      await metaColony.finalizeTask(taskId);
+
+      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      await forwardTime(3600, this);
+      let repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitRootHash("0x0", 0, 10);
+      await repCycle.confirmNewHash(0);
+      await forwardTime(3600, this);
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await badClient.initialise(colonyNetwork.address);
+
+      badClient.entryToFalsify = "-1";
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await repCycle.confirmNewHash(0);
+      await forwardTime(3600, this);
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+
+      badClient.entryToFalsify = "1";
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      // Now get all the information needed to fire off a respondToChallenge call
+      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
+      const submission = await repCycle.disputeRounds(round.toString(), index.toString());
+      const firstDisagreeIdx = new BN(submission[8].toString());
+      const lastAgreeIdx = firstDisagreeIdx.subn(1);
+      const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
+      const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
+      const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
+      const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
+      await checkErrorRevert(
+        repCycle.respondToChallenge(
+          [
+            round.toString(),
+            index.toString(),
+            goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
+            goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
+            `0x${agreeStateBranchMask.toString(16)}`,
+            goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
+            `0x${disagreeStateBranchMask.toString(16)}`,
+            goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
+            0,
+            logEntryNumber.toString()
+          ],
+          reputationKey,
+          goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,
+          new BN(goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value.slice(2), 16)
+            .addn(1)
+            .toString(16, 128),
+          // This is the right line
+          // goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value,
           agreeStateSiblings,
           goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.value,
           disagreeStateSiblings,
@@ -1558,7 +1707,7 @@ contract("ColonyNetworkMining", accounts => {
       const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
       const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
       const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-      const logEntryNumber = await goodClient.getLogEntryNumberForUpdateNumber(lastAgreeIdx.toString());
+      const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [
