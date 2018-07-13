@@ -2755,11 +2755,43 @@ contract("ColonyNetworkMining", accounts => {
 
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
+      const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId();
+      await metaColony.addGlobalSkill(rootGlobalSkillId.toNumber()); // SkillId 4 added
+      await metaColony.addGlobalSkill(4); // SkillId 5 added
+      await metaColony.addGlobalSkill(5); // SkillId 6 added
+
+      const taskId = await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skill: 4,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 5000000000000,
+        managerRating: 1,
+        workerRating: 1,
+        evaluator: accounts[1],
+        worker: accounts[3]
+      });
+
+      let repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and 4x reputation updates for three task completions (manager, worker (domain and skill), evaluator);
+      // That's thirteen in total.
+      repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      assert.equal(nInactiveLogEntries.toNumber(), 17);
 
       await goodClient.addLogContentsToReputationTree();
       // Check the client's tree has seven entries. In order these were added (and therefore in order of reputation UID),
+      const client = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree });
+      await client.initialise(colonyNetwork.address);
+      await client.addLogContentsToReputationTree();
+
+      // Check the client's tree has 21 entries. In order these were added (and therefore in order of reputation UID),
       // these are:
       // 1. Colony-wide total reputation for metaColony's root skill
       // 2. Colony-wide total reputation for mining skill
@@ -2767,12 +2799,36 @@ contract("ColonyNetworkMining", accounts => {
       // 4. Miner's reputation for mining skill
       // x. Colony-wide total reputation for metacolony's root skill (same as 1)
       // 5. Manager reputation for metaColony's root skill
+      // x. Manager reputation for metaColony's root skill (same as 3, by virtue of Manager and miner being MAIN_ACCOUNT)
       // x. Colony-wide total reputation for metacolony's root skill (same as 1)
       // x. Evaluator reputation for metaColony's root skill (same as 5, by virtue of evaluator and manager being MANAGER)
       // x. Colony-wide total reputation for metacolony's root skill (same as 1)
       // 6. Worker reputation for metacolony's root skill
       // 7. Colony-wide total reputation for global skill task was in
       // 8. Worker reputation for global skill task was in
+      // 5. Worker reputation for metacolony's root skill
+      // 6. Colony-wide total reputation for global skill task was in
+      // 8. Worker reputation for global skill task was in
+      // ... Negative rep updates for task #4
+      // x. Colony-wide total reputation for metaColony mining skill (same as 2)
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // x. Manager reputation for metaColony's mining skill (same as 4)
+      // x. Manager reputation for metaColony's root skill (same as 3, by virtue of Manager and miner being MAIN_ACCOUNT)
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // x. Evaluator reputation for metaColony's root skill (same as 5)
+      // x. Colony-wide total reputation for metaColony mining skill (same as 2)
+      // x. Colony-wide total reputation for metacolony's root skill (same as 1)
+      // 9. Worker reputation for metaColony's mining skill
+      // 10. Worker reputation for metaColony's root skill
+      // 11. Colony-wide total reputation for global skillId 5
+      // 12. Colony-wide total reputation for global skillId 6
+      // x. Colony-wide total reputation for global skillId 1 (same as 7)
+      // 13. Colony-wide total reputation for global skillId 4
+      // 14. Worker reputation for global skillId 5
+      // 15. Worker reputation for global skillId 6
+      // 16. Worker reputation for global skillId 1
+      // 17. Worker reputation for global skillId 4
+      assert.equal(Object.keys(client.reputations).length, 17);
 
       const GLOBAL_SKILL = new BN(1);
       const META_ROOT_SKILL = new BN(2);
@@ -2807,6 +2863,7 @@ contract("ColonyNetworkMining", accounts => {
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL, MANAGER);
       value = makeReputationValue(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).muln(3), 5);
       assert.equal(goodClient.reputations[key], value);
+      assert.equal(Object.keys(client.reputations).length, 7);
 
       // 6. Reputation reward for WORKER for being the worker for the tasks
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL, WORKER);
@@ -2817,22 +2874,43 @@ contract("ColonyNetworkMining", accounts => {
       key = makeReputationKey(metaColony.address, GLOBAL_SKILL);
       value = makeReputationValue(WORKER_PAYOUT.muln(3), 7);
       assert.equal(goodClient.reputations[key], value);
+      const reputationProps = [
+        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: DEFAULT_STAKE.muln(6).add(REWARD) }, //"6999994001000000000"
+        { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD }, //"999999857142857143"
+        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: DEFAULT_STAKE.muln(6).add(REWARD) }, //"6999999000000000000"
+        { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: REWARD }, //"999999857142857143"
+        { id: 5, skill: META_ROOT_SKILL, account: OTHER_ACCOUNT2, value: "1000000000" },
+        { id: 6, skill: META_ROOT_SKILL, account: accounts[2], value: "0" },
+        { id: 7, skill: GLOBAL_SKILL, account: undefined, value: "0" },
+        { id: 8, skill: GLOBAL_SKILL, account: accounts[2], value: "0" },
+        { id: 9, skill: MINING_SKILL, account: accounts[3], value: "0" },
+        { id: 10, skill: META_ROOT_SKILL, account: accounts[3], value: "0" },
+        { id: 11, skill: 5, account: undefined, value: "0" },
+        { id: 12, skill: 6, account: undefined, value: "0" },
+        { id: 13, skill: 4, account: undefined, value: "0" },
+        { id: 14, skill: 5, account: accounts[3], value: "0" },
+        { id: 15, skill: 6, account: accounts[3], value: "0" },
+        { id: 16, skill: 1, account: accounts[3], value: "0" },
+        { id: 17, skill: 4, account: accounts[3], value: "0" }
+      ];
 
       // 8. Worker reputation for global skill task was in
       key = makeReputationKey(metaColony.address, GLOBAL_SKILL, WORKER);
       value = makeReputationValue(WORKER_PAYOUT.muln(3), 8);
       assert.equal(goodClient.reputations[key], value);
+      reputationProps.forEach(reputationProp => {
+        const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
+        const value = makeReputationValue(reputationProp.value, reputationProp.id);
+        assert.equal(client.reputations[key], value, `${reputationProp.id} failed`);
+      });
     });
 
     it("The reputation mining client should correctly update parent reputations", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
-      await metaColony.addGlobalSkill(5);
+      // TODO: We are working with the same global skills tree as the previous test
       await metaColony.addGlobalSkill(6);
       await metaColony.addGlobalSkill(7);
       await metaColony.addGlobalSkill(8);
       await metaColony.addGlobalSkill(9);
-
       // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
       await fundColonyWithTokens(metaColony, clny);
@@ -2850,6 +2928,9 @@ contract("ColonyNetworkMining", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // Should be 5 updates: 1 for the previous mining cycle and 4 for the task.
+      // The update log should contain the person being rewarded for the previous update cycle,
+      // and 2x4 reputation updates for the task completions (manager, worker (domain and skill), evaluator);
+      // That's 9 in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 5);
@@ -2897,7 +2978,7 @@ contract("ColonyNetworkMining", accounts => {
       });
     });
 
-    it("Should cope if the wrong reputation transition is a distant parent", async () => {
+    it("should cope if the wrong reputation transition is a distant parent", async () => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);

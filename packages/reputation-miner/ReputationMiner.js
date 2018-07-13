@@ -171,10 +171,12 @@ class ReputationMiner {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
+    let logEntry;
     let score;
+
     interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
     jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
-    let logEntry;
+
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       const key = await Object.keys(this.reputations)[updateNumber];
       const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
@@ -213,6 +215,48 @@ class ReputationMiner {
       }
       const reputationChange = ethers.utils.bigNumberify(logEntry.amount);
       score = this.getScore(updateNumber, reputationChange);
+
+      // When reputation score update is negative, adjust its value for child reputation updates
+      // We update colonywide sums first (children, parents, skill)
+      // Then the user-specifc sums in the order children, parents, skill.
+      if (score.lt(0)) {
+        // For reputation loss, when updating child skills, adjust reputation amount lost
+        const nUpdates = logEntry[4];
+        let [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
+        const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
+        const innerUpdateNumber = updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog);
+
+        // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
+        // and user-specific updates located in the first nChildUpdates of the second half of the nUpdates set.
+        if (
+          innerUpdateNumber.lt(nChildUpdates) ||
+          (innerUpdateNumber.gte(nUpdates.div(2)) && innerUpdateNumber.lt(nUpdates.div(2).add(nChildUpdates)))
+        ) {
+          // Get current reputation amount of the actual skill key we are updating parents and children of.
+          // This is the user reputation for the skill, which is positioned at the end of the current logEntry nUpdates.
+          const updateNumberForActualUserSkillRep = updateNumber.sub(innerUpdateNumber).add(nUpdates).sub(1);
+
+          const keyForActualUserSkillRep = await this.getKeyForUpdateNumber(updateNumberForActualUserSkillRep.toNumber());
+
+          const keyAlreadyExists = this.reputations[keyForActualUserSkillRep] !== undefined;
+          if (keyAlreadyExists) {
+            // Look up value from our JSON.
+            const valueForActualUserSkillRep = this.reputations[keyForActualUserSkillRep];
+            const existingValueForActualUserSkillRep = ethers.utils.bigNumberify(`0x${valueForActualUserSkillRep.slice(2, 66)}`);
+
+            if (!existingValueForActualUserSkillRep.isZero()) {
+              const key = await this.getKeyForUpdateNumber(updateNumber);
+              const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
+
+              // todo bn.js doesn't have decimals so is fraction precision enough here?
+              const targetScore = reputation.mul(score).div(existingValueForActualUserSkillRep);
+              score = targetScore;
+            }
+          } else {
+            score = ethers.utils.bigNumberify("0");
+          }
+        }
+      }
     }
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
@@ -243,10 +287,6 @@ class ReputationMiner {
         newestReputationProof
       })
     );
-
-    // TODO: Include updates for all child skills if x.amount is negative
-    // We update colonywide sums first (children, parents, skill)
-    // Then the user-specifc sums in the order children, parents, skill.
 
     await this.insert(key, score, updateNumber);
   }
@@ -386,7 +426,7 @@ class ReputationMiner {
   async getKeyForUpdateInLogEntry(updateNumber, logEntry) {
     let skillAddress;
     // We need to work out the skillId and user address to use.
-    // If we are in the first half of 'j's, then we are dealing with global update, so
+    // If we are in the first half of 'updateNumber's, then we are dealing with global update, so
     // the skilladdress will be 0x0, rather than the user address
     if (updateNumber.lt(logEntry[4].div(2))) {
       skillAddress = ethers.constants.AddressZero;
