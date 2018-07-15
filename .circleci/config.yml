@@ -71,6 +71,9 @@ jobs:
           name: "Checking contract storage variables"
           command: yarn run check:storagevars
       - run:
+          name: "Checking contract recovery modifiers"
+          command: yarn run check:recoverymods
+      - run:
           name: "Running unit tests"
           command: yarn run test:contracts
       - run:
