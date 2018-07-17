@@ -53,7 +53,7 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
     // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
     bool globalSkill;
   }
-  // Contains all global and local skills in the network, mapping skillId to Skill. Where skillId is 1-based unique identofier
+  // Contains all global and local skills in the network, mapping skillId to Skill. Where skillId is 1-based unique identifier
   mapping (uint256 => Skill) skills;
   // Number of skills in the network, including both global and local skills
   uint256 skillCount;

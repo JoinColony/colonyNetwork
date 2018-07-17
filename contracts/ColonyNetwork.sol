@@ -82,8 +82,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return colonyVersionResolver[_version];
   }
 
-  function getSkill(uint256 _skillId) public view returns (uint256, uint256) {
-    return (skills[_skillId].nParents, skills[_skillId].nChildren);
+  function getSkill(uint256 _skillId) public view returns (uint256, uint256, bool) {
+    Skill storage skill = skills[_skillId];
+    return (skill.nParents, skill.nChildren, skill.globalSkill);
   }
 
   function isGlobalSkill(uint256 _skillId) public view returns (bool) {
