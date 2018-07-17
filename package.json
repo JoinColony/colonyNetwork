@@ -28,10 +28,11 @@
     "posttest:contracts:gasCosts": "npm run stop:blockchain:client",
     "posttest:contracts:patricia": "npm run stop:blockchain:client"
   },
-  "pre-commit": [
-    "eslint-staged",
-    "solium-staged"
-  ],
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn eslint-staged && yarn solium-staged"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JoinColony/colonyNetwork.git"
@@ -63,6 +64,7 @@
     "ethereumjs-util": "^5.2.0",
     "ganache-cli": "6.1.6",
     "ganache-core": "^2.0.2",
+    "husky": "^1.0.0-rc.6",
     "istanbul": "^0.4.5",
     "jsonfile": "^4.0.0",
     "mocha": "^5.2.0",
