@@ -42,9 +42,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   address clnyTokenAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
-  mapping (address => Submission) public reputationHashSubmissions;
+  mapping (address => Submission) reputationHashSubmissions;
   uint256 public reputationMiningWindowOpenTimestamp;
-  mapping (uint256 => Submission[]) public disputeRounds;
+  mapping (uint256 => Submission[]) disputeRounds;
 
   // Tracks the number of submissions in each round that have completed their challenge, one way or the other.
   // This might be that they passed the challenge, it might be that their opponent passed (and therefore by implication,
@@ -481,6 +481,66 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int256, uint256, address, uint256, uint256) {
     ReputationLogEntry storage x = reputationUpdateLog[_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+  }
+
+  function getReputationHashSubmissions(address _user) public view returns (
+    bytes32 proposedNewRootHash,
+    uint256 nNodes,
+    uint256 lastResponseTimestamp,
+    uint256 challengeStepCompleted,
+    bytes32 jrh,
+    bytes32 intermediateReputationHash,
+    uint256 intermediateReputationNNodes,
+    uint256 jrhNnodes,
+    uint256 lowerBound,
+    uint256 upperBound,
+    uint256 providedPreviousReputationUID
+  )
+  {
+    Submission memory submission = reputationHashSubmissions[_user];
+    return (
+      submission.proposedNewRootHash,
+      submission.nNodes,
+      submission.lastResponseTimestamp,
+      submission.challengeStepCompleted,
+      submission.jrh,
+      submission.intermediateReputationHash,
+      submission.intermediateReputationNNodes,
+      submission.jrhNnodes,
+      submission.lowerBound,
+      submission.upperBound,
+      submission.provedPreviousReputationUID
+    );
+  }
+
+  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (
+    bytes32 proposedNewRootHash,
+    uint256 nNodes,
+    uint256 lastResponseTimestamp,
+    uint256 challengeStepCompleted,
+    bytes32 jrh,
+    bytes32 intermediateReputationHash,
+    uint256 intermediateReputationNNodes,
+    uint256 jrhNnodes,
+    uint256 lowerBound,
+    uint256 upperBound,
+    uint256 providedPreviousReputationUID
+  )
+  {
+    Submission memory submission = disputeRounds[_round][_index];
+    return (
+      submission.proposedNewRootHash,
+      submission.nNodes,
+      submission.lastResponseTimestamp,
+      submission.challengeStepCompleted,
+      submission.jrh,
+      submission.intermediateReputationHash,
+      submission.intermediateReputationNNodes,
+      submission.jrhNnodes,
+      submission.lowerBound,
+      submission.upperBound,
+      submission.provedPreviousReputationUID
+    );
   }
 
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint256 reward, uint256 miningSkillId) public {

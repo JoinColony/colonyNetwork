@@ -313,7 +313,7 @@ contract("TokenLocking", addresses => {
     });
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(tokenLocking.punishStakers([addresses[0], addresses[1]]));
+      await checkErrorRevert(tokenLocking.punishStakers([addresses[0], addresses[1]]), "token-locking-sender-not-reputation-mining-cycle");
     });
   });
 });

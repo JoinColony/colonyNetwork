@@ -15,13 +15,23 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   }
 
   modifier onlyReputationMiningCycle() {
-    require(msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true));
+    require(msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true), "token-locking-sender-not-reputation-mining-cycle");
     _;
   }
 
   modifier tokenNotLocked(address _token) {
     if (userLocks[_token][msg.sender].balance > 0) {
       require(userLocks[_token][msg.sender].lockCount == totalLockCount[_token], "token-locking-token-locked");
+    }
+    _;
+  }
+
+  modifier hashNotSubmitted(address _token) {
+    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    if (_token == clnyToken) {
+      bytes32 submittedHash;
+      (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender);
+      require(submittedHash == 0x0);
     }
     _;
   }
@@ -63,15 +73,9 @@ contract TokenLocking is TokenLockingStorage, DSMath {
 
   function withdraw(address _token, uint256 _amount) public
   tokenNotLocked(_token)
+  hashNotSubmitted(_token)
   {
     require(_amount > 0, "token-locking-invalid-amount");
-
-    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
-    if (_token == clnyToken) {
-      bytes32 submittedHash;
-      (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).reputationHashSubmissions(msg.sender);
-      require(submittedHash == 0x0);
-    }
 
     userLocks[_token][msg.sender].balance = sub(userLocks[_token][msg.sender].balance, _amount);
 

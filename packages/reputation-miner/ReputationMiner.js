@@ -535,7 +535,7 @@ class ReputationMiner {
     while (submission[0] !== submittedHash) {
       try {
         index.iaddn(1);
-        submission = await repCycle.disputeRounds(round.toString(), index.toString()); // eslint-disable-line no-await-in-loop
+        submission = await repCycle.getDisputeRounds(round.toString(), index.toString()); // eslint-disable-line no-await-in-loop
       } catch (err) {
         round.iaddn(1);
         index = new BN("-1");
@@ -553,7 +553,7 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    let submission = await repCycle.disputeRounds(round.toString(), index.toString());
+    let submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
     const targetNode = new BN(
       submission[8]
         .add(submission[9])
@@ -573,7 +573,7 @@ class ReputationMiner {
         gasLimit: 1000000
       }
     );
-    submission = await repCycle.disputeRounds(round.toString(), index.toString());
+    submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
     return tx;
   }
 
@@ -586,7 +586,7 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    const submission = await repCycle.disputeRounds(round.toString(), index.toString());
+    const submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
     // console.log(submission);
     const firstDisagreeIdx = new BN(submission[8].toString());
     const lastAgreeIdx = firstDisagreeIdx.subn(1);
