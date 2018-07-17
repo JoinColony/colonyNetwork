@@ -121,24 +121,6 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChild3.toNumber(), 6);
     });
 
-    it("should be able to add child skills a few levels down the skills tree", async () => {
-      // Add 2 skill nodes to root skill
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(1);
-      // Add a child skill to skill id 4
-      await metaColony.addGlobalSkill(4);
-
-      const newDeepSkill = await colonyNetwork.getSkill.call(6);
-      assert.equal(newDeepSkill[0].toNumber(), 2);
-      assert.equal(newDeepSkill[1].toNumber(), 0);
-
-      const parentSkill1 = await colonyNetwork.getParentSkillId.call(6, 0);
-      assert.equal(parentSkill1.toNumber(), 4);
-
-      const parentSkill2 = await colonyNetwork.getParentSkillId.call(6, 1);
-      assert.equal(parentSkill2.toNumber(), 1);
-    });
-
     it("should NOT be able to add a child skill for a non existent parent", async () => {
       // Add 2 skill nodes to root skill
       await metaColony.addGlobalSkill(1);
@@ -228,7 +210,7 @@ contract("Meta Colony", accounts => {
       assert.equal(skill6ParentSkillId2.toNumber(), 1);
     });
 
-    it("when N parents are there, should record parent skill ids for N = integer powers of 2", async () => {
+    it("should correctly ascend the skills tree to find parents", async () => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);
@@ -239,18 +221,39 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(10);
       await metaColony.addGlobalSkill(11);
 
-      const skill12 = await colonyNetwork.getSkill.call(12);
-      assert.equal(skill12[0].toNumber(), 9);
-      assert.equal(skill12[1].toNumber(), 0);
+      // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
-      const skill12ParentSkillId1 = await colonyNetwork.getParentSkillId.call(12, 0);
-      assert.equal(skill12ParentSkillId1.toNumber(), 11);
-      const skill12ParentSkillId2 = await colonyNetwork.getParentSkillId.call(12, 1);
-      assert.equal(skill12ParentSkillId2.toNumber(), 10);
-      const skill12ParentSkillId3 = await colonyNetwork.getParentSkillId.call(12, 2);
-      assert.equal(skill12ParentSkillId3.toNumber(), 8);
-      const skill12ParentSkillId4 = await colonyNetwork.getParentSkillId.call(12, 3);
-      assert.equal(skill12ParentSkillId4.toNumber(), 4);
+      const [numParents, numChildren] = await colonyNetwork.getSkill.call(12);
+      assert.equal(numParents.toNumber(), 9);
+      assert.equal(numChildren.toNumber(), 0);
+
+      let parentId;
+      parentId = await colonyNetwork.getParentSkillId.call(12, 0);
+      assert.equal(parentId.toNumber(), 11);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 1);
+      assert.equal(parentId.toNumber(), 10);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 2);
+      assert.equal(parentId.toNumber(), 9);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 3);
+      assert.equal(parentId.toNumber(), 8);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 4);
+      assert.equal(parentId.toNumber(), 7);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 5);
+      assert.equal(parentId.toNumber(), 6);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 6);
+      assert.equal(parentId.toNumber(), 5);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 7);
+      assert.equal(parentId.toNumber(), 4);
+      parentId = await colonyNetwork.getParentSkillId.call(12, 8);
+      assert.equal(parentId.toNumber(), 1);
+
+      // Higher indices return 0
+      parentId = await colonyNetwork.getParentSkillId(12, 9);
+      assert.equal(parentId.toNumber(), 0);
+      parentId = await colonyNetwork.getParentSkillId(12, 10);
+      assert.equal(parentId.toNumber(), 0);
+      parentId = await colonyNetwork.getParentSkillId(12, 100);
+      assert.equal(parentId.toNumber(), 0);
     });
 
     it("should NOT be able to add a new root global skill", async () => {

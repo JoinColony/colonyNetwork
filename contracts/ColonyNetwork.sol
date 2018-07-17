@@ -218,8 +218,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
-    Skill storage skill = skills[_skillId];
-    return skill.parents[_parentSkillIndex];
+    return ascendSkillTree(_skillId, _parentSkillIndex + 1);
   }
 
   function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
@@ -242,5 +241,20 @@ contract ColonyNetwork is ColonyNetworkStorage {
       nParents,
       nChildren
     );
+  }
+
+  function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {
+    if (_parentSkillNumber == 0) {
+      return _skillId;
+    }
+
+    Skill storage skill = skills[_skillId];
+    for (uint i; i < skill.parents.length; i++) {
+      if (2**(i+1) > _parentSkillNumber) {
+        uint _newSkillId = skill.parents[i];
+        uint _newParentSkillNumber = _parentSkillNumber - 2**i;
+        return ascendSkillTree(_newSkillId, _newParentSkillNumber);
+      }
+    }
   }
 }
