@@ -817,6 +817,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
     if (u[U_DECAY_TRANSITION]==1) {
+      // TODO: Account for potential overflow during this calculation. This could be done by capping reputation at some
+      // value where this calculation can never overflow, doing the calculation the other way around once it is over some threshold,
+      // or some other solution.
       require(disagreeStateReputationValue == (agreeStateReputationValue*999306852819440)/1000000000000000);
     } else {
       if (logEntry.amount < 0 && uint(logEntry.amount * -1) > agreeStateReputationValue ) {
