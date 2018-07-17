@@ -74,7 +74,7 @@
     "rimraf": "^2.6.2",
     "shortid": "^2.2.8",
     "solidity-coverage": "0.5.5",
-    "solidity-parser-antlr": "^0.2.11",
+    "solidity-parser-antlr": "^0.3.0",
     "solium": "^1.1.7",
     "truffle": "^4.1.11",
     "web3-utils": "^1.0.0-beta.34"
