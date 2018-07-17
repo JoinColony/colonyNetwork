@@ -2640,7 +2640,98 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(validProof, true);
     });
 
-    it.skip("The reputation mining client should calculate reputation decay correctly");
+    it("Should correctly decay a reputation to zero, and then 'decay' to zero in subsequent cycles", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        1,
+        new BN("10")
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await forwardTime(3600, this);
+      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      let repCycle = ReputationMiningCycle.at(addr);
+      const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
+
+      await goodClient.insert(metaColony.address, rootGlobalSkill, "0x0000000000000000000000000000000000000000", new BN("1"), 0);
+      await goodClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("1"), 0);
+      await badClient.insert(metaColony.address, rootGlobalSkill, "0x0000000000000000000000000000000000000000", new BN("1"), 0);
+      await badClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("1"), 0);
+      const rootHash = await goodClient.getRootHash();
+
+      await repCycle.submitRootHash(rootHash, 2, 10);
+      await repCycle.confirmNewHash(0);
+      await forwardTime(3600, this);
+      const decayKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
+
+      // Check we have exactly one reputation.
+      assert.equal(
+        "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
+        goodClient.reputations[decayKey]
+      );
+
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+
+      await forwardTime(3600, this);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      // Check it decayed from 1 to 0.
+      assert.equal(
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
+        goodClient.reputations[decayKey]
+      );
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        1,
+        new BN("10")
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      const keys = Object.keys(goodClient.reputations);
+      for (let i = 0; i < keys.length; i += 1) {
+        const key = keys[i];
+        const colonyAddress = key.slice(0, 42);
+        const skillId = key.slice(42, 106);
+        const userAddress = key.slice(106);
+        const value = goodClient.reputations[key];
+        const score = new BN(value.slice(2, 66), 16);
+
+        await badClient.insert(colonyAddress, skillId, userAddress, score, 0); // eslint-disable-line no-await-in-loop
+      }
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(1);
+
+      // Check it 'decayed' from 0 to 0
+      assert.equal(
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
+        goodClient.reputations[decayKey]
+      );
+    });
+
     it.skip("should abort if a deposit did not complete correctly");
   });
 });
