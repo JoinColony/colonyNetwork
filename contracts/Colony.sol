@@ -29,19 +29,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
 
-  function setOwnerRole(address _user) public normal auth {
+  function setOwnerRole(address _user) public stoppable auth {
     // To allow only one address to have owner role at a time, we have to remove current owner from their role
     Authority colonyAuthority = Authority(authority);
     colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
     colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
   }
 
-  function setAdminRole(address _user) public normal auth {
+  function setAdminRole(address _user) public stoppable auth {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, true);
   }
 
   // Can only be called by the owner role.
-  function removeAdminRole(address _user) public normal auth {
+  function removeAdminRole(address _user) public stoppable auth {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }
 
@@ -67,7 +67,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function setToken(address _token) public
-  normal
+  stoppable
   auth
   {
     token = ERC20Extended(_token);
@@ -77,7 +77,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return token;
   }
 
-  function initialiseColony(address _address) public normal {
+  function initialiseColony(address _address) public stoppable {
     require(colonyNetworkAddress == 0x0, "colony-initialise-bad-address");
     colonyNetworkAddress = _address;
 
@@ -103,7 +103,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function bootstrapColony(address[] _users, int[] _amounts) public
-  normal
+  stoppable
   auth
   isInBootstrapPhase
   {
@@ -118,13 +118,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function mintTokens(uint _wad) public
-  normal
+  stoppable
   auth
   {
     return token.mint(_wad);
   }
 
-  function mintTokensForColonyNetwork(uint _wad) public normal {
+  function mintTokensForColonyNetwork(uint _wad) public stoppable {
     // Only the colony Network can call this function
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
@@ -133,12 +133,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token.transfer(colonyNetworkAddress, _wad);
   }
 
-  function registerColonyLabel(bytes32 _subnode) public auth {
+  function registerColonyLabel(bytes32 _subnode) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(_subnode);
   }
 
   function addGlobalSkill(uint _parentSkillId) public
-  normal
+  stoppable
   auth
   returns (uint256)
   {
@@ -147,7 +147,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function addDomain(uint256 _parentDomainId) public
-  normal
+  stoppable
   auth
   domainExists(_parentDomainId)
   {
@@ -192,7 +192,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
   public
-  normal
+  stoppable
   verifyKey(key)
   returns (bool)
   {
@@ -203,7 +203,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return true;
   }
 
-  function upgrade(uint256 _newVersion) public normal auth {
+  function upgrade(uint256 _newVersion) public stoppable auth {
     // Upgrades can only go up in version
     uint256 currentVersion = version();
     require(_newVersion > currentVersion);
@@ -214,7 +214,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     e.setResolver(newResolver);
   }
 
-  function enterRecoveryMode() public normal auth {
+  function enterRecoveryMode() public stoppable auth {
     recoveryMode = true;
     recoveryApprovalCount = 0;
     recoveryEditedTimestamp = now;

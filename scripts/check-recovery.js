@@ -14,7 +14,7 @@ const walkSync = (dir, filelist = []) => {
 function correctRecoveryModifier(functionDef) {
   const isPrivate = ["private", "internal"].indexOf(functionDef.visibility) > -1;
   const isView = ["view", "pure"].indexOf(functionDef.stateMutability) > -1;
-  const hasModifier = functionDef.modifiers.filter(mod => ["normal", "recovery"].indexOf(mod.name) > -1).length > 0;
+  const hasModifier = functionDef.modifiers.filter(mod => ["stoppable", "recovery"].indexOf(mod.name) > -1).length > 0;
   return isPrivate || (isView || hasModifier);
 }
 
@@ -67,10 +67,10 @@ walkSync("./contracts/").forEach(contractName => {
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter(child => child.type === "ContractDefinition")[0];
 
-  // Check for that all public, non-{view,pure} functions have either normal or recovery modifiers.
+  // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes.filter(child => child.type === "FunctionDefinition").forEach(functionDef => {
     if (!correctRecoveryModifier(functionDef)) {
-      console.log("The contract", contractName, "contains a missing normal/recovery modifier in function", functionDef.name, ".");
+      console.log("The contract", contractName, "contains a missing stoppable/recovery modifier in function", functionDef.name, ".");
       process.exit(1);
     }
   });
