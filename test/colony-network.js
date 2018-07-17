@@ -112,14 +112,14 @@ contract("ColonyNetwork", accounts => {
       assert.equal(rootGlobalSkill[0].toNumber(), 0);
       assert.equal(rootGlobalSkill[1].toNumber(), 0);
 
-      const globalSkill1 = await colonyNetwork.isGlobalSkill.call(1);
-      assert.isTrue(globalSkill1);
+      const globalSkill1 = await colonyNetwork.getSkill.call(1);
+      assert.isTrue(globalSkill1[2]);
 
-      const globalSkill2 = await colonyNetwork.isGlobalSkill.call(2);
-      assert.isFalse(globalSkill2);
+      const globalSkill2 = await colonyNetwork.getSkill.call(2);
+      assert.isFalse(globalSkill2[2]);
 
-      const localSkill1 = await colonyNetwork.isGlobalSkill.call(3);
-      assert.isFalse(localSkill1);
+      const localSkill1 = await colonyNetwork.getSkill.call(3);
+      assert.isFalse(localSkill1[2]);
 
       const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId.call();
       assert.equal(rootGlobalSkillId, 1);
@@ -142,8 +142,8 @@ contract("ColonyNetwork", accounts => {
       assert.equal(rootLocalSkill[0].toNumber(), 0);
       assert.equal(rootLocalSkill[1].toNumber(), 0);
 
-      const isGlobal = await colonyNetwork.isGlobalSkill.call(2);
-      assert.isFalse(isGlobal);
+      const skill = await colonyNetwork.getSkill.call(2);
+      assert.isFalse(skill[2]);
 
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);

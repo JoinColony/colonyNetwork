@@ -71,11 +71,6 @@ contract IColonyNetwork {
   /// @return isGlobalSkill true if specified skill is a global skill, otherwise false
   function getSkill(uint256 _skillId) public view returns (uint256 nParents, uint256 nChildren, bool isGlobalSkill);
 
-  /// @notice Checks if skill with id `_skillId` is a global skill
-  /// @param _skillId Id of the skill
-  /// @return isGlobalSkill true if skill with id `_skillId` is a global skill, false otherwise
-  function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
-
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or
   /// @param _user The address of the user for the reputation update
