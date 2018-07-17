@@ -463,4 +463,16 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(1, 3));
     });
   });
+
+  describe("when getting a skill", () => {
+    it("should return a true flag if the skill is global", async () => {
+      const globalSkill = await colonyNetwork.getSkill.call(1);
+      assert.isTrue(globalSkill[2]);
+    });
+
+    it("should return a false flag if the skill is local", async () => {
+      const localSkill = await colonyNetwork.getSkill.call(2);
+      assert.isFalse(localSkill[2]);
+    });
+  });
 });

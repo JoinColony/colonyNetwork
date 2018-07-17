@@ -160,7 +160,9 @@ contract ColonyStorage is DSAuth, DSMath {
 
   modifier globalSkill(uint256 _skillId) {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(colonyNetworkContract.isGlobalSkill(_skillId));
+    bool isGlobalSkill;
+    (, , isGlobalSkill) = colonyNetworkContract.getSkill(_skillId);
+    require(isGlobalSkill);
     _;
   }
 

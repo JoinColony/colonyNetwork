@@ -68,12 +68,8 @@ contract IColonyNetwork {
   /// @param _skillId Id of the skill
   /// @return nParents uint256 `skill.nParents` i.e. the number of parent skills of skill with id `_skillId`
   /// @return nChildren uint256 `skill.nChildren` i.e. the number of child skills of skill with id `_skillId`
-  function getSkill(uint256 _skillId) public view returns (uint256 nParents, uint256 nChildren);
-
-  /// @notice Checks if skill with id `_skillId` is a global skill
-  /// @param _skillId Id of the skill
-  /// @return isGlobalSkill true if skill with id `_skillId` is a global skill, false otherwise
-  function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
+  /// @return isGlobalSkill true if specified skill is a global skill, otherwise false
+  function getSkill(uint256 _skillId) public view returns (uint256 nParents, uint256 nChildren, bool isGlobalSkill);
 
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or

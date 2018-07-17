@@ -593,7 +593,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // We update skills in the order children, then parents, then the skill listed in the log itself.
     // If the amount in the log is positive, then no children are being updated.
     uint nParents;
-    (nParents, ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
+    (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
     uint nChildUpdates;
     if (logEntry.amount >= 0) { // solium-disable-line no-empty-blocks, whitespace
       // Then we have no child updates to consider
