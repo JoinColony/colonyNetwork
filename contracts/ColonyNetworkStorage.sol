@@ -73,4 +73,22 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
 
   // Mapping containing the last auction start timestamp for a token address
   mapping (address => uint) recentAuctions;
+
+  // Address of the ENS registrar for joincolony.eth
+  address ens;
+  // Namehash of the root node that we administer (i.e. namehash("joincolony.eth"))
+  bytes32 rootNode;
+  // Namehash of the users node that we administer (i.e. namehash("user.joincolony.eth"))
+  bytes32 userNode;
+  // Namehash of the colony node that we administer (i.e. namehash("colony.joincolony.eth"))
+  bytes32 colonyNode;
+  // Mapping from colony address to claimed colony label
+  mapping (address => bytes32) colonyLabels;
+  // Mapping from user address to claimed user label
+  mapping (address => bytes32) userLabels;
+
+  modifier calledByColony() {
+    require(_isColony[msg.sender]);
+    _;
+  }
 }

@@ -49,11 +49,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _;
   }
 
-  modifier calledByColony() {
-    require(_isColony[msg.sender]);
-    _;
-  }
-
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
   }

@@ -168,4 +168,18 @@ contract IColonyNetwork {
   /// @notice Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network
   /// @param _token Address of the token held by the network to be auctioned
   function startTokenAuction(address _token) public;
+
+  /// @notice Setup registrar with ENS and root node
+  /// @param _ens Address of ENS registrar
+  /// @param _rootNode Namehash of the root node for the domain
+  function setupRegistrar(address _ens, bytes32 _rootNode) public;
+
+  /// @notice Register a "user.joincolony.eth" label.
+  /// @param subnode The keccak256 hash of the label to register.
+  function registerUserLabel(bytes32 subnode) public;
+
+  /// @notice Register a "colony.joincolony.eth" label. Can only be called by a Colony.
+  /// @param subnode The keccak256 hash of the label to register.
+  function registerColonyLabel(bytes32 subnode) public;
+
 }

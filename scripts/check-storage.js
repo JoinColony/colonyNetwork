@@ -25,11 +25,18 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/Token.sol", // Not directly used by any colony contracts
       "contracts/TokenLockingStorage.sol",
       "contracts/PatriciaTree/PatriciaTree.sol", // Used by ReputationMiningCycle, which does not use EtherRouter
-      "contracts/gnosis/MultiSigWallet.sol" // Not directly used by any colony contracts
+      "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
+      "contracts/ens/ENSRegistry.sol" // Not directly used by any colony contracts
     ].indexOf(contractName) > -1
   ) {
     return;
   }
+
+  // Skip non-solidity files
+  if (contractName.indexOf(".sol") < 0) {
+    return;
+  }
+
   const src = fs.readFileSync(`./${contractName}`, "utf8");
 
   const result = parser.parse(src, { tolerant: true });

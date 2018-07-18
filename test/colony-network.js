@@ -3,6 +3,10 @@ import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, checkEr
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
+const namehash = require("eth-ens-namehash");
+const web3utils = require("web3-utils");
+
+const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
@@ -293,6 +297,69 @@ contract("ColonyNetwork", accounts => {
 
       const skillCount = await colonyNetwork.getSkillCount.call();
       assert.equal(skillCount.toNumber(), 1);
+    });
+  });
+
+  describe("when managing ENS names", () => {
+    const rootNode = namehash.hash("joincolony.eth");
+    let ensRegistry;
+
+    beforeEach(async () => {
+      ensRegistry = await ENSRegistry.new();
+      await ensRegistry.setOwner(rootNode, colonyNetwork.address);
+      await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
+    });
+
+    it("should own the root domains", async () => {
+      let owner;
+      owner = await ensRegistry.owner(rootNode);
+      assert.equal(owner, colonyNetwork.address);
+
+      owner = await ensRegistry.owner(namehash.hash("user.joincolony.eth"));
+      assert.equal(owner, colonyNetwork.address);
+
+      owner = await ensRegistry.owner(namehash.hash("colony.joincolony.eth"));
+      assert.equal(owner, colonyNetwork.address);
+    });
+
+    it("should be able to register one unique label per user", async () => {
+      const label = web3utils.soliditySha3("test");
+      const hash = namehash.hash("test.user.joincolony.eth");
+
+      // User can register unique label
+      await colonyNetwork.registerUserLabel(label, { from: accounts[1] });
+      const owner = await ensRegistry.owner(hash);
+      assert.equal(owner, accounts[1]);
+
+      // Label already in use
+      await checkErrorRevert(colonyNetwork.registerUserLabel(label, { from: accounts[2] }));
+
+      // Can't register two labels for a user
+      const newLabel = web3utils.soliditySha3("test2");
+      await checkErrorRevert(colonyNetwork.registerUserLabel(newLabel, { from: accounts[1] }));
+    });
+
+    it("should be able to register one unique label per colony, if owner", async () => {
+      const label = web3utils.soliditySha3("test");
+      const hash = namehash.hash("test.colony.joincolony.eth");
+
+      // Cargo-cult colony generation
+      const token = await Token.new(...TOKEN_ARGS);
+      const { logs } = await colonyNetwork.createColony(token.address);
+      const { colonyAddress } = logs[0].args;
+      const colony = await Colony.at(colonyAddress);
+
+      // Non-owner can't register label for colony
+      await checkErrorRevert(colony.registerColonyLabel(label, { from: accounts[1] }));
+
+      // Owner can register label for colony
+      await colony.registerColonyLabel(label, { from: accounts[0] });
+      const owner = await ensRegistry.owner(hash);
+      assert.equal(owner, colony.address);
+
+      // Can't register two labels for a colony
+      const newLabel = web3utils.soliditySha3("test2");
+      await checkErrorRevert(colony.registerColonyLabel(newLabel, { from: accounts[0] }));
     });
   });
 });
