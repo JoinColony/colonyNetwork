@@ -82,6 +82,9 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     require(ERC20Extended(_token).transfer(msg.sender, _amount), "token-locking-transfer-failed");
   }
 
+  // This function is only used in context of reputation mining
+  // TODO: After we add formula to calculate user's loss, refactor accordingly and/or
+  // move some of the functionality to `ColonyNetworkMining` if needed
   function punishStakers(address[] _users) public onlyReputationMiningCycle {
     address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
