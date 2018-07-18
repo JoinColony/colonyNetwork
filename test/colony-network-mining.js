@@ -2331,6 +2331,76 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should calculate reputation decays differently if they are large", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        -1,
+        new BN("10")
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await forwardTime(3600, this);
+      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      let repCycle = ReputationMiningCycle.at(addr);
+      const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
+
+      await goodClient.insert(
+        metaColony.address,
+        rootGlobalSkill,
+        "0x0000000000000000000000000000000000000000",
+        new BN("2").pow(new BN("256")).subn(2),
+        0
+      );
+      await goodClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
+      await badClient.insert(
+        metaColony.address,
+        rootGlobalSkill,
+        "0x0000000000000000000000000000000000000000",
+        new BN("2").pow(new BN("256")).subn(2),
+        0
+      );
+      await badClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
+      const rootHash = await goodClient.getRootHash();
+
+      await repCycle.submitRootHash(rootHash, 2, 10);
+      await repCycle.confirmNewHash(0);
+      await forwardTime(3600, this);
+      badClient.entryToFalsify = "1";
+
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+
+      const largeCalculationResult = new BN("2")
+        .pow(new BN("256"))
+        .subn(2)
+        .div(new BN("1000000000000000"))
+        .mul(new BN("999679150010888"));
+
+      const smallCalculationResult = new BN("2")
+        .pow(new BN("256"))
+        .subn(2)
+        .mul(new BN("999679150010888"))
+        .div(new BN("1000000000000000"));
+
+      const decayKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
+      assert.notEqual(smallCalculationResult.toString(16, 64), goodClient.reputations[decayKey].slice(2, 66));
+      assert.equal(largeCalculationResult.toString(16, 64), goodClient.reputations[decayKey].slice(2, 66));
+    });
+
     it("should keep reputation updates that occur during one update window for the next window", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
 
