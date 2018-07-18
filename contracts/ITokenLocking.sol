@@ -38,6 +38,11 @@ contract ITokenLocking {
   /// @param _amount Amount to withdraw
   function withdraw(address _token, uint256 _amount) public;
 
+  /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect
+  /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
+  /// @param stakers Array of the addresses of stakers to punish
+  function punishStakers(address[] stakers) public;
+
   /// @notice Get global lock count for a specific token
   /// @param _token Address of the token
   /// @return lockCount Global token lock count

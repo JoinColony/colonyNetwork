@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/math.sol";
 import "./IColonyNetwork.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
+import "./ITokenLocking.sol";
 
 
 // TODO: Can we handle all possible disputes regarding the very first hash that should be set?
@@ -37,11 +38,13 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint256 nPreviousUpdates;
   }
   address colonyNetworkAddress;
+  address tokenLockingAddress;
+  address clnyTokenAddress;
   // TODO: Do we need both these mappings?
   mapping (bytes32 => mapping( uint256 => address[])) public submittedHashes;
-  mapping (address => Submission) public reputationHashSubmissions;
+  mapping (address => Submission) reputationHashSubmissions;
   uint256 public reputationMiningWindowOpenTimestamp;
-  mapping (uint256 => Submission[]) public disputeRounds;
+  mapping (uint256 => Submission[]) disputeRounds;
 
   // Tracks the number of submissions in each round that have completed their challenge, one way or the other.
   // This might be that they passed the challenge, it might be that their opponent passed (and therefore by implication,
@@ -116,7 +119,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
     // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
     // Here, the minimum stake is 10**15.
-    require(entryIndex <= IColonyNetwork(colonyNetworkAddress).getStakedBalance(msg.sender) / 10**15);
+    uint256 balance;
+    (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
+    require(entryIndex <= balance / 10**15);
     require(entryIndex > 0);
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
@@ -147,8 +152,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   /// @notice Constructor for this contract.
-  constructor() public {
+  constructor(address _tokenLockingAddress, address _clnyTokenAddress) public {
     colonyNetworkAddress = msg.sender;
+    tokenLockingAddress = _tokenLockingAddress;
+    clnyTokenAddress = _clnyTokenAddress;
   }
 
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
@@ -291,14 +298,18 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
         // Our opponent completed the same number of challenge rounds, and both have now timed out.
         nInvalidatedHashes += 2;
         // Punish the people who proposed our opponent
-        IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes]);
+        ITokenLocking(tokenLockingAddress).punishStakers(
+          submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes]
+        );
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
       nHashesCompletedChallengeRound[round] += 2;
 
       // Punish the people who proposed the hash that was rejected
-      IColonyNetwork(colonyNetworkAddress).punishStakers(submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes]);
+      ITokenLocking(tokenLockingAddress).punishStakers(
+        submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes]
+      );
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
@@ -470,6 +481,66 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   function getReputationUpdateLogEntry(uint256 _id) public view returns (address, int256, uint256, address, uint256, uint256) {
     ReputationLogEntry storage x = reputationUpdateLog[_id];
     return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+  }
+
+  function getReputationHashSubmissions(address _user) public view returns (
+    bytes32 proposedNewRootHash,
+    uint256 nNodes,
+    uint256 lastResponseTimestamp,
+    uint256 challengeStepCompleted,
+    bytes32 jrh,
+    bytes32 intermediateReputationHash,
+    uint256 intermediateReputationNNodes,
+    uint256 jrhNnodes,
+    uint256 lowerBound,
+    uint256 upperBound,
+    uint256 providedPreviousReputationUID
+  )
+  {
+    Submission memory submission = reputationHashSubmissions[_user];
+    return (
+      submission.proposedNewRootHash,
+      submission.nNodes,
+      submission.lastResponseTimestamp,
+      submission.challengeStepCompleted,
+      submission.jrh,
+      submission.intermediateReputationHash,
+      submission.intermediateReputationNNodes,
+      submission.jrhNnodes,
+      submission.lowerBound,
+      submission.upperBound,
+      submission.provedPreviousReputationUID
+    );
+  }
+
+  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (
+    bytes32 proposedNewRootHash,
+    uint256 nNodes,
+    uint256 lastResponseTimestamp,
+    uint256 challengeStepCompleted,
+    bytes32 jrh,
+    bytes32 intermediateReputationHash,
+    uint256 intermediateReputationNNodes,
+    uint256 jrhNnodes,
+    uint256 lowerBound,
+    uint256 upperBound,
+    uint256 providedPreviousReputationUID
+  )
+  {
+    Submission memory submission = disputeRounds[_round][_index];
+    return (
+      submission.proposedNewRootHash,
+      submission.nNodes,
+      submission.lastResponseTimestamp,
+      submission.challengeStepCompleted,
+      submission.jrh,
+      submission.intermediateReputationHash,
+      submission.intermediateReputationNNodes,
+      submission.jrhNnodes,
+      submission.lowerBound,
+      submission.upperBound,
+      submission.provedPreviousReputationUID
+    );
   }
 
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint256 reward, uint256 miningSkillId) public {

@@ -379,7 +379,18 @@ contract IColony {
   /// @return deliverableTimestamp Deliverable submission timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns (bytes32 specificationHash, bytes32 deliverableHash, bool finalized, bool cancelled, uint256 dueDate, uint256 payoutsWeCannotMake, uint256 potId, uint256 deliverableTimestamp, uint256 domainId, uint256[] skillIds);
+  function getTask(uint256 _id) public view returns (
+    bytes32 specificationHash,
+    bytes32 deliverableHash,
+    bool finalized,
+    bool cancelled,
+    uint256 dueDate,
+    uint256 payoutsWeCannotMake,
+    uint256 potId,
+    uint256 deliverableTimestamp,
+    uint256 domainId,
+    uint256[] skillIds
+    );
 
   /// @notice Get the `Role` properties back for role `_role` in task `_id`
   /// @param _id Id of the task
@@ -466,7 +477,13 @@ contract IColony {
   /// @return amount Total amount of tokens taken aside for reward payout
   /// @return tokenAddress Token address
   /// @return blockTimestamp Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32 reputationState, uint256 totalTokens, uint256 amount, address tokenAddress, uint256 blockTimestamp);
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (
+    bytes32 reputationState,
+    uint256 totalTokens,
+    uint256 amount,
+    address tokenAddress,
+    uint256 blockTimestamp
+    );
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation

@@ -20,6 +20,7 @@ import {
 import { currentBlockTime, createSignatures, createSignaturesTrezor } from "./test-helper";
 
 const IColony = artifacts.require("IColony");
+const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, opts }) {
@@ -266,8 +267,10 @@ export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount
   const clny = Token.at(clnyAddress);
 
   await giveUserCLNYTokens(colonyNetwork, address, _amount);
-  await clny.approve(colonyNetwork.address, _amount.toString(), { from: address });
-  await colonyNetwork.deposit(_amount.toString(), { from: address });
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+  const tokenLocking = ITokenLocking.at(tokenLockingAddress);
+  await clny.approve(tokenLocking.address, _amount.toString(), { from: address });
+  await tokenLocking.deposit(clny.address, _amount.toString(), { from: address });
 }
 
 export async function fundColonyWithTokens(colony, token, tokenAmount) {

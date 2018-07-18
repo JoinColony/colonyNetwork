@@ -20,42 +20,15 @@ pragma experimental "v0.5.0";
 
 import "./ColonyNetworkStorage.sol";
 import "./ReputationMiningCycle.sol";
+import "./ERC20Extended.sol";
 
 
-contract ColonyNetworkStaking is ColonyNetworkStorage {
+contract ColonyNetworkMining is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
     require(msg.sender == activeReputationMiningCycle);
     _;
-  }
-
-  function deposit(uint256 _amount) public {
-    // Get CLNY address
-    ERC20Extended clny = ERC20Extended(IColony(metaColony).getToken());
-    uint256 networkBalance = clny.balanceOf(this);
-    // Move some over.
-    clny.transferFrom(msg.sender, this, _amount);
-    // Check it actually transferred
-    assert(clny.balanceOf(this)-networkBalance==_amount);
-    // Note who it belongs to.
-    stakedBalances[msg.sender] = add(stakedBalances[msg.sender], _amount);
-  }
-
-  function withdraw(uint256 _amount) public {
-    uint256 balance = stakedBalances[msg.sender];
-    require(balance >= _amount);
-    bytes32 submittedHash;
-    (submittedHash, , , , , , , , , , ) = ReputationMiningCycle(activeReputationMiningCycle).reputationHashSubmissions(msg.sender);
-    bool hasRequesterSubmitted = submittedHash == 0x0 ? false : true;
-    require(hasRequesterSubmitted==false);
-    stakedBalances[msg.sender] -= _amount;
-    ERC20Extended clny = ERC20Extended(IColony(metaColony).getToken());
-    clny.transfer(msg.sender, _amount);
-  }
-
-  function getStakedBalance(address _user) public view returns (uint) {
-    return stakedBalances[_user];
   }
 
   function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public
@@ -70,14 +43,16 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
   }
 
   function startNextCycle() public {
+    address clnyToken = IColony(metaColony).getToken();
+    require(clnyToken != 0x0);
     require(activeReputationMiningCycle == 0x0);
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     if (activeReputationMiningCycle == 0x0) {
       // This will only be true the very first time that this is run, to kick off the whole reputation mining process
-      activeReputationMiningCycle = new ReputationMiningCycle();
+      activeReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
     }
     ReputationMiningCycle(activeReputationMiningCycle).resetWindow();
-    inactiveReputationMiningCycle = new ReputationMiningCycle();
+    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
   }
 
   function getReputationMiningCycle(bool _active) public view returns(address) {
@@ -86,22 +61,6 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
     } else {
       return inactiveReputationMiningCycle;
     }
-  }
-
-  function punishStakers(address[] stakers) public
-  onlyReputationMiningCycle
-  {
-    // TODO: Actually think about this function
-    // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
-    // it in ReputationMiningCycle.invalidateHash;
-    for (uint256 i = 0; i < stakers.length; i++) {
-      // This is pretty harsh! Are we happy with this?
-      // Alternative: lose more than they would have gained for backing the right hash.
-      stakedBalances[stakers[i]] = 0;
-    }
-    // TODO: Where do these staked tokens go? Maybe split between the person who did the 'invalidate' transaction
-    // and the colony network?
-    // TODO: Lose rep?
   }
 
   function rewardStakers(address[] stakers) internal {
@@ -126,8 +85,7 @@ contract ColonyNetworkStaking is ColonyNetworkStorage {
 
     for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.
-      // We reinvest here as it's much easier (gas-wise).
-      stakedBalances[stakers[i]] += reward;
+      ERC20Extended(IColony(metaColony).getToken()).transfer(stakers[i], reward);
     }
   }
 }

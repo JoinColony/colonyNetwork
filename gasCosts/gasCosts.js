@@ -320,8 +320,9 @@ contract("All", accounts => {
 
       await repCycle.confirmNewHash(2);
 
+      const clnyToken = await metaColony.getToken();
       // withdraw
-      await colonyNetwork.withdraw(lessBigStr, { from: STAKER1 });
+      await tokenLocking.withdraw(clnyToken, lessBigStr, { from: STAKER1 });
     });
 
     it("when working with reward payouts", async () => {
