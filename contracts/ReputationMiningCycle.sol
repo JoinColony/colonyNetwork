@@ -820,7 +820,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       // TODO: Account for potential overflow during this calculation. This could be done by capping reputation at some
       // value where this calculation can never overflow, doing the calculation the other way around once it is over some threshold,
       // or some other solution.
-      require(disagreeStateReputationValue == (agreeStateReputationValue*999306852819440)/1000000000000000);
+      require(disagreeStateReputationValue == (agreeStateReputationValue*999679150010888)/1000000000000000);
     } else {
       if (logEntry.amount < 0 && uint(logEntry.amount * -1) > agreeStateReputationValue ) {
         require(disagreeStateReputationValue == 0);

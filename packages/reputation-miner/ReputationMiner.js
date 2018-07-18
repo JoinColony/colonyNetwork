@@ -196,7 +196,7 @@ class ReputationMiner {
     let logEntry;
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       const key = await Object.keys(this.reputations)[updateNumber];
-      const newReputation = new BN(this.reputations[key].slice(2, 66), 16).mul(new BN("999306852819440")).div(new BN("1000000000000000"));
+      const newReputation = new BN(this.reputations[key].slice(2, 66), 16).mul(new BN("999679150010888")).div(new BN("1000000000000000"));
       let reputationChange = newReputation.sub(new BN(this.reputations[key].slice(2, 66), 16));
       reputationChange = ethers.utils.bigNumberify(reputationChange.toString());
       logEntry = [undefined, reputationChange, undefined, key.slice(2, 42)];
