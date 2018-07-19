@@ -235,13 +235,13 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await metaColony.claimColonyFunds(clny.address);
   const taskId = await setupRatedTask({
     colonyNetwork,
-    colony: metaColony,
+    colony: metaColony, // NOTE: CLNY is native token
     managerPayout: amount.mul(new BN("2")),
     evaluatorPayout: new BN("0"),
     workerPayout: new BN("0")
   });
   await metaColony.finalizeTask(taskId);
-  await metaColony.claimPayout(taskId, 0, clny.address);
+  await metaColony.claimPayout(taskId, MANAGER_ROLE, clny.address);
 
   let mainBalance = await clny.balanceOf.call(MANAGER);
   await clny.transfer(

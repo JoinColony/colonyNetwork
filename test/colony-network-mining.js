@@ -4,7 +4,7 @@ import path from "path";
 import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { forwardTime, checkErrorRevert, web3GetTransactionReceipt } from "../helpers/test-helper";
+import { forwardTime, checkErrorRevert, web3GetTransactionReceipt, bn2hex64, makeReputationKey, makeReputationValue } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
@@ -2121,7 +2121,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(0);
 
       // The update log should contain the person being rewarded for the previous
-      // update cycle, and reputation updates for three task completions (manager, worker (domain and skill), evaluator);
+      // update cycle, and 4x reputation updates for three task completions (manager, worker (domain and skill), evaluator);
       // That's thirteen in total.
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = ReputationMiningCycle.at(addr);
@@ -2147,84 +2147,55 @@ contract("ColonyNetworkMining", accounts => {
       // 8. Worker reputation for global skill task was in
       //
 
-      const GLOBAL_SKILL = "1";
-      const META_ROOT_SKILL = "2";
-      const MINING_SKILL = "3";
+      const GLOBAL_SKILL = 1;
+      const META_ROOT_SKILL = 2;
+      const MINING_SKILL = 3;
 
       assert.equal(Object.keys(client.reputations).length, 8);
+      let key;
+      let value;
       // These should be:
       let key;
       // 1. Colony-wide total reputation for metacolony's root skill
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key += `${new BN(META_ROOT_SKILL).toString(16, 64)}`;
-      key += `${new BN(0, 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000006124fee993bc0000`+`0000000000000000000000000000000000000000000000000000000000000001` // eslint-disable-line
-      );
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL)
+      value = makeReputationValue(7000000000000000000, 1);
+      assert.equal(client.reputations[key], value);
 
       // 2. Colony-wide total reputation for mining skill
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key += `${new BN(MINING_SKILL).toString(16, 64)}`;
-      key += `${new BN(0, 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000000de0b6b3a7640000`+`0000000000000000000000000000000000000000000000000000000000000002` // eslint-disable-line
-      );
+      key = makeReputationKey(metaColony.address, MINING_SKILL)
+      value = makeReputationValue(1000000000000000000, 2);
+      assert.equal(client.reputations[key], value);
 
       // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key += `${new BN(META_ROOT_SKILL).toString(16, 64)}`;
-      key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000006124fee993bc0000`+`0000000000000000000000000000000000000000000000000000000000000003` // eslint-disable-line
-      );
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, MAIN_ACCOUNT)
+      value = makeReputationValue(7000000000000000000, 3);
+      assert.equal(client.reputations[key], value);
 
-      // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputaiton hash
-      //   (currently skill 0, needs to change to indicate a special mining skill)
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
-      key += `${new BN(MINING_SKILL).toString(16, 64)}`; // SkillId as uint256
-      key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000000de0b6b3a7640000`+`0000000000000000000000000000000000000000000000000000000000000004` // eslint-disable-line
-      );
+      // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputation hash
+      key = makeReputationKey(metaColony.address, MINING_SKILL, MAIN_ACCOUNT)
+      value = makeReputationValue(1000000000000000000, 4);
+      assert.equal(client.reputations[key], value);
+
       // 5. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key += `${new BN(META_ROOT_SKILL).toString(16, 64)}`;
-      key += `${new BN(OTHER_ACCOUNT.slice(2), 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000000000000000000000`+`0000000000000000000000000000000000000000000000000000000000000005` // eslint-disable-line
-      );
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, OTHER_ACCOUNT)
+      value = makeReputationValue(0, 5);
+      assert.equal(client.reputations[key], value);
+
       // 6. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key += `${new BN(META_ROOT_SKILL).toString(16, 64)}`;
-      key += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000000000000000000000`+`0000000000000000000000000000000000000000000000000000000000000006` // eslint-disable-line
-      );
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, accounts[2])
+      value = makeReputationValue(0, 6);
+      assert.equal(client.reputations[key], value);
 
       // 7. Colony-wide total reputation for global skill task was in
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key += `${new BN(GLOBAL_SKILL).toString(16, 64)}`;
-      key += `${new BN(0, 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000000000000000000000`+`0000000000000000000000000000000000000000000000000000000000000007` // eslint-disable-line
-      );
+      key = makeReputationKey(metaColony.address, GLOBAL_SKILL)
+      value = makeReputationValue(0, 7);
+      assert.equal(client.reputations[key], value);
 
       // 8. Worker reputation for global skill task was in
-      key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`;
-      key += `${new BN(GLOBAL_SKILL).toString(16, 64)}`;
-      key += `${new BN(accounts[2].slice(2), 16).toString(16, 40)}`;
-      assert.equal(
-        client.reputations[key],
-        `0x`+`0000000000000000000000000000000000000000000000000000000000000000`+`0000000000000000000000000000000000000000000000000000000000000008` // eslint-disable-line
-      );
+      key = makeReputationKey(metaColony.address, GLOBAL_SKILL, accounts[2])
+      value = makeReputationValue(0, 8);
+      assert.equal(client.reputations[key], value);
     });
 
     it("Should allow a user to prove their reputation", async () => {
