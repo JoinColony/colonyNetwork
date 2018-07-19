@@ -53,7 +53,7 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
   const promises = Object.keys(functionsToResolve).map(async fName => {
     const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
     const address = functionsToResolve[fName].definedIn;
-    const sigHash = web3Utils.soliditySha3(sig).substr(0, 10);
+    const sigHash = await web3Utils.soliditySha3(sig).substr(0, 10);
     await resolver.register(sig, address);
     const destination = await resolver.lookup.call(sigHash);
     assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);

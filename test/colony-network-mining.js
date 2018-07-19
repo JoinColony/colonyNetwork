@@ -1267,7 +1267,7 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
       await forwardTime(3600, this);
       let repCycle = ReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x0", 0, 10);
+      await repCycle.submitRootHash("0x01", 0, 10);
       await repCycle.confirmNewHash(0);
       await forwardTime(3600, this);
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1467,7 +1467,7 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
       await forwardTime(3600, this);
       let repCycle = ReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x0", 0, 10);
+      await repCycle.submitRootHash("0x01", 0, 10);
       await repCycle.confirmNewHash(0);
       await forwardTime(3600, this);
       addr = await colonyNetwork.getReputationMiningCycle.call(true);

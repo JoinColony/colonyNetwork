@@ -6284,7 +6284,7 @@ ora@^0.2.3:
     cli-spinners "^0.1.2"
     object-assign "^4.0.1"
 
-original-require@^1.0.1:
+original-require@1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/original-require/-/original-require-1.0.1.tgz#0f130471584cd33511c5ec38c8d59213f9ac5e20"
 
@@ -8304,12 +8304,12 @@ trim@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/trim/-/trim-0.0.1.tgz#5858547f6b290757ee95cccc666fb50084c460dd"
 
-truffle@^4.1.11:
-  version "4.1.11"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-4.1.11.tgz#a4df812ebf4a564892900c4a1dac1131104a0799"
+truffle@^5.0.0-next.5:
+  version "5.0.0-next.5"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0-next.5.tgz#891d00f1d453a23a59e13afd623e5d4d3129b96a"
   dependencies:
     mocha "^4.1.0"
-    original-require "^1.0.1"
+    original-require "1.0.1"
     solc "0.4.24"
 
 tty-browserify@0.0.0:

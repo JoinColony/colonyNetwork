@@ -24,6 +24,10 @@ step_setup_greenkeeper: &step_setup_greenkeeper
   run:
     name: "Add greenkeeper-lockfile-update"
     command: yarn global add greenkeeper-lockfile@1
+step_pull_solc_docker: &step_pull_solc_docker
+    run:
+      name: "Pull solc 0.4.23 docker image"
+      command: docker pull ethereum/solc:0.4.23
 jobs:
   greenkeeper-updates:
     <<: *job_common
@@ -45,6 +49,7 @@ jobs:
       - <<: *step_restore_cache
       - <<: *step_setup_global_packages
       - <<: *step_setup_greenkeeper
+      - <<: *step_pull_solc_docker
       - run:
           name: "Setup parity"
           command: |
@@ -103,6 +108,7 @@ jobs:
       - checkout
       - <<: *step_restore_cache
       - <<: *step_setup_global_packages
+      - <<: *step_pull_solc_docker
       - run:
           name: "Running unit tests with coverage"
           command: yarn run test:contracts:coverage
