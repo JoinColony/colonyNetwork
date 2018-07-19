@@ -202,6 +202,7 @@ contract IColony {
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
   function makeTask(bytes32 _specificationHash, uint256 _domainId) public;
+  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _dueDate) public;
 
   /// @notice Get the number of tasks in the colony
   /// @return count The task count

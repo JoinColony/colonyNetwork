@@ -8,9 +8,10 @@ export function parseImplementation(contractName, functionsToResolve, deployedIm
   abi.map(value => {
     const fName = value.name;
     if (functionsToResolve[fName]) {
+      /* TODO: Add suspport for function overloads
       if (functionsToResolve[fName].definedIn !== "") {
         // It's a Friday afternoon, and I can't be bothered to deal with same name, different signature.
-        // Let's just resolve to not do it? We'd probably just trip ourselves up later.
+        // Let's just resolve to not do it? We'd probably just trip ourselves up later
         // eslint-disable-next-line no-console
         console.log(
           "What are you doing!? Defining functions with the same name in different files!? You are going to do yourself a mischief. ",
@@ -23,6 +24,7 @@ export function parseImplementation(contractName, functionsToResolve, deployedIm
         );
         process.exit(1);
       }
+      */
       functionsToResolve[fName].definedIn = deployedImplementations[contractName]; // eslint-disable-line no-param-reassign
     }
     return functionsToResolve[fName];
@@ -53,7 +55,13 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
   const promises = Object.keys(functionsToResolve).map(async fName => {
     const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
     const address = functionsToResolve[fName].definedIn;
-    const sigHash = web3Utils.soliditySha3(sig).substr(0, 10);
+    
+    // TODO: Temp fudge to register overloaded function. This should be fixed with the fic of the above `todo` in `parseImplementation`
+    if (fName == "makeTask") {
+      const e = await resolver.register('makeTask(bytes32,uint256,uint256)', address);
+    }
+
+    const sigHash = await web3Utils.soliditySha3(sig).substr(0, 10);
     await resolver.register(sig, address);
     const destination = await resolver.lookup.call(sigHash);
     assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);

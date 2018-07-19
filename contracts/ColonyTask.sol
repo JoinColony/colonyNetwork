@@ -133,6 +133,32 @@ contract ColonyTask is ColonyStorage {
     emit TaskAdded(taskCount);
   }
 
+  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _dueDate) public
+  // auth
+  domainExists(_domainId)
+  {
+    taskCount += 1;
+    potCount += 1;
+
+    Task memory task;
+    task.specificationHash = _specificationHash;
+    task.potId = potCount;
+    task.domainId = _domainId;
+    task.skills = new uint256[](1);
+    task.dueDate = _dueDate;
+    tasks[taskCount] = task;
+    tasks[taskCount].roles[MANAGER] = Role({
+      user: msg.sender,
+      rateFail: false,
+      rating: TaskRatings.None
+    });
+
+    pots[potCount].taskId = taskCount;
+
+    emit PotAdded(potCount);
+    emit TaskAdded(taskCount);
+  }
+
   function getTaskCount() public view returns (uint256) {
     return taskCount;
   }
