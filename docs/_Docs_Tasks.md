@@ -32,6 +32,10 @@ Every task has three roles associated with it which determine permissions for ed
 |Evaluator [`1`]| A task's Evaluator role is a person who will independently establish the quality of the work done by the Worker.  
 |Worker [`2`]| A task's Worker role is the person who will fulfill the requirements of the task as specified in the task brief.
 
+Once created, some changes to a task require the signature of multiple roles. See the [colonyJS task lifecycle](/colonyjs/docs-task-lifecycle/) and [Multisignature transactions](/colonyjs/docs-multisignature-transactions/) for for further information about role permissions and multi-sig operations.
+
+Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/api-authorityclient/). 
+
 ## The Task Life-cycle
 
 ### Create
@@ -51,17 +55,21 @@ At any time before a task is finalized, the task can be canceled, which allows a
 ### Rate
 After the work has been submitted (or the due date has passed), the work rating period begins.
 
-Task payouts are determined by work rating, which is currently implemented as "5-star" system, but which will change to a "3-star" system in the future.
+Task payouts are determined by work rating, which is rated on the basis of 3 possible outcomes:
+* `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the native token payout.
+* `[2]` **Satisfactory**. The work done met the established expectations. Worker is awarded reputation equal to the native token payout.
+* `[3]` **Excellent**. The work done exceeded the expectations of the manager. Reputation is awarded at 1.5 times the native token payout.
 
+In consideration of the descriptions above, during the rating period:
 * The Evaluator reviews the work done and submits a rating for the Worker.
 * The Worker considers the task assignment and submits a rating for the Manager.
 
 Because work ratings are on-chain, they follow a _*Commit* and *Reveal*_ pattern in which ratings are obscured to prevent them from influencing each other.
 
 * During the *Commit* period, hidden ratings are submitted to the blockchain. The commit period lasts at most 5 days, but completes earlier if all parties commit.
-* During the *Reveal* period, users submit a transaction to reveal their rating. The reveal period also lasts at most 5 days, but completes earlier if all parties reveal. 
+* During the *Reveal* period, users submit a transaction to reveal their rating. The reveal period also lasts at most 5 days, but completes earlier if all parties reveal.
 
-During the rating period, if either party fails to commit or reveal their rating, their counterpart is given the highest possible rating, and their own rating is penalized.
+During the rating period, if either party fails to commit or reveal their rating, their counterpart is given the highest possible rating, and their own rating is penalized at -0.5 times the native token payout.
 
 ### Finalize
 After the rating period has finished, the task may be finalized, which prevents any further task modifications and allows each role to claim their payout.
