@@ -55,10 +55,10 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
   const promises = Object.keys(functionsToResolve).map(async fName => {
     const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
     const address = functionsToResolve[fName].definedIn;
-    
+
     // TODO: Temp fudge to register overloaded function. This should be fixed with the fic of the above `todo` in `parseImplementation`
-    if (fName == "makeTask") {
-      const e = await resolver.register('makeTask(bytes32,uint256,uint256)', address);
+    if (fName === "makeTask") {
+      await resolver.register("makeTask(bytes32,uint256,uint256)", address);
     }
 
     const sigHash = await web3Utils.soliditySha3(sig).substr(0, 10);
