@@ -203,9 +203,13 @@ class ReputationMiner {
     const updateNumber = new BN(logEntry[5].add(j).toString());
     const score = this.getScore(updateNumber, logEntry);
 
+    // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.toString() === "0") {
+      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes();
+      if (nNodes.toString() !== "0") {
+        console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
+      }
       // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
-      // This 'if' statement is only in for now to make tests easier to write.
       interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
       jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     } else {
@@ -553,7 +557,7 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    let submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
+    const submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
     const targetNode = new BN(
       submission[8]
         .add(submission[9])
@@ -573,7 +577,6 @@ class ReputationMiner {
         gasLimit: 1000000
       }
     );
-    submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
     return tx;
   }
 

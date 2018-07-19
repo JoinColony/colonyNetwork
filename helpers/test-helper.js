@@ -270,7 +270,6 @@ export function bnSqrt(bn, isGreater) {
   return b;
 }
 
-
 export function makeReputationKey(colonyAddress, skill, accountAddress = undefined) {
   let key = `0x`;
   key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
