@@ -24,7 +24,15 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, opts }) {
-  const { logs } = await colony.makeTask(hash, domainId, opts);
+  let logs;
+
+  // Web3 gets confused about which method to use if undefined is passed as a param here.
+  if (opts === undefined) {
+   ({ logs } = await colony.makeTask(hash, domainId));
+  } else {
+    ({ logs } = await colony.makeTask(hash, domainId, opts));
+  }
+
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
 }
