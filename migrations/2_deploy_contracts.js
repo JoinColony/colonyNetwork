@@ -19,13 +19,13 @@ artifacts.require("./ReputationMiningCycle");
 
 module.exports = (deployer, network) => {
   console.log(`## ${network} network ##`);
-  deployer.deploy([SafeMath]);
+  deployer.deploy(SafeMath);
   deployer.link(SafeMath, ColonyTask);
-  deployer.deploy([ColonyNetwork]);
-  deployer.deploy([ColonyNetworkMining]);
-  deployer.deploy([ColonyNetworkAuction]);
-  deployer.deploy([ColonyNetworkRegistrar]);
-  deployer.deploy([ENSRegistry]);
-  deployer.deploy([EtherRouter]);
-  deployer.deploy([Resolver]);
+  deployer.deploy(ColonyNetwork);
+  deployer.deploy(ColonyNetworkMining);
+  deployer.deploy(ColonyNetworkAuction);
+  deployer.deploy(ColonyNetworkRegistrar);
+  deployer.deploy(ENSRegistry);
+  deployer.deploy(EtherRouter);
+  deployer.deploy(Resolver);
 };
