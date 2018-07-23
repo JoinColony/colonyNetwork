@@ -417,7 +417,7 @@ contract("Colony", addresses => {
 
       const sigTypes = [0, 0];
       const signers = [MANAGER, WORKER];
-      const txData = await colony.contract.setTaskWorkerRole.getData(taskId, WORKER);
+      const txData = await colony.contract.methods["setTaskWorkerRole"](taskId, WORKER).encodeABI();
       const sigsPromises = sigTypes.map((type, i) => createSignatures(colony, taskId, [signers[i]], 0, txData));
       const sigs = await Promise.all(sigsPromises);
       const sigV = sigs.map(sig => sig.sigV[0]);

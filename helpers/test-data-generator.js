@@ -30,7 +30,7 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
 }
 
 async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {
-  const txData = await colony.contract[functionName].getData(...args);
+  const txData = await colony.contract.methods[functionName](...args).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     if (type === 0) {
       return createSignatures(colony, taskId, [signers[i]], 0, txData);
