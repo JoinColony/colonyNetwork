@@ -8,7 +8,7 @@ import fs from "fs";
 
 export function web3GetNetwork() {
   return new Promise((resolve, reject) => {
-    web3.version.getNetwork((err, res) => {
+    web3.eth.net.getId((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
@@ -17,7 +17,7 @@ export function web3GetNetwork() {
 
 export function web3GetClient() {
   return new Promise((resolve, reject) => {
-    web3.version.getNode((err, res) => {
+    web3.eth.getNodeInfo((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
