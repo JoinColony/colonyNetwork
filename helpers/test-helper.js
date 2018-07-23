@@ -78,6 +78,15 @@ export function web3GetCode(a) {
   });
 }
 
+export function web3GetAccounts() {
+  return new Promise((resolve, reject) => {
+    web3.eth.getAccounts((err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res);
+    });
+  });
+}
+
 // eslint-disable-next-line no-unused-vars
 export async function checkErrorRevert(promise, errMsg) {
   // There is a discrepancy between how ganache-cli handles errors

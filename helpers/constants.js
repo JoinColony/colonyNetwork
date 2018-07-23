@@ -1,5 +1,5 @@
 import web3Utils from "web3-utils";
-import { getRandomString } from "./test-helper";
+import { getRandomString, web3GetAccounts } from "./test-helper";
 
 let MANAGER;
 let EVALUATOR;
@@ -26,12 +26,13 @@ const RATING_1_SALT = web3Utils.soliditySha3(getRandomString(10));
 const RATING_2_SALT = web3Utils.soliditySha3(getRandomString(10));
 const RATING_1_SECRET = web3Utils.soliditySha3(RATING_1_SALT, MANAGER_RATING);
 const RATING_2_SECRET = web3Utils.soliditySha3(RATING_2_SALT, WORKER_RATING);
+const ACCOUNTS = await web3GetAccounts();
 
 module.exports = {
-  MANAGER: MANAGER || web3.eth.accounts[0],
-  EVALUATOR: EVALUATOR || web3.eth.accounts[1],
-  WORKER: WORKER || web3.eth.accounts[2],
-  OTHER: OTHER || web3.eth.accounts[3],
+  MANAGER: MANAGER || ACCOUNTS[0],
+  EVALUATOR: EVALUATOR || ACCOUNTS[1],
+  WORKER: WORKER || ACCOUNTS[2],
+  OTHER: OTHER || ACCOUNTS[3],
   MANAGER_ROLE,
   EVALUATOR_ROLE,
   WORKER_ROLE,
