@@ -14,8 +14,9 @@ module.exports = deployer => {
 
   deployer
     .then(() => EtherRouter.deployed())
-    .then(instance => {
-      colonyNetwork = IColonyNetwork.at(instance.address);
+    .then(instance => IColonyNetwork.at(instance.address))
+    .then(network => {
+      colonyNetwork = network;
       return ENSRegistry.deployed();
     })
     .then(instance => {

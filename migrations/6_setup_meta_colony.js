@@ -32,7 +32,8 @@ module.exports = deployer => {
       tokenLocking = address;
       return token.approve(tokenLocking, "10000000000000000");
     })
-    .then(() => ITokenLocking.at(tokenLocking).deposit(token.address, "10000000000000000"))
+    .then(() => ITokenLocking.at(tokenLocking))
+    .then(iTokenLocking => iTokenLocking.deposit(token.address, "10000000000000000"))
     .then(() => colonyNetwork.startNextCycle())
     .then(() => colonyNetwork.getSkillCount.call())
     .then(skillCount => {
