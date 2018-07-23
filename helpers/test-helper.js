@@ -7,7 +7,7 @@ import fs from "fs";
 
 export function web3GetNetwork() {
   return new Promise((resolve, reject) => {
-    web3.version.getNetwork((err, res) => {
+    web3.eth.net.getId((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
@@ -16,7 +16,7 @@ export function web3GetNetwork() {
 
 export function web3GetClient() {
   return new Promise((resolve, reject) => {
-    web3.version.getNode((err, res) => {
+    web3.eth.getNodeInfo((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
@@ -231,7 +231,8 @@ export async function createSignaturesTrezor(colony, taskId, signers, value, dat
   const msgHash = web3Utils.soliditySha3(input);
 
   for (let i = 0; i < signers.length; i += 1) {
-    const user = signers[i].toString();
+    let user = signers[i].toString();
+    user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
     const prefixedMessageHash = web3Utils.soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
     const sig = ethUtils.ecsign(Buffer.from(prefixedMessageHash.slice(2), "hex"), Buffer.from(privKey, "hex"));

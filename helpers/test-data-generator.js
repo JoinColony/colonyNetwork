@@ -24,13 +24,21 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, opts }) {
-  const { logs } = await colony.makeTask(hash, domainId, opts);
+  let logs;
+
+  // Web3 gets confused about which method to use if undefined is passed as a param here.
+  if (opts === undefined) {
+   ({ logs } = await colony.makeTask(hash, domainId));
+  } else {
+    ({ logs } = await colony.makeTask(hash, domainId, opts));
+  }
+
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
 }
 
 async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {
-  const txData = await colony.contract[functionName].getData(...args);
+  const txData = await colony.contract.methods[functionName](...args).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     if (type === 0) {
       return createSignatures(colony, taskId, [signers[i]], 0, txData);
