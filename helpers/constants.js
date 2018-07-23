@@ -26,7 +26,7 @@ const RATING_1_SALT = web3Utils.soliditySha3(getRandomString(10));
 const RATING_2_SALT = web3Utils.soliditySha3(getRandomString(10));
 const RATING_1_SECRET = web3Utils.soliditySha3(RATING_1_SALT, MANAGER_RATING);
 const RATING_2_SECRET = web3Utils.soliditySha3(RATING_2_SALT, WORKER_RATING);
-const ACCOUNTS = await web3GetAccounts();
+const ACCOUNTS = web3GetAccounts();
 
 module.exports = {
   MANAGER: MANAGER || ACCOUNTS[0],

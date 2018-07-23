@@ -35,7 +35,7 @@ contract("EtherRouter / Resolver", accounts => {
     });
 
     it("should not change resolver on EtherRouter if there have been insufficient number of confirmations", async () => {
-      const txData = await etherRouter.contract.methods["setResolver"]("0xb3e2b6020926af4763d706b5657446b95795de57").encodeABI();
+      const txData = await etherRouter.contract.methods.setResolver("0xb3e2b6020926af4763d706b5657446b95795de57").encodeABI();
       const tx = await multisig.submitTransaction(etherRouter.address, 0, txData, { from: ACCOUNT_TWO });
       const { transactionId } = tx.logs[0].args;
       const isConfirmed = await multisig.isConfirmed.call(transactionId);
