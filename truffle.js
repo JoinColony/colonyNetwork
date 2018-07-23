@@ -5,7 +5,6 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      gas: 6700000,
       gasPrice: 0,
       network_id: "*",
       websockets: true
@@ -13,7 +12,6 @@ module.exports = {
     integration: {
       host: "localhost",
       port: 8545,
-      gas: 6700000,
       gasPrice: 0,
       network_id: "integration",
       websockets: true
@@ -39,7 +37,14 @@ module.exports = {
   compilers: {
     solc: {
       version: "0.4.23",
-      docker: true
+      docker: true,
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200
+        },
+        evmVersion: "byzantium"
+      }
     }
   }
 };
