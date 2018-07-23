@@ -26,9 +26,11 @@ module.exports = deployer => {
     .then(() => EtherRouter.deployed())
     .then(_colonyNetworkEtherRouter => {
       colonyNetworkEtherRouter = _colonyNetworkEtherRouter;
-      return IColonyNetwork.at(_colonyNetworkEtherRouter.address).setTokenLocking(etherRouter.address);
+      return IColonyNetwork.at(_colonyNetworkEtherRouter.address);
     })
-    .then(() => TokenLocking.at(etherRouter.address).setColonyNetwork(colonyNetworkEtherRouter.address))
+    .then(iColonyNetwork => iColonyNetwork.setTokenLocking(etherRouter.address))
+    .then(() => TokenLocking.at(etherRouter.address))
+    .then(tokenLocking => tokenLocking.setColonyNetwork(colonyNetworkEtherRouter.address))
     .then(() => {
       console.log("### Token locking setup at ", etherRouter.address, "with Resolver", resolver.address);
     })
