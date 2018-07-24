@@ -7,6 +7,9 @@ All funding within a colony resides in pots. To each pot, a colony can associate
 
 Assigning funding to pots is purely a bookkeeping mechanism for a colony. From the perspective of the blockchain, ether and tokens are held by the colony contract until they are paid out when a task is completed.
 
+A colony's native token, chosen at the time of creation, has a special role within colony funding. When paid to a user through the task mechanism, the token confers reputation to that user, which can influence rewards payouts. See the colonyJS [tokenClient API](/colonyjs/api-tokenclient/) for information about the native token and related administration.
+
+
 ==TOC==
 
 ## Types of Pots
@@ -28,6 +31,9 @@ When new domains are created, they each are assigned a newly created pot, which 
 Each task created within a domain also has its own pot, which is funded from the domain to which the task belongs. Pots associated with tasks may only pay out to the individuals associated with the task (the Manager, Evaluator, and Worker of the task).
 
 ## Funding Proposals
+
+Note: Funding Proposals are not slated for implementation in the first version of the colonyNetwork. Instead, movement of funds between pots in a colony is permissioned activity based on [authority roles](colonyjs/api-authorityclient/). The rest of this page explains funding proposals as described in the Colony Whitepaper, which will be implemented in subsequent upgrades to the Colony Network.
+
 Funding proposals are the mechanism that mediates the flow of funds between pots. Funding proposals are created by any user with sufficient reputation to stake in the relevant domain.
 
 Funding proposals can be one of two types: Basic Funding Proposals (BFPs), or Priority Funding Proposals (PFPs).
