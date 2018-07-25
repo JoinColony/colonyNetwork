@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { INITIAL_FUNDING, MANAGER } from "../helpers/constants";
+import { INITIAL_FUNDING } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
@@ -16,6 +16,7 @@ const Token = artifacts.require("Token");
 
 contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
+  const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
 
   let metaColony;

@@ -2,7 +2,7 @@
 import web3Utils from "web3-utils";
 import { BN } from "bn.js";
 
-import { MANAGER, WORKER, EVALUATOR, OTHER, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
+import { MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
 
@@ -18,7 +18,12 @@ const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
-contract("Colony Reputation Updates", () => {
+contract("Colony Reputation Updates", accounts => {
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER = accounts[3];
+  
   let colonyNetwork;
   let metaColony;
   let resolverColonyNetworkDeployed;
@@ -51,7 +56,7 @@ contract("Colony Reputation Updates", () => {
     await fundColonyWithTokens(metaColony, colonyToken, amount);
     await colonyNetwork.startNextCycle();
     const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-    inactiveReputationMiningCycle = ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+    inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
   });
 
   describe("when added", () => {

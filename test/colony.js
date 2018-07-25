@@ -3,10 +3,6 @@
 import { toBN } from "web3-utils";
 
 import {
-  MANAGER,
-  EVALUATOR,
-  WORKER,
-  OTHER,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
   WORKER_ROLE,
@@ -60,7 +56,12 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
-contract("Colony", addresses => {
+contract("Colony", accounts => {
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER = accounts[3];
+
   let colony;
   let token;
   let otherToken;
@@ -153,8 +154,8 @@ contract("Colony", addresses => {
   describe("when working with permissions", () => {
     it("should allow current owner role to transfer role to another address", async () => {
       const ownerRole = 0;
-      const currentOwner = addresses[0];
-      const futureOwner = addresses[2];
+      const currentOwner = accounts[0];
+      const futureOwner = accounts[2];
 
       let hasRole = await authority.hasUserRole(currentOwner, ownerRole);
       assert(hasRole, `${currentOwner} does not have owner role`);
@@ -168,8 +169,8 @@ contract("Colony", addresses => {
     it("should allow admin to assign colony admin role", async () => {
       const adminRole = 1;
 
-      const user1 = addresses[1];
-      const user5 = addresses[5];
+      const user1 = accounts[1];
+      const user5 = accounts[5];
 
       await colony.setAdminRole(user1);
 
@@ -188,7 +189,7 @@ contract("Colony", addresses => {
     it("should allow owner to remove colony admin role", async () => {
       const adminRole = 1;
 
-      const user1 = addresses[1];
+      const user1 = accounts[1];
 
       await colony.setAdminRole(user1);
 
@@ -204,8 +205,8 @@ contract("Colony", addresses => {
     it("should not allow admin to remove admin role", async () => {
       const adminRole = 1;
 
-      const user1 = addresses[1];
-      const user2 = addresses[2];
+      const user1 = accounts[1];
+      const user2 = accounts[2];
 
       await colony.setAdminRole(user1);
       await colony.setAdminRole(user2);
@@ -226,7 +227,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow admin to call predetermined functions", async () => {
-      const user3 = addresses[3];
+      const user3 = accounts[3];
 
       await colony.setAdminRole(user3);
 
@@ -317,7 +318,7 @@ contract("Colony", addresses => {
 
   describe("when bootstrapping the colony", () => {
     const INITIAL_REPUTATIONS = [toBN(5 * 1e18).toString(), toBN(4 * 1e18).toString(), toBN(3 * 1e18).toString(), toBN(2 * 1e18).toString()];
-    const INITIAL_ADDRESSES = addresses.slice(0, 4);
+    const INITIAL_ADDRESSES = accounts.slice(0, 4);
 
     it("should assign reputation correctly when bootstrapping the colony", async () => {
       const skillCount = await colonyNetwork.getSkillCount.call();
@@ -325,7 +326,7 @@ contract("Colony", addresses => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-      const inactiveReputationMiningCycle = ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+      const inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
@@ -384,7 +385,7 @@ contract("Colony", addresses => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await checkErrorRevert(
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
-          from: addresses[1]
+          from: accounts[1]
         })
       );
     });

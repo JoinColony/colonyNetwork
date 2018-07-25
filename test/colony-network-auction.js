@@ -28,10 +28,10 @@ contract("ColonyNetworkAuction", accounts => {
     quantity = new BN(10).pow(new BN(36)).muln(3);
     clnyNeededForMaxPriceAuctionSellout = new BN(10).pow(new BN(54)).muln(3);
     const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = IColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony.call();
-    metaColony = IColony.at(metaColonyAddress);
+    metaColony = await IColony.at(metaColonyAddress);
   });
 
   beforeEach(async () => {
@@ -46,7 +46,7 @@ contract("ColonyNetworkAuction", accounts => {
     const { logs, receipt } = await colonyNetwork.startTokenAuction(token.address);
     createAuctionTxReceipt = receipt;
     const auctionAddress = logs[0].args.auction;
-    tokenAuction = DutchAuction.at(auctionAddress);
+    tokenAuction = await DutchAuction.at(auctionAddress);
   });
 
   describe("when initialising an auction", async () => {
@@ -88,7 +88,7 @@ contract("ColonyNetworkAuction", accounts => {
       await otherToken.transfer(colonyNetwork.address, 1e17);
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
       const auctionAddress = logs[0].args.auction;
-      tokenAuction = DutchAuction.at(auctionAddress);
+      tokenAuction = await DutchAuction.at(auctionAddress);
       const minPrice = await tokenAuction.minPrice.call();
       assert.equal(minPrice.toString(10), 10);
     });

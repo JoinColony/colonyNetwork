@@ -3,9 +3,6 @@ import web3Utils from "web3-utils";
 import { BN } from "bn.js";
 
 import {
-  MANAGER,
-  EVALUATOR,
-  WORKER,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
@@ -225,9 +222,9 @@ export async function setupRatedTask({
 
 export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
-  const metaColony = IColony.at(metaColonyAddress);
+  const metaColony = await IColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken.call();
-  const clny = Token.at(clnyAddress);
+  const clny = await Token.at(clnyAddress);
   const amount = new BN(_amount);
   const mainStartingBalance = await clny.balanceOf.call(MANAGER);
   const targetStartingBalance = await clny.balanceOf.call(address);
@@ -262,13 +259,13 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony.call();
-  const metaColony = IColony.at(metaColonyAddress);
+  const metaColony = await IColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken.call();
-  const clny = Token.at(clnyAddress);
+  const clny = await Token.at(clnyAddress);
 
   await giveUserCLNYTokens(colonyNetwork, address, _amount);
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-  const tokenLocking = ITokenLocking.at(tokenLockingAddress);
+  const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await clny.approve(tokenLocking.address, _amount.toString(), { from: address });
   await tokenLocking.deposit(clny.address, _amount.toString(), { from: address });
 }

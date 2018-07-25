@@ -2,7 +2,7 @@
 
 import { toBN, sha3 } from "web3-utils";
 
-import { MANAGER, EVALUATOR, WORKER, MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
+import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlockTime, bnSqrt } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, executeSignedRoleAssignment, makeTask } from "../helpers/test-data-generator";
 
@@ -13,7 +13,12 @@ const Token = artifacts.require("Token");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const DSRoles = artifacts.require("DSRoles");
 
-contract("Colony Funding", addresses => {
+contract("Colony Funding", accounts => {
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER = accounts[3];
+
   let colony;
   let token;
   let otherToken;
@@ -25,7 +30,7 @@ contract("Colony Funding", addresses => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
-    tokenLocking = ITokenLocking.at(tokenLockingAddress);
+    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   });
 
   beforeEach(async () => {
@@ -98,7 +103,6 @@ contract("Colony Funding", addresses => {
     it("should not let tokens be moved by non-admins", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
-
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 2, 51, otherToken.address, { from: EVALUATOR }));
       const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
@@ -578,9 +582,9 @@ contract("Colony Funding", addresses => {
     const totalReputation = toBN(userReputation);
     const totalTokens = toBN(userReputation);
 
-    const userAddress1 = addresses[0];
-    const userAddress2 = addresses[1];
-    const userAddress3 = addresses[2];
+    const userAddress1 = accounts[0];
+    const userAddress2 = accounts[1];
+    const userAddress3 = accounts[2];
     let initialSquareRoots;
 
     beforeEach(async () => {
@@ -625,7 +629,7 @@ contract("Colony Funding", addresses => {
       const newToken = await Token.new(...tokenArgs);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
-      const newColony = IColony.at(colonyAddress);
+      const newColony = await IColony.at(colonyAddress);
 
       await checkErrorRevert(newColony.startNextRewardPayout(otherToken.address), "colony-reward-payout-invalid-total-tokens");
     });
@@ -902,11 +906,11 @@ contract("Colony Funding", addresses => {
 
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
-      const colony1 = IColony.at(colonyAddress);
+      const colony1 = await IColony.at(colonyAddress);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
-      const colony2 = IColony.at(colonyAddress);
+      const colony2 = await IColony.at(colonyAddress);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -991,11 +995,11 @@ contract("Colony Funding", addresses => {
 
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
-      const colony1 = IColony.at(colonyAddress);
+      const colony1 = await IColony.at(colonyAddress);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
-      const colony2 = IColony.at(colonyAddress);
+      const colony2 = await IColony.at(colonyAddress);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;

@@ -7,9 +7,6 @@ import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
-  MANAGER,
-  EVALUATOR,
-  WORKER,
   MANAGER_ROLE,
   WORKER_ROLE,
   MANAGER_RATING,
@@ -56,6 +53,10 @@ const contractLoader = new TruffleLoader({
 contract("All", accounts => {
   const gasPrice = 20e9;
 
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+
   let colony;
   let token;
   let tokenAddress;
@@ -79,7 +80,7 @@ contract("All", accounts => {
     token = await Token.new(...tokenArgs);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
-    tokenLocking = ITokenLocking.at(tokenLockingAddress);
+    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
 
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
@@ -239,13 +240,13 @@ contract("All", accounts => {
       let repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
 
       await oneHourLater();
-      let repCycle = ReputationMiningCycle.at(repCycleAddr);
+      let repCycle = await ReputationMiningCycle.at(repCycleAddr);
       await repCycle.submitRootHash("0x0", 0, 1);
       await repCycle.confirmNewHash(0);
       await oneHourLater();
 
       repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
-      repCycle = ReputationMiningCycle.at(repCycleAddr);
+      repCycle = await ReputationMiningCycle.at(repCycleAddr);
 
       const goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
       const badClient = new MaliciousReputationMinerExtraRep(
@@ -335,7 +336,7 @@ contract("All", accounts => {
       const newToken = await Token.new(...tokenArgs);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
-      const newColony = IColony.at(colonyAddress);
+      const newColony = await IColony.at(colonyAddress);
       await newToken.setOwner(colonyAddress);
 
       await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());

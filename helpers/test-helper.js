@@ -78,7 +78,7 @@ export function web3GetCode(a) {
   });
 }
 
-export function web3GetAccounts() {
+export function _web3GetAccounts() {
   return new Promise((resolve, reject) => {
     web3.eth.getAccounts((err, res) => {
       if (err !== null) return reject(err);

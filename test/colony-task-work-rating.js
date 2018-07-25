@@ -1,9 +1,6 @@
 /* globals artifacts */
 
 import {
-  EVALUATOR,
-  WORKER,
-  OTHER,
   MANAGER_RATING,
   WORKER_RATING,
   RATING_1_SALT,
@@ -25,7 +22,12 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
 
-contract("Colony Task Work Rating", () => {
+contract("Colony Task Work Rating", accounts => {
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER = accounts[3];
+
   let colony;
   let colonyNetwork;
   let token;
