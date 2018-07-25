@@ -8304,9 +8304,9 @@ trim@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/trim/-/trim-0.0.1.tgz#5858547f6b290757ee95cccc666fb50084c460dd"
 
-truffle@^5.0.0-next.5:
-  version "5.0.0-next.5"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0-next.5.tgz#891d00f1d453a23a59e13afd623e5d4d3129b96a"
+truffle@^5.0.0-next.6:
+  version "5.0.0-next.6"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0-next.6.tgz#6275caf2e9229630dbed74b77f3e6b6641297ff4"
   dependencies:
     mocha "^4.1.0"
     original-require "1.0.1"
