@@ -78,7 +78,7 @@ export function web3GetCode(a) {
   });
 }
 
-export function _web3GetAccounts() {
+export function web3GetAccounts() {
   return new Promise((resolve, reject) => {
     web3.eth.getAccounts((err, res) => {
       if (err !== null) return reject(err);
@@ -212,18 +212,20 @@ export function getFunctionSignature(sig) {
 export async function createSignatures(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
-  const nonce = await colony.getTaskChangeNonce.call(taskId);
+  const nonce = await colony.getTaskChangeNonce(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
-  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
+
+  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString(16), "64", "0")}${data.slice(
     2
-  )}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
+  )}${web3Utils.padLeft(nonce.toString(16), "64", "0")}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];
   const sigS = [];
   const msgHash = web3Utils.soliditySha3(input);
 
   for (let i = 0; i < signers.length; i += 1) {
-    const user = signers[i].toString();
+    let user = signers[i].toString();
+    user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
     const prefixedMessageHash = ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
     const sig = ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
@@ -241,9 +243,9 @@ export async function createSignaturesTrezor(colony, taskId, signers, value, dat
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce.call(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
-  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
+  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString(16), "64", "0")}${data.slice(
     2
-  )}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
+  )}${web3Utils.padLeft(nonce.toString(16), "64", "0")}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];
   const sigS = [];
