@@ -65,7 +65,7 @@ contract("ColonyNetwork", accounts => {
     it("should be able to register a higher Colony contract version", async () => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const updatedVersion = currentColonyVersion.add(1).toNumber();
+      const updatedVersion = currentColonyVersion.addn(1).toNumber();
       await colonyNetwork.addColonyVersion(updatedVersion, sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
@@ -211,7 +211,7 @@ contract("ColonyNetwork", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.add(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
       await colony.upgrade(newVersion);
@@ -227,7 +227,7 @@ contract("ColonyNetwork", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.add(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
       await checkErrorRevert(await EtherRouter.at(colony.address).setResolver(sampleResolver));
@@ -253,7 +253,7 @@ contract("ColonyNetwork", accounts => {
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.add(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1).toNumber();
       const colony = await Colony.at(colonyAddress);
 
       await checkErrorRevert(colony.upgrade(newVersion));
@@ -270,7 +270,7 @@ contract("ColonyNetwork", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.add(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
       await checkErrorRevert(colony.upgrade(newVersion, { from: OTHER_ACCOUNT }));

@@ -232,7 +232,7 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("once target reached, endTime is set correctly", async () => {
-      const amount = clnyNeededForMaxPriceAuctionSellout.divn(3).toString();
+      const amount = clnyNeededForMaxPriceAuctionSellout.divn(3).toString(10);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_2, amount);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_3, amount);

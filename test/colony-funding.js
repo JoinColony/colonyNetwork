@@ -1156,7 +1156,7 @@ contract("Colony Funding", accounts => {
         });
 
         ({ logs } = await newColony.startNextRewardPayout(payoutToken.address));
-        const payoutId = logs[0].args.id.toNumber();
+        const payoutId = logs[0].args.id;
 
         // Getting total amount available for payout
         const amountAvailableForPayout = await newColony.getPotBalance(0, payoutToken.address);

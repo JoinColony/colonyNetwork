@@ -74,7 +74,7 @@ contract("Colony Reputation Updates", accounts => {
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryEvaluator[0], EVALUATOR);
-      assert.equal(repLogEntryEvaluator[1].toNumber(), 50 * 1e18);
+      assert.isTrue(repLogEntryEvaluator[1].eq(toBN(50 * 1e18)));
       assert.equal(repLogEntryEvaluator[2].toNumber(), 2);
       assert.equal(repLogEntryEvaluator[3], metaColony.address);
       assert.equal(repLogEntryEvaluator[4].toNumber(), 2);
@@ -82,7 +82,7 @@ contract("Colony Reputation Updates", accounts => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       assert.equal(repLogEntryWorker[0], WORKER);
-      assert.equal(repLogEntryWorker[1].toNumber(), 300 * 1e18);
+      assert.isTrue(repLogEntryWorker[1].eq(toBN(300 * 1e18)));
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
       assert.equal(repLogEntryWorker[3], metaColony.address);
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
@@ -212,13 +212,12 @@ contract("Colony Reputation Updates", accounts => {
       // Fund colony with maximum possible int number of tokens
       const maxUIntNumber = new BN(2)
         .pow(new BN(255))
-        .sub(new BN(1))
-        .toString(10);
+        .sub(new BN(1));
       await fundColonyWithTokens(metaColony, colonyToken, maxUIntNumber);
       // Split the tokens as payouts between the manager and worker
       const managerPayout = new BN("2");
       const evaluatorPayout = new BN("1");
-      const workerPayout = new BN(maxUIntNumber).sub(managerPayout).sub(evaluatorPayout);
+      const workerPayout = maxUIntNumber.sub(managerPayout).sub(evaluatorPayout);
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
