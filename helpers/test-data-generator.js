@@ -26,7 +26,7 @@ const Token = artifacts.require("Token");
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1 }) {
   const { logs } = await colony.makeTask(hash, domainId);
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
-  return logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
+  return logs.filter(log => log.event === "TaskAdded")[0].args.id;
 }
 
 async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {

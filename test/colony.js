@@ -267,7 +267,7 @@ contract("Colony", addresses => {
   });
 
   describe("when creating tasks", () => {
-    it.only("should allow admins to make task", async () => {
+    it("should allow admins to make task", async () => {
       await makeTask({ colony });
       const task = await colony.getTask.call(1);
       assert.equal(task[0], SPECIFICATION_HASH);

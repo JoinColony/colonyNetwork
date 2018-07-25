@@ -6,8 +6,7 @@ module.exports = {
       host: "localhost",
       port: 8545,
       gasPrice: 0,
-      network_id: "*",
-      websockets: true
+      network_id: "*"
     },
     integration: {
       host: "localhost",
