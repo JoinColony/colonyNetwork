@@ -408,7 +408,7 @@ contract("Colony Funding", accounts => {
       await colony.finalizeTask(taskId);
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address), "colony-funding-task-bad-state");
       const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
-      assert.equal(colonyPotBalance.toNumber(), 350 * 1e18);
+      assert.isTrue(colonyPotBalance.eq(toBN(350 * 1e18)));
     });
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
@@ -457,13 +457,13 @@ contract("Colony Funding", accounts => {
       let colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
       let colonyEtherBalance = await web3GetBalance(colony.address);
       let colonyRewardBalance = await colony.getPotBalance.call(0, 0x0);
-      assert.equal(colonyEtherBalance.toNumber(), 100);
-      assert.equal(colonyPotBalance.toNumber(), 0);
+      assert.equal(colonyEtherBalance, 100);
+      assert.isTrue(colonyPotBalance.isZero());
       await colony.claimColonyFunds(0x0);
       colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
       colonyEtherBalance = await web3GetBalance(colony.address);
       colonyRewardBalance = await colony.getPotBalance.call(0, 0x0);
-      assert.equal(colonyEtherBalance.toNumber(), 100);
+      assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyRewardBalance.toNumber(), 1);
       assert.equal(colonyPotBalance.toNumber(), 99);
     });
@@ -476,7 +476,7 @@ contract("Colony Funding", accounts => {
       const colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
       const colonyEtherBalance = await web3GetBalance(colony.address);
       const pot2Balance = await colony.getPotBalance.call(2, 0x0);
-      assert.equal(colonyEtherBalance.toNumber(), 100);
+      assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyPotBalance.toNumber(), 48);
       assert.equal(pot2Balance.toNumber(), 51);
     });
@@ -493,7 +493,7 @@ contract("Colony Funding", accounts => {
       const colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
       const pot2Balance = await colony.getPotBalance.call(2, 0x0);
       const pot3Balance = await colony.getPotBalance.call(3, 0x0);
-      assert.equal(colonyEtherBalance.toNumber(), 100);
+      assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyPotBalance.toNumber(), 59);
       assert.equal(pot2Balance.toNumber(), 40);
       assert.equal(pot3Balance.toNumber(), 0);
@@ -567,7 +567,7 @@ contract("Colony Funding", accounts => {
       const colonyRewardPotBalance = await colony.getPotBalance.call(0, 0x0);
       const colonyEtherBalance = await web3GetBalance(colony.address);
       const nonRewardPotsTotal = await colony.getNonRewardPotsTotal.call(0x0);
-      assert.equal(colonyEtherBalance.toNumber(), 300);
+      assert.equal(colonyEtherBalance, 300);
       assert.equal(colonyPotBalance.toNumber(), 297);
       assert.equal(colonyRewardPotBalance.toNumber(), 3);
       assert.equal(nonRewardPotsTotal.toNumber(), 297);
@@ -1211,7 +1211,7 @@ contract("Colony Funding", accounts => {
         console.log(
           "Percentage Wrong: ",
           solidityReward
-            .minus(reward)
+            .sub(reward)
             .div(reward)
             .times(100)
             .toString(),

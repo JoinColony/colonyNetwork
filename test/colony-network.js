@@ -49,7 +49,7 @@ contract("ColonyNetwork", accounts => {
     it("should accept ether", async () => {
       await colonyNetwork.send(1);
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
-      assert.equal(colonyNetworkBalance.toNumber(), 1);
+      assert.equal(colonyNetworkBalance, 1);
     });
 
     it("should have the correct current Colony version set", async () => {
@@ -167,7 +167,7 @@ contract("ColonyNetwork", accounts => {
         checkErrorNonPayableFunction(err);
       }
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
-      assert.equal(0, colonyNetworkBalance.toNumber());
+      assert.equal(0, colonyNetworkBalance);
     });
 
     it("should log a ColonyAdded event", async () => {

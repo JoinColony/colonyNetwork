@@ -1,5 +1,5 @@
 /* globals artifacts */
-import web3Utils from "web3-utils";
+import { toBN } from "web3-utils";
 import { BN } from "bn.js";
 
 import { MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
@@ -66,7 +66,7 @@ contract("Colony Reputation Updates", accounts => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryManager[0], MANAGER);
-      assert.equal(repLogEntryManager[1].toNumber(), 100 * 1e18);
+      assert.isTrue(repLogEntryManager[1].eq(toBN(100 * 1e18)));
       assert.equal(repLogEntryManager[2].toNumber(), 2);
       assert.equal(repLogEntryManager[3], metaColony.address);
       assert.equal(repLogEntryManager[4].toNumber(), 2);
@@ -191,8 +191,7 @@ contract("Colony Reputation Updates", accounts => {
       });
       await metaColony.finalizeTask(taskId1);
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      const result = web3Utils
-        .toBN(WORKER_PAYOUT)
+      const result = toBN(WORKER_PAYOUT)
         .muln(3)
         .divn(2);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
@@ -232,7 +231,7 @@ contract("Colony Reputation Updates", accounts => {
 
       // Check the task pot is correctly funded with the max amount
       const taskPotBalance = await metaColony.getPotBalance.call(2, colonyToken.address);
-      assert.isTrue(taskPotBalance.equals(maxUIntNumber));
+      assert.isTrue(taskPotBalance.eq(maxUIntNumber));
 
       await checkErrorRevert(metaColony.finalizeTask(taskId));
     });

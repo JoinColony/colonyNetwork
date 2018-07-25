@@ -200,8 +200,8 @@ contract("ColonyNetworkMining", accounts => {
       accounts.map(async address => {
         const info = await tokenLocking.getUserLock(clny.address, address);
         const stakedBalance = info[1];
-        if (stakedBalance.toNumber() > 0) {
-          await tokenLocking.withdraw(clny.address, stakedBalance.toNumber(), { from: address });
+        if (stakedBalance.gt(new BN(0))) {
+          await tokenLocking.withdraw(clny.address, stakedBalance.toString(), { from: address });
         }
         const userBalance = await clny.balanceOf.call(address);
         return clny.transfer(0x0, userBalance, { from: address });

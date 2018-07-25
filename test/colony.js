@@ -102,7 +102,7 @@ contract("Colony", accounts => {
     it("should accept ether", async () => {
       await colony.send(1);
       const colonyBalance = await web3GetBalance(colony.address);
-      assert.equal(colonyBalance.toNumber(), 1);
+      assert.equal(colonyBalance, 1);
     });
 
     it("should not have owner", async () => {
@@ -1426,12 +1426,12 @@ contract("Colony", accounts => {
       const cancelledDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
       const cancelledTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
       const cancelledDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
-      assert.notEqual(originalTaskEtherBalance.toNumber(), cancelledTaskEtherBalance.toNumber());
-      assert.notEqual(originalDomainEtherBalance.toNumber(), cancelledDomainEtherBalance.toNumber());
-      assert.notEqual(originalTaskTokenBalance.toNumber(), cancelledTaskTokenBalance.toNumber());
-      assert.notEqual(originalDomainTokenBalance.toNumber(), cancelledDomainTokenBalance.toNumber());
-      assert.notEqual(originalTaskOtherTokenBalance.toNumber(), cancelledTaskOtherTokenBalance.toNumber());
-      assert.notEqual(originalDomainOtherTokenBalance.toNumber(), cancelledDomainOtherTokenBalance.toNumber());
+      assert.isTrue(originalTaskEtherBalance.eq(cancelledTaskEtherBalance));
+      assert.isTrue(originalDomainEtherBalance.eq(cancelledDomainEtherBalance));
+      assert.isTrue(originalTaskTokenBalance.eq(cancelledTaskTokenBalance));
+      assert.isTrue(originalDomainTokenBalance.eq(cancelledDomainTokenBalance));
+      assert.isTrue(originalTaskOtherTokenBalance.eq(cancelledTaskOtherTokenBalance));
+      assert.isTrue(originalDomainOtherTokenBalance.eq(cancelledDomainOtherTokenBalance));
       assert.equal(cancelledTaskEtherBalance.toNumber(), 0);
       assert.equal(cancelledTaskTokenBalance.toNumber(), 0);
       assert.equal(cancelledTaskOtherTokenBalance.toNumber(), 0);
@@ -1619,7 +1619,7 @@ contract("Colony", accounts => {
       const networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
       const networkBalanceAfter = await token.balanceOf.call(colonyNetwork.address);
-      assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 1 * 1e18);
+      assert.equal(networkBalanceAfter.sub(networkBalanceBefore).eq(toBN(1 * 1e18)));
       const balance = await token.balanceOf.call(MANAGER);
       assert.equal(balance.toNumber(), 99 * 1e18);
       const potBalance = await colony.getPotBalance.call(2, token.address);
@@ -1647,8 +1647,18 @@ contract("Colony", accounts => {
       await colony.claimPayout(taskId, MANAGER_ROLE, 0x0, { gasPrice: 0 });
       const balanceAfter = await web3GetBalance(MANAGER);
       const metaBalanceAfter = await web3GetBalance(metaColonyAddress);
-      assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 99);
-      assert.equal(metaBalanceAfter.minus(metaBalanceBefore).toNumber(), 1);
+      assert.equal(
+        toBN(balanceAfter)
+          .sub(toBN(balanceBefore))
+          .toNumber(),
+        99
+      );
+      assert.equal(
+        toBN(metaBalanceAfter)
+          .sub(toBN(metaBalanceBefore))
+          .toNumber(),
+        1
+      );
       const potBalance = await colony.getPotBalance.call(2, 0x0);
       assert.equal(potBalance.toNumber(), 250);
     });
