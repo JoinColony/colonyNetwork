@@ -17,7 +17,6 @@ contract("Colony Funding", accounts => {
   const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
-  const OTHER = accounts[3];
 
   let colony;
   let token;

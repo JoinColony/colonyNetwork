@@ -1,5 +1,5 @@
 import web3Utils from "web3-utils";
-import { getRandomString, web3GetAccounts } from "./test-helper";
+import { getRandomString } from "./test-helper";
 
 const MANAGER_ROLE = 0;
 const EVALUATOR_ROLE = 1;

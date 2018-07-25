@@ -23,7 +23,6 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Token = artifacts.require("Token");
 
 contract("Colony Task Work Rating", accounts => {
-  const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
   const OTHER = accounts[3];

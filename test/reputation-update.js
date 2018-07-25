@@ -23,7 +23,7 @@ contract("Colony Reputation Updates", accounts => {
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
   const OTHER = accounts[3];
-  
+
   let colonyNetwork;
   let metaColony;
   let resolverColonyNetworkDeployed;

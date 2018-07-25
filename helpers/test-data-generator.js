@@ -54,9 +54,9 @@ export async function executeSignedRoleAssignment({ colony, functionName, taskId
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator, worker }) {
   const accounts = await web3GetAccounts();
   const manager = accounts[0];
-  evaluator = evaluator ? evaluator : accounts[1];
-  worker = worker ? worker : accounts[2];
-  
+  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
+
   const taskId = await makeTask({ colony, domainId: domain });
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
@@ -138,8 +138,8 @@ export async function setupFundedTask({
   const accounts = await web3GetAccounts();
   const manager = accounts[0];
   let tokenAddress;
-  evaluator = evaluator ? evaluator : accounts[1];
-  worker = worker ? worker : accounts[2];
+  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
   if (token === undefined) {
     tokenAddress = await colony.getToken.call();
@@ -208,8 +208,8 @@ export async function setupRatedTask({
   workerRatingSalt = RATING_2_SALT
 }) {
   const accounts = await web3GetAccounts();
-  evaluator = evaluator ? evaluator : accounts[1];
-  worker = worker ? worker : accounts[2];
+  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
   const taskId = await setupFundedTask({
     colonyNetwork,
