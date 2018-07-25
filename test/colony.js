@@ -393,7 +393,7 @@ contract("Colony", accounts => {
     it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await makeTask({ colony });
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_REPUTATIONS, INITIAL_ADDRESSES));
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });
   });
 
@@ -1405,14 +1405,14 @@ contract("Colony", accounts => {
       await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
 
       // Keep track of original Ether balance in pots
-      const originalDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
-      const originalTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      const originalDomainEtherBalance = await colony.getPotBalance(domainPotId, 0x0);
+      const originalTaskEtherBalance = await colony.getPotBalance(taskPotId, 0x0);
       // And same for the token
-      const originalDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
-      const originalTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      const originalDomainTokenBalance = await colony.getPotBalance(domainPotId, token.address);
+      const originalTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
       // And the other token
-      const originalDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
-      const originalTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
+      const originalDomainOtherTokenBalance = await colony.getPotBalance(domainPotId, otherToken.address);
+      const originalTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
 
       // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
       await colony.cancelTask(taskId);
@@ -1420,24 +1420,24 @@ contract("Colony", accounts => {
       await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskTokenBalance, token.address);
       await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskOtherTokenBalance, otherToken.address);
 
-      const cancelledTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
-      const cancelledDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
-      const cancelledTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
-      const cancelledDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
-      const cancelledTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
-      const cancelledDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
-      assert.isTrue(originalTaskEtherBalance.eq(cancelledTaskEtherBalance));
-      assert.isTrue(originalDomainEtherBalance.eq(cancelledDomainEtherBalance));
-      assert.isTrue(originalTaskTokenBalance.eq(cancelledTaskTokenBalance));
-      assert.isTrue(originalDomainTokenBalance.eq(cancelledDomainTokenBalance));
-      assert.isTrue(originalTaskOtherTokenBalance.eq(cancelledTaskOtherTokenBalance));
-      assert.isTrue(originalDomainOtherTokenBalance.eq(cancelledDomainOtherTokenBalance));
+      const cancelledTaskEtherBalance = await colony.getPotBalance(taskPotId, 0x0);
+      const cancelledDomainEtherBalance = await colony.getPotBalance(domainPotId, 0x0);
+      const cancelledTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
+      const cancelledDomainTokenBalance = await colony.getPotBalance(domainPotId, token.address);
+      const cancelledTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
+      const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domainPotId, otherToken.address);
+      assert.isFalse(originalTaskEtherBalance.eq(cancelledTaskEtherBalance));
+      assert.isFalse(originalDomainEtherBalance.eq(cancelledDomainEtherBalance));
+      assert.isFalse(originalTaskTokenBalance.eq(cancelledTaskTokenBalance));
+      assert.isFalse(originalDomainTokenBalance.eq(cancelledDomainTokenBalance));
+      assert.isFalse(originalTaskOtherTokenBalance.eq(cancelledTaskOtherTokenBalance));
+      assert.isFalse(originalDomainOtherTokenBalance.eq(cancelledDomainOtherTokenBalance));
       assert.equal(cancelledTaskEtherBalance.toNumber(), 0);
       assert.equal(cancelledTaskTokenBalance.toNumber(), 0);
       assert.equal(cancelledTaskOtherTokenBalance.toNumber(), 0);
-      assert.equal(originalDomainEtherBalance.plus(originalTaskEtherBalance).toNumber(), cancelledDomainEtherBalance.toNumber());
-      assert.equal(originalDomainTokenBalance.plus(originalTaskTokenBalance).toNumber(), cancelledDomainTokenBalance.toNumber());
-      assert.equal(originalDomainOtherTokenBalance.plus(originalTaskOtherTokenBalance).toNumber(), cancelledDomainOtherTokenBalance.toNumber());
+      assert.isTrue(originalDomainEtherBalance.add(originalTaskEtherBalance).eq(cancelledDomainEtherBalance));
+      assert.isTrue(originalDomainTokenBalance.add(originalTaskTokenBalance).eq(cancelledDomainTokenBalance));
+      assert.isTrue(originalDomainOtherTokenBalance.add(originalTaskOtherTokenBalance).eq(cancelledDomainOtherTokenBalance));
     });
 
     it("should fail if manager tries to cancel a task that was finalized", async () => {
@@ -1619,11 +1619,11 @@ contract("Colony", accounts => {
       const networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
       const networkBalanceAfter = await token.balanceOf.call(colonyNetwork.address);
-      assert.equal(networkBalanceAfter.sub(networkBalanceBefore).eq(toBN(1 * 1e18)));
+      assert.isTrue(networkBalanceAfter.sub(networkBalanceBefore).eq(toBN(1 * 1e18)));
       const balance = await token.balanceOf.call(MANAGER);
-      assert.equal(balance.toNumber(), 99 * 1e18);
+      assert.isTrue(balance.eq(toBN(99 * 1e18)));
       const potBalance = await colony.getPotBalance.call(2, token.address);
-      assert.equal(potBalance.toNumber(), 250 * 1e18);
+      assert.isTrue(potBalance.eq(toBN(250 * 1e18)));
     });
 
     it("should payout agreed ether for a task", async () => {

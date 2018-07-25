@@ -186,7 +186,7 @@ contract ColonyStorage is DSAuth, DSMath {
   }
 
   modifier isInBootstrapPhase() {
-    require(taskCount == 0);
+    require(taskCount == 0, "colony-not-in-bootstrap-mode");
     _;
   }
 
