@@ -98,12 +98,13 @@ export async function checkErrorRevert(promise, errMsg) {
   // We have to have this special function that we use to catch the error.
   let tx;
   let receipt;
+  let reason;
   try {
     tx = await promise;
     receipt = await web3GetTransactionReceipt(tx);
   } catch (err) {
-    // TODO: Check errMsg == err.Error or wherever truffle decides ot put this
-    ({ tx, receipt } = err);
+    ({ tx, receipt, reason } = err);
+    assert.equal(reason, errMsg);
   }
 
   // Check the receipt `status` to ensure transaction failed.
