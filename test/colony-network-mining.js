@@ -1605,7 +1605,7 @@ contract("ColonyNetworkMining", accounts => {
 
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.disputeRounds(round.toString(), index.toString());
+      const submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
       const firstDisagreeIdx = new BN(submission[8].toString());
       const lastAgreeIdx = firstDisagreeIdx.subn(1);
       const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());

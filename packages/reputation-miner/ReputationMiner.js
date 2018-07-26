@@ -184,7 +184,7 @@ class ReputationMiner {
 
   /**
    * Process the `j`th update and add to the current reputation state and the justificationtree.
-   * @param  {BigNumber}  updateNumber     The number of the update that the the log entry implies that should be considered.
+   * @param  {BigNumber}  updateNumber     The number of the update that should be considered.
    * @return {Promise}
    */
   async addSingleReputationUpdate(updateNumber, repCycle) {
@@ -244,12 +244,11 @@ class ReputationMiner {
       })
     );
 
-    const [skillId, skillAddress] = await this.getSkillIdAndAddressForUpdate(updateNumber); // eslint-disable-line no-await-in-loop
-
+    const [skillId, skillAddress] = await ReputationMiner.getSkillIdAndAddressFromKey(key);
     // TODO: Include updates for all child skills if x.amount is negative
     // We update colonywide sums first (children, parents, skill)
     // Then the user-specifc sums in the order children, parents, skill.
-    await this.insert(logEntry[3], skillId, skillAddress, score, updateNumber); // eslint-disable-line no-await-in-loop
+    await this.insert(logEntry[3], skillId, skillAddress, score, updateNumber);
   }
 
   /**
@@ -349,19 +348,14 @@ class ReputationMiner {
 
     const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber.toString());
 
-    const [skillId, userAddress] = await this.getSkillIdAndAddressForUpdateInLogEntry(
+    const key = await this.getKeyForUpdateInLogEntry(
       updateNumber.sub(new BN(logEntry[5].toString())).sub(this.nReputationsBeforeLatestLog),
       logEntry
     );
-    const key = `0x${new BN(logEntry[3].slice(2), 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(
-      userAddress.slice(2),
-      16
-    ).toString(16, 40)}`;
     return key;
   }
 
-  async getSkillIdAndAddressForUpdate(updateNumber) {
-    const key = await this.getKeyForUpdateNumber(updateNumber);
+  static async getSkillIdAndAddressFromKey(key) {
     // const colonyAddress = key.slice(2, 42);
     const skillId = key.slice(42, 106);
     const userAddress = key.slice(106);
@@ -369,16 +363,12 @@ class ReputationMiner {
   }
 
   /**
-   * Gets the skillId and 'user' address appropriate for the nth reputation update that logEntry implies.
-   * If updateNumber is in the first half of the number of updates logEntry implies, `skillAddress` is 0x0, as
-   * this corresponds to a colony-wide total amount of reputation being update. Otherwise, `skillAddress` is the
-   * address of the user in the log entry.
-   * The skillId depends on whether it is a child, parent or the skill listed in the log entry itself being updated.
+   * Gets the key appropriate for the nth reputation update that logEntry implies.
    * @param  {BigNumber} _updateNumber The number of the update the log entry implies we want the information for. Must be less than logEntry[4].
    * @param  {LogEntry}  logEntry An array six long, containing the log entry in question [userAddress, amount, skillId, colony, nUpdates, nPreviousUpdates ]
-   * @return {Promise}              Promise that resolves to [skillId, address]
+   * @return {Promise}              Promise that resolves to key
    */
-  async getSkillIdAndAddressForUpdateInLogEntry(_updateNumber, logEntry) {
+  async getKeyForUpdateInLogEntry(_updateNumber, logEntry) {
     const updateNumber = new BN(_updateNumber.toString());
     let skillAddress;
     // We need to work out the skillId and user address to use.
@@ -426,7 +416,11 @@ class ReputationMiner {
       // Then the skill being update is the skill itself - not a parent or child
       skillId = logEntry[2]; // eslint-disable-line prefer-destructuring
     }
-    return [skillId, skillAddress];
+    const key = `0x${new BN(logEntry[3].slice(2), 16).toString(16, 40)}${new BN(skillId.toString()).toString(16, 64)}${new BN(
+      skillAddress.slice(2),
+      16
+    ).toString(16, 40)}`;
+    return key;
   }
 
   /**
