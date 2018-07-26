@@ -47,9 +47,8 @@ contract("ColonyNetworkMining", accounts => {
     tokenLocking = ITokenLocking.at(tokenLockingAddress);
     const metaColonyAddress = await colonyNetwork.getMetaColony.call();
     metaColony = IColony.at(metaColonyAddress);
-    clny = await Token.new("Colony Network Token", "CLNY", 18);
-    await metaColony.setToken(clny.address);
-    await clny.setOwner(metaColony.address);
+    const clnyAddress = await metaColony.getToken();
+    clny = Token.at(clnyAddress);
   });
 
   beforeEach(async () => {
