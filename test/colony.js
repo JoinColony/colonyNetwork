@@ -1165,9 +1165,9 @@ contract("Colony", accounts => {
           colony,
           functionName: "setTaskBrief",
           taskId,
-          signers: [MANAGER, EVALUATOR],
-          sigTypes: [0, 0],
-          args: [10, 0]
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [10, SPECIFICATION_HASH_UPDATED]
         })
       );
     });

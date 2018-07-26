@@ -98,22 +98,18 @@ export async function checkErrorRevert(promise, errorMessage) {
   // We have to have this special function that we use to catch the error.
   let tx;
   let receipt;
-  let reason;
+  let reason; // eslint-disable-line no-unused-vars
   try {
     tx = await promise;
     receipt = await web3GetTransactionReceipt(tx);
   } catch (err) {
+    console.log(err);
     ({ tx, receipt, reason } = err);
     // TODO: address as part of https://github.com/JoinColony/colonyNetwork/issues/201#issuecomment-407634292
-    /// assert.equal(reason, errorMessage);
+    // / assert.equal(reason, errorMessage);
   }
-
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00);
-}
-
-export function checkErrorNonPayableFunction(tx) {
-  assert.equal(tx, "Error: Cannot send value to non-payable function");
 }
 
 export function getRandomString(_length) {

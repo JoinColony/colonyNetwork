@@ -232,7 +232,7 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("once target reached, endTime is set correctly", async () => {
-      const amount = clnyNeededForMaxPriceAuctionSellout.divn(3).toString(10);
+      const amount = clnyNeededForMaxPriceAuctionSellout.divn(3).toString();
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_2, amount);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_3, amount);
@@ -314,7 +314,7 @@ contract("ColonyNetworkAuction", accounts => {
       const balanceBefore = await clny.balanceOf.call(colonyNetwork.address);
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal.call();
-      assert.notEqual(receivedTotal.toNumber(), 0);
+      assert.isFalse(receivedTotal.isZero());
       const balanceAfter = await clny.balanceOf.call(colonyNetwork.address);
       assert.equal(balanceBefore.add(receivedTotal).toString(), balanceAfter.toString());
     });

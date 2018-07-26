@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, checkErrorNonPayableFunction, expectEvent } from "../helpers/test-helper";
+import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
@@ -71,13 +71,13 @@ contract("ColonyNetwork", accounts => {
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       assert.equal(updatedColonyVersion.toNumber(), updatedVersion);
       const currentResolver = await colonyNetwork.getColonyVersionResolver.call(updatedVersion);
-      assert.equal(currentResolver, sampleResolver);
+      assert.equal(currentResolver.toLowerCase(), sampleResolver);
     });
 
     it("when registering a lower version of the Colony contract, should NOT update the current (latest) colony version", async () => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      await colonyNetwork.addColonyVersion(currentColonyVersion.sub(1).toNumber(), sampleResolver);
+      await colonyNetwork.addColonyVersion(currentColonyVersion.subn(1).toNumber(), sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       assert.equal(updatedColonyVersion.toNumber(), currentColonyVersion.toNumber());
@@ -160,12 +160,9 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should fail if ETH is sent", async () => {
-      try {
-        const token = await Token.new(...TOKEN_ARGS);
-        await colonyNetwork.createColony(token.address, { value: 1, gas: createColonyGas });
-      } catch (err) {
-        checkErrorNonPayableFunction(err);
-      }
+      const token = await Token.new(...TOKEN_ARGS);
+      await checkErrorRevert(colonyNetwork.createColony(token.address, { value: 1, gas: createColonyGas }));
+
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
       assert.equal(0, colonyNetworkBalance);
     });
@@ -216,7 +213,7 @@ contract("ColonyNetwork", accounts => {
 
       await colony.upgrade(newVersion);
       const colonyResolver = await colonyEtherRouter.resolver.call();
-      assert.equal(colonyResolver, sampleResolver);
+      assert.equal(colonyResolver.toLowerCase(), sampleResolver);
     });
 
     it("should not be able to set colony resolver by directly calling `setResolver`", async () => {
@@ -229,8 +226,7 @@ contract("ColonyNetwork", accounts => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
       const newVersion = currentColonyVersion.addn(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
-
-      await checkErrorRevert(await EtherRouter.at(colony.address).setResolver(sampleResolver));
+      await checkErrorRevert(colony.setResolver(sampleResolver));
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
@@ -241,7 +237,7 @@ contract("ColonyNetwork", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
-      const newVersion = currentColonyVersion.sub(1).toNumber();
+      const newVersion = currentColonyVersion.subn(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
       await checkErrorRevert(colony.upgrade(newVersion));

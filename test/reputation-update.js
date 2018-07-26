@@ -210,9 +210,7 @@ contract("Colony Reputation Updates", accounts => {
 
     it("should revert on reputation amount overflow", async () => {
       // Fund colony with maximum possible int number of tokens
-      const maxUIntNumber = new BN(2)
-        .pow(new BN(255))
-        .sub(new BN(1));
+      const maxUIntNumber = new BN(2).pow(new BN(255)).sub(new BN(1));
       await fundColonyWithTokens(metaColony, colonyToken, maxUIntNumber);
       // Split the tokens as payouts between the manager and worker
       const managerPayout = new BN("2");

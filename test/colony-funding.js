@@ -1213,7 +1213,7 @@ contract("Colony Funding", accounts => {
           solidityReward
             .sub(reward)
             .div(reward)
-            .times(100)
+            .muln(100)
             .toString(),
           "%"
         );
