@@ -1726,12 +1726,8 @@ contract("ColonyNetworkMining", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      await goodClient.respondToBinarySearchForChallenge();
 
-      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0], 0x0, [], 0x0, [], 0x0, [], 0, 0, []));
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 0x0, [], 0x0, [], 0x0, [], 0, 0, []));
 
       // Cleanup
       await badClient.respondToBinarySearchForChallenge();
@@ -1743,16 +1739,22 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 2, badClient2Argument: -1 }].forEach(
+    [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 9, badClient2Argument: -1 }].forEach(
       async args => {
         it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
           is too ${args.word}`, async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
           await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
-          const addr = await colonyNetwork.getReputationMiningCycle.call(true);
+          let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+          let repCycle = ReputationMiningCycle.at(addr);
           await forwardTime(3600, this);
-          const repCycle = ReputationMiningCycle.at(addr);
+          await repCycle.submitRootHash("0x0", 0, 10);
+          await repCycle.confirmNewHash(0);
+
+          addr = await colonyNetwork.getReputationMiningCycle.call(true);
+          repCycle = ReputationMiningCycle.at(addr);
+          await forwardTime(3600, this);
 
           badClient = new MaliciousReputationMinerExtraRep(
             { loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
