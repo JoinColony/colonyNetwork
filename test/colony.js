@@ -28,6 +28,7 @@ import {
 import {
   getTokenArgs,
   web3GetBalance,
+  web3GetStorageAt,
   checkErrorRevert,
   expectEvent,
   expectAllEvents,
@@ -1712,6 +1713,131 @@ contract("Colony", addresses => {
       await colony.finalizeTask(taskId);
 
       await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }));
+    });
+  });
+
+  describe("Recovery Mode", () => {
+    it("should be able to add and remove recovery roles when not in recovery", async () => {
+      const owner = addresses[0];
+      let numRecoveryRoles;
+
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 0);
+
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.setRecoveryRole(addresses[1], { from: owner });
+      await colony.setRecoveryRole(addresses[2], { from: owner });
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 3);
+
+      // Can remove recovery roles
+      await colony.removeRecoveryRole(addresses[2], { from: owner });
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 2);
+
+      // Can't remove twice
+      await colony.removeRecoveryRole(addresses[2], { from: owner });
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 2);
+
+      // Can remove owner
+      await colony.removeRecoveryRole(owner, { from: owner });
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 1);
+    });
+
+    it("should not be able to add and remove roles when in recovery", async () => {
+      const owner = addresses[0];
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.enterRecoveryMode({ from: owner });
+      await checkErrorRevert(colony.setOwnerRole(addresses[1], { from: owner }));
+      await checkErrorRevert(colony.setAdminRole(addresses[1], { from: owner }));
+      await checkErrorRevert(colony.removeAdminRole(addresses[1], { from: owner }));
+      await checkErrorRevert(colony.setRecoveryRole(addresses[1], { from: owner }));
+      await checkErrorRevert(colony.removeRecoveryRole(addresses[1], { from: owner }));
+    });
+
+    it("should not be able to call normal functions while in recovery", async () => {
+      const owner = addresses[0];
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.enterRecoveryMode({ from: owner });
+      await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }));
+      await checkErrorRevert(colony.mintTokens(1000, { from: owner }));
+      await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }));
+      await checkErrorRevert(colony.makeTask("0x0", 0, { from: owner }));
+    });
+
+    it("should exit recovery mode with sufficient approvals", async () => {
+      const owner = addresses[0];
+      const version = await colony.version();
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.setRecoveryRole(addresses[1], { from: owner });
+      await colony.setRecoveryRole(addresses[2], { from: owner });
+
+      await colony.enterRecoveryMode({ from: owner });
+      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
+
+      // 0/3 approve
+      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
+
+      // 1/3 approve
+      await colony.approveExitRecovery({ from: owner });
+      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
+
+      // 2/3 approve
+      await colony.approveExitRecovery({ from: addresses[1] });
+      await colony.exitRecoveryMode(version.toNumber(), { from: owner });
+    });
+
+    it("recovery users can work in recovery mode", async () => {
+      const owner = addresses[0];
+      const version = await colony.version();
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.setRecoveryRole(addresses[1], { from: owner });
+
+      await colony.enterRecoveryMode({ from: owner });
+      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: addresses[1] });
+
+      // 2/2 approve
+      await colony.approveExitRecovery({ from: owner });
+      await colony.approveExitRecovery({ from: addresses[1] });
+      await colony.exitRecoveryMode(version.toNumber(), { from: addresses[1] });
+    });
+
+    it("users cannot approve twice", async () => {
+      const owner = addresses[0];
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.enterRecoveryMode({ from: owner });
+      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
+
+      await colony.approveExitRecovery({ from: owner });
+      await checkErrorRevert(colony.approveExitRecovery({ from: owner }));
+    });
+
+    it("users cannot approve if unauthorized", async () => {
+      const owner = addresses[0];
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.enterRecoveryMode({ from: owner });
+      await checkErrorRevert(colony.approveExitRecovery({ from: addresses[1] }));
+    });
+
+    it("should allow editing of general variables", async () => {
+      const owner = addresses[0];
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.enterRecoveryMode({ from: owner });
+      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
+
+      const unprotected = await web3GetStorageAt(colony.address, 5);
+      assert.equal(unprotected.toString(), `0xdeadbeef${"0".repeat(56)}`);
+    });
+
+    it("should not allow editing of protected variables", async () => {
+      const owner = addresses[0];
+      const protectedLoc = 0;
+
+      await colony.setRecoveryRole(owner, { from: owner });
+      await colony.enterRecoveryMode({ from: owner });
+      await checkErrorRevert(colony.setStorageSlotRecovery(protectedLoc, "0xdeadbeef", { from: owner }));
     });
   });
 });

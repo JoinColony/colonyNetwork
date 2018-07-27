@@ -24,6 +24,7 @@ import "../lib/dappsys/roles.sol";
 contract Authority is DSRoles {
   uint8 ownerRole = 0;
   uint8 adminRole = 1;
+  uint8 recoveryRole = 2;
 
   constructor(address colony) public {
     // Set token
@@ -38,6 +39,10 @@ contract Authority is DSRoles {
     setOwnerRoleCapability(colony, "setOwnerRole(address)");
     // Remove admin role
     setOwnerRoleCapability(colony, "removeAdminRole(address)");
+    // Set recovery role
+    setOwnerRoleCapability(colony, "setRecoveryRole(address)");
+    // Remove recovery role
+    setOwnerRoleCapability(colony, "removeRecoveryRole(address)");
     // Upgrade colony
     setOwnerRoleCapability(colony, "upgrade(uint256)");
     // Claim colony ENS label
@@ -61,6 +66,15 @@ contract Authority is DSRoles {
     // Set admin
     setAdminRoleCapability(colony, "setAdminRole(address)");
     setOwnerRoleCapability(colony, "setAdminRole(address)");
+
+    // Enter recovery mode
+    setRecoveryRoleCapability(colony, "enterRecoveryMode()");
+    // Approve recovery exit
+    setRecoveryRoleCapability(colony, "approveExitRecovery()");
+    // Update arbitrary storage value
+    setRecoveryRoleCapability(colony, "setStorageSlotRecovery(uint256,bytes32)");
+    // Exit recovery mode and set resolver version
+    setRecoveryRoleCapability(colony, "exitRecoveryMode(uint256)");
   }
 
   function setOwnerRoleCapability(address colony, bytes sig) private {
@@ -71,5 +85,10 @@ contract Authority is DSRoles {
   function setAdminRoleCapability(address colony, bytes sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(adminRole, colony, functionSig, true);
+  }
+
+  function setRecoveryRoleCapability(address colony, bytes sig) private {
+    bytes4 functionSig = bytes4(keccak256(sig));
+    setRoleCapability(recoveryRole, colony, functionSig, true);
   }
 }

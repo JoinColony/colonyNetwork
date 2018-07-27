@@ -29,23 +29,45 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
 
-  function setOwnerRole(address _user) public auth {
+  function setOwnerRole(address _user) public stoppable auth {
     // To allow only one address to have owner role at a time, we have to remove current owner from their role
     Authority colonyAuthority = Authority(authority);
     colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
     colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
   }
 
-  function setAdminRole(address _user) public auth {
+  function setAdminRole(address _user) public stoppable auth {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, true);
   }
 
   // Can only be called by the owner role.
-  function removeAdminRole(address _user) public auth {
+  function removeAdminRole(address _user) public stoppable auth {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }
 
+  // Can only be called by the owner role.
+  function setRecoveryRole(address _user) public stoppable auth {
+    require(recoveryRolesCount < ~uint64(0), "maximum-num-recovery-roles");
+    if (!Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
+      Authority(authority).setUserRole(_user, RECOVERY_ROLE, true);
+      recoveryRolesCount++;
+    }
+  }
+
+  // Can only be called by the owner role.
+  function removeRecoveryRole(address _user) public stoppable auth {
+    if (Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
+      Authority(authority).setUserRole(_user, RECOVERY_ROLE, false);
+      recoveryRolesCount--;
+    }
+  }
+
+  function numRecoveryRoles() public view returns(uint64) {
+    return recoveryRolesCount;
+  }
+
   function setToken(address _token) public
+  stoppable
   auth
   {
     token = ERC20Extended(_token);
@@ -55,7 +77,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return token;
   }
 
-  function initialiseColony(address _address) public {
+  function initialiseColony(address _address) public stoppable {
     require(colonyNetworkAddress == 0x0, "colony-initialise-bad-address");
     colonyNetworkAddress = _address;
 
@@ -81,6 +103,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function bootstrapColony(address[] _users, int[] _amounts) public
+  stoppable
   auth
   isInBootstrapPhase
   {
@@ -95,12 +118,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function mintTokens(uint _wad) public
+  stoppable
   auth
   {
     return token.mint(_wad);
   }
 
-  function mintTokensForColonyNetwork(uint _wad) public {
+  function mintTokensForColonyNetwork(uint _wad) public stoppable {
     // Only the colony Network can call this function
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
@@ -109,11 +133,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token.transfer(colonyNetworkAddress, _wad);
   }
 
-  function registerColonyLabel(bytes32 _subnode) public auth {
+  function registerColonyLabel(bytes32 _subnode) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(_subnode);
   }
 
   function addGlobalSkill(uint _parentSkillId) public
+  stoppable
   auth
   returns (uint256)
   {
@@ -122,8 +147,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function addDomain(uint256 _parentDomainId) public
-  domainExists(_parentDomainId)
+  stoppable
   auth
+  domainExists(_parentDomainId)
   {
     // Note: Remove when we want to allow more domain hierarchy levels
     require(_parentDomainId == 1, "colony-parent-skill-not-root");
@@ -165,8 +191,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
+  public
+  stoppable
   verifyKey(key)
-  public view returns (bool)
+  returns (bool)
   {
     // Get roothash from colonynetwork
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
@@ -175,7 +203,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return true;
   }
 
-  function upgrade(uint256 _newVersion) public auth {
+  function upgrade(uint256 _newVersion) public stoppable auth {
     // Upgrades can only go up in version
     uint256 currentVersion = version();
     require(_newVersion > currentVersion);
@@ -184,6 +212,58 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(newResolver != 0x0);
     EtherRouter e = EtherRouter(address(this));
     e.setResolver(newResolver);
+  }
+
+  function enterRecoveryMode() public stoppable auth {
+    recoveryMode = true;
+    recoveryApprovalCount = 0;
+    recoveryEditedTimestamp = now;
+  }
+
+  uint256 constant AUTHORITY_SLOT = 0;
+  uint256 constant OWNER_SLOT = 1;
+  uint256 constant RESOLVER_SLOT = 2;
+  uint256 constant COLONY_NETWORK_ADDRESS_SLOT = 3;
+
+  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
+    require(_slot != AUTHORITY_SLOT, "protected-variable");
+    require(_slot != OWNER_SLOT, "protected-variable");
+    require(_slot != RESOLVER_SLOT, "protected-variable");
+    require(_slot != COLONY_NETWORK_ADDRESS_SLOT, "protected-variable");
+
+    // Protect key variables
+    uint64 _recoveryRolesCount = recoveryRolesCount;
+
+    // Make recovery edit
+    uint x = _slot;
+    bytes32 y = _value;
+    assembly {
+      sstore(x, y)
+    }
+
+    // Restore key variables
+    recoveryRolesCount = _recoveryRolesCount;
+
+    // Reset recovery state
+    recoveryMode = true;
+    recoveryApprovalCount = 0;
+    recoveryEditedTimestamp = now;
+  }
+
+  function approveExitRecovery() public recovery auth {
+    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "recovery-approval-already-given");
+    recoveryApprovalTimestamps[msg.sender] = now;
+    recoveryApprovalCount++;
+  }
+
+  function exitRecoveryMode(uint256 _newVersion) public recovery auth {
+    uint numRequired = recoveryRolesCount / 2 + 1;
+    require(recoveryApprovalCount >= numRequired, "recovery-exit-insufficient-approvals");
+
+    recoveryMode = false;
+    if (_newVersion > version()) {
+      upgrade(_newVersion);
+    }
   }
 
   function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)

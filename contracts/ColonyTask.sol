@@ -109,6 +109,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function makeTask(bytes32 _specificationHash, uint256 _domainId) public
+  stoppable
   auth
   domainExists(_domainId)
   {
@@ -147,7 +148,7 @@ contract ColonyTask is ColonyStorage {
     bytes32[] _sigS,
     uint8[] _mode,
     uint256 _value,
-    bytes _data) public
+    bytes _data) public stoppable
   {
     require(_value == 0);
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
@@ -203,7 +204,7 @@ contract ColonyTask is ColonyStorage {
     bytes32[] _sigS,
     uint8[] _mode,
     uint256 _value,
-    bytes _data) public
+    bytes _data) public stoppable
   {
     require(_value == 0);
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
@@ -253,6 +254,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
+  stoppable
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
   taskWorkRatingCommitOpen(_id)
@@ -264,6 +266,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public
+  stoppable
   taskWorkRatingRevealOpen(_id)
   {
     // MAYBE: we should hash these the other way around, i.e. generateSecret(_rating, _salt)
@@ -281,6 +284,7 @@ contract ColonyTask is ColonyStorage {
   // their rating of their counterpart is assumed to be the highest possible
   // and they will receive a reputation penalty
   function assignWorkRating(uint256 _id) public
+  stoppable
   taskWorkRatingsClosed(_id)
   {
     Role storage managerRole = tasks[_id].roles[MANAGER];
@@ -311,33 +315,35 @@ contract ColonyTask is ColonyStorage {
   }
 
   function setTaskManagerRole(uint256 _id, address _user) public
+  stoppable
   self()
   isAdmin(_user)
   {
     setTaskRoleUser(_id, MANAGER, _user);
   }
 
-  function setTaskEvaluatorRole(uint256 _id, address _user) public self {
+  function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
     require(tasks[_id].roles[EVALUATOR].user == 0x0);
     setTaskRoleUser(_id, EVALUATOR, _user);
   }
 
-  function setTaskWorkerRole(uint256 _id, address _user) public self {
+  function setTaskWorkerRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
     require(tasks[_id].roles[WORKER].user == 0x0);
     setTaskRoleUser(_id, WORKER, _user);
   }
 
-  function removeTaskEvaluatorRole(uint256 _id) public self {
+  function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
     setTaskRoleUser(_id, EVALUATOR, 0x0);
   }
 
-  function removeTaskWorkerRole(uint256 _id) public self {
+  function removeTaskWorkerRole(uint256 _id) public stoppable self {
     setTaskRoleUser(_id, WORKER, 0x0);
   }
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
+  stoppable
   confirmTaskRoleIdentity(_id, MANAGER)
   taskExists(_id)
   taskNotFinalized(_id)
@@ -349,6 +355,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function setTaskSkill(uint256 _id, uint256 _skillId) public
+  stoppable
   self()
   taskExists(_id)
   taskNotFinalized(_id)
@@ -361,6 +368,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
+  stoppable
   self()
   taskExists(_id)
   taskNotFinalized(_id)
@@ -371,6 +379,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
+  stoppable
   self()
   taskExists(_id)
   taskNotFinalized(_id)
@@ -381,6 +390,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
+  stoppable
   taskExists(_id)
   taskNotFinalized(_id)
   beforeDueDate(_id)
@@ -394,6 +404,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function finalizeTask(uint256 _id) public
+  stoppable
   taskWorkRatingsAssigned(_id)
   taskNotFinalized(_id)
   {
@@ -408,6 +419,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function cancelTask(uint256 _id) public
+  stoppable
   auth
   taskExists(_id)
   taskNotFinalized(_id)

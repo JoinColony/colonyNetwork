@@ -32,6 +32,15 @@ export function web3GetBalance(account) {
   });
 }
 
+export function web3GetStorageAt(address, position) {
+  return new Promise((resolve, reject) => {
+    web3.eth.getStorageAt(address, position, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res);
+    });
+  });
+}
+
 export function web3GetTransaction(txid) {
   return new Promise((resolve, reject) => {
     web3.eth.getTransaction(txid, (err, res) => {

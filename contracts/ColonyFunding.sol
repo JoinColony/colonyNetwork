@@ -37,15 +37,15 @@ contract ColonyFunding is ColonyStorage {
     return 100;
   }
 
-  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public self {
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, MANAGER, _token, _amount);
   }
 
-  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public self {
+  function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, EVALUATOR, _token, _amount);
   }
 
-  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public self {
+  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, WORKER, _token, _amount);
 
     emit TaskWorkerPayoutChanged(_id, _token, _amount);
@@ -67,6 +67,7 @@ contract ColonyFunding is ColonyStorage {
   }
 
   function claimPayout(uint256 _id, uint256 _role, address _token) public
+  stoppable
   taskFinalized(_id)
   {
     Task storage task = tasks[_id];
@@ -107,6 +108,7 @@ contract ColonyFunding is ColonyStorage {
   }
 
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
+  stoppable
   auth
   {
     // Prevent people moving funds from the pot for paying out token holders
@@ -137,7 +139,7 @@ contract ColonyFunding is ColonyStorage {
     updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
   }
 
-  function claimColonyFunds(address _token) public {
+  function claimColonyFunds(address _token) public stoppable {
     uint toClaim;
     uint feeToPay;
     uint remainder;
@@ -164,7 +166,7 @@ contract ColonyFunding is ColonyStorage {
     return nonRewardPotsTotal[_token];
   }
 
-  function startNextRewardPayout(address _token) public auth {
+  function startNextRewardPayout(address _token) public stoppable auth {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(address(token));
 
@@ -186,7 +188,9 @@ contract ColonyFunding is ColonyStorage {
     emit RewardPayoutCycleStarted(totalLockCount);
   }
 
-  function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public {
+  function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public
+  stoppable
+  {
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
     // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
@@ -229,7 +233,7 @@ contract ColonyFunding is ColonyStorage {
     ERC20Extended(payout.tokenAddress).transfer(msg.sender, reward);
   }
 
-  function finalizeRewardPayout(uint256 _payoutId) public {
+  function finalizeRewardPayout(uint256 _payoutId) public stoppable {
     RewardPayoutCycle memory payout = rewardPayoutCycles[_payoutId];
 
     require(activeRewardPayouts[payout.tokenAddress], "colony-reward-payout-token-not-active");
