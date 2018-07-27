@@ -103,10 +103,9 @@ export async function checkErrorRevert(promise, errorMessage) {
     tx = await promise;
     receipt = await web3GetTransactionReceipt(tx);
   } catch (err) {
-    console.log(err);
     ({ tx, receipt, reason } = err);
     // TODO: address as part of https://github.com/JoinColony/colonyNetwork/issues/201#issuecomment-407634292
-    // / assert.equal(reason, errorMessage);
+    // assert.equal(reason, errorMessage);
   }
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00);
