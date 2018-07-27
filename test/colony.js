@@ -1775,7 +1775,7 @@ contract("Colony", accounts => {
       await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }));
       await checkErrorRevert(colony.mintTokens(1000, { from: owner }));
       await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }));
-      await checkErrorRevert(colony.makeTask("0x0", 0, { from: owner }));
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }));
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {

@@ -1958,7 +1958,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
-      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 0x0, [], 0x0, [], 0x0, [], 0, 0, []));
+      await checkErrorRevert(repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "0x01", [], "0x01", [], "0x01", [], "0x01", "0x01", []));
 
       // Cleanup
       await badClient.respondToBinarySearchForChallenge();
