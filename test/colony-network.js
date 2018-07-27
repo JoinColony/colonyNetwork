@@ -28,7 +28,7 @@ contract("ColonyNetwork", accounts => {
 
   before(async () => {
     const network = await web3GetNetwork();
-    createColonyGas = network === "coverage" ? "0xfffffffffff" : 4e6;
+    createColonyGas = network === "1999" ? "0xfffffffffff" : 4e6;
     resolverColonyNetworkDeployed = await Resolver.deployed();
   });
 

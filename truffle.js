@@ -12,14 +12,14 @@ module.exports = {
       host: "localhost",
       port: 8545,
       gasPrice: 0,
-      network_id: "integration"
+      network_id: "1998"
     },
     coverage: {
       host: "localhost",
-      network_id: "*",
       port: 8555, // <-- Use port 8555
       gas: 0xfffffffffff, // <-- Use this high gas value
-      gasPrice: 0x01 // <-- Use this low gas price
+      gasPrice: 0x01, // <-- Use this low gas price
+      network_id: "1999"
     }
   },
   mocha: {
