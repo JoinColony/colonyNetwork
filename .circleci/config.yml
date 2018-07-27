@@ -49,6 +49,7 @@ jobs:
       - <<: *step_restore_cache
       - <<: *step_setup_global_packages
       - <<: *step_setup_greenkeeper
+      - setup_remote_docker
       - <<: *step_pull_solc_docker
       - run:
           name: "Setup parity"
@@ -108,6 +109,7 @@ jobs:
       - checkout
       - <<: *step_restore_cache
       - <<: *step_setup_global_packages
+      - setup_remote_docker
       - <<: *step_pull_solc_docker
       - run:
           name: "Running unit tests with coverage"
