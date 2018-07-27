@@ -1729,25 +1729,25 @@ contract("Colony", accounts => {
 
   describe("Recovery Mode", () => {
     it("should be able to add and remove recovery roles when not in recovery", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       let numRecoveryRoles;
 
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 0);
 
       await colony.setRecoveryRole(owner, { from: owner });
-      await colony.setRecoveryRole(addresses[1], { from: owner });
-      await colony.setRecoveryRole(addresses[2], { from: owner });
+      await colony.setRecoveryRole(accounts[1], { from: owner });
+      await colony.setRecoveryRole(accounts[2], { from: owner });
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 3);
 
       // Can remove recovery roles
-      await colony.removeRecoveryRole(addresses[2], { from: owner });
+      await colony.removeRecoveryRole(accounts[2], { from: owner });
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 2);
 
       // Can't remove twice
-      await colony.removeRecoveryRole(addresses[2], { from: owner });
+      await colony.removeRecoveryRole(accounts[2], { from: owner });
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 2);
 
@@ -1758,18 +1758,18 @@ contract("Colony", accounts => {
     });
 
     it("should not be able to add and remove roles when in recovery", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.setOwnerRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.setAdminRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.removeAdminRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.setRecoveryRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.removeRecoveryRole(addresses[1], { from: owner }));
+      await checkErrorRevert(colony.setOwnerRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.setAdminRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.removeAdminRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.setRecoveryRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.removeRecoveryRole(accounts[1], { from: owner }));
     });
 
     it("should not be able to call normal functions while in recovery", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
       await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }));
@@ -1779,11 +1779,11 @@ contract("Colony", accounts => {
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       const version = await colony.version();
       await colony.setRecoveryRole(owner, { from: owner });
-      await colony.setRecoveryRole(addresses[1], { from: owner });
-      await colony.setRecoveryRole(addresses[2], { from: owner });
+      await colony.setRecoveryRole(accounts[1], { from: owner });
+      await colony.setRecoveryRole(accounts[2], { from: owner });
 
       await colony.enterRecoveryMode({ from: owner });
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
@@ -1796,27 +1796,27 @@ contract("Colony", accounts => {
       await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
 
       // 2/3 approve
-      await colony.approveExitRecovery({ from: addresses[1] });
+      await colony.approveExitRecovery({ from: accounts[1] });
       await colony.exitRecoveryMode(version.toNumber(), { from: owner });
     });
 
     it("recovery users can work in recovery mode", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       const version = await colony.version();
       await colony.setRecoveryRole(owner, { from: owner });
-      await colony.setRecoveryRole(addresses[1], { from: owner });
+      await colony.setRecoveryRole(accounts[1], { from: owner });
 
       await colony.enterRecoveryMode({ from: owner });
-      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: addresses[1] });
+      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: accounts[1] });
 
       // 2/2 approve
       await colony.approveExitRecovery({ from: owner });
-      await colony.approveExitRecovery({ from: addresses[1] });
-      await colony.exitRecoveryMode(version.toNumber(), { from: addresses[1] });
+      await colony.approveExitRecovery({ from: accounts[1] });
+      await colony.exitRecoveryMode(version.toNumber(), { from: accounts[1] });
     });
 
     it("users cannot approve twice", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
@@ -1826,14 +1826,14 @@ contract("Colony", accounts => {
     });
 
     it("users cannot approve if unauthorized", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.approveExitRecovery({ from: addresses[1] }));
+      await checkErrorRevert(colony.approveExitRecovery({ from: accounts[1] }));
     });
 
     it("should allow editing of general variables", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
@@ -1843,7 +1843,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow editing of protected variables", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       const protectedLoc = 0;
 
       await colony.setRecoveryRole(owner, { from: owner });
