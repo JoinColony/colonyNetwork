@@ -69,16 +69,19 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
   modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
-    require(reputationMiningWindowOpenTimestamp > 0, "colony-reputation-mining-cycle-not-open");
     // Check the ticket is a winning one.
-    // TODO Figure out how to uncomment the next line, but not break tests sporadically.
-    // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
-    // x = floor(uint((2**256 - 1) / 3600)
-    if (now - reputationMiningWindowOpenTimestamp <= 3600) {
+    if (!submissionWindowClosed()) {
+      // x = floor(uint((2**256 - 1) / 3600)
       uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
-      uint256 target = (now - reputationMiningWindowOpenTimestamp ) * x;
-      require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target, "colony-reputation-mining-cycle-closed");
+      uint256 target = (now - reputationMiningWindowOpenTimestamp) * x;
+      require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
     }
+    _;
+  }
+
+  modifier submissionsOpen() {
+    require(reputationMiningWindowOpenTimestamp > 0, "colony-reputation-mining-cycle-not-open");
+    require(!submissionWindowClosed() || nSubmittedHashes == 0, "colony-reputation-mining-cycle-submissions-closed");
     _;
   }
 
@@ -120,6 +123,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function submitRootHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex) public
+  submissionsOpen()
   entryQualifies(newHash, nNodes, entryIndex)
   withinTarget(newHash, entryIndex)
   {
@@ -175,7 +179,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   function confirmNewHash(uint256 roundNumber) public
   finalDisputeRoundCompleted(roundNumber)
   {
-    // TODO: Require some amount of time to have passed (i.e. people have had a chance to submit other hashes)
+    require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
+
     Submission storage submission = disputeRounds[roundNumber][0];
     IColonyNetwork(colonyNetworkAddress).setReputationRootHash(
       submission.proposedNewRootHash,
@@ -444,6 +449,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /////////////////////////
   // Internal functions
   /////////////////////////
+
+  function submissionWindowClosed() internal view returns(bool) {
+    return now - reputationMiningWindowOpenTimestamp >= 3600;
+  }
 
   function processBinaryChallengeSearchResponse(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 targetNode) internal {
     disputeRounds[round][idx].lastResponseTimestamp = now;

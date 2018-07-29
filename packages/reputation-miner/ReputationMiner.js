@@ -493,17 +493,25 @@ class ReputationMiner {
   }
 
   /**
+   * Get the active reputation mining cycle
+   * @return {Promise}
+   */
+  async getActiveRepCycle() {
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+    return new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
+  }
+
+  /**
    * Submit what the client believes should be the next reputation state root hash to the `ReputationMiningCycle` contract
    * @return {Promise}
    */
-  async submitRootHash() {
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
+  async submitRootHash(entryIndex = 1) {
     const hash = await this.getRootHash();
+    const repCycle = await this.getActiveRepCycle();
     // TODO: Work out what entry we should use when we submit
-    const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, 1);
+    const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, entryIndex);
 
-    return repCycle.submitRootHash(hash, this.nReputations, 1, { gasLimit: `0x${gas.mul(2).toString()}` });
+    return repCycle.submitRootHash(hash, this.nReputations, entryIndex, { gasLimit: `0x${gas.mul(2).toString()}` });
   }
 
   /**
@@ -590,8 +598,7 @@ class ReputationMiner {
   async submitJustificationRootHash() {
     const jrh = await this.justificationTree.getRootHash();
     const [branchMask1, siblings1] = await this.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
+    const repCycle = await this.getActiveRepCycle();
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1));
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
@@ -607,8 +614,7 @@ class ReputationMiner {
    */
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
+    const repCycle = await this.getActiveRepCycle();
 
     let index = ethers.utils.bigNumberify(-1);
     let round = ethers.utils.bigNumberify(0);
@@ -632,8 +638,7 @@ class ReputationMiner {
    */
   async respondToBinarySearchForChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
+    const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
     const targetNode = submission[8].add(submission[9]).div(2);
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
@@ -653,8 +658,7 @@ class ReputationMiner {
    */
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
+    const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
     // console.log(submission);
     const firstDisagreeIdx = submission[8];

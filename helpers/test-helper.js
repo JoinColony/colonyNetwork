@@ -308,3 +308,18 @@ export function makeReputationKey(colonyAddress, skill, accountAddress = undefin
 export function makeReputationValue(value, repuationId) {
   return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(repuationId)).toString(16, 64)}`; // eslint-disable-line
 }
+
+export async function findIndexAndSubmitRootHash(client, byteCutoff = 0x00, nIter = 1000) {
+  const rootHash = await client.getRootHash();
+  const repCycle = await client.getActiveRepCycle();
+  let entryIndex = 1;
+
+  for (let i = 1; i < nIter; i += 1) {
+    const hash = await repCycle.getEntryHash(client.realWallet.address, i, rootHash); // eslint-disable-line no-await-in-loop
+    if (parseInt(hash.substring(2, 4), 16) <= byteCutoff) {
+      entryIndex = i;
+    }
+  }
+  await client.submitRootHash(entryIndex);
+  return entryIndex;
+}
