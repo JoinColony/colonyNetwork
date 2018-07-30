@@ -41,11 +41,11 @@ contract("TokenLocking", accounts => {
   describe("when locking tokens", async () => {
     it("should correctly set colony network address", async () => {
       await tokenLocking.setColonyNetwork(0x0);
-      let colonyNetworkAddress = await tokenLocking.getColonyNetwork.call();
+      let colonyNetworkAddress = await tokenLocking.getColonyNetwork();
       assert.equal(colonyNetworkAddress, 0x0);
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
-      colonyNetworkAddress = await tokenLocking.getColonyNetwork.call();
+      colonyNetworkAddress = await tokenLocking.getColonyNetwork();
       assert.equal(colonyNetworkAddress, colonyNetwork.address);
     });
 

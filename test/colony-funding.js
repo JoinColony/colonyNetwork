@@ -28,7 +28,7 @@ contract("Colony Funding", accounts => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   });
 
@@ -47,16 +47,16 @@ contract("Colony Funding", accounts => {
     it("should not put the tokens straight in to the pot", async () => {
       await otherToken.mint(100);
       await otherToken.transfer(colony.address, 100);
-      let colonyRewardPotBalance = await colony.getPotBalance.call(0, otherToken.address);
-      let colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
-      let colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
+      let colonyRewardPotBalance = await colony.getPotBalance(0, otherToken.address);
+      let colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      let colonyTokenBalance = await otherToken.balanceOf(colony.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
       assert.equal(colonyPotBalance.toNumber(), 0);
       assert.equal(colonyRewardPotBalance.toNumber(), 0);
       await colony.claimColonyFunds(otherToken.address);
-      colonyRewardPotBalance = await colony.getPotBalance.call(0, otherToken.address);
-      colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
-      colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
+      colonyRewardPotBalance = await colony.getPotBalance(0, otherToken.address);
+      colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      colonyTokenBalance = await otherToken.balanceOf(colony.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
       assert.equal(colonyPotBalance.toNumber(), 99);
       assert.equal(colonyRewardPotBalance.toNumber(), 1);
@@ -64,9 +64,9 @@ contract("Colony Funding", accounts => {
 
     it("should not put its own tokens in to the reward pot", async () => {
       await fundColonyWithTokens(colony, token, 100);
-      const colonyRewardPotBalance = await colony.getPotBalance.call(0, token.address);
-      const colonyPotBalance = await colony.getPotBalance.call(1, token.address);
-      const colonyTokenBalance = await token.balanceOf.call(colony.address);
+      const colonyRewardPotBalance = await colony.getPotBalance(0, token.address);
+      const colonyPotBalance = await colony.getPotBalance(1, token.address);
+      const colonyTokenBalance = await token.balanceOf(colony.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
       assert.equal(colonyPotBalance.toNumber(), 100);
       assert.equal(colonyRewardPotBalance.toNumber(), 0);
@@ -76,9 +76,9 @@ contract("Colony Funding", accounts => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 51, otherToken.address);
-      const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
-      const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
-      const pot2Balance = await colony.getPotBalance.call(2, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      const colonyTokenBalance = await otherToken.balanceOf(colony.address);
+      const pot2Balance = await colony.getPotBalance(2, otherToken.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
       assert.equal(colonyPotBalance.toNumber(), 48);
       assert.equal(pot2Balance.toNumber(), 51);
@@ -89,10 +89,10 @@ contract("Colony Funding", accounts => {
       await makeTask({ colony });
 
       await checkErrorRevert(colony.moveFundsBetweenPots(0, 2, 1, otherToken.address), "colonyFunding-cannot-move-funds-from-pot-0");
-      const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
-      const colonyRewardPotBalance = await colony.getPotBalance.call(0, otherToken.address);
-      const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
-      const pot2Balance = await colony.getPotBalance.call(2, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      const colonyRewardPotBalance = await colony.getPotBalance(0, otherToken.address);
+      const colonyTokenBalance = await otherToken.balanceOf(colony.address);
+      const pot2Balance = await colony.getPotBalance(2, otherToken.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
       assert.equal(colonyPotBalance.toNumber(), 99);
       assert.equal(pot2Balance.toNumber(), 0);
@@ -103,9 +103,9 @@ contract("Colony Funding", accounts => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 2, 51, otherToken.address, { from: EVALUATOR }));
-      const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
-      const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
-      const pot2Balance = await colony.getPotBalance.call(2, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      const colonyTokenBalance = await otherToken.balanceOf(colony.address);
+      const pot2Balance = await colony.getPotBalance(2, otherToken.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
       assert.equal(colonyPotBalance.toNumber(), 99);
       assert.equal(pot2Balance.toNumber(), 0);
@@ -118,10 +118,10 @@ contract("Colony Funding", accounts => {
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
 
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, otherToken.address));
-      const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
-      const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
-      const pot2Balance = await colony.getPotBalance.call(2, otherToken.address);
-      const pot3Balance = await colony.getPotBalance.call(3, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      const colonyTokenBalance = await otherToken.balanceOf(colony.address);
+      const pot2Balance = await colony.getPotBalance(2, otherToken.address);
+      const pot3Balance = await colony.getPotBalance(3, otherToken.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
       assert.equal(colonyPotBalance.toNumber(), 59);
       assert.equal(pot2Balance.toNumber(), 40);
@@ -169,13 +169,13 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 0]
       });
-      let task = await colony.getTask.call(taskId);
+      let task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1, 2, 0, otherToken.address);
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 0, Payout 0
@@ -188,19 +188,19 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Pot 0, Payout 40
       // Pot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 40
@@ -213,7 +213,7 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 80]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 80
@@ -226,13 +226,13 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2, 1, 40, otherToken.address);
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 40, Payout 40
@@ -261,7 +261,7 @@ contract("Colony Funding", accounts => {
       // Pot 20, Payout 40
       // Pot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1, 2, 60, otherToken.address);
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 80, Payout 40
@@ -297,7 +297,7 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 10]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 20, Payout 10
@@ -310,13 +310,13 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 5]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 20, Payout 5
       // Pot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 10, Payout 5
@@ -329,7 +329,7 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Pot 10, Payout 40
@@ -342,7 +342,7 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 30]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 1);
 
       // Pot 10, Payout 30
@@ -378,7 +378,7 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 5]
       });
-      task = await colony.getTask.call(taskId);
+      task = await colony.getTask(taskId);
       assert.equal(task[5].toNumber(), 0);
 
       // Pot 5, Payout 5
@@ -387,9 +387,9 @@ contract("Colony Funding", accounts => {
     it("should pay fees on revenue correctly", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await fundColonyWithTokens(colony, otherToken, 200);
-      const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
-      const colonyRewardPotBalance = await colony.getPotBalance.call(0, otherToken.address);
-      const colonyTokenBalance = await otherToken.balanceOf.call(colony.address);
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      const colonyRewardPotBalance = await colony.getPotBalance(0, otherToken.address);
+      const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       assert.equal(colonyTokenBalance.toNumber(), 300);
       assert.equal(colonyRewardPotBalance.toNumber(), 3);
       assert.equal(colonyPotBalance.toNumber(), 297);
@@ -398,7 +398,7 @@ contract("Colony Funding", accounts => {
     it("should not allow contributions to nonexistent pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 5, 40, otherToken.address));
-      const colonyPotBalance = await colony.getPotBalance.call(1, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 99);
     });
 
@@ -407,7 +407,7 @@ contract("Colony Funding", accounts => {
       const taskId = await setupRatedTask({ colonyNetwork, colony, token: otherToken });
       await colony.finalizeTask(taskId);
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address), "colony-funding-task-bad-state");
-      const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance(2, otherToken.address);
       assert.isTrue(colonyPotBalance.eq(toBN(350 * 1e18)));
     });
 
@@ -421,7 +421,7 @@ contract("Colony Funding", accounts => {
       await colony.claimPayout(taskId, EVALUATOR_ROLE, otherToken.address, { from: EVALUATOR });
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
 
-      const colonyPotBalance = await colony.getPotBalance.call(2, otherToken.address);
+      const colonyPotBalance = await colony.getPotBalance(2, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 0);
     });
 
@@ -439,7 +439,7 @@ contract("Colony Funding", accounts => {
       await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
       await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
 
-      const taskInfo = await colony.getTask.call(taskId);
+      const taskInfo = await colony.getTask(taskId);
       const taskPotId = taskInfo[6].toNumber();
       const remainingPotBalance = await colony.getPotBalance(taskPotId, token.address);
       assert.equal(remainingPotBalance.toString(), WORKER_PAYOUT.toString(), "should have remaining pot balance equal to worker payout");
@@ -454,15 +454,15 @@ contract("Colony Funding", accounts => {
   describe("when receiving ether", () => {
     it("should not put the ether straight in to the pot", async () => {
       await colony.send(100);
-      let colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
+      let colonyPotBalance = await colony.getPotBalance(1, 0x0);
       let colonyEtherBalance = await web3GetBalance(colony.address);
-      let colonyRewardBalance = await colony.getPotBalance.call(0, 0x0);
+      let colonyRewardBalance = await colony.getPotBalance(0, 0x0);
       assert.equal(colonyEtherBalance, 100);
       assert.isTrue(colonyPotBalance.isZero());
       await colony.claimColonyFunds(0x0);
-      colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
+      colonyPotBalance = await colony.getPotBalance(1, 0x0);
       colonyEtherBalance = await web3GetBalance(colony.address);
-      colonyRewardBalance = await colony.getPotBalance.call(0, 0x0);
+      colonyRewardBalance = await colony.getPotBalance(0, 0x0);
       assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyRewardBalance.toNumber(), 1);
       assert.equal(colonyPotBalance.toNumber(), 99);
@@ -473,9 +473,9 @@ contract("Colony Funding", accounts => {
       await colony.claimColonyFunds(0x0);
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 51, 0x0);
-      const colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
+      const colonyPotBalance = await colony.getPotBalance(1, 0x0);
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const pot2Balance = await colony.getPotBalance.call(2, 0x0);
+      const pot2Balance = await colony.getPotBalance(2, 0x0);
       assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyPotBalance.toNumber(), 48);
       assert.equal(pot2Balance.toNumber(), 51);
@@ -490,9 +490,9 @@ contract("Colony Funding", accounts => {
 
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, 0x0));
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
-      const pot2Balance = await colony.getPotBalance.call(2, 0x0);
-      const pot3Balance = await colony.getPotBalance.call(3, 0x0);
+      const colonyPotBalance = await colony.getPotBalance(1, 0x0);
+      const pot2Balance = await colony.getPotBalance(2, 0x0);
+      const pot3Balance = await colony.getPotBalance(3, 0x0);
       assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyPotBalance.toNumber(), 59);
       assert.equal(pot2Balance.toNumber(), 40);
@@ -563,10 +563,10 @@ contract("Colony Funding", accounts => {
       await colony.claimColonyFunds(0x0);
       await colony.send(200);
       await colony.claimColonyFunds(0x0);
-      const colonyPotBalance = await colony.getPotBalance.call(1, 0x0);
-      const colonyRewardPotBalance = await colony.getPotBalance.call(0, 0x0);
+      const colonyPotBalance = await colony.getPotBalance(1, 0x0);
+      const colonyRewardPotBalance = await colony.getPotBalance(0, 0x0);
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const nonRewardPotsTotal = await colony.getNonRewardPotsTotal.call(0x0);
+      const nonRewardPotsTotal = await colony.getNonRewardPotsTotal(0x0);
       assert.equal(colonyEtherBalance, 300);
       assert.equal(colonyPotBalance.toNumber(), 297);
       assert.equal(colonyRewardPotBalance.toNumber(), 3);

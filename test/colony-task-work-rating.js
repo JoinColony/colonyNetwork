@@ -55,18 +55,18 @@ contract("Colony Task Work Rating", accounts => {
 
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       const currentTime1 = await currentBlockTime();
-      const rating1 = await colony.getTaskWorkRatings.call(taskId);
+      const rating1 = await colony.getTaskWorkRatings(taskId);
       assert.equal(rating1[0], 1);
       assert.closeTo(rating1[1].toNumber(), currentTime1, 2);
-      const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(taskId, WORKER_ROLE);
+      const ratingSecret1 = await colony.getTaskWorkRatingSecret(taskId, WORKER_ROLE);
       assert.equal(ratingSecret1, RATING_2_SECRET);
 
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       const currentTime2 = await currentBlockTime();
-      const rating2 = await colony.getTaskWorkRatings.call(taskId);
+      const rating2 = await colony.getTaskWorkRatings(taskId);
       assert.equal(rating2[0].toNumber(), 2);
       assert.closeTo(rating2[1].toNumber(), currentTime2, 2);
-      const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(taskId, MANAGER_ROLE);
+      const ratingSecret2 = await colony.getTaskWorkRatingSecret(taskId, MANAGER_ROLE);
       assert.equal(ratingSecret2, RATING_1_SECRET);
     });
 
@@ -75,9 +75,9 @@ contract("Colony Task Work Rating", accounts => {
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
-      const ratingSecret2 = await colony.getTaskWorkRatingSecret.call(taskId, MANAGER_ROLE);
+      const ratingSecret2 = await colony.getTaskWorkRatingSecret(taskId, MANAGER_ROLE);
       assert.equal(ratingSecret2, RATING_1_SECRET);
-      const ratingSecret1 = await colony.getTaskWorkRatingSecret.call(taskId, WORKER_ROLE);
+      const ratingSecret1 = await colony.getTaskWorkRatingSecret(taskId, WORKER_ROLE);
       assert.equal(ratingSecret1, RATING_2_SECRET);
     });
 
@@ -86,21 +86,21 @@ contract("Colony Task Work Rating", accounts => {
       dueDate += SECONDS_PER_DAY * 7;
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
-      const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
     it("should fail if I try to rate work on behalf of a worker", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await checkErrorRevert(colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: OTHER }));
-      const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0], 0);
     });
 
     it("should fail if I try to rate work for a role that's not setup to be rated", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await checkErrorRevert(colony.submitTaskWorkRating(taskId, EVALUATOR_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
-      const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
@@ -109,9 +109,9 @@ contract("Colony Task Work Rating", accounts => {
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: EVALUATOR }));
-      const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0], 1);
-      const ratingSecret = await colony.getTaskWorkRatingSecret.call(taskId, WORKER_ROLE);
+      const ratingSecret = await colony.getTaskWorkRatingSecret(taskId, WORKER_ROLE);
       assert.equal(ratingSecret, RATING_2_SECRET);
     });
 
@@ -120,7 +120,7 @@ contract("Colony Task Work Rating", accounts => {
 
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
-      const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
@@ -128,7 +128,7 @@ contract("Colony Task Work Rating", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
 
       await checkErrorRevert(colony.submitTaskWorkRating(10, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
-      const ratingSecrets = await colony.getTaskWorkRatings.call(taskId);
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0], 0);
     });
   });
@@ -138,14 +138,14 @@ contract("Colony Task Work Rating", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
 
-      const roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
+      const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.equal(roleManager[2].toNumber(), MANAGER_RATING);
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
       assert.equal(roleWorker[2].toNumber(), WORKER_RATING);
 
-      const roleEvaluator = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.isFalse(roleEvaluator[1]);
     });
 
@@ -159,10 +159,10 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(1, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), WORKER_RATING);
 
-      const roleEvaluator = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.isFalse(roleEvaluator[1]);
     });
 
@@ -172,7 +172,7 @@ contract("Colony Task Work Rating", accounts => {
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await checkErrorRevert(colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_2_SALT, { from: WORKER }));
 
-      const roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
+      const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.equal(roleManager[2].toNumber(), 0);
     });
 
@@ -184,7 +184,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
       await checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), 0);
     });
 
@@ -196,7 +196,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
       await checkErrorRevert(colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }));
 
-      const roleManager = await colony.getTaskRole.call(1, MANAGER_ROLE);
+      const roleManager = await colony.getTaskRole(1, MANAGER_ROLE);
       assert.equal(roleManager[2].toNumber(), 0);
     });
 
@@ -206,7 +206,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 4, this);
       await checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), 0);
     });
 
@@ -217,7 +217,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), 0);
     });
 
@@ -246,14 +246,14 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.assignWorkRating(taskId);
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.isTrue(roleWorker[1]);
       assert.equal(roleWorker[2].toNumber(), WORKER_RATING);
 
-      const roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
+      const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.equal(roleManager[2].toNumber(), 3);
 
-      const roleEvaluator = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.isFalse(roleEvaluator[1]);
     });
 
@@ -265,16 +265,16 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.assignWorkRating(taskId);
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
       assert.equal(roleWorker[2].toNumber(), 3);
 
-      const roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
+      const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.isFalse(roleManager[1]);
       assert.equal(roleManager[2].toNumber(), MANAGER_RATING);
 
       await colony.finalizeTask(taskId);
-      const roleEvaluator = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.isTrue(roleEvaluator[1]);
       assert.equal(roleEvaluator[2].toNumber(), 1);
     });
@@ -284,16 +284,16 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await colony.assignWorkRating(taskId);
 
-      const roleWorker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.isTrue(roleWorker[1]);
       assert.equal(roleWorker[2].toNumber(), 3);
 
-      const roleManager = await colony.getTaskRole.call(taskId, MANAGER_ROLE);
+      const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.isFalse(roleManager[1]);
       assert.equal(roleManager[2].toNumber(), 3);
 
       await colony.finalizeTask(taskId);
-      const roleEvaluator = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.isTrue(roleEvaluator[1]);
       assert.equal(roleEvaluator[2].toNumber(), 1);
     });
@@ -302,7 +302,7 @@ contract("Colony Task Work Rating", accounts => {
       await setupAssignedTask({ colonyNetwork, colony });
       await forwardTime(SECONDS_PER_DAY * 6, this);
       await checkErrorRevert(colony.assignWorkRating(1));
-      const roleWorker = await colony.getTaskRole.call(1, WORKER_ROLE);
+      const roleWorker = await colony.getTaskRole(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
     });
   });

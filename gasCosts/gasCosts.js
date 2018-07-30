@@ -79,17 +79,17 @@ contract("All", accounts => {
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
 
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
 
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
-    tokenAddress = await colony.getToken.call();
+    tokenAddress = await colony.getToken();
     await IColony.defaults({ gasPrice });
 
-    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IColony.at(metaColonyAddress);
 
     const otherTokenArgs = getTokenArgs();
@@ -237,7 +237,7 @@ contract("All", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER2, big);
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER3, big);
 
-      let repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
+      let repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
 
       await oneHourLater();
       let repCycle = await ReputationMiningCycle.at(repCycleAddr);
@@ -245,7 +245,7 @@ contract("All", accounts => {
       await repCycle.confirmNewHash(0);
       await oneHourLater();
 
-      repCycleAddr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await ReputationMiningCycle.at(repCycleAddr);
 
       const goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });

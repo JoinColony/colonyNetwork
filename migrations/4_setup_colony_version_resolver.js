@@ -30,7 +30,7 @@ module.exports = deployer => {
     })
     .then(instance => {
       colonyTask = instance;
-      return colony.version.call();
+      return colony.version();
     })
     .then(_version => {
       version = _version.toNumber();

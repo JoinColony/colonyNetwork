@@ -46,7 +46,7 @@ contract("Colony Reputation Updates", accounts => {
     const tokenArgs = getTokenArgs();
     colonyToken = await Token.new(...tokenArgs);
     await colonyNetwork.createMetaColony(colonyToken.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
     await colonyToken.setOwner(metaColonyAddress);
     metaColony = await IColony.at(metaColonyAddress);
     const amount = new BN(10)
@@ -168,14 +168,14 @@ contract("Colony Reputation Updates", accounts => {
       initialRepLogLength = initialRepLogLength.toNumber();
       const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId1);
-      let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength);
+      let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength);
       const nPrevious = repLogEntry[5].toNumber();
-      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
+      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 1);
       assert.equal(repLogEntry[5].toNumber(), 2 + nPrevious);
 
       const taskId2 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId2);
-      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength + 2);
+      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 2);
       assert.equal(repLogEntry[5].toNumber(), 4 + nPrevious);
     });
 
@@ -227,7 +227,7 @@ contract("Colony Reputation Updates", accounts => {
       });
 
       // Check the task pot is correctly funded with the max amount
-      const taskPotBalance = await metaColony.getPotBalance.call(2, colonyToken.address);
+      const taskPotBalance = await metaColony.getPotBalance(2, colonyToken.address);
       assert.isTrue(taskPotBalance.eq(maxUIntNumber));
 
       await checkErrorRevert(metaColony.finalizeTask(taskId));
