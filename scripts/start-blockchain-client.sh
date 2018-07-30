@@ -44,7 +44,7 @@ start_parity() {
     --author ${addresses[0]} \
     --unlock ${addresses[0]},${addresses[1]},${addresses[2]},${addresses[3]} \
     --keys-path ./keys --geth --no-dapps \
-    --tx-gas-limit 0x6ACFC0 --gasprice 0x0 --gas-floor-target 0x6ACFC0 \
+    --tx-gas-limit 0x6691B7 --gasprice 0x0 --gas-floor-target 0x6691B7 \
     --reseal-on-txs all --reseal-min-period 0 \
     --jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000" \
     --password ./parityPassword >/dev/null 2>&1
