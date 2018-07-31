@@ -191,6 +191,7 @@ class ReputationMiner {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
+    let score;
     interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
     jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     let logEntry;
@@ -198,22 +199,35 @@ class ReputationMiner {
       const key = await Object.keys(this.reputations)[updateNumber];
       const reputation = new BN(this.reputations[key].slice(2, 66), 16);
       let newReputation;
-      if (reputation.gt(new BN("2").pow(new BN("256").subn(1).div(new BN("10").pow(new BN("15")))))) {
-        newReputation = new BN(this.reputations[key].slice(2, 66), 16).div(new BN("1000000000000000")).mul(new BN("999679150010888"));
+      // These are the numerator and the denominator of the fraction we wish to reduce the reputation by. It
+      // is very slightly less than one.
+      // Disabling prettier on the next line so we can have these two values aligned so it's easy to see
+      // the fraction will be slightly less than one.
+      const numerator   = new BN("999679150010888");  // eslint-disable-line prettier/prettier
+      const denominator = new BN("1000000000000000");
+
+      if (
+        reputation.gt(
+          new BN("2")
+            .pow(new BN("256"))
+            .subn(1)
+            .div(denominator)
+        )
+      ) {
+        newReputation = new BN(this.reputations[key].slice(2, 66), 16).div(denominator).mul(numerator);
       } else {
-        newReputation = new BN(this.reputations[key].slice(2, 66), 16).mul(new BN("999679150010888")).div(new BN("1000000000000000"));
+        newReputation = new BN(this.reputations[key].slice(2, 66), 16).mul(numerator).div(denominator);
       }
       let reputationChange = newReputation.sub(new BN(this.reputations[key].slice(2, 66), 16));
       reputationChange = ethers.utils.bigNumberify(reputationChange.toString());
-      logEntry = [undefined, reputationChange, undefined, key.slice(2, 42)];
+      score = this.getScore(updateNumber, reputationChange);
     } else {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber);
 
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
+      score = this.getScore(updateNumber, logEntry[1]);
     }
-
-    const score = this.getScore(updateNumber, logEntry);
 
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.toString() === "0") {
@@ -244,11 +258,11 @@ class ReputationMiner {
       })
     );
 
-    const [skillId, skillAddress] = await ReputationMiner.getSkillIdAndAddressFromKey(key);
+    const [colonyAddress, skillId, userAddress] = await ReputationMiner.breakKeyInToElements(key);
     // TODO: Include updates for all child skills if x.amount is negative
     // We update colonywide sums first (children, parents, skill)
     // Then the user-specifc sums in the order children, parents, skill.
-    await this.insert(logEntry[3], skillId, skillAddress, score, updateNumber);
+    await this.insert(colonyAddress, skillId, userAddress, score, updateNumber);
   }
 
   /**
@@ -355,11 +369,11 @@ class ReputationMiner {
     return key;
   }
 
-  static async getSkillIdAndAddressFromKey(key) {
-    // const colonyAddress = key.slice(2, 42);
+  static async breakKeyInToElements(key) {
+    const colonyAddress = key.slice(2, 42);
     const skillId = key.slice(42, 106);
     const userAddress = key.slice(106);
-    return [skillId, userAddress];
+    return [colonyAddress, skillId, userAddress];
   }
 
   /**
@@ -381,7 +395,7 @@ class ReputationMiner {
       // Following the destructuring rule, this line would be [skillAddress] = logEntry, which I think is very misleading
     }
     const nUpdates = new BN(logEntry[4].toString());
-    const score = this.getScore(updateNumber.add(this.nReputationsBeforeLatestLog), logEntry);
+    const score = this.getScore(updateNumber.add(this.nReputationsBeforeLatestLog), logEntry[1]);
 
     let [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
     nParents = new BN(nParents.toString());
@@ -455,8 +469,8 @@ class ReputationMiner {
    * @dev The version of this function in malicious.js uses `this`, but not this version.
    */
   // eslint-disable-next-line class-methods-use-this
-  getScore(i, logEntry) {
-    return logEntry[1];
+  getScore(i, score) {
+    return score;
   }
 
   /**

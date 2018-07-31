@@ -615,7 +615,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   function checkKey(uint256[11] u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
-    // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition (TODO: not implemented)
+    // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
     if (updateNumber < IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes()) {
