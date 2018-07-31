@@ -181,5 +181,4 @@ contract IColonyNetwork {
   /// @notice Register a "colony.joincolony.eth" label. Can only be called by a Colony.
   /// @param subnode The keccak256 hash of the label to register.
   function registerColonyLabel(bytes32 subnode) public;
-
 }

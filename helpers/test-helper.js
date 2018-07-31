@@ -3,6 +3,7 @@ import shortid from "shortid";
 import { assert } from "chai";
 import web3Utils from "web3-utils";
 import ethUtils from "ethereumjs-util";
+import BN from "bn.js";
 import fs from "fs";
 
 export function web3GetNetwork() {
@@ -267,4 +268,20 @@ export function bnSqrt(bn, isGreater) {
     b = b.addn(1);
   }
   return b;
+}
+
+export function makeReputationKey(colonyAddress, skill, accountAddress = undefined) {
+  let key = `0x`;
+  key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
+  key += `${new BN(skill).toString(16, 64)}`; // SkillId as uint256
+  if (accountAddress === undefined) {
+    key += `${new BN(0, 16).toString(16, 40)}`; // Colony address as 0 bytes
+  } else {
+    key += `${new BN(accountAddress.slice(2), 16).toString(16, 40)}`; // User address as bytes
+  }
+  return key;
+}
+
+export function makeReputationValue(value, repuationId) {
+  return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(repuationId)).toString(16, 64)}`; // eslint-disable-line
 }
