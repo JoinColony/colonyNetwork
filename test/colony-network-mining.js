@@ -1984,9 +1984,8 @@ contract("ColonyNetworkMining", accounts => {
           await repCycle.confirmNewHash(0);
 
           addr = await colonyNetwork.getReputationMiningCycle(true);
-          repCycle = ReputationMiningCycle.at(addr);
+          repCycle = await ReputationMiningCycle.at(addr);
           await forwardTime(3600, this);
-          const repCycle = await ReputationMiningCycle.at(addr);
 
           badClient = new MaliciousReputationMinerExtraRep(
             { loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
