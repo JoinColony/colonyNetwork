@@ -167,10 +167,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     reputationMiningWindowOpenTimestamp = now;
   }
 
-  function submitRootHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex)
+  function submitRootHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex) public
   entryQualifies(newHash, nNodes, entryIndex)
   withinTarget(newHash, entryIndex)
-  public
   {
     // Limit the total number of miners allowed to submit a specific hash to 12
     require (submittedHashes[newHash][nNodes].length < 12);
