@@ -224,7 +224,9 @@ contract("Meta Colony", accounts => {
 
       // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
-      const [numParents, numChildren] = await colonyNetwork.getSkill(12);
+      const skill = await colonyNetwork.getSkill(12);
+      const numParents = skill[0];
+      const numChildren = skill[1];
       assert.equal(numParents.toNumber(), 9);
       assert.equal(numChildren.toNumber(), 0);
 
