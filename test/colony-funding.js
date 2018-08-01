@@ -92,7 +92,7 @@ contract("Colony Funding", accounts => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(0, 2, 1, otherToken.address), "colonyFunding-cannot-move-funds-from-pot-0");
+      await checkErrorRevert(colony.moveFundsBetweenPots(0, 2, 1, otherToken.address), "colony-funding-cannot-move-funds-from-pot-0");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       const colonyRewardPotBalance = await colony.getPotBalance(0, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
@@ -121,7 +121,7 @@ contract("Colony Funding", accounts => {
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, otherToken.address));
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, otherToken.address), "colony-funding-task-bad-state");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       const pot2Balance = await colony.getPotBalance(2, otherToken.address);
@@ -401,7 +401,7 @@ contract("Colony Funding", accounts => {
 
     it("should not allow contributions to nonexistent pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 5, 40, otherToken.address));
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 5, 40, otherToken.address), "colony-funding-nonexistent-pot");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       assert.equal(colonyPotBalance.toNumber(), 99);
     });
@@ -492,7 +492,7 @@ contract("Colony Funding", accounts => {
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, 0x0));
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, 0x0), "colony-funding-task-bad-state");
       const colonyEtherBalance = await web3GetBalance(colony.address);
       const colonyPotBalance = await colony.getPotBalance(1, 0x0);
       const pot2Balance = await colony.getPotBalance(2, 0x0);
@@ -797,7 +797,7 @@ contract("Colony Funding", accounts => {
         colony.claimRewardPayout(payoutId.toString(), initialSquareRoots, userReputation.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "colony-reward-payout-already-claimed-or-waived"
+        "colony-token-locking-invalid-lock-id"
       );
     });
 
@@ -811,7 +811,7 @@ contract("Colony Funding", accounts => {
         colony.claimRewardPayout(payoutId2, initialSquareRoots, userReputation.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "colony-reward-payout-bad-id"
+        "colony-reward-payout-invalid-parameter-amount"
       );
     });
 
@@ -826,7 +826,7 @@ contract("Colony Funding", accounts => {
         "colony-reward-payout-invalid-parameter-total-tokens",
         "colony-reward-payout-invalid-parameter-numerator",
         "colony-reward-payout-invalid-parameter-denominator",
-        "colony-reward-payout-invalid-parameter-amountAvailableForPayout"
+        "colony-reward-payout-invalid-parameter-amount"
       ];
 
       const promises = initialSquareRoots.map((param, i) => {
@@ -883,7 +883,7 @@ contract("Colony Funding", accounts => {
     it("should not be able to finalize payout if payoutId does not exist", async () => {
       await colony.startNextRewardPayout(otherToken.address);
 
-      await checkErrorRevert(colony.finalizeRewardPayout(10), "colony-reward-payout-not-found");
+      await checkErrorRevert(colony.finalizeRewardPayout(10), "colony-reward-payout-token-not-active");
     });
 
     it("should not be able to claim the same payout twice", async () => {
@@ -898,7 +898,7 @@ contract("Colony Funding", accounts => {
         colony.claimRewardPayout(payoutId, initialSquareRoots, userReputation.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "token-locking-invalid-lock-id"
+        "colony-token-locking-invalid-lock-id"
       );
     });
 

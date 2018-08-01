@@ -131,7 +131,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(colony.initialiseColony(0x0));
+      await checkErrorRevert(colony.initialiseColony(0x0), "colony-initialise-bad-address");
     });
 
     it("should correctly generate a rating secret", async () => {
@@ -361,8 +361,8 @@ contract("Colony", accounts => {
 
     it("should throw if length of inputs is not equal", async () => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
-      await checkErrorRevert(colony.bootstrapColony([INITIAL_ADDRESSES[0]], INITIAL_REPUTATIONS));
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, [INITIAL_REPUTATIONS[0]]));
+      await checkErrorRevert(colony.bootstrapColony([INITIAL_ADDRESSES[0]], INITIAL_REPUTATIONS), "colony-bootstrap-bad-inputs");
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, [INITIAL_REPUTATIONS[0]]), "colony-bootstrap-bad-inputs");
     });
 
     it("should not allow negative number", async () => {
@@ -375,7 +375,8 @@ contract("Colony", accounts => {
               .neg()
               .toString()
           ]
-        )
+        ),
+        "colony-bootstrap-bad-amount-input"
       );
     });
 
@@ -1729,7 +1730,7 @@ contract("Colony", accounts => {
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
 
-      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }));
+      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }), "colony-claim-payout-access-denied");
     });
   });
 
@@ -1767,21 +1768,21 @@ contract("Colony", accounts => {
       const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.setOwnerRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.setAdminRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.removeAdminRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.setRecoveryRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.removeRecoveryRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.setOwnerRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdminRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.removeAdminRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setRecoveryRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.removeRecoveryRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
     });
 
     it("should not be able to call normal functions while in recovery", async () => {
       const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }));
-      await checkErrorRevert(colony.mintTokens(1000, { from: owner }));
-      await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }));
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }));
+      await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.mintTokens(1000, { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }), "colony-in-recovery-mode");
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
@@ -1795,11 +1796,11 @@ contract("Colony", accounts => {
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
 
       // 0/3 approve
-      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
+      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber(), { from: owner }), "colony-recovery-exit-insufficient-approvals");
 
       // 1/3 approve
       await colony.approveExitRecovery({ from: owner });
-      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
+      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber(), { from: owner }), "colony-recovery-exit-insufficient-approvals");
 
       // 2/3 approve
       await colony.approveExitRecovery({ from: accounts[1] });
@@ -1828,7 +1829,7 @@ contract("Colony", accounts => {
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
 
       await colony.approveExitRecovery({ from: owner });
-      await checkErrorRevert(colony.approveExitRecovery({ from: owner }));
+      await checkErrorRevert(colony.approveExitRecovery({ from: owner }), "colony-recovery-approval-already-given");
     });
 
     it("users cannot approve if unauthorized", async () => {
@@ -1854,7 +1855,7 @@ contract("Colony", accounts => {
 
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.setStorageSlotRecovery(protectedLoc, "0xdeadbeef", { from: owner }));
+      await checkErrorRevert(colony.setStorageSlotRecovery(protectedLoc, "0xdeadbeef", { from: owner }), "colony-protected-variable");
     });
   });
 });

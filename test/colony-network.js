@@ -332,7 +332,7 @@ contract("ColonyNetwork", accounts => {
 
       // Can't register two labels for a user
       const newLabel = web3utils.soliditySha3("test2");
-      await checkErrorRevert(colonyNetwork.registerUserLabel(newLabel, { from: accounts[1] }));
+      await checkErrorRevert(colonyNetwork.registerUserLabel(newLabel, { from: accounts[1] }), "user-already-labeled");
     });
 
     it("should be able to register one unique label per colony, if owner", async () => {
@@ -355,7 +355,7 @@ contract("ColonyNetwork", accounts => {
 
       // Can't register two labels for a colony
       const newLabel = web3utils.soliditySha3("test2");
-      await checkErrorRevert(colony.registerColonyLabel(newLabel, { from: accounts[0] }));
+      await checkErrorRevert(colony.registerColonyLabel(newLabel, { from: accounts[0] }), "colony-already-labeled");
     });
   });
 });

@@ -68,8 +68,7 @@ contract("TokenLocking", accounts => {
       await checkErrorRevert(
         tokenLocking.deposit(token.address, usersTokens, {
           from: userAddress
-        }),
-        "token-locking-transfer-failed"
+        })
       );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       const userDepositedBalance = info[1];
@@ -125,7 +124,8 @@ contract("TokenLocking", accounts => {
       await checkErrorRevert(
         tokenLocking.deposit(token.address, 0, {
           from: userAddress
-        })
+        }),
+        "colony-token-locking-invalid-amount"
       );
     });
 
@@ -140,7 +140,8 @@ contract("TokenLocking", accounts => {
       await checkErrorRevert(
         tokenLocking.withdraw(token.address, 0, {
           from: userAddress
-        })
+        }),
+        "token-locking-invalid-amount"
       );
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
@@ -185,7 +186,7 @@ contract("TokenLocking", accounts => {
         tokenLocking.incrementLockCounterTo(token.address, 10, {
           from: userAddress
         }),
-        "token-locking-invalid-lock-id"
+        "colony-token-locking-invalid-lock-id"
       );
     });
 
@@ -238,7 +239,7 @@ contract("TokenLocking", accounts => {
         tokenLocking.deposit(token.address, usersTokens, {
           from: userAddress
         }),
-        "token-locking-token-locked"
+        "colony-token-locking-token-locked"
       );
     });
 
@@ -254,7 +255,7 @@ contract("TokenLocking", accounts => {
         tokenLocking.withdraw(token.address, usersTokens, {
           from: userAddress
         }),
-        "token-locking-token-locked"
+        "colony-token-locking-token-locked"
       );
     });
 

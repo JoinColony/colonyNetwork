@@ -21,7 +21,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
 
   modifier tokenNotLocked(address _token) {
     if (userLocks[_token][msg.sender].balance > 0) {
-      require(userLocks[_token][msg.sender].lockCount == totalLockCount[_token], "token-locking-token-locked");
+      require(userLocks[_token][msg.sender].lockCount == totalLockCount[_token], "colony-token-locking-token-locked");
     }
     _;
   }
@@ -50,23 +50,23 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   }
 
   function unlockTokenForUser(address _token, address _user, uint256 _lockId) public onlyColony {
-    require(sub(_lockId, userLocks[_token][_user].lockCount) == 1, "token-locking-invalid-lock-id");
+    require(sub(_lockId, userLocks[_token][_user].lockCount) == 1, "colony-token-locking-invalid-lock-id");
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
     assert(_lockId <= totalLockCount[_token]);
     userLocks[_token][_user].lockCount = _lockId;
   }
 
   function incrementLockCounterTo(address _token, uint256 _lockId) public {
-    require(_lockId <= totalLockCount[_token] && _lockId > userLocks[_token][msg.sender].lockCount, "token-locking-invalid-lock-id");
+    require(_lockId <= totalLockCount[_token] && _lockId > userLocks[_token][msg.sender].lockCount, "colony-token-locking-invalid-lock-id");
     userLocks[_token][msg.sender].lockCount = _lockId;
   }
 
   function deposit(address _token, uint256 _amount) public
   tokenNotLocked(_token)
   {
-    require(_amount > 0, "token-locking-invalid-amount");
+    require(_amount > 0, "colony-token-locking-invalid-amount");
 
-    require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "token-locking-transfer-failed");
+    require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed");
 
     userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(userLocks[_token][msg.sender].balance, _amount));
   }

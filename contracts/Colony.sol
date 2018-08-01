@@ -226,10 +226,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   uint256 constant COLONY_NETWORK_ADDRESS_SLOT = 3;
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
-    require(_slot != AUTHORITY_SLOT, "protected-variable");
-    require(_slot != OWNER_SLOT, "protected-variable");
-    require(_slot != RESOLVER_SLOT, "protected-variable");
-    require(_slot != COLONY_NETWORK_ADDRESS_SLOT, "protected-variable");
+    require(_slot != AUTHORITY_SLOT, "colony-protected-variable");
+    require(_slot != OWNER_SLOT, "colony-protected-variable");
+    require(_slot != RESOLVER_SLOT, "colony-protected-variable");
+    require(_slot != COLONY_NETWORK_ADDRESS_SLOT, "colony-protected-variable");
 
     // Protect key variables
     uint64 _recoveryRolesCount = recoveryRolesCount;
@@ -251,14 +251,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function approveExitRecovery() public recovery auth {
-    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "recovery-approval-already-given");
+    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");
     recoveryApprovalTimestamps[msg.sender] = now;
     recoveryApprovalCount++;
   }
 
   function exitRecoveryMode(uint256 _newVersion) public recovery auth {
     uint numRequired = recoveryRolesCount / 2 + 1;
-    require(recoveryApprovalCount >= numRequired, "recovery-exit-insufficient-approvals");
+    require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
 
     recoveryMode = false;
     if (_newVersion > version()) {

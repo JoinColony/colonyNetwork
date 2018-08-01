@@ -196,12 +196,12 @@ contract ColonyStorage is DSAuth, DSMath {
   }
 
   modifier recovery() {
-    require(recoveryMode, "not-in-recovery-mode");
+    require(recoveryMode, "colony-not-in-recovery-mode");
     _;
   }
 
   modifier stoppable() {
-    require(!recoveryMode, "in-recovery-mode");
+    require(!recoveryMode, "colony-in-recovery-mode");
     _;
   }
 

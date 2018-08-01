@@ -112,13 +112,13 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("should fail starting the auction twice", async () => {
-      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address));
+      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address), "colony-auction-start-too-soon");
     });
 
     it("should fail if the last auction for the same token started less than 30 days", async () => {
       await token.mint(quantity.toString());
       await token.transfer(colonyNetwork.address, quantity.toString());
-      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address));
+      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address), "colony-auction-start-too-soon");
     });
 
     const auctionProps = [

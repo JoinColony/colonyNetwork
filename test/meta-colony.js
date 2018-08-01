@@ -293,7 +293,7 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
       await metaColony.addDomain(1);
-      await checkErrorRevert(metaColony.addDomain(2));
+      await checkErrorRevert(metaColony.addDomain(2), "colony-parent-skill-not-root");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 4);
