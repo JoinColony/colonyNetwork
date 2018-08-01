@@ -15,6 +15,6 @@ sed -i.bak "s/contract ColonyNetwork/contract UpdatedColonyNetwork/g" ./contract
 sed -i.bak "s/address resolver;/address resolver;function isUpdated() public pure returns(bool) {return true;}/g" ./contracts/UpdatedColonyNetwork.sol
 sed -i.bak "s/contract Colony/contract UpdatedColony/g" ./contracts/UpdatedColony.sol
 sed -i.bak "s/function version() public pure returns (uint256) { return ${version}/function version() public pure returns (uint256) { return ${updated_version}/g" ./contracts/UpdatedColony.sol
-sed -i.bak "s/contract UpdatedColony is ColonyStorage, PatriciaTreeProofs {/contract UpdatedColony is ColonyStorage, PatriciaTreeProofs {function isUpdated() public pure returns(bool) {return true;}/g" ./contracts/UpdatedColony.sol
+sed -i.bak "s/contract UpdatedColony is ColonyStorage {/contract UpdatedColony is ColonyStorage {function isUpdated() public pure returns(bool) {return true;}/g" ./contracts/UpdatedColony.sol
 sed -i.bak "s/contract IColony/contract IUpdatedColony/g" ./contracts/IUpdatedColony.sol
 sed -i.bak "s/contract IUpdatedColony {/contract IUpdatedColony {function isUpdated() public pure returns(bool);/g" ./contracts/IUpdatedColony.sol

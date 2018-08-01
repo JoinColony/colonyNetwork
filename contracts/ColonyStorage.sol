@@ -23,9 +23,10 @@ import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./Authority.sol";
+import "./PatriciaTree/PatriciaTreeProofs.sol";
 
 
-contract ColonyStorage is DSAuth, DSMath {
+contract ColonyStorage is DSAuth, DSMath, PatriciaTreeProofs {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
@@ -55,6 +56,8 @@ contract ColonyStorage is DSAuth, DSMath {
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;
+    // Colony wide reputation
+    uint256 colonyWideReputation;
     // Total tokens at the time of reward payout creation
     uint256 totalTokens;
     // Amount alocated for reward payout

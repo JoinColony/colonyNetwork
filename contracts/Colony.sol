@@ -19,11 +19,10 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "./ColonyStorage.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
 import "./EtherRouter.sol";
 
 
-contract Colony is ColonyStorage, PatriciaTreeProofs {
+contract Colony is ColonyStorage {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.

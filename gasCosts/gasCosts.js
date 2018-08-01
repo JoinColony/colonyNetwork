@@ -19,7 +19,7 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import {
   giveUserCLNYTokensAndStake,
@@ -335,6 +335,38 @@ contract("All", accounts => {
 
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
 
+      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      await forwardTime(3600, this);
+      let repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.submitRootHash("0x0", 0, 10);
+      await repCycle.confirmNewHash(0);
+
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
+
+      const miningClient = new ReputationMiner({
+        loader: contractLoader,
+        minerAddress: accounts[4],
+        realProviderPort: REAL_PROVIDER_PORT,
+        useJsTree: true
+      });
+      await miningClient.initialise(colonyNetwork.address);
+      await miningClient.addLogContentsToReputationTree();
+      await forwardTime(3600, this);
+      await miningClient.submitRootHash();
+
+      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      repCycle = ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      const [rootDomainSkill] = await newColony.getDomain(1);
+      const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill.toNumber());
+      let { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
+      const colonyWideReputationProof = [key, value, branchMask, siblings];
+
+      const userReputationKey = makeReputationKey(newColony.address, rootDomainSkill.toNumber(), WORKER);
+      ({ key, value, branchMask, siblings } = await miningClient.getReputationProofObject(userReputationKey));
+      const userReputationProof = [key, value, branchMask, siblings];
+
       await newToken.approve(tokenLocking.address, workerReputation.toString(), {
         from: WORKER
       });
@@ -342,7 +374,7 @@ contract("All", accounts => {
         from: WORKER
       });
 
-      const tx = await newColony.startNextRewardPayout(otherToken.address);
+      const tx = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.id;
 
       await tokenLocking.incrementLockCounterTo(newToken.address, payoutId, {
@@ -367,7 +399,7 @@ contract("All", accounts => {
         amountSqrt.toString()
       ];
 
-      await newColony.claimRewardPayout(payoutId, squareRoots, workerReputation.toString(), totalReputation.toString(), {
+      await newColony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof, {
         from: WORKER
       });
 
@@ -376,14 +408,14 @@ contract("All", accounts => {
 
       await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());
 
-      const tx2 = await newColony.startNextRewardPayout(otherToken.address);
+      const tx2 = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId2 = tx2.logs[0].args.id;
 
       await tokenLocking.incrementLockCounterTo(newToken.address, payoutId2, {
         from: MANAGER
       });
 
-      await newColony.claimRewardPayout(payoutId2, squareRoots, workerReputation.toString(), totalReputation.toString(), {
+      await newColony.claimRewardPayout(payoutId2, squareRoots, ...userReputationProof, {
         from: WORKER
       });
 

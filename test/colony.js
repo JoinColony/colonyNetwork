@@ -249,7 +249,7 @@ contract("Colony", accounts => {
       canCall = await authority.canCall(user3, colony.address, functionSig);
       assert.equal(canCall, true);
 
-      functionSig = getFunctionSignature("startNextRewardPayout(address)");
+      functionSig = getFunctionSignature("startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
       canCall = await authority.canCall(user3, colony.address, functionSig);
       assert.equal(canCall, true);
 
