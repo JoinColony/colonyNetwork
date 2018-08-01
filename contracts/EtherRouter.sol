@@ -25,7 +25,7 @@ import "../lib/dappsys/auth.sol";
 contract EtherRouter is DSAuth {
   Resolver public resolver;
 
-  function() payable external {
+  function() external payable {
     if (msg.sig == 0x0) {
       return;
     }
