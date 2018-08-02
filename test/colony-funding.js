@@ -802,16 +802,20 @@ contract("Colony Funding", accounts => {
     });
 
     it("should not be able to claim funds if previous payout is not claimed", async () => {
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+      await fundColonyWithTokens(colony, newToken, initialFunding.toString());
+
       await colony.startNextRewardPayout(otherToken.address);
 
-      const { logs } = await colony.startNextRewardPayout(token.address);
+      const { logs } = await colony.startNextRewardPayout(newToken.address);
       const payoutId2 = logs[0].args.id;
 
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId2, initialSquareRoots, userReputation.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "colony-reward-payout-invalid-parameter-amount"
+        "colony-token-locking-invalid-lock-id"
       );
     });
 
