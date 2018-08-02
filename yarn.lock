@@ -126,6 +126,10 @@
   version "10.0.3"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-10.0.3.tgz#1f89840c7aac2406cc43a2ecad98fc02a8e130e4"
 
+"@types/node@^10.3.2":
+  version "10.5.5"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-10.5.5.tgz#8e84d24e896cd77b0d4f73df274027e3149ec2ba"
+
 "@types/node@^8.0.0":
   version "8.10.11"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-8.10.11.tgz#971ea8cb91adbe0b74e3fbd867dec192d5893a5f"
@@ -2801,15 +2805,15 @@ ethereumjs-wallet@~0.6.0:
     utf8 "^2.1.1"
     uuid "^2.0.1"
 
-ethers@^3.0.15:
-  version "3.0.15"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-3.0.15.tgz#7cdea4e23025681f69f575bf481b227315e0e7ab"
+ethers@^4.0.0-beta.9:
+  version "4.0.0-beta.9"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.0-beta.9.tgz#831b94b45797ebc5bf1dda2b94eb2c489ffa9725"
   dependencies:
+    "@types/node" "^10.3.2"
     aes-js "3.0.0"
     bn.js "^4.4.0"
     elliptic "6.3.3"
-    hash.js "^1.0.0"
-    inherits "2.0.1"
+    hash.js "1.1.3"
     js-sha3 "0.5.7"
     scrypt-js "2.0.3"
     setimmediate "1.0.4"
@@ -3601,7 +3605,7 @@ hash-base@^3.0.0:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
 
-hash.js@^1.0.0, hash.js@^1.0.3:
+hash.js@1.1.3, hash.js@^1.0.0, hash.js@^1.0.3:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/hash.js/-/hash.js-1.1.3.tgz#340dedbe6290187151c1ea1d777a3448935df846"
   dependencies:
