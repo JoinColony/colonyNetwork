@@ -78,7 +78,7 @@
     "solidity-coverage": "0.5.5",
     "solidity-parser-antlr": "^0.3.0",
     "solium": "^1.1.8",
-    "truffle": "^5.0.0-next.6",
+    "truffle": "^5.0.0-next.7",
     "web3-utils": "^1.0.0-beta.34"
   },
   "dependencies": {
