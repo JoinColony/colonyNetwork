@@ -105,6 +105,7 @@ contract IReputationMiningCycle {
   /// * 9. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// *10. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
   ///      the log entry index corresponding to the update to avoid us having to iterate over the log.
+  /// *11. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateReputationValue The value of the reputation at key `_reputationKey` in the last reputation state the submitted hashes agreed on
@@ -117,7 +118,7 @@ contract IReputationMiningCycle {
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[10] u, //An array of 10 UINT Params, ordered as given above.
+    uint256[11] u, //An array of 10 UINT Params, ordered as given above.
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes agreeStateReputationValue,
