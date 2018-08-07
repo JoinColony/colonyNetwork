@@ -241,7 +241,7 @@ contract("All", accounts => {
 
       await oneHourLater();
       let repCycle = await ReputationMiningCycle.at(repCycleAddr);
-      await repCycle.submitRootHash("0x01", 0, 1);
+      await repCycle.submitRootHash("0x00", 0, 1);
       await repCycle.confirmNewHash(0);
       await oneHourLater();
 
