@@ -1,10 +1,14 @@
 /* globals artifacts */
-
 import { toBN, sha3 } from "web3-utils";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlockTime, bnSqrt } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, executeSignedRoleAssignment, makeTask } from "../helpers/test-data-generator";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -408,7 +412,7 @@ contract("Colony Funding", accounts => {
       await colony.finalizeTask(taskId);
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address), "colony-funding-task-bad-state");
       const colonyPotBalance = await colony.getPotBalance(2, otherToken.address);
-      assert.isTrue(colonyPotBalance.eq(toBN(350 * 1e18)));
+      expect(colonyPotBalance).to.eq.BN(toBN(350 * 10 ** 18));
     });
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
@@ -458,7 +462,7 @@ contract("Colony Funding", accounts => {
       let colonyEtherBalance = await web3GetBalance(colony.address);
       let colonyRewardBalance = await colony.getPotBalance(0, 0x0);
       assert.equal(colonyEtherBalance, 100);
-      assert.isTrue(colonyPotBalance.isZero());
+      expect(colonyPotBalance).to.be.zero; // eslint-disable-line no-unused-expressions
       await colony.claimColonyFunds(0x0);
       colonyPotBalance = await colony.getPotBalance(1, 0x0);
       colonyEtherBalance = await web3GetBalance(colony.address);

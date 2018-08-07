@@ -1,12 +1,17 @@
 /* globals artifacts */
 import { toBN } from "web3-utils";
 import { BN } from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import { MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -66,7 +71,7 @@ contract("Colony Reputation Updates", accounts => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryManager[0], MANAGER);
-      assert.isTrue(repLogEntryManager[1].eq(toBN(100 * 1e18)));
+      expect(repLogEntryManager[1]).to.eq.BN(toBN(100 * 1e18));
       assert.equal(repLogEntryManager[2].toNumber(), 2);
       assert.equal(repLogEntryManager[3], metaColony.address);
       assert.equal(repLogEntryManager[4].toNumber(), 2);
@@ -74,7 +79,7 @@ contract("Colony Reputation Updates", accounts => {
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryEvaluator[0], EVALUATOR);
-      assert.isTrue(repLogEntryEvaluator[1].eq(toBN(50 * 1e18)));
+      expect(repLogEntryEvaluator[1]).to.eq.BN(toBN(50 * 1e18));
       assert.equal(repLogEntryEvaluator[2].toNumber(), 2);
       assert.equal(repLogEntryEvaluator[3], metaColony.address);
       assert.equal(repLogEntryEvaluator[4].toNumber(), 2);
@@ -82,7 +87,7 @@ contract("Colony Reputation Updates", accounts => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       assert.equal(repLogEntryWorker[0], WORKER);
-      assert.isTrue(repLogEntryWorker[1].eq(toBN(300 * 1e18)));
+      expect(repLogEntryWorker[1]).to.eq.BN(toBN(300 * 1e18));
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
       assert.equal(repLogEntryWorker[3], metaColony.address);
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
@@ -228,7 +233,7 @@ contract("Colony Reputation Updates", accounts => {
 
       // Check the task pot is correctly funded with the max amount
       const taskPotBalance = await metaColony.getPotBalance(2, colonyToken.address);
-      assert.isTrue(taskPotBalance.eq(maxUIntNumber));
+      expect(taskPotBalance).to.eq.BN(maxUIntNumber);
 
       await checkErrorRevert(metaColony.finalizeTask(taskId));
     });

@@ -1,6 +1,8 @@
 /* globals artifacts */
 
 import { toBN } from "web3-utils";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import {
   MANAGER_ROLE,
@@ -44,6 +46,9 @@ import {
 } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const Colony = artifacts.require("Colony");
 const Resolver = artifacts.require("Resolver");
@@ -1435,9 +1440,9 @@ contract("Colony", accounts => {
       assert.equal(cancelledTaskEtherBalance.toNumber(), 0);
       assert.equal(cancelledTaskTokenBalance.toNumber(), 0);
       assert.equal(cancelledTaskOtherTokenBalance.toNumber(), 0);
-      assert.isTrue(originalDomainEtherBalance.add(originalTaskEtherBalance).eq(cancelledDomainEtherBalance));
-      assert.isTrue(originalDomainTokenBalance.add(originalTaskTokenBalance).eq(cancelledDomainTokenBalance));
-      assert.isTrue(originalDomainOtherTokenBalance.add(originalTaskOtherTokenBalance).eq(cancelledDomainOtherTokenBalance));
+      expect(originalDomainEtherBalance.add(originalTaskEtherBalance)).to.eq.BN(cancelledDomainEtherBalance);
+      expect(originalDomainTokenBalance.add(originalTaskTokenBalance)).to.eq.BN(cancelledDomainTokenBalance);
+      expect(originalDomainOtherTokenBalance.add(originalTaskOtherTokenBalance)).to.eq.BN(cancelledDomainOtherTokenBalance);
     });
 
     it("should fail if manager tries to cancel a task that was finalized", async () => {
@@ -1619,11 +1624,11 @@ contract("Colony", accounts => {
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
-      assert.isTrue(networkBalanceAfter.sub(networkBalanceBefore).eq(toBN(1 * 1e18)));
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(toBN(1 * 1e18));
       const balance = await token.balanceOf(MANAGER);
-      assert.isTrue(balance.eq(toBN(99 * 1e18)));
+      expect(balance).to.eq.BN(toBN(99 * 1e18));
       const potBalance = await colony.getPotBalance(2, token.address);
-      assert.isTrue(potBalance.eq(toBN(250 * 1e18)));
+      expect(potBalance).to.eq.BN(toBN(250 * 1e18));
     });
 
     it("should payout agreed ether for a task", async () => {

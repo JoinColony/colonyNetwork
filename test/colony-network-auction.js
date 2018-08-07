@@ -1,8 +1,13 @@
 /* globals artifacts */
 import { BN } from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../helpers/test-helper";
 import { giveUserCLNYTokens } from "../helpers/test-data-generator";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -180,13 +185,13 @@ contract("ColonyNetworkAuction", accounts => {
         const currentPriceString = currentPrice.toString(10);
         // Chai assert.closeTo does not work with Big Numbers so some manual comaring to error margin is required
         const differencePrices = auctionProp.price.sub(new BN(currentPriceString));
-        assert.isTrue(differencePrices.lte(errorMarginPrice));
+        expect(differencePrices).to.be.lte.BN(errorMarginPrice);
 
         const totalToEndAuction = await tokenAuction.totalToEndAuction();
         const amount = new BN(currentPriceString).mul(quantity).div(new BN(10).pow(new BN(18)));
         const errorMarginQuantity = amount.divn(100);
         const differenceQuantity = totalToEndAuction.sub(amount);
-        assert.isTrue(differenceQuantity.lte(errorMarginQuantity));
+        expect(differenceQuantity).to.be.lte.BN(errorMarginQuantity);
       });
     });
 
