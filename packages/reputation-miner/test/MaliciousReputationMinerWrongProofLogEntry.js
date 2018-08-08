@@ -8,7 +8,7 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
   // This client will supply the wrong log entry as part of its proof
   constructor(opts, amountToFalsify) {
     super(opts);
-    this.amountToFalsify = new BN(amountToFalsify.toString());
+    this.amountToFalsify = amountToFalsify.toString();
   }
 
   async respondToChallenge() {
@@ -22,8 +22,8 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
     // console.log('get justification tree');
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-    const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
-    logEntryNumber.iadd(this.amountToFalsify);
+    let logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
+    logEntryNumber = logEntryNumber.add(this.amountToFalsify);
     const tx = await repCycle.respondToChallenge(
       [
         round.toString(),

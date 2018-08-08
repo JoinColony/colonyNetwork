@@ -110,7 +110,7 @@ contract("ColonyNetworkMining", accounts => {
     let idx2;
     let toInvalidateIdx;
     const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
-    const submission1before = await repCycle.getDisputeRounds(round1.toString(), idx1.toString());
+    const submission1before = await repCycle.getDisputeRounds(round1, idx1);
     if (client2 !== undefined) {
       // Submit JRH for submission 1 if needed
       // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
@@ -120,13 +120,12 @@ contract("ColonyNetworkMining", accounts => {
 
       [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
       assert(round1.eq(round2), "Clients do not have submissions in the same round");
-      const submission2before = await repCycle.getDisputeRounds(round2.toString(), idx2.toString());
-
+      const submission2before = await repCycle.getDisputeRounds(round2, idx2);
       assert(
         idx1
           .sub(idx2)
-          .abs()
-          .eqn(1),
+          .pow(2)
+          .eq(1),
         "Clients are not facing each other in this round"
       );
       if (submission2before[4] === "0x0000000000000000000000000000000000000000000000000000000000000000") {
@@ -169,7 +168,7 @@ contract("ColonyNetworkMining", accounts => {
       await forwardTime(600, test);
     } else {
       // idx1.modn returns a javascript number, which is surprising!
-      toInvalidateIdx = idx1.modn(2) === 1 ? idx1.subn(1) : idx1.addn(1);
+      toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
     }
     await repCycle.invalidateHash(round1.toString(), toInvalidateIdx.toString());
   }
@@ -333,7 +332,8 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await ReputationMiningCycle.at(addr);
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
-
+      await goodClient.reputationTree.getRootHash();
+      await badClient.reputationTree.getRootHash();
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
@@ -1339,7 +1339,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.addLogContentsToReputationTree();
 
       badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         1,
         "0xfffffffff"
       );
@@ -1360,7 +1360,7 @@ contract("ColonyNetworkMining", accounts => {
 
       await repCycle.confirmNewHash(1);
       badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         1,
         "0xfffffffff"
       );
@@ -2102,7 +2102,8 @@ contract("ColonyNetworkMining", accounts => {
       let cycle = 0;
       while (nRemainingHashes > 1) {
         for (let i = 0; i < clients.length; i += 2 * 2 ** cycle) {
-          const [client1round] = await clients[i].getMySubmissionRoundAndIndex(); // eslint-disable-line no-await-in-loop
+          let [client1round] = await clients[i].getMySubmissionRoundAndIndex(); // eslint-disable-line no-await-in-loop
+          client1round = new BN(client1round.toString());
           let client2round = new BN("-1");
           let client2idx = i;
           while (!client1round.eq(client2round)) {
@@ -2111,6 +2112,7 @@ contract("ColonyNetworkMining", accounts => {
               break;
             }
             [client2round] = await clients[client2idx].getMySubmissionRoundAndIndex(); // eslint-disable-line no-await-in-loop
+            client2round = new BN(client2round.toString());
           }
           await accommodateChallengeAndInvalidateHash(this, clients[i], clients[client2idx]); // eslint-disable-line no-await-in-loop
           // These could all be done simultaneously, but the one-liner with Promise.all is very hard to read.
