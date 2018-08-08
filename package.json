@@ -52,6 +52,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
     "babel-register": "^6.26.0",
+    "bn-chai": "^1.0.1",
     "bn.js": "^4.11.8",
     "chai": "^4.1.2",
     "eslint": "^5.0.1",
@@ -78,7 +79,7 @@
     "solidity-coverage": "0.5.5",
     "solidity-parser-antlr": "^0.3.0",
     "solium": "^1.1.8",
-    "truffle": "^4.1.11",
+    "truffle": "^5.0.0-next.7",
     "web3-utils": "^1.0.0-beta.34"
   },
   "dependencies": {

@@ -5,23 +5,21 @@ module.exports = {
     development: {
       host: "localhost",
       port: 8545,
-      gas: 6700000,
       gasPrice: 0,
       network_id: "*"
     },
     integration: {
       host: "localhost",
       port: 8545,
-      gas: 6700000,
       gasPrice: 0,
-      network_id: "integration"
+      network_id: "1998"
     },
     coverage: {
       host: "localhost",
-      network_id: "*",
       port: 8555, // <-- Use port 8555
       gas: 0xfffffffffff, // <-- Use this high gas value
-      gasPrice: 0x01 // <-- Use this low gas price
+      gasPrice: 0x01, // <-- Use this low gas price
+      network_id: "1999"
     }
   },
   mocha: {
@@ -33,10 +31,17 @@ module.exports = {
     },
     slow: 1000
   },
-  solc: {
-    optimizer: {
-      enabled: true,
-      runs: 200
+  compilers: {
+    solc: {
+      version: "0.4.23",
+      docker: true,
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200
+        },
+        evmVersion: "byzantium"
+      }
     }
   }
 };

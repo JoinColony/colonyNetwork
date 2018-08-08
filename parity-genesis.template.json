@@ -8,7 +8,7 @@
         "gasLimitBoundDivisor": "0x400",
         "maximumExtraDataSize": "0x20",
         "minGasLimit": "0x1388",
-        "networkID" : "0x2",
+        "networkID" : "0x7CE",
         "eip658Transition": "0x0",
         "eip140Transition": "0x0",
         "eip211Transition": "0x0",
@@ -27,7 +27,7 @@
         "timestamp": "0x00",
         "parentHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
         "extraData": "0x",
-        "gasLimit": "0x6ACFC0"
+        "gasLimit": "0x6691B7"
     },
     "accounts": {
         "0000000000000000000000000000000000000001": { "balance": "1", "nonce": "1048576", "builtin": { "name": "ecrecover", "pricing": { "linear": { "base": 3000, "word": 0 } } } },

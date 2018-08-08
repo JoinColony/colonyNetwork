@@ -1,12 +1,10 @@
 /* globals artifacts */
 
 import { toBN } from "web3-utils";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import {
-  MANAGER,
-  EVALUATOR,
-  WORKER,
-  OTHER,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
   WORKER_ROLE,
@@ -49,6 +47,9 @@ import {
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
+
 const Colony = artifacts.require("Colony");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -60,7 +61,12 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
-contract("Colony", addresses => {
+contract("Colony", accounts => {
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER = accounts[3];
+
   let colony;
   let token;
   let otherToken;
@@ -91,7 +97,7 @@ contract("Colony", addresses => {
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
-    const authorityAddress = await colony.authority.call();
+    const authorityAddress = await colony.authority();
     authority = await Authority.at(authorityAddress);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
@@ -101,21 +107,21 @@ contract("Colony", addresses => {
     it("should accept ether", async () => {
       await colony.send(1);
       const colonyBalance = await web3GetBalance(colony.address);
-      assert.equal(colonyBalance.toNumber(), 1);
+      assert.equal(colonyBalance, 1);
     });
 
     it("should not have owner", async () => {
-      const owner = await colony.owner.call();
+      const owner = await colony.owner();
       assert.equal(owner, "0x0000000000000000000000000000000000000000");
     });
 
     it("should return zero task count", async () => {
-      const taskCount = await colony.getTaskCount.call();
+      const taskCount = await colony.getTaskCount();
       assert.equal(taskCount, 0);
     });
 
     it("should return zero for taskChangeNonce", async () => {
-      const taskChangeNonce = await colony.getTaskChangeNonce.call(1);
+      const taskChangeNonce = await colony.getTaskChangeNonce(1);
       assert.equal(taskChangeNonce, 0);
     });
 
@@ -128,24 +134,24 @@ contract("Colony", addresses => {
     });
 
     it("should correctly generate a rating secret", async () => {
-      const ratingSecret1 = await colony.generateSecret.call(RATING_1_SALT, MANAGER_RATING);
+      const ratingSecret1 = await colony.generateSecret(RATING_1_SALT, MANAGER_RATING);
       assert.equal(ratingSecret1, RATING_1_SECRET);
-      const ratingSecret2 = await colony.generateSecret.call(RATING_2_SALT, WORKER_RATING);
+      const ratingSecret2 = await colony.generateSecret(RATING_2_SALT, WORKER_RATING);
       assert.equal(ratingSecret2, RATING_2_SECRET);
     });
 
     it("should initialise the root domain", async () => {
       // There should be one domain (the root domain)
-      const domainCount = await colony.getDomainCount.call();
+      const domainCount = await colony.getDomainCount();
       assert.equal(domainCount, 1);
 
-      const domain = await colony.getDomain.call(domainCount);
+      const domain = await colony.getDomain(domainCount);
 
       // The first pot should have been created and assigned to the domain
       assert.equal(domain[1], 1);
 
       // A root skill should have been created for the Colony
-      const rootLocalSkillId = await colonyNetwork.getSkillCount.call();
+      const rootLocalSkillId = await colonyNetwork.getSkillCount();
       assert.equal(domain[0].toNumber(), rootLocalSkillId.toNumber());
     });
   });
@@ -153,8 +159,8 @@ contract("Colony", addresses => {
   describe("when working with permissions", () => {
     it("should allow current owner role to transfer role to another address", async () => {
       const ownerRole = 0;
-      const currentOwner = addresses[0];
-      const futureOwner = addresses[2];
+      const currentOwner = accounts[0];
+      const futureOwner = accounts[2];
 
       let hasRole = await authority.hasUserRole(currentOwner, ownerRole);
       assert(hasRole, `${currentOwner} does not have owner role`);
@@ -168,8 +174,8 @@ contract("Colony", addresses => {
     it("should allow admin to assign colony admin role", async () => {
       const adminRole = 1;
 
-      const user1 = addresses[1];
-      const user5 = addresses[5];
+      const user1 = accounts[1];
+      const user5 = accounts[5];
 
       await colony.setAdminRole(user1);
 
@@ -188,7 +194,7 @@ contract("Colony", addresses => {
     it("should allow owner to remove colony admin role", async () => {
       const adminRole = 1;
 
-      const user1 = addresses[1];
+      const user1 = accounts[1];
 
       await colony.setAdminRole(user1);
 
@@ -204,8 +210,8 @@ contract("Colony", addresses => {
     it("should not allow admin to remove admin role", async () => {
       const adminRole = 1;
 
-      const user1 = addresses[1];
-      const user2 = addresses[2];
+      const user1 = accounts[1];
+      const user2 = accounts[2];
 
       await colony.setAdminRole(user1);
       await colony.setAdminRole(user2);
@@ -226,7 +232,7 @@ contract("Colony", addresses => {
     });
 
     it("should allow admin to call predetermined functions", async () => {
-      const user3 = addresses[3];
+      const user3 = accounts[3];
 
       await colony.setAdminRole(user3);
 
@@ -269,7 +275,7 @@ contract("Colony", addresses => {
   describe("when creating tasks", () => {
     it("should allow admins to make task", async () => {
       await makeTask({ colony });
-      const task = await colony.getTask.call(1);
+      const task = await colony.getTask(1);
       assert.equal(task[0], SPECIFICATION_HASH);
       assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
       assert.isFalse(task[2]);
@@ -280,15 +286,15 @@ contract("Colony", addresses => {
 
     it("should fail if a non-admin user tries to make a task", async () => {
       await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 1, { from: OTHER }));
-      const taskCount = await colony.getTaskCount.call();
+      const taskCount = await colony.getTaskCount();
       assert.equal(taskCount.toNumber(), 0);
     });
 
     it("should set the task manager as the creator", async () => {
       await makeTask({ colony });
-      const taskCount = await colony.getTaskCount.call();
+      const taskCount = await colony.getTaskCount();
       assert.equal(taskCount.toNumber(), 1);
-      const taskManager = await colony.getTaskRole.call(1, MANAGER_ROLE);
+      const taskManager = await colony.getTaskRole(1, MANAGER_ROLE);
       assert.equal(taskManager[0], MANAGER);
     });
 
@@ -298,7 +304,7 @@ contract("Colony", addresses => {
       await makeTask({ colony });
       await makeTask({ colony });
       await makeTask({ colony });
-      const taskCount = await colony.getTaskCount.call();
+      const taskCount = await colony.getTaskCount();
 
       assert.equal(taskCount.toNumber(), 5);
     });
@@ -306,7 +312,7 @@ contract("Colony", addresses => {
     it("should set the task domain correctly", async () => {
       await colony.addDomain(1);
       await makeTask({ colony, domainId: 2 });
-      const task = await colony.getTask.call(1);
+      const task = await colony.getTask(1);
       assert.equal(task[8].toNumber(), 2);
     });
 
@@ -317,15 +323,15 @@ contract("Colony", addresses => {
 
   describe("when bootstrapping the colony", () => {
     const INITIAL_REPUTATIONS = [toBN(5 * 1e18).toString(), toBN(4 * 1e18).toString(), toBN(3 * 1e18).toString(), toBN(2 * 1e18).toString()];
-    const INITIAL_ADDRESSES = addresses.slice(0, 4);
+    const INITIAL_ADDRESSES = accounts.slice(0, 4);
 
     it("should assign reputation correctly when bootstrapping the colony", async () => {
-      const skillCount = await colonyNetwork.getSkillCount.call();
+      const skillCount = await colonyNetwork.getSkillCount();
 
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-      const inactiveReputationMiningCycle = ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+      const inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
@@ -384,7 +390,7 @@ contract("Colony", addresses => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await checkErrorRevert(
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
-          from: addresses[1]
+          from: accounts[1]
         })
       );
     });
@@ -392,7 +398,7 @@ contract("Colony", addresses => {
     it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await makeTask({ colony });
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_REPUTATIONS, INITIAL_ADDRESSES));
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });
   });
 
@@ -417,7 +423,7 @@ contract("Colony", addresses => {
 
       const sigTypes = [0, 0];
       const signers = [MANAGER, WORKER];
-      const txData = await colony.contract.setTaskWorkerRole.getData(taskId, WORKER);
+      const txData = await colony.contract.methods.setTaskWorkerRole(taskId, WORKER).encodeABI();
       const sigsPromises = sigTypes.map((type, i) => createSignatures(colony, taskId, [signers[i]], 0, txData));
       const sigs = await Promise.all(sigsPromises);
       const sigV = sigs.map(sig => sig.sigV[0]);
@@ -469,7 +475,7 @@ contract("Colony", addresses => {
         })
       );
 
-      const evaluator = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.equal(evaluator[0], "0x0000000000000000000000000000000000000000");
 
       await checkErrorRevert(
@@ -483,7 +489,7 @@ contract("Colony", addresses => {
         })
       );
 
-      const worker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(worker[0], "0x0000000000000000000000000000000000000000");
     });
 
@@ -543,7 +549,7 @@ contract("Colony", addresses => {
         args: [taskId, WORKER]
       });
 
-      let workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      let workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], WORKER);
 
       await executeSignedTaskChange({
@@ -555,7 +561,7 @@ contract("Colony", addresses => {
         args: [taskId]
       });
 
-      workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], "0x0000000000000000000000000000000000000000");
     });
 
@@ -582,7 +588,7 @@ contract("Colony", addresses => {
         })
       );
 
-      const workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], WORKER);
     });
 
@@ -600,7 +606,7 @@ contract("Colony", addresses => {
         })
       );
 
-      const workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], "0x0000000000000000000000000000000000000000");
     });
 
@@ -625,10 +631,10 @@ contract("Colony", addresses => {
         args: [taskId, MANAGER]
       });
 
-      const evaluatorInfo = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const evaluatorInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.equal(evaluatorInfo[0], MANAGER);
 
-      const workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], MANAGER);
     });
 
@@ -657,10 +663,10 @@ contract("Colony", addresses => {
         })
       );
 
-      const evaluatorInfo = await colony.getTaskRole.call(taskId, EVALUATOR_ROLE);
+      const evaluatorInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.equal(evaluatorInfo[0], "0x0000000000000000000000000000000000000000");
 
-      const workerInfo = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], "0x0000000000000000000000000000000000000000");
     });
 
@@ -704,7 +710,7 @@ contract("Colony", addresses => {
         args: [taskId, WORKER]
       });
 
-      const worker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(worker[0], WORKER);
     });
 
@@ -722,7 +728,7 @@ contract("Colony", addresses => {
         })
       );
 
-      const worker = await colony.getTaskRole.call(taskId, WORKER_ROLE);
+      const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(worker[0], "0x0000000000000000000000000000000000000000");
     });
 
@@ -876,7 +882,7 @@ contract("Colony", addresses => {
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
 
-      let taskChangeNonce = await colony.getTaskChangeNonce.call(taskId);
+      let taskChangeNonce = await colony.getTaskChangeNonce(taskId);
       assert.equal(taskChangeNonce, 1);
 
       // Change the due date
@@ -891,7 +897,7 @@ contract("Colony", addresses => {
         args: [taskId, dueDate]
       });
 
-      taskChangeNonce = await colony.getTaskChangeNonce.call(taskId);
+      taskChangeNonce = await colony.getTaskChangeNonce(taskId);
       assert.equal(taskChangeNonce, 2);
     });
 
@@ -908,7 +914,7 @@ contract("Colony", addresses => {
         sigTypes: [0],
         args: [taskId1, SPECIFICATION_HASH_UPDATED]
       });
-      let taskChangeNonce = await colony.getTaskChangeNonce.call(taskId1);
+      let taskChangeNonce = await colony.getTaskChangeNonce(taskId1);
       assert.equal(taskChangeNonce, 1);
 
       await executeSignedTaskChange({
@@ -920,7 +926,7 @@ contract("Colony", addresses => {
         args: [taskId2, SPECIFICATION_HASH_UPDATED]
       });
 
-      taskChangeNonce = await colony.getTaskChangeNonce.call(taskId2);
+      taskChangeNonce = await colony.getTaskChangeNonce(taskId2);
       assert.equal(taskChangeNonce, 1);
 
       // Change the task2 due date
@@ -935,7 +941,7 @@ contract("Colony", addresses => {
         args: [taskId2, dueDate]
       });
 
-      taskChangeNonce = await colony.getTaskChangeNonce.call(taskId2);
+      taskChangeNonce = await colony.getTaskChangeNonce(taskId2);
       assert.equal(taskChangeNonce, 2);
     });
 
@@ -950,7 +956,7 @@ contract("Colony", addresses => {
         sigTypes: [0],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
@@ -974,7 +980,7 @@ contract("Colony", addresses => {
         sigTypes: [0, 0],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
@@ -998,7 +1004,7 @@ contract("Colony", addresses => {
         sigTypes: [1, 1],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
@@ -1022,7 +1028,7 @@ contract("Colony", addresses => {
         sigTypes: [0, 1],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
     });
 
@@ -1048,7 +1054,7 @@ contract("Colony", addresses => {
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         })
       );
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.equal(task[0], SPECIFICATION_HASH);
     });
 
@@ -1075,7 +1081,7 @@ contract("Colony", addresses => {
         args: [taskId, dueDate]
       });
 
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.equal(task[4], dueDate);
     });
 
@@ -1164,9 +1170,9 @@ contract("Colony", addresses => {
           colony,
           functionName: "setTaskBrief",
           taskId,
-          signers: [MANAGER, EVALUATOR],
-          sigTypes: [0, 0],
-          args: [10, 0]
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [10, SPECIFICATION_HASH_UPDATED]
         })
       );
     });
@@ -1225,11 +1231,11 @@ contract("Colony", addresses => {
       const taskId = await makeTask({ colony });
 
       // Acquire meta colony, create new global skill, assign new task's skill
-      const metaColonyAddress = await colonyNetwork.getMetaColony.call();
+      const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IColony.at(metaColonyAddress);
       await metaColony.addGlobalSkill(1);
 
-      const skillCount = await colonyNetwork.getSkillCount.call();
+      const skillCount = await colonyNetwork.getSkillCount();
 
       await expectEvent(
         executeSignedTaskChange({
@@ -1274,12 +1280,12 @@ contract("Colony", addresses => {
       dueDate += SECONDS_PER_DAY * 4;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
-      let task = await colony.getTask.call(1);
+      let task = await colony.getTask(1);
       assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
 
       const currentTime = await currentBlockTime();
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
-      task = await colony.getTask.call(1);
+      task = await colony.getTask(1);
       assert.equal(task[1], DELIVERABLE_HASH);
       assert.closeTo(task[7].toNumber(), currentTime, 2);
     });
@@ -1309,7 +1315,7 @@ contract("Colony", addresses => {
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
 
       await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: WORKER }));
-      const task = await colony.getTask.call(1);
+      const task = await colony.getTask(1);
       assert.equal(task[1], DELIVERABLE_HASH);
     });
 
@@ -1319,7 +1325,7 @@ contract("Colony", addresses => {
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
       await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }));
-      const task = await colony.getTask.call(1);
+      const task = await colony.getTask(1);
       assert.notEqual(task[1], DELIVERABLE_HASH);
     });
 
@@ -1342,7 +1348,7 @@ contract("Colony", addresses => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.isTrue(task[2]);
     });
 
@@ -1378,16 +1384,16 @@ contract("Colony", addresses => {
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
 
       await colony.cancelTask(taskId);
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       assert.isTrue(task[3]);
     });
 
     it("should be possible to return funds back to the domain", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
-      const task = await colony.getTask.call(taskId);
+      const task = await colony.getTask(taskId);
       const domainId = task[8].toNumber();
-      const domain = await colony.getDomain.call(domainId);
+      const domain = await colony.getDomain(domainId);
       const taskPotId = task[6];
       const domainPotId = domain[1];
 
@@ -1404,14 +1410,14 @@ contract("Colony", addresses => {
       await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
 
       // Keep track of original Ether balance in pots
-      const originalDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
-      const originalTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
+      const originalDomainEtherBalance = await colony.getPotBalance(domainPotId, 0x0);
+      const originalTaskEtherBalance = await colony.getPotBalance(taskPotId, 0x0);
       // And same for the token
-      const originalDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
-      const originalTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
+      const originalDomainTokenBalance = await colony.getPotBalance(domainPotId, token.address);
+      const originalTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
       // And the other token
-      const originalDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
-      const originalTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
+      const originalDomainOtherTokenBalance = await colony.getPotBalance(domainPotId, otherToken.address);
+      const originalTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
 
       // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
       await colony.cancelTask(taskId);
@@ -1419,24 +1425,24 @@ contract("Colony", addresses => {
       await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskTokenBalance, token.address);
       await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskOtherTokenBalance, otherToken.address);
 
-      const cancelledTaskEtherBalance = await colony.getPotBalance.call(taskPotId, 0x0);
-      const cancelledDomainEtherBalance = await colony.getPotBalance.call(domainPotId, 0x0);
-      const cancelledTaskTokenBalance = await colony.getPotBalance.call(taskPotId, token.address);
-      const cancelledDomainTokenBalance = await colony.getPotBalance.call(domainPotId, token.address);
-      const cancelledTaskOtherTokenBalance = await colony.getPotBalance.call(taskPotId, otherToken.address);
-      const cancelledDomainOtherTokenBalance = await colony.getPotBalance.call(domainPotId, otherToken.address);
-      assert.notEqual(originalTaskEtherBalance.toNumber(), cancelledTaskEtherBalance.toNumber());
-      assert.notEqual(originalDomainEtherBalance.toNumber(), cancelledDomainEtherBalance.toNumber());
-      assert.notEqual(originalTaskTokenBalance.toNumber(), cancelledTaskTokenBalance.toNumber());
-      assert.notEqual(originalDomainTokenBalance.toNumber(), cancelledDomainTokenBalance.toNumber());
-      assert.notEqual(originalTaskOtherTokenBalance.toNumber(), cancelledTaskOtherTokenBalance.toNumber());
-      assert.notEqual(originalDomainOtherTokenBalance.toNumber(), cancelledDomainOtherTokenBalance.toNumber());
+      const cancelledTaskEtherBalance = await colony.getPotBalance(taskPotId, 0x0);
+      const cancelledDomainEtherBalance = await colony.getPotBalance(domainPotId, 0x0);
+      const cancelledTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
+      const cancelledDomainTokenBalance = await colony.getPotBalance(domainPotId, token.address);
+      const cancelledTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
+      const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domainPotId, otherToken.address);
+      assert.isFalse(originalTaskEtherBalance.eq(cancelledTaskEtherBalance));
+      assert.isFalse(originalDomainEtherBalance.eq(cancelledDomainEtherBalance));
+      assert.isFalse(originalTaskTokenBalance.eq(cancelledTaskTokenBalance));
+      assert.isFalse(originalDomainTokenBalance.eq(cancelledDomainTokenBalance));
+      assert.isFalse(originalTaskOtherTokenBalance.eq(cancelledTaskOtherTokenBalance));
+      assert.isFalse(originalDomainOtherTokenBalance.eq(cancelledDomainOtherTokenBalance));
       assert.equal(cancelledTaskEtherBalance.toNumber(), 0);
       assert.equal(cancelledTaskTokenBalance.toNumber(), 0);
       assert.equal(cancelledTaskOtherTokenBalance.toNumber(), 0);
-      assert.equal(originalDomainEtherBalance.plus(originalTaskEtherBalance).toNumber(), cancelledDomainEtherBalance.toNumber());
-      assert.equal(originalDomainTokenBalance.plus(originalTaskTokenBalance).toNumber(), cancelledDomainTokenBalance.toNumber());
-      assert.equal(originalDomainOtherTokenBalance.plus(originalTaskOtherTokenBalance).toNumber(), cancelledDomainOtherTokenBalance.toNumber());
+      expect(originalDomainEtherBalance.add(originalTaskEtherBalance)).to.eq.BN(cancelledDomainEtherBalance);
+      expect(originalDomainTokenBalance.add(originalTaskTokenBalance)).to.eq.BN(cancelledDomainTokenBalance);
+      expect(originalDomainOtherTokenBalance.add(originalTaskOtherTokenBalance)).to.eq.BN(cancelledDomainOtherTokenBalance);
     });
 
     it("should fail if manager tries to cancel a task that was finalized", async () => {
@@ -1557,19 +1563,19 @@ contract("Colony", addresses => {
       await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
       await colony.finalizeTask(taskId);
 
-      const taskPayoutManager1 = await colony.getTaskPayout.call(taskId, MANAGER_ROLE, 0x0);
+      const taskPayoutManager1 = await colony.getTaskPayout(taskId, MANAGER_ROLE, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);
-      const taskPayoutManager2 = await colony.getTaskPayout.call(taskId, MANAGER_ROLE, token.address);
+      const taskPayoutManager2 = await colony.getTaskPayout(taskId, MANAGER_ROLE, token.address);
       assert.equal(taskPayoutManager2.toNumber(), 100);
 
-      const taskPayoutEvaluator1 = await colony.getTaskPayout.call(taskId, EVALUATOR_ROLE, 0x0);
+      const taskPayoutEvaluator1 = await colony.getTaskPayout(taskId, EVALUATOR_ROLE, 0x0);
       assert.equal(taskPayoutEvaluator1.toNumber(), 1000);
-      const taskPayoutEvaluator2 = await colony.getTaskPayout.call(taskId, EVALUATOR_ROLE, token.address);
+      const taskPayoutEvaluator2 = await colony.getTaskPayout(taskId, EVALUATOR_ROLE, token.address);
       assert.equal(taskPayoutEvaluator2.toNumber(), 40);
 
-      const taskPayoutWorker1 = await colony.getTaskPayout.call(taskId, WORKER_ROLE, 0x0);
+      const taskPayoutWorker1 = await colony.getTaskPayout(taskId, WORKER_ROLE, 0x0);
       assert.equal(taskPayoutWorker1.toNumber(), 98000);
-      const taskPayoutWorker2 = await colony.getTaskPayout.call(taskId, WORKER_ROLE, token.address);
+      const taskPayoutWorker2 = await colony.getTaskPayout(taskId, WORKER_ROLE, token.address);
       assert.equal(taskPayoutWorker2.toNumber(), 200);
     });
 
@@ -1615,14 +1621,14 @@ contract("Colony", addresses => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      const networkBalanceBefore = await token.balanceOf.call(colonyNetwork.address);
+      const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
-      const networkBalanceAfter = await token.balanceOf.call(colonyNetwork.address);
-      assert.equal(networkBalanceAfter.minus(networkBalanceBefore).toNumber(), 1 * 1e18);
-      const balance = await token.balanceOf.call(MANAGER);
-      assert.equal(balance.toNumber(), 99 * 1e18);
-      const potBalance = await colony.getPotBalance.call(2, token.address);
-      assert.equal(potBalance.toNumber(), 250 * 1e18);
+      const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(toBN(1 * 1e18));
+      const balance = await token.balanceOf(MANAGER);
+      expect(balance).to.eq.BN(toBN(99 * 1e18));
+      const potBalance = await colony.getPotBalance(2, token.address);
+      expect(potBalance).to.eq.BN(toBN(250 * 1e18));
     });
 
     it("should payout agreed ether for a task", async () => {
@@ -1640,15 +1646,25 @@ contract("Colony", addresses => {
         workerPayout: 200
       });
       await colony.finalizeTask(taskId);
-      const metaColonyAddress = await colonyNetwork.getMetaColony.call();
+      const metaColonyAddress = await colonyNetwork.getMetaColony();
       const balanceBefore = await web3GetBalance(MANAGER);
       const metaBalanceBefore = await web3GetBalance(metaColonyAddress);
       await colony.claimPayout(taskId, MANAGER_ROLE, 0x0, { gasPrice: 0 });
       const balanceAfter = await web3GetBalance(MANAGER);
       const metaBalanceAfter = await web3GetBalance(metaColonyAddress);
-      assert.equal(balanceAfter.minus(balanceBefore).toNumber(), 99);
-      assert.equal(metaBalanceAfter.minus(metaBalanceBefore).toNumber(), 1);
-      const potBalance = await colony.getPotBalance.call(2, 0x0);
+      assert.equal(
+        toBN(balanceAfter)
+          .sub(toBN(balanceBefore))
+          .toNumber(),
+        99
+      );
+      assert.equal(
+        toBN(metaBalanceAfter)
+          .sub(toBN(metaBalanceBefore))
+          .toNumber(),
+        1
+      );
+      const potBalance = await colony.getPotBalance(2, 0x0);
       assert.equal(potBalance.toNumber(), 250);
     });
 
@@ -1718,25 +1734,25 @@ contract("Colony", addresses => {
 
   describe("Recovery Mode", () => {
     it("should be able to add and remove recovery roles when not in recovery", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       let numRecoveryRoles;
 
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 0);
 
       await colony.setRecoveryRole(owner, { from: owner });
-      await colony.setRecoveryRole(addresses[1], { from: owner });
-      await colony.setRecoveryRole(addresses[2], { from: owner });
+      await colony.setRecoveryRole(accounts[1], { from: owner });
+      await colony.setRecoveryRole(accounts[2], { from: owner });
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 3);
 
       // Can remove recovery roles
-      await colony.removeRecoveryRole(addresses[2], { from: owner });
+      await colony.removeRecoveryRole(accounts[2], { from: owner });
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 2);
 
       // Can't remove twice
-      await colony.removeRecoveryRole(addresses[2], { from: owner });
+      await colony.removeRecoveryRole(accounts[2], { from: owner });
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 2);
 
@@ -1747,32 +1763,32 @@ contract("Colony", addresses => {
     });
 
     it("should not be able to add and remove roles when in recovery", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.setOwnerRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.setAdminRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.removeAdminRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.setRecoveryRole(addresses[1], { from: owner }));
-      await checkErrorRevert(colony.removeRecoveryRole(addresses[1], { from: owner }));
+      await checkErrorRevert(colony.setOwnerRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.setAdminRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.removeAdminRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.setRecoveryRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.removeRecoveryRole(accounts[1], { from: owner }));
     });
 
     it("should not be able to call normal functions while in recovery", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
       await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }));
       await checkErrorRevert(colony.mintTokens(1000, { from: owner }));
       await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }));
-      await checkErrorRevert(colony.makeTask("0x0", 0, { from: owner }));
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }));
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       const version = await colony.version();
       await colony.setRecoveryRole(owner, { from: owner });
-      await colony.setRecoveryRole(addresses[1], { from: owner });
-      await colony.setRecoveryRole(addresses[2], { from: owner });
+      await colony.setRecoveryRole(accounts[1], { from: owner });
+      await colony.setRecoveryRole(accounts[2], { from: owner });
 
       await colony.enterRecoveryMode({ from: owner });
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
@@ -1785,27 +1801,27 @@ contract("Colony", addresses => {
       await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
 
       // 2/3 approve
-      await colony.approveExitRecovery({ from: addresses[1] });
+      await colony.approveExitRecovery({ from: accounts[1] });
       await colony.exitRecoveryMode(version.toNumber(), { from: owner });
     });
 
     it("recovery users can work in recovery mode", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       const version = await colony.version();
       await colony.setRecoveryRole(owner, { from: owner });
-      await colony.setRecoveryRole(addresses[1], { from: owner });
+      await colony.setRecoveryRole(accounts[1], { from: owner });
 
       await colony.enterRecoveryMode({ from: owner });
-      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: addresses[1] });
+      await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: accounts[1] });
 
       // 2/2 approve
       await colony.approveExitRecovery({ from: owner });
-      await colony.approveExitRecovery({ from: addresses[1] });
-      await colony.exitRecoveryMode(version.toNumber(), { from: addresses[1] });
+      await colony.approveExitRecovery({ from: accounts[1] });
+      await colony.exitRecoveryMode(version.toNumber(), { from: accounts[1] });
     });
 
     it("users cannot approve twice", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
@@ -1815,14 +1831,14 @@ contract("Colony", addresses => {
     });
 
     it("users cannot approve if unauthorized", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.approveExitRecovery({ from: addresses[1] }));
+      await checkErrorRevert(colony.approveExitRecovery({ from: accounts[1] }));
     });
 
     it("should allow editing of general variables", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
@@ -1832,7 +1848,7 @@ contract("Colony", addresses => {
     });
 
     it("should not allow editing of protected variables", async () => {
-      const owner = addresses[0];
+      const owner = accounts[0];
       const protectedLoc = 0;
 
       await colony.setRecoveryRole(owner, { from: owner });

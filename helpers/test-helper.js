@@ -8,7 +8,7 @@ import fs from "fs";
 
 export function web3GetNetwork() {
   return new Promise((resolve, reject) => {
-    web3.version.getNetwork((err, res) => {
+    web3.eth.net.getId((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
@@ -17,7 +17,7 @@ export function web3GetNetwork() {
 
 export function web3GetClient() {
   return new Promise((resolve, reject) => {
-    web3.version.getNode((err, res) => {
+    web3.eth.getNodeInfo((err, res) => {
       if (err !== null) return reject(err);
       return resolve(res);
     });
@@ -78,8 +78,17 @@ export function web3GetCode(a) {
   });
 }
 
+export function web3GetAccounts() {
+  return new Promise((resolve, reject) => {
+    web3.eth.getAccounts((err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res);
+    });
+  });
+}
+
 // eslint-disable-next-line no-unused-vars
-export async function checkErrorRevert(promise, errMsg) {
+export async function checkErrorRevert(promise, errorMessage) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
   // (still making a valid transaction and returning a txid). For the explanation of why
@@ -89,20 +98,17 @@ export async function checkErrorRevert(promise, errMsg) {
   // We have to have this special function that we use to catch the error.
   let tx;
   let receipt;
+  let reason; // eslint-disable-line no-unused-vars
   try {
     tx = await promise;
     receipt = await web3GetTransactionReceipt(tx);
   } catch (err) {
-    // TODO: Check errMsg == err.Error or wherever truffle decides ot put this
-    ({ tx, receipt } = err);
+    ({ tx, receipt, reason } = err);
+    // TODO: address as part of https://github.com/JoinColony/colonyNetwork/issues/201#issuecomment-407634292
+    // assert.equal(reason, errorMessage);
   }
-
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00);
-}
-
-export function checkErrorNonPayableFunction(tx) {
-  assert.equal(tx, "Error: Cannot send value to non-payable function");
 }
 
 export function getRandomString(_length) {
@@ -158,7 +164,9 @@ export async function expectAllEvents(tx, eventNames) {
 }
 
 export async function forwardTime(seconds, test) {
-  const client = await web3GetClient();
+  // TODO: Get the client via web3GetClient() which requires web3 beta34 for `getNodeInfo`.
+  // Current version of truffle 5.0.0-next.6
+  const client = "TestRPC";
   const p = new Promise((resolve, reject) => {
     if (client.indexOf("TestRPC") === -1) {
       resolve(test.skip());
@@ -203,18 +211,20 @@ export function getFunctionSignature(sig) {
 export async function createSignatures(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
-  const nonce = await colony.getTaskChangeNonce.call(taskId);
+  const nonce = await colony.getTaskChangeNonce(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
-  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
+
+  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString(16), "64", "0")}${data.slice(
     2
-  )}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
+  )}${web3Utils.padLeft(nonce.toString(16), "64", "0")}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];
   const sigS = [];
   const msgHash = web3Utils.soliditySha3(input);
 
   for (let i = 0; i < signers.length; i += 1) {
-    const user = signers[i].toString();
+    let user = signers[i].toString();
+    user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
     const prefixedMessageHash = ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
     const sig = ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
@@ -230,18 +240,19 @@ export async function createSignatures(colony, taskId, signers, value, data) {
 export async function createSignaturesTrezor(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
-  const nonce = await colony.getTaskChangeNonce.call(taskId);
+  const nonce = await colony.getTaskChangeNonce(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
-  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString("16"), "64", "0")}${data.slice(
+  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString(16), "64", "0")}${data.slice(
     2
-  )}${web3Utils.padLeft(nonce.toString("16"), "64", "0")}`; // eslint-disable-line max-len
+  )}${web3Utils.padLeft(nonce.toString(16), "64", "0")}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];
   const sigS = [];
   const msgHash = web3Utils.soliditySha3(input);
 
   for (let i = 0; i < signers.length; i += 1) {
-    const user = signers[i].toString();
+    let user = signers[i].toString();
+    user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
     const prefixedMessageHash = web3Utils.soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
     const sig = ethUtils.ecsign(Buffer.from(prefixedMessageHash.slice(2), "hex"), Buffer.from(privKey, "hex"));

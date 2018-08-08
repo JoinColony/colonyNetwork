@@ -19,7 +19,7 @@ bc_client_running() {
 }
 
 start_ganache() {
-  node_modules/.bin/ganache-cli --acctKeys="./ganache-accounts.json" --noVMErrorsOnRPCResponse --gasLimit 6700000 \
+  node_modules/.bin/ganache-cli --acctKeys="./ganache-accounts.json" --noVMErrorsOnRPCResponse --gasLimit 6721975 \
     --account="0x0355596cdb5e5242ad082c4fe3f8bbe48c9dba843fe1f99dd8272f487e70efae, 100000000000000000000" \
     --account="0xe9aebe8791ad1ebd33211687e9c53f13fe8cca53b271a6529c7d7ba05eda5ce2, 100000000000000000000" \
     --account="0x6f36842c663f5afc0ef3ac986ec62af9d09caa1bbf59a50cdb7334c9cc880e65, 100000000000000000000" \
@@ -44,7 +44,7 @@ start_parity() {
     --author ${addresses[0]} \
     --unlock ${addresses[0]},${addresses[1]},${addresses[2]},${addresses[3]} \
     --keys-path ./keys --geth --no-dapps \
-    --tx-gas-limit 0x6ACFC0 --gasprice 0x0 --gas-floor-target 0x6ACFC0 \
+    --tx-gas-limit 0x6691B7 --gasprice 0x0 --gas-floor-target 0x6691B7 \
     --reseal-on-txs all --reseal-min-period 0 \
     --jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000" \
     --password ./parityPassword >/dev/null 2>&1

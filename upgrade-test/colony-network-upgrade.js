@@ -38,7 +38,7 @@ contract("ColonyNetwork contract upgrade", () => {
 
   describe("when upgrading ColonyNetwork contract", () => {
     it("should return correct total number of colonies", async () => {
-      const updatedColonyCount = await updatedColonyNetwork.getColonyCount.call();
+      const updatedColonyCount = await updatedColonyNetwork.getColonyCount();
       assert.equal(3, updatedColonyCount.toNumber());
     });
 

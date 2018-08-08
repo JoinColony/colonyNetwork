@@ -8,9 +8,9 @@ const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
-contract("TokenLocking", addresses => {
+contract("TokenLocking", accounts => {
   const usersTokens = 6;
-  const userAddress = addresses[1];
+  const userAddress = accounts[1];
   let token;
   let tokenLocking;
   let otherToken;
@@ -19,9 +19,9 @@ contract("TokenLocking", addresses => {
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = IColonyNetwork.at(etherRouter.address);
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking.call();
-    tokenLocking = ITokenLocking.at(tokenLockingAddress);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   });
 
   beforeEach(async () => {
@@ -35,17 +35,17 @@ contract("TokenLocking", addresses => {
 
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
-    colony = IColony.at(colonyAddress);
+    colony = await IColony.at(colonyAddress);
   });
 
   describe("when locking tokens", async () => {
     it("should correctly set colony network address", async () => {
       await tokenLocking.setColonyNetwork(0x0);
-      let colonyNetworkAddress = await tokenLocking.getColonyNetwork.call();
+      let colonyNetworkAddress = await tokenLocking.getColonyNetwork();
       assert.equal(colonyNetworkAddress, 0x0);
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
-      colonyNetworkAddress = await tokenLocking.getColonyNetwork.call();
+      colonyNetworkAddress = await tokenLocking.getColonyNetwork();
       assert.equal(colonyNetworkAddress, colonyNetwork.address);
     });
 
@@ -313,7 +313,7 @@ contract("TokenLocking", addresses => {
     });
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(tokenLocking.punishStakers([addresses[0], addresses[1]]), "token-locking-sender-not-reputation-mining-cycle");
+      await checkErrorRevert(tokenLocking.punishStakers([accounts[0], accounts[1]]), "token-locking-sender-not-reputation-mining-cycle");
     });
   });
 });

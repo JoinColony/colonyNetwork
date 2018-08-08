@@ -3,9 +3,6 @@ import web3Utils from "web3-utils";
 import { BN } from "bn.js";
 
 import {
-  MANAGER,
-  EVALUATOR,
-  WORKER,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
@@ -17,20 +14,20 @@ import {
   WORKER_ROLE,
   SPECIFICATION_HASH
 } from "./constants";
-import { currentBlockTime, createSignatures, createSignaturesTrezor } from "./test-helper";
+import { currentBlockTime, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
-export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, opts }) {
-  const { logs } = await colony.makeTask(hash, domainId, opts);
+export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1 }) {
+  const { logs } = await colony.makeTask(hash, domainId);
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
-  return logs.filter(log => log.event === "TaskAdded")[0].args.id.toNumber();
+  return logs.filter(log => log.event === "TaskAdded")[0].args.id;
 }
 
 async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {
-  const txData = await colony.contract[functionName].getData(...args);
+  const txData = await colony.contract.methods[functionName](...args).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     if (type === 0) {
       return createSignatures(colony, taskId, [signers[i]], 0, txData);
@@ -54,18 +51,23 @@ export async function executeSignedRoleAssignment({ colony, functionName, taskId
   return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
-export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator = EVALUATOR, worker = WORKER }) {
+export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator, worker }) {
+  const accounts = await web3GetAccounts();
+  const manager = accounts[0];
+  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
+
   const taskId = await makeTask({ colony, domainId: domain });
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
-    const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId.call();
+    const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
     if (rootGlobalSkill.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
 
     await executeSignedTaskChange({
       colony,
       functionName: "setTaskSkill",
       taskId,
-      signers: [MANAGER],
+      signers: [manager],
       sigTypes: [0],
       args: [taskId, rootGlobalSkill.toNumber()]
     });
@@ -74,13 +76,13 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
       colony,
       functionName: "setTaskSkill",
       taskId,
-      signers: [MANAGER],
+      signers: [manager],
       sigTypes: [0],
       args: [taskId, skill]
     });
   }
 
-  let signers = MANAGER === evaluator ? [MANAGER] : [MANAGER, evaluator];
+  let signers = manager === evaluator ? [manager] : [manager, evaluator];
   let sigTypes = Array.from({ length: signers.length }, () => 0);
 
   await executeSignedRoleAssignment({
@@ -92,7 +94,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
     args: [taskId, evaluator]
   });
 
-  signers = MANAGER === worker ? [MANAGER] : [MANAGER, worker];
+  signers = manager === worker ? [manager] : [manager, worker];
   sigTypes = Array.from({ length: signers.length }, () => 0);
 
   await executeSignedRoleAssignment({
@@ -127,21 +129,25 @@ export async function setupFundedTask({
   dueDate,
   domain,
   skill,
-  evaluator = EVALUATOR,
-  worker = WORKER,
+  evaluator,
+  worker,
   managerPayout = MANAGER_PAYOUT,
   evaluatorPayout = EVALUATOR_PAYOUT,
   workerPayout = WORKER_PAYOUT
 }) {
+  const accounts = await web3GetAccounts();
+  const manager = accounts[0];
   let tokenAddress;
+  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
   if (token === undefined) {
-    tokenAddress = await colony.getToken.call();
+    tokenAddress = await colony.getToken();
   } else {
     tokenAddress = token === 0x0 ? 0x0 : token.address;
   }
   const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, domain, skill, evaluator, worker });
-  const task = await colony.getTask.call(taskId);
+  const task = await colony.getTask(taskId);
   const potId = task[6].toNumber();
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
@@ -153,12 +159,12 @@ export async function setupFundedTask({
     colony,
     functionName: "setTaskManagerPayout",
     taskId,
-    signers: [MANAGER],
+    signers: [manager],
     sigTypes: [0],
     args: [taskId, tokenAddress, managerPayout.toString()]
   });
 
-  let signers = MANAGER === evaluator ? [MANAGER] : [MANAGER, evaluator];
+  let signers = manager === evaluator ? [manager] : [manager, evaluator];
   let sigTypes = Array.from({ length: signers.length }, () => 0);
 
   await executeSignedTaskChange({
@@ -170,7 +176,7 @@ export async function setupFundedTask({
     args: [taskId, tokenAddress, evaluatorPayout.toString()]
   });
 
-  signers = MANAGER === worker ? [MANAGER] : [MANAGER, worker];
+  signers = manager === worker ? [manager] : [manager, worker];
   sigTypes = Array.from({ length: signers.length }, () => 0);
 
   await executeSignedTaskChange({
@@ -191,8 +197,8 @@ export async function setupRatedTask({
   dueDate,
   domain,
   skill,
-  evaluator = EVALUATOR,
-  worker = WORKER,
+  evaluator,
+  worker,
   managerPayout = MANAGER_PAYOUT,
   evaluatorPayout = EVALUATOR_PAYOUT,
   workerPayout = WORKER_PAYOUT,
@@ -201,6 +207,10 @@ export async function setupRatedTask({
   workerRating = WORKER_RATING,
   workerRatingSalt = RATING_2_SALT
 }) {
+  const accounts = await web3GetAccounts();
+  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
+
   const taskId = await setupFundedTask({
     colonyNetwork,
     colony,
@@ -224,14 +234,17 @@ export async function setupRatedTask({
 }
 
 export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
+  const accounts = await web3GetAccounts();
+  const manager = accounts[0];
   const metaColonyAddress = await colonyNetwork.getMetaColony();
-  const metaColony = IColony.at(metaColonyAddress);
-  const clnyAddress = await metaColony.getToken.call();
-  const clny = Token.at(clnyAddress);
+  const metaColony = await IColony.at(metaColonyAddress);
+  const clnyAddress = await metaColony.getToken();
+  const clny = await Token.at(clnyAddress);
   const amount = new BN(_amount);
-  const mainStartingBalance = await clny.balanceOf.call(MANAGER);
-  const targetStartingBalance = await clny.balanceOf.call(address);
-  await metaColony.mintTokens(amount * 3);
+  const mainStartingBalance = await clny.balanceOf(manager);
+  const targetStartingBalance = await clny.balanceOf(address);
+  await metaColony.mintTokens(amount.muln(3).toString());
+
   await metaColony.claimColonyFunds(clny.address);
   const taskId = await setupRatedTask({
     colonyNetwork,
@@ -243,7 +256,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await metaColony.finalizeTask(taskId);
   await metaColony.claimPayout(taskId, MANAGER_ROLE, clny.address);
 
-  let mainBalance = await clny.balanceOf.call(MANAGER);
+  let mainBalance = await clny.balanceOf(manager);
   await clny.transfer(
     0x0,
     mainBalance
@@ -252,29 +265,29 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
       .toString()
   );
   await clny.transfer(address, amount.toString());
-  mainBalance = await clny.balanceOf.call(MANAGER);
-  if (address !== MANAGER) {
+  mainBalance = await clny.balanceOf(manager);
+  if (address !== manager) {
     await clny.transfer(0x0, mainBalance.sub(mainStartingBalance).toString());
   }
-  const userBalance = await clny.balanceOf.call(address);
+  const userBalance = await clny.balanceOf(address);
   assert.equal(targetStartingBalance.add(amount).toString(), userBalance.toString());
 }
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount) {
-  const metaColonyAddress = await colonyNetwork.getMetaColony.call();
-  const metaColony = IColony.at(metaColonyAddress);
-  const clnyAddress = await metaColony.getToken.call();
-  const clny = Token.at(clnyAddress);
+  const metaColonyAddress = await colonyNetwork.getMetaColony();
+  const metaColony = await IColony.at(metaColonyAddress);
+  const clnyAddress = await metaColony.getToken();
+  const clny = await Token.at(clnyAddress);
 
   await giveUserCLNYTokens(colonyNetwork, address, _amount);
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-  const tokenLocking = ITokenLocking.at(tokenLockingAddress);
+  const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await clny.approve(tokenLocking.address, _amount.toString(), { from: address });
   await tokenLocking.deposit(clny.address, _amount.toString(), { from: address });
 }
 
 export async function fundColonyWithTokens(colony, token, tokenAmount) {
-  const colonyToken = await colony.getToken.call();
+  const colonyToken = await colony.getToken();
   if (colonyToken === token.address) {
     await colony.mintTokens(tokenAmount);
   } else {

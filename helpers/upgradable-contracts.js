@@ -53,9 +53,9 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
   const promises = Object.keys(functionsToResolve).map(async fName => {
     const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
     const address = functionsToResolve[fName].definedIn;
-    const sigHash = web3Utils.soliditySha3(sig).substr(0, 10);
+    const sigHash = await web3Utils.soliditySha3(sig).substr(0, 10);
     await resolver.register(sig, address);
-    const destination = await resolver.lookup.call(sigHash);
+    const destination = await resolver.lookup(sigHash);
     assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
   });
   return Promise.all(promises);
@@ -67,7 +67,7 @@ export async function setupUpgradableToken(token, resolver, etherRouter) {
   await setupEtherRouter("ERC20Extended", deployedImplementations, resolver);
 
   await etherRouter.setResolver(resolver.address);
-  const registeredResolver = await etherRouter.resolver.call();
+  const registeredResolver = await etherRouter.resolver();
   assert.equal(registeredResolver, resolver.address);
 }
 
@@ -79,9 +79,9 @@ export async function setupColonyVersionResolver(colony, colonyTask, colonyFundi
 
   await setupEtherRouter("IColony", deployedImplementations, resolver);
 
-  const version = await colony.version.call();
+  const version = await colony.version();
   await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);
-  const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion.call();
+  const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
   assert.equal(version, currentColonyVersion.toNumber());
 }
 
@@ -110,6 +110,6 @@ export async function setupUpgradableTokenLocking(etherRouter, resolver, tokenLo
   await setupEtherRouter("ITokenLocking", deployedImplementations, resolver);
 
   await etherRouter.setResolver(resolver.address);
-  const registeredResolver = await etherRouter.resolver.call();
+  const registeredResolver = await etherRouter.resolver();
   assert.equal(registeredResolver, resolver.address);
 }

@@ -1,12 +1,17 @@
 /* globals artifacts */
-import web3Utils from "web3-utils";
+import { toBN } from "web3-utils";
 import { BN } from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 
-import { MANAGER, WORKER, EVALUATOR, OTHER, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
+import { MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -18,7 +23,12 @@ const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
-contract("Colony Reputation Updates", () => {
+contract("Colony Reputation Updates", accounts => {
+  const MANAGER = accounts[0];
+  const EVALUATOR = accounts[1];
+  const WORKER = accounts[2];
+  const OTHER = accounts[3];
+
   let colonyNetwork;
   let metaColony;
   let resolverColonyNetworkDeployed;
@@ -41,7 +51,7 @@ contract("Colony Reputation Updates", () => {
     const tokenArgs = getTokenArgs();
     colonyToken = await Token.new(...tokenArgs);
     await colonyNetwork.createMetaColony(colonyToken.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony.call();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
     await colonyToken.setOwner(metaColonyAddress);
     metaColony = await IColony.at(metaColonyAddress);
     const amount = new BN(10)
@@ -51,7 +61,7 @@ contract("Colony Reputation Updates", () => {
     await fundColonyWithTokens(metaColony, colonyToken, amount);
     await colonyNetwork.startNextCycle();
     const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-    inactiveReputationMiningCycle = ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+    inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
   });
 
   describe("when added", () => {
@@ -61,7 +71,7 @@ contract("Colony Reputation Updates", () => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryManager[0], MANAGER);
-      assert.equal(repLogEntryManager[1].toNumber(), 100 * 1e18);
+      expect(repLogEntryManager[1]).to.eq.BN(toBN(100 * 1e18));
       assert.equal(repLogEntryManager[2].toNumber(), 2);
       assert.equal(repLogEntryManager[3], metaColony.address);
       assert.equal(repLogEntryManager[4].toNumber(), 2);
@@ -69,7 +79,7 @@ contract("Colony Reputation Updates", () => {
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryEvaluator[0], EVALUATOR);
-      assert.equal(repLogEntryEvaluator[1].toNumber(), 50 * 1e18);
+      expect(repLogEntryEvaluator[1]).to.eq.BN(toBN(50 * 1e18));
       assert.equal(repLogEntryEvaluator[2].toNumber(), 2);
       assert.equal(repLogEntryEvaluator[3], metaColony.address);
       assert.equal(repLogEntryEvaluator[4].toNumber(), 2);
@@ -77,7 +87,7 @@ contract("Colony Reputation Updates", () => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       assert.equal(repLogEntryWorker[0], WORKER);
-      assert.equal(repLogEntryWorker[1].toNumber(), 300 * 1e18);
+      expect(repLogEntryWorker[1]).to.eq.BN(toBN(300 * 1e18));
       assert.equal(repLogEntryWorker[2].toNumber(), 2);
       assert.equal(repLogEntryWorker[3], metaColony.address);
       assert.equal(repLogEntryWorker[4].toNumber(), 2);
@@ -163,14 +173,14 @@ contract("Colony Reputation Updates", () => {
       initialRepLogLength = initialRepLogLength.toNumber();
       const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId1);
-      let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength);
+      let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength);
       const nPrevious = repLogEntry[5].toNumber();
-      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength + 1);
+      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 1);
       assert.equal(repLogEntry[5].toNumber(), 2 + nPrevious);
 
       const taskId2 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId2);
-      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry.call(initialRepLogLength + 2);
+      repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 2);
       assert.equal(repLogEntry[5].toNumber(), 4 + nPrevious);
     });
 
@@ -186,8 +196,7 @@ contract("Colony Reputation Updates", () => {
       });
       await metaColony.finalizeTask(taskId1);
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      const result = web3Utils
-        .toBN(WORKER_PAYOUT)
+      const result = toBN(WORKER_PAYOUT)
         .muln(3)
         .divn(2);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
@@ -206,15 +215,12 @@ contract("Colony Reputation Updates", () => {
 
     it("should revert on reputation amount overflow", async () => {
       // Fund colony with maximum possible int number of tokens
-      const maxUIntNumber = new BN(2)
-        .pow(new BN(255))
-        .sub(new BN(1))
-        .toString(10);
+      const maxUIntNumber = new BN(2).pow(new BN(255)).sub(new BN(1));
       await fundColonyWithTokens(metaColony, colonyToken, maxUIntNumber);
       // Split the tokens as payouts between the manager and worker
       const managerPayout = new BN("2");
       const evaluatorPayout = new BN("1");
-      const workerPayout = new BN(maxUIntNumber).sub(managerPayout).sub(evaluatorPayout);
+      const workerPayout = maxUIntNumber.sub(managerPayout).sub(evaluatorPayout);
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
@@ -226,8 +232,8 @@ contract("Colony Reputation Updates", () => {
       });
 
       // Check the task pot is correctly funded with the max amount
-      const taskPotBalance = await metaColony.getPotBalance.call(2, colonyToken.address);
-      assert.isTrue(taskPotBalance.equals(maxUIntNumber));
+      const taskPotBalance = await metaColony.getPotBalance(2, colonyToken.address);
+      expect(taskPotBalance).to.eq.BN(maxUIntNumber);
 
       await checkErrorRevert(metaColony.finalizeTask(taskId));
     });

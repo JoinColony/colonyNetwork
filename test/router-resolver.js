@@ -30,16 +30,16 @@ contract("EtherRouter / Resolver", accounts => {
   describe("EtherRouter", () => {
     it("should revert if non-owner tries to change the Resolver on EtherRouter", async () => {
       await checkErrorRevert(etherRouter.setResolver("0xb3e2b6020926af4763d706b5657446b95795de57", { from: COINBASE_ACCOUNT }));
-      const resolverUpdated = await etherRouter.resolver.call();
+      const resolverUpdated = await etherRouter.resolver();
       assert.equal(resolverUpdated, resolver.address);
     });
 
     it("should not change resolver on EtherRouter if there have been insufficient number of confirmations", async () => {
-      const txData = await etherRouter.contract.setResolver.getData("0xb3e2b6020926af4763d706b5657446b95795de57");
+      const txData = await etherRouter.contract.methods.setResolver("0xb3e2b6020926af4763d706b5657446b95795de57").encodeABI();
       const tx = await multisig.submitTransaction(etherRouter.address, 0, txData, { from: ACCOUNT_TWO });
       const { transactionId } = tx.logs[0].args;
-      const isConfirmed = await multisig.isConfirmed.call(transactionId);
-      const resolverUpdated = await etherRouter.resolver.call();
+      const isConfirmed = await multisig.isConfirmed(transactionId);
+      const resolverUpdated = await etherRouter.resolver();
       assert.isFalse(isConfirmed);
       assert.equal(resolverUpdated, resolver.address);
     });
@@ -48,18 +48,18 @@ contract("EtherRouter / Resolver", accounts => {
   describe("Resolver", () => {
     it("should return correct destination for given function", async () => {
       const deployedColonyNetwork = await ColonyNetwork.deployed();
-      const signature = await resolver.stringToSig.call("createColony(address)");
-      const destination = await resolver.lookup.call(signature);
+      const signature = await resolver.stringToSig("createColony(address)");
+      const destination = await resolver.lookup(signature);
       assert.equal(destination, deployedColonyNetwork.address);
     });
 
     it("when checking destination for a function that doesn't exist, should return 0", async () => {
-      const destination = await resolver.lookup.call("0xdeadbeef");
+      const destination = await resolver.lookup("0xdeadbeef");
       assert.equal(destination, 0);
     });
 
     it("should return correctly encoded function signature", async () => {
-      const signature = await resolver.stringToSig.call("transferFrom(address,address,uint256)");
+      const signature = await resolver.stringToSig("transferFrom(address,address,uint256)");
       assert.equal(signature, "0x23b872dd");
     });
   });
