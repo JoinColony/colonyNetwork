@@ -32,7 +32,7 @@ contract ColonyNetworkRegistrar is ColonyNetworkStorage {
 
   modifier unowned(bytes32 node, bytes32 subnode) {
     address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, subnode)));
-    require(currentOwner == 0);
+    require(currentOwner == 0, "colony-label-already-in-use");
     _;
   }
 
@@ -52,7 +52,7 @@ contract ColonyNetworkRegistrar is ColonyNetworkStorage {
   public
   unowned(userNode, subnode)
   {
-    require(userLabels[msg.sender] == 0, "user-already-labeled");
+    require(userLabels[msg.sender] == 0, "colony-user-already-labeled");
     userLabels[msg.sender] = subnode;
 
     ENS(ens).setSubnodeOwner(userNode, subnode, msg.sender);

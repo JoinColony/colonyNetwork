@@ -32,20 +32,20 @@ contract ColonyNetwork is ColonyNetworkStorage {
   // All colonies are able to manage their Local (domain associated) skills
   modifier allowedToAddSkill(bool globalSkill) {
     if (globalSkill) {
-      require(msg.sender == metaColony);
+      require(msg.sender == metaColony, "colony-must-be-meta-colony");
     } else {
-      require(_isColony[msg.sender] || msg.sender == address(this));
+      require(_isColony[msg.sender] || msg.sender == address(this), "colony-must-be-colony");
     }
     _;
   }
 
   modifier skillExists(uint skillId) {
-    require(skillCount >= skillId);
+    require(skillCount >= skillId, "colony-invalid-skill-id");
     _;
   }
 
   modifier nonZero(uint256 parentSkillId) {
-    require(parentSkillId > 0);
+    require(parentSkillId > 0, "colony-invalid-parent-skill-id");
     _;
   }
 
@@ -94,7 +94,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   auth
   {
     // Token locking address can't be changed
-    require(tokenLocking == 0x0);
+    require(tokenLocking == 0x0, "colony-invalid-token-locking-address");
     tokenLocking = _tokenLocking;
   }
 
@@ -105,7 +105,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function createMetaColony(address _tokenAddress) public
   auth
   {
-    require(metaColony == 0);
+    require(metaColony == 0, "colony-meta-colony-exists-already");
     // Add the root global skill
     skillCount += 1;
     Skill memory rootGlobalSkill;
@@ -175,7 +175,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     Skill storage parentSkill = skills[_parentSkillId];
 
     // Global and local skill trees are kept separate
-    require(parentSkill.globalSkill == _globalSkill);
+    require(parentSkill.globalSkill == _globalSkill, "colony-global-skill-id-does-not-match");
 
     Skill memory s;
     s.nParents = parentSkill.nParents + 1;

@@ -47,7 +47,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // Can only be called by the owner role.
   function setRecoveryRole(address _user) public stoppable auth {
-    require(recoveryRolesCount < ~uint64(0), "maximum-num-recovery-roles");
+    require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
     if (!Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
       Authority(authority).setUserRole(_user, RECOVERY_ROLE, true);
       recoveryRolesCount++;
@@ -185,8 +185,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAddress >>= 96;
     userAddress >>= 96;
     // Require that the user is proving their own reputation in this colony.
-    require(address(colonyAddress) == address(this));
-    require(address(userAddress) == msg.sender);
+    require(address(colonyAddress) == address(this), "colony-invalid-colony-reputation-owner");
+    require(address(userAddress) == msg.sender, "colony-invalid-user-reputation-owner");
     _;
   }
 
@@ -206,10 +206,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function upgrade(uint256 _newVersion) public stoppable auth {
     // Upgrades can only go up in version
     uint256 currentVersion = version();
-    require(_newVersion > currentVersion);
+    require(_newVersion > currentVersion, "colony-version-must-be-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
-    require(newResolver != 0x0);
+    require(newResolver != 0x0, "colony-version-must-be-registered");
     EtherRouter e = EtherRouter(address(this));
     e.setResolver(newResolver);
   }

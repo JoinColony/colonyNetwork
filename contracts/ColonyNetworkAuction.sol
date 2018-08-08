@@ -63,35 +63,35 @@ contract DutchAuction is DSMath {
   mapping (address => uint256) public bids;
 
   modifier auctionNotStarted {
-    require(startTime == 0);
-    require(!started);
+    require(startTime == 0, "colony-auction-already-started");
+    require(!started, "colony-auction-already-started");
     _;
   }
 
   modifier auctionStartedAndOpen {
-    require(started);
-    require(startTime > 0);
-    require(endTime == 0);
+    require(started, "colony-auction-not-started");
+    require(startTime > 0, "colony-auction-not-started");
+    require(endTime == 0, "colony-auction-closed");
     _;
   }
 
   modifier auctionClosed {
-    require(endTime > 0);
+    require(endTime > 0, "colony-auction-not-closed");
     _;
   }
 
   modifier auctionNotFinalized() {
-    require(!finalized);
+    require(!finalized, "colony-auction-already-finalized");
     _;
   }
 
   modifier auctionFinalized {
-    require(finalized);
+    require(finalized, "colony-auction-not-finalized");
     _;
   }
 
   modifier allBidsClaimed  {
-    require(claimCount == bidCount);
+    require(claimCount == bidCount, "colony-auction-not-all-bids-claimed");
     _;
   }
 
@@ -101,7 +101,7 @@ contract DutchAuction is DSMath {
 
   constructor(address _clnyToken, address _token) public {
     colonyNetwork = msg.sender;
-    require(_clnyToken != 0x0 && _token != 0x0);
+    require(_clnyToken != 0x0 && _token != 0x0, "colony-auction-cannot-use-ether");
     assert(_token != _clnyToken);
     clnyToken = ERC20Extended(_clnyToken);
     token = ERC20Extended(_token);
@@ -144,7 +144,7 @@ contract DutchAuction is DSMath {
   function bid(uint256 _amount) public
   auctionStartedAndOpen
   {
-    require(_amount > 0);
+    require(_amount > 0, "colony-auction-invalid-bid");
     uint _totalToEndAuction = totalToEndAuction();
     uint remainingToEndAuction = sub(_totalToEndAuction, receivedTotal);
 
@@ -186,7 +186,7 @@ contract DutchAuction is DSMath {
   returns (bool)
   {
     uint amount = bids[msg.sender];
-    require(amount > 0);
+    require(amount > 0, "colony-auction-zero-bid-total");
 
     uint tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
     claimCount += 1;
@@ -194,7 +194,7 @@ contract DutchAuction is DSMath {
     // Set receiver bid to 0 before transferring the tokens
     bids[msg.sender] = 0;
     uint beforeClaimBalance = token.balanceOf(msg.sender);
-    require(token.transfer(msg.sender, tokens));
+    require(token.transfer(msg.sender, tokens), "colony-auction-transfer-failed");
     assert(token.balanceOf(msg.sender) == add(beforeClaimBalance, tokens));
     assert(bids[msg.sender] == 0);
 

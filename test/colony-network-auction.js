@@ -63,7 +63,7 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("should fail with 0x0 token", async () => {
-      await checkErrorRevert(colonyNetwork.startTokenAuction("0x0"));
+      await checkErrorRevert(colonyNetwork.startTokenAuction("0x0"), "colony-auction-cannot-use-ether");
     });
 
     it("should fail if auction is initialised for the CLNY token", async () => {
@@ -275,18 +275,18 @@ contract("ColonyNetworkAuction", accounts => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.addn(1).toString());
       await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.addn(1).toString(), { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
-      await checkErrorRevert(tokenAuction.bid(1, { from: BIDDER_1 }));
+      await checkErrorRevert(tokenAuction.bid(1, { from: BIDDER_1 }), "colony-auction-closed");
     });
 
     it("cannot finalize when target not reached", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "3000");
       await clny.approve(tokenAuction.address, "3000", { from: BIDDER_1 });
       await tokenAuction.bid("3000", { from: BIDDER_1 });
-      await checkErrorRevert(tokenAuction.finalize());
+      await checkErrorRevert(tokenAuction.finalize(), "colony-auction-not-closed");
     });
 
     it("cannot bid with 0 tokens", async () => {
-      await checkErrorRevert(tokenAuction.bid(0));
+      await checkErrorRevert(tokenAuction.bid(0), "colony-auction-invalid-bid");
     });
   });
 
@@ -328,16 +328,16 @@ contract("ColonyNetworkAuction", accounts => {
       await tokenAuction.finalize();
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 1000);
       await clny.approve(tokenAuction.address, 1000, { from: BIDDER_1 });
-      await checkErrorRevert(tokenAuction.bid(1000, { from: BIDDER_1 }));
+      await checkErrorRevert(tokenAuction.bid(1000, { from: BIDDER_1 }), "colony-auction-closed");
     });
 
     it("cannot finalize after finalized once", async () => {
       await tokenAuction.finalize();
-      await checkErrorRevert(tokenAuction.finalize());
+      await checkErrorRevert(tokenAuction.finalize(), "colony-auction-already-finalized");
     });
 
     it("cannot claim if not finalized", async () => {
-      await checkErrorRevert(tokenAuction.claim({ from: BIDDER_1 }));
+      await checkErrorRevert(tokenAuction.claim({ from: BIDDER_1 }), "colony-auction-not-finalized");
     });
   });
 
@@ -428,12 +428,12 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("should fail if auction not finalized", async () => {
-      await checkErrorRevert(tokenAuction.close());
+      await checkErrorRevert(tokenAuction.close(), "colony-auction-not-finalized");
     });
 
     it("should fail if not all bids have been claimed", async () => {
       await tokenAuction.finalize();
-      await checkErrorRevert(tokenAuction.close());
+      await checkErrorRevert(tokenAuction.close(), "colony-auction-not-all-bids-claimed");
     });
 
     it("should fail if there are CLNY tokens left owned by the auction", async () => {
