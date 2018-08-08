@@ -45,6 +45,7 @@
   },
   "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
   "devDependencies": {
+    "@colony/colony-js-contract-loader-fs": "1.5.4",
     "@colony/eslint-config-colony": "5.0.0",
     "babel-cli": "^6.26.0",
     "babel-eslint": "^8.2.3",
@@ -81,9 +82,6 @@
     "solium": "^1.1.8",
     "truffle": "^5.0.0-next.7",
     "web3-utils": "^1.0.0-beta.34"
-  },
-  "dependencies": {
-    "@colony/colony-js-contract-loader-fs": "1.5.4"
   },
   "private": true,
   "workspaces": [
