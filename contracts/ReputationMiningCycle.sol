@@ -832,7 +832,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       } else {
         // TODO: Is this safe? I think so, because even if there's over/underflows, they should
         // still be the same number.
-        require(int(agreeStateReputationValue)+logEntry.amount == int(disagreeStateReputationValue));
+        require(int(agreeStateReputationValue)+logEntry.amount == int(disagreeStateReputationValue), "colony-invalid-newest-reputation-proof");
       }
     }
   }
