@@ -67,7 +67,7 @@
     "ethereumjs-util": "^5.2.0",
     "ganache-cli": "6.1.6",
     "ganache-core": "^2.0.2",
-    "husky": "^1.0.0-rc.6",
+    "husky": "^1.0.0-rc.13",
     "istanbul": "^0.4.5",
     "jsonfile": "^4.0.0",
     "mocha": "^5.2.0",
