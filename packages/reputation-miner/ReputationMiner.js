@@ -112,9 +112,11 @@ class ReputationMiner {
       this.reputationTree = new patriciaJs.PatriciaTree();
     } else {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
-      const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
-      const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
-      this.reputationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
+
+      const abstractContract = new ethers.Contract(null, this.patriciaTreeContractDef.abi, this.ganacheWallet);
+      const contract = await abstractContract.deploy(this.patriciaTreeContractDef.bytecode);
+      await contract.deployed();
+      this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
     this.nReputations = ethers.utils.bigNumberify(0);
@@ -130,9 +132,10 @@ class ReputationMiner {
     if (this.useJsTree) {
       this.justificationTree = new patriciaJs.PatriciaTree();
     } else {
-      const patriciaTreeDeployTx = ethers.Contract.getDeployTransaction(this.patriciaTreeContractDef.bytecode, this.patriciaTreeContractDef.abi);
-      const tx = await this.ganacheWallet.sendTransaction(patriciaTreeDeployTx);
-      this.justificationTree = new ethers.Contract(ethers.utils.getContractAddress(tx), this.patriciaTreeContractDef.abi, this.ganacheWallet);
+      const abstractContract = new ethers.Contract(null, this.patriciaTreeContractDef.abi, this.ganacheWallet);
+      const contract = await abstractContract.deploy(this.patriciaTreeContractDef.bytecode);
+      await contract.deployed();
+      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
     this.justificationHashes = {};
@@ -527,16 +530,7 @@ class ReputationMiner {
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    const res = repCycle.submitJustificationRootHash(
-      round,
-      index,
-      jrh,
-      `0x${branchMask1.toString(16)}`,
-      siblings1,
-      `0x${branchMask2.toString(16)}`,
-      siblings2,
-      { gasLimit: 6000000 }
-    );
+    const res = await repCycle.submitJustificationRootHash(round, index, jrh, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
     return res;
   }
 
@@ -579,7 +573,7 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    const tx = await repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, `0x${branchMask.toString(16)}`, siblings, {
+    const tx = await repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask, siblings, {
       gasLimit: 1000000
     });
     return tx;

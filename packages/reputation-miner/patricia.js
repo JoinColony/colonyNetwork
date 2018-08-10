@@ -1,5 +1,6 @@
 const BN = require("bn.js");
 const web3Utils = require("web3-utils");
+const ethers = require("ethers");
 
 // //////////////
 // Internal utilities
@@ -174,6 +175,7 @@ exports.PatriciaTree = function PatriciaTree() {
       edge = node.children[head];
       label = tail;
     }
+    branchMask = ethers.utils.bigNumberify(branchMask.toString());
     return [branchMask, siblings.map(s => bn2hex64(s))];
   };
 
