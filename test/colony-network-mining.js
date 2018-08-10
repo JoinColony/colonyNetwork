@@ -2829,6 +2829,91 @@ contract("ColonyNetworkMining", accounts => {
       );
     });
 
+    it.only("The client should be able to correctly sync to the current state just from on-chain interactions", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      const goodClient2 = new ReputationMiner({
+        loader: contractLoader,
+        minerAddress: OTHER_ACCOUNT,
+        realProviderPort: REAL_PROVIDER_PORT,
+        useJsTree
+      });
+      await goodClient2.initialise(colonyNetwork.address);
+
+      // Make multiple reputation cycles, with different numbers tasks and blocks in them.
+      await forwardTime(3600, this);
+      for (let i = 0; i < 5; i += 1) {
+        const taskId = await setupRatedTask( // eslint-disable-line
+          {
+            colonyNetwork,
+            colony: metaColony,
+            colonyToken: clny,
+            workerRating: 3
+          }
+        );
+        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
+      }
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      await forwardTime(1, this);
+      await forwardTime(1, this);
+      await forwardTime(1, this);
+      await forwardTime(1, this);
+
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      for (let i = 0; i < 5; i += 1) {
+        const taskId = await setupRatedTask( // eslint-disable-line
+          {
+            colonyNetwork,
+            colony: metaColony,
+            colonyToken: clny,
+            workerRating: 1
+          }
+        );
+        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
+      }
+
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      // Now sync goodClient2
+      await goodClient2.sync();
+
+      // Require goodClient2 and goodClient have the same hashes.
+      const client1Hash = await goodClient.reputationTree.getRootHash();
+      const client2Hash = await badClient.reputationTree.getRootHash();
+
+      assert.equal(client1Hash, client2Hash);
+
+      // goodClient2 does the next update.
+    });
+
     it.skip("should abort if a deposit did not complete correctly");
   });
 });
