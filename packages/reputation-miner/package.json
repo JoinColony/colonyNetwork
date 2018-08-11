@@ -21,6 +21,6 @@
     "ganache-core": "^2.1.0",
     "jsonfile": "^4.0.0",
     "web3-utils": "^1.0.0-beta.34",
-    "yargs": "^11.0.0"
+    "yargs": "^12.0.1"
   }
 }
