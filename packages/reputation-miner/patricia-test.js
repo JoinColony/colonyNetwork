@@ -51,7 +51,7 @@ contract("Javascript Patricia Tree", accounts => {
       const fido = web3Utils.fromAscii("fido");
 
       await jsClient.reputationTree.insert(dog, fido);
-      await solClient.reputationTree.insert(dog, fido);
+      await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });
 
       const jsRoot = await jsClient.reputationTree.getRootHash();
       const solRoot = await solClient.reputationTree.getRootHash();
@@ -66,13 +66,13 @@ contract("Javascript Patricia Tree", accounts => {
       const rover = web3Utils.fromAscii("rover");
 
       await jsClient.reputationTree.insert(dog, fido);
-      await solClient.reputationTree.insert(dog, fido);
+      await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });
 
       await jsClient.reputationTree.insert(ape, bubbles);
-      await solClient.reputationTree.insert(ape, bubbles);
+      await solClient.reputationTree.insert(ape, bubbles, { gasLimit: 4000000 });
 
       await jsClient.reputationTree.insert(dog, rover);
-      await solClient.reputationTree.insert(dog, rover);
+      await solClient.reputationTree.insert(dog, rover, { gasLimit: 4000000 });
 
       const jsRoot = await jsClient.reputationTree.getRootHash();
       const solRoot = await solClient.reputationTree.getRootHash();
@@ -87,13 +87,13 @@ contract("Javascript Patricia Tree", accounts => {
       const rover = web3Utils.fromAscii("rover");
 
       await jsClient.reputationTree.insert(dog, fido);
-      await solClient.reputationTree.insert(dog, fido);
+      await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });
 
       await jsClient.reputationTree.insert(ape, bubbles);
-      await solClient.reputationTree.insert(ape, bubbles);
+      await solClient.reputationTree.insert(ape, bubbles, { gasLimit: 4000000 });
 
       await jsClient.reputationTree.insert(dog, rover);
-      await solClient.reputationTree.insert(dog, rover);
+      await solClient.reputationTree.insert(dog, rover, { gasLimit: 4000000 });
 
       const [jsMask, jsSiblings] = await jsClient.reputationTree.getProof(dog);
       const [solMask, solSiblings] = await solClient.reputationTree.getProof(dog);
