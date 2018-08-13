@@ -207,13 +207,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // If the amount in the log is positive, then no children are being updated.
     uint nParents = IColonyNetwork(colonyNetworkAddress).getSkillNParents(logEntry.skillId);
     uint nChildUpdates;
-    if (logEntry.amount >= 0) { // solium-disable-line no-empty-blocks, whitespace
-      // Then we have no child updates to consider
-    } else {
+    if (logEntry.amount < 0) {
       nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
       // NB This is not necessarily the same as nChildren. However, this is the number of child updates
       // that this entry in the log was expecting at the time it was created.
     }
+    
     uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
     if (relativeUpdateNumber < nChildUpdates) {
       expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, relativeUpdateNumber);
