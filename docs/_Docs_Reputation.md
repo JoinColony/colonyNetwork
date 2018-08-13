@@ -14,6 +14,8 @@ The Reputation System in Colony is a tool for governance in a decentralized cont
 
 Reputation confers influence in a colony by mediating a member's ability to adjust various aspects of the organization. Whether it is the ability to move funds to fund tasks, to create new domains and skills, or to settle disputes, reputation determines influence by degrees.
 
+*It is important to note that in the first deployed version of the Colony Network, reputation will play a more passive role in a colony. Reputation will still determine payouts during the rewards cycle, but influence over domain/skill creation, funding tasks, and other important functions will instead be mediated by a permissioned [authority role](/colonyjs/api-authorityclient/).* 
+
 ==TOC==
 
 ## Gaining and Losing Reputation
@@ -23,13 +25,16 @@ Unlike a token, reputation cannot be transacted between accounts. Reputation can
 The most straightforward way of gaining reputation is by completing tasks within the colony. Tasks funded with native tokens generate reputation for their recipient upon payout.
 
 The amount of reputation gained or lost through a task is determined by the task's rating:
-  * *1 point*. User was unable to complete the task. Reputation penalty equal to the token payout.
-  * *2 points*. User completed the task acceptably. Reputation gain equal to the token payout.
-  * *3 points*. User completed the task to a higher standard than requested. Reputation gain equal to 1.5 × the token payout.
+
+* `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the native token payout.
+* `[2]` **Satisfactory**. The work done met the established expectations. Worker is awarded reputation equal to the native token payout.
+* `[3]` **Excellent**. The work done exceeded the expectations of the manager. Reputation is awarded at 1.5 times the native token payout.
 
 When a payout is received for the completion of a task, reputation is awarded within the task's domain, as well as all its parent domains. If the task is tagged with a skill, reputation is awarded in the skill, as well as all its parent skills.
 
 See [Tasks](/colonynetwork/docs-tasks/) for more information about the task workflow and ratings.
+
+See the colonyJS [task lifecycle](/colonyjs/docs-task-lifecycle/) for implementation examples.
 
 ### Staking Reputation
 Almost every interaction with a colony requires that the user stake some amount of reputation. How much reputation is required to stake depends on how important the interaction is. Actions like the creation and funding of tasks require a nominal amount of reputation, while things like creating a new domain require comparatively more.

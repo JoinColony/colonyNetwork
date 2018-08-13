@@ -30,6 +30,6 @@ The major differences between the planned first release and the system described
 
 * Domains within a colony will be restricted to a single level.
 * Voting, Objections, and Dispute resolution will not be included.
-* Task creation does not require reputation, and tasks ratings still use a 5 point system (the 3 point system will be implemented when colonyNetwork#161 is merged)
+* Reputation will not mediate colony member's ability to interact with certain functions. Instead, the [authority roles](/colonyjs/api-authorityclient/) will be used to grant the OWNER and ADMIN roles the ability to call certain priviledged functions such as creating a new task. 
 
 Subsequent versions of the Colony Network will add functionality (working toward a complete implementation of the whitepaper), and all deprecated versions will remain fully supported by the network after an upgrade. See [upgrades](/colonynetwork/docs-upgrades-to-the-colony-network/) for more information.

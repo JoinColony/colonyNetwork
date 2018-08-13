@@ -15,16 +15,15 @@ Skills are a similar structure that categorize the _type_ of work done, independ
 ## Domains
 Like a file system that contains files and sub-folders, any domain can contain tasks, sub-domains, or both.
 
-![Example Domains](https://raw.githubusercontent.com/JoinColony/colonyNetwork/develop/docs/img/domains_r1.svg?sanitize=true)
+![Example Domains](img/domains_r1.svg)
 
 With the exception of the top-level colony domain, which contains all tasks and sub-domains, every domain in a colony belongs to a larger parent domain.
 
 Every domain has an associated [pot](/colonynetwork/docs-pots-and-funding/) which can receive funding (in most circumstances from the parent domain's pot).
 
-
 Tasks are tagged with a `DomainId` that specifies which domain they belong to. When a member of a colony earns native tokens as a result of a completed task (Managers, Workers, and Evaluators all earn reputation from task completion), they earn reputation in that domain as well as all parent domains, including the colony-wide domain. They do not earn any reputation in child domains.
 
-A well-organized domain hierarchy is one way to isolate and compartmentalize work within a colony: Reputation mediates the flow of funding from parent domains to their children (see [pots](/colonynetwork/docs-pots-and-funding/) for more about funding), which may in turn direct funding toward smaller and more specialized or specific child domains or tasks.
+A well-organized domain hierarchy is one way to isolate and compartmentalize work within a colony: In the Colony Protocol, reputation mediates the flow of funding from parent domains to their children (see [pots](/colonynetwork/docs-pots-and-funding/) for more about funding), which may in turn direct funding toward smaller and more specialized or specific child domains or tasks. In version 1 of the colonyNetwork, however, the flow of funds between domain pots is permissioned based on [authority roles](colonyjs/api-authorityclient/).
 
 ## Skills
 Skills do not exist within a particular colony, but instead are a single structure available to all colonies on the network. The global skill hierarchy is maintained by [The Meta Colony](/colonynetwork/docs-the-meta-colony-and-clny/).
@@ -35,6 +34,8 @@ Even though the global set of Skills is shared by all colonies, reputation earne
 
 Skill tags are meant to provide a more fine-grained categorization of work than domains, allowing for tasks within the same domain to be further differentiated.
 
+See the colonyJS [colonyClient API](/colonyjs/api-colonyclient/) for implementation details. 
+
 ## Disputes
 Domains and Skills determine the scope of voting in the event of a dispute or collective decision.
 
@@ -44,4 +45,4 @@ When an objection is raised, the objector must specify at least one domain or sk
 
 Because of the recursively-awarded reputation in parent domains/skills, an individual will always have the same absolute voting power as a dispute is escalated, but of course will have diminishing proportional voting power as the dispute involves more and more participants.
 
-See [Objections and Disputes](/colonynetwork/docs-objections-and-disputes/) for more information about the dispute resolution process.
+See [Objections and Disputes](/colonynetwork/docs-objections-and-disputes/) for more information about the complete dispute resolution process as described in the Colony whitepaper.
