@@ -337,8 +337,8 @@ contract("All", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
       await forwardTime(3600, this);
-      let repCycle = ReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x0", 0, 10);
+      let repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
@@ -355,10 +355,11 @@ contract("All", accounts => {
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
-      repCycle = ReputationMiningCycle.at(addr);
+      repCycle = await ReputationMiningCycle.at(addr);
       await repCycle.confirmNewHash(0);
 
-      const [rootDomainSkill] = await newColony.getDomain(1);
+      const result = await newColony.getDomain(1);
+      const rootDomainSkill = result.skillId;
       const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill.toNumber());
       let { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
       const colonyWideReputationProof = [key, value, branchMask, siblings];

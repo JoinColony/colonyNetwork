@@ -1349,7 +1349,7 @@ contract("Colony Funding", accounts => {
         repCycle = await ReputationMiningCycle.at(addr);
         await repCycle.confirmNewHash(0);
 
-        const result = await colony.getDomain(1);
+        const result = await newColony.getDomain(1);
         const rootDomainSkill = result.skillId;
         const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill.toNumber());
         let { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey, true);
@@ -1438,8 +1438,8 @@ contract("Colony Funding", accounts => {
           "Percentage Wrong: ",
           solidityReward
             .sub(reward)
-            .div(reward)
             .muln(100)
+            .div(reward)
             .toString(),
           "%"
         );

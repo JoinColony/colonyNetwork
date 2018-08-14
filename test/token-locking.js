@@ -53,8 +53,8 @@ contract("TokenLocking", addresses => {
 
     let addr = await colonyNetwork.getReputationMiningCycle.call(true);
     await forwardTime(3600, this);
-    let repCycle = ReputationMiningCycle.at(addr);
-    await repCycle.submitRootHash("0x0", 0, 10);
+    let repCycle = await ReputationMiningCycle.at(addr);
+    await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], toBN(10).pow(toBN(18)));
@@ -71,10 +71,11 @@ contract("TokenLocking", addresses => {
     await miningClient.submitRootHash();
 
     addr = await colonyNetwork.getReputationMiningCycle.call(true);
-    repCycle = ReputationMiningCycle.at(addr);
+    repCycle = await ReputationMiningCycle.at(addr);
     await repCycle.confirmNewHash(0);
 
-    const [rootDomainSkill] = await colony.getDomain(1);
+    const result = await colony.getDomain(1);
+    const rootDomainSkill = result.skillId;
     const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill.toNumber());
     const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
     colonyWideReputationProof = [key, value, branchMask, siblings];

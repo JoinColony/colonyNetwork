@@ -255,7 +255,10 @@ class ReputationMiner {
     // TODO: Include updates for all child skills if x.amount is negative
     // We update colonywide sums first (children, parents, skill)
     // Then the user-specifc sums in the order children, parents, skill.
-    await this.insert(colonyAddress, skillId, userAddress, score, updateNumber);
+
+    // Converting to decimal, since its going to be converted to hex inside `insert`
+    const skillIdDecimal = new BN(skillId, 16).toString();
+    await this.insert(colonyAddress, skillIdDecimal, userAddress, score, updateNumber);
   }
 
   /**
