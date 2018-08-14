@@ -1089,7 +1089,7 @@ contract("Colony", accounts => {
 
     it("should fail if a non-colony call is made to the task update functions", async () => {
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }));
+      await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "colony-not-self");
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {
@@ -1296,7 +1296,7 @@ contract("Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH));
+      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-already-finalized");
     });
 
     it("should fail if I try to submit work for a task that is past its due date", async () => {
@@ -1307,7 +1307,7 @@ contract("Colony", accounts => {
     });
 
     it("should fail if I try to submit work for a task using an invalid id", async () => {
-      await checkErrorRevert(colony.submitTaskDeliverable(10, DELIVERABLE_HASH));
+      await checkErrorRevert(colony.submitTaskDeliverable(10, DELIVERABLE_HASH), "colony-task-does-not-exist");
     });
 
     it("should fail if I try to submit work twice", async () => {
@@ -1326,7 +1326,7 @@ contract("Colony", accounts => {
       dueDate += SECONDS_PER_DAY * 4;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
-      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }));
+      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }), "colony-task-role-identity-mismatch");
       const task = await colony.getTask(1);
       assert.notEqual(task[1], DELIVERABLE_HASH);
     });
@@ -1364,7 +1364,7 @@ contract("Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.finalizeTask(taskId));
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-already-finalized");
     });
 
     it("should fail if I try to accept a task using an invalid id", async () => {
@@ -1451,11 +1451,11 @@ contract("Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.cancelTask(taskId));
+      await checkErrorRevert(colony.cancelTask(taskId), "colony-task-already-finalized");
     });
 
     it("should fail if manager tries to cancel a task with invalid id", async () => {
-      await checkErrorRevert(colony.cancelTask(10));
+      await checkErrorRevert(colony.cancelTask(10), "colony-task-does-not-exist");
     });
 
     it("should log a TaskCanceled event", async () => {
@@ -1722,7 +1722,7 @@ contract("Colony", accounts => {
     it("should return error when task is not finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address));
+      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address), "colony-task-not-finalized");
     });
 
     it("should return error when called by account that doesn't match the role", async () => {

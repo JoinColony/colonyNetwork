@@ -147,22 +147,22 @@ contract ColonyStorage is DSAuth, DSMath {
 
   modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
     Role storage role = tasks[_id].roles[_role];
-    require(msg.sender == role.user);
+    require(msg.sender == role.user, "colony-task-role-identity-mismatch");
     _;
   }
 
   modifier taskExists(uint256 _id) {
-    require(_id <= taskCount);
+    require(_id <= taskCount, "colony-task-does-not-exist");
     _;
   }
 
   modifier taskNotFinalized(uint256 _id) {
-    require(!tasks[_id].finalized);
+    require(!tasks[_id].finalized, "colony-task-already-finalized");
     _;
   }
 
   modifier taskFinalized(uint256 _id) {
-    require(tasks[_id].finalized);
+    require(tasks[_id].finalized, "colony-task-not-finalized");
     _;
   }
 
@@ -170,18 +170,18 @@ contract ColonyStorage is DSAuth, DSMath {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     bool isGlobalSkill;
     (, , isGlobalSkill) = colonyNetworkContract.getSkill(_skillId);
-    require(isGlobalSkill);
+    require(isGlobalSkill, "colony-not-global-skill");
     _;
   }
 
   modifier skillExists(uint256 _skillId) {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(_skillId <= colonyNetworkContract.getSkillCount());
+    require(_skillId <= colonyNetworkContract.getSkillCount(), "colony-skill-does-not-exist");
     _;
   }
 
   modifier domainExists(uint256 _domainId) {
-    require(_domainId <= domainCount);
+    require(_domainId <= domainCount, "colony-domain-does-not-exist");
     _;
   }
 
@@ -191,7 +191,7 @@ contract ColonyStorage is DSAuth, DSMath {
   }
 
   modifier isAdmin(address _user) {
-    require(Authority(authority).hasUserRole(_user, ADMIN_ROLE));
+    require(Authority(authority).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
     _;
   }
 
@@ -206,7 +206,7 @@ contract ColonyStorage is DSAuth, DSMath {
   }
 
   modifier self() {
-    require(address(this) == msg.sender);
+    require(address(this) == msg.sender, "colony-not-self");
     _;
   }
 }

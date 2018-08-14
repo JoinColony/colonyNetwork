@@ -344,10 +344,10 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
   stoppable
-  confirmTaskRoleIdentity(_id, MANAGER)
   taskExists(_id)
   taskNotFinalized(_id)
   domainExists(_domainId)
+  confirmTaskRoleIdentity(_id, MANAGER)
   {
     tasks[_id].domainId = _domainId;
 
@@ -356,11 +356,11 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskSkill(uint256 _id, uint256 _skillId) public
   stoppable
-  self()
   taskExists(_id)
   taskNotFinalized(_id)
   skillExists(_skillId)
   globalSkill(_skillId)
+  self()
   {
     tasks[_id].skills[0] = _skillId;
 
@@ -369,9 +369,9 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
   stoppable
-  self()
   taskExists(_id)
   taskNotFinalized(_id)
+  self()
   {
     tasks[_id].specificationHash = _specificationHash;
 
@@ -380,9 +380,9 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   stoppable
-  self()
   taskExists(_id)
   taskNotFinalized(_id)
+  self()
   {
     tasks[_id].dueDate = _dueDate;
 
