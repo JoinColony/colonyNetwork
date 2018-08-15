@@ -2901,9 +2901,9 @@ ethereumjs-wallet@0.6.0:
     utf8 "^2.1.1"
     uuid "^2.0.1"
 
-ethers@^4.0.0-beta.11:
-  version "4.0.0-beta.11"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.0-beta.11.tgz#d160f5476fc63d7416b4060c0052a8511d7da452"
+"ethers@https://github.com/area/ethers.js#typescript":
+  version "4.0.0-beta.12"
+  resolved "https://github.com/area/ethers.js#32b7fd0a86de074363b18ec61f7eeca74ce7bb97"
   dependencies:
     "@types/node" "^10.3.2"
     aes-js "3.0.0"

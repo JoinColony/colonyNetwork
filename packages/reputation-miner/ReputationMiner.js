@@ -128,7 +128,7 @@ class ReputationMiner {
    * in case a dispute is called which would require it.
    * @return {Promise}
    */
-  async addLogContentsToReputationTree() {
+  async addLogContentsToReputationTree(blockNumber = "latest") {
     if (this.useJsTree) {
       this.justificationTree = new patriciaJs.PatriciaTree();
     } else {
@@ -139,7 +139,7 @@ class ReputationMiner {
     }
 
     this.justificationHashes = {};
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     // Do updates
@@ -148,14 +148,14 @@ class ReputationMiner {
     // This is also the number of decays we have.
 
     // How many updates from the logs do we have?
-    const nLogEntries = await repCycle.getReputationUpdateLogLength();
-    const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1));
+    const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
+    const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1), { blockNumber });
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
 
     for (let i = ethers.utils.bigNumberify("0"); i.lt(totalnUpdates); i = i.add(1)) {
-      await this.addSingleReputationUpdate(i, repCycle); // eslint-disable-line no-await-in-loop
+      await this.addSingleReputationUpdate(i, repCycle, blockNumber); // eslint-disable-line no-await-in-loop
     }
-    const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1));
+    const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1), blockNumber);
     const justUpdatedProof = await this.getReputationProofObject(prevKey);
     const newestReputationProof = await this.getNewestReputationProofObject(totalnUpdates);
     const interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
@@ -180,7 +180,7 @@ class ReputationMiner {
    * @param  {BigNumber}  updateNumber     The number of the update that should be considered.
    * @return {Promise}
    */
-  async addSingleReputationUpdate(updateNumber, repCycle) {
+  async addSingleReputationUpdate(updateNumber, repCycle, blockNumber) {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
@@ -216,29 +216,29 @@ class ReputationMiner {
       score = this.getScore(updateNumber, reputationChange);
     } else {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
-      const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber);
-      logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
+      const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber, blockNumber);
+      logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
       score = this.getScore(updateNumber, logEntry[1]);
     }
-
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
-      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes();
-      const rootHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
-      if (!nNodes.eq(0) && rootHash !== interimHash) {
+      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockNumber });
+      const localRootHash = this.reputationTree.getRootHash();
+      const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockNumber });
+      if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
+        // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
+        interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
+        jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
       }
-      // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
-      interimHash = rootHash;
-      jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     } else {
-      const prevKey = await this.getKeyForUpdateNumber(updateNumber.sub(1));
+      const prevKey = await this.getKeyForUpdateNumber(updateNumber.sub(1), blockNumber);
       justUpdatedProof = await this.getReputationProofObject(prevKey);
     }
     const newestReputationProof = await this.getNewestReputationProofObject(updateNumber);
     await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
 
-    const key = await this.getKeyForUpdateNumber(updateNumber);
+    const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
@@ -329,17 +329,17 @@ class ReputationMiner {
    * @param  {Number}  _i The update number we wish to determine which log entry in the reputationUpdateLog creates
    * @return {Promise}   A promise that resolves to the number of the corresponding log entry.
    */
-  async getLogEntryNumberForLogUpdateNumber(_i) {
+  async getLogEntryNumberForLogUpdateNumber(_i, blockNumber) {
     const updateNumber = _i;
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    const nLogEntries = await repCycle.getReputationUpdateLogLength();
+    const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
     let lower = ethers.utils.bigNumberify("0");
     let upper = nLogEntries.sub(1);
 
     while (!upper.eq(lower)) {
       const testIdx = lower.add(upper.sub(lower).div(2));
-      const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx); // eslint-disable-line no-await-in-loop
+      const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockNumber }); // eslint-disable-line no-await-in-loop
       if (testLogEntry[5].gt(updateNumber)) {
         upper = testIdx.sub(1);
       } else if (testLogEntry[5].lte(updateNumber) && testLogEntry[5].add(testLogEntry[4]).gt(updateNumber)) {
@@ -353,18 +353,18 @@ class ReputationMiner {
     return lower;
   }
 
-  async getKeyForUpdateNumber(_i) {
+  async getKeyForUpdateNumber(_i, blockNumber) {
     const updateNumber = ethers.utils.bigNumberify(_i);
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       // Then it's a decay
       return Object.keys(this.reputations)[updateNumber.toNumber()];
     }
     // Else it's from a log entry
-    const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog));
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true);
+    const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog), blockNumber);
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
-    const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
+    const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
 
     const key = await this.getKeyForUpdateInLogEntry(updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog), logEntry);
     return key;
@@ -721,6 +721,48 @@ class ReputationMiner {
     // If successful, add to our JSON.
     this.reputations[key] = value;
     return true;
+  }
+
+  /**
+   * Causes the reputation miner to replay mining logs that have occurred since the supplied block number
+   * Note this function only does anything to the current state of the miner if the miner has no state or
+   * it 'sees' that the state it has was the accepted state on-chain at some point since the supplied block
+   * number.
+   * @param  { Number }  blockNumber The block number to sync from.
+   * @return {Promise}               A promise that resolves once the state is up-to-date
+   */
+  async sync(blockNumber) {
+    // Get the events
+    const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
+    filter.fromBlock = blockNumber;
+    const events = await this.realProvider.getLogs(filter);
+    let localHash = await this.reputationTree.getRootHash();
+    let applyLogs = false;
+
+    // We're not going to apply the logs unless we're syncing from scratch (which is this if statement)
+    // or we find a hash that we recognise as our current state, and we're going to sync from there (which
+    // is the if statement at the end of the loop below
+    if (localHash === `0x${new BN(0).toString(16, 64)}`) {
+      applyLogs = true;
+    }
+
+    for (let i = 0; i < events.length; i += 1) {
+      const event = events[i];
+      const hash = event.data.slice(0, 66);
+      if (applyLogs) {
+        const nNodes = ethers.utils.bigNumberify(`0x${event.data.slice(66)}`);
+        const previousBlock = event.blockNumber - 1;
+        await this.addLogContentsToReputationTree(previousBlock); // eslint-disable-line no-await-in-loop
+        localHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+        const localNNodes = this.nReputations;
+        if (localHash !== hash || !localNNodes.eq(nNodes)) {
+          console.log("WARNING: Sync seems to have failed");
+        }
+      }
+      if (applyLogs === false && localHash === hash) {
+        applyLogs = true;
+      }
+    }
   }
 }
 

@@ -4,7 +4,14 @@ import path from "path";
 import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { forwardTime, checkErrorRevert, web3GetTransactionReceipt, makeReputationKey, makeReputationValue } from "../helpers/test-helper";
+import {
+  forwardTime,
+  checkErrorRevert,
+  web3GetTransactionReceipt,
+  makeReputationKey,
+  makeReputationValue,
+  currentBlock
+} from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
@@ -2829,91 +2836,140 @@ contract("ColonyNetworkMining", accounts => {
       );
     });
 
-    it.only("The client should be able to correctly sync to the current state just from on-chain interactions", async () => {
+    it.skip("should abort if a deposit did not complete correctly");
+  });
+
+  describe("Miner syncing functionality", () => {
+    let startingBlockNumber;
+    let goodClient2;
+
+    async function advanceTimeSubmitAndConfirmHash(test) {
+      await forwardTime(3600, test);
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+    }
+
+    beforeEach(async () => {
+      const startingBlock = await currentBlock();
+      startingBlockNumber = startingBlock.number;
+
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      const goodClient2 = new ReputationMiner({
+      goodClient2 = new ReputationMiner({
         loader: contractLoader,
         minerAddress: OTHER_ACCOUNT,
         realProviderPort: REAL_PROVIDER_PORT,
         useJsTree
       });
       await goodClient2.initialise(colonyNetwork.address);
-
       // Make multiple reputation cycles, with different numbers tasks and blocks in them.
-      await forwardTime(3600, this);
       for (let i = 0; i < 5; i += 1) {
         const taskId = await setupRatedTask( // eslint-disable-line
           {
             colonyNetwork,
             colony: metaColony,
-            colonyToken: clny,
+            managerPayout: 1000000000000,
+            evaluatorPayout: 1000000000000,
+            workerPayout: 1000000000000,
+            managerRating: 3,
             workerRating: 3
           }
         );
         await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
       }
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.submitRootHash();
 
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await ReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceTimeSubmitAndConfirmHash(this);
 
       await forwardTime(1, this);
       await forwardTime(1, this);
       await forwardTime(1, this);
       await forwardTime(1, this);
-
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await ReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceTimeSubmitAndConfirmHash(this);
 
       for (let i = 0; i < 5; i += 1) {
         const taskId = await setupRatedTask( // eslint-disable-line
           {
             colonyNetwork,
             colony: metaColony,
-            colonyToken: clny,
-            workerRating: 1
+            managerPayout: 1000000000000,
+            evaluatorPayout: 1000000000000,
+            workerPayout: 1000000000000,
+            managerRating: 3,
+            workerRating: 3
           }
         );
         await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
       }
 
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.submitRootHash();
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await ReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceTimeSubmitAndConfirmHash(this);
+      await advanceTimeSubmitAndConfirmHash(this);
+      await advanceTimeSubmitAndConfirmHash(this);
+    });
 
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.submitRootHash();
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await ReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+    it("The client should be able to correctly sync to the current state from scratch just from on-chain interactions", async () => {
+      // Because these tests rely on a custom, teeny-tiny-hacked version of ganache-cli, they don't work with solidity-coverage.
+      // But that's okay, because these tests don't test anything meaningful in the contracts.
 
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.submitRootHash();
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await ReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      if (process.env.SOLIDITY_COVERAGE) {
+        this.skip();
+      }
 
       // Now sync goodClient2
-      await goodClient2.sync();
+      await goodClient2.sync(startingBlockNumber);
 
       // Require goodClient2 and goodClient have the same hashes.
       const client1Hash = await goodClient.reputationTree.getRootHash();
-      const client2Hash = await badClient.reputationTree.getRootHash();
-
+      const client2Hash = await goodClient2.reputationTree.getRootHash();
       assert.equal(client1Hash, client2Hash);
-
-      // goodClient2 does the next update.
     });
 
-    it.skip("should abort if a deposit did not complete correctly");
+    it("The client should be able to correctly sync to the current state from an old, correct state", async () => {
+      if (process.env.SOLIDITY_COVERAGE) {
+        this.skip();
+      }
+
+      // Bring client up to date
+      await goodClient2.sync(startingBlockNumber);
+
+      // Do some additional updates.
+      await advanceTimeSubmitAndConfirmHash(this);
+
+      for (let i = 0; i < 5; i += 1) {
+        const taskId = await setupRatedTask( // eslint-disable-line
+          {
+            colonyNetwork,
+            colony: metaColony,
+            managerPayout: 1000000000000,
+            evaluatorPayout: 1000000000000,
+            workerPayout: 1000000000000,
+            managerRating: 3,
+            workerRating: 3
+          }
+        );
+        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
+      }
+
+      await advanceTimeSubmitAndConfirmHash(this);
+
+      await forwardTime(1, this);
+      await forwardTime(1, this);
+      await forwardTime(1, this);
+      await forwardTime(1, this);
+      await forwardTime(3600, this);
+
+      await advanceTimeSubmitAndConfirmHash(this);
+
+      // Update it again - note that we're passing in the old startingBlockNumber still. If it applied
+      // all of the updates from that block number, it would fail, because it would be replaying some
+      // updates that it already knew about.
+      await goodClient2.sync(startingBlockNumber);
+
+      const client1Hash = await goodClient.reputationTree.getRootHash();
+      const client2Hash = await goodClient2.reputationTree.getRootHash();
+      assert.equal(client1Hash, client2Hash);
+    });
   });
 });
