@@ -2848,7 +2848,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.addLogContentsToReputationTree();
       await goodClient.submitRootHash();
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = await ReputationMiningCycle.at(addr);
+      const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.confirmNewHash(0);
     }
 
@@ -2933,7 +2933,7 @@ contract("ColonyNetworkMining", accounts => {
           await advanceTimeSubmitAndConfirmHash(this);
 
           for (let i = 0; i < 5; i += 1) {
-        const taskId = await setupRatedTask( // eslint-disable-line
+            const taskId = await setupRatedTask( // eslint-disable-line
               {
                 colonyNetwork,
                 colony: metaColony,
