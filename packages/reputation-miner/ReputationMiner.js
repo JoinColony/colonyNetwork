@@ -375,12 +375,11 @@ class ReputationMiner {
 
   /**
    * Gets the key appropriate for the nth reputation update that logEntry implies.
-   * @param  {BigNumber} _updateNumber The number of the update the log entry implies we want the information for. Must be less than logEntry[4].
+   * @param  {BigNumber} updateNumber The number of the update the log entry implies we want the information for. Must be less than logEntry[4].
    * @param  {LogEntry}  logEntry An array six long, containing the log entry in question [userAddress, amount, skillId, colony, nUpdates, nPreviousUpdates ]
    * @return {Promise}              Promise that resolves to key
    */
-  async getKeyForUpdateInLogEntry(_updateNumber, logEntry) {
-    const updateNumber = _updateNumber;
+  async getKeyForUpdateInLogEntry(updateNumber, logEntry) {
     let skillAddress;
     // We need to work out the skillId and user address to use.
     // If we are in the first half of 'j's, then we are dealing with global update, so

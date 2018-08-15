@@ -332,10 +332,10 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await ReputationMiningCycle.at(addr);
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
-      await goodClient.reputationTree.getRootHash();
-      await badClient.reputationTree.getRootHash();
+
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
+
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
       const newAddr = await colonyNetwork.getReputationMiningCycle(true);

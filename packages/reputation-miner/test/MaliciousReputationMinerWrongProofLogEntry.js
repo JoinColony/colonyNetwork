@@ -14,14 +14,9 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const submission = await repCycle.getDisputeRounds(round, index);
-    // console.log(submission);
     const firstDisagreeIdx = submission[8];
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
-    // console.log('getReputationUPdateLogEntry', lastAgreeIdx);
-    // const logEntry = await repCycle.getReputationUpdateLogEntry(lastAgreeIdx.toString());
-    // console.log('getReputationUPdateLogEntry done');
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
-    // console.log('get justification tree');
     const lastAgreeKey = MaliciousReputationMiningWrongProofLogEntry.getHexString(lastAgreeIdx, 64);
     const firstDisagreeKey = MaliciousReputationMiningWrongProofLogEntry.getHexString(firstDisagreeIdx, 64);
 
