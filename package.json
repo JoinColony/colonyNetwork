@@ -80,7 +80,7 @@
     "solidity-coverage": "0.5.7",
     "solidity-parser-antlr": "^0.3.0",
     "solium": "^1.1.8",
-    "truffle": "^5.0.0-next.7",
+    "truffle": "^5.0.0-next.9",
     "web3-utils": "^1.0.0-beta.34"
   },
   "private": true,
