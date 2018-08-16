@@ -87,6 +87,7 @@ contract("Colony", accounts => {
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
 
+    await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
   });
 

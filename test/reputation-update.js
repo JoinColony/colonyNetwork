@@ -59,6 +59,7 @@ contract("Colony Reputation Updates", accounts => {
       .mul(new BN(1000))
       .toString();
     await fundColonyWithTokens(metaColony, colonyToken, amount);
+    await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
     const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
     inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);

@@ -156,6 +156,9 @@ contract IColonyNetwork {
   /// subsequently called from within `setReputationRootHash`
   function startNextCycle() public;
 
+  /// @notice Creates initial inactive reputation mining cycle
+  function initialiseReputationMining() public;
+
   /// @notice Get the root hash of the current reputation state tree
   /// @return rootHash bytes32 The current Reputation Root Hash
   function getReputationRootHash() public view returns (bytes32 rootHash);

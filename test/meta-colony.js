@@ -45,6 +45,7 @@ contract("Meta Colony", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IColony.at(metaColonyAddress);
 
+    await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
   });
 
