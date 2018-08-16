@@ -164,9 +164,7 @@ export async function expectAllEvents(tx, eventNames) {
 }
 
 export async function forwardTime(seconds, test) {
-  // TODO: Get the client via web3GetClient() which requires web3 beta34 for `getNodeInfo`.
-  // Current version of truffle 5.0.0-next.6
-  const client = "TestRPC";
+  const client = await web3GetClient();
   const p = new Promise((resolve, reject) => {
     if (client.indexOf("TestRPC") === -1) {
       resolve(test.skip());
