@@ -16,9 +16,9 @@
   "dependencies": {
     "@colony/colony-js-contract-loader-fs": "1.5.4",
     "bn.js": "^4.11.8",
-    "ethers": "^3.0.15",
+    "ethers": "^4.0.0-beta.11",
     "express": "^4.16.3",
-    "ganache-core": "^2.1.0",
+    "ganache-core": "^2.1.6",
     "jsonfile": "^4.0.0",
     "web3-utils": "^1.0.0-beta.34",
     "yargs": "^12.0.1"
