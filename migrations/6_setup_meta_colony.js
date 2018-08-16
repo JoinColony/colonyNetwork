@@ -34,6 +34,7 @@ module.exports = deployer => {
     })
     .then(() => ITokenLocking.at(tokenLocking))
     .then(iTokenLocking => iTokenLocking.deposit(token.address, "10000000000000000"))
+    .then(() => colonyNetwork.initialiseReputationMining())
     .then(() => colonyNetwork.startNextCycle())
     .then(() => colonyNetwork.getSkillCount())
     .then(skillCount => {

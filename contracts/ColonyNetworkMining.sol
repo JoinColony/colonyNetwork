@@ -42,15 +42,20 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     rewardStakers(stakers);
   }
 
+  function initialiseReputationMining() public {
+    require(inactiveReputationMiningCycle == 0x0);
+    address clnyToken = IColony(metaColony).getToken();
+    require(clnyToken != 0x0);
+    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
+  }
+
   function startNextCycle() public {
     address clnyToken = IColony(metaColony).getToken();
     require(clnyToken != 0x0);
     require(activeReputationMiningCycle == 0x0);
+    require(inactiveReputationMiningCycle != 0x0);
+    // Inactive now becomes active
     activeReputationMiningCycle = inactiveReputationMiningCycle;
-    if (activeReputationMiningCycle == 0x0) {
-      // This will only be true the very first time that this is run, to kick off the whole reputation mining process
-      activeReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
-    }
     ReputationMiningCycle(activeReputationMiningCycle).resetWindow();
     inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
   }
