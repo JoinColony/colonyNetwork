@@ -222,8 +222,11 @@ class ReputationMiner {
       if (score.lt(0)) {
         // For reputation loss, when updating child skills, adjust reputation amount lost
         const nUpdates = logEntry[4];
-        let [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
-        const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
+        const [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
+        const nChildUpdates = nUpdates
+          .div(2)
+          .sub(1)
+          .sub(nParents);
         const innerUpdateNumber = updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog);
 
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
@@ -234,7 +237,10 @@ class ReputationMiner {
         ) {
           // Get current reputation amount of the actual skill key we are updating parents and children of.
           // This is the user reputation for the skill, which is positioned at the end of the current logEntry nUpdates.
-          const updateNumberForActualUserSkillRep = updateNumber.sub(innerUpdateNumber).add(nUpdates).sub(1);
+          const updateNumberForActualUserSkillRep = updateNumber
+            .sub(innerUpdateNumber)
+            .add(nUpdates)
+            .sub(1);
 
           const keyForActualUserSkillRep = await this.getKeyForUpdateNumber(updateNumberForActualUserSkillRep.toNumber());
 
@@ -246,11 +252,17 @@ class ReputationMiner {
 
             if (!existingValueForActualUserSkillRep.isZero()) {
               const key = await this.getKeyForUpdateNumber(updateNumber);
-              const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
 
-              // todo bn.js doesn't have decimals so is fraction precision enough here?
-              const targetScore = reputation.mul(score).div(existingValueForActualUserSkillRep);
-              score = targetScore;
+              const keyExists = this.reputations[key] !== undefined;
+              if (keyExists) {
+                const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
+
+                // todo bn.js doesn't have decimals so is fraction precision enough here?
+                const targetScore = reputation.mul(score).div(existingValueForActualUserSkillRep);
+                score = targetScore;
+              } else {
+                score = ethers.utils.bigNumberify("0");
+              }
             }
           } else {
             score = ethers.utils.bigNumberify("0");
