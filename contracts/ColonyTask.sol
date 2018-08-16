@@ -420,6 +420,13 @@ contract ColonyTask is ColonyStorage {
     emit TaskDeliverableSubmitted(_id, _deliverableHash);
   }
 
+  function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public
+  stoppable
+  {
+    submitTaskDeliverable(_id, _deliverableHash);
+    submitTaskWorkRating(_id, 0, _ratingSecret);
+  }
+
   function finalizeTask(uint256 _id) public
   stoppable
   taskExists(_id)

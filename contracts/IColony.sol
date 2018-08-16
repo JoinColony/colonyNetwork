@@ -394,6 +394,13 @@ contract IColony {
   /// @param _deliverableHash Unique hash of the task deliverable content in ddb
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
 
+  /// @notice Submit the task deliverable for Worker and rating for Manager
+  /// @dev Internally call `submitTaskDeliverable` and `submitTaskWorkRating` in sequence
+  /// @param _id Id of the task
+  /// @param _deliverableHash Unique hash of the task deliverable content in ddb
+  /// @param _ratingSecret Rating secret for manager
+  function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public;
+
   /// @notice Called after task work rating is complete which closes the task and logs the respective reputation log updates
   /// Allowed to be called once per task. Secured function to authorised members
   /// @dev Set the `task.finalized` property to true

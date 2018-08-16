@@ -70,6 +70,19 @@ contract("Colony Task Work Rating", accounts => {
       assert.equal(ratingSecret2, RATING_1_SECRET);
     });
 
+    it("should allow combined submission and rating, before the due date", async () => {
+      const currentTime = await currentBlockTime();
+      const dueDate = currentTime + SECONDS_PER_DAY * 7;
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+
+      await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_1_SECRET, { from: WORKER });
+      const ratings = await colony.getTaskWorkRatings(taskId);
+      assert.equal(ratings[0].toNumber(), 1);
+      assert.closeTo(ratings[1].toNumber(), currentTime, 2);
+      const ratingSecret = await colony.getTaskWorkRatingSecret(taskId, MANAGER_ROLE);
+      assert.equal(ratingSecret, RATING_1_SECRET);
+    });
+
     it("should allow rating, after the due date has passed, when no work has been submitted", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
