@@ -10,12 +10,12 @@ import "../lib/dappsys/math.sol";
 
 contract TokenLocking is TokenLockingStorage, DSMath {
   modifier onlyColony() {
-    require(IColonyNetwork(colonyNetwork).isColony(msg.sender), "token-locking-sender-not-colony");
+    require(IColonyNetwork(colonyNetwork).isColony(msg.sender), "colony-token-locking-sender-not-colony");
     _;
   }
 
   modifier onlyReputationMiningCycle() {
-    require(msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true), "token-locking-sender-not-reputation-mining-cycle");
+    require(msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true), "colony-token-locking-sender-not-reputation-mining-cycle");
     _;
   }
 
@@ -31,7 +31,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     if (_token == clnyToken) {
       bytes32 submittedHash;
       (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender);
-      require(submittedHash == 0x0);
+      require(submittedHash == 0x0, "colony-token-locking-hash-already-submitted");
     }
     _;
   }
@@ -75,11 +75,11 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   tokenNotLocked(_token)
   hashNotSubmitted(_token)
   {
-    require(_amount > 0, "token-locking-invalid-amount");
+    require(_amount > 0, "colony-token-locking-invalid-amount");
 
     userLocks[_token][msg.sender].balance = sub(userLocks[_token][msg.sender].balance, _amount);
 
-    require(ERC20Extended(_token).transfer(msg.sender, _amount), "token-locking-transfer-failed");
+    require(ERC20Extended(_token).transfer(msg.sender, _amount), "colony-token-locking-transfer-failed");
   }
 
   // This function is only used in context of reputation mining
