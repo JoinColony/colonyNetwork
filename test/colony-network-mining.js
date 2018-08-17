@@ -2909,67 +2909,62 @@ contract("ColonyNetworkMining", accounts => {
       await advanceTimeSubmitAndConfirmHash(this);
     });
 
-    it("The client should be able to correctly sync to the current state from scratch just from on-chain interactions", async () => {
-      // Because these tests rely on a custom, teeny-tiny-hacked version of ganache-cli, they don't work with solidity-coverage.
-      // But that's okay, because these tests don't test anything meaningful in the contracts.
+    // Because these tests rely on a custom, teeny-tiny-hacked version of ganache-cli, they don't work with solidity-coverage.
+    // But that's okay, because these tests don't test anything meaningful in the contracts.
+    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+      ? it.skip
+      : it("The client should be able to correctly sync to the current state from scratch just from on-chain interactions", async () => {
+          // Now sync goodClient2
+          await goodClient2.sync(startingBlockNumber);
 
-      if (process.env.SOLIDITY_COVERAGE) {
-        this.skip();
-      }
+          // Require goodClient2 and goodClient have the same hashes.
+          const client1Hash = await goodClient.reputationTree.getRootHash();
+          const client2Hash = await goodClient2.reputationTree.getRootHash();
+          assert.equal(client1Hash, client2Hash);
+        });
 
-      // Now sync goodClient2
-      await goodClient2.sync(startingBlockNumber);
+    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+      ? it.skip
+      : it("The client should be able to correctly sync to the current state from an old, correct state", async () => {
+          // Bring client up to date
+          await goodClient2.sync(startingBlockNumber);
 
-      // Require goodClient2 and goodClient have the same hashes.
-      const client1Hash = await goodClient.reputationTree.getRootHash();
-      const client2Hash = await goodClient2.reputationTree.getRootHash();
-      assert.equal(client1Hash, client2Hash);
-    });
+          // Do some additional updates.
+          await advanceTimeSubmitAndConfirmHash(this);
 
-    it("The client should be able to correctly sync to the current state from an old, correct state", async () => {
-      if (process.env.SOLIDITY_COVERAGE) {
-        this.skip();
-      }
-
-      // Bring client up to date
-      await goodClient2.sync(startingBlockNumber);
-
-      // Do some additional updates.
-      await advanceTimeSubmitAndConfirmHash(this);
-
-      for (let i = 0; i < 5; i += 1) {
+          for (let i = 0; i < 5; i += 1) {
         const taskId = await setupRatedTask( // eslint-disable-line
-          {
-            colonyNetwork,
-            colony: metaColony,
-            managerPayout: 1000000000000,
-            evaluatorPayout: 1000000000000,
-            workerPayout: 1000000000000,
-            managerRating: 3,
-            workerRating: 3
+              {
+                colonyNetwork,
+                colony: metaColony,
+                managerPayout: 1000000000000,
+                evaluatorPayout: 1000000000000,
+                workerPayout: 1000000000000,
+                managerRating: 3,
+                workerRating: 3
+              }
+            );
+            await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
           }
-        );
-        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
-      }
 
-      await advanceTimeSubmitAndConfirmHash(this);
+          await advanceTimeSubmitAndConfirmHash(this);
 
-      await forwardTime(1, this);
-      await forwardTime(1, this);
-      await forwardTime(1, this);
-      await forwardTime(1, this);
-      await forwardTime(3600, this);
+          await forwardTime(1, this);
+          await forwardTime(1, this);
+          await forwardTime(1, this);
+          await forwardTime(1, this);
+          await forwardTime(3600, this);
 
-      await advanceTimeSubmitAndConfirmHash(this);
+          await advanceTimeSubmitAndConfirmHash(this);
 
-      // Update it again - note that we're passing in the old startingBlockNumber still. If it applied
-      // all of the updates from that block number, it would fail, because it would be replaying some
-      // updates that it already knew about.
-      await goodClient2.sync(startingBlockNumber);
+          // Update it again - note that we're passing in the old startingBlockNumber still. If it applied
+          // all of the updates from that block number, it would fail, because it would be replaying some
+          // updates that it already knew about.
+          await goodClient2.sync(startingBlockNumber);
 
-      const client1Hash = await goodClient.reputationTree.getRootHash();
-      const client2Hash = await goodClient2.reputationTree.getRootHash();
-      assert.equal(client1Hash, client2Hash);
-    });
+          const client1Hash = await goodClient.reputationTree.getRootHash();
+          const client2Hash = await goodClient2.reputationTree.getRootHash();
+          assert.equal(client1Hash, client2Hash);
+        });
   });
 });
