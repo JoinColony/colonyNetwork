@@ -63,7 +63,7 @@ const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 contract("Colony", accounts => {
   const MANAGER = accounts[0];
-  const EVALUATOR = accounts[1];
+  const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
   const OTHER = accounts[3];
 
@@ -291,12 +291,51 @@ contract("Colony", accounts => {
       assert.equal(taskCount.toNumber(), 0);
     });
 
-    it("should set the task manager as the creator", async () => {
-      await makeTask({ colony });
+    it("should set the task manager as the creator and evaluator", async () => {
+      const taskId = await makeTask({ colony });
+
       const taskCount = await colony.getTaskCount();
       assert.equal(taskCount.toNumber(), 1);
-      const taskManager = await colony.getTaskRole(1, MANAGER_ROLE);
+
+      const taskManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.equal(taskManager[0], MANAGER);
+
+      const taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+      assert.equal(taskEvaluator[0], MANAGER);
+    });
+
+    it("should allow the reassignment of evaluator", async () => {
+      const newEvaluator = accounts[1];
+      assert.notEqual(MANAGER, newEvaluator);
+
+      const taskId = await makeTask({ colony });
+
+      let taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+      assert.equal(taskEvaluator[0], EVALUATOR);
+
+      await executeSignedTaskChange({
+        colony,
+        functionName: "removeTaskEvaluatorRole",
+        taskId,
+        signers: [MANAGER], // NOTE: only one signature because manager === evaluator
+        sigTypes: [0],
+        args: [taskId]
+      });
+
+      taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+      assert.equal(taskEvaluator[0], "0x0000000000000000000000000000000000000000");
+
+      await executeSignedRoleAssignment({
+        colony,
+        functionName: "setTaskEvaluatorRole",
+        taskId,
+        signers: [MANAGER, newEvaluator],
+        sigTypes: [0, 0],
+        args: [taskId, newEvaluator]
+      });
+
+      taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+      assert.equal(taskEvaluator[0], newEvaluator);
     });
 
     it("should return the correct number of tasks", async () => {
@@ -448,6 +487,9 @@ contract("Colony", accounts => {
     });
 
     it("should allow the worker and evaluator roles to be assigned", async () => {
+      const newEvaluator = accounts[1];
+      assert.notEqual(MANAGER, newEvaluator);
+
       const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
@@ -459,24 +501,45 @@ contract("Colony", accounts => {
         args: [taskId, WORKER]
       });
 
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "removeTaskEvaluatorRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId]
+      });
+
       await executeSignedRoleAssignment({
         colony,
         taskId,
         functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
+        signers: [MANAGER, newEvaluator],
         sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
+        args: [taskId, newEvaluator]
       });
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(worker[0], WORKER);
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluator[0], EVALUATOR);
+      assert.equal(evaluator[0], newEvaluator);
     });
 
     it("should not allow the worker or evaluator roles to be assigned only by manager", async () => {
+      const newEvaluator = accounts[1];
+      assert.notEqual(MANAGER, newEvaluator);
+
       const taskId = await makeTask({ colony });
+
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "removeTaskEvaluatorRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId]
+      });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -485,7 +548,7 @@ contract("Colony", accounts => {
           functionName: "setTaskEvaluatorRole",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, EVALUATOR]
+          args: [taskId, newEvaluator]
         }),
         "colony-task-role-assignment-does-not-meet-required-signatures"
       );
@@ -532,15 +595,6 @@ contract("Colony", accounts => {
         }),
         "colony-task-role-assignment-execution-failed"
       );
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
-      });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -612,6 +666,9 @@ contract("Colony", accounts => {
     });
 
     it("should not allow role to be assigned if passed address is not equal to one of the signers", async () => {
+      const newEvaluator = accounts[1];
+      assert.notEqual(MANAGER, newEvaluator);
+
       const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
@@ -621,7 +678,7 @@ contract("Colony", accounts => {
           functionName: "setTaskWorkerRole",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, EVALUATOR]
+          args: [taskId, newEvaluator]
         }),
         "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
@@ -636,23 +693,11 @@ contract("Colony", accounts => {
       await executeSignedRoleAssignment({
         colony,
         taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, MANAGER]
-      });
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
         functionName: "setTaskWorkerRole",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, MANAGER]
       });
-
-      const evaluatorInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluatorInfo[0], MANAGER);
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], MANAGER);
@@ -660,18 +705,6 @@ contract("Colony", accounts => {
 
     it("should not allow anyone to assign himself to a role with one signature except manager", async () => {
       const taskId = await makeTask({ colony });
-
-      await checkErrorRevert(
-        executeSignedRoleAssignment({
-          colony,
-          taskId,
-          functionName: "setTaskEvaluatorRole",
-          signers: [EVALUATOR],
-          sigTypes: [0],
-          args: [taskId, EVALUATOR]
-        }),
-        "colony-task-role-assignment-does-not-meet-required-signatures"
-      );
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -685,39 +718,8 @@ contract("Colony", accounts => {
         "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
-      const evaluatorInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluatorInfo[0], "0x0000000000000000000000000000000000000000");
-
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(workerInfo[0], "0x0000000000000000000000000000000000000000");
-    });
-
-    it("should be able to remove evaluator role", async () => {
-      const taskId = await makeTask({ colony });
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
-      });
-
-      let evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluator[0], EVALUATOR);
-
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "removeTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId]
-      });
-
-      evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluator[0], "0x0000000000000000000000000000000000000000");
     });
 
     it("should allow different modes of signing when assigning roles", async () => {
@@ -782,7 +784,7 @@ contract("Colony", accounts => {
         executeSignedRoleAssignment({
           colony,
           taskId,
-          functionName: "setTaskEvaluatorRole",
+          functionName: "setTaskWorkerRole",
           signers: [OTHER],
           sigTypes: [0],
           args: [taskId, MANAGER]
@@ -790,7 +792,7 @@ contract("Colony", accounts => {
         "colony-task-role-assignment-not-signed-by-manager"
       );
 
-      const managerInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
+      const managerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(managerInfo[0], "0x0000000000000000000000000000000000000000");
     });
 
@@ -804,7 +806,7 @@ contract("Colony", accounts => {
           colony,
           taskId,
           functionName: "setTaskManagerRole",
-          signers: [MANAGER, EVALUATOR],
+          signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
           args: [taskId, OTHER]
         }),
@@ -856,8 +858,10 @@ contract("Colony", accounts => {
     });
 
     it("should not allow assignment of manager role if current manager is not one of the signers", async () => {
-      const taskId = await makeTask({ colony });
+      const newEvaluator = accounts[1];
+      assert.notEqual(MANAGER, newEvaluator);
 
+      const taskId = await makeTask({ colony });
       await colony.setAdminRole(WORKER);
 
       // Setting the worker
@@ -871,13 +875,22 @@ contract("Colony", accounts => {
       });
 
       // Setting the evaluator
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "removeTaskEvaluatorRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId]
+      });
+
       await executeSignedRoleAssignment({
         colony,
         taskId,
         functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
+        signers: [MANAGER, newEvaluator],
         sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
+        args: [taskId, newEvaluator]
       });
 
       await checkErrorRevert(
@@ -886,7 +899,7 @@ contract("Colony", accounts => {
           colony,
           taskId,
           functionName: "setTaskManagerRole",
-          signers: [EVALUATOR, WORKER],
+          signers: [newEvaluator, WORKER],
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
@@ -1122,15 +1135,6 @@ contract("Colony", accounts => {
     it("should fail update of task brief signed by a non-registered role", async () => {
       const taskId = await makeTask({ colony });
 
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
-      });
-
       await checkErrorRevert(
         executeSignedTaskChange({
           colony,
@@ -1150,15 +1154,6 @@ contract("Colony", accounts => {
       await executeSignedRoleAssignment({
         colony,
         taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
-      });
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
         functionName: "setTaskWorkerRole",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
@@ -1170,8 +1165,8 @@ contract("Colony", accounts => {
           colony,
           functionName: "setTaskBrief",
           taskId,
-          signers: [MANAGER, EVALUATOR],
-          sigTypes: [0, 0],
+          signers: [MANAGER],
+          sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
         "colony-task-signatures-do-not-match-reviewer-2"
@@ -1220,8 +1215,8 @@ contract("Colony", accounts => {
           colony,
           functionName: "setTaskBrief",
           taskId,
-          signers: [MANAGER, EVALUATOR],
-          sigTypes: [0, 0],
+          signers: [MANAGER],
+          sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
         "colony-task-finalized"
@@ -1521,14 +1516,6 @@ contract("Colony", accounts => {
         sigTypes: [0, 0],
         args: [taskId, WORKER]
       });
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
-      });
       await colony.mintTokens(100);
 
       // Set the manager payout as 5000 wei and 100 colony tokens
@@ -1555,8 +1542,8 @@ contract("Colony", accounts => {
         colony,
         functionName: "setTaskEvaluatorPayout",
         taskId,
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
+        signers: [MANAGER],
+        sigTypes: [0],
         args: [taskId, 0x0, 1000]
       });
 
@@ -1565,8 +1552,8 @@ contract("Colony", accounts => {
         colony,
         functionName: "setTaskEvaluatorPayout",
         taskId,
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
+        signers: [MANAGER],
+        sigTypes: [0],
         args: [taskId, token.address, 40]
       });
 
@@ -1749,11 +1736,14 @@ contract("Colony", accounts => {
     });
 
     it("should disburse nothing for unsatisfactory work, for manager and worker", async () => {
+      const evaluator = accounts[1];
+
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony,
         token,
+        evaluator,
         managerRating: 1,
         workerRating: 1
       });
@@ -1761,7 +1751,7 @@ contract("Colony", accounts => {
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
       await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
 
       const managerBalance = await token.balanceOf(MANAGER);
       assert.equal(managerBalance.toNumber(), 0);
@@ -1769,20 +1759,22 @@ contract("Colony", accounts => {
       const workerBalance = await token.balanceOf(WORKER);
       assert.equal(workerBalance.toNumber(), 0);
 
-      const evaluatorBalance = await token.balanceOf(EVALUATOR);
+      const evaluatorBalance = await token.balanceOf(evaluator);
       const evaluatorPayout = EVALUATOR_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
       assert.equal(evaluatorBalance.toString(), evaluatorPayout.toString());
     });
 
     it("should disburse nothing for unsatisfactory work, for evaluator", async () => {
+      const evaluator = accounts[1];
+
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token, evaluator });
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await colony.finalizeTask(taskId);
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
       await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
 
       const managerBalance = await token.balanceOf(MANAGER);
       const managerPayout = MANAGER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
@@ -1792,7 +1784,7 @@ contract("Colony", accounts => {
       const workerPayout = WORKER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
       assert.equal(workerBalance.toString(), workerPayout.toString());
 
-      const evaluatorBalance = await token.balanceOf(EVALUATOR);
+      const evaluatorBalance = await token.balanceOf(evaluator);
       assert.equal(evaluatorBalance.toNumber(), 0);
     });
 

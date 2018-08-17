@@ -25,7 +25,7 @@ const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
 contract("Colony Reputation Updates", accounts => {
   const MANAGER = accounts[0];
-  const EVALUATOR = accounts[1];
+  const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
   const OTHER = accounts[3];
 

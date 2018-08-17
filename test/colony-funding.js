@@ -19,7 +19,7 @@ const DSRoles = artifacts.require("DSRoles");
 
 contract("Colony Funding", accounts => {
   const MANAGER = accounts[0];
-  const EVALUATOR = accounts[1];
+  const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
 
   let colony;
@@ -106,7 +106,7 @@ contract("Colony Funding", accounts => {
     it("should not let tokens be moved by non-admins", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 2, 51, otherToken.address, { from: EVALUATOR }));
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 2, 51, otherToken.address, { from: WORKER }));
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       const pot2Balance = await colony.getPotBalance(2, otherToken.address);

@@ -114,12 +114,8 @@ contract ColonyTask is ColonyStorage {
     task.domainId = _domainId;
     task.skills = new uint256[](1);
     tasks[taskCount] = task;
-    tasks[taskCount].roles[MANAGER] = Role({
-      user: msg.sender,
-      rateFail: false,
-      rating: TaskRatings.None
-    });
-
+    tasks[taskCount].roles[MANAGER].user = msg.sender;
+    tasks[taskCount].roles[EVALUATOR].user = msg.sender;
     pots[potCount].taskId = taskCount;
 
     emit PotAdded(potCount);
