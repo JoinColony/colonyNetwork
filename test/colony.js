@@ -315,8 +315,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "removeTaskEvaluatorRole",
         taskId,
+        functionName: "removeTaskEvaluatorRole",
         signers: [MANAGER], // NOTE: only one signature because manager === evaluator
         sigTypes: [0],
         args: [taskId]
@@ -327,8 +327,8 @@ contract("Colony", accounts => {
 
       await executeSignedRoleAssignment({
         colony,
-        functionName: "setTaskEvaluatorRole",
         taskId,
+        functionName: "setTaskEvaluatorRole",
         signers: [MANAGER, newEvaluator],
         sigTypes: [0, 0],
         args: [taskId, newEvaluator]
@@ -916,8 +916,8 @@ contract("Colony", accounts => {
       // Change the task brief
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskBrief",
         taskId,
+        functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -931,8 +931,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskDueDate",
         taskId,
+        functionName: "setTaskDueDate",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, dueDate]
@@ -949,8 +949,8 @@ contract("Colony", accounts => {
       // Change the task1 brief
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskBrief",
         taskId: taskId1,
+        functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId1, SPECIFICATION_HASH_UPDATED]
@@ -960,8 +960,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskBrief",
         taskId: taskId2,
+        functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId2, SPECIFICATION_HASH_UPDATED]
@@ -975,8 +975,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskDueDate",
         taskId: taskId2,
+        functionName: "setTaskDueDate",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId2, dueDate]
@@ -991,8 +991,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskBrief",
         taskId,
+        functionName: "setTaskBrief",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1015,8 +1015,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskBrief",
         taskId,
+        functionName: "setTaskBrief",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1039,8 +1039,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskBrief",
         taskId,
+        functionName: "setTaskBrief",
         signers: [MANAGER, WORKER],
         sigTypes: [1, 1],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1063,8 +1063,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskBrief",
         taskId,
+        functionName: "setTaskBrief",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 1],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1088,8 +1088,8 @@ contract("Colony", accounts => {
       await checkErrorRevert(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskBrief",
           taskId,
+          functionName: "setTaskBrief",
           signers: [MANAGER, MANAGER],
           sigTypes: [0, 1],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1116,8 +1116,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskDueDate",
         taskId,
+        functionName: "setTaskDueDate",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
         args: [taskId, dueDate]
@@ -1138,8 +1138,8 @@ contract("Colony", accounts => {
       await checkErrorRevert(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskBrief",
           taskId,
+          functionName: "setTaskBrief",
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1163,8 +1163,8 @@ contract("Colony", accounts => {
       await checkErrorRevert(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskBrief",
           taskId,
+          functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1179,8 +1179,8 @@ contract("Colony", accounts => {
       await checkErrorRevert(
         executeSignedTaskChange({
           colony,
-          functionName: "getTaskRole",
           taskId,
+          functionName: "getTaskRole",
           signers: [MANAGER, EVALUATOR],
           sigTypes: [0, 0],
           args: [taskId, 0]
@@ -1195,8 +1195,8 @@ contract("Colony", accounts => {
       await checkErrorRevert(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskBrief",
           taskId,
+          functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
           args: [10, SPECIFICATION_HASH_UPDATED]
@@ -1213,8 +1213,8 @@ contract("Colony", accounts => {
       await checkErrorRevert(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskBrief",
           taskId,
+          functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1229,8 +1229,8 @@ contract("Colony", accounts => {
       await expectEvent(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskBrief",
           taskId,
+          functionName: "setTaskBrief",
           signers: [MANAGER],
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
@@ -1246,8 +1246,8 @@ contract("Colony", accounts => {
       await expectEvent(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskDueDate",
           taskId,
+          functionName: "setTaskDueDate",
           signers: [MANAGER],
           sigTypes: [0],
           args: [taskId, dueDate]
@@ -1269,8 +1269,8 @@ contract("Colony", accounts => {
       await expectEvent(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskSkill",
           taskId,
+          functionName: "setTaskSkill",
           signers: [MANAGER],
           sigTypes: [0],
           args: [taskId, skillCount.toNumber()]
@@ -1501,8 +1501,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskDueDate",
         taskId,
+        functionName: "setTaskDueDate",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, dueDate]
@@ -1521,8 +1521,8 @@ contract("Colony", accounts => {
       // Set the manager payout as 5000 wei and 100 colony tokens
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, 0x0, 5000]
@@ -1530,8 +1530,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, token.address, 100]
@@ -1540,8 +1540,8 @@ contract("Colony", accounts => {
       // Set the evaluator payout as 1000 ethers
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskEvaluatorPayout",
         taskId,
+        functionName: "setTaskEvaluatorPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, 0x0, 1000]
@@ -1550,8 +1550,8 @@ contract("Colony", accounts => {
       // Set the evaluator payout as 40 colony tokens
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskEvaluatorPayout",
         taskId,
+        functionName: "setTaskEvaluatorPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, token.address, 40]
@@ -1560,8 +1560,8 @@ contract("Colony", accounts => {
       // Set the worker payout as 98000 wei and 200 colony tokens
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskWorkerPayout",
         taskId,
+        functionName: "setTaskWorkerPayout",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
         args: [taskId, 0x0, 98000]
@@ -1569,8 +1569,8 @@ contract("Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskWorkerPayout",
         taskId,
+        functionName: "setTaskWorkerPayout",
         signers: [MANAGER, WORKER],
         sigTypes: [0, 0],
         args: [taskId, token.address, 200]
@@ -1663,8 +1663,8 @@ contract("Colony", accounts => {
       await expectEvent(
         executeSignedTaskChange({
           colony,
-          functionName: "setTaskWorkerPayout",
           taskId,
+          functionName: "setTaskWorkerPayout",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
           args: [taskId, 0x0, 98000]

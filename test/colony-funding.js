@@ -167,8 +167,8 @@ contract("Colony Funding", accounts => {
       // Pot was equal to payout, transition to pot being equal by changing payout (18)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 0]
@@ -186,8 +186,8 @@ contract("Colony Funding", accounts => {
       // Pot was equal to payout, transition to pot being lower by increasing payout (8)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
@@ -211,8 +211,8 @@ contract("Colony Funding", accounts => {
       // Pot was above payout, transition to being equal by increasing payout (12)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 80]
@@ -224,8 +224,8 @@ contract("Colony Funding", accounts => {
       // Pot was equal to payout, transition to being above by decreasing payout (6)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
@@ -246,8 +246,8 @@ contract("Colony Funding", accounts => {
       // Remove 20 from pot
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 20]
@@ -255,8 +255,8 @@ contract("Colony Funding", accounts => {
       await colony.moveFundsBetweenPots(2, 1, 20, otherToken.address);
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
@@ -275,8 +275,8 @@ contract("Colony Funding", accounts => {
       // Remove 60 from pot
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 20]
@@ -284,8 +284,8 @@ contract("Colony Funding", accounts => {
       await colony.moveFundsBetweenPots(2, 1, 60, otherToken.address);
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
@@ -295,8 +295,8 @@ contract("Colony Funding", accounts => {
       // Pot was below payout, change to being above by changing payout (4)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 10]
@@ -308,8 +308,8 @@ contract("Colony Funding", accounts => {
       // Pot was above, change to being above by changing payout (16)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 5]
@@ -327,8 +327,8 @@ contract("Colony Funding", accounts => {
       // Pot was above payout, change to being below by changing payout (10)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
@@ -340,8 +340,8 @@ contract("Colony Funding", accounts => {
       // Pot was below payout, change to being below by changing payout (14)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 30]
@@ -356,8 +356,8 @@ contract("Colony Funding", accounts => {
       // Remove 5 from pot
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 5]
@@ -365,8 +365,8 @@ contract("Colony Funding", accounts => {
       await colony.moveFundsBetweenPots(2, 1, 5, otherToken.address);
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 30]
@@ -376,8 +376,8 @@ contract("Colony Funding", accounts => {
       // Pot was below payout, change to being equal by changing payout (2)
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, otherToken.address, 5]
@@ -519,8 +519,8 @@ contract("Colony Funding", accounts => {
       // Set manager payout above pot value 40 > 0
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, 0x0, 40]
@@ -539,8 +539,8 @@ contract("Colony Funding", accounts => {
       // Set manager payout above pot value 50 > 40
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskManagerPayout",
         taskId,
+        functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, 0x0, 50]

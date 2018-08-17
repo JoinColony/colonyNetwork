@@ -26,7 +26,7 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
   return logs.filter(log => log.event === "TaskAdded")[0].args.id;
 }
 
-async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {
+async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
   const txData = await colony.contract.methods[functionName](...args).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     if (type === 0) {
@@ -41,13 +41,13 @@ async function getSigsAndTransactionData({ colony, functionName, taskId, signers
   return { sigV, sigR, sigS, txData };
 }
 
-export async function executeSignedTaskChange({ colony, functionName, taskId, signers, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args });
+export async function executeSignedTaskChange({ colony, taskId, functionName, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args });
   return colony.executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
-export async function executeSignedRoleAssignment({ colony, functionName, taskId, signers, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args });
+export async function executeSignedRoleAssignment({ colony, taskId, functionName, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args });
   return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
@@ -65,8 +65,8 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
 
     await executeSignedTaskChange({
       colony,
-      functionName: "setTaskSkill",
       taskId,
+      functionName: "setTaskSkill",
       signers: [manager],
       sigTypes: [0],
       args: [taskId, rootGlobalSkill.toNumber()]
@@ -74,8 +74,8 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   } else {
     await executeSignedTaskChange({
       colony,
-      functionName: "setTaskSkill",
       taskId,
+      functionName: "setTaskSkill",
       signers: [manager],
       sigTypes: [0],
       args: [taskId, skill]
@@ -85,8 +85,8 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   if (manager !== evaluator) {
     await executeSignedTaskChange({
       colony,
-      functionName: "removeTaskEvaluatorRole",
       taskId,
+      functionName: "removeTaskEvaluatorRole",
       signers: [manager],
       sigTypes: [0],
       args: [taskId]
@@ -94,8 +94,8 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
 
     await executeSignedRoleAssignment({
       colony,
-      functionName: "setTaskEvaluatorRole",
       taskId,
+      functionName: "setTaskEvaluatorRole",
       signers: [manager, evaluator],
       sigTypes: [0, 0],
       args: [taskId, evaluator]
@@ -121,8 +121,8 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskDueDate",
     taskId,
+    functionName: "setTaskDueDate",
     signers,
     sigTypes,
     args: [taskId, dueDateTimestamp]
@@ -165,8 +165,8 @@ export async function setupFundedTask({
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskManagerPayout",
     taskId,
+    functionName: "setTaskManagerPayout",
     signers: [manager],
     sigTypes: [0],
     args: [taskId, tokenAddress, managerPayout.toString()]
@@ -177,8 +177,8 @@ export async function setupFundedTask({
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskEvaluatorPayout",
     taskId,
+    functionName: "setTaskEvaluatorPayout",
     signers,
     sigTypes,
     args: [taskId, tokenAddress, evaluatorPayout.toString()]
@@ -189,8 +189,8 @@ export async function setupFundedTask({
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskWorkerPayout",
     taskId,
+    functionName: "setTaskWorkerPayout",
     signers,
     sigTypes,
     args: [taskId, tokenAddress, workerPayout.toString()]
