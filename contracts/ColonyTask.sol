@@ -95,16 +95,8 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  modifier taskWorkRatingsClosed(uint256 _id) {
-    uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    // More than 10 days from work submission have passed
-    require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT), "colony-task-rating-period-still-open");
-    _;
-  }
-
-  modifier taskWorkRatingsAssigned(uint256 _id) {
-    require(tasks[_id].roles[WORKER].rating != TaskRatings.None, "colony-task-worker-rating-missing");
-    require(tasks[_id].roles[MANAGER].rating != TaskRatings.None, "colony-task-manager-rating-missing");
+  modifier canFinalizeTask(uint256 _id) {
+    require(taskWorkRatingsAssigned(_id) || taskWorkRatingsClosed(_id), "colony-task-cannot-finalize");
     _;
   }
 
@@ -297,28 +289,6 @@ contract ColonyTask is ColonyStorage {
     emit TaskWorkRatingRevealed(_id, _role, _rating);
   }
 
-  // In the event of a user not committing or revealing within the 10 day rating window,
-  // their rating of their counterpart is assumed to be the highest possible
-  // and they will receive a reputation penalty
-  function assignWorkRating(uint256 _id) public
-  stoppable
-  taskWorkRatingsClosed(_id)
-  {
-    Role storage managerRole = tasks[_id].roles[MANAGER];
-    Role storage workerRole = tasks[_id].roles[WORKER];
-    Role storage evaluatorRole = tasks[_id].roles[EVALUATOR];
-
-    if (workerRole.rating == TaskRatings.None) {
-      evaluatorRole.rateFail = true;
-      workerRole.rating = TaskRatings.Excellent;
-    }
-
-    if (managerRole.rating == TaskRatings.None) {
-      workerRole.rateFail = true;
-      managerRole.rating = TaskRatings.Excellent;
-    }
-  }
-
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32) {
     return keccak256(abi.encodePacked(_salt, _value));
   }
@@ -429,10 +399,13 @@ contract ColonyTask is ColonyStorage {
 
   function finalizeTask(uint256 _id) public
   stoppable
-  taskExists(_id)
-  taskWorkRatingsAssigned(_id)
+  canFinalizeTask(_id)
   taskNotFinalized(_id)
   {
+    if (!taskWorkRatingsAssigned(_id)) {
+      assignWorkRating(_id);
+    }
+
     Task storage task = tasks[_id];
     task.finalized = true;
 
@@ -551,6 +524,37 @@ contract ColonyTask is ColonyStorage {
       sig := mload(add(_data, 0x20))
       taskId := mload(add(_data, 0x24)) // same as calldataload(72)
       userAddress := mload(add(_data, 0x44))
+    }
+  }
+
+  function taskWorkRatingsAssigned(uint256 _id) internal view returns (bool) {
+    return (tasks[_id].roles[WORKER].rating != TaskRatings.None) && (tasks[_id].roles[MANAGER].rating != TaskRatings.None);
+  }
+
+  function taskWorkRatingsClosed(uint256 _id) internal view returns (bool) {
+    uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
+    // More than 10 days from work submission have passed
+    return sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT);
+  }
+
+  // In the event of a user not committing or revealing within the 10 day rating window,
+  // their rating of their counterpart is assumed to be the highest possible
+  // and they will receive a reputation penalty
+  function assignWorkRating(uint256 _id) internal {
+    require(taskWorkRatingsClosed(_id), "colony-task-ratings-not-closed");
+
+    Role storage managerRole = tasks[_id].roles[MANAGER];
+    Role storage workerRole = tasks[_id].roles[WORKER];
+    Role storage evaluatorRole = tasks[_id].roles[EVALUATOR];
+
+    if (workerRole.rating == TaskRatings.None) {
+      evaluatorRole.rateFail = true;
+      workerRole.rating = TaskRatings.Excellent;
+    }
+
+    if (managerRole.rating == TaskRatings.None) {
+      workerRole.rateFail = true;
+      managerRole.rating = TaskRatings.Excellent;
     }
   }
 

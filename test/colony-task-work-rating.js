@@ -284,7 +284,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
-      await colony.assignWorkRating(taskId);
+      await colony.finalizeTask(taskId);
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.isTrue(roleWorker[1]);
@@ -303,7 +303,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
-      await colony.assignWorkRating(taskId);
+      await colony.finalizeTask(taskId);
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
@@ -313,7 +313,6 @@ contract("Colony Task Work Rating", accounts => {
       assert.isFalse(roleManager[1]);
       assert.equal(roleManager[2].toNumber(), MANAGER_RATING);
 
-      await colony.finalizeTask(taskId);
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.isTrue(roleEvaluator[1]);
       assert.equal(roleEvaluator[2].toNumber(), 1);
@@ -322,7 +321,7 @@ contract("Colony Task Work Rating", accounts => {
     it("should assign rating 3 to manager and 3 to worker, with penalties, when no one has submitted any ratings", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
-      await colony.assignWorkRating(taskId);
+      await colony.finalizeTask(taskId);
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.isTrue(roleWorker[1]);
@@ -332,7 +331,6 @@ contract("Colony Task Work Rating", accounts => {
       assert.isFalse(roleManager[1]);
       assert.equal(roleManager[2].toNumber(), 3);
 
-      await colony.finalizeTask(taskId);
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
       assert.isTrue(roleEvaluator[1]);
       assert.equal(roleEvaluator[2].toNumber(), 1);
@@ -341,7 +339,7 @@ contract("Colony Task Work Rating", accounts => {
     it("should revert if I try to assign ratings before the reveal period is over", async () => {
       await setupAssignedTask({ colonyNetwork, colony });
       await forwardTime(SECONDS_PER_DAY * 6, this);
-      await checkErrorRevert(colony.assignWorkRating(1), "colony-task-rating-period-still-open");
+      await checkErrorRevert(colony.finalizeTask(1), "colony-task-cannot-finalize");
       const roleWorker = await colony.getTaskRole(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
     });

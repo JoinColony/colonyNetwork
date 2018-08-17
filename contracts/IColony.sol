@@ -307,10 +307,6 @@ contract IColony {
   /// @param _salt Salt value used to generate the rating secret
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
 
-  /// @notice Assign missing ratings penalising users where needed for missing the rating window
-  /// @param _id Id of the task
-  function assignWorkRating(uint256 _id) public;
-
   /// @notice Helper function used to generage consistently the rating secret using salt value `_salt` and value to hide `_value`
   /// @param _salt Salt value
   /// @param _value Value to hide

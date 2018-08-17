@@ -1778,7 +1778,6 @@ contract("Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
-      await colony.assignWorkRating(taskId);
       await colony.finalizeTask(taskId);
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
