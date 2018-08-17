@@ -22,7 +22,7 @@ import "./ColonyStorage.sol";
 import "./EtherRouter.sol";
 
 
-contract Colony is ColonyStorage {
+contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.

@@ -22,7 +22,7 @@ import "./ColonyStorage.sol";
 import "./ITokenLocking.sol";
 
 
-contract ColonyFunding is ColonyStorage {
+contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   event RewardPayoutCycleStarted(uint256 indexed id);
   event RewardPayoutCycleEnded(uint256 indexed id);
   event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
@@ -194,7 +194,7 @@ contract ColonyFunding is ColonyStorage {
     require(!activeRewardPayouts[_token], "colony-reward-payout-token-active");
 
     uint256 totalTokens = sub(token.totalSupply(), token.balanceOf(address(this)));
-    require(token.totalSupply() > 0, "colony-reward-payout-invalid-total-tokens");
+    require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
 
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     uint256 colonyWideReputation = checkReputation(
