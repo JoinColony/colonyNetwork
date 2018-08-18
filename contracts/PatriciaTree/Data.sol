@@ -57,7 +57,7 @@ library Data {
   // Removes the first bit from a label and returns the bit and a
   // label containing the rest of the label (shifted to the left).
   function chopFirstBit(Label memory self) internal pure returns (uint firstBit, Label memory tail) {
-    require(self.length > 0);
+    require(self.length > 0, "colony-patricia-tree-zero-self-length");
     return (uint(self.data >> 255), Label(self.data << 1, self.length - 1));
   }
 
@@ -126,7 +126,7 @@ library Data {
   // Returns the result of removing a prefix of length `prefix` bits from the
   // given label (shifting its data to the left).
   function removePrefix(Label memory self, uint prefix) private pure returns (Label memory r) {
-    require(prefix <= self.length);
+    require(prefix <= self.length, "colony-patricia-tree-prefix-longer-than-self");
     r.length = self.length - prefix;
     r.data = self.data << prefix;
   }

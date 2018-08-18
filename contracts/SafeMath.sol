@@ -33,17 +33,17 @@ library SafeMath {
   }
 
   function addInt(int a, int b) public pure returns (int) {
-    require(safeToAddInt(a, b));
+    require(safeToAddInt(a, b), "colony-math-unsafe-int-add");
     return a + b;
   }
 
   function subInt(int a, int b) public pure returns (int) {
-    require(safeToSubInt(a, b));
+    require(safeToSubInt(a, b), "colony-math-unsafe-int-sub");
     return a - b;
   }
 
   function mulInt(int a, int b) public pure returns (int) {
-    require(safeToMulInt(a, b));
+    require(safeToMulInt(a, b), "colony-math-unsafe-int-mul");
     return a * b;
   }
 }

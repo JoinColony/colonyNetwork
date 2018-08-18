@@ -122,7 +122,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint256 balance;
     (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
     require(entryIndex <= balance / 10**15, "colony-reputation-mining-stake-minimum-not-met");
-    require(entryIndex > 0);
+    require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
       // ...require that they are submitting the same hash ...
@@ -648,7 +648,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
 
     // Check that the supplied log entry corresponds to this update number
     require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
-    require(updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-following-log-entry-updates");
+    require(
+      updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates,
+      "colony-reputation-mining-update-number-part-of-following-log-entry-updates");
     uint expectedSkillId;
     address expectedAddress;
     (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(logEntry, updateNumber);
@@ -901,7 +903,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // TODO: we're calling this twice during submitJRH. Should only need to call once.
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
 
-    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates + reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
+    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
+    reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;

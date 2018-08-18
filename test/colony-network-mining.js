@@ -264,7 +264,7 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(3600);
       const repCycle = await ReputationMiningCycle.at(addr);
-      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 0));
+      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 0), "colony-reputation-mining-zero-entry-index-passed");
       const nSubmittedHashes = await repCycle.nSubmittedHashes();
       assert(nSubmittedHashes.isZero());
     });

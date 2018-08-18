@@ -15,7 +15,9 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   }
 
   modifier onlyReputationMiningCycle() {
-    require(msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true), "colony-token-locking-sender-not-reputation-mining-cycle");
+    require(
+      msg.sender == IColonyNetwork(colonyNetwork).getReputationMiningCycle(true),
+      "colony-token-locking-sender-not-reputation-mining-cycle");
     _;
   }
 

@@ -236,7 +236,7 @@ contract("Colony Reputation Updates", accounts => {
       const taskPotBalance = await metaColony.getPotBalance(2, colonyToken.address);
       expect(taskPotBalance).to.eq.BN(maxUIntNumber);
 
-      await checkErrorRevert(metaColony.finalizeTask(taskId));
+      await checkErrorRevert(metaColony.finalizeTask(taskId), "colony-math-unsafe-int-mul");
     });
   });
 });

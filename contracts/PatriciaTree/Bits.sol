@@ -16,7 +16,7 @@ library Bits {
   /// @param self The `uint256` to find the highest bit set in
   /// @dev Requires that `self != 0`.
   function highestBitSet(uint self) internal pure returns (uint8 highest) {
-    require(self != 0);
+    require(self != 0, "colony-patricia-tree-zero-self");
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
       if (val & (ONE << i) - 1 << i != 0) {
@@ -31,7 +31,7 @@ library Bits {
   /// @param self The `uint256` to find the lowest bit set in
   /// @dev Requires that `self != 0`.
   function lowestBitSet(uint self) internal pure returns (uint8 lowest) {
-    require(self != 0);
+    require(self != 0, "colony-patricia-tree-zero-self");
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
       if (val & (ONE << i) - 1 == 0) {
