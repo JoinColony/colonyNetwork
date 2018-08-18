@@ -226,7 +226,7 @@ contract ColonyTask is ColonyStorage {
     } else {
       nSignaturesRequired = 2;
     }
-    require(_sigR.length == nSignaturesRequired, "colony-task-role-assignment-does-not-meet-signatures-required");
+    require(_sigR.length == nSignaturesRequired, "colony-task-role-assignment-does-not-meet-required-signatures");
 
     bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
     address[] memory reviewerAddresses = getReviewerAddresses(
@@ -248,7 +248,7 @@ contract ColonyTask is ColonyStorage {
         "colony-task-role-assignment-not-signed-by-manager"
       );
       // One of the signers must be an address we want to set here
-      require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1], "colony-task-role-assignment-not-signed-by-new-role-user");
+      require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1], "colony-task-role-assignment-not-signed-by-new-user-for-role");
       // Require that signatures are not from the same address
       // This will never throw, because we require that manager is one of the signers,
       // and if manager is both signers, then `userAddress` must also be a manager, and if
@@ -279,7 +279,7 @@ contract ColonyTask is ColonyStorage {
   {
     // MAYBE: we should hash these the other way around, i.e. generateSecret(_rating, _salt)
     bytes32 ratingSecret = generateSecret(_salt, _rating);
-    require(ratingSecret == taskWorkRatings[_id].secret[_role], "colony-task-rating-secret-not-match");
+    require(ratingSecret == taskWorkRatings[_id].secret[_role], "colony-task-rating-secret-mismatch");
 
     TaskRatings rating = TaskRatings(_rating);
     require(rating != TaskRatings.None, "colony-task-rating-missing");

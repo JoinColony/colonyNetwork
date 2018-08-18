@@ -101,7 +101,7 @@ contract DutchAuction is DSMath {
 
   constructor(address _clnyToken, address _token) public {
     colonyNetwork = msg.sender;
-    require(_clnyToken != 0x0 && _token != 0x0, "colony-auction-cannot-use-ether");
+    require(_clnyToken != 0x0 && _token != 0x0, "colony-auction-invalid-token");
     assert(_token != _clnyToken);
     clnyToken = ERC20Extended(_clnyToken);
     token = ERC20Extended(_token);

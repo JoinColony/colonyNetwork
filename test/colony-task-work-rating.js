@@ -184,7 +184,7 @@ contract("Colony Task Work Rating", accounts => {
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_2_SALT, { from: WORKER }),
-        "colony-task-rating-secret-not-match"
+        "colony-task-rating-secret-mismatch"
       );
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);

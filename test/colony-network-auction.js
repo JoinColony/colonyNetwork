@@ -63,7 +63,7 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("should fail with 0x0 token", async () => {
-      await checkErrorRevert(colonyNetwork.startTokenAuction("0x0"), "colony-auction-cannot-use-ether");
+      await checkErrorRevert(colonyNetwork.startTokenAuction("0x0"), "colony-auction-invalid-token");
     });
 
     it("should fail if auction is initialised for the CLNY token", async () => {

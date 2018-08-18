@@ -476,7 +476,7 @@ contract("Colony", accounts => {
           sigTypes: [0],
           args: [taskId, EVALUATOR]
         }),
-        "colony-task-role-assignment-does-not-meet-signatures-required"
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -491,7 +491,7 @@ contract("Colony", accounts => {
           sigTypes: [0],
           args: [taskId, WORKER]
         }),
-        "colony-task-role-assignment-does-not-meet-signatures-required"
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -593,7 +593,7 @@ contract("Colony", accounts => {
           sigTypes: [0, 0],
           args: [taskId, 0x0]
         }),
-        "colony-task-role-assignment-not-signed-by-new-role-user"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -612,7 +612,7 @@ contract("Colony", accounts => {
           sigTypes: [0, 0],
           args: [taskId, EVALUATOR]
         }),
-        "colony-task-role-assignment-not-signed-by-new-role-user"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -659,7 +659,7 @@ contract("Colony", accounts => {
           sigTypes: [0],
           args: [taskId, EVALUATOR]
         }),
-        "colony-task-role-assignment-does-not-meet-signatures-required"
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       await checkErrorRevert(
@@ -671,7 +671,7 @@ contract("Colony", accounts => {
           sigTypes: [0],
           args: [taskId, WORKER]
         }),
-        "colony-task-role-assignment-does-not-meet-signatures-required"
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       const evaluatorInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -797,7 +797,7 @@ contract("Colony", accounts => {
           sigTypes: [0, 0],
           args: [taskId, OTHER]
         }),
-        "colony-task-role-assignment-not-signed-by-new-role-user"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -837,7 +837,7 @@ contract("Colony", accounts => {
           sigTypes: [0, 0],
           args: [taskId, 0x0]
         }),
-        "colony-task-role-assignment-not-signed-by-new-role-user"
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);

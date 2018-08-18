@@ -112,7 +112,7 @@ contract ColonyFunding is ColonyStorage {
   auth
   {
     // Prevent people moving funds from the pot for paying out token holders
-    require(_fromPot > 0, "colony-funding-cannot-move-funds-from-pot");
+    require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
 
     // TODO Only allow sending from created pots - perhaps not necessary explicitly, but if not, note as such here.
     require(_toPot <= potCount, "colony-funding-nonexistent-pot"); // Only allow sending to created pots

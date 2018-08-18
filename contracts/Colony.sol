@@ -185,8 +185,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAddress >>= 96;
     userAddress >>= 96;
     // Require that the user is proving their own reputation in this colony.
-    require(address(colonyAddress) == address(this), "colony-invalid-colony-reputation-owner");
-    require(address(userAddress) == msg.sender, "colony-invalid-user-reputation-owner");
+    require(address(colonyAddress) == address(this), "colony-invalid-reputation-key-colony-address");
+    require(address(userAddress) == msg.sender, "colony-invalid-reputation-key-user-address");
     _;
   }
 
