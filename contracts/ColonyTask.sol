@@ -108,7 +108,7 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  function makeTask(bytes32 _specificationHash, uint256 _domainId) public
+  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public
   stoppable
   auth
   domainExists(_domainId)
@@ -132,6 +132,15 @@ contract ColonyTask is ColonyStorage {
 
     emit PotAdded(potCount);
     emit TaskAdded(taskCount);
+
+    if (_skillId > 0) {
+      this.setTaskSkill(taskCount, _skillId);
+    }
+
+    if (_dueDate > 0) {
+      this.setTaskDueDate(taskCount, _dueDate);
+    }
+
   }
 
   function getTaskCount() public view returns (uint256) {

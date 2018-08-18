@@ -55,8 +55,8 @@ contract Authority is DSRoles {
     setAdminRoleCapability(colony, "addDomain(uint256)");
     setOwnerRoleCapability(colony, "addDomain(uint256)");
     // Add task
-    setAdminRoleCapability(colony, "makeTask(bytes32,uint256)");
-    setOwnerRoleCapability(colony, "makeTask(bytes32,uint256)");
+    setAdminRoleCapability(colony, "makeTask(bytes32,uint256,uint256,uint256)");
+    setOwnerRoleCapability(colony, "makeTask(bytes32,uint256,uint256,uint256)");
     // Start next reward payout
     setAdminRoleCapability(colony, "startNextRewardPayout(address)");
     setOwnerRoleCapability(colony, "startNextRewardPayout(address)");

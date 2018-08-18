@@ -245,7 +245,7 @@ contract("Colony", accounts => {
       canCall = await authority.canCall(user3, colony.address, functionSig);
       assert.equal(canCall, true);
 
-      functionSig = getFunctionSignature("makeTask(bytes32,uint256)");
+      functionSig = getFunctionSignature("makeTask(bytes32,uint256,uint256,uint256)");
       canCall = await authority.canCall(user3, colony.address, functionSig);
       assert.equal(canCall, true);
 
@@ -286,7 +286,7 @@ contract("Colony", accounts => {
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 1, { from: OTHER }));
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 1, 0, 0, { from: OTHER }));
       const taskCount = await colony.getTaskCount();
       assert.equal(taskCount.toNumber(), 0);
     });
@@ -318,7 +318,18 @@ contract("Colony", accounts => {
     });
 
     it("should log TaskAdded and PotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1), ["TaskAdded", "PotAdded"]);
+      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1, 0, 0), ["TaskAdded", "PotAdded"]);
+    });
+
+    it("should optionally set the skill and due date", async () => {
+      const skillId = 1;
+      const currTime = await currentBlockTime();
+      const dueDate = currTime + SECONDS_PER_DAY * 10;
+
+      const taskId = await makeTask({ colony, skillId, dueDate });
+      const task = await colony.getTask(taskId);
+      assert.equal(task[4].toNumber(), dueDate);
+      assert.equal(task[9][0].toNumber(), skillId);
     });
   });
 
@@ -1803,7 +1814,7 @@ contract("Colony", accounts => {
       await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000, { from: owner }), "colony-in-recovery-mode");
       await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, 0, 0, { from: owner }), "colony-in-recovery-mode");
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
