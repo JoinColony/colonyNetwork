@@ -87,7 +87,6 @@ export function web3GetAccounts() {
   });
 }
 
-// eslint-disable-next-line no-unused-vars
 export async function checkErrorRevert(promise, errorMessage) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
@@ -98,7 +97,7 @@ export async function checkErrorRevert(promise, errorMessage) {
   // We have to have this special function that we use to catch the error.
   let tx;
   let receipt;
-  let reason; // eslint-disable-line no-unused-vars
+  let reason;
   try {
     tx = await promise;
     receipt = await web3GetTransactionReceipt(tx);
