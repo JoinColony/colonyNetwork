@@ -51,8 +51,12 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return totalLockCount[_token];
   }
 
-  function unlockTokenForUser(address _token, address _user, uint256 _lockId) public onlyColony {
-    require(sub(_lockId, userLocks[_token][_user].lockCount) == 1, "colony-token-locking-invalid-lock-id");
+  function unlockTokenForUser(address _token, address _user, uint256 _lockId) public 
+  onlyColony 
+  {
+    uint256 lockCountDelta = sub(_lockId, userLocks[_token][_user].lockCount);
+    require(lockCountDelta != 0, "colony-token-already-unlocked");
+    require(lockCountDelta == 1, "colony-token-locking-has-previous-active-locks");
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
     assert(_lockId <= totalLockCount[_token]);
     userLocks[_token][_user].lockCount = _lockId;

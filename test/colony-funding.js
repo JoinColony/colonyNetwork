@@ -797,7 +797,7 @@ contract("Colony Funding", accounts => {
         colony.claimRewardPayout(payoutId.toString(), initialSquareRoots, userReputation.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "colony-token-locking-invalid-lock-id"
+        "colony-token-already-unlocked"
       );
     });
 
@@ -815,7 +815,7 @@ contract("Colony Funding", accounts => {
         colony.claimRewardPayout(payoutId2, initialSquareRoots, userReputation.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "colony-token-locking-invalid-lock-id"
+        "colony-token-locking-has-previous-active-locks"
       );
     });
 
@@ -902,7 +902,7 @@ contract("Colony Funding", accounts => {
         colony.claimRewardPayout(payoutId, initialSquareRoots, userReputation.toString(), totalReputation.toString(), {
           from: userAddress1
         }),
-        "colony-token-locking-invalid-lock-id"
+        "colony-token-already-unlocked"
       );
     });
 
