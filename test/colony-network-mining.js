@@ -780,14 +780,17 @@ contract("ColonyNetworkMining", accounts => {
 
   describe("Function permissions", () => {
     it('should not allow "setReputationRootHash" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]));
+      await checkErrorRevert(
+        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]),
+        "colony-reputation-mining-sender-not-active-reputation-cycle"
+      );
     });
 
     it('should not allow "startNextCycle" to be called if a cycle is in progress', async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(3600, this);
       assert(parseInt(addr, 16) !== 0);
-      await checkErrorRevert(colonyNetwork.startNextCycle());
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-still-active");
     });
 
     it('should not allow "rewardStakersWithReputation" to be called by someone not the colonyNetwork', async () => {
