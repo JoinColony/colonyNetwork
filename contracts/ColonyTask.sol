@@ -395,6 +395,7 @@ contract ColonyTask is ColonyStorage {
 
   function finalizeTask(uint256 _id) public
   stoppable
+  taskExists(_id)
   canFinalizeTask(_id)
   taskNotFinalized(_id)
   {

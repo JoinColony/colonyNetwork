@@ -1169,7 +1169,7 @@ contract("Colony", accounts => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-signatures-do-not-match-reviewer-2"
+        "colony-task-change-does-not-meet-signatures-required"
       );
     });
 
@@ -1384,7 +1384,7 @@ contract("Colony", accounts => {
     it("should fail if the task work ratings have not been assigned", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
-      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-worker-rating-missing");
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-cannot-finalize");
     });
 
     it("should fail if I try to accept a task that was finalized before", async () => {
@@ -1599,24 +1599,6 @@ contract("Colony", accounts => {
 
       const taskPayoutWorker = await colony.getTaskPayout(taskId, WORKER_ROLE, 0x0);
       assert.equal(taskPayoutWorker.toNumber(), 98000);
-    });
-
-    it("should not be able to set all payments at once if evaluator is assigned and not manager", async () => {
-      let dueDate = await currentBlockTime();
-      dueDate += SECONDS_PER_DAY * 7;
-
-      const taskId = await makeTask({ colony, dueDate });
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
-      });
-
-      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000), "colony-funding-evaluator-already-set");
     });
 
     it("should not be able to set all payments at once if worker is assigned and not manager", async () => {
