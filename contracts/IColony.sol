@@ -234,7 +234,9 @@ contract IColony {
   /// @notice Make a new task in the colony. Secured function to authorised members
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
-  function makeTask(bytes32 _specificationHash, uint256 _domainId) public;
+  /// @param _skillId The skill associated with the task, can set to 0 for no-op
+  /// @param _dueDate The due date of the task, can set to 0 for no-op
+  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public;
 
   /// @notice Get the number of tasks in the colony
   /// @return count The task count
@@ -476,6 +478,15 @@ contract IColony {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
   function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public;
+
+  /// @notice Set `_token` payout for all roles in task `_id` to the respective amounts
+  /// @dev Can only call if evaluator and worker are unassigned or manager, otherwise need signature
+  /// @param _id Id of the task
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _managerAmount Payout amount for manager
+  /// @param _evaluatorAmount Payout amount for evaluator
+  /// @param _workerAmount Payout amount for worker
+  function setAllTaskPayouts(uint256 _id,address _token,uint256 _managerAmount,uint256 _evaluatorAmount,uint256 _workerAmount) public;
 
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
   /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.

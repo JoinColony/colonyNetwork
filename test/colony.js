@@ -245,7 +245,7 @@ contract("Colony", accounts => {
       canCall = await authority.canCall(user3, colony.address, functionSig);
       assert.equal(canCall, true);
 
-      functionSig = getFunctionSignature("makeTask(bytes32,uint256)");
+      functionSig = getFunctionSignature("makeTask(bytes32,uint256,uint256,uint256)");
       canCall = await authority.canCall(user3, colony.address, functionSig);
       assert.equal(canCall, true);
 
@@ -286,7 +286,7 @@ contract("Colony", accounts => {
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 1, { from: OTHER }));
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 1, 0, 0, { from: OTHER }));
       const taskCount = await colony.getTaskCount();
       assert.equal(taskCount.toNumber(), 0);
     });
@@ -318,7 +318,18 @@ contract("Colony", accounts => {
     });
 
     it("should log TaskAdded and PotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1), ["TaskAdded", "PotAdded"]);
+      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1, 0, 0), ["TaskAdded", "PotAdded"]);
+    });
+
+    it("should optionally set the skill and due date", async () => {
+      const skillId = 1;
+      const currTime = await currentBlockTime();
+      const dueDate = currTime + SECONDS_PER_DAY * 10;
+
+      const taskId = await makeTask({ colony, skillId, dueDate });
+      const task = await colony.getTask(taskId);
+      assert.equal(task[4].toNumber(), dueDate);
+      assert.equal(task[9][0].toNumber(), skillId);
     });
   });
 
@@ -1578,14 +1589,6 @@ contract("Colony", accounts => {
         args: [taskId, token.address, 200]
       });
 
-      // Run through the task flow
-      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
-      await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
-      await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
-      await colony.finalizeTask(taskId);
-
       const taskPayoutManager1 = await colony.getTaskPayout(taskId, MANAGER_ROLE, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);
       const taskPayoutManager2 = await colony.getTaskPayout(taskId, MANAGER_ROLE, token.address);
@@ -1600,6 +1603,60 @@ contract("Colony", accounts => {
       assert.equal(taskPayoutWorker1.toNumber(), 98000);
       const taskPayoutWorker2 = await colony.getTaskPayout(taskId, WORKER_ROLE, token.address);
       assert.equal(taskPayoutWorker2.toNumber(), 200);
+    });
+
+    it("should be able (if manager) to set all payments at once if evaluator and worker are manager or unassigned", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate });
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000, { from: OTHER }), "colony-funding-must-be-manager");
+      await colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000);
+
+      const taskPayoutManager = await colony.getTaskPayout(taskId, MANAGER_ROLE, 0x0);
+      assert.equal(taskPayoutManager.toNumber(), 5000);
+
+      const taskPayoutEvaluator = await colony.getTaskPayout(taskId, EVALUATOR_ROLE, 0x0);
+      assert.equal(taskPayoutEvaluator.toNumber(), 1000);
+
+      const taskPayoutWorker = await colony.getTaskPayout(taskId, WORKER_ROLE, 0x0);
+      assert.equal(taskPayoutWorker.toNumber(), 98000);
+    });
+
+    it("should not be able to set all payments at once if evaluator is assigned and not manager", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, EVALUATOR],
+        sigTypes: [0, 0],
+        args: [taskId, EVALUATOR]
+      });
+
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000), "colony-funding-evaluator-already-set");
+    });
+
+    it("should not be able to set all payments at once if worker is assigned and not manager", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, WORKER]
+      });
+
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000), "colony-funding-worker-already-set");
     });
 
     it("should log a TaskWorkerPayoutChanged event, if the task's worker's payout changed", async () => {
@@ -1803,7 +1860,7 @@ contract("Colony", accounts => {
       await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000, { from: owner }), "colony-in-recovery-mode");
       await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, 0, 0, { from: owner }), "colony-in-recovery-mode");
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
