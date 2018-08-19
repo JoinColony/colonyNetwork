@@ -412,28 +412,28 @@ contract("ColonyNetworkAuction", accounts => {
     });
   });
 
-  describe("when closing the auction", async () => {
+  describe("when destructing the auction", async () => {
     beforeEach(async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.toString());
       await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
     });
 
-    it("should be able to close the auction and kill the auction contract", async () => {
+    it("should be able to destruct the auction and kill the auction contract", async () => {
       await tokenAuction.finalize();
       await tokenAuction.claim({ from: BIDDER_1 });
-      await tokenAuction.close();
+      await tokenAuction.destruct();
       const code = await web3GetCode(tokenAuction.address);
       assert.equal(code, 0);
     });
 
     it("should fail if auction not finalized", async () => {
-      await checkErrorRevert(tokenAuction.close(), "colony-auction-not-finalized");
+      await checkErrorRevert(tokenAuction.destruct(), "colony-auction-not-finalized");
     });
 
     it("should fail if not all bids have been claimed", async () => {
       await tokenAuction.finalize();
-      await checkErrorRevert(tokenAuction.close(), "colony-auction-not-all-bids-claimed");
+      await checkErrorRevert(tokenAuction.destruct(), "colony-auction-not-all-bids-claimed");
     });
 
     it("should fail if there are CLNY tokens left owned by the auction", async () => {
@@ -442,7 +442,7 @@ contract("ColonyNetworkAuction", accounts => {
       await metaColony.mintTokens(100);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 100);
       await clny.transfer(tokenAuction.address, 100, { from: BIDDER_1 });
-      await checkErrorRevert(tokenAuction.close());
+      await checkErrorRevert(tokenAuction.destruct());
     });
   });
 });

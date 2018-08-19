@@ -52,7 +52,7 @@ contract ColonyNetworkRegistrar is ColonyNetworkStorage {
   public
   unowned(userNode, subnode)
   {
-    require(userLabels[msg.sender] == 0, "colony-user-already-owned");
+    require(userLabels[msg.sender] == 0, "colony-user-label-already-owned");
     userLabels[msg.sender] = subnode;
 
     ENS(ens).setSubnodeOwner(userNode, subnode, msg.sender);

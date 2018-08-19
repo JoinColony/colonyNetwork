@@ -227,7 +227,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 4, this);
       await checkErrorRevert(
         colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
-        "colony-task-rating-secret-reveal-period-closed"
+        "colony-task-rating-secret-reveal-period-not-open"
       );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -328,7 +328,7 @@ contract("Colony Task Work Rating", accounts => {
     it("should revert if I try to assign ratings before the reveal period is over", async () => {
       await setupAssignedTask({ colonyNetwork, colony });
       await forwardTime(SECONDS_PER_DAY * 6, this);
-      await checkErrorRevert(colony.assignWorkRating(1), "colony-task-rating-period-open");
+      await checkErrorRevert(colony.assignWorkRating(1), "colony-task-rating-period-still-open");
       const roleWorker = await colony.getTaskRole(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
     });

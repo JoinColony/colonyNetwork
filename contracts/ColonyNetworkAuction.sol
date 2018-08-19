@@ -202,7 +202,7 @@ contract DutchAuction is DSMath {
     return true;
   }
 
-  function close() public
+  function destruct() public
   auctionFinalized
   allBidsClaimed
   {

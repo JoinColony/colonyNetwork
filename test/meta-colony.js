@@ -134,7 +134,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a child skill to a local skill parent", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(2), "colony-global-skill-id-does-not-match");
+      await checkErrorRevert(metaColony.addGlobalSkill(2), "colony-global-and-local-skill-trees-are-separate");
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 3);
     });
@@ -293,7 +293,7 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
       await metaColony.addDomain(1);
-      await checkErrorRevert(metaColony.addDomain(2), "colony-parent-skill-not-root");
+      await checkErrorRevert(metaColony.addDomain(2), "colony-parent-domain-not-root");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 4);
@@ -435,7 +435,7 @@ contract("Meta Colony", accounts => {
       assert.equal(task[9][0].toNumber(), 6);
     });
 
-    it("should not allow a non-manager to set global skill on task", async () => {
+    it("should not allow anyone but the colony to set global skill on task", async () => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(5);
 

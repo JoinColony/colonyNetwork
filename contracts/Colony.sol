@@ -152,7 +152,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   domainExists(_parentDomainId)
   {
     // Note: Remove when we want to allow more domain hierarchy levels
-    require(_parentDomainId == 1, "colony-parent-skill-not-root");
+    require(_parentDomainId == 1, "colony-parent-domain-not-root");
 
     uint256 parentSkillId = domains[_parentDomainId].skillId;
 

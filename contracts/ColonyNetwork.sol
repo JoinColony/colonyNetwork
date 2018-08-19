@@ -175,7 +175,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     Skill storage parentSkill = skills[_parentSkillId];
 
     // Global and local skill trees are kept separate
-    require(parentSkill.globalSkill == _globalSkill, "colony-global-skill-id-does-not-match");
+    require(parentSkill.globalSkill == _globalSkill, "colony-global-and-local-skill-trees-are-separate");
 
     Skill memory s;
     s.nParents = parentSkill.nParents + 1;
