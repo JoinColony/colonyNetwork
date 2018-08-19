@@ -424,8 +424,8 @@ contract("Meta Colony", accounts => {
 
       await executeSignedTaskChange({
         colony,
-        functionName: "setTaskSkill",
         taskId,
+        functionName: "setTaskSkill",
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, 6]

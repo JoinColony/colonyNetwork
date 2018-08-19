@@ -26,7 +26,7 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
   return logs.filter(log => log.event === "TaskAdded")[0].args.id;
 }
 
-async function getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args }) {
+async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
   const txData = await colony.contract.methods[functionName](...args).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     if (type === 0) {
@@ -41,20 +41,20 @@ async function getSigsAndTransactionData({ colony, functionName, taskId, signers
   return { sigV, sigR, sigS, txData };
 }
 
-export async function executeSignedTaskChange({ colony, functionName, taskId, signers, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args });
+export async function executeSignedTaskChange({ colony, taskId, functionName, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args });
   return colony.executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
-export async function executeSignedRoleAssignment({ colony, functionName, taskId, signers, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, functionName, taskId, signers, sigTypes, args });
+export async function executeSignedRoleAssignment({ colony, taskId, functionName, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args });
   return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
 export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator, worker }) {
   const accounts = await web3GetAccounts();
   const manager = accounts[0];
-  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
   const taskId = await makeTask({ colony, domainId: domain });
@@ -65,8 +65,8 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
 
     await executeSignedTaskChange({
       colony,
-      functionName: "setTaskSkill",
       taskId,
+      functionName: "setTaskSkill",
       signers: [manager],
       sigTypes: [0],
       args: [taskId, rootGlobalSkill.toNumber()]
@@ -74,28 +74,36 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   } else {
     await executeSignedTaskChange({
       colony,
-      functionName: "setTaskSkill",
       taskId,
+      functionName: "setTaskSkill",
       signers: [manager],
       sigTypes: [0],
       args: [taskId, skill]
     });
   }
 
-  let signers = manager === evaluator ? [manager] : [manager, evaluator];
-  let sigTypes = Array.from({ length: signers.length }, () => 0);
+  if (manager !== evaluator) {
+    await executeSignedTaskChange({
+      colony,
+      taskId,
+      functionName: "removeTaskEvaluatorRole",
+      signers: [manager],
+      sigTypes: [0],
+      args: [taskId]
+    });
 
-  await executeSignedRoleAssignment({
-    colony,
-    taskId,
-    functionName: "setTaskEvaluatorRole",
-    signers,
-    sigTypes,
-    args: [taskId, evaluator]
-  });
+    await executeSignedRoleAssignment({
+      colony,
+      taskId,
+      functionName: "setTaskEvaluatorRole",
+      signers: [manager, evaluator],
+      sigTypes: [0, 0],
+      args: [taskId, evaluator]
+    });
+  }
 
-  signers = manager === worker ? [manager] : [manager, worker];
-  sigTypes = Array.from({ length: signers.length }, () => 0);
+  const signers = manager === worker ? [manager] : [manager, worker];
+  const sigTypes = Array.from({ length: signers.length }, () => 0);
 
   await executeSignedRoleAssignment({
     colony,
@@ -113,8 +121,8 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskDueDate",
     taskId,
+    functionName: "setTaskDueDate",
     signers,
     sigTypes,
     args: [taskId, dueDateTimestamp]
@@ -137,10 +145,10 @@ export async function setupFundedTask({
 }) {
   const accounts = await web3GetAccounts();
   const manager = accounts[0];
-  let tokenAddress;
-  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
+  let tokenAddress;
   if (token === undefined) {
     tokenAddress = await colony.getToken();
   } else {
@@ -157,8 +165,8 @@ export async function setupFundedTask({
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskManagerPayout",
     taskId,
+    functionName: "setTaskManagerPayout",
     signers: [manager],
     sigTypes: [0],
     args: [taskId, tokenAddress, managerPayout.toString()]
@@ -169,8 +177,8 @@ export async function setupFundedTask({
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskEvaluatorPayout",
     taskId,
+    functionName: "setTaskEvaluatorPayout",
     signers,
     sigTypes,
     args: [taskId, tokenAddress, evaluatorPayout.toString()]
@@ -181,8 +189,8 @@ export async function setupFundedTask({
 
   await executeSignedTaskChange({
     colony,
-    functionName: "setTaskWorkerPayout",
     taskId,
+    functionName: "setTaskWorkerPayout",
     signers,
     sigTypes,
     args: [taskId, tokenAddress, workerPayout.toString()]
@@ -208,7 +216,8 @@ export async function setupRatedTask({
   workerRatingSalt = RATING_2_SALT
 }) {
   const accounts = await web3GetAccounts();
-  evaluator = evaluator || accounts[1]; // eslint-disable-line no-param-reassign
+  const manager = accounts[0];
+  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
   const taskId = await setupFundedTask({

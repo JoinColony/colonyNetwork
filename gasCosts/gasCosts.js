@@ -54,7 +54,7 @@ contract("All", accounts => {
   const gasPrice = 20e9;
 
   const MANAGER = accounts[0];
-  const EVALUATOR = accounts[1];
+  const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
 
   let colony;
@@ -187,15 +187,6 @@ contract("All", accounts => {
         signers: [MANAGER],
         sigTypes: [0],
         args: [taskId, tokenAddress, 100]
-      });
-
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, EVALUATOR],
-        sigTypes: [0, 0],
-        args: [taskId, EVALUATOR]
       });
 
       await executeSignedRoleAssignment({

@@ -307,10 +307,6 @@ contract IColony {
   /// @param _salt Salt value used to generate the rating secret
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
 
-  /// @notice Assign missing ratings penalising users where needed for missing the rating window
-  /// @param _id Id of the task
-  function assignWorkRating(uint256 _id) public;
-
   /// @notice Helper function used to generage consistently the rating secret using salt value `_salt` and value to hide `_value`
   /// @param _salt Salt value
   /// @param _value Value to hide
@@ -393,6 +389,13 @@ contract IColony {
   /// @param _id Id of the task
   /// @param _deliverableHash Unique hash of the task deliverable content in ddb
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
+
+  /// @notice Submit the task deliverable for Worker and rating for Manager
+  /// @dev Internally call `submitTaskDeliverable` and `submitTaskWorkRating` in sequence
+  /// @param _id Id of the task
+  /// @param _deliverableHash Unique hash of the task deliverable content in ddb
+  /// @param _ratingSecret Rating secret for manager
+  function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public;
 
   /// @notice Called after task work rating is complete which closes the task and logs the respective reputation log updates
   /// Allowed to be called once per task. Secured function to authorised members

@@ -2492,27 +2492,27 @@ contract("ColonyNetworkMining", accounts => {
       const client = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree });
       await client.initialise(colonyNetwork.address);
       await client.addLogContentsToReputationTree();
-      // Check the client's tree has eight entries. In order these were added (and therefore in order of reputation UID),
+      // Check the client's tree has seven entries. In order these were added (and therefore in order of reputation UID),
       // these are:
       // 1. Colony-wide total reputation for metaColony's root skill
       // 2. Colony-wide total reputation for mining skill
       // 3. Miner's reputation for metaColony's root skill
       // 4. Miner's reputation for mining skill
       // x. Colony-wide total reputation for metacolony's root skill (same as 1)
-      // x. Manager reputation for metaColony's root skill (same as 3, by virtue of Manage and miner being MAIN_ACCOUNT)
+      // x. Manager reputation for metaColony's root skill (same as 3, by virtue of manager and miner being MAIN_ACCOUNT)
       // x. Colony-wide total reputation for metacolony's root skill (same as 1)
-      // 5. Evaluator reputation for metaColony's root skill
+      // x. Evaluator reputation for metaColony's root skill (same as 3, by virtue of evaluator and manager being MAIN_ACCOUNT)
       // x. Colony-wide total reputation for metacolony's root skill (same as 1)
-      // 6. Worker reputation for metacolony's root skill
-      // 7. Colony-wide total reputation for global skill task was in
-      // 8. Worker reputation for global skill task was in
+      // 5. Worker reputation for metacolony's root skill
+      // 6. Colony-wide total reputation for global skill task was in
+      // 7. Worker reputation for global skill task was in
       //
 
       const GLOBAL_SKILL = 1;
       const META_ROOT_SKILL = 2;
       const MINING_SKILL = 3;
 
-      assert.equal(Object.keys(client.reputations).length, 8);
+      assert.equal(Object.keys(client.reputations).length, 7);
       let key;
       let value;
       // These should be:
@@ -2536,25 +2536,20 @@ contract("ColonyNetworkMining", accounts => {
       value = makeReputationValue(1000000000000000000, 4);
       assert.equal(client.reputations[key], value);
 
-      // 5. Reputation reward for OTHER_ACCOUNT for being the evaluator for the tasks created by giveUserCLNYTokens
-      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, OTHER_ACCOUNT);
+      // 5. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
+      // NB at the moment, the reputation reward for the worker is 0.
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, accounts[2]);
       value = makeReputationValue(0, 5);
       assert.equal(client.reputations[key], value);
 
-      // 6. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
-      // NB at the moment, the reputation reward for the worker is 0.
-      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, accounts[2]);
+      // 6. Colony-wide total reputation for global skill task was in
+      key = makeReputationKey(metaColony.address, GLOBAL_SKILL);
       value = makeReputationValue(0, 6);
       assert.equal(client.reputations[key], value);
 
-      // 7. Colony-wide total reputation for global skill task was in
-      key = makeReputationKey(metaColony.address, GLOBAL_SKILL);
-      value = makeReputationValue(0, 7);
-      assert.equal(client.reputations[key], value);
-
-      // 8. Worker reputation for global skill task was in
+      // 7. Worker reputation for global skill task was in
       key = makeReputationKey(metaColony.address, GLOBAL_SKILL, accounts[2]);
-      value = makeReputationValue(0, 8);
+      value = makeReputationValue(0, 7);
       assert.equal(client.reputations[key], value);
     });
 
@@ -2606,16 +2601,15 @@ contract("ColonyNetworkMining", accounts => {
       const META_ROOT_SKILL = 2;
       const MINING_SKILL = 3;
 
-      assert.equal(Object.keys(goodClient.reputations).length, 23);
       const reputationProps = [
         { id: 1, skill: META_ROOT_SKILL, account: undefined, value: 3000003000000000000 },
         { id: 2, skill: MINING_SKILL, account: undefined, value: 1000000000000000000 },
         { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: 3000001000000000000 },
         { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: 1000000000000000000 },
-        { id: 5, skill: META_ROOT_SKILL, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 6, skill: META_ROOT_SKILL, account: accounts[2], value: 1000000000000 },
-        { id: 7, skill: 1, account: undefined, value: 1000000000000 },
-        { id: 8, skill: 1, account: accounts[2], value: 0 },
+        { id: 5, skill: META_ROOT_SKILL, account: accounts[2], value: 1000000000000 },
+        { id: 6, skill: 1, account: undefined, value: 1000000000000 },
+        { id: 7, skill: 1, account: accounts[2], value: 0 },
+        { id: 8, skill: META_ROOT_SKILL, account: OTHER_ACCOUNT, value: 1000000000000 },
 
         { id: 9, skill: 9, account: undefined, value: 1000000000000 },
         { id: 10, skill: 8, account: undefined, value: 1000000000000 },
@@ -2634,6 +2628,8 @@ contract("ColonyNetworkMining", accounts => {
         { id: 22, skill: 1, account: OTHER_ACCOUNT, value: 1000000000000 },
         { id: 23, skill: 10, account: OTHER_ACCOUNT, value: 1000000000000 }
       ];
+
+      assert.equal(Object.keys(goodClient.reputations).length, reputationProps.length);
 
       reputationProps.forEach(reputationProp => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
