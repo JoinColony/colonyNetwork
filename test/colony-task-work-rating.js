@@ -340,7 +340,7 @@ contract("Colony Task Work Rating", accounts => {
     it("should revert if I try to assign ratings before the reveal period is over", async () => {
       await setupAssignedTask({ colonyNetwork, colony });
       await forwardTime(SECONDS_PER_DAY * 6, this);
-      await checkErrorRevert(colony.finalizeTask(1), "colony-task-cannot-finalize");
+      await checkErrorRevert(colony.finalizeTask(1), "colony-task-ratings-incomplete");
       const roleWorker = await colony.getTaskRole(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
     });

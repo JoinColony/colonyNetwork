@@ -1384,7 +1384,7 @@ contract("Colony", accounts => {
     it("should fail if the task work ratings have not been assigned", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
-      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-cannot-finalize");
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-ratings-incomplete");
     });
 
     it("should fail if I try to accept a task that was finalized before", async () => {

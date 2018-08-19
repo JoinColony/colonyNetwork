@@ -95,8 +95,8 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  modifier canFinalizeTask(uint256 _id) {
-    require(taskWorkRatingsAssigned(_id) || taskWorkRatingsClosed(_id), "colony-task-cannot-finalize");
+  modifier taskWorkRatingsComplete(uint256 _id) {
+    require(taskWorkRatingsAssigned(_id) || taskWorkRatingsClosed(_id), "colony-task-ratings-incomplete");
     _;
   }
 
@@ -396,7 +396,7 @@ contract ColonyTask is ColonyStorage {
   function finalizeTask(uint256 _id) public
   stoppable
   taskExists(_id)
-  canFinalizeTask(_id)
+  taskWorkRatingsComplete(_id)
   taskNotFinalized(_id)
   {
     if (!taskWorkRatingsAssigned(_id)) {
