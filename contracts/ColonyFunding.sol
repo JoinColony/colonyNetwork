@@ -51,6 +51,27 @@ contract ColonyFunding is ColonyStorage {
     emit TaskWorkerPayoutChanged(_id, _token, _amount);
   }
 
+  function setAllTaskPayouts(
+    uint256 _id,
+    address _token,
+    uint256 _managerAmount,
+    uint256 _evaluatorAmount,
+    uint256 _workerAmount
+  )
+  public
+  stoppable
+  {
+    Task storage task = tasks[_id];
+
+    require(task.roles[MANAGER].user == msg.sender, "colony-funding-must-be-manager");
+    require(task.roles[EVALUATOR].user == task.roles[MANAGER].user || task.roles[EVALUATOR].user == 0x0, "colony-funding-evaluator-already-set");
+    require(task.roles[WORKER].user == task.roles[MANAGER].user || task.roles[WORKER].user == 0x0, "colony-funding-worker-already-set");
+
+    this.setTaskManagerPayout(_id, _token, _managerAmount);
+    this.setTaskEvaluatorPayout(_id, _token, _evaluatorAmount);
+    this.setTaskWorkerPayout(_id, _token, _workerAmount);
+  }
+
   // To get all payouts for a task iterate over roles.length
   function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256) {
     Task storage task = tasks[_id];

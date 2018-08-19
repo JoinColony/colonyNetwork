@@ -1589,14 +1589,6 @@ contract("Colony", accounts => {
         args: [taskId, token.address, 200]
       });
 
-      // Run through the task flow
-      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
-      await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
-      await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
-      await colony.finalizeTask(taskId);
-
       const taskPayoutManager1 = await colony.getTaskPayout(taskId, MANAGER_ROLE, 0x0);
       assert.equal(taskPayoutManager1.toNumber(), 5000);
       const taskPayoutManager2 = await colony.getTaskPayout(taskId, MANAGER_ROLE, token.address);
@@ -1611,6 +1603,60 @@ contract("Colony", accounts => {
       assert.equal(taskPayoutWorker1.toNumber(), 98000);
       const taskPayoutWorker2 = await colony.getTaskPayout(taskId, WORKER_ROLE, token.address);
       assert.equal(taskPayoutWorker2.toNumber(), 200);
+    });
+
+    it("should be able (if manager) to set all payments at once if evaluator and worker are manager or unassigned", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate });
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000, { from: OTHER }), "colony-funding-must-be-manager");
+      await colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000);
+
+      const taskPayoutManager = await colony.getTaskPayout(taskId, MANAGER_ROLE, 0x0);
+      assert.equal(taskPayoutManager.toNumber(), 5000);
+
+      const taskPayoutEvaluator = await colony.getTaskPayout(taskId, EVALUATOR_ROLE, 0x0);
+      assert.equal(taskPayoutEvaluator.toNumber(), 1000);
+
+      const taskPayoutWorker = await colony.getTaskPayout(taskId, WORKER_ROLE, 0x0);
+      assert.equal(taskPayoutWorker.toNumber(), 98000);
+    });
+
+    it("should not be able to set all payments at once if evaluator is assigned and not manager", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, EVALUATOR],
+        sigTypes: [0, 0],
+        args: [taskId, EVALUATOR]
+      });
+
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000), "colony-funding-evaluator-already-set");
+    });
+
+    it("should not be able to set all payments at once if worker is assigned and not manager", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, WORKER]
+      });
+
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000), "colony-funding-worker-already-set");
     });
 
     it("should log a TaskWorkerPayoutChanged event, if the task's worker's payout changed", async () => {

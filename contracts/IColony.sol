@@ -479,6 +479,15 @@ contract IColony {
   /// @param _amount Payout amount
   function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public;
 
+  /// @notice Set `_token` payout for all roles in task `_id` to the respective amounts
+  /// @dev Can only call if evaluator and worker are unassigned or manager, otherwise need signature
+  /// @param _id Id of the task
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _managerAmount Payout amount for manager
+  /// @param _evaluatorAmount Payout amount for evaluator
+  /// @param _workerAmount Payout amount for worker
+  function setAllTaskPayouts(uint256 _id,address _token,uint256 _managerAmount,uint256 _evaluatorAmount,uint256 _workerAmount) public;
+
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
   /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
   /// Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
