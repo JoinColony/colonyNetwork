@@ -87,7 +87,6 @@ export function web3GetAccounts() {
   });
 }
 
-// eslint-disable-next-line no-unused-vars
 export async function checkErrorRevert(promise, errorMessage) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
@@ -98,14 +97,13 @@ export async function checkErrorRevert(promise, errorMessage) {
   // We have to have this special function that we use to catch the error.
   let tx;
   let receipt;
-  let reason; // eslint-disable-line no-unused-vars
+  let reason;
   try {
     tx = await promise;
     receipt = await web3GetTransactionReceipt(tx);
   } catch (err) {
     ({ tx, receipt, reason } = err);
-    // TODO: address as part of https://github.com/JoinColony/colonyNetwork/issues/201#issuecomment-407634292
-    // assert.equal(reason, errorMessage);
+    assert.equal(reason, errorMessage);
   }
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00);

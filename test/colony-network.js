@@ -134,7 +134,7 @@ contract("ColonyNetwork", accounts => {
       await colonyNetwork.createMetaColony(token.address);
       const metaColonyAddress1 = await colonyNetwork.getMetaColony();
 
-      await checkErrorRevert(colonyNetwork.createMetaColony(token.address));
+      await checkErrorRevert(colonyNetwork.createMetaColony(token.address), "colony-meta-colony-exists-already");
       const metaColonyAddress2 = await colonyNetwork.getMetaColony();
       assert.equal(metaColonyAddress1, metaColonyAddress2);
     });
@@ -240,7 +240,7 @@ contract("ColonyNetwork", accounts => {
       const newVersion = currentColonyVersion.subn(1).toNumber();
       await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
 
-      await checkErrorRevert(colony.upgrade(newVersion));
+      await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-newer");
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
@@ -252,7 +252,7 @@ contract("ColonyNetwork", accounts => {
       const newVersion = currentColonyVersion.addn(1).toNumber();
       const colony = await Colony.at(colonyAddress);
 
-      await checkErrorRevert(colony.upgrade(newVersion));
+      await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-registered");
       assert.equal(version.toNumber(), currentColonyVersion.toNumber());
     });
 
@@ -283,13 +283,13 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should not be able to add a global skill, by an address that is not the meta colony ", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(1, true));
+      await checkErrorRevert(colonyNetwork.addSkill(1, true), "colony-must-be-meta-colony");
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 1);
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(2, false));
+      await checkErrorRevert(colonyNetwork.addSkill(1, false), "colony-must-be-colony");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 1);
@@ -328,11 +328,11 @@ contract("ColonyNetwork", accounts => {
       assert.equal(owner, accounts[1]);
 
       // Label already in use
-      await checkErrorRevert(colonyNetwork.registerUserLabel(label, { from: accounts[2] }));
+      await checkErrorRevert(colonyNetwork.registerUserLabel(label, { from: accounts[2] }), "colony-label-already-owned");
 
       // Can't register two labels for a user
       const newLabel = web3utils.soliditySha3("test2");
-      await checkErrorRevert(colonyNetwork.registerUserLabel(newLabel, { from: accounts[1] }));
+      await checkErrorRevert(colonyNetwork.registerUserLabel(newLabel, { from: accounts[1] }), "colony-user-label-already-owned");
     });
 
     it("should be able to register one unique label per colony, if owner", async () => {
@@ -355,7 +355,7 @@ contract("ColonyNetwork", accounts => {
 
       // Can't register two labels for a colony
       const newLabel = web3utils.soliditySha3("test2");
-      await checkErrorRevert(colony.registerColonyLabel(newLabel, { from: accounts[0] }));
+      await checkErrorRevert(colony.registerColonyLabel(newLabel, { from: accounts[0] }), "colony-already-labeled");
     });
   });
 });

@@ -85,21 +85,27 @@ contract("Colony Task Work Rating", accounts => {
       let dueDate = await currentBlockTime();
       dueDate += SECONDS_PER_DAY * 7;
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
-      await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
+      await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }), "colony-task-not-complete");
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
     it("should fail if I try to rate work on behalf of a worker", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
-      await checkErrorRevert(colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: OTHER }));
+      await checkErrorRevert(
+        colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: OTHER }),
+        "colony-user-cannot-rate-task-manager"
+      );
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0], 0);
     });
 
     it("should fail if I try to rate work for a role that's not setup to be rated", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
-      await checkErrorRevert(colony.submitTaskWorkRating(taskId, EVALUATOR_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
+      await checkErrorRevert(
+        colony.submitTaskWorkRating(taskId, EVALUATOR_ROLE, RATING_2_SECRET, { from: EVALUATOR }),
+        "colony-unsupported-role-to-rate"
+      );
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
@@ -108,7 +114,10 @@ contract("Colony Task Work Rating", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
-      await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: EVALUATOR }));
+      await checkErrorRevert(
+        colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: EVALUATOR }),
+        "colony-task-rating-secret-already-exists"
+      );
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0], 1);
       const ratingSecret = await colony.getTaskWorkRatingSecret(taskId, WORKER_ROLE);
@@ -119,7 +128,10 @@ contract("Colony Task Work Rating", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
 
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
-      await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
+      await checkErrorRevert(
+        colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }),
+        "colony-task-rating-secret-submit-period-closed"
+      );
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
@@ -127,7 +139,7 @@ contract("Colony Task Work Rating", accounts => {
     it("should fail if I try to submit work for a task using an invalid id", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
 
-      await checkErrorRevert(colony.submitTaskWorkRating(10, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }));
+      await checkErrorRevert(colony.submitTaskWorkRating(10, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }), "colony-task-does-not-exist");
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0], 0);
     });
@@ -170,7 +182,10 @@ contract("Colony Task Work Rating", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
-      await checkErrorRevert(colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_2_SALT, { from: WORKER }));
+      await checkErrorRevert(
+        colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_2_SALT, { from: WORKER }),
+        "colony-task-rating-secret-mismatch"
+      );
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
       assert.equal(roleManager[2].toNumber(), 0);
@@ -182,7 +197,10 @@ contract("Colony Task Work Rating", accounts => {
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
-      await checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
+      await checkErrorRevert(
+        colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
+        "colony-task-rating-secret-reveal-period-closed"
+      );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), 0);
@@ -194,7 +212,10 @@ contract("Colony Task Work Rating", accounts => {
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await forwardTime(SECONDS_PER_DAY * 5 + 2, this);
-      await checkErrorRevert(colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }));
+      await checkErrorRevert(
+        colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER }),
+        "colony-task-rating-secret-reveal-period-closed"
+      );
 
       const roleManager = await colony.getTaskRole(1, MANAGER_ROLE);
       assert.equal(roleManager[2].toNumber(), 0);
@@ -204,7 +225,10 @@ contract("Colony Task Work Rating", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await forwardTime(SECONDS_PER_DAY * 4, this);
-      await checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
+      await checkErrorRevert(
+        colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
+        "colony-task-rating-secret-reveal-period-not-open"
+      );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), 0);
@@ -215,7 +239,10 @@ contract("Colony Task Work Rating", accounts => {
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
-      await checkErrorRevert(colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }));
+      await checkErrorRevert(
+        colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR }),
+        "colony-task-rating-secret-reveal-period-closed"
+      );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
       assert.equal(roleWorker[2].toNumber(), 0);
@@ -301,7 +328,7 @@ contract("Colony Task Work Rating", accounts => {
     it("should revert if I try to assign ratings before the reveal period is over", async () => {
       await setupAssignedTask({ colonyNetwork, colony });
       await forwardTime(SECONDS_PER_DAY * 6, this);
-      await checkErrorRevert(colony.assignWorkRating(1));
+      await checkErrorRevert(colony.assignWorkRating(1), "colony-task-rating-period-still-open");
       const roleWorker = await colony.getTaskRole(1, WORKER_ROLE);
       assert.isFalse(roleWorker[1]);
     });

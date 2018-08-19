@@ -47,7 +47,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // Can only be called by the owner role.
   function setRecoveryRole(address _user) public stoppable auth {
-    require(recoveryRolesCount < ~uint64(0), "maximum-num-recovery-roles");
+    require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
     if (!Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
       Authority(authority).setUserRole(_user, RECOVERY_ROLE, true);
       recoveryRolesCount++;
@@ -152,7 +152,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   domainExists(_parentDomainId)
   {
     // Note: Remove when we want to allow more domain hierarchy levels
-    require(_parentDomainId == 1, "colony-parent-skill-not-root");
+    require(_parentDomainId == 1, "colony-parent-domain-not-root");
 
     uint256 parentSkillId = domains[_parentDomainId].skillId;
 
@@ -185,8 +185,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAddress >>= 96;
     userAddress >>= 96;
     // Require that the user is proving their own reputation in this colony.
-    require(address(colonyAddress) == address(this));
-    require(address(userAddress) == msg.sender);
+    require(address(colonyAddress) == address(this), "colony-invalid-reputation-key-colony-address");
+    require(address(userAddress) == msg.sender, "colony-invalid-reputation-key-user-address");
     _;
   }
 
@@ -206,10 +206,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function upgrade(uint256 _newVersion) public stoppable auth {
     // Upgrades can only go up in version
     uint256 currentVersion = version();
-    require(_newVersion > currentVersion);
+    require(_newVersion > currentVersion, "colony-version-must-be-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
-    require(newResolver != 0x0);
+    require(newResolver != 0x0, "colony-version-must-be-registered");
     EtherRouter e = EtherRouter(address(this));
     e.setResolver(newResolver);
   }
@@ -226,10 +226,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   uint256 constant COLONY_NETWORK_ADDRESS_SLOT = 3;
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
-    require(_slot != AUTHORITY_SLOT, "protected-variable");
-    require(_slot != OWNER_SLOT, "protected-variable");
-    require(_slot != RESOLVER_SLOT, "protected-variable");
-    require(_slot != COLONY_NETWORK_ADDRESS_SLOT, "protected-variable");
+    require(_slot != AUTHORITY_SLOT, "colony-protected-variable");
+    require(_slot != OWNER_SLOT, "colony-protected-variable");
+    require(_slot != RESOLVER_SLOT, "colony-protected-variable");
+    require(_slot != COLONY_NETWORK_ADDRESS_SLOT, "colony-protected-variable");
 
     // Protect key variables
     uint64 _recoveryRolesCount = recoveryRolesCount;
@@ -251,14 +251,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function approveExitRecovery() public recovery auth {
-    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "recovery-approval-already-given");
+    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");
     recoveryApprovalTimestamps[msg.sender] = now;
     recoveryApprovalCount++;
   }
 
   function exitRecoveryMode(uint256 _newVersion) public recovery auth {
     uint numRequired = recoveryRolesCount / 2 + 1;
-    require(recoveryApprovalCount >= numRequired, "recovery-exit-insufficient-approvals");
+    require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
 
     recoveryMode = false;
     if (_newVersion > version()) {

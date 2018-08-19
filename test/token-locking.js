@@ -68,8 +68,7 @@ contract("TokenLocking", accounts => {
       await checkErrorRevert(
         tokenLocking.deposit(token.address, usersTokens, {
           from: userAddress
-        }),
-        "token-locking-transfer-failed"
+        })
       );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       const userDepositedBalance = info[1];
@@ -125,7 +124,8 @@ contract("TokenLocking", accounts => {
       await checkErrorRevert(
         tokenLocking.deposit(token.address, 0, {
           from: userAddress
-        })
+        }),
+        "colony-token-locking-invalid-amount"
       );
     });
 
@@ -140,7 +140,8 @@ contract("TokenLocking", accounts => {
       await checkErrorRevert(
         tokenLocking.withdraw(token.address, 0, {
           from: userAddress
-        })
+        }),
+        "colony-token-locking-invalid-amount"
       );
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
@@ -185,7 +186,7 @@ contract("TokenLocking", accounts => {
         tokenLocking.incrementLockCounterTo(token.address, 10, {
           from: userAddress
         }),
-        "token-locking-invalid-lock-id"
+        "colony-token-locking-invalid-lock-id"
       );
     });
 
@@ -196,7 +197,7 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      await checkErrorRevert(tokenLocking.lockToken(token.address), "token-locking-sender-not-colony");
+      await checkErrorRevert(tokenLocking.lockToken(token.address), "colony-token-locking-sender-not-colony");
     });
 
     it("should not be able to unlock users tokens if sender is not colony", async () => {
@@ -208,7 +209,7 @@ contract("TokenLocking", accounts => {
       });
       const { logs } = await colony.startNextRewardPayout(otherToken.address);
       const payoutId = logs[0].args.id;
-      await checkErrorRevert(tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId), "token-locking-sender-not-colony");
+      await checkErrorRevert(tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId), "colony-token-locking-sender-not-colony");
     });
 
     it("should be able to deposit tokens multiple times if they are unlocked", async () => {
@@ -238,7 +239,7 @@ contract("TokenLocking", accounts => {
         tokenLocking.deposit(token.address, usersTokens, {
           from: userAddress
         }),
-        "token-locking-token-locked"
+        "colony-token-locking-token-locked"
       );
     });
 
@@ -254,7 +255,7 @@ contract("TokenLocking", accounts => {
         tokenLocking.withdraw(token.address, usersTokens, {
           from: userAddress
         }),
-        "token-locking-token-locked"
+        "colony-token-locking-token-locked"
       );
     });
 
@@ -313,7 +314,7 @@ contract("TokenLocking", accounts => {
     });
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(tokenLocking.punishStakers([accounts[0], accounts[1]]), "token-locking-sender-not-reputation-mining-cycle");
+      await checkErrorRevert(tokenLocking.punishStakers([accounts[0], accounts[1]]), "colony-token-locking-sender-not-reputation-mining-cycle");
     });
   });
 });

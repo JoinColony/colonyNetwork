@@ -128,13 +128,13 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(1);
 
-      await checkErrorRevert(metaColony.addGlobalSkill(6));
+      await checkErrorRevert(metaColony.addGlobalSkill(6), "colony-invalid-skill-id");
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 5);
     });
 
     it("should NOT be able to add a child skill to a local skill parent", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(2));
+      await checkErrorRevert(metaColony.addGlobalSkill(2), "colony-global-and-local-skill-trees-are-separate");
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 3);
     });
@@ -261,7 +261,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a new root global skill", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(0));
+      await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-invalid-parent-skill-id");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 3);
@@ -293,7 +293,7 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
       await metaColony.addDomain(1);
-      await checkErrorRevert(metaColony.addDomain(2));
+      await checkErrorRevert(metaColony.addDomain(2), "colony-parent-domain-not-root");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 4);
@@ -352,7 +352,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a new local skill by anyone but a Colony", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(2, false));
+      await checkErrorRevert(colonyNetwork.addSkill(2, false), "colony-must-be-colony");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 4);
@@ -362,7 +362,7 @@ contract("Meta Colony", accounts => {
       const skillCountBefore = await colonyNetwork.getSkillCount();
       const rootDomain = await colony.getDomain(1);
       const rootLocalSkillId = rootDomain[0].toNumber();
-      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false));
+      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false), "colony-must-be-colony");
       const skillCountAfter = await colonyNetwork.getSkillCount();
 
       assert.equal(skillCountBefore.toNumber(), skillCountAfter.toNumber());
@@ -392,18 +392,18 @@ contract("Meta Colony", accounts => {
     it("should NOT allow a non-manager to set domain on task", async () => {
       await colony.addDomain(1);
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }), "colony-task-role-identity-mismatch");
       const task = await colony.getTask(1);
       assert.equal(task[8].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
-      await checkErrorRevert(colony.setTaskDomain(10, 3));
+      await checkErrorRevert(colony.setTaskDomain(10, 3), "colony-task-does-not-exist");
     });
 
     it("should NOT be able to set a nonexistent domain on task", async () => {
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskDomain(1, 20));
+      await checkErrorRevert(colony.setTaskDomain(1, 20), "colony-domain-does-not-exist");
 
       const task = await colony.getTask(1);
       assert.equal(task[8].toNumber(), 1);
@@ -413,7 +413,7 @@ contract("Meta Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.setTaskDomain(taskId, 1));
+      await checkErrorRevert(colony.setTaskDomain(taskId, 1), "colony-task-already-finalized");
     });
 
     it("should be able to set global skill on task", async () => {
@@ -435,18 +435,18 @@ contract("Meta Colony", accounts => {
       assert.equal(task[9][0].toNumber(), 6);
     });
 
-    it("should not allow a non-manager to set global skill on task", async () => {
+    it("should not allow anyone but the colony to set global skill on task", async () => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(5);
 
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }), "colony-not-self");
       const task = await colony.getTask(1);
       assert.equal(task[9][0].toNumber(), 0);
     });
 
     it("should NOT be able to set global skill on nonexistent task", async () => {
-      await checkErrorRevert(colony.setTaskSkill(10, 1));
+      await checkErrorRevert(colony.setTaskSkill(10, 1), "colony-task-does-not-exist");
     });
 
     it("should NOT be able to set global skill on finalized task", async () => {
@@ -455,7 +455,7 @@ contract("Meta Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.setTaskSkill(taskId, 6));
+      await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-already-finalized");
 
       const task = await colony.getTask(taskId);
       assert.equal(task[9][0].toNumber(), 1);
@@ -463,12 +463,12 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to set nonexistent skill on task", async () => {
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 5));
+      await checkErrorRevert(colony.setTaskSkill(1, 5), "colony-skill-does-not-exist");
     });
 
     it("should NOT be able to set local skill on task", async () => {
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 3));
+      await checkErrorRevert(colony.setTaskSkill(1, 3), "colony-not-global-skill");
     });
   });
 

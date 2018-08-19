@@ -27,7 +27,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   // TODO: Can we handle a dispute regarding the very first hash that should be set?
 
   modifier onlyReputationMiningCycle () {
-    require(msg.sender == activeReputationMiningCycle);
+    require(msg.sender == activeReputationMiningCycle, "colony-reputation-mining-sender-not-active-reputation-cycle");
     _;
   }
 
@@ -43,17 +43,17 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function initialiseReputationMining() public {
-    require(inactiveReputationMiningCycle == 0x0);
+    require(inactiveReputationMiningCycle == 0x0, "colony-reputation-mining-already-initialised");
     address clnyToken = IColony(metaColony).getToken();
-    require(clnyToken != 0x0);
+    require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
     inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
   }
 
   function startNextCycle() public {
     address clnyToken = IColony(metaColony).getToken();
-    require(clnyToken != 0x0);
-    require(activeReputationMiningCycle == 0x0);
-    require(inactiveReputationMiningCycle != 0x0);
+    require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
+    require(activeReputationMiningCycle == 0x0, "colony-reputation-mining-still-active");
+    require(inactiveReputationMiningCycle != 0x0, "colony-reputation-mining-not-initialised");
     // Inactive now becomes active
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     ReputationMiningCycle(activeReputationMiningCycle).resetWindow();

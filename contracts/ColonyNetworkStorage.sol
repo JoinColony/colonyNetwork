@@ -88,7 +88,7 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   mapping (address => bytes32) userLabels;
 
   modifier calledByColony() {
-    require(_isColony[msg.sender]);
+    require(_isColony[msg.sender], "colony-must-be-colony");
     _;
   }
 }

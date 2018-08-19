@@ -90,8 +90,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
-    require (nSubmittedHashes - nInvalidatedHashes == 1);
-    require (disputeRounds[roundNumber].length == 1); //i.e. this is the final round
+    require(nSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-completed");
+    require(disputeRounds[roundNumber].length == 1, "colony-reputation-mining-final-round-not-completed"); //i.e. this is the final round
     // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
     // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
     // element is zeroed. If this functionality of 'delete' is ever changed, this will have to change too.
@@ -103,7 +103,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @param idx The index in the round of the hash under consideration
   modifier challengeOpen(uint256 round, uint256 idx) {
     // TODO: More checks that this is an appropriate time to respondToChallenge
-    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound);
+    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-closed");
     _;
   }
 
@@ -121,15 +121,15 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // Here, the minimum stake is 10**15.
     uint256 balance;
     (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
-    require(entryIndex <= balance / 10**15);
-    require(entryIndex > 0);
+    require(entryIndex <= balance / 10**15, "colony-reputation-mining-stake-minimum-not-met");
+    require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
       // ...require that they are submitting the same hash ...
-      require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash);
+      require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
       // ...require that they are submitting the same number of nodes for that hash ...
-      require(nNodes == reputationHashSubmissions[msg.sender].nNodes);
-      require (submittedEntries[newHash][msg.sender][entryIndex] == false); // ... but not this exact entry
+      require(nNodes == reputationHashSubmissions[msg.sender].nNodes, "colony-reputation-mining-submitting-different-nnodes");
+      require(submittedEntries[newHash][msg.sender][entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index"); // ... but not this exact entry
     }
     _;
   }
@@ -138,7 +138,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
   modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
-    require(reputationMiningWindowOpenTimestamp > 0);
+    require(reputationMiningWindowOpenTimestamp > 0, "colony-reputation-mining-cycle-not-open");
     // Check the ticket is a winning one.
     // TODO Figure out how to uncomment the next line, but not break tests sporadically.
     // require((now-reputationMiningWindowOpenTimestamp) <= 3600);
@@ -146,7 +146,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     if (now - reputationMiningWindowOpenTimestamp <= 3600) {
       uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
       uint256 target = (now - reputationMiningWindowOpenTimestamp ) * x;
-      require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target);
+      require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target, "colony-reputation-mining-cycle-closed");
     }
     _;
   }
@@ -163,7 +163,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   function resetWindow() public {
-    require(msg.sender == colonyNetworkAddress);
+    require(msg.sender == colonyNetworkAddress, "colony-reputation-mining-sender-not-network");
     reputationMiningWindowOpenTimestamp = now;
   }
 
@@ -172,7 +172,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   withinTarget(newHash, entryIndex)
   {
     // Limit the total number of miners allowed to submit a specific hash to 12
-    require (submittedHashes[newHash][nNodes].length < 12);
+    require(submittedHashes[newHash][nNodes].length < 12, "colony-reputation-mining-max-number-miners-reached");
 
     // If this is a new hash, increment nSubmittedHashes as such.
     if (submittedHashes[newHash][nNodes].length == 0) {
@@ -247,10 +247,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       // We just move the opponent on, and nothing else happens.
 
       // Ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
-      require(nHashesCompletedChallengeRound[round-1] == disputeRounds[round-1].length);
+      require(nHashesCompletedChallengeRound[round-1] == disputeRounds[round-1].length, "colony-reputation-mining-previous-dispute-round-not-complete");
 
       // Prevent us invalidating the final hash
-      require(disputeRounds[round].length > 1);
+      require(disputeRounds[round].length > 1, "colony-reputation-mining-cannot-invalidate-final-hash");
       // Move opponent on to next round
       disputeRounds[round+1].push(disputeRounds[round][opponentIdx]);
       delete disputeRounds[round][opponentIdx];
@@ -264,15 +264,15 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
         startPairingInRound(round+1);
       }
     } else {
-      require(disputeRounds[round].length > opponentIdx);
-      require(disputeRounds[round][opponentIdx].proposedNewRootHash != "");
+      require(disputeRounds[round].length > opponentIdx, "colony-reputation-mining-dispute-id-not-in-range");
+      require(disputeRounds[round][opponentIdx].proposedNewRootHash != "", "colony-reputation-mining-proposed-hash-empty");
 
       // Require that this is not better than its opponent.
-      require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted);
-      require(disputeRounds[round][opponentIdx].provedPreviousReputationUID >= disputeRounds[round][idx].provedPreviousReputationUID);
+      require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
+      require(disputeRounds[round][opponentIdx].provedPreviousReputationUID >= disputeRounds[round][idx].provedPreviousReputationUID, "colony-reputation-mining-less-reputation-uids-proven");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600); //'In time' is ten minutes here.
+      require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600, "colony-reputation-mining-failed-to-respond-in-time"); //'In time' is ten minutes here.
 
       // Work out whether we are invalidating just the supplied idx or its opponent too.
       bool eliminateOpponent = false;
@@ -323,7 +323,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   {
     // TODO: Check this challenge is active.
     // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
-    require(disputeRounds[round][idx].lowerBound!=disputeRounds[round][idx].upperBound);
+    require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
 
     uint256 targetNode = add(
       disputeRounds[round][idx].lowerBound,
@@ -337,7 +337,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
 
     bytes32 impliedRoot = getImpliedRoot(targetNodeBytes, jhIntermediateValue, branchMask, siblings);
-    require(impliedRoot==jrh, "colony-invalid-binary-search-response");
+    require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-response");
     // If require hasn't thrown, proof is correct.
     // Process the consequences
     processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode);
@@ -431,7 +431,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   ) public
   {
     // Require we've not submitted already.
-    require(disputeRounds[round][index].jrh == 0x0);
+    require(disputeRounds[round][index].jrh == 0x0, "colony-reputation-mining-hash-already-submitted");
 
     // Check the proofs for the JRH
     checkJRHProof1(jrh, branchMask1, siblings1);
@@ -455,7 +455,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     uint256 _nChildren
   ) public
   {
-    require(colonyNetworkAddress == msg.sender);
+    require(colonyNetworkAddress == msg.sender, "colony-reputation-mining-sender-not-network");
     uint reputationUpdateLogLength = reputationUpdateLog.length;
     uint nPreviousUpdates = 0;
     if (reputationUpdateLogLength > 0) {
@@ -545,8 +545,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
   }
 
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint256 reward, uint256 miningSkillId) public {
-    require(reputationUpdateLog.length==0);
-    require(msg.sender == colonyNetworkAddress);
+    require(msg.sender == colonyNetworkAddress, "colony-reputation-mining-sender-not-network");
+    require(reputationUpdateLog.length == 0, "colony-reputation-mining-log-length-non-zero");
     for (uint256 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
@@ -638,7 +638,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // We check that the reputation UID is right for the decay transition being disputed.
     // The key is then implicitly checked when they prove that the key+value they supplied is in the
     // right intermediate state in their justification tree.
-    require(uid-1 == _updateNumber);
+    require(uid-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
   function checkKeyLogEntry(uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal {
@@ -647,8 +647,10 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     ReputationLogEntry storage logEntry = reputationUpdateLog[logEntryNumber];
 
     // Check that the supplied log entry corresponds to this update number
-    require(updateNumber >= logEntry.nPreviousUpdates);
-    require(updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates);
+    require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
+    require(
+      updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates,
+      "colony-reputation-mining-update-number-part-of-following-log-entry-updates");
     uint expectedSkillId;
     address expectedAddress;
     (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(logEntry, updateNumber);
@@ -666,9 +668,9 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
                                               // any unintended side effects here, but I'm not quite confortable enough with EVM's stack to be sure.
                                               // Not sure what the alternative would be anyway.
     }
-    require(expectedAddress == userAddress);
-    require(logEntry.colony == colonyAddress);
-    require(expectedSkillId == skillId);
+    require(expectedAddress == userAddress, "colony-reputation-mining-user-address-mismatch");
+    require(logEntry.colony == colonyAddress, "colony-reputation-mining-colony-address-mismatch");
+    require(expectedSkillId == skillId, "colony-reputation-mining-skill-id-mismatch");
   }
 
   function getExpectedSkillIdAndAddress(ReputationLogEntry storage logEntry, uint256 updateNumber) internal view
@@ -739,7 +741,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       // This implies they are claiming that this is a new hash.
       return;
     }
-    require(impliedRoot == jrh);
+    require(impliedRoot == jrh, "colony-reputation-mining-invalid-before-reputation-proof");
     // They've actually verified whatever they claimed. We increment their challengeStepCompleted by one to indicate this.
     // In the event that our opponent lied about this reputation not existing yet in the tree, they will both complete
     // a call to respondToChallenge, but we will have a higher challengeStepCompleted value, and so they will be the ones
@@ -774,7 +776,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
 
     bytes32 impliedRoot = getImpliedRoot(firstDisagreeIdxBytes, jhLeafValue, u[U_DISAGREE_STATE_BRANCH_MASK], disagreeStateSiblings);
-    require(jrh==impliedRoot, "colony-invalid-after-reputation-proof");
+    require(jrh==impliedRoot, "colony-reputation-mining-invalid-after-reputation-proof");
   }
 
   function performReputationCalculation(
@@ -801,13 +803,13 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     if (agreeStateReputationUID != 0) {
       // i.e. if this was an existing reputation, then require that the ID hasn't changed.
       // TODO: Situation where it is not an existing reputation
-      require(agreeStateReputationUID==disagreeStateReputationUID);
+      require(agreeStateReputationUID==disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
     } else {
       uint256 previousNewReputationUID;
       assembly {
         previousNewReputationUID := mload(add(previousNewReputationValueBytes, 64))
       }
-      require(previousNewReputationUID+1 == disagreeStateReputationUID);
+      require(previousNewReputationUID + 1 == disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
       // Flag that we need to check that the reputation they supplied is in the 'agree' state.
       // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
       // this function, without adding a new variable to the stack in the parent function...
@@ -816,23 +818,23 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
-    if (u[U_DECAY_TRANSITION]==1) {
+    if (u[U_DECAY_TRANSITION] == 1) {
       // Very large reputation decays are calculated the 'other way around' to avoid overflows.
       if (agreeStateReputationValue > uint256(2**256 - 1)/uint256(10**15)) {
-        require(disagreeStateReputationValue == (agreeStateReputationValue/1000000000000000)*999679150010888);
+        require(disagreeStateReputationValue == (agreeStateReputationValue/1000000000000000)*999679150010888, "colony-reputation-mining-decay-incorrect");
       } else {
-        require(disagreeStateReputationValue == (agreeStateReputationValue*999679150010888)/1000000000000000);
+        require(disagreeStateReputationValue == (agreeStateReputationValue*999679150010888)/1000000000000000, "colony-reputation-mining-decay-incorrect");
       }
     } else {
       if (logEntry.amount < 0 && uint(logEntry.amount * -1) > agreeStateReputationValue ) {
-        require(disagreeStateReputationValue == 0);
+        require(disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
       } else if (uint(logEntry.amount) + agreeStateReputationValue < agreeStateReputationValue) {
         // We also don't allow reputation to overflow
-        require(disagreeStateReputationValue == 2**256 - 1);
+        require(disagreeStateReputationValue == 2**256 - 1, "colony-reputation-mining-reputation-not-max-uint");
       } else {
         // TODO: Is this safe? I think so, because even if there's over/underflows, they should
         // still be the same number.
-        require(int(agreeStateReputationValue)+logEntry.amount == int(disagreeStateReputationValue));
+        require(int(agreeStateReputationValue)+logEntry.amount == int(disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
       }
     }
   }
@@ -864,7 +866,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-    require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh);
+    require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
   function saveProvedReputation(uint256[11] u, bytes previousNewReputationValue) internal {
@@ -887,7 +889,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       mstore(add(jhLeafValue, 0x40), reputationRootHashNNodes)
     }
     bytes32 impliedRoot = getImpliedRoot(zero, jhLeafValue, branchMask1, siblings1);
-    require(jrh==impliedRoot, "colony-invalid-jrh-proof-1");
+    require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-1");
   }
 
   function checkJRHProof2(uint256 round, uint256 index, bytes32 jrh, uint256 branchMask2, bytes32[] siblings2) internal {
@@ -901,7 +903,8 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
     // TODO: we're calling this twice during submitJRH. Should only need to call once.
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
 
-    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates + reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
+    uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
+    reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;
@@ -913,7 +916,7 @@ contract ReputationMiningCycle is PatriciaTreeProofs, DSMath {
       mstore(add(nUpdatesBytes, 0x20), nUpdates)
     }
     bytes32 impliedRoot = getImpliedRoot(nUpdatesBytes, jhLeafValue, branchMask2, siblings2);
-    require(jrh==impliedRoot, "colony-invalid-jrh-proof-2");
+    require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-2");
 
   }
 

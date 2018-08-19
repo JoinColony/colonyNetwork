@@ -131,7 +131,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(colony.initialiseColony(0x0));
+      await checkErrorRevert(colony.initialiseColony(0x0), "colony-initialise-bad-address");
     });
 
     it("should correctly generate a rating secret", async () => {
@@ -361,8 +361,8 @@ contract("Colony", accounts => {
 
     it("should throw if length of inputs is not equal", async () => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
-      await checkErrorRevert(colony.bootstrapColony([INITIAL_ADDRESSES[0]], INITIAL_REPUTATIONS));
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, [INITIAL_REPUTATIONS[0]]));
+      await checkErrorRevert(colony.bootstrapColony([INITIAL_ADDRESSES[0]], INITIAL_REPUTATIONS), "colony-bootstrap-bad-inputs");
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, [INITIAL_REPUTATIONS[0]]), "colony-bootstrap-bad-inputs");
     });
 
     it("should not allow negative number", async () => {
@@ -375,7 +375,8 @@ contract("Colony", accounts => {
               .neg()
               .toString()
           ]
-        )
+        ),
+        "colony-bootstrap-bad-amount-input"
       );
     });
 
@@ -415,7 +416,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
           args: [taskId, WORKER]
-        })
+        }),
+        "colony-task-change-is-not-role-assignement"
       );
     });
 
@@ -431,7 +433,7 @@ contract("Colony", accounts => {
       const sigR = sigs.map(sig => sig.sigR[0]);
       const sigS = sigs.map(sig => sig.sigS[0]);
 
-      await checkErrorRevert(colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 10, txData));
+      await checkErrorRevert(colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 10, txData), "colony-task-role-assignment-non-zero-value");
     });
 
     it("should allow the worker and evaluator roles to be assigned", async () => {
@@ -473,7 +475,8 @@ contract("Colony", accounts => {
           signers: [MANAGER],
           sigTypes: [0],
           args: [taskId, EVALUATOR]
-        })
+        }),
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -487,7 +490,8 @@ contract("Colony", accounts => {
           signers: [MANAGER],
           sigTypes: [0],
           args: [taskId, WORKER]
-        })
+        }),
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -514,7 +518,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, OTHER]
-        })
+        }),
+        "colony-task-role-assignment-execution-failed"
       );
 
       await executeSignedRoleAssignment({
@@ -534,7 +539,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, OTHER]
-        })
+        }),
+        "colony-task-role-assignment-execution-failed"
       );
     });
 
@@ -586,7 +592,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, 0x0]
-        })
+        }),
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -604,7 +611,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
           args: [taskId, EVALUATOR]
-        })
+        }),
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -650,7 +658,8 @@ contract("Colony", accounts => {
           signers: [EVALUATOR],
           sigTypes: [0],
           args: [taskId, EVALUATOR]
-        })
+        }),
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       await checkErrorRevert(
@@ -661,7 +670,8 @@ contract("Colony", accounts => {
           signers: [WORKER],
           sigTypes: [0],
           args: [taskId, WORKER]
-        })
+        }),
+        "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       const evaluatorInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -715,7 +725,7 @@ contract("Colony", accounts => {
       assert.equal(worker[0], WORKER);
     });
 
-    it("should not allow role assignment if non of the signers is manager", async () => {
+    it("should not allow role assignment if none of the signers is manager", async () => {
       const taskId = await makeTask({ colony });
 
       await checkErrorRevert(
@@ -726,7 +736,8 @@ contract("Colony", accounts => {
           signers: [WORKER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, WORKER]
-        })
+        }),
+        "colony-task-role-assignment-not-signed-by-manager"
       );
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
@@ -764,7 +775,8 @@ contract("Colony", accounts => {
           signers: [OTHER],
           sigTypes: [0],
           args: [taskId, MANAGER]
-        })
+        }),
+        "colony-task-role-assignment-not-signed-by-manager"
       );
 
       const managerInfo = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
@@ -784,7 +796,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, EVALUATOR],
           sigTypes: [0, 0],
           args: [taskId, OTHER]
-        })
+        }),
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -802,7 +815,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, OTHER]
-        })
+        }),
+        "colony-task-role-assignment-execution-failed"
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -822,7 +836,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, 0x0]
-        })
+        }),
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -844,7 +859,7 @@ contract("Colony", accounts => {
         args: [taskId, WORKER]
       });
 
-      // Setting the manager
+      // Setting the evaluator
       await executeSignedRoleAssignment({
         colony,
         taskId,
@@ -863,7 +878,8 @@ contract("Colony", accounts => {
           signers: [EVALUATOR, WORKER],
           sigTypes: [0, 0],
           args: [taskId, WORKER]
-        })
+        }),
+        "colony-task-role-assignment-not-signed-by-manager"
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -1053,7 +1069,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, MANAGER],
           sigTypes: [0, 1],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
-        })
+        }),
+        "colony-task-duplicate-reviewers"
       );
       const task = await colony.getTask(taskId);
       assert.equal(task[0], SPECIFICATION_HASH);
@@ -1088,7 +1105,7 @@ contract("Colony", accounts => {
 
     it("should fail if a non-colony call is made to the task update functions", async () => {
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }));
+      await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "colony-not-self");
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {
@@ -1111,7 +1128,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
-        })
+        }),
+        "colony-task-change-does-not-meet-signatures-required"
       );
     });
 
@@ -1144,7 +1162,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, EVALUATOR],
           sigTypes: [0, 0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
-        })
+        }),
+        "colony-task-signatures-do-not-match-reviewer-2"
       );
     });
 
@@ -1159,7 +1178,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, EVALUATOR],
           sigTypes: [0, 0],
           args: [taskId, 0]
-        })
+        }),
+        "colony-task-change-does-not-meet-signatures-required"
       );
     });
 
@@ -1174,7 +1194,8 @@ contract("Colony", accounts => {
           signers: [MANAGER],
           sigTypes: [0],
           args: [10, SPECIFICATION_HASH_UPDATED]
-        })
+        }),
+        "colony-task-does-not-exist"
       );
     });
 
@@ -1191,7 +1212,8 @@ contract("Colony", accounts => {
           signers: [MANAGER, EVALUATOR],
           sigTypes: [0, 0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
-        })
+        }),
+        "colony-task-finalized"
       );
     });
 
@@ -1295,18 +1317,18 @@ contract("Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH));
+      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-already-finalized");
     });
 
     it("should fail if I try to submit work for a task that is past its due date", async () => {
       let dueDate = await currentBlockTime();
       dueDate -= 1;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
-      await checkErrorRevert(colony.submitTaskDeliverable(1, DELIVERABLE_HASH));
+      await checkErrorRevert(colony.submitTaskDeliverable(1, DELIVERABLE_HASH), "colony-task-due-date-passed");
     });
 
     it("should fail if I try to submit work for a task using an invalid id", async () => {
-      await checkErrorRevert(colony.submitTaskDeliverable(10, DELIVERABLE_HASH));
+      await checkErrorRevert(colony.submitTaskDeliverable(10, DELIVERABLE_HASH), "colony-task-does-not-exist");
     });
 
     it("should fail if I try to submit work twice", async () => {
@@ -1315,7 +1337,7 @@ contract("Colony", accounts => {
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
 
-      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: WORKER }));
+      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: WORKER }), "colony-task-deliverable-already-submitted");
       const task = await colony.getTask(1);
       assert.equal(task[1], DELIVERABLE_HASH);
     });
@@ -1325,7 +1347,7 @@ contract("Colony", accounts => {
       dueDate += SECONDS_PER_DAY * 4;
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
-      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }));
+      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: OTHER }), "colony-task-role-identity-mismatch");
       const task = await colony.getTask(1);
       assert.notEqual(task[1], DELIVERABLE_HASH);
     });
@@ -1356,20 +1378,20 @@ contract("Colony", accounts => {
     it("should fail if the task work ratings have not been assigned", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
-      await checkErrorRevert(colony.finalizeTask(taskId));
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-worker-rating-missing");
     });
 
     it("should fail if I try to accept a task that was finalized before", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.finalizeTask(taskId));
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-already-finalized");
     });
 
     it("should fail if I try to accept a task using an invalid id", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await setupRatedTask({ colonyNetwork, colony, token });
-      await checkErrorRevert(colony.finalizeTask(10));
+      await checkErrorRevert(colony.finalizeTask(10), "colony-task-does-not-exist");
     });
 
     it("should log a TaskFinalized event", async () => {
@@ -1450,11 +1472,11 @@ contract("Colony", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.cancelTask(taskId));
+      await checkErrorRevert(colony.cancelTask(taskId), "colony-task-already-finalized");
     });
 
     it("should fail if manager tries to cancel a task with invalid id", async () => {
-      await checkErrorRevert(colony.cancelTask(10));
+      await checkErrorRevert(colony.cancelTask(10), "colony-task-does-not-exist");
     });
 
     it("should log a TaskCanceled event", async () => {
@@ -1721,7 +1743,7 @@ contract("Colony", accounts => {
     it("should return error when task is not finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address));
+      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address), "colony-task-not-finalized");
     });
 
     it("should return error when called by account that doesn't match the role", async () => {
@@ -1729,7 +1751,7 @@ contract("Colony", accounts => {
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
 
-      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }));
+      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }), "colony-claim-payout-access-denied");
     });
   });
 
@@ -1767,21 +1789,21 @@ contract("Colony", accounts => {
       const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.setOwnerRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.setAdminRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.removeAdminRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.setRecoveryRole(accounts[1], { from: owner }));
-      await checkErrorRevert(colony.removeRecoveryRole(accounts[1], { from: owner }));
+      await checkErrorRevert(colony.setOwnerRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdminRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.removeAdminRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setRecoveryRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.removeRecoveryRole(accounts[1], { from: owner }), "colony-in-recovery-mode");
     });
 
     it("should not be able to call normal functions while in recovery", async () => {
       const owner = accounts[0];
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }));
-      await checkErrorRevert(colony.mintTokens(1000, { from: owner }));
-      await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }));
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }));
+      await checkErrorRevert(colony.initialiseColony("0x0", { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.mintTokens(1000, { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.addGlobalSkill(0, { from: owner }), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, { from: owner }), "colony-in-recovery-mode");
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
@@ -1795,11 +1817,11 @@ contract("Colony", accounts => {
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
 
       // 0/3 approve
-      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
+      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber(), { from: owner }), "colony-recovery-exit-insufficient-approvals");
 
       // 1/3 approve
       await colony.approveExitRecovery({ from: owner });
-      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber()), { from: owner });
+      await checkErrorRevert(colony.exitRecoveryMode(version.toNumber(), { from: owner }), "colony-recovery-exit-insufficient-approvals");
 
       // 2/3 approve
       await colony.approveExitRecovery({ from: accounts[1] });
@@ -1828,7 +1850,7 @@ contract("Colony", accounts => {
       await colony.setStorageSlotRecovery(5, "0xdeadbeef", { from: owner });
 
       await colony.approveExitRecovery({ from: owner });
-      await checkErrorRevert(colony.approveExitRecovery({ from: owner }));
+      await checkErrorRevert(colony.approveExitRecovery({ from: owner }), "colony-recovery-approval-already-given");
     });
 
     it("users cannot approve if unauthorized", async () => {
@@ -1854,7 +1876,7 @@ contract("Colony", accounts => {
 
       await colony.setRecoveryRole(owner, { from: owner });
       await colony.enterRecoveryMode({ from: owner });
-      await checkErrorRevert(colony.setStorageSlotRecovery(protectedLoc, "0xdeadbeef", { from: owner }));
+      await checkErrorRevert(colony.setStorageSlotRecovery(protectedLoc, "0xdeadbeef", { from: owner }), "colony-protected-variable");
     });
   });
 });

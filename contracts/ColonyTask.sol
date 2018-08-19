@@ -41,56 +41,56 @@ contract ColonyTask is ColonyStorage {
     // Manager rated by worker
     // Worker rated by evaluator
     if (_role == MANAGER) {
-      require(tasks[_id].roles[WORKER].user == msg.sender);
+      require(tasks[_id].roles[WORKER].user == msg.sender, "colony-user-cannot-rate-task-manager");
     } else if (_role == WORKER) {
-      require(tasks[_id].roles[EVALUATOR].user == msg.sender);
+      require(tasks[_id].roles[EVALUATOR].user == msg.sender, "colony-user-cannot-rate-task-worker");
     } else {
-      revert();
+      revert("colony-unsupported-role-to-rate");
     }
     _;
   }
 
   modifier ratingSecretDoesNotExist(uint256 _id, uint8 _role) {
-    require(taskWorkRatings[_id].secret[_role] == "");
+    require(taskWorkRatings[_id].secret[_role] == "", "colony-task-rating-secret-already-exists");
     _;
   }
 
   modifier workNotSubmitted(uint256 _id) {
-    require(tasks[_id].deliverableTimestamp == 0);
+    require(tasks[_id].deliverableTimestamp == 0, "colony-task-deliverable-already-submitted");
     _;
   }
 
   modifier beforeDueDate(uint256 _id) {
-    require(tasks[_id].dueDate >= now);
+    require(tasks[_id].dueDate >= now, "colony-task-due-date-passed");
     _;
   }
 
   modifier taskWorkRatingCommitOpen(uint256 _id) {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
-    require(ratingSecrets.count < 2);
+    require(ratingSecrets.count < 2, "colony-task-rating-all-secrets-submitted");
 
     // Check we are either past the due date or work has already been submitted
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    require(taskCompletionTime > 0 && taskCompletionTime <= now);
+    require(taskCompletionTime > 0 && taskCompletionTime <= now, "colony-task-not-complete");
 
     // Check we are within 5 days of the work submission time
-    require(sub(now, taskCompletionTime) <= RATING_COMMIT_TIMEOUT);
+    require(sub(now, taskCompletionTime) <= RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-submit-period-closed");
     _;
   }
 
   modifier taskWorkRatingRevealOpen(uint256 _id) {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
-    require(ratingSecrets.count <= 2);
+    require(ratingSecrets.count <= 2, "colony-task-rating-more-secrets-submitted-than-expected");
 
     // If both ratings have been received, start the reveal period from the time of the last rating commit
     // Otherwise start the reveal period after the commit period has expired
     // In both cases, keep reveal period open for 5 days
     if (ratingSecrets.count == 2) {
-      require(sub(now, ratingSecrets.timestamp) <= RATING_REVEAL_TIMEOUT);
+      require(sub(now, ratingSecrets.timestamp) <= RATING_REVEAL_TIMEOUT, "colony-task-rating-secret-reveal-period-closed");
     } else if (ratingSecrets.count < 2) {
       uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-      require(sub(now, taskCompletionTime) > RATING_COMMIT_TIMEOUT);
-      require(sub(now, taskCompletionTime) <= add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT));
+      require(sub(now, taskCompletionTime) > RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-reveal-period-not-open");
+      require(sub(now, taskCompletionTime) <= add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT), "colony-task-rating-secret-reveal-period-closed");
     }
     _;
   }
@@ -98,13 +98,13 @@ contract ColonyTask is ColonyStorage {
   modifier taskWorkRatingsClosed(uint256 _id) {
     uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
     // More than 10 days from work submission have passed
-    require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT));
+    require(sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT), "colony-task-rating-period-still-open");
     _;
   }
 
   modifier taskWorkRatingsAssigned(uint256 _id) {
-    require(tasks[_id].roles[WORKER].rating != TaskRatings.None);
-    require(tasks[_id].roles[MANAGER].rating != TaskRatings.None);
+    require(tasks[_id].roles[WORKER].rating != TaskRatings.None, "colony-task-worker-rating-missing");
+    require(tasks[_id].roles[MANAGER].rating != TaskRatings.None, "colony-task-manager-rating-missing");
     _;
   }
 
@@ -150,14 +150,15 @@ contract ColonyTask is ColonyStorage {
     uint256 _value,
     bytes _data) public stoppable
   {
-    require(_value == 0);
-    require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
+    require(_value == 0, "colony-task-change-non-zero-value");
+    require(_sigR.length == _sigS.length && _sigR.length == _sigV.length, "colony-task-change-signatures-count-do-not-match");
 
     bytes4 sig;
     uint256 taskId;
     (sig, taskId) = deconstructCall(_data);
-    require(!tasks[taskId].finalized);
-    require(!roleAssignmentSigs[sig]);
+    require(taskId <= taskCount, "colony-task-does-not-exist");
+    require(!tasks[taskId].finalized, "colony-task-finalized");
+    require(!roleAssignmentSigs[sig], "colony-task-change-is-role-assignement");
 
     uint8 nSignaturesRequired;
     if (tasks[taskId].roles[reviewers[sig][0]].user == address(0) || tasks[taskId].roles[reviewers[sig][1]].user == address(0)) {
@@ -170,7 +171,7 @@ contract ColonyTask is ColonyStorage {
       nSignaturesRequired = 2;
     }
 
-    require(_sigR.length == nSignaturesRequired);
+    require(_sigR.length == nSignaturesRequired, "colony-task-change-does-not-meet-signatures-required");
 
     bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
     address[] memory reviewerAddresses = getReviewerAddresses(
@@ -183,19 +184,21 @@ contract ColonyTask is ColonyStorage {
 
     require(
       reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][0]].user ||
-      reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user
+      reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user,
+      "colony-task-signatures-do-not-match-reviewer-1"
     );
 
     if (nSignaturesRequired == 2) {
-      require(reviewerAddresses[0] != reviewerAddresses[1]);
+      require(reviewerAddresses[0] != reviewerAddresses[1], "colony-task-duplicate-reviewers");
       require(
         reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][0]].user ||
-        reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][1]].user
+        reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][1]].user,
+        "colony-task-signatures-do-not-match-reviewer-2"
       );
     }
 
     taskChangeNonces[taskId]++;
-    require(executeCall(address(this), _value, _data));
+    require(executeCall(address(this), _value, _data), "colony-task-change-execution-failed");
   }
 
   function executeTaskRoleAssignment(
@@ -206,15 +209,15 @@ contract ColonyTask is ColonyStorage {
     uint256 _value,
     bytes _data) public stoppable
   {
-    require(_value == 0);
-    require(_sigR.length == _sigS.length && _sigR.length == _sigV.length);
+    require(_value == 0, "colony-task-role-assignment-non-zero-value");
+    require(_sigR.length == _sigS.length && _sigR.length == _sigV.length, "colony-task-role-assignment-signatures-count-do-not-match");
 
     bytes4 sig;
     uint256 taskId;
     address userAddress;
     (sig, taskId, userAddress) = deconstructRoleChangeCall(_data);
 
-    require(roleAssignmentSigs[sig]);
+    require(roleAssignmentSigs[sig], "colony-task-change-is-not-role-assignement");
 
     uint8 nSignaturesRequired;
     // If manager wants to set himself to a role
@@ -223,7 +226,7 @@ contract ColonyTask is ColonyStorage {
     } else {
       nSignaturesRequired = 2;
     }
-    require(_sigR.length == nSignaturesRequired);
+    require(_sigR.length == nSignaturesRequired, "colony-task-role-assignment-does-not-meet-required-signatures");
 
     bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
     address[] memory reviewerAddresses = getReviewerAddresses(
@@ -236,25 +239,30 @@ contract ColonyTask is ColonyStorage {
 
     if (nSignaturesRequired == 1) {
       // Since we want to set a manager as an evaluator, require just manager's signature
-      require(reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user);
+      require(reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user, "colony-task-role-assignment-not-signed-by-manager");
     } else {
       // One of signers must be a manager
-      require(reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user || reviewerAddresses[1] == tasks[taskId].roles[MANAGER].user);
+      require(
+        reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user ||
+        reviewerAddresses[1] == tasks[taskId].roles[MANAGER].user,
+        "colony-task-role-assignment-not-signed-by-manager"
+      );
       // One of the signers must be an address we want to set here
-      require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1]);
+      require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1], "colony-task-role-assignment-not-signed-by-new-user-for-role");
       // Require that signatures are not from the same address
       // This will never throw, because we require that manager is one of the signers,
       // and if manager is both signers, then `userAddress` must also be a manager, and if
       // `userAddress` is a manager, then we require 1 signature (will be kept for possible future changes)
-      require(reviewerAddresses[0] != reviewerAddresses[1]);
+      require(reviewerAddresses[0] != reviewerAddresses[1], "colony-task-role-assignment-duplicate-signatures");
     }
 
     taskChangeNonces[taskId]++;
-    require(executeCall(address(this), _value, _data));
+    require(executeCall(address(this), _value, _data), "colony-task-role-assignment-execution-failed");
   }
 
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
   stoppable
+  taskExists(_id)
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
   taskWorkRatingCommitOpen(_id)
@@ -271,10 +279,10 @@ contract ColonyTask is ColonyStorage {
   {
     // MAYBE: we should hash these the other way around, i.e. generateSecret(_rating, _salt)
     bytes32 ratingSecret = generateSecret(_salt, _rating);
-    require(ratingSecret == taskWorkRatings[_id].secret[_role]);
+    require(ratingSecret == taskWorkRatings[_id].secret[_role], "colony-task-rating-secret-mismatch");
 
     TaskRatings rating = TaskRatings(_rating);
-    require(rating != TaskRatings.None, "Cannot rate None!");
+    require(rating != TaskRatings.None, "colony-task-rating-missing");
     tasks[_id].roles[_role].rating = rating;
 
     emit TaskWorkRatingRevealed(_id, _role, _rating);
@@ -324,13 +332,13 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
-    require(tasks[_id].roles[EVALUATOR].user == 0x0);
+    require(tasks[_id].roles[EVALUATOR].user == 0x0, "colony-task-evaluator-role-already-assigned");
     setTaskRoleUser(_id, EVALUATOR, _user);
   }
 
   function setTaskWorkerRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
-    require(tasks[_id].roles[WORKER].user == 0x0);
+    require(tasks[_id].roles[WORKER].user == 0x0, "colony-task-worker-role-already-assigned");
     setTaskRoleUser(_id, WORKER, _user);
   }
 
@@ -344,10 +352,10 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
   stoppable
-  confirmTaskRoleIdentity(_id, MANAGER)
   taskExists(_id)
   taskNotFinalized(_id)
   domainExists(_domainId)
+  confirmTaskRoleIdentity(_id, MANAGER)
   {
     tasks[_id].domainId = _domainId;
 
@@ -356,11 +364,11 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskSkill(uint256 _id, uint256 _skillId) public
   stoppable
-  self()
   taskExists(_id)
   taskNotFinalized(_id)
   skillExists(_skillId)
   globalSkill(_skillId)
+  self()
   {
     tasks[_id].skills[0] = _skillId;
 
@@ -369,9 +377,9 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
   stoppable
-  self()
   taskExists(_id)
   taskNotFinalized(_id)
+  self()
   {
     tasks[_id].specificationHash = _specificationHash;
 
@@ -380,9 +388,9 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   stoppable
-  self()
   taskExists(_id)
   taskNotFinalized(_id)
+  self()
   {
     tasks[_id].dueDate = _dueDate;
 
@@ -405,6 +413,7 @@ contract ColonyTask is ColonyStorage {
 
   function finalizeTask(uint256 _id) public
   stoppable
+  taskExists(_id)
   taskWorkRatingsAssigned(_id)
   taskNotFinalized(_id)
   {
@@ -468,7 +477,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function getReputation(int payout, uint8 rating, bool rateFail) internal pure returns(int reputation) {
-    require(rating > 0 && rating <= 3, "Invalid rating");
+    require(rating > 0 && rating <= 3, "colony-task-rating-invalid");
 
     // -1, 1, 1.5 multipliers, -0.5 penalty
     int8[3] memory ratingMultipliers = [-2, 2, 3];

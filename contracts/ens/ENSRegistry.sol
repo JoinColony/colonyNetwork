@@ -17,7 +17,7 @@ contract ENSRegistry is ENS {
   // Permits modifications only by the owner of the specified node, or if unowned.
   modifier onlyOwner(bytes32 node) {
     address currentOwner = records[node].owner;
-    require(currentOwner == 0 || currentOwner == msg.sender);
+    require(currentOwner == 0 || currentOwner == msg.sender, "colony-ens-non-owner-access");
     _;
   }
 

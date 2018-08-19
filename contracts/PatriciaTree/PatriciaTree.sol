@@ -32,7 +32,7 @@ contract PatriciaTree is IPatriciaTree, PatriciaTreeProofs {
   }
 
   function getProof(bytes key) public view returns (uint branchMask, bytes32[] _siblings) {
-    require(tree.root != 0);
+    require(tree.root != 0, "colony-patricia-tree-zero-tree-root");
     Data.Label memory k = Data.Label(keccak256(key), 256);
     Data.Edge memory e = tree.rootEdge;
     bytes32[256] memory siblings;
