@@ -1494,19 +1494,10 @@ contract("Colony", accounts => {
 
   describe("when funding tasks", () => {
     it("should be able to set the task payouts for different roles", async () => {
-      const taskId = await makeTask({ colony });
-
       let dueDate = await currentBlockTime();
       dueDate += SECONDS_PER_DAY * 7;
 
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskDueDate",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, dueDate]
-      });
+      const taskId = await makeTask({ colony, dueDate });
 
       await executeSignedRoleAssignment({
         colony,
