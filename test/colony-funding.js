@@ -696,6 +696,35 @@ contract("Colony Funding", accounts => {
       );
     });
 
+    it("should not be able to create reward payout if passed reputation is not from the correct colony", async () => {
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+      const { logs } = await colonyNetwork.createColony(newToken.address);
+      const { colonyAddress } = logs[0].args;
+      const newColony = await IColony.at(colonyAddress);
+
+      const result = await colony.getDomain(1);
+      const rootDomainSkill = result.skillId;
+
+      await miningClient.insert(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000", toBN(10), 0);
+
+      await forwardTime(3600, this);
+      await miningClient.submitRootHash();
+
+      const addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      const repCycle = await ReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill.toNumber());
+      const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
+      colonyWideReputationProof = [key, value, branchMask, siblings];
+
+      await checkErrorRevert(
+        colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof),
+        "colony-reputation-invalid-colony-address"
+      );
+    });
+
     it("should not be able to create reward payout if skill id is not from root domain", async () => {
       const funding = toBN(360 * 1e18);
       await fundColonyWithTokens(colony, token, funding.toString());
