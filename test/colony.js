@@ -45,7 +45,7 @@ import {
   makeTask
 } from "../helpers/test-data-generator";
 
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+import { setupColonyVersionResolver, setupReputationVersionResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -59,7 +59,9 @@ const Token = artifacts.require("Token");
 const Authority = artifacts.require("Authority");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
+const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
 
 contract("Colony", accounts => {
   const MANAGER = accounts[0];
@@ -86,6 +88,11 @@ contract("Colony", accounts => {
 
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
+
+    const reputationMiningCycle = await ReputationMiningCycle.new();
+    const reputationMiningCycleRespond = await ReputationMiningCycleRespond.new();
+    const reputationMiningCycleResolver = await Resolver.new();
+    await setupReputationVersionResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
@@ -382,7 +389,7 @@ contract("Colony", accounts => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-      const inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+      const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);

@@ -19,8 +19,9 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "./ColonyNetworkStorage.sol";
-import "./ReputationMiningCycle.sol";
 import "./ERC20Extended.sol";
+import "./IReputationMiningCycle.sol";
+import "./EtherRouter.sol";
 
 
 contract ColonyNetworkMining is ColonyNetworkStorage {
@@ -46,7 +47,10 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     require(inactiveReputationMiningCycle == 0x0, "colony-reputation-mining-already-initialised");
     address clnyToken = IColony(metaColony).getToken();
     require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
-    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
+
+    inactiveReputationMiningCycle = new EtherRouter();
+    EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
+    IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
   }
 
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
@@ -58,8 +62,11 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     require(inactiveReputationMiningCycle != 0x0, "colony-reputation-mining-not-initialised");
     // Inactive now becomes active
     activeReputationMiningCycle = inactiveReputationMiningCycle;
-    ReputationMiningCycle(activeReputationMiningCycle).resetWindow();
-    inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
+    IReputationMiningCycle(activeReputationMiningCycle).resetWindow();
+
+    inactiveReputationMiningCycle = new EtherRouter();
+    EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
+    IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
     emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNNodes);
   }
 
@@ -89,7 +96,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     IColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
 
     // This gives them reputation in the next update cycle.
-    ReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward, rootGlobalSkillId + 2);
+    IReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward, rootGlobalSkillId + 2);
 
     for (uint256 i = 0; i < stakers.length; i++) {
       // Also give them some newly minted tokens.

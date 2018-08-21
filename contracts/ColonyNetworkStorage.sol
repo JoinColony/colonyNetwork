@@ -40,6 +40,8 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   mapping (address => bool) _isColony;
   // Maps colony contract versions to respective resolvers
   mapping (uint256 => address) colonyVersionResolver;
+  // Contains the address of the resolver for ReputationMiningCycle
+  address miningCycleResolver;
 
   struct Skill {
     // total number of parent skills

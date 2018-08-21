@@ -8,7 +8,7 @@ import { MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
 
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+import { setupColonyVersionResolver, setupReputationVersionResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -21,7 +21,9 @@ const Colony = artifacts.require("Colony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
+const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
 
 contract("Colony Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -59,10 +61,16 @@ contract("Colony Reputation Updates", accounts => {
       .mul(new BN(1000))
       .toString();
     await fundColonyWithTokens(metaColony, colonyToken, amount);
+
+    const reputationMiningCycle = await ReputationMiningCycle.new();
+    const reputationMiningCycleRespond = await ReputationMiningCycleRespond.new();
+    const reputationMiningCycleResolver = await Resolver.new();
+    await setupReputationVersionResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
+
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
     const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-    inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+    inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
   });
 
   describe("when added", () => {

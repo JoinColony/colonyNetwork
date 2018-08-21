@@ -196,5 +196,11 @@ contract IReputationMiningCycle {
   /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public;
 
-  function reputationMiningWindowOpenTimestamp() public view returns (uint timestamp);
+  function getReputationMiningWindowOpenTimestamp() public view returns (uint timestamp);
+
+  function initialise(address tokenLocking, address clnyToken) public;
+
+  function getNSubmittedHashes() public view returns (uint nSubmittedHashes);
+  function getNInvalidatedHashes() public view returns (uint nInvalidatedHashes);
+  function getSubmittedHashes(bytes32 hash, uint256 nNodes, uint256 index) public view returns (address user);
 }
