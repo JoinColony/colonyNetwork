@@ -750,7 +750,7 @@ class ReputationMiner {
       const event = events[i];
       const hash = event.data.slice(0, 66);
       if (applyLogs) {
-        const nNodes = ethers.utils.bigNumberify(`0x${event.data.slice(66)}`);
+        const nNodes = ethers.utils.bigNumberify(`0x${event.data.slice(66, 130)}`);
         const previousBlock = event.blockNumber - 1;
         await this.addLogContentsToReputationTree(previousBlock); // eslint-disable-line no-await-in-loop
         localHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
