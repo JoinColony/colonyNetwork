@@ -49,6 +49,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
   }
 
+  event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
+
   function startNextCycle() public {
     address clnyToken = IColony(metaColony).getToken();
     require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
@@ -58,6 +60,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     ReputationMiningCycle(activeReputationMiningCycle).resetWindow();
     inactiveReputationMiningCycle = new ReputationMiningCycle(tokenLocking, clnyToken);
+    emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNNodes);
   }
 
   function getReputationMiningCycle(bool _active) public view returns(address) {

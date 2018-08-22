@@ -42,6 +42,11 @@ contract IColonyNetwork {
   /// @param quantity Quantity of `token` to auction
   event AuctionCreated(address auction, address token, uint256 quantity);
 
+  /// @notice Event logged when a reputation mining cycle completes
+  /// @param hash The root hash of the newly accepted reputation state
+  /// @param nNodes The number of nodes in the reputation state
+  event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
+
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0
   function getMetaColony() public view returns (address colonyAddress);

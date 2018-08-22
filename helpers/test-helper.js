@@ -137,6 +137,18 @@ export async function currentBlockTime() {
   return p;
 }
 
+export async function currentBlock() {
+  const p = new Promise((resolve, reject) => {
+    web3.eth.getBlock("latest", (err, res) => {
+      if (err) {
+        return reject(err);
+      }
+      return resolve(res);
+    });
+  });
+  return p;
+}
+
 export async function getBlockTime(blockNumber) {
   const p = new Promise((resolve, reject) => {
     web3.eth.getBlock(blockNumber, (err, res) => {
