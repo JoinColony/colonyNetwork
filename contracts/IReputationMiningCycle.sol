@@ -196,11 +196,22 @@ contract IReputationMiningCycle {
   /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public;
 
+  /// @notice Get the timestamp that the current reputation mining window opened
   function getReputationMiningWindowOpenTimestamp() public view returns (uint timestamp);
 
+  /// @notice Initialise this reputation mining cycle.
+  /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract
   function initialise(address tokenLocking, address clnyToken) public;
 
+  /// @notice Get the number of hashes that have been submitted this mining cycle
   function getNSubmittedHashes() public view returns (uint nSubmittedHashes);
+
+  /// @notice Get the number of hashes that have been invalidated this mining cycle
   function getNInvalidatedHashes() public view returns (uint nInvalidatedHashes);
+
+  /// @notice Get the address that made a particular submission
+  /// @param hash The hash that was submitted
+  /// @param nNodes The number of nodes that was submitted
+  /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
   function getSubmittedHashes(bytes32 hash, uint256 nNodes, uint256 index) public view returns (address user);
 }
