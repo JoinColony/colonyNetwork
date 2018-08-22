@@ -23,6 +23,7 @@ import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./Authority.sol";
+import "./PatriciaTree/PatriciaTreeProofs.sol";
 
 
 contract ColonyStorage is DSAuth, DSMath {
@@ -55,6 +56,8 @@ contract ColonyStorage is DSAuth, DSMath {
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
     bytes32 reputationState;
+    // Colony wide reputation
+    uint256 colonyWideReputation;
     // Total tokens at the time of reward payout creation
     uint256 totalTokens;
     // Amount alocated for reward payout

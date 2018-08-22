@@ -224,11 +224,12 @@ class ReputationMiner {
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
       const nNodes = await this.colonyNetwork.getReputationRootHashNNodes();
-      if (!nNodes.eq(0)) {
+      const rootHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
+      if (!nNodes.eq(0) && rootHash !== interimHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
       }
       // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
-      interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
+      interimHash = rootHash;
       jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     } else {
       const prevKey = await this.getKeyForUpdateNumber(updateNumber.sub(1));
@@ -254,7 +255,10 @@ class ReputationMiner {
     // TODO: Include updates for all child skills if x.amount is negative
     // We update colonywide sums first (children, parents, skill)
     // Then the user-specifc sums in the order children, parents, skill.
-    await this.insert(colonyAddress, skillId, userAddress, score, updateNumber);
+
+    // Converting to decimal, since its going to be converted to hex inside `insert`
+    const skillIdDecimal = new BN(skillId, 16).toString();
+    await this.insert(colonyAddress, skillIdDecimal, userAddress, score, updateNumber);
   }
 
   /**

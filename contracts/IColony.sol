@@ -502,7 +502,11 @@ contract IColony {
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
   /// @param _token Address of the token used for reward payout
-  function startNextRewardPayout(address _token) public;
+  /// @param key Some Reputation hash tree key
+  /// @param value Reputation value
+  /// @param branchMask The branchmask of the proof
+  /// @param siblings The siblings of the proof
+  function startNextRewardPayout(address _token, bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public;
 
   /// @notice Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation
   /// which will be proven via Merkle proof inside this function.
@@ -517,19 +521,30 @@ contract IColony {
   /// _squareRoots[4] - square root of numerator (user reputation * user tokens)
   /// _squareRoots[5] - square root of denominator (total reputation * total tokens)
   /// _squareRoots[6] - square root of payout amount
-  /// @param _userReputation User reputation at the point of creation of reward payout cycle
-  /// @param _totalReputation Total reputation at the point of creation of reward payout cycle
-  function claimRewardPayout(uint256 _payoutId, uint256[7] _squareRoots, uint256 _userReputation, uint256 _totalReputation) public;
+  /// @param key Some Reputation hash tree key
+  /// @param value Reputation value
+  /// @param branchMask The branchmask of the proof
+  /// @param siblings The siblings of the proof
+  function claimRewardPayout(
+    uint256 _payoutId,
+    uint256[7] _squareRoots,
+    bytes key,
+    bytes value,
+    uint256 branchMask,
+    bytes32[] siblings
+    ) public;
 
   /// @notice Get useful information about specific reward payout
   /// @param _payoutId Id of the reward payout
   /// @return reputationState Reputation root hash at the time of creation
+  /// @return colonyWideReputation Colony wide reputation in `reputationState`
   /// @return totalTokens Total colony tokens at the time of creation
   /// @return amount Total amount of tokens taken aside for reward payout
   /// @return tokenAddress Token address
   /// @return blockTimestamp Block number at the time of creation
   function getRewardPayoutInfo(uint256 _payoutId) public view returns (
     bytes32 reputationState,
+    uint256 colonyWideReputation,
     uint256 totalTokens,
     uint256 amount,
     address tokenAddress,

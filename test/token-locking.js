@@ -1,21 +1,35 @@
 /* globals artifacts */
+import { toBN } from "web3-utils";
+import path from "path";
+import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
+import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey } from "../helpers/test-helper";
+import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
 
-import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
+import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
+const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 
-contract("TokenLocking", accounts => {
-  const usersTokens = 6;
-  const userAddress = accounts[1];
+const contractLoader = new TruffleLoader({
+  contractDir: path.resolve(__dirname, "..", "build", "contracts")
+});
+
+const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+
+contract("TokenLocking", addresses => {
+  const usersTokens = 10;
+  const otherUserTokens = 100;
+  const userAddress = addresses[1];
   let token;
   let tokenLocking;
   let otherToken;
   let colonyNetwork;
   let colony;
+  let colonyWideReputationProof;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
@@ -27,15 +41,44 @@ contract("TokenLocking", accounts => {
   beforeEach(async () => {
     let tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
-    await token.mint(usersTokens);
-    await token.transfer(userAddress, usersTokens);
-
     tokenArgs = getTokenArgs();
     otherToken = await Token.new(...tokenArgs);
 
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
+    await token.setOwner(colony.address);
+    await colony.mintTokens(usersTokens + otherUserTokens);
+    await colony.bootstrapColony([userAddress], [usersTokens]);
+
+    let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+    await forwardTime(3600, this);
+    let repCycle = await ReputationMiningCycle.at(addr);
+    await repCycle.submitRootHash("0x00", 0, 10);
+    await repCycle.confirmNewHash(0);
+
+    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], toBN(10).pow(toBN(18)));
+
+    const miningClient = new ReputationMiner({
+      loader: contractLoader,
+      minerAddress: addresses[4],
+      realProviderPort: REAL_PROVIDER_PORT,
+      useJsTree: true
+    });
+    await miningClient.initialise(colonyNetwork.address);
+    await miningClient.addLogContentsToReputationTree();
+    await forwardTime(3600, this);
+    await miningClient.submitRootHash();
+
+    addr = await colonyNetwork.getReputationMiningCycle.call(true);
+    repCycle = await ReputationMiningCycle.at(addr);
+    await repCycle.confirmNewHash(0);
+
+    const result = await colony.getDomain(1);
+    const rootDomainSkill = result.skillId;
+    const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill.toNumber());
+    const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
+    colonyWideReputationProof = [key, value, branchMask, siblings];
   });
 
   describe("when locking tokens", async () => {
@@ -78,8 +121,7 @@ contract("TokenLocking", accounts => {
     });
 
     it("should not be able to withdraw if specified amount is greated than deposited", async () => {
-      const otherUserTokens = 100;
-      await token.mint(otherUserTokens);
+      await colony.bootstrapColony([addresses[0]], [otherUserTokens]);
       await token.approve(tokenLocking.address, otherUserTokens);
       await tokenLocking.deposit(token.address, otherUserTokens);
 
@@ -156,7 +198,7 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      await colony.startNextRewardPayout(otherToken.address);
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
       assert.equal(totalLockCount.toNumber(), 1);
     });
@@ -168,7 +210,7 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      const { logs } = await colony.startNextRewardPayout(otherToken.address);
+      const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.id;
 
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, {
@@ -180,7 +222,7 @@ contract("TokenLocking", accounts => {
     });
 
     it("should not be able to waive to id that does not exist", async () => {
-      await colony.startNextRewardPayout(otherToken.address);
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
 
       await checkErrorRevert(
         tokenLocking.incrementLockCounterTo(token.address, 10, {
@@ -207,7 +249,7 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      const { logs } = await colony.startNextRewardPayout(otherToken.address);
+      const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.id;
       await checkErrorRevert(tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId), "colony-token-locking-sender-not-colony");
     });
@@ -234,7 +276,7 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      await colony.startNextRewardPayout(otherToken.address);
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       await checkErrorRevert(
         tokenLocking.deposit(token.address, usersTokens, {
           from: userAddress
@@ -250,7 +292,7 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      await colony.startNextRewardPayout(otherToken.address);
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       await checkErrorRevert(
         tokenLocking.withdraw(token.address, usersTokens, {
           from: userAddress
@@ -266,7 +308,7 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      const { logs } = await colony.startNextRewardPayout(otherToken.address);
+      const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.id;
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, {
         from: userAddress
@@ -286,18 +328,18 @@ contract("TokenLocking", accounts => {
       await tokenLocking.deposit(token.address, usersTokens, {
         from: userAddress
       });
-      await colony.startNextRewardPayout(otherToken.address);
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
 
       const tokenArgs = getTokenArgs();
       const newToken = await Token.new(...tokenArgs);
-      await colony.startNextRewardPayout(newToken.address);
+      await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
 
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
       assert.equal(totalLockCount.toNumber(), 2);
     });
 
     it("should be able to set user lock count equal to total lock count when depositing if user had 0 deposited tokens", async () => {
-      await colony.startNextRewardPayout(otherToken.address);
+      await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
 
       await token.approve(tokenLocking.address, usersTokens, {
         from: userAddress
@@ -314,7 +356,7 @@ contract("TokenLocking", accounts => {
     });
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(tokenLocking.punishStakers([accounts[0], accounts[1]]), "colony-token-locking-sender-not-reputation-mining-cycle");
+      await checkErrorRevert(tokenLocking.punishStakers([addresses[0], addresses[1]]), "colony-token-locking-sender-not-reputation-mining-cycle");
     });
   });
 });

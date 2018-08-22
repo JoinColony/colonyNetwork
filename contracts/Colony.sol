@@ -19,7 +19,6 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "./ColonyStorage.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
 import "./EtherRouter.sol";
 
 
