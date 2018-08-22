@@ -805,6 +805,16 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await IReputationMiningCycle.at(addr);
       await checkErrorRevert(repCycle.rewardStakersWithReputation([MAIN_ACCOUNT], 0x0, 10000, 3), "colony-reputation-mining-sender-not-network");
     });
+
+    it('should not allow "initialise" to be called on either the active or inactive ReputationMiningCycle', async () => {
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await checkErrorRevert(repCycle.initialise(MAIN_ACCOUNT, OTHER_ACCOUNT), "colony-reputation-mining-cycle-already-initialised");
+
+      addr = await colonyNetwork.getReputationMiningCycle(false);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await checkErrorRevert(repCycle.initialise(MAIN_ACCOUNT, OTHER_ACCOUNT), "colony-reputation-mining-cycle-already-initialised");
+    });
   });
 
   describe("Types of disagreement", () => {

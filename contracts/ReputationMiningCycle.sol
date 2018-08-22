@@ -89,7 +89,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract
   function initialise(address _tokenLockingAddress, address _clnyTokenAddress) public {
     // Prevent this being called multiple times
-    require(colonyNetworkAddress == 0, "colony-mining-cycle-already-initialised");
+    require(colonyNetworkAddress == 0, "colony-reputation-mining-cycle-already-initialised");
     colonyNetworkAddress = msg.sender;
     tokenLockingAddress = _tokenLockingAddress;
     clnyTokenAddress = _clnyTokenAddress;
