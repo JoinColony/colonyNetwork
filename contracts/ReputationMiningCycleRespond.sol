@@ -30,50 +30,12 @@ import "./ReputationMiningCycleStorage.sol";
 // A possible workaround would be to 'kick off' reputation mining with a known dummy state...
 contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
 
-  /// @notice A modifier that checks that the supplied `roundNumber` is the final round
-  /// @param roundNumber The `roundNumber` to check if it is the final round
-  modifier finalDisputeRoundCompleted(uint256 roundNumber) {
-    require(nSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-completed");
-    require(disputeRounds[roundNumber].length == 1, "colony-reputation-mining-final-round-not-completed"); //i.e. this is the final round
-    // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
-    // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
-    // element is zeroed. If this functionality of 'delete' is ever changed, this will have to change too.
-    _;
-  }
-
   /// @notice A modifier that checks if the challenge corresponding to the hash in the passed `round` and `id` is open
   /// @param round The round number of the hash under consideration
   /// @param idx The index in the round of the hash under consideration
   modifier challengeOpen(uint256 round, uint256 idx) {
     // TODO: More checks that this is an appropriate time to respondToChallenge
     require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-closed");
-    _;
-  }
-
-  /// @notice A modifier that checks if the proposed entry is eligible. The more CLNY a user stakes, the more
-  /// potential entries they have in a reputation mining cycle. This is effectively restricting the nonce range
-  /// that is allowable from a given user when searching for a submission that will pass `withinTarget`. A user
-  /// is allowed to use multiple entries in a single cycle, but each entry can only be used once per cycle, and
-  /// if there are multiple entries they must all be for the same proposed Reputation State Root Hash with the
-  /// same number of nodes.
-  /// @param newHash The hash being submitted
-  /// @param nNodes The number of nodes in the reputation tree that `newHash` is the root hash of
-  /// @param entryIndex The number of the entry the submitter hash asked us to consider.
-  modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
-    // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
-    // Here, the minimum stake is 10**15.
-    uint256 balance;
-    (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
-    require(entryIndex <= balance / 10**15, "colony-reputation-mining-stake-minimum-not-met");
-    require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
-    // If this user has submitted before during this round...
-    if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
-      // ...require that they are submitting the same hash ...
-      require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
-      // ...require that they are submitting the same number of nodes for that hash ...
-      require(nNodes == reputationHashSubmissions[msg.sender].nNodes, "colony-reputation-mining-submitting-different-nnodes");
-      require(submittedEntries[newHash][msg.sender][entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index"); // ... but not this exact entry
-    }
     _;
   }
 

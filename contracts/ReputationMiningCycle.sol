@@ -41,15 +41,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     _;
   }
 
-  /// @notice A modifier that checks if the challenge corresponding to the hash in the passed `round` and `id` is open
-  /// @param round The round number of the hash under consideration
-  /// @param idx The index in the round of the hash under consideration
-  modifier challengeOpen(uint256 round, uint256 idx) {
-    // TODO: More checks that this is an appropriate time to respondToChallenge
-    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-closed");
-    _;
-  }
-
   /// @notice A modifier that checks if the proposed entry is eligible. The more CLNY a user stakes, the more
   /// potential entries they have in a reputation mining cycle. This is effectively restricting the nonce range
   /// that is allowable from a given user when searching for a submission that will pass `withinTarget`. A user
