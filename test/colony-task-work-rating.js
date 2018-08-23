@@ -84,8 +84,9 @@ contract("Colony Task Work Rating", accounts => {
       assert.equal(ratingSecret, RATING_1_SECRET);
     });
 
-    it("should allow rating, after the due date has passed, when no work has been submitted", async () => {
+    it("should allow rating after the due date has passed when no work has been submitted and the manager has marked the task complete", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
@@ -104,8 +105,14 @@ contract("Colony Task Work Rating", accounts => {
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
+    it("should not allow the manager to mark a task as complete if no due date is set");
+    it("should not allow the manager to mark a task as complete if before the due date and work has not been submitted");
+    it("should not allow the manager to (re-)mark a task as complete if work has already been submitted");
+    it("should allow the manager to mark a task as complete if after the due date and no work has been submitted");
+
     it("should fail if I try to rate work on behalf of a worker", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: OTHER }),
         "colony-user-cannot-rate-task-manager"
@@ -116,6 +123,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail if I try to rate work for a role that's not setup to be rated", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await checkErrorRevert(
         colony.submitTaskWorkRating(taskId, EVALUATOR_ROLE, RATING_2_SECRET, { from: EVALUATOR }),
         "colony-unsupported-role-to-rate"
@@ -126,6 +134,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail, if I try to rate work twice", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await checkErrorRevert(
@@ -140,6 +149,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail if I try to rate a task too late", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
 
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await checkErrorRevert(
@@ -194,6 +204,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail if I try to reveal rating with an incorrect secret", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await checkErrorRevert(
@@ -207,6 +218,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail if there are two rating secrets and I try to reveal the one from the evaluator late", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
@@ -222,6 +234,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail if there are two rating secrets and I try to reveal the one from the worker late", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
@@ -237,6 +250,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail if evaluator tries to reveal rating before the 5 days wait for rating commits expires", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await forwardTime(SECONDS_PER_DAY * 4, this);
       await checkErrorRevert(
@@ -250,6 +264,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should fail if evaluator tries to reveal rating after 5 days wait for rating reveal expires", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
 
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
@@ -281,6 +296,7 @@ contract("Colony Task Work Rating", accounts => {
   describe("when assigning work ratings after the user not commiting or revealing on time", () => {
     it("should assign rating 3 to manager and penalise worker, when they haven't submitted rating on time", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
@@ -300,6 +316,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should assign rating 3 to worker and 1 to evaluator if evaluator hasn't submitted rating on time", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
       await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
@@ -321,6 +338,7 @@ contract("Colony Task Work Rating", accounts => {
 
     it("should assign rating 3 to manager and 3 to worker, with penalties, when no one has submitted any ratings", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await colony.finalizeTask(taskId);
 
@@ -338,7 +356,8 @@ contract("Colony Task Work Rating", accounts => {
     });
 
     it("should revert if I try to assign ratings before the reveal period is over", async () => {
-      await setupAssignedTask({ colonyNetwork, colony });
+      const taskId = await setupAssignedTask({ colonyNetwork, colony });
+      await colony.completeTask(taskId);
       await forwardTime(SECONDS_PER_DAY * 6, this);
       await checkErrorRevert(colony.finalizeTask(1), "colony-task-ratings-incomplete");
       const roleWorker = await colony.getTaskRole(1, WORKER_ROLE);

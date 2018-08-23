@@ -12,7 +12,8 @@ import {
   RATING_2_SALT,
   MANAGER_ROLE,
   WORKER_ROLE,
-  SPECIFICATION_HASH
+  SPECIFICATION_HASH,
+  DELIVERABLE_HASH
 } from "./constants";
 import { currentBlockTime, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
@@ -156,7 +157,7 @@ export async function setupFundedTask({
   }
   const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, domain, skill, evaluator, worker });
   const task = await colony.getTask(taskId);
-  const potId = task[6].toNumber();
+  const potId = task[5].toNumber();
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
@@ -233,6 +234,9 @@ export async function setupRatedTask({
     evaluatorPayout,
     workerPayout
   });
+
+  await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: worker });
+
   const WORKER_RATING_SECRET = web3Utils.soliditySha3(workerRatingSalt, workerRating);
   const MANAGER_RATING_SECRET = web3Utils.soliditySha3(managerRatingSalt, managerRating);
   await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });

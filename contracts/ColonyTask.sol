@@ -36,6 +36,7 @@ contract ColonyTask is ColonyStorage {
   event TaskWorkRatingRevealed(uint256 indexed id, uint8 role, uint8 rating);
   event TaskFinalized(uint256 indexed id);
   event TaskCanceled(uint256 indexed id);
+  event TaskCompleted(uint256 indexed id);
 
   modifier userCanRateRole(uint256 _id, uint8 _role) {
     // Manager rated by worker
@@ -55,13 +56,24 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  modifier workNotSubmitted(uint256 _id) {
-    require(tasks[_id].deliverableTimestamp == 0, "colony-task-deliverable-already-submitted");
+  modifier beforeDueDate(uint256 _id) {
+    require(tasks[_id].dueDate >= now, "colony-task-due-date-passed");
     _;
   }
 
-  modifier beforeDueDate(uint256 _id) {
-    require(tasks[_id].dueDate >= now, "colony-task-due-date-passed");
+  modifier taskComplete(uint256 _id) {
+    require(tasks[_id].completionTimestamp > 0, "colony-task-not-complete");
+    _;
+  }
+
+  modifier taskNotComplete(uint256 _id) {
+    require(tasks[_id].completionTimestamp == 0, "colony-task-complete");
+    _;
+  }
+
+  modifier afterDueDate(uint256 _id) {
+    uint dueDate = tasks[_id].dueDate;
+    require(dueDate > 0 && now >= dueDate, "colony-task-due-date-in-future");
     _;
   }
 
@@ -69,9 +81,7 @@ contract ColonyTask is ColonyStorage {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     require(ratingSecrets.count < 2, "colony-task-rating-all-secrets-submitted");
 
-    // Check we are either past the due date or work has already been submitted
-    uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    require(taskCompletionTime > 0 && taskCompletionTime <= now, "colony-task-not-complete");
+    uint taskCompletionTime = tasks[_id].completionTimestamp;
 
     // Check we are within 5 days of the work submission time
     require(sub(now, taskCompletionTime) <= RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-submit-period-closed");
@@ -88,7 +98,7 @@ contract ColonyTask is ColonyStorage {
     if (ratingSecrets.count == 2) {
       require(sub(now, ratingSecrets.timestamp) <= RATING_REVEAL_TIMEOUT, "colony-task-rating-secret-reveal-period-closed");
     } else if (ratingSecrets.count < 2) {
-      uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
+      uint taskCompletionTime = tasks[_id].completionTimestamp;
       require(sub(now, taskCompletionTime) > RATING_COMMIT_TIMEOUT, "colony-task-rating-secret-reveal-period-not-open");
       require(sub(now, taskCompletionTime) <= add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT), "colony-task-rating-secret-reveal-period-closed");
     }
@@ -154,7 +164,7 @@ contract ColonyTask is ColonyStorage {
     uint256 taskId;
     (sig, taskId) = deconstructCall(_data);
     require(taskId <= taskCount, "colony-task-does-not-exist");
-    require(!tasks[taskId].finalized, "colony-task-finalized");
+    require(tasks[taskId].status != FINALIZED, "colony-task-finalized");
     require(!roleAssignmentSigs[sig], "colony-task-change-is-role-assignement");
 
     uint8 nSignaturesRequired;
@@ -260,6 +270,7 @@ contract ColonyTask is ColonyStorage {
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
   stoppable
   taskExists(_id)
+  taskComplete(_id)
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
   taskWorkRatingCommitOpen(_id)
@@ -375,14 +386,11 @@ contract ColonyTask is ColonyStorage {
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
   stoppable
   taskExists(_id)
-  taskNotFinalized(_id)
-  beforeDueDate(_id)
-  workNotSubmitted(_id)
+  taskNotComplete(_id)
   confirmTaskRoleIdentity(_id, WORKER)
   {
     tasks[_id].deliverableHash = _deliverableHash;
-    tasks[_id].deliverableTimestamp = now;
-
+    markTaskCompleted(_id);
     emit TaskDeliverableSubmitted(_id, _deliverableHash);
   }
 
@@ -390,12 +398,23 @@ contract ColonyTask is ColonyStorage {
   stoppable
   {
     submitTaskDeliverable(_id, _deliverableHash);
-    submitTaskWorkRating(_id, 0, _ratingSecret);
+    submitTaskWorkRating(_id, MANAGER, _ratingSecret);
+  }
+
+  function completeTask(uint256 _id) public
+  stoppable
+  taskExists(_id)
+  taskNotComplete(_id)
+  afterDueDate(_id)
+  confirmTaskRoleIdentity(_id, MANAGER)
+  {
+    markTaskCompleted(_id);
   }
 
   function finalizeTask(uint256 _id) public
   stoppable
   taskExists(_id)
+  taskComplete(_id)
   taskWorkRatingsComplete(_id)
   taskNotFinalized(_id)
   {
@@ -404,7 +423,7 @@ contract ColonyTask is ColonyStorage {
     }
 
     Task storage task = tasks[_id];
-    task.finalized = true;
+    task.status = FINALIZED;
 
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
       updateReputation(roleId, task);
@@ -419,22 +438,21 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   taskNotFinalized(_id)
   {
-    tasks[_id].cancelled = true;
+    tasks[_id].status = CANCELLED;
 
     emit TaskCanceled(_id);
   }
 
-  function getTask(uint256 _id) public view returns (bytes32, bytes32, bool, bool, uint256, uint256, uint256, uint256, uint256, uint256[]) {
+  function getTask(uint256 _id) public view returns (bytes32, bytes32, uint8, uint256, uint256, uint256, uint256, uint256, uint256[]) {
     Task storage t = tasks[_id];
     return (
       t.specificationHash,
       t.deliverableHash,
-      t.finalized,
-      t.cancelled,
+      t.status,
       t.dueDate,
       t.payoutsWeCannotMake,
       t.potId,
-      t.deliverableTimestamp,
+      t.completionTimestamp,
       t.domainId,
       t.skills
     );
@@ -443,6 +461,11 @@ contract ColonyTask is ColonyStorage {
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8) {
     Role storage role = tasks[_id].roles[_role];
     return (role.user, role.rateFail, uint8(role.rating));
+  }
+
+  function markTaskCompleted(uint256 _id) internal {
+    tasks[_id].completionTimestamp = now;
+    emit TaskCompleted(_id);
   }
 
   function updateReputation(uint8 roleId, Task storage task) internal {
@@ -529,9 +552,11 @@ contract ColonyTask is ColonyStorage {
   }
 
   function taskWorkRatingsClosed(uint256 _id) internal view returns (bool) {
-    uint taskCompletionTime = tasks[_id].deliverableTimestamp != 0 ? tasks[_id].deliverableTimestamp : tasks[_id].dueDate;
-    // More than 10 days from work submission have passed
-    return sub(now, taskCompletionTime) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT);
+    // More than 10 days from completion have passed
+    return (
+      tasks[_id].completionTimestamp > 0 && // If this is zero, the task isn't complete yet!
+      sub(now, tasks[_id].completionTimestamp) > add(RATING_COMMIT_TIMEOUT, RATING_REVEAL_TIMEOUT)
+    );
   }
 
   // In the event of a user not committing or revealing within the 10 day rating window,

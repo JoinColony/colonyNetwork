@@ -77,17 +77,15 @@ contract("Colony contract upgrade", accounts => {
     it("should return correct tasks", async () => {
       const task1 = await updatedColony.getTask(1);
       assert.equal(task1[0], SPECIFICATION_HASH);
-      assert.isFalse(task1[2]);
-      assert.isFalse(task1[3]);
+      assert.equal(task1[2].toNumber(), 0);
+      assert.equal(task1[3].toNumber(), 0);
       assert.equal(task1[4].toNumber(), 0);
-      assert.equal(task1[5].toNumber(), 0);
 
       const task2 = await updatedColony.getTask(2);
       assert.equal(task2[0], SPECIFICATION_HASH_UPDATED);
-      assert.isFalse(task2[2]);
-      assert.isFalse(task2[3]);
+      assert.equal(task2[2].toNumber(), 0);
+      assert.equal(task2[3].toNumber(), 0);
       assert.equal(task2[4].toNumber(), 0);
-      assert.equal(task2[5].toNumber(), 0);
     });
 
     it("should return correct permissions", async () => {

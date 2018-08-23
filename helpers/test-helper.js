@@ -95,18 +95,22 @@ export async function checkErrorRevert(promise, errorMessage) {
   //
   // Obviously, we want our tests to pass on all, so this is a bit of a problem.
   // We have to have this special function that we use to catch the error.
-  let tx;
   let receipt;
   let reason;
   try {
-    tx = await promise;
-    receipt = await web3GetTransactionReceipt(tx);
+    ({ receipt } = await promise);
+    // If the promise is from Truffle, then we have the receipt already.
+    // If this tx has come from the mining client, the promise has just resolved to a tx hash and we need to do the following
+    if (!receipt) {
+      const txid = await promise;
+      receipt = await web3GetTransactionReceipt(txid);
+    }
   } catch (err) {
-    ({ tx, receipt, reason } = err);
+    ({ receipt, reason } = err);
     assert.equal(reason, errorMessage);
   }
   // Check the receipt `status` to ensure transaction failed.
-  assert.equal(receipt.status, 0x00);
+  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected error ${errorMessage}`);
 }
 
 export function getRandomString(_length) {

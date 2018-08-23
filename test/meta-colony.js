@@ -391,7 +391,7 @@ contract("Meta Colony", accounts => {
       await colony.setTaskDomain(taskId, 2);
 
       const task = await colony.getTask(taskId);
-      assert.equal(task[8].toNumber(), 2);
+      assert.equal(task[7].toNumber(), 2);
     });
 
     it("should NOT allow a non-manager to set domain on task", async () => {
@@ -399,7 +399,7 @@ contract("Meta Colony", accounts => {
       await makeTask({ colony });
       await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }), "colony-task-role-identity-mismatch");
       const task = await colony.getTask(1);
-      assert.equal(task[8].toNumber(), 1);
+      assert.equal(task[7].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
@@ -411,7 +411,7 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskDomain(1, 20), "colony-domain-does-not-exist");
 
       const task = await colony.getTask(1);
-      assert.equal(task[8].toNumber(), 1);
+      assert.equal(task[7].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on finalized task", async () => {
@@ -437,7 +437,7 @@ contract("Meta Colony", accounts => {
       });
 
       const task = await colony.getTask(taskId);
-      assert.equal(task[9][0].toNumber(), 6);
+      assert.equal(task[8][0].toNumber(), 6);
     });
 
     it("should not allow anyone but the colony to set global skill on task", async () => {
@@ -447,7 +447,7 @@ contract("Meta Colony", accounts => {
       await makeTask({ colony });
       await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }), "colony-not-self");
       const task = await colony.getTask(1);
-      assert.equal(task[9][0].toNumber(), 0);
+      assert.equal(task[8][0].toNumber(), 0);
     });
 
     it("should NOT be able to set global skill on nonexistent task", async () => {
@@ -463,7 +463,7 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-already-finalized");
 
       const task = await colony.getTask(taskId);
-      assert.equal(task[9][0].toNumber(), 1);
+      assert.equal(task[8][0].toNumber(), 1);
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {
