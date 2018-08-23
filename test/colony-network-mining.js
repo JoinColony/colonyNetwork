@@ -2984,17 +2984,14 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(Object.keys(client.reputations).length, 23);
 
       const reputationProps = [
-        // Reputation earned by MAIN_ACCOUNT for mining the correct hash
         { id: 1, skill: 2, account: undefined, value: 3000005802000000000 },
-        // TODO: Bug in parent reputation update for reputation loss, value below is wrongly deducted by -560000000000000000 => 440000000000000000
-        // { id: 2, skill: 3, account: undefined, value: 1000000000000000000 },
+        { id: 2, skill: 3, account: undefined, value: 1000000000000000000 },
         { id: 3, skill: 2, account: accounts[0], value: 3000002500000000000 },
         { id: 4, skill: 3, account: accounts[0], value: 1000000000000000000 },
         { id: 5, skill: 2, account: accounts[2], value: 3300000000000 },
         { id: 6, skill: 1, account: undefined, value: 3300000000000 },
         { id: 7, skill: 1, account: accounts[2], value: 3300000000000 },
         { id: 8, skill: 2, account: accounts[1], value: 2000000000 },
-        // Reputation updated from completing a task in root domain and global skill 8
         { id: 9, skill: 9, account: undefined, value: 3300000000000 },
         { id: 10, skill: 8, account: undefined, value: 3300000000000 },
         { id: 11, skill: 7, account: undefined, value: 3300000000000 },
@@ -3002,7 +2999,6 @@ contract("ColonyNetworkMining", accounts => {
         { id: 13, skill: 5, account: undefined, value: 3300000000000 },
         { id: 14, skill: 4, account: undefined, value: 3300000000000 },
         { id: 15, skill: 10, account: undefined, value: 3300000000000 },
-
         { id: 16, skill: 9, account: accounts[2], value: 3300000000000 },
         { id: 17, skill: 8, account: accounts[2], value: 3300000000000 }, // 44% decrease
         { id: 18, skill: 7, account: accounts[2], value: 3300000000000 },
