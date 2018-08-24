@@ -190,7 +190,11 @@ contract IColonyNetwork {
   /// @param subnode The keccak256 hash of the label to register.
   function registerColonyLabel(bytes32 subnode) public;
 
-  /// @notice Set the resolve to be used by instances of ReputationMiningCycle
+  /// @notice Set the resolver to be used by new instances of ReputationMiningCycle
   /// @param miningResolverAddress The address of the Resolver contract with the functions correctly wired.
   function setMiningResolver(address miningResolverAddress) public;
+
+  /// @notice get the resolver to be used by new instances of ReputationMiningCycle
+  /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
+  function getMiningResolver() public view returns (address miningResolverAddress);
 }

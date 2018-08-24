@@ -45,7 +45,7 @@ import {
   makeTask
 } from "../helpers/test-data-generator";
 
-import { setupColonyVersionResolver, setupReputationMiningCycleResolver } from "../helpers/upgradable-contracts";
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -60,8 +60,6 @@ const Authority = artifacts.require("Authority");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
-const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
 
 contract("Colony", accounts => {
   const MANAGER = accounts[0];
@@ -89,10 +87,10 @@ contract("Colony", accounts => {
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
 
-    const reputationMiningCycle = await ReputationMiningCycle.new();
-    const reputationMiningCycleRespond = await ReputationMiningCycleRespond.new();
-    const reputationMiningCycleResolver = await Resolver.new();
-    await setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();

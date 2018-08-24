@@ -3,7 +3,7 @@ import { INITIAL_FUNDING } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
-import { setupColonyVersionResolver, setupReputationMiningCycleResolver } from "../helpers/upgradable-contracts";
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -13,8 +13,6 @@ const IColony = artifacts.require("IColony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
-const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
-const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
 
 contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
@@ -47,10 +45,10 @@ contract("Meta Colony", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IColony.at(metaColonyAddress);
 
-    const reputationMiningCycle = await ReputationMiningCycle.new();
-    const reputationMiningCycleRespond = await ReputationMiningCycleRespond.new();
-    const reputationMiningCycleResolver = await Resolver.new();
-    await setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
