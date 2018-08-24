@@ -113,8 +113,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     /* if (disputeRounds[round][idx].challengeStepCompleted==disputeRounds[round][opponentIdx].challengeStepCompleted){
       // Freeze the reputation mining system.
     } */
-
   }
+  
   /////////////////////////
   // Internal functions
   /////////////////////////

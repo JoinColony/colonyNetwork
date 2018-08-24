@@ -12,7 +12,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -53,7 +53,7 @@ contract("TokenLocking", addresses => {
 
     let addr = await colonyNetwork.getReputationMiningCycle.call(true);
     await forwardTime(3600, this);
-    let repCycle = await ReputationMiningCycle.at(addr);
+    let repCycle = await IReputationMiningCycle.at(addr);
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
@@ -71,7 +71,7 @@ contract("TokenLocking", addresses => {
     await miningClient.submitRootHash();
 
     addr = await colonyNetwork.getReputationMiningCycle.call(true);
-    repCycle = await ReputationMiningCycle.at(addr);
+    repCycle = await IReputationMiningCycle.at(addr);
     await repCycle.confirmNewHash(0);
 
     const result = await colony.getDomain(1);

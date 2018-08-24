@@ -793,7 +793,7 @@ contract("ColonyNetworkMining", accounts => {
       );
     });
 
-    it('should not allow "repCycle.nSubmittedHashesCycle" to be called if a cycle is in progress', async () => {
+    it('should not allow "startNextCycle" to be called if a cycle is in progress', async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(3600, this);
       assert(parseInt(addr, 16) !== 0);

@@ -3,7 +3,7 @@ import { INITIAL_FUNDING } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
-import { setupColonyVersionResolver, setupReputationVersionResolver } from "../helpers/upgradable-contracts";
+import { setupColonyVersionResolver, setupReputationMiningCycleResolver } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -50,7 +50,7 @@ contract("Meta Colony", accounts => {
     const reputationMiningCycle = await ReputationMiningCycle.new();
     const reputationMiningCycleRespond = await ReputationMiningCycleRespond.new();
     const reputationMiningCycleResolver = await Resolver.new();
-    await setupReputationVersionResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
+    await setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();

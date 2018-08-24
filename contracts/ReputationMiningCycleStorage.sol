@@ -19,15 +19,12 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "../lib/dappsys/auth.sol";
-import "../lib/dappsys/math.sol";
-import "./IColonyNetwork.sol";
-import "./PatriciaTree/PatriciaTreeProofs.sol";
-import "./ITokenLocking.sol";
-
 
 // TODO: Can we handle all possible disputes regarding the very first hash that should be set?
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
 // A possible workaround would be to 'kick off' reputation mining with a known dummy state...
+
+
 contract ReputationMiningCycleStorage is DSAuth {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver;

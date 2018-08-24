@@ -1,7 +1,7 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 
-const { setupReputationVersionResolver } = require("../helpers/upgradable-contracts");
+const { setupReputationMiningCycleResolver } = require("../helpers/upgradable-contracts");
 
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
@@ -17,10 +17,10 @@ module.exports = deployer => {
   let colonyNetwork;
 
   deployer
-    .then(() => ReputationMiningCycle.new())
+    .then(() => ReputationMiningCycle.deployed())
     .then(instance => {
       reputationMiningCycle = instance;
-      return ReputationMiningCycleRespond.new();
+      return ReputationMiningCycleRespond.deployed();
     })
     .then(instance => {
       reputationMiningCycleRespond = instance;
@@ -34,7 +34,7 @@ module.exports = deployer => {
     .then(instance => {
       colonyNetwork = instance;
       // Register the new Colony contract version with the newly setup Resolver
-      return setupReputationVersionResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork);
+      return setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork);
     })
     .then(() => {
       console.log("### ReputationMiningCycle set to Resolver", resolver.address);

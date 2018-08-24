@@ -114,7 +114,7 @@ export async function setupUpgradableTokenLocking(etherRouter, resolver, tokenLo
   assert.equal(registeredResolver, resolver.address);
 }
 
-export async function setupReputationVersionResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork) {
+export async function setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork) {
   const deployedImplementations = {};
   deployedImplementations.ReputationMiningCycle = reputationMiningCycle.address;
   deployedImplementations.ReputationMiningCycleRespond = reputationMiningCycleRespond.address;

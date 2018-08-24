@@ -45,7 +45,7 @@ import {
   makeTask
 } from "../helpers/test-data-generator";
 
-import { setupColonyVersionResolver, setupReputationVersionResolver } from "../helpers/upgradable-contracts";
+import { setupColonyVersionResolver, setupReputationMiningCycleResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -92,7 +92,7 @@ contract("Colony", accounts => {
     const reputationMiningCycle = await ReputationMiningCycle.new();
     const reputationMiningCycleRespond = await ReputationMiningCycleRespond.new();
     const reputationMiningCycleResolver = await Resolver.new();
-    await setupReputationVersionResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
+    await setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, reputationMiningCycleResolver, colonyNetwork);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
