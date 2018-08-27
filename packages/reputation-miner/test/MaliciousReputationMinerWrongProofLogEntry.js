@@ -40,6 +40,7 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
         this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
         "0",
         logEntryNumber,
+        "0",
         "0"
       ],
       reputationKey,
