@@ -41,7 +41,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const oneHourLater = async () => forwardTime(3600, this);
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -231,13 +231,13 @@ contract("All", accounts => {
       let repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
 
       await oneHourLater();
-      let repCycle = await ReputationMiningCycle.at(repCycleAddr);
+      let repCycle = await IReputationMiningCycle.at(repCycleAddr);
       await repCycle.submitRootHash("0x00", 0, 1);
       await repCycle.confirmNewHash(0);
       await oneHourLater();
 
       repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await ReputationMiningCycle.at(repCycleAddr);
+      repCycle = await IReputationMiningCycle.at(repCycleAddr);
 
       const goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
       const badClient = new MaliciousReputationMinerExtraRep(
@@ -337,7 +337,7 @@ contract("All", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
       await forwardTime(3600, this);
-      let repCycle = await ReputationMiningCycle.at(addr);
+      let repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -355,7 +355,7 @@ contract("All", accounts => {
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
-      repCycle = await ReputationMiningCycle.at(addr);
+      repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.confirmNewHash(0);
 
       const result = await newColony.getDomain(1);

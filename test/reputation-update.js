@@ -21,7 +21,7 @@ const Colony = artifacts.require("Colony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
-const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 contract("Colony Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -59,10 +59,16 @@ contract("Colony Reputation Updates", accounts => {
       .mul(new BN(1000))
       .toString();
     await fundColonyWithTokens(metaColony, colonyToken, amount);
+
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
     const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-    inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+    inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
   });
 
   describe("when added", () => {

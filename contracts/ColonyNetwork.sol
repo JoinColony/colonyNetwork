@@ -102,6 +102,16 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return tokenLocking;
   }
 
+  function setMiningResolver(address _miningResolver) public
+  auth
+  {
+    miningCycleResolver = _miningResolver;
+  }
+
+  function getMiningResolver() public returns (address) {
+    return miningCycleResolver;
+  }
+
   function createMetaColony(address _tokenAddress) public
   auth
   {

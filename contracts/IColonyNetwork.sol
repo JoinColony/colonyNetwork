@@ -189,4 +189,12 @@ contract IColonyNetwork {
   /// @notice Register a "colony.joincolony.eth" label. Can only be called by a Colony.
   /// @param subnode The keccak256 hash of the label to register.
   function registerColonyLabel(bytes32 subnode) public;
+
+  /// @notice Set the resolver to be used by new instances of ReputationMiningCycle
+  /// @param miningResolverAddress The address of the Resolver contract with the functions correctly wired.
+  function setMiningResolver(address miningResolverAddress) public;
+
+  /// @notice get the resolver to be used by new instances of ReputationMiningCycle
+  /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
+  function getMiningResolver() public view returns (address miningResolverAddress);
 }

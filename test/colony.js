@@ -59,7 +59,7 @@ const Token = artifacts.require("Token");
 const Authority = artifacts.require("Authority");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
-const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 contract("Colony", accounts => {
   const MANAGER = accounts[0];
@@ -86,6 +86,11 @@ contract("Colony", accounts => {
 
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
+
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
@@ -382,7 +387,7 @@ contract("Colony", accounts => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-      const inactiveReputationMiningCycle = await ReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
+      const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);

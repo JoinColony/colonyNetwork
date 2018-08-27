@@ -45,6 +45,11 @@ contract("Meta Colony", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IColony.at(metaColonyAddress);
 
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
   });
