@@ -6566,9 +6566,9 @@ solc@0.4.24, solc@^0.4.2:
     semver "^5.3.0"
     yargs "^4.7.1"
 
-solidity-coverage@0.5.7:
-  version "0.5.7"
-  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.5.7.tgz#b7eb67678d446ab2702a26c2158ad71b4865a057"
+solidity-coverage@0.5.8:
+  version "0.5.8"
+  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.5.8.tgz#e5518b22e28ece47a28fb9ca1e4f3a8a64877752"
   dependencies:
     death "^1.1.0"
     ethereumjs-testrpc-sc "6.1.6"
