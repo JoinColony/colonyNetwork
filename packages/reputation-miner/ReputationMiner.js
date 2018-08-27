@@ -841,7 +841,8 @@ class ReputationMiner {
         this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
         "0",
         logEntryNumber,
-        "0"
+        "0",
+        "1"
       ],
       reputationKey,
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
