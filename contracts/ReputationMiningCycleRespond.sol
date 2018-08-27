@@ -61,12 +61,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_REQUIRE_REPUTATION_CHECK = 8;
   uint constant U_LOG_ENTRY_NUMBER = 9;
   uint constant U_DECAY_TRANSITION = 10;
+  uint constant U_ORIGIN_SKILL_REPUTATION_VALUE = 11;
 
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function respondToChallenge(
-    uint256[11] memory u, //An array of 11 UINT Params, ordered as given above.
+    uint256[12] memory u, //An array of 12 UINT Params, ordered as given above.
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
     bytes memory agreeStateReputationValue,
@@ -131,7 +132,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   // Internal functions
   /////////////////////////
 
-  function checkKey(uint256[11] memory u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
+  function checkKey(uint256[12] memory u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -212,7 +213,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       // NB This is not necessarily the same as nChildren. However, this is the number of child updates
       // that this entry in the log was expecting at the time it was created.
     }
-    
+
     uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
     if (relativeUpdateNumber < nChildUpdates) {
       expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, relativeUpdateNumber);
@@ -224,7 +225,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveBeforeReputationValue(
-    uint256[11] memory u,
+    uint256[12] memory u,
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
     bytes memory agreeStateReputationValue,
@@ -276,7 +277,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveAfterReputationValue(
-    uint256[11] memory u,
+    uint256[12] memory u,
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
     bytes memory disagreeStateReputationValue,
@@ -311,13 +312,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function performReputationCalculation(
-    uint256[11] memory u,
+    uint256[12] memory u,
     bytes memory agreeStateReputationValueBytes,
     bytes memory disagreeStateReputationValueBytes,
     bytes memory previousNewReputationValueBytes
   ) internal view
   {
-    // TODO: Possibility of reputation loss - child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is of the user's reputation in skill given by logEntry.skillId
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
@@ -352,21 +352,43 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         require(disagreeStateReputationValue == (agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
       }
     } else {
-      if (logEntry.amount < 0 && uint(logEntry.amount * -1) > agreeStateReputationValue ) {
+      uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
+      int256 amount = logEntry.amount;
+      // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is 
+      // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill"
+      if (amount < 0) {
+        uint nParents;
+        (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
+        uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
+
+        if (relativeUpdateNumber < nChildUpdates) {
+          // TODO: Prove reputation from u[U_ORIGIN_SKILL_REPUTATION_VALUE]
+          amount = (amount*int(agreeStateReputationValue))/int(u[U_ORIGIN_SKILL_REPUTATION_VALUE]);
+        }
+      }
+
+      if (amount < 0 && uint(amount * -1) > agreeStateReputationValue ) {
         require(disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
-      } else if (uint(logEntry.amount) + agreeStateReputationValue < agreeStateReputationValue) {
+      } else if (uint(amount) + agreeStateReputationValue < agreeStateReputationValue) {
         // We also don't allow reputation to overflow
         require(disagreeStateReputationValue == 2**256 - 1, "colony-reputation-mining-reputation-not-max-uint");
       } else {
         // TODO: Is this safe? I think so, because even if there's over/underflows, they should
         // still be the same number.
-        require(int(agreeStateReputationValue)+logEntry.amount == int(disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+        require(int(agreeStateReputationValue)+amount == int(disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
       }
     }
   }
 
+  function getRelativeUpdateNumber(uint256[12] u, ReputationLogEntry logEntry) internal view returns (uint256) {
+    uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
+    uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1 - nNodes;
+    uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
+    return relativeUpdateNumber;
+  }
+
   function checkPreviousReputationInState(
-    uint256[11] memory u,
+    uint256[12] memory u,
     bytes32[] memory agreeStateSiblings,
     bytes memory previousNewReputationKey,
     bytes memory previousNewReputationValue,
@@ -393,7 +415,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
-  function saveProvedReputation(uint256[11] memory u, bytes memory previousNewReputationValue) internal {
+  function saveProvedReputation(uint256[12] memory u, bytes memory previousNewReputationValue) internal {
     uint256 previousReputationUID;
     assembly {
       previousReputationUID := mload(add(previousNewReputationValue,0x40))
