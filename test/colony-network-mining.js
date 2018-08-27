@@ -2964,13 +2964,13 @@ contract("ColonyNetworkMining", accounts => {
       await metaColony.finalizeTask(taskId2);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await ReputationMiningCycle.at(addr);
+      let repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(3600, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
       addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await ReputationMiningCycle.at(addr);
+      repCycle = await IReputationMiningCycle.at(addr);
 
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       // The update log should contain the person being rewarded for the previous update cycle,
