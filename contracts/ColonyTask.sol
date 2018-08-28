@@ -73,7 +73,8 @@ contract ColonyTask is ColonyStorage {
 
   modifier afterDueDate(uint256 _id) {
     uint dueDate = tasks[_id].dueDate;
-    require(dueDate > 0 && now >= dueDate, "colony-task-due-date-in-future");
+    require(dueDate > 0, "colony-task-due-date-not-set");
+    require(now >= dueDate, "colony-task-due-date-in-future");
     _;
   }
 

@@ -116,7 +116,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   });
 
   let dueDateTimestamp = dueDate;
-  if (!dueDateTimestamp) {
+  if (dueDateTimestamp !== 0 && !dueDateTimestamp) {
     dueDateTimestamp = await currentBlockTime();
   }
 
