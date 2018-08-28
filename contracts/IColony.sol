@@ -390,7 +390,7 @@ contract IColony {
 
   /// @notice Submit the task deliverable, i.e. the output of the work performed for task `_id`
   /// Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten
-  /// @dev Set the `task.deliverableHash` and `task.deliverableTimestamp` properties
+  /// @dev Set the `task.deliverableHash` and `task.completionTimestamp` properties
   /// @param _id Id of the task
   /// @param _deliverableHash Unique hash of the task deliverable content in ddb
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
@@ -428,7 +428,7 @@ contract IColony {
   /// @return dueDate Due date
   /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current task funding
   /// @return potId Id of funding pot for task
-  /// @return deliverableTimestamp Deliverable submission timestamp
+  /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
   function getTask(uint256 _id) public view returns (
