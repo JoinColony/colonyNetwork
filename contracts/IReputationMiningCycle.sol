@@ -100,11 +100,10 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 6. The number of nodes this hash considers to be present in the first reputation state the two hashes in this challenge disagree on
   /// * 7. The branchMask of the proof that reputation root hash of the first reputation state the two hashes in this challenge disagree on is in this submitted hash's justification tree
   /// * 8. The branchMask of the proof for the most recently added reputation state in this hash's state tree in the last reputation state the two hashes in this challenge agreed on
-  /// * 9. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// *10. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
+  /// * 9. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
   ///      the log entry index corresponding to the update to avoid us having to iterate over the log.
-  /// *11. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// *12. Origin skill reputation branch mask. Nonzero for child reputation updates.
+  /// *10. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+  /// *11. Origin skill reputation branch mask. Nonzero for child reputation updates.
   /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateReputationValue The value of the reputation at key `_reputationKey` in the last reputation state the submitted hashes agreed on
@@ -117,6 +116,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
+<<<<<<< HEAD
     uint256[12] memory u, //An array of 12 UINT Params, ordered as given above.
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
@@ -127,6 +127,29 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes memory previousNewReputationKey,
     bytes memory previousNewReputationValue,
     bytes32[] memory previousNewReputationSiblings) public;
+||||||| merged common ancestors
+    uint256[12] u, //An array of 12 UINT Params, ordered as given above.
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes agreeStateReputationValue,
+    bytes32[] agreeStateSiblings,
+    bytes disagreeStateReputationValue,
+    bytes32[] disagreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValue,
+    bytes32[] previousNewReputationSiblings) public;
+=======
+    uint256[11] u, //An array of 11 UINT Params, ordered as given above.
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes agreeStateReputationValue,
+    bytes32[] agreeStateSiblings,
+    bytes disagreeStateReputationValue,
+    bytes32[] disagreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValue,
+    bytes32[] previousNewReputationSiblings) public;
+>>>>>>> Remove U_REQUIRE_REPUTATION_CHECK property
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
   /// @param round The round that the hash is currently in.

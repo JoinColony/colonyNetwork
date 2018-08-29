@@ -58,15 +58,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_DISAGREE_STATE_NNODES = 5;
   uint constant U_DISAGREE_STATE_BRANCH_MASK = 6;
   uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
-  uint constant U_REQUIRE_REPUTATION_CHECK = 8;
-  uint constant U_LOG_ENTRY_NUMBER = 9;
-  uint constant U_DECAY_TRANSITION = 10;
-  uint constant U_ORIGIN_SKILL_REPUTATION_VALUE = 11;
+  uint constant U_LOG_ENTRY_NUMBER = 8;
+  uint constant U_DECAY_TRANSITION = 9;
+  uint constant U_ORIGIN_SKILL_REPUTATION_VALUE = 10;
 
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function respondToChallenge(
+<<<<<<< HEAD
     uint256[12] memory u, //An array of 12 UINT Params, ordered as given above.
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
@@ -77,10 +77,32 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes memory previousNewReputationKey,
     bytes memory previousNewReputationValue,
     bytes32[] memory previousNewReputationSiblings
+||||||| merged common ancestors
+    uint256[12] u, //An array of 12 UINT Params, ordered as given above.
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes agreeStateReputationValue,
+    bytes32[] agreeStateSiblings,
+    bytes disagreeStateReputationValue,
+    bytes32[] disagreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValue,
+    bytes32[] previousNewReputationSiblings
+=======
+    uint256[11] u, //An array of 12 UINT Params, ordered as given above.
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes agreeStateReputationValue,
+    bytes32[] agreeStateSiblings,
+    bytes disagreeStateReputationValue,
+    bytes32[] disagreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValue,
+    bytes32[] previousNewReputationSiblings
+>>>>>>> Remove U_REQUIRE_REPUTATION_CHECK property
   ) public
     challengeOpen(u[U_ROUND], u[U_IDX])
   {
-    u[U_REQUIRE_REPUTATION_CHECK] = 0;
     u[U_DECAY_TRANSITION] = 0;
     // TODO: More checks that this is an appropriate time to respondToChallenge (maybe in modifier);
     /* bytes32 jrh = disputeRounds[round][idx].jrh; */
@@ -130,7 +152,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   // Internal functions
   /////////////////////////
 
+<<<<<<< HEAD
   function checkKey(uint256[12] memory u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
+||||||| merged common ancestors
+  function checkKey(uint256[12] u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
+=======
+  function checkKey(uint256[11] u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
+>>>>>>> Remove U_REQUIRE_REPUTATION_CHECK property
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -223,11 +251,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveBeforeReputationValue(
+<<<<<<< HEAD
     uint256[12] memory u,
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
     bytes memory agreeStateReputationValue,
     bytes32[] memory agreeStateSiblings
+||||||| merged common ancestors
+    uint256[12] u,
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes agreeStateReputationValue,
+    bytes32[] agreeStateSiblings
+=======
+    uint256[11] u,
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes agreeStateReputationValue,
+    bytes32[] agreeStateSiblings
+>>>>>>> Remove U_REQUIRE_REPUTATION_CHECK property
   ) internal
   {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
@@ -275,11 +317,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveAfterReputationValue(
+<<<<<<< HEAD
     uint256[12] memory u,
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
     bytes memory disagreeStateReputationValue,
     bytes32[] memory disagreeStateSiblings
+||||||| merged common ancestors
+    uint256[12] u,
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes disagreeStateReputationValue,
+    bytes32[] disagreeStateSiblings
+=======
+    uint256[11] u,
+    bytes _reputationKey,
+    bytes32[] reputationSiblings,
+    bytes disagreeStateReputationValue,
+    bytes32[] disagreeStateSiblings
+>>>>>>> Remove U_REQUIRE_REPUTATION_CHECK property
   ) internal view
   {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
@@ -310,6 +366,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function performReputationCalculation(
+<<<<<<< HEAD
     uint256[12] memory u,
     bytes memory agreeStateReputationValueBytes,
     bytes memory disagreeStateReputationValueBytes,
@@ -318,6 +375,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes memory previousNewReputationValueBytes,
     bytes32[] memory previousNewReputationSiblings
   ) internal view
+||||||| merged common ancestors
+    uint256[12] u,
+    bytes agreeStateReputationValueBytes,
+    bytes disagreeStateReputationValueBytes,
+    bytes32[] agreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValueBytes,
+    bytes32[] previousNewReputationSiblings
+  ) internal
+=======
+    uint256[11] u,
+    bytes agreeStateReputationValueBytes,
+    bytes disagreeStateReputationValueBytes,
+    bytes32[] agreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValueBytes,
+    bytes32[] previousNewReputationSiblings
+  ) internal
+>>>>>>> Remove U_REQUIRE_REPUTATION_CHECK property
   {
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
@@ -344,7 +420,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveUID(
-    uint256[12] u,
+    uint256[11] u,
     uint256 _agreeStateReputationUID,
     uint256 _disagreeStateReputationUID,
     bytes32[] _agreeStateSiblings,
@@ -363,10 +439,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         previousNewReputationUID := mload(add(_previousNewReputationValue, 64))
       }
       require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
-      // Flag that we need to check that the reputation they supplied is in the 'agree' state.
-      // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
-      // this function, without adding a new variable to the stack in the parent function...
-      u[U_REQUIRE_REPUTATION_CHECK] = 1;
 
       // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
       checkPreviousReputationInState(
@@ -381,7 +453,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
   }
 
-  function proveValue(uint256[12] u, uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue) internal  view {
+  function proveValue(uint256[11] u, uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue) internal  view {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
@@ -440,7 +512,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
   }
 
-  function getRelativeUpdateNumber(uint256[12] u, ReputationLogEntry logEntry) internal view returns (uint256) {
+  function getRelativeUpdateNumber(uint256[11] u, ReputationLogEntry logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1 - nNodes;
     uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
@@ -448,11 +520,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkPreviousReputationInState(
+<<<<<<< HEAD
     uint256[12] memory u,
     bytes32[] memory agreeStateSiblings,
     bytes memory previousNewReputationKey,
     bytes memory previousNewReputationValue,
     bytes32[] memory previousNewReputationSiblings
+||||||| merged common ancestors
+    uint256[12] u,
+    bytes32[] agreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValue,
+    bytes32[] previousNewReputationSiblings
+=======
+    uint256[11] u,
+    bytes32[] agreeStateSiblings,
+    bytes previousNewReputationKey,
+    bytes previousNewReputationValue,
+    bytes32[] previousNewReputationSiblings
+>>>>>>> Remove U_REQUIRE_REPUTATION_CHECK property
     ) internal view
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
