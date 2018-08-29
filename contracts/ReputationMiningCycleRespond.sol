@@ -331,16 +331,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
     }
 
-    if (agreeStateReputationUID != 0) {
-      // i.e. if this was an existing reputation, then require that the ID hasn't changed.
-      require(agreeStateReputationUID==disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
-    } else {
-      uint256 previousNewReputationUID;
-      assembly {
-        previousNewReputationUID := mload(add(previousNewReputationValueBytes, 64))
-      }
-      require(previousNewReputationUID + 1 == disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
-    }
+    validateUID(u, agreeStateReputationUID, disagreeStateReputationUID, previousNewReputationValueBytes);
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
@@ -377,6 +368,29 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         // still be the same number.
         require(int(agreeStateReputationValue)+amount == int(disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
       }
+    }
+  }
+
+  function validateUID(
+    uint256[12] u,
+    uint256 _agreeStateReputationUID,
+    uint256 _disagreeStateReputationUID,
+    bytes _previousNewReputationValue
+  ) internal pure
+  {
+    if (_agreeStateReputationUID != 0) {
+      // i.e. if this was an existing reputation, then require that the ID hasn't changed.
+      require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
+    } else {
+      uint256 previousNewReputationUID;
+      assembly {
+        previousNewReputationUID := mload(add(_previousNewReputationValue, 64))
+      }
+      require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
+      // Flag that we need to check that the reputation they supplied is in the 'agree' state.
+      // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
+      // this function, without adding a new variable to the stack in the parent function...
+      u[U_REQUIRE_REPUTATION_CHECK] = 1;
     }
   }
 
