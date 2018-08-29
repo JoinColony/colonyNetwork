@@ -107,16 +107,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     proveAfterReputationValue(u, _reputationKey, reputationSiblings, disagreeStateReputationValue, disagreeStateSiblings);
 
     // Perform the reputation calculation ourselves.
-    performReputationCalculation(u, agreeStateReputationValue, disagreeStateReputationValue, previousNewReputationValue);
-
-    // Check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState0
-    checkPreviousReputationInState(
+    performReputationCalculation(
       u,
+      agreeStateReputationValue,
+      disagreeStateReputationValue,
       agreeStateSiblings,
       previousNewReputationKey,
       previousNewReputationValue,
       previousNewReputationSiblings);
-    saveProvedReputation(u, previousNewReputationValue);
 
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
@@ -315,10 +313,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256[12] memory u,
     bytes memory agreeStateReputationValueBytes,
     bytes memory disagreeStateReputationValueBytes,
-    bytes memory previousNewReputationValueBytes
+    bytes32[] memory agreeStateSiblings,
+    bytes memory previousNewReputationKey,
+    bytes memory previousNewReputationValueBytes,
+    bytes32[] memory previousNewReputationSiblings
   ) internal view
   {
-    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
     uint256 agreeStateReputationUID;
@@ -331,21 +331,72 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
     }
 
-    validateUID(u, agreeStateReputationUID, disagreeStateReputationUID, previousNewReputationValueBytes);
+    proveUID(
+      u,
+      agreeStateReputationUID,
+      disagreeStateReputationUID,
+      agreeStateSiblings,
+      previousNewReputationKey,
+      previousNewReputationValueBytes,
+      previousNewReputationSiblings);
+
+    proveValue(u, agreeStateReputationValue, disagreeStateReputationValue);
+  }
+
+  function proveUID(
+    uint256[12] u,
+    uint256 _agreeStateReputationUID,
+    uint256 _disagreeStateReputationUID,
+    bytes32[] _agreeStateSiblings,
+    bytes _previousNewReputationKey,
+    bytes _previousNewReputationValue,
+    bytes32[] _previousNewReputationSiblings
+  ) internal
+  {
+    if (_agreeStateReputationUID != 0) {
+      // i.e. if this was an existing reputation, then require that the ID hasn't changed.
+      // TODO: Situation where it is not an existing reputation
+      require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
+    } else {
+      uint256 previousNewReputationUID;
+      assembly {
+        previousNewReputationUID := mload(add(_previousNewReputationValue, 64))
+      }
+      require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
+      // Flag that we need to check that the reputation they supplied is in the 'agree' state.
+      // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
+      // this function, without adding a new variable to the stack in the parent function...
+      u[U_REQUIRE_REPUTATION_CHECK] = 1;
+
+      // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
+      checkPreviousReputationInState(
+        u,
+        _agreeStateSiblings,
+        _previousNewReputationKey,
+        _previousNewReputationValue,
+        _previousNewReputationSiblings);
+
+      // Save the index for tiebreak scenarios later.
+      saveProvedReputation(u, _previousNewReputationValue);
+    }
+  }
+
+  function proveValue(uint256[12] u, uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue) internal  view {
+    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
     if (u[U_DECAY_TRANSITION] == 1) {
       // Very large reputation decays are calculated the 'other way around' to avoid overflows.
       if (agreeStateReputationValue > uint256(2**256 - 1)/uint256(10**15)) {
-        require(disagreeStateReputationValue == (agreeStateReputationValue/DECAY_DENOMINATOR)*DECAY_NUMERATOR, "colony-reputation-mining-decay-incorrect");
+        require(_disagreeStateReputationValue == (_agreeStateReputationValue/DECAY_DENOMINATOR)*DECAY_NUMERATOR, "colony-reputation-mining-decay-incorrect");
       } else {
-        require(disagreeStateReputationValue == (agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
+        require(_disagreeStateReputationValue == (_agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
       }
     } else {
       uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
       int256 amount = logEntry.amount;
-      // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is 
+      // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is
       // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill"
       if (amount < 0) {
         uint nParents;
@@ -354,19 +405,19 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
         if (relativeUpdateNumber < nChildUpdates) {
           // TODO: Prove reputation from u[U_ORIGIN_SKILL_REPUTATION_VALUE]
-          amount = (amount*int(agreeStateReputationValue))/int(u[U_ORIGIN_SKILL_REPUTATION_VALUE]);
+          amount = (amount*int(_agreeStateReputationValue))/int(u[U_ORIGIN_SKILL_REPUTATION_VALUE]);
         }
       }
 
-      if (amount < 0 && uint(amount * -1) > agreeStateReputationValue ) {
-        require(disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
-      } else if (uint(amount) + agreeStateReputationValue < agreeStateReputationValue) {
+      if (amount < 0 && uint(amount * -1) > _agreeStateReputationValue ) {
+        require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
+      } else if (uint(amount) + _agreeStateReputationValue < _agreeStateReputationValue) {
         // We also don't allow reputation to overflow
-        require(disagreeStateReputationValue == 2**256 - 1, "colony-reputation-mining-reputation-not-max-uint");
+        require(_disagreeStateReputationValue == 2**256 - 1, "colony-reputation-mining-reputation-not-max-uint");
       } else {
         // TODO: Is this safe? I think so, because even if there's over/underflows, they should
         // still be the same number.
-        require(int(agreeStateReputationValue)+amount == int(disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+        require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
       }
     }
   }
@@ -386,11 +437,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       assembly {
         previousNewReputationUID := mload(add(_previousNewReputationValue, 64))
       }
-      require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
-      // Flag that we need to check that the reputation they supplied is in the 'agree' state.
-      // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
-      // this function, without adding a new variable to the stack in the parent function...
-      u[U_REQUIRE_REPUTATION_CHECK] = 1;
     }
   }
 
