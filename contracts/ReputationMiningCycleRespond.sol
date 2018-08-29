@@ -58,13 +58,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_DISAGREE_STATE_NNODES = 5;
   uint constant U_DISAGREE_STATE_BRANCH_MASK = 6;
   uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
-  uint constant U_REQUIRE_REPUTATION_CHECK = 8;
-  uint constant U_LOG_ENTRY_NUMBER = 9;
-  uint constant U_DECAY_TRANSITION = 10;
-  uint constant U_ORIGIN_SKILL_REPUTATION_VALUE = 11;
+  uint constant U_LOG_ENTRY_NUMBER = 8;
+  uint constant U_DECAY_TRANSITION = 9;
+  uint constant U_ORIGIN_SKILL_REPUTATION_VALUE = 10;
 
   function respondToChallenge(
-    uint256[12] u, //An array of 12 UINT Params, ordered as given above.
+    uint256[11] u, //An array of 12 UINT Params, ordered as given above.
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes agreeStateReputationValue,
@@ -77,7 +76,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   ) public
     challengeOpen(u[U_ROUND], u[U_IDX])
   {
-    u[U_REQUIRE_REPUTATION_CHECK] = 0;
     u[U_DECAY_TRANSITION] = 0;
     // TODO: More checks that this is an appropriate time to respondToChallenge (maybe in modifier);
     /* bytes32 jrh = disputeRounds[round][idx].jrh; */
@@ -127,7 +125,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   // Internal functions
   /////////////////////////
 
-  function checkKey(uint256[12] u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
+  function checkKey(uint256[11] u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -221,7 +219,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveBeforeReputationValue(
-    uint256[12] u,
+    uint256[11] u,
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes agreeStateReputationValue,
@@ -265,7 +263,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveAfterReputationValue(
-    uint256[12] u,
+    uint256[11] u,
     bytes _reputationKey,
     bytes32[] reputationSiblings,
     bytes disagreeStateReputationValue,
@@ -292,7 +290,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function performReputationCalculation(
-    uint256[12] u,
+    uint256[11] u,
     bytes agreeStateReputationValueBytes,
     bytes disagreeStateReputationValueBytes,
     bytes32[] agreeStateSiblings,
@@ -326,7 +324,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveUID(
-    uint256[12] u,
+    uint256[11] u,
     uint256 _agreeStateReputationUID,
     uint256 _disagreeStateReputationUID,
     bytes32[] _agreeStateSiblings,
@@ -345,10 +343,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         previousNewReputationUID := mload(add(_previousNewReputationValue, 64))
       }
       require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
-      // Flag that we need to check that the reputation they supplied is in the 'agree' state.
-      // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
-      // this function, without adding a new variable to the stack in the parent function...
-      u[U_REQUIRE_REPUTATION_CHECK] = 1;
 
       // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
       checkPreviousReputationInState(
@@ -363,7 +357,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
   }
 
-  function proveValue(uint256[12] u, uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue) internal  view {
+  function proveValue(uint256[11] u, uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue) internal  view {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
@@ -422,7 +416,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
   }
 
-  function getRelativeUpdateNumber(uint256[12] u, ReputationLogEntry logEntry) internal view returns (uint256) {
+  function getRelativeUpdateNumber(uint256[11] u, ReputationLogEntry logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1 - nNodes;
     uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
@@ -430,7 +424,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkPreviousReputationInState(
-    uint256[12] u,
+    uint256[11] u,
     bytes32[] agreeStateSiblings,
     bytes previousNewReputationKey,
     bytes previousNewReputationValue,
