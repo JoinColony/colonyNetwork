@@ -2977,6 +2977,32 @@ contract("ColonyNetworkMining", accounts => {
           assert.equal(client1Hash, client2Hash);
         });
 
+    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+      ? it.skip
+      : it.only("The client should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
+          // Save to the database
+          await goodClient.saveCurrentState();
+          const savedHash = await goodClient.reputationTree.getRootHash();
+
+          // Do some additional updates.
+          await advanceTimeSubmitAndConfirmHash(this);
+          await advanceTimeSubmitAndConfirmHash(this);
+          await advanceTimeSubmitAndConfirmHash(this);
+          await advanceTimeSubmitAndConfirmHash(this);
+
+          // Tell goodClient2 to load from the database
+          await goodClient2.loadState(savedHash);
+
+          // Update it again - note that we're passing in the old startingBlockNumber still. If it applied
+          // all of the updates from that block number, it would fail, because it would be replaying some
+          // updates that it already knew about.
+          await goodClient2.sync(startingBlockNumber);
+
+          const client1Hash = await goodClient.reputationTree.getRootHash();
+          const client2Hash = await goodClient2.reputationTree.getRootHash();
+          assert.equal(client1Hash, client2Hash);
+        });
+
     it("should be able to successfully save the current state to the database and then load it", async () => {
       await goodClient.saveCurrentState();
       const client1Hash = await goodClient.reputationTree.getRootHash();
