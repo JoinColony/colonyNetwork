@@ -199,11 +199,13 @@ class ReputationMiner {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
+    let originReputationProof;
     let logEntry;
     let score;
 
     interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
     jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
+    originReputationProof = await this.getReputationProofObject("0x0");
 
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       const key = await Object.keys(this.reputations)[updateNumber];
@@ -297,6 +299,8 @@ class ReputationMiner {
                 score = ethers.utils.bigNumberify("0");
               }
             }
+
+            originReputationProof = await this.getReputationProofObject(keyForActualUserSkillRep);
           } else {
             score = ethers.utils.bigNumberify("0");
           }
@@ -322,6 +326,7 @@ class ReputationMiner {
 
     const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
+
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
@@ -329,7 +334,8 @@ class ReputationMiner {
         jhLeafValue,
         justUpdatedProof,
         nextUpdateProof,
-        newestReputationProof
+        newestReputationProof,
+        originReputationProof
       })
     );
 
@@ -789,17 +795,11 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
-    // console.log(submission);
     const firstDisagreeIdx = submission[8];
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
-    // console.log('getReputationUPdateLogEntry', lastAgreeIdx);
-    // const logEntry = await repCycle.getReputationUpdateLogEntry(lastAgreeIdx.toString());
-    // console.log('getReputationUPdateLogEntry done');
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
-    // console.log('get justification tree');
     const lastAgreeKey = ReputationMiner.getHexString(lastAgreeIdx, 64);
     const firstDisagreeKey = ReputationMiner.getHexString(firstDisagreeIdx, 64);
-
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
     let logEntryNumber = ethers.utils.bigNumberify(0);
@@ -840,10 +840,9 @@ class ReputationMiner {
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
         ReputationMiner.getHexString(disagreeStateBranchMask),
         this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
-        "0",
         logEntryNumber,
         "0",
-        "1"
+        this.justificationHashes[lastAgreeKey].originReputationProof.branchMask
       ],
       reputationKey,
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
@@ -854,6 +853,9 @@ class ReputationMiner {
       this.justificationHashes[lastAgreeKey].newestReputationProof.key,
       this.justificationHashes[lastAgreeKey].newestReputationProof.value,
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
+      this.justificationHashes[lastAgreeKey].originReputationProof.key,
+      this.justificationHashes[lastAgreeKey].originReputationProof.value,
+      this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
       { gasLimit: 4000000 }
     );
     return tx;

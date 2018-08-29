@@ -125,6 +125,9 @@ contract IReputationMiningCycle {
   /// @param previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param previousNewReputationValue The value of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param previousNewReputationSiblings The siblings of the Merkle proof of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// @param originReputationKey Nonzero for child updates only. The key of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// @param originReputationValue Nonzero for child updates only. The value of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// @param originReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
@@ -137,7 +140,10 @@ contract IReputationMiningCycle {
     bytes32[] disagreeStateSiblings,
     bytes previousNewReputationKey,
     bytes previousNewReputationValue,
-    bytes32[] previousNewReputationSiblings) public;
+    bytes32[] previousNewReputationSiblings,
+    bytes originReputationKey,
+    bytes originReputationValue,
+    bytes32[] originReputationSiblings) public;
 
   /// @notice Submit the Justification Root Hash (JRH) for a submitted reputation hash.
   /// @param round The round that the hash is currently in.
