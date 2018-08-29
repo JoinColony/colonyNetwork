@@ -237,26 +237,25 @@ class ReputationMiner {
           innerUpdateNumber.lt(nChildUpdates) ||
           (innerUpdateNumber.gte(nUpdates.div(2)) && innerUpdateNumber.lt(nUpdates.div(2).add(nChildUpdates)))
         ) {
-          // Get current reputation amount of the actual skill key we are updating parents and children of.
-          // This is the user reputation for the skill, which is positioned at the end of the current logEntry nUpdates.
-          const updateNumberForActualUserSkillRep = updateNumber
+          // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
+          const originSkillUpdateNumber = updateNumber
             .sub(innerUpdateNumber)
             .add(nUpdates)
             .sub(1);
-          const keyForActualUserSkillRep = await this.getKeyForUpdateNumber(updateNumberForActualUserSkillRep.toNumber());
+          const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
 
-          const keyAlreadyExists = this.reputations[keyForActualUserSkillRep] !== undefined;
+          const keyAlreadyExists = this.reputations[originSkillKey] !== undefined;
           if (keyAlreadyExists) {
             // Look up value from our JSON.
-            const valueForActualUserSkillRep = this.reputations[keyForActualUserSkillRep];
-            const existingValueForActualUserSkillRep = ethers.utils.bigNumberify(`0x${valueForActualUserSkillRep.slice(2, 66)}`);
+            const originSkillValueBytes = this.reputations[originSkillKey];
+            const originSkillValue = ethers.utils.bigNumberify(`0x${originSkillValueBytes.slice(2, 66)}`);
 
-            if (!existingValueForActualUserSkillRep.isZero()) {
+            if (!originSkillValue.isZero()) {
               let key;
-              // For colony wide reputation updates, consider the key of the actual user reputation
+              // For colony wide reputation updates, consider the key of the origin user reputation
               if (innerUpdateNumber.lt(nChildUpdates)) {
-                const updateNumberForActualChildSkillRep = updateNumber.add(nUpdates.div(2));
-                key = await this.getKeyForUpdateNumber(updateNumberForActualChildSkillRep);
+                const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
+                key = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
               } else {
                 key = await this.getKeyForUpdateNumber(updateNumber);
               }
@@ -265,14 +264,14 @@ class ReputationMiner {
               if (keyExists) {
                 const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
                 // todo bn.js doesn't have decimals so is fraction precision enough here?
-                const targetScore = reputation.mul(score).div(existingValueForActualUserSkillRep);
+                const targetScore = reputation.mul(score).div(originSkillValue);
                 score = targetScore;
               } else {
                 score = ethers.utils.bigNumberify("0");
               }
             }
 
-            originReputationProof = await this.getReputationProofObject(keyForActualUserSkillRep);
+            originReputationProof = await this.getReputationProofObject(originSkillKey);
           } else {
             score = ethers.utils.bigNumberify("0");
           }
