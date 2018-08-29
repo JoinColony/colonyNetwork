@@ -2976,5 +2976,13 @@ contract("ColonyNetworkMining", accounts => {
           const client2Hash = await goodClient2.reputationTree.getRootHash();
           assert.equal(client1Hash, client2Hash);
         });
+
+    it("should be able to successfully save the current state to the database and then load it", async () => {
+      await goodClient.saveCurrentState();
+      const client1Hash = await goodClient.reputationTree.getRootHash();
+      await goodClient2.loadState(client1Hash);
+      const client2Hash = await goodClient2.reputationTree.getRootHash();
+      assert.equal(client1Hash, client2Hash);
+    });
   });
 });
