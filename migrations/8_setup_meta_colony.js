@@ -41,8 +41,11 @@ module.exports = deployer => {
       assert.equal(skillCount.toNumber(), 3);
       return colonyNetwork.getMetaColony();
     })
-    .then(metaColonyAddress => {
-      token.setOwner(metaColonyAddress);
+    .then(async metaColonyAddress => {
+      // Doing an async / await here because we need this promise to resolve (i.e. tx to mine) and we also want
+      // to log the address. It's either do this, or do `return colonyNetwork.getMetaColony()` twice. I'm easy on
+      // which we use.
+      await token.setOwner(metaColonyAddress);
       console.log("### Meta Colony created at", metaColonyAddress);
     })
     .catch(err => {
