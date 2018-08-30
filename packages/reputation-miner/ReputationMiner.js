@@ -866,7 +866,11 @@ class ReputationMiner {
 
   async resetDB() {
     const db = await sqlite.open(this.dbPath, { Promise });
-    await db.run(`DROP TABLE users, colonies, skills, reputations, reputation_states`);
+    await db.run(`DROP TABLE IF EXISTS users`);
+    await db.run(`DROP TABLE IF EXISTS colonies`);
+    await db.run(`DROP TABLE IF EXISTS skills`);
+    await db.run(`DROP TABLE IF EXISTS reputations`);
+    await db.run(`DROP TABLE IF EXISTS reputation_states`);
     await db.run("CREATE TABLE users ( address text NOT NULL UNIQUE )");
     await db.run("CREATE TABLE reputation_states ( root_hash text NOT NULL UNIQUE, n_nodes INTEGER NOT NULL )");
     await db.run("CREATE TABLE colonies ( address text NOT NULL UNIQUE )");

@@ -2979,8 +2979,9 @@ contract("ColonyNetworkMining", accounts => {
 
     process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
       ? it.skip
-      : it.only("The client should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
+      : it("The client should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
           // Save to the database
+          await goodClient.resetDB();
           await goodClient.saveCurrentState();
           const savedHash = await goodClient.reputationTree.getRootHash();
 
@@ -3004,6 +3005,7 @@ contract("ColonyNetworkMining", accounts => {
         });
 
     it("should be able to successfully save the current state to the database and then load it", async () => {
+      await goodClient.resetDB();
       await goodClient.saveCurrentState();
       const client1Hash = await goodClient.reputationTree.getRootHash();
       await goodClient2.loadState(client1Hash);
