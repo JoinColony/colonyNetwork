@@ -2,7 +2,7 @@ version: 2
 
 job_common: &job_common
   docker:
-    - image: circleci/node:9.11.2
+    - image: circleci/node:9.11.2-stretch
   working_directory: ~/colonyNetwork
 step_save_cache: &step_save_cache
   save_cache:
@@ -56,8 +56,8 @@ jobs:
       - run:
           name: "Setup parity"
           command: |
-            wget https://releases.parity.io/v1.11.8/x86_64-unknown-linux-gnu/parity_1.11.8_ubuntu_amd64.deb
-            sudo dpkg -i parity_1.11.8_ubuntu_amd64.deb
+            wget https://releases.parity.io/v1.11.8/x86_64-unknown-debian-gnu/parity_1.11.8_debian_amd64.deb
+            sudo dpkg -i parity_1.11.8_debian_amd64.deb
             echo "password" > parityPassword
             cp ./parity-genesis.template.json ./parity-genesis.json
             sed -i "s/wwwww/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
