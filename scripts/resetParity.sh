@@ -20,7 +20,7 @@ if hash gsed 2>/dev/null; then
 else
   SED='sed'
 fi
-$SED -i "s/wwwww/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
-$SED -i "s/xxxxx/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
-$SED -i "s/yyyyy/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
-$SED -i "s/zzzzz/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
+$SED -i "s/wwwww/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/xxxxx/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/yyyyy/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/zzzzz/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json

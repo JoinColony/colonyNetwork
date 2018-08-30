@@ -60,10 +60,10 @@ jobs:
             sudo dpkg -i parity_1.11.8_ubuntu_amd64.deb
             echo "password" > parityPassword
             cp ./parity-genesis.template.json ./parity-genesis.json
-            sed -i "s/wwwww/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
-            sed -i "s/xxxxx/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
-            sed -i "s/yyyyy/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
-            sed -i "s/zzzzz/$(parity --keys-path ./keys --password ./parityPassword account new)/g" ./parity-genesis.json
+            sed -i "s/wwwww/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/xxxxx/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/yyyyy/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/zzzzz/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
       - run:
           name: "Install lsof"
           command: |
