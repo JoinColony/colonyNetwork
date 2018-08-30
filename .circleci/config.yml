@@ -13,7 +13,6 @@ step_restore_cache: &step_restore_cache
   restore_cache:
     keys:
       - node-modules-{{ checksum "package.json" }}
-      - node-modules-
 step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
