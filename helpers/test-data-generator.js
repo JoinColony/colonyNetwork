@@ -15,7 +15,7 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH
 } from "./constants";
-import { currentBlockTime, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
+import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
@@ -115,19 +115,17 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
     args: [taskId, worker]
   });
 
-  let dueDateTimestamp = dueDate;
-  if (dueDateTimestamp !== 0 && !dueDateTimestamp) {
-    dueDateTimestamp = await currentBlockTime();
+  const dueDateTimestamp = dueDate;
+  if (dueDateTimestamp) {
+    await executeSignedTaskChange({
+      colony,
+      taskId,
+      functionName: "setTaskDueDate",
+      signers,
+      sigTypes,
+      args: [taskId, dueDateTimestamp]
+    });
   }
-
-  await executeSignedTaskChange({
-    colony,
-    taskId,
-    functionName: "setTaskDueDate",
-    signers,
-    sigTypes,
-    args: [taskId, dueDateTimestamp]
-  });
   return taskId;
 }
 

@@ -1328,14 +1328,16 @@ contract("Colony", accounts => {
 
     it("should fail if I try to submit work for a task that is complete", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupAssignedTask({ colonyNetwork, colony, token });
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, token, dueDate });
       await colony.completeTask(taskId);
       await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-complete");
     });
 
     it("should fail if I try to submit work for a task that is finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+      const dueDate = await currentBlockTime();
+      const taskId = await setupRatedTask({ colonyNetwork, colony, dueDate, token });
       await colony.finalizeTask(taskId);
       await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-complete");
     });
@@ -1399,7 +1401,8 @@ contract("Colony", accounts => {
 
     it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, token });
       await colony.completeTask(taskId);
       await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-ratings-incomplete");
     });
@@ -1758,7 +1761,9 @@ contract("Colony", accounts => {
       const evaluator = accounts[1];
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony, token, evaluator });
+      const dueDate = await currentBlockTime();
+      const taskId = await setupFundedTask({ colonyNetwork, colony, dueDate, token, evaluator });
+
       await colony.completeTask(taskId);
 
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
