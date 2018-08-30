@@ -96,7 +96,7 @@ contract ColonyStorage is DSAuth, DSMath {
   uint8 constant EVALUATOR = 1;
   uint8 constant WORKER = 2;
 
-  // Task Sates
+  // Task States
   uint8 constant ACTIVE = 0;
   uint8 constant CANCELLED = 1;
   uint8 constant FINALIZED = 2;

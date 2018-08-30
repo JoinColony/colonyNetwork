@@ -65,7 +65,7 @@ contract IColony {
   event TaskDeliverableSubmitted(uint256 indexed id, bytes32 deliverableHash);
 
   /// @notice Event logged when a task has been completed. This is either because the dueDate has passed
-  /// and the manager has become tired of waiting, or the worker has submitted the deliverable. In the
+  /// and the manager closed the task, or the worker has submitted the deliverable. In the
   /// latter case, TaskDeliverableSubmitted will also be emitted.
   event TaskCompleted(uint256 indexed id);
 
@@ -415,7 +415,7 @@ contract IColony {
   function cancelTask(uint256 _id) public;
 
   /// @notice Mark a task as complete after the due date has passed.
-  /// This allows the task to be rated and finalized (and funds recovered) even in the presence of a work who has disappeared.
+  /// This allows the task to be rated and finalized (and funds recovered) even in the presence of a worker who has disappeared.
   /// Note that if the due date was not set, then this function will throw.
   /// @param _id Id of the task
   function completeTask(uint256 _id) public;

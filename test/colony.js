@@ -21,7 +21,10 @@ import {
   RATING_2_SECRET,
   MANAGER_PAYOUT,
   WORKER_PAYOUT,
-  EVALUATOR_PAYOUT
+  EVALUATOR_PAYOUT,
+  ACTIVE_TASK_STATE,
+  CANCELLED_TASK_STATE,
+  FINALIZED_TASK_STATE
 } from "../helpers/constants";
 import {
   getTokenArgs,
@@ -284,7 +287,7 @@ contract("Colony", accounts => {
       const task = await colony.getTask(1);
       assert.equal(task[0], SPECIFICATION_HASH);
       assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
-      assert.equal(task[2].toNumber(), 0);
+      assert.equal(task[2].toNumber(), ACTIVE_TASK_STATE);
       assert.equal(task[3].toNumber(), 0);
       assert.equal(task[4].toNumber(), 0);
     });
@@ -1386,12 +1389,12 @@ contract("Colony", accounts => {
   });
 
   describe("when finalizing a task", () => {
-    it('should set the task "status" property to "finalized" (2)', async () => {
+    it('should set the task "status" property to "finalized"', async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
       const task = await colony.getTask(taskId);
-      assert.equal(task[2].toNumber(), 2);
+      assert.equal(task[2].toNumber(), FINALIZED_TASK_STATE);
     });
 
     it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
@@ -1422,13 +1425,13 @@ contract("Colony", accounts => {
   });
 
   describe("when cancelling a task", () => {
-    it('should set the task "status" property to "cancelled" (1)', async () => {
+    it('should set the task "status" property to "cancelled"', async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
 
       await colony.cancelTask(taskId);
       const task = await colony.getTask(taskId);
-      assert.equal(task[2].toNumber(), 1);
+      assert.equal(task[2].toNumber(), CANCELLED_TASK_STATE);
     });
 
     it("should be possible to return funds back to the domain", async () => {
