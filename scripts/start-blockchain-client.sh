@@ -35,7 +35,7 @@ start_ganache() {
 }
 
 start_parity() {
-  mapfile -t addresses < <( parity --keys-path ./keys account list )
+  mapfile -t addresses < <( parity --keys-path ./keys account list --chain ./parity-genesis.json)
   if [ ${#addresses[@]} -eq 0 ]; then
     echo "No parity addresses found. Did you initialise it correctly?"
     exit 1;

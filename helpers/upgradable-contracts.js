@@ -50,15 +50,17 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
     return functionsToResolve;
   });
   Object.keys(deployedImplementations).map(name => parseImplementation(name, functionsToResolve, deployedImplementations));
-  const promises = Object.keys(functionsToResolve).map(async fName => {
+  for (let i = 0; i < Object.keys(functionsToResolve).length; i += 1) {
+    // We do it like this rather than a nice await Promise.all on a mapped array of promises because of
+    // https://github.com/paritytech/parity-ethereum/issues/9155
+    const fName = Object.keys(functionsToResolve)[i];
     const sig = `${fName}(${functionsToResolve[fName].inputs.join(",")})`;
     const address = functionsToResolve[fName].definedIn;
-    const sigHash = await web3Utils.soliditySha3(sig).substr(0, 10);
-    await resolver.register(sig, address);
-    const destination = await resolver.lookup(sigHash);
+    const sigHash = await web3Utils.soliditySha3(sig).substr(0, 10); // eslint-disable-line no-await-in-loop
+    await resolver.register(sig, address); // eslint-disable-line no-await-in-loop
+    const destination = await resolver.lookup(sigHash); // eslint-disable-line no-await-in-loop
     assert.equal(destination, address, `${sig} has not been registered correctly. Is it defined?`);
-  });
-  return Promise.all(promises);
+  }
 }
 
 export async function setupUpgradableToken(token, resolver, etherRouter) {
