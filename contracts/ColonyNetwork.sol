@@ -61,6 +61,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return metaColony;
   }
 
+  function getSomething(uint256 a) public view returns (uint256) {
+    return a;
+  }
+
   function getColonyCount() public view returns (uint256) {
     return colonyCount;
   }

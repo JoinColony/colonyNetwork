@@ -56,6 +56,11 @@ contract IReputationMiningCycle {
     uint256 providedPreviousReputationUID
     );
 
+  /// @notice Change value at specific slot
+  /// @param _slot Index of the slot we want to change
+  /// @param _value Value we want to set at `_slot`
+  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
+
   /// @notice Get the hash for the corresponding entry.
   /// @param submitter The address that submitted the hash
   /// @param entryIndex The index of the entry that they used to submit the hash

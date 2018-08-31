@@ -32,6 +32,51 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     _;
   }
 
+  function enterRecoveryMode() public stoppable auth {
+    recoveryMode = true;
+    recoveryApprovalCount = 0;
+    recoveryEditedTimestamp = now;
+  }
+
+  function approveExitRecovery() public recovery auth {
+    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");
+    recoveryApprovalTimestamps[msg.sender] = now;
+    recoveryApprovalCount++;
+  }
+
+  function exitRecoveryMode() public recovery auth {
+    uint numRequired = recoveryRolesCount / 2 + 1;
+    require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
+
+    recoveryMode = false;
+  }
+
+  function setReputationState(bytes32 _rootHash, uint256 _nNodes) public recovery auth {
+    reputationRootHash = _rootHash;
+    reputationRootHashNNodes = _nNodes;
+    recoveryApprovalCount = 0;
+    recoveryEditedTimestamp = now;
+  }
+
+  function setReputationMiningCycleStorageSlot(uint256 _slot, bytes32 _value, bool _active) public recovery auth {
+    address reputationMiningCycle = _active ? activeReputationMiningCycle : inactiveReputationMiningCycle;
+    IReputationMiningCycle(reputationMiningCycle).setStorageSlotRecovery(_slot, _value);
+    recoveryApprovalCount = 0;
+    recoveryEditedTimestamp = now;
+  }
+
+  function setCorruptedReputationUpdateLogs(address _reputationMiningCycle, uint256[] _updateLogs) public recovery auth {
+    corruptedReputationUpdateLogs[_reputationMiningCycle] = _updateLogs;
+  }
+
+  function getCorruptedReputationUpdateLogs(address _reputationMiningCycle) public view returns (uint256[]) {
+    return corruptedReputationUpdateLogs[_reputationMiningCycle];
+  }
+
+  function isInRecoveryMode() public view returns (bool) {
+    return recoveryMode;
+  }
+
   function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public
   onlyReputationMiningCycle
   {

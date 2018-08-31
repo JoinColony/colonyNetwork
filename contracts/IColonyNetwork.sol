@@ -47,6 +47,50 @@ contract IColonyNetwork {
   /// @param nNodes The number of nodes in the reputation state
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
 
+  // Implemented in DSAuth.sol
+  /// @notice Set the `Authority` for the colony
+  /// @param _authority The `Authority` contract address
+  function setAuthority(address _authority) public;
+
+  /// @notice Put colony network mining into recovery mode.
+  /// Can only be called by user with recovery role.
+  function enterRecoveryMode() public;
+
+  /// @notice Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
+  function exitRecoveryMode() public;
+
+  /// @notice Indicate approval to exit recovery mode.
+  /// Can only be called by user with recovery role.
+  function approveExitRecovery() public;
+
+  /// @notice Is colony network mining in recovery mode
+  /// @return inRecoveryMode Return true if recovery mode is active, false otherwise
+  function isInRecoveryMode() public view returns (bool inRecoveryMode);
+
+  /// @notice Sets reputation state
+  /// @dev Can only be called in recovery mode
+  /// @param _rootHash Reputation root hash
+  /// @param _nNodes Number of nodes
+  function setReputationState(bytes32 _rootHash, uint256 _nNodes) public;
+
+  /// @notice Sets storage slot in reputation mining cycle contract
+  /// @param _slot Id of the slot we want to change
+  /// @param _value Value we want to set
+  /// @param _active Active or inactive reputation mining cycle
+  function setReputationMiningCycleStorageSlot(uint256 _slot, bytes32 _value, bool _active) public;
+
+  /// @notice Set which update logs are work, on specified reputation mining cycle contract
+  /// @dev Can only be called while mining cycle is in recovery mode
+  /// @dev Logs will be ignored by mining client
+  /// @param _reputationMiningCycle Address of the reputation mining cycle
+  /// @param _updateLogs Array of indexes of the logs we want to ignore
+  function setCorruptedReputationUpdateLogs(address _reputationMiningCycle, uint256[] _updateLogs) public;
+
+  /// @notice Get corrupted/wrong update logs for specific mining cycle
+  /// @param _reputationMiningCycle Address of reputation mining cycle
+  /// @return updateLogs Array of indexes of update logs
+  function getCorruptedReputationUpdateLogs(address _reputationMiningCycle) public view returns (uint256[] updateLogs);
+
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165
   /// @dev Interface identification is specified in ERC-165.

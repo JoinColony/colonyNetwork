@@ -26,6 +26,10 @@ import "./ReputationMiningCycleStorage.sol";
 
 
 contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
+  modifier onlyColonyNetwork() {
+    require(msg.sender == colonyNetworkAddress);
+    _;
+  }
 
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
@@ -96,6 +100,14 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     colonyNetworkAddress = msg.sender;
     tokenLockingAddress = _tokenLockingAddress;
     clnyTokenAddress = _clnyTokenAddress;
+  }
+
+  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public onlyColonyNetwork {
+    uint256 x = _slot;
+    bytes32 y = _value;
+    assembly {
+      sstore(x, y)
+    }
   }
 
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {

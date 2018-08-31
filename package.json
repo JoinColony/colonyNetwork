@@ -16,6 +16,7 @@
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
     "test:contracts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test --network development",
+    "test:contracts:recovery": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test ./recovery-test/* --network development",
     "test:contracts:upgrade": "npm run start:blockchain:client parity & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./upgrade-test/* --network integration",
     "test:contracts:gasCosts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development",
     "test:contracts:patricia": "npm run start:blockchain:client parity & truffle migrate --reset --compile-all && truffle test packages/reputation-miner/patricia-test.js --network development",

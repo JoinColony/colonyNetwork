@@ -158,11 +158,14 @@ class ReputationMiner {
 
     // How many updates from the logs do we have?
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
+    if (nLogEntries.toNumber() === 0) {
+      return;
+    }
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1), { blockNumber });
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
 
     for (let i = ethers.utils.bigNumberify("0"); i.lt(totalnUpdates); i = i.add(1)) {
-      await this.addSingleReputationUpdate(i, repCycle, blockNumber); // eslint-disable-line no-await-in-loop
+      await this.addSingleReputationUpdate(i, repCycle, blockNumber, a); // eslint-disable-line no-await-in-loop
     }
     const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1), blockNumber);
     const justUpdatedProof = await this.getReputationProofObject(prevKey);
@@ -189,7 +192,7 @@ class ReputationMiner {
    * @param  {BigNumber}  updateNumber     The number of the update that should be considered.
    * @return {Promise}
    */
-  async addSingleReputationUpdate(updateNumber, repCycle, blockNumber) {
+  async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, a) {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
@@ -227,7 +230,13 @@ class ReputationMiner {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber, blockNumber);
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
-      score = this.getScore(updateNumber, logEntry[1]);
+      let invalidUpdates = await this.colonyNetwork.getCorruptedReputationUpdateLogs(repCycle.address);
+      invalidUpdates = invalidUpdates.map(i => i.toNumber());
+      let reputationChange = logEntry[1];
+      if (invalidUpdates.includes(logEntryUpdateNumber.toNumber())) {
+        reputationChange = ethers.utils.bigNumberify("0");
+      }
+      score = this.getScore(updateNumber, reputationChange);
     }
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {

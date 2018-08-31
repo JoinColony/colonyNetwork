@@ -96,6 +96,14 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
 
   mapping (bytes32 => ENSRecord) records;
 
+  // Recovery variables
+  bool recoveryMode;
+  uint64 recoveryRolesCount;
+  uint64 recoveryApprovalCount;
+  uint256 recoveryEditedTimestamp;
+  mapping (address => uint256) recoveryApprovalTimestamps;
+  mapping (address => uint256[]) corruptedReputationUpdateLogs;
+
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;
@@ -103,6 +111,16 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
 
   modifier notCalledByColony() {
     require(!_isColony[msg.sender], "colony-caller-must-not-be-colony");
+    _;
+  }
+
+  modifier recovery() {
+    require(recoveryMode, "colony-not-in-recovery-mode");
+    _;
+  }
+
+  modifier stoppable {
+    require(!recoveryMode, "colony-in-recovery-mode");
     _;
   }
 }
