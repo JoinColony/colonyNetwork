@@ -18,7 +18,7 @@ Just like in a "normal" colony, accounts holding both CLNY and Reputation in the
 CNLY is required as a stake to participate in [Reputation Mining](/colonynetwork/docs-reputation-mining/). Miners earn a reward in CLNY, as well as reputation within the Meta Colony tagged with a special 'mining' skill.
 
 ## Revenue and Rewards
-The Meta Colony, as custodian of the Colony Network, collects a small fee every time a user claims a payout from a task. If the task payout is in a token other than whitelisted ones such as Ether or Dai, the token is sent to an auction contract, and the proceeds are sent to the Meta Colony.   
+The Meta Colony, as custodian of the Colony Network, collects a small fee every time a user claims a payout from a task. If the task payout is in a token other than whitelisted currencies such as ETH or DAI, the token is sent to an auction contract, and sold off for CLNY, which is burned.   
 
 This idea of a fee is a little unusual for such a decentralized system. One of the appeals of Ethereum is that other than gas costs, platforms do not generally seek rent and are free to use. However, the Network Fee is vital in ensuring the game theoretic security of the Colony Network’s reputation mining and governance processes by providing underlying value to the CLNY held by Meta Colony members.
 
