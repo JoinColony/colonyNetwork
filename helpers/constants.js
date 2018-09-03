@@ -23,6 +23,10 @@ const RATING_2_SALT = web3Utils.soliditySha3(getRandomString(10));
 const RATING_1_SECRET = web3Utils.soliditySha3(RATING_1_SALT, MANAGER_RATING);
 const RATING_2_SECRET = web3Utils.soliditySha3(RATING_2_SALT, WORKER_RATING);
 
+const ACTIVE_TASK_STATE = 0;
+const CANCELLED_TASK_STATE = 1;
+const FINALIZED_TASK_STATE = 2;
+
 module.exports = {
   MANAGER_ROLE,
   EVALUATOR_ROLE,
@@ -41,5 +45,8 @@ module.exports = {
   RATING_1_SALT,
   RATING_2_SALT,
   RATING_1_SECRET,
-  RATING_2_SECRET
+  RATING_2_SECRET,
+  ACTIVE_TASK_STATE,
+  CANCELLED_TASK_STATE,
+  FINALIZED_TASK_STATE
 };

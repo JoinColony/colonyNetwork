@@ -21,7 +21,10 @@ import {
   RATING_2_SECRET,
   MANAGER_PAYOUT,
   WORKER_PAYOUT,
-  EVALUATOR_PAYOUT
+  EVALUATOR_PAYOUT,
+  ACTIVE_TASK_STATE,
+  CANCELLED_TASK_STATE,
+  FINALIZED_TASK_STATE
 } from "../helpers/constants";
 import {
   getTokenArgs,
@@ -284,10 +287,9 @@ contract("Colony", accounts => {
       const task = await colony.getTask(1);
       assert.equal(task[0], SPECIFICATION_HASH);
       assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
-      assert.isFalse(task[2]);
-      assert.isFalse(task[3]);
+      assert.equal(task[2].toNumber(), ACTIVE_TASK_STATE);
+      assert.equal(task[3].toNumber(), 0);
       assert.equal(task[4].toNumber(), 0);
-      assert.equal(task[5].toNumber(), 0);
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
@@ -358,7 +360,7 @@ contract("Colony", accounts => {
       await colony.addDomain(1);
       await makeTask({ colony, domainId: 2 });
       const task = await colony.getTask(1);
-      assert.equal(task[8].toNumber(), 2);
+      assert.equal(task[7].toNumber(), 2);
     });
 
     it("should log TaskAdded and PotAdded events", async () => {
@@ -372,8 +374,8 @@ contract("Colony", accounts => {
 
       const taskId = await makeTask({ colony, skillId, dueDate });
       const task = await colony.getTask(taskId);
-      assert.equal(task[4].toNumber(), dueDate);
-      assert.equal(task[9][0].toNumber(), skillId);
+      assert.equal(task[3].toNumber(), dueDate);
+      assert.equal(task[8][0].toNumber(), skillId);
     });
   });
 
@@ -1129,7 +1131,7 @@ contract("Colony", accounts => {
       });
 
       const task = await colony.getTask(taskId);
-      assert.equal(task[4], dueDate);
+      assert.equal(task[3], dueDate);
     });
 
     it("should fail if a non-colony call is made to the task update functions", async () => {
@@ -1321,21 +1323,32 @@ contract("Colony", accounts => {
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
       task = await colony.getTask(1);
       assert.equal(task[1], DELIVERABLE_HASH);
-      assert.closeTo(task[7].toNumber(), currentTime, 2);
+      assert.closeTo(task[6].toNumber(), currentTime, 2);
+    });
+
+    it("should fail if I try to submit work for a task that is complete", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, token, dueDate });
+      await colony.completeTask(taskId);
+      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-complete");
     });
 
     it("should fail if I try to submit work for a task that is finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+      const dueDate = await currentBlockTime();
+      const taskId = await setupRatedTask({ colonyNetwork, colony, dueDate, token });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-already-finalized");
+      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-complete");
     });
 
-    it("should fail if I try to submit work for a task that is past its due date", async () => {
+    it("should succeed if I try to submit work for a task that is past its due date but not yet marked as complete", async () => {
       let dueDate = await currentBlockTime();
       dueDate -= 1;
-      await setupAssignedTask({ colonyNetwork, colony, dueDate });
-      await checkErrorRevert(colony.submitTaskDeliverable(1, DELIVERABLE_HASH), "colony-task-due-date-passed");
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
+      const task = await colony.getTask(taskId);
+      assert.equal(task[1], DELIVERABLE_HASH);
     });
 
     it("should fail if I try to submit work for a task using an invalid id", async () => {
@@ -1348,7 +1361,7 @@ contract("Colony", accounts => {
       await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.submitTaskDeliverable(1, DELIVERABLE_HASH, { from: WORKER });
 
-      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: WORKER }), "colony-task-deliverable-already-submitted");
+      await checkErrorRevert(colony.submitTaskDeliverable(1, SPECIFICATION_HASH, { from: WORKER }), "colony-task-complete");
       const task = await colony.getTask(1);
       assert.equal(task[1], DELIVERABLE_HASH);
     });
@@ -1378,17 +1391,19 @@ contract("Colony", accounts => {
   });
 
   describe("when finalizing a task", () => {
-    it('should set the task "finalized" property to "true"', async () => {
+    it('should set the task "status" property to "finalized"', async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await colony.finalizeTask(taskId);
       const task = await colony.getTask(taskId);
-      assert.isTrue(task[2]);
+      assert.equal(task[2].toNumber(), FINALIZED_TASK_STATE);
     });
 
-    it("should fail if the task work ratings have not been assigned", async () => {
+    it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, token });
+      await colony.completeTask(taskId);
       await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-ratings-incomplete");
     });
 
@@ -1413,22 +1428,22 @@ contract("Colony", accounts => {
   });
 
   describe("when cancelling a task", () => {
-    it('should set the task "cancelled" property to "true"', async () => {
+    it('should set the task "status" property to "cancelled"', async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
 
       await colony.cancelTask(taskId);
       const task = await colony.getTask(taskId);
-      assert.isTrue(task[3]);
+      assert.equal(task[2].toNumber(), CANCELLED_TASK_STATE);
     });
 
     it("should be possible to return funds back to the domain", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
       const task = await colony.getTask(taskId);
-      const domainId = task[8].toNumber();
+      const domainId = task[7].toNumber();
       const domain = await colony.getDomain(domainId);
-      const taskPotId = task[6];
+      const taskPotId = task[5];
       const domainPotId = domain[1];
 
       // Our test-data-generator already set up some task fund with tokens,
@@ -1746,7 +1761,11 @@ contract("Colony", accounts => {
       const evaluator = accounts[1];
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony, token, evaluator });
+      const dueDate = await currentBlockTime();
+      const taskId = await setupFundedTask({ colonyNetwork, colony, dueDate, token, evaluator });
+
+      await colony.completeTask(taskId);
+
       await forwardTime(SECONDS_PER_DAY * 10 + 1, this);
       await colony.finalizeTask(taskId);
 

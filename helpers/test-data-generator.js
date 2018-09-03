@@ -12,9 +12,10 @@ import {
   RATING_2_SALT,
   MANAGER_ROLE,
   WORKER_ROLE,
-  SPECIFICATION_HASH
+  SPECIFICATION_HASH,
+  DELIVERABLE_HASH
 } from "./constants";
-import { currentBlockTime, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
+import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
@@ -114,19 +115,17 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
     args: [taskId, worker]
   });
 
-  let dueDateTimestamp = dueDate;
-  if (!dueDateTimestamp) {
-    dueDateTimestamp = await currentBlockTime();
+  const dueDateTimestamp = dueDate;
+  if (dueDateTimestamp) {
+    await executeSignedTaskChange({
+      colony,
+      taskId,
+      functionName: "setTaskDueDate",
+      signers,
+      sigTypes,
+      args: [taskId, dueDateTimestamp]
+    });
   }
-
-  await executeSignedTaskChange({
-    colony,
-    taskId,
-    functionName: "setTaskDueDate",
-    signers,
-    sigTypes,
-    args: [taskId, dueDateTimestamp]
-  });
   return taskId;
 }
 
@@ -156,7 +155,7 @@ export async function setupFundedTask({
   }
   const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, domain, skill, evaluator, worker });
   const task = await colony.getTask(taskId);
-  const potId = task[6].toNumber();
+  const potId = task[5].toNumber();
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
@@ -233,6 +232,9 @@ export async function setupRatedTask({
     evaluatorPayout,
     workerPayout
   });
+
+  await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: worker });
+
   const WORKER_RATING_SECRET = web3Utils.soliditySha3(workerRatingSalt, workerRating);
   const MANAGER_RATING_SECRET = web3Utils.soliditySha3(managerRatingSalt, managerRating);
   await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });

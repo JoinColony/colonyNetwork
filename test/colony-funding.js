@@ -193,13 +193,13 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 0]
       });
       let task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1, 2, 0, otherToken.address);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 0, Payout 0
       // Pot was equal to payout, transition to pot being lower by increasing payout (8)
@@ -212,19 +212,19 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 40]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 1);
+      assert.equal(task[4].toNumber(), 1);
 
       // Pot 0, Payout 40
       // Pot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by increasing payout (12)
@@ -237,7 +237,7 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 80]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 80, Payout 80
       // Pot was equal to payout, transition to being above by decreasing payout (6)
@@ -250,13 +250,13 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 40]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 80, Payout 40
       // Pot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2, 1, 40, otherToken.address);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 40, Payout 40
       // Pot was equal to payout, transition to pot being below payout by changing pot (7)
@@ -285,7 +285,7 @@ contract("Colony Funding", accounts => {
       // Pot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1, 2, 60, otherToken.address);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 80, Payout 40
       // Pot was above payout, change to being below by changing pot (9)
@@ -321,7 +321,7 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 10]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 20, Payout 10
       // Pot was above, change to being above by changing payout (16)
@@ -334,13 +334,13 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 5]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 20, Payout 5
       // Pot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 10, Payout 5
       // Pot was above payout, change to being below by changing payout (10)
@@ -353,7 +353,7 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 40]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 1);
+      assert.equal(task[4].toNumber(), 1);
 
       // Pot 10, Payout 40
       // Pot was below payout, change to being below by changing payout (14)
@@ -366,7 +366,7 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 30]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 1);
+      assert.equal(task[4].toNumber(), 1);
 
       // Pot 10, Payout 30
       // Pot was below payout, change to being below by changing pot (13)
@@ -402,7 +402,7 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 5]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Pot 5, Payout 5
     });
@@ -463,7 +463,7 @@ contract("Colony Funding", accounts => {
       await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
 
       const taskInfo = await colony.getTask(taskId);
-      const taskPotId = taskInfo[6].toNumber();
+      const taskPotId = taskInfo[5].toNumber();
       const remainingPotBalance = await colony.getPotBalance(taskPotId, token.address);
       assert.equal(remainingPotBalance.toString(), WORKER_PAYOUT.toString(), "should have remaining pot balance equal to worker payout");
 
@@ -545,12 +545,12 @@ contract("Colony Funding", accounts => {
         args: [taskId, 0x0, 40]
       });
       let task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 1);
+      assert.equal(task[4].toNumber(), 1);
 
       // Fund the pot equal to manager payout 40 = 40
       await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Cannot bring pot balance below current payout
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, 0x0), "colony-funding-task-bad-state");
@@ -565,12 +565,12 @@ contract("Colony Funding", accounts => {
         args: [taskId, 0x0, 50]
       });
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 1);
+      assert.equal(task[4].toNumber(), 1);
 
       // Fund the pot equal to manager payout, plus 10, 50 < 60
       await colony.moveFundsBetweenPots(1, 2, 20, 0x0);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
 
       // Cannot bring pot balance below current payout
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, 0x0), "colony-funding-task-bad-state");
@@ -578,7 +578,7 @@ contract("Colony Funding", accounts => {
       // Can remove surplus 50 = 50
       await colony.moveFundsBetweenPots(2, 1, 10, 0x0);
       task = await colony.getTask(taskId);
-      assert.equal(task[5].toNumber(), 0);
+      assert.equal(task[4].toNumber(), 0);
     });
 
     it("should pay fees on revenue correctly", async () => {

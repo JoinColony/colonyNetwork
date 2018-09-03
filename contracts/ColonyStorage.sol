@@ -86,12 +86,20 @@ contract ColonyStorage is DSAuth, DSMath {
   uint256 potCount;
   uint256 domainCount;
 
+  // Colony-wide roles
   uint8 constant OWNER_ROLE = 0;
   uint8 constant ADMIN_ROLE = 1;
   uint8 constant RECOVERY_ROLE = 2;
+
+  // Task Roles
   uint8 constant MANAGER = 0;
   uint8 constant EVALUATOR = 1;
   uint8 constant WORKER = 2;
+
+  // Task States
+  uint8 constant ACTIVE = 0;
+  uint8 constant CANCELLED = 1;
+  uint8 constant FINALIZED = 2;
 
   // Variables for recovery mode
   bool recoveryMode;
@@ -106,12 +114,11 @@ contract ColonyStorage is DSAuth, DSMath {
   struct Task {
     bytes32 specificationHash;
     bytes32 deliverableHash;
-    bool finalized;
-    bool cancelled;
+    uint8 status;
     uint256 dueDate;
     uint256 payoutsWeCannotMake;
     uint256 potId;
-    uint256 deliverableTimestamp;
+    uint256 completionTimestamp;
     uint256 domainId;
     uint256[] skills;
 
@@ -160,12 +167,12 @@ contract ColonyStorage is DSAuth, DSMath {
   }
 
   modifier taskNotFinalized(uint256 _id) {
-    require(!tasks[_id].finalized, "colony-task-already-finalized");
+    require(tasks[_id].status != FINALIZED, "colony-task-already-finalized");
     _;
   }
 
   modifier taskFinalized(uint256 _id) {
-    require(tasks[_id].finalized, "colony-task-not-finalized");
+    require(tasks[_id].status == FINALIZED, "colony-task-not-finalized");
     _;
   }
 

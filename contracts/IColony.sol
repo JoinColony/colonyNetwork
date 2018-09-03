@@ -64,6 +64,11 @@ contract IColony {
   /// @param deliverableHash Hash of the work performed
   event TaskDeliverableSubmitted(uint256 indexed id, bytes32 deliverableHash);
 
+  /// @notice Event logged when a task has been completed. This is either because the dueDate has passed
+  /// and the manager closed the task, or the worker has submitted the deliverable. In the
+  /// latter case, TaskDeliverableSubmitted will also be emitted.
+  event TaskCompleted(uint256 indexed id);
+
   /// @notice Event logged when the rating of a role was revealed
   /// @param id Id of the task
   /// @param role Role that got rated
@@ -385,7 +390,7 @@ contract IColony {
 
   /// @notice Submit the task deliverable, i.e. the output of the work performed for task `_id`
   /// Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten
-  /// @dev Set the `task.deliverableHash` and `task.deliverableTimestamp` properties
+  /// @dev Set the `task.deliverableHash` and `task.completionTimestamp` properties
   /// @param _id Id of the task
   /// @param _deliverableHash Unique hash of the task deliverable content in ddb
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public;
@@ -405,31 +410,35 @@ contract IColony {
 
   /// @notice Cancel a task at any point before it is finalized. Secured function to authorised members
   /// Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`
-  /// @dev Set the `task.cancelled` property to true
+  /// @dev Set the `task.status` property to 1
   /// @param _id Id of the task
   function cancelTask(uint256 _id) public;
+
+  /// @notice Mark a task as complete after the due date has passed.
+  /// This allows the task to be rated and finalized (and funds recovered) even in the presence of a worker who has disappeared.
+  /// Note that if the due date was not set, then this function will throw.
+  /// @param _id Id of the task
+  function completeTask(uint256 _id) public;
 
   /// @notice Get a task with id `_id`
   /// @param _id Id of the task
   /// @return specificationHash Task brief hash
   /// @return deliverableHash Task deliverable hash
-  /// @return finalized Finalised property
-  /// @return cancelled Cancelled property
+  /// @return status Status property. 0 - Active. 1 - Cancelled. 2 - Finalized
   /// @return dueDate Due date
   /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current task funding
   /// @return potId Id of funding pot for task
-  /// @return deliverableTimestamp Deliverable submission timestamp
+  /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
   function getTask(uint256 _id) public view returns (
     bytes32 specificationHash,
     bytes32 deliverableHash,
-    bool finalized,
-    bool cancelled,
+    uint8 status,
     uint256 dueDate,
     uint256 payoutsWeCannotMake,
     uint256 potId,
-    uint256 deliverableTimestamp,
+    uint256 completionTimestamp,
     uint256 domainId,
     uint256[] skillIds
     );
