@@ -12,7 +12,7 @@ import {
   makeReputationKey,
   makeReputationValue,
   currentBlock,
-  findIndexAndSubmitRootHash
+  getValidEntryNumber
 } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 
@@ -586,21 +586,10 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
       // Find an entry that will be eligible in the last 60 seconds of the window
-      let i;
-      // 1 will almost always be okay here. But there's a 60/3600 chance that it wouldn't be.
-      // We don't want this test to be flickery, so let's make sure 1 is going to be okay or use a higher
-      // number if not. There is a 1 in 10**3555 chance of this test failing if this is the only thing that
-      // can be wrong, so there's a much better chance that I've written this test poorly if it starts
-      // failing - don't just dismiss it!
-      for (i = 1; i < 1000; i += 1) {
-        const hash = await repCycle.getEntryHash(MAIN_ACCOUNT, i, "0x12345678"); // eslint-disable-line no-await-in-loop
-        if (parseInt(hash.substring(2, 4), 16) < 0xfb) {
-          break;
-        }
-      }
-      await forwardTime(3540, this);
-      await repCycle.submitRootHash("0x12345678", 10, i);
-      await forwardTime(60, this);
+      await forwardTime(1800, this);
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber);
+      await forwardTime(1800, this);
     });
 
     it("should not allow a user to back more than one hash in a single cycle", async () => {
@@ -609,8 +598,10 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(3500, this);
-      await repCycle.submitRootHash("0x12345678", 10, 10);
-      await checkErrorRevert(repCycle.submitRootHash("0x87654321", 10, 10), "colony-reputation-mining-submitting-different-hash");
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber);
+      const entryNumber2 = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x87654321");
+      await checkErrorRevert(repCycle.submitRootHash("0x87654321", 10, entryNumber2), "colony-reputation-mining-submitting-different-hash");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
     });
@@ -621,9 +612,10 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(3500, this);
-      await repCycle.submitRootHash("0x12345678", 10, 10);
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber);
 
-      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 11, 9), "colony-reputation-mining-submitting-different-nnodes");
+      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 11, entryNumber), "colony-reputation-mining-submitting-different-nnodes");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
     });
@@ -634,9 +626,11 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(3500, this);
-      await repCycle.submitRootHash("0x12345678", 10, 10);
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
 
-      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 10), "colony-reputation-mining-submitting-same-entry-index");
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber);
+
+      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, entryNumber), "colony-reputation-mining-submitting-same-entry-index");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
     });
@@ -647,8 +641,11 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(3500, this);
-      await repCycle.submitRootHash("0x12345678", 10, 10);
-      await repCycle.submitRootHash("0x12345678", 10, 9);
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
+      const entryNumber2 = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", entryNumber + 1);
+
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber);
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber2);
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
       await forwardTime(100, this);
@@ -686,21 +683,14 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
+      await forwardTime(3000, this);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x12345678", 10, 1);
-      await repCycle.submitRootHash("0x12345678", 10, 2);
-      await repCycle.submitRootHash("0x12345678", 10, 3);
-      await repCycle.submitRootHash("0x12345678", 10, 4);
-      await repCycle.submitRootHash("0x12345678", 10, 5);
-      await repCycle.submitRootHash("0x12345678", 10, 6);
-      await repCycle.submitRootHash("0x12345678", 10, 7);
-      await repCycle.submitRootHash("0x12345678", 10, 8);
-      await repCycle.submitRootHash("0x12345678", 10, 9);
-      await repCycle.submitRootHash("0x12345678", 10, 10);
-      await repCycle.submitRootHash("0x12345678", 10, 11);
-      await repCycle.submitRootHash("0x12345678", 10, 12);
-      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 13), "colony-reputation-mining-max-number-miners-reached");
+      let entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", 1);
+      for (let i = 1; i <= 12; i += 1) {
+        await repCycle.submitRootHash("0x12345678", 10, entryNumber); // eslint-disable-line no-await-in-loop
+        entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", entryNumber); // eslint-disable-line no-await-in-loop
+      }
+      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, entryNumber), "colony-reputation-mining-max-number-miners-reached");
     });
 
     it("should prevent submission of hashes with an invalid entry for the balance of a user", async () => {
@@ -711,7 +701,8 @@ contract("ColonyNetworkMining", accounts => {
       await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 1000000000000), "colony-reputation-mining-stake-minimum-not-met");
-      await repCycle.submitRootHash("0x87654321", 10, 10, { from: OTHER_ACCOUNT });
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x87654321");
+      await repCycle.submitRootHash("0x87654321", 10, entryNumber, { from: OTHER_ACCOUNT });
     });
 
     it("should prevent submission of hashes with a valid entry, but invalid hash for the current time", async () => {
@@ -768,8 +759,11 @@ contract("ColonyNetworkMining", accounts => {
       let repCycle = await IReputationMiningCycle.at(addr);
 
       await forwardTime(3500, this);
-      await repCycle.submitRootHash("0x12345678", 10, 10);
-      await repCycle.submitRootHash("0x12345678", 10, 8, { from: OTHER_ACCOUNT });
+      const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
+      const entryNumber2 = await getValidEntryNumber(colonyNetwork, OTHER_ACCOUNT, "0x12345678");
+
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber);
+      await repCycle.submitRootHash("0x12345678", 10, entryNumber2, { from: OTHER_ACCOUNT });
       await forwardTime(100, this);
       await repCycle.confirmNewHash(0);
 
@@ -1752,8 +1746,8 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.addLogContentsToReputationTree();
 
       await forwardTime(3200, this);
-      await findIndexAndSubmitRootHash(goodClient, 0xef);
-      await findIndexAndSubmitRootHash(badClient, 0xef);
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
       await forwardTime(400, this);
 
       await goodClient.submitJustificationRootHash();
@@ -1864,9 +1858,8 @@ contract("ColonyNetworkMining", accounts => {
       // We need to complete the current reputation cycle so that all the required log entries are present
       let reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
-      await forwardTime(3500, this);
+      await forwardTime(3600, this);
       await repCycle.submitRootHash("0x00", 0, 10);
-      await forwardTime(100, this);
       await repCycle.confirmNewHash(0);
 
       const clients = await Promise.all(
@@ -1890,7 +1883,7 @@ contract("ColonyNetworkMining", accounts => {
         // Doing these individually rather than in a big loop because with many instances of the EVM
         // churning away at once, I *think* it's slower.
         await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
-        await findIndexAndSubmitRootHash(clients[i], 0xef); // eslint-disable-line no-await-in-loop
+        await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
         await clients[i].submitJustificationRootHash(); // eslint-disable-line no-await-in-loop
         console.log(`Client ${i} of ${clients.length - 1} submitted JRH`); // eslint-disable-line no-console
       }
@@ -1919,8 +1912,8 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.addLogContentsToReputationTree();
 
       await forwardTime(3200, this);
-      await findIndexAndSubmitRootHash(goodClient, 0xef);
-      await findIndexAndSubmitRootHash(badClient, 0xef);
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
       await forwardTime(400, this);
 
       await goodClient.submitJustificationRootHash();
@@ -2177,7 +2170,7 @@ contract("ColonyNetworkMining", accounts => {
         // Doing these individually rather than in a big loop because with many instances of the EVM
         // churning away at once, I *think* it's slower.
         await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
-        await findIndexAndSubmitRootHash(clients[i], 0xef); // eslint-disable-line no-await-in-loop
+        await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
         console.log(`Client ${i} of ${clients.length - 1} submitted JRH`); // eslint-disable-line no-console
       }
       await forwardTime(400, this);
@@ -2415,8 +2408,8 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.addLogContentsToReputationTree();
 
       await forwardTime(3200, this);
-      await findIndexAndSubmitRootHash(goodClient, 0xef);
-      await findIndexAndSubmitRootHash(badClient, 0xef);
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
       await forwardTime(400, this);
 
       await goodClient.submitJustificationRootHash();
