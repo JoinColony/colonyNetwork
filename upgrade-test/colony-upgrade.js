@@ -27,6 +27,8 @@ contract("Colony contract upgrade", accounts => {
   let updatedColony;
   let updatedColonyVersion;
 
+  const dueDate = 112233445566;
+
   before(async () => {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
@@ -43,8 +45,8 @@ contract("Colony contract upgrade", accounts => {
     const tokenAddress = await colony.getToken();
     token = await Token.at(tokenAddress);
 
-    await makeTask({ colony });
-    await makeTask({ colony, hash: SPECIFICATION_HASH_UPDATED });
+    await makeTask({ colony, dueDate });
+    await makeTask({ colony, dueDate: dueDate + 1, hash: SPECIFICATION_HASH_UPDATED });
     // Setup new Colony contract version on the Network
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
@@ -78,13 +80,13 @@ contract("Colony contract upgrade", accounts => {
       const task1 = await updatedColony.getTask(1);
       assert.equal(task1[0], SPECIFICATION_HASH);
       assert.equal(task1[2].toNumber(), 0);
-      assert.equal(task1[3].toNumber(), 0);
+      assert.equal(task1[3].toNumber(), dueDate);
       assert.equal(task1[4].toNumber(), 0);
 
       const task2 = await updatedColony.getTask(2);
       assert.equal(task2[0], SPECIFICATION_HASH_UPDATED);
       assert.equal(task2[2].toNumber(), 0);
-      assert.equal(task2[3].toNumber(), 0);
+      assert.equal(task2[3].toNumber(), dueDate + 1);
       assert.equal(task2[4].toNumber(), 0);
     });
 

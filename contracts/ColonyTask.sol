@@ -136,9 +136,11 @@ contract ColonyTask is ColonyStorage {
       this.setTaskSkill(taskCount, _skillId);
     }
 
-    if (_dueDate > 0) {
-      this.setTaskDueDate(taskCount, _dueDate);
+    uint256 dueDate = _dueDate;
+    if (dueDate == 0) {
+      dueDate = now + 90 days;
     }
+    this.setTaskDueDate(taskCount, dueDate);
 
   }
 
@@ -379,6 +381,7 @@ contract ColonyTask is ColonyStorage {
   taskNotFinalized(_id)
   self()
   {
+    require (_dueDate > 0, "colony-task-due-date-cannot-be-zero");
     tasks[_id].dueDate = _dueDate;
 
     emit TaskDueDateChanged(_id, _dueDate);
