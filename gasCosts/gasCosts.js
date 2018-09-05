@@ -19,7 +19,7 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt, makeReputationKey, findIndexAndSubmitRootHash } from "../helpers/test-helper";
+import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import {
   giveUserCLNYTokensAndStake,
@@ -256,11 +256,11 @@ contract("All", accounts => {
       await badClient.addLogContentsToReputationTree();
       await badClient2.addLogContentsToReputationTree();
 
-      await forwardTime(3200, this);
-      await findIndexAndSubmitRootHash(goodClient, 0xef);
-      await findIndexAndSubmitRootHash(badClient, 0xef);
-      await findIndexAndSubmitRootHash(badClient2, 0xef);
-      await forwardTime(400, this);
+      await forwardTime(1800, this);
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+      await badClient2.submitRootHash();
+      await forwardTime(1800, this);
 
       // Session of respond / invalidate between our 3 submissions
       await goodClient.submitJustificationRootHash();

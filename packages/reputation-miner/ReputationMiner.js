@@ -516,7 +516,6 @@ class ReputationMiner {
   async submitRootHash(startIndex = 1) {
     const hash = await this.getRootHash();
     const repCycle = await this.getActiveRepCycle();
-    // TODO: Work out what entry we should use when we submit
     // Get how much we've staked, and thefore how many entries we have
     let entryIndex;
     const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
@@ -538,8 +537,7 @@ class ReputationMiner {
         .bigNumberify(timestamp)
         .sub(reputationMiningWindowOpenTimestamp)
         .mul(constant);
-
-      if (ethers.utils.bigNumberify(entryHash) < target) {
+      if (ethers.utils.bigNumberify(entryHash).lt(target)) {
         entryIndex = i;
         break;
       }
