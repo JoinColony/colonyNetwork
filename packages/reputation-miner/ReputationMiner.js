@@ -225,7 +225,7 @@ class ReputationMiner {
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
       const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockNumber });
-      const localRootHash = this.reputationTree.getRootHash();
+      const localRootHash = await this.reputationTree.getRootHash();
       const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockNumber });
       if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
@@ -762,7 +762,7 @@ class ReputationMiner {
           console.log("WARNING: Sync seems to have failed");
         }
         if (saveHistoricalStates) {
-          await this.saveCurrentState(); // eslint-disable-line no-await-in-loop
+          await this.saveCurrentState(event.blockNumber); // eslint-disable-line no-await-in-loop
         }
       }
       if (applyLogs === false && localHash === hash) {
@@ -861,6 +861,28 @@ class ReputationMiner {
       await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
       this.reputations[key] = row.value;
     }
+    const currentStateHash = await this.reputationTree.getRootHash();
+    if (currentStateHash !== reputationRootHash) {
+      console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
+    }
+    await db.close();
+  }
+
+  async createDB() {
+    const db = await sqlite.open(this.dbPath, { Promise });
+    await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )");
+    await db.run("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_nodes INTEGER NOT NULL)");
+    await db.run("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )");
+    await db.run("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )");
+    await db.run(
+      `CREATE TABLE IF NOT EXISTS reputations (
+        root_hash_rowid text NOT NULL,
+        colony_address_rowid INTEGER NOT NULL,
+        skill_id INTEGER NOT NULL,
+        user_address_rowid INTEGER NOT NULL,
+        value text NOT NULL
+      )`
+    );
     await db.close();
   }
 
@@ -871,20 +893,8 @@ class ReputationMiner {
     await db.run(`DROP TABLE IF EXISTS skills`);
     await db.run(`DROP TABLE IF EXISTS reputations`);
     await db.run(`DROP TABLE IF EXISTS reputation_states`);
-    await db.run("CREATE TABLE users ( address text NOT NULL UNIQUE )");
-    await db.run("CREATE TABLE reputation_states ( root_hash text NOT NULL UNIQUE, n_nodes INTEGER NOT NULL )");
-    await db.run("CREATE TABLE colonies ( address text NOT NULL UNIQUE )");
-    await db.run("CREATE TABLE skills ( skill_id INTEGER PRIMARY KEY )");
-    await db.run(
-      `CREATE TABLE reputations (
-        root_hash_rowid text NOT NULL,
-        colony_address_rowid INTEGER NOT NULL,
-        skill_id INTEGER NOT NULL,
-        user_address_rowid INTEGER NOT NULL,
-        value text NOT NULL
-      )`
-    );
     await db.close();
+    await this.createDB();
   }
 }
 
