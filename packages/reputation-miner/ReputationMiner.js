@@ -777,18 +777,18 @@ class ReputationMiner {
     const currentRootHash = await this.getRootHash();
     let res = await db.all(`SELECT rowid, root_hash FROM reputation_states WHERE root_hash='${currentRootHash}' AND n_nodes='${this.nReputations}'`);
 
-    let rootHashDBId;
+    let rootHashRowId;
     if (res.length === 0) {
       res = await db.run(`INSERT INTO reputation_states (root_hash, n_nodes) VALUES ('${currentRootHash}', ${this.nReputations})`);
-      rootHashDBId = res.lastID;
+      rootHashRowId = res.lastID;
     } else {
-      rootHashDBId = res[0].rowid;
+      rootHashRowId = res[0].rowid;
     }
 
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
-      let colonyDBId;
-      let userDBId;
-      let skillDBId;
+      let colonyRowId;
+      let userRowId;
+      let skillRowId;
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
       let [colonyAddress, skillId, userAddress] = await ReputationMiner.breakKeyInToElements(key); // eslint-disable-line no-await-in-loop
@@ -799,42 +799,42 @@ class ReputationMiner {
       res = await db.all(`SELECT rowid FROM colonies WHERE address='${colonyAddress}'`); // eslint-disable-line no-await-in-loop
       if (res.length === 0) {
         res = await db.run(`INSERT INTO colonies (address) VALUES ('${colonyAddress}')`); // eslint-disable-line no-await-in-loop
-        colonyDBId = res.lastID;
+        colonyRowId = res.lastID;
       } else {
-        colonyDBId = res[0].rowid;
+        colonyRowId = res[0].rowid;
       }
 
       res = await db.all(`SELECT rowid FROM users WHERE address='${userAddress}'`); // eslint-disable-line no-await-in-loop
       if (res.length === 0) {
         res = await db.run(`INSERT INTO users (address) VALUES ('${userAddress}')`); // eslint-disable-line no-await-in-loop
-        userDBId = res.lastID;
+        userRowId = res.lastID;
       } else {
-        userDBId = res[0].rowid;
+        userRowId = res[0].rowid;
       }
 
       res = await db.all(`SELECT skill_id FROM skills WHERE skill_id='${skillId}'`); // eslint-disable-line no-await-in-loop
       if (res.length === 0) {
         res = await db.run(`INSERT INTO skills (skill_id) VALUES ('${skillId}')`); // eslint-disable-line no-await-in-loop
-        skillDBId = res.lastID;
+        skillRowId = res.lastID;
       } else {
-        skillDBId = res[0].skill_id;
+        skillRowId = res[0].skill_id;
       }
 
       // eslint-disable-next-line no-await-in-loop
       res = await db.get(
         `SELECT COUNT ( * ) AS "n"
         FROM reputations
-        WHERE root_hash=${rootHashDBId}
-        AND colony_address=${colonyDBId}
-        AND skill_id=${skillDBId}
-        AND user_address=${userDBId}`
+        WHERE root_hash_rowid=${rootHashRowId}
+        AND colony_address_rowid=${colonyRowId}
+        AND skill_id=${skillRowId}
+        AND user_address_rowid=${userRowId}`
       );
 
       if (res.n === 0) {
         // eslint-disable-next-line no-await-in-loop
         await db.run(
-          `INSERT INTO reputations (root_hash, colony_address, skill_id, user_address, value)
-          VALUES (${rootHashDBId}, ${colonyDBId}, ${skillDBId}, ${userDBId}, '${value}')`
+          `INSERT INTO reputations (root_hash_rowid, colony_address_rowid, skill_id, user_address_rowid, value)
+          VALUES (${rootHashRowId}, ${colonyRowId}, ${skillRowId}, ${userRowId}, '${value}')`
         );
       }
     }
@@ -849,9 +849,9 @@ class ReputationMiner {
     const res = await db.all(
       `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
        FROM reputations
-       INNER JOIN colonies ON colonies.rowid=reputations.colony_address
-       INNER JOIN users ON users.rowid=reputations.user_address
-       INNER JOIN reputation_states ON reputation_states.rowid=reputations.root_hash
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_address_rowid
+       INNER JOIN users ON users.rowid=reputations.user_address_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.root_hash_rowid
        WHERE reputation_states.root_hash="${reputationRootHash}"`
     );
     this.nReputations = ethers.utils.bigNumberify(res.length);
@@ -877,10 +877,10 @@ class ReputationMiner {
     await db.run("CREATE TABLE skills ( skill_id INTEGER PRIMARY KEY )");
     await db.run(
       `CREATE TABLE reputations (
-        root_hash text NOT NULL,
-        colony_address INTEGER NOT NULL,
+        root_hash_rowid text NOT NULL,
+        colony_address_rowid INTEGER NOT NULL,
         skill_id INTEGER NOT NULL,
-        user_address INTEGER NOT NULL,
+        user_address_rowid INTEGER NOT NULL,
         value text NOT NULL
       )`
     );
