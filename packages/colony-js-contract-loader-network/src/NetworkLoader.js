@@ -19,12 +19,12 @@ const STATIC_CONTRACTS = Object.assign(
 const VERSIONED_CONTRACTS = {};
 // Define versioned contracts
 NETWORKS.forEach(network => {
-  VERSIONS.forEach(version => {
-    VERSIONED_CONTRACT_NAMES.forEach(contract => {
-      VERSIONED_CONTRACTS[contract] = {};
-      if (!VERSIONED_CONTRACTS[contract][network]) {
-        VERSIONED_CONTRACTS[contract][network] = {};
-      }
+  VERSIONED_CONTRACT_NAMES.forEach(contract => {
+    VERSIONED_CONTRACTS[contract] = {};
+    if (!VERSIONED_CONTRACTS[contract][network]) {
+      VERSIONED_CONTRACTS[contract][network] = {};
+    }
+    VERSIONS.forEach(version => {
       // eslint-disable-next-line global-require, import/no-dynamic-require
       VERSIONED_CONTRACTS[contract][network][version] = require(`../contracts/versioned/${network}-v${version}/${contract}.json`);
     });
