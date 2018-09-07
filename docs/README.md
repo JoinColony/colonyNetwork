@@ -1,4 +1,4 @@
-<img align="center" src="./img/colonyNetwork_combomark.svg" />
+<img align="center" src="./img/colonyNetwork_color.svg" />
 
 # The Colony Network
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/JoinColony/colonyNetwork)

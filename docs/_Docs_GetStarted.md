@@ -49,7 +49,7 @@ The Reputation Mining client is usable for testing, but has a limited functional
 Start the mining client with:
 
 ```
-node packages/reputation-miner/bin/index.js --file ./reputations.json --colonyNetworkAddress 0x76d508fa65654654ffdb334a3023353587112e09 --minerAddress 0xb77d57f4959eafa0339424b83fcfaf9c15407461
+node packages/reputation-miner/bin/index.js --file ./reputations.json --colonyNetworkAddress 0xDF0F615d9548a5edc2377BB9CD88b81a846DfBC5 --minerAddress 0xb77d57f4959eafa0339424b83fcfaf9c15407461
 ```
 
 The `minerAddress` in the execution above is the first account in `ganache-accounts.json`.
