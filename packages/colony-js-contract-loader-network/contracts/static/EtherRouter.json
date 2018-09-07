@@ -121,7 +121,7 @@
   },
   "networks": {
     "rinkeby": {
-      "address": "0x6B110832B5673F62B841ee24E60e2b032090D0de"
+      "address": "0xDF0F615d9548a5edc2377BB9CD88b81a846DfBC5"
     }
   },
   "schemaVersion": "2.0.0",
