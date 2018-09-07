@@ -13,8 +13,14 @@ describe("colony-contract-loader-network - NetworkLoader", () => {
     expect(contract).toHaveProperty("address", contractAddress);
   });
 
-  test("It should load a versioned contract that is defined", async () => {
+  test("It should load an older versioned contract that is defined", async () => {
     const contract = await loader.load({ contractName: "IColony", contractAddress, version: "1" });
+    expect(contract).toHaveProperty("abi", expect.any(Array));
+    expect(contract).toHaveProperty("address", contractAddress);
+  });
+
+  test("It should load the latest versioned contract that is defined", async () => {
+    const contract = await loader.load({ contractName: "IColony", contractAddress, version: "2" });
     expect(contract).toHaveProperty("abi", expect.any(Array));
     expect(contract).toHaveProperty("address", contractAddress);
   });
@@ -37,7 +43,7 @@ describe("colony-contract-loader-network - NetworkLoader", () => {
       });
       expect(false).toBe(true); // should be unreachable
     } catch (error) {
-      expect(error.toString()).toMatch("Contract IColonyNetwork with version 1 not found in main");
+      expect(error.toString()).toMatch("Contract IColonyNetwork with version 2 not found in main");
     }
   });
 
@@ -46,7 +52,7 @@ describe("colony-contract-loader-network - NetworkLoader", () => {
       await loader.load({ contractName: "CryptoKitty", contractAddress });
       expect(false).toBe(true); // should be unreachable
     } catch (error) {
-      expect(error.toString()).toMatch("Contract CryptoKitty with version 1 not found in rinkeby");
+      expect(error.toString()).toMatch("Contract CryptoKitty with version 2 not found in rinkeby");
     }
   });
 
