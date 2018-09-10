@@ -149,6 +149,18 @@
           "indexed": true,
           "name": "id",
           "type": "uint256"
+        }
+      ],
+      "name": "TaskCompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "id",
+          "type": "uint256"
         },
         {
           "indexed": false,
@@ -1084,6 +1096,20 @@
       "type": "function"
     },
     {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_id",
+          "type": "uint256"
+        }
+      ],
+      "name": "completeTask",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "constant": true,
       "inputs": [
         {
@@ -1102,12 +1128,8 @@
           "type": "bytes32"
         },
         {
-          "name": "finalized",
-          "type": "bool"
-        },
-        {
-          "name": "cancelled",
-          "type": "bool"
+          "name": "status",
+          "type": "uint8"
         },
         {
           "name": "dueDate",
@@ -1122,7 +1144,7 @@
           "type": "uint256"
         },
         {
-          "name": "deliverableTimestamp",
+          "name": "completionTimestamp",
           "type": "uint256"
         },
         {
@@ -1371,6 +1393,22 @@
         {
           "name": "_token",
           "type": "address"
+        },
+        {
+          "name": "key",
+          "type": "bytes"
+        },
+        {
+          "name": "value",
+          "type": "bytes"
+        },
+        {
+          "name": "branchMask",
+          "type": "uint256"
+        },
+        {
+          "name": "siblings",
+          "type": "bytes32[]"
         }
       ],
       "name": "startNextRewardPayout",
@@ -1391,12 +1429,20 @@
           "type": "uint256[7]"
         },
         {
-          "name": "_userReputation",
+          "name": "key",
+          "type": "bytes"
+        },
+        {
+          "name": "value",
+          "type": "bytes"
+        },
+        {
+          "name": "branchMask",
           "type": "uint256"
         },
         {
-          "name": "_totalReputation",
-          "type": "uint256"
+          "name": "siblings",
+          "type": "bytes32[]"
         }
       ],
       "name": "claimRewardPayout",
@@ -1418,6 +1464,10 @@
         {
           "name": "reputationState",
           "type": "bytes32"
+        },
+        {
+          "name": "colonyWideReputation",
+          "type": "uint256"
         },
         {
           "name": "totalTokens",
@@ -1539,9 +1589,9 @@
   ],
   "compiler": {
     "name": "solc",
-    "version": "0.4.23+commit.124ca40d.Emscripten.clang"
+    "version": "0.4.23+commit.124ca40d.Linux.g++"
   },
   "networks": {},
   "schemaVersion": "2.0.1",
-  "updatedAt": "2018-08-21T15:01:00.401Z"
+  "updatedAt": "2018-09-08T13:06:59.638Z"
 }

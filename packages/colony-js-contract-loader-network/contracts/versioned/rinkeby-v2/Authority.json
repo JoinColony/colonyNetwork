@@ -317,9 +317,9 @@
   ],
   "compiler": {
     "name": "solc",
-    "version": "0.4.23+commit.124ca40d.Emscripten.clang"
+    "version": "0.4.23+commit.124ca40d.Linux.g++"
   },
   "networks": {},
   "schemaVersion": "2.0.1",
-  "updatedAt": "2018-08-21T15:01:00.355Z"
+  "updatedAt": "2018-09-08T13:06:59.558Z"
 }
