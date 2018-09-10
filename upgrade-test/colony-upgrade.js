@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { getTokenArgs } from "../helpers/test-helper";
+import { currentBlockTime, getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
 import { makeTask } from "../helpers/test-data-generator";
@@ -27,11 +27,13 @@ contract("Colony contract upgrade", accounts => {
   let updatedColony;
   let updatedColonyVersion;
 
-  const dueDate = 112233445566;
+  let dueDate;
 
   before(async () => {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
+
+    dueDate = await currentBlockTime();
 
     const tokenArgs = getTokenArgs();
     const colonyToken = await Token.new(...tokenArgs);

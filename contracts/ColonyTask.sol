@@ -73,7 +73,7 @@ contract ColonyTask is ColonyStorage {
 
   modifier afterDueDate(uint256 _id) {
     uint dueDate = tasks[_id].dueDate;
-    require(dueDate > 0, "colony-task-due-date-not-set");
+    /* require(dueDate > 0, "colony-task-due-date-not-set"); */
     require(now >= dueDate, "colony-task-due-date-in-future");
     _;
   }
@@ -138,6 +138,8 @@ contract ColonyTask is ColonyStorage {
 
     uint256 dueDate = _dueDate;
     if (dueDate == 0) {
+      // If / When restoring due date to optional status in the future, be sure to go uncomment the relevant line in `afterDueDate` that checks the
+      // due date has been set.
       dueDate = now + 90 days;
     }
     this.setTaskDueDate(taskCount, dueDate);
