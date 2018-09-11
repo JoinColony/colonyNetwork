@@ -775,9 +775,7 @@ class ReputationMiner {
     const db = await sqlite.open(this.dbPath, { Promise });
 
     const currentRootHash = await this.getRootHash();
-    let res = await db.all(`SELECT rowid, root_hash FROM reputation_states WHERE root_hash='${currentRootHash}' AND n_nodes='${this.nReputations}'`);
-
-    res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_nodes) VALUES ('${currentRootHash}', ${this.nReputations})`);
+    let res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_nodes) VALUES ('${currentRootHash}', ${this.nReputations})`);
 
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
