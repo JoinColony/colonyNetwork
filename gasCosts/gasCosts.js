@@ -214,7 +214,6 @@ contract("All", accounts => {
     });
 
     it("when working with staking", async () => {
-      // TODO: Should stakers be part of the constants?
       const STAKER1 = accounts[0];
       const STAKER2 = accounts[1];
       const STAKER3 = accounts[2];
