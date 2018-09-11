@@ -376,7 +376,7 @@ class ReputationMiner {
     return key;
   }
 
-  static async breakKeyInToElements(key) {
+  static breakKeyInToElements(key) {
     const colonyAddress = key.slice(2, 42);
     const skillId = key.slice(42, 106);
     const userAddress = key.slice(106);
@@ -523,6 +523,54 @@ class ReputationMiner {
     const [branchMask, siblings] = await this.reputationTree.getProof(key);
     const retBranchMask = ReputationMiner.getHexString(branchMask);
     return [retBranchMask, siblings];
+  }
+
+  /**
+   * Get a Merkle proof and value for `key` in a past reputation state with root hash `rootHash`
+   * @param  {[type]}  rootHash A previous root hash of a reputation state
+   * @param  {[type]}  key      A key in that root hash we wish to know the value and proof for
+   * @return {Promise}          A promise that resolves to [branchmask, siblings, value] for the supplied key in the supplied root hash
+   */
+  async getHistoricalProofAndValue(rootHash, key) {
+    const tree = new patriciaJs.PatriciaTree();
+    // Load all reputations from that state.
+
+    const db = await sqlite.open(this.dbPath, { Promise });
+
+    let res = await db.all(
+      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash="${rootHash}"`
+    );
+
+    for (let i = 0; i < res.length; i += 1) {
+      const row = res[i];
+      const rowKey = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address); // eslint-disable-line no-await-in-loop
+      await tree.insert(rowKey, row.value); // eslint-disable-line no-await-in-loop
+    }
+
+    const keyElements = ReputationMiner.breakKeyInToElements(key);
+    const [colonyAddress, , userAddress] = keyElements;
+    const skillId = new BN(keyElements[1]).toString();
+    res = await db.all(
+      `SELECT reputations.value
+      FROM reputations
+      INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+      INNER JOIN users ON users.rowid=reputations.user_rowid
+      INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+      WHERE reputation_states.root_hash="${rootHash}"
+      AND users.address="0x${userAddress}"
+      AND reputations.skill_id="${skillId}"
+      AND colonies.address="0x${colonyAddress}"`
+    );
+
+    await db.close();
+    const [branchMask, siblings] = await tree.getProof(key);
+    const retBranchMask = ReputationMiner.getHexString(branchMask);
+    return [retBranchMask, siblings, res[0].value];
   }
 
   /**
@@ -781,7 +829,7 @@ class ReputationMiner {
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
-      const keyElements = await ReputationMiner.breakKeyInToElements(key); // eslint-disable-line no-await-in-loop
+      const keyElements = ReputationMiner.breakKeyInToElements(key); // eslint-disable-line no-await-in-loop
       const [colonyAddress, , userAddress] = keyElements;
       const skillId = parseInt(keyElements[1], 16);
 

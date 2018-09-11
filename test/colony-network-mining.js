@@ -2990,5 +2990,35 @@ contract("ColonyNetworkMining", accounts => {
       const client2Hash = await goodClient2.reputationTree.getRootHash();
       assert.equal(client1Hash, client2Hash);
     });
+
+    it("should be able to correctly get the proof for a reputation in a historical state without affecting the current miner state", async () => {
+      await goodClient.resetDB();
+      await goodClient.saveCurrentState();
+      const clientHash1 = await goodClient.reputationTree.getRootHash();
+      const key = Object.keys(goodClient.reputations)[0];
+      const value = goodClient.reputations[key];
+      const [branchMask, siblings] = await goodClient.getProof(key);
+
+      await advanceTimeSubmitAndConfirmHash(this);
+      // So now we have a different state
+      await goodClient.saveCurrentState();
+
+      const clientHash2 = await goodClient.reputationTree.getRootHash();
+      assert.notEqual(clientHash1, clientHash2);
+
+      const [retrievedBranchMask, retrievedSiblings, retrievedValue] = await goodClient.getHistoricalProofAndValue(clientHash1, key);
+
+      // Check they're right
+      assert.equal(value, retrievedValue);
+      assert.equal(branchMask, retrievedBranchMask);
+      assert.equal(siblings.length, retrievedSiblings.length);
+      for (let i = 0; i < retrievedSiblings.length; i += 1) {
+        assert.equal(siblings[i], retrievedSiblings[i]);
+        assert.equal(siblings[i], retrievedSiblings[i]);
+      }
+
+      const clientHash3 = await goodClient.reputationTree.getRootHash();
+      assert.equal(clientHash2, clientHash3);
+    });
   });
 });
