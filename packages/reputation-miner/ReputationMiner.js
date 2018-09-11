@@ -257,9 +257,7 @@ class ReputationMiner {
     // We update colonywide sums first (children, parents, skill)
     // Then the user-specifc sums in the order children, parents, skill.
 
-    // Converting to decimal, since its going to be converted to hex inside `insert`
-    const skillIdDecimal = new BN(skillId, 16).toString();
-    await this.insert(colonyAddress, skillIdDecimal, userAddress, score, updateNumber);
+    await this.insert(colonyAddress, skillId, userAddress, score, updateNumber);
   }
 
   /**
@@ -288,6 +286,14 @@ class ReputationMiner {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
 
+    let base = 10;
+    let skillId = _skillId.toString();
+    if (skillId.slice(0, 2) === "0x") {
+      // We've been passed a hex string
+      skillId = skillId.slice(2);
+      base = 16;
+    }
+
     let isAddress = web3Utils.isAddress(colonyAddress);
     // TODO should we return errors here?
     if (!isAddress) {
@@ -305,10 +311,10 @@ class ReputationMiner {
     }
     colonyAddress = colonyAddress.toLowerCase();
     userAddress = userAddress.toLowerCase();
-    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(_skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
-      16,
-      40
-    )}`;
+    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString(), base).toString(16, 64)}${new BN(
+      userAddress,
+      16
+    ).toString(16, 40)}`;
     return key;
   }
 
@@ -375,7 +381,7 @@ class ReputationMiner {
     const colonyAddress = key.slice(2, 42);
     const skillId = key.slice(42, 106);
     const userAddress = key.slice(106);
-    return [colonyAddress, skillId, userAddress];
+    return [`0x${colonyAddress}`, `0x${skillId}`, `0x${userAddress}`];
   }
 
   /**
