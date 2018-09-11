@@ -65,7 +65,7 @@ class ReputationMinerClient {
         await this._miner.insert(ADDRESS3, 1, ADDRESS2, new BN("100000000"));
         await this._miner.insert(ADDRESS3, 1, ADDRESS4, new BN("100000000"));
         await this._miner.insert(ADDRESS3, 1, ADDRESS0, new BN("200000000"));
-        console.log("💾 Writing initialised state with dummy data to JSON file");
+        console.log("💾 Writing initialised state with dummy data to database");
 
         await this._miner.saveCurrentState();
       }
