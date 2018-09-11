@@ -283,12 +283,13 @@ contract("Colony", accounts => {
 
   describe("when creating tasks", () => {
     it("should allow admins to make task", async () => {
-      await makeTask({ colony });
+      const dueDate = await currentBlockTime();
+      await makeTask({ colony, dueDate });
       const task = await colony.getTask(1);
       assert.equal(task[0], SPECIFICATION_HASH);
       assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
       assert.equal(task[2].toNumber(), ACTIVE_TASK_STATE);
-      assert.equal(task[3].toNumber(), 0);
+      assert.equal(task[3].toNumber(), dueDate);
       assert.equal(task[4].toNumber(), 0);
     });
 
@@ -376,6 +377,16 @@ contract("Colony", accounts => {
       const task = await colony.getTask(taskId);
       assert.equal(task[3].toNumber(), dueDate);
       assert.equal(task[8][0].toNumber(), skillId);
+    });
+
+    it("should set the due date to 90 days from now if unspecified", async () => {
+      const skillId = 1;
+      const dueDate = 0;
+      const taskId = await makeTask({ colony, skillId, dueDate });
+      const task = await colony.getTask(taskId);
+      const currTime = await currentBlockTime();
+      const expectedDueDate = currTime + SECONDS_PER_DAY * 90;
+      assert.equal(task[3].toNumber(), expectedDueDate);
     });
   });
 
@@ -1129,6 +1140,20 @@ contract("Colony", accounts => {
         sigTypes: [0, 0],
         args: [taskId, dueDate]
       });
+
+      const task = await colony.getTask(taskId);
+      assert.equal(task[3], dueDate);
+    });
+
+    it("should not allow update of task due if it is trying to be set to 0", async () => {
+      const dueDate = await currentBlockTime();
+
+      const taskId = await makeTask({ colony, dueDate });
+
+      await checkErrorRevert(
+        executeSignedTaskChange({ colony, taskId, functionName: "setTaskDueDate", signers: [MANAGER], sigTypes: [0], args: [taskId, 0] }),
+        "colony-task-change-execution-failed"
+      );
 
       const task = await colony.getTask(taskId);
       assert.equal(task[3], dueDate);
