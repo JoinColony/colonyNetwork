@@ -114,7 +114,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       // Freeze the reputation mining system.
     } */
   }
-  
+
   /////////////////////////
   // Internal functions
   /////////////////////////
@@ -307,7 +307,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     if (agreeStateReputationUID != 0) {
       // i.e. if this was an existing reputation, then require that the ID hasn't changed.
-      // TODO: Situation where it is not an existing reputation
       require(agreeStateReputationUID==disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
     } else {
       uint256 previousNewReputationUID;
