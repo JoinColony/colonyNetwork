@@ -116,7 +116,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       metaColonyAddress.transfer(fee);
     } else {
       // Payout token
-      // TODO: If it's a whitelisted token, it goes straight to the metaColony
+      // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
       payoutToken.transfer(task.roles[_role].user, remainder);
