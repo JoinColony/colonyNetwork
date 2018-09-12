@@ -21,5 +21,5 @@ if (rinkeby) {
   provider = new ethers.providers.InfuraProvider("rinkeby");
 }
 
-const client = new ReputationMinerClient({ file, loader, minerAddress, privateKey, provider, seed });
+const client = new ReputationMinerClient({ file, loader, minerAddress, privateKey, provider, seed, useJSTree: true });
 client.initialise(colonyNetworkAddress);

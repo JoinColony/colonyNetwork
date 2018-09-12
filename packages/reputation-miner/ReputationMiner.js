@@ -2,6 +2,7 @@ const BN = require("bn.js");
 const web3Utils = require("web3-utils");
 const ganache = require("ganache-core");
 const ethers = require("ethers");
+const sqlite = require("sqlite");
 const patriciaJs = require("./patricia");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
@@ -60,9 +61,10 @@ class ReputationMiner {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false }) {
+  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false, dbPath = "./reputationStates.sqlite" }) {
     this.loader = loader;
     this.minerAddress = minerAddress;
+    this.dbPath = dbPath;
 
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
@@ -223,7 +225,7 @@ class ReputationMiner {
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
       const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockNumber });
-      const localRootHash = this.reputationTree.getRootHash();
+      const localRootHash = await this.reputationTree.getRootHash();
       const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockNumber });
       if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
@@ -729,9 +731,10 @@ class ReputationMiner {
    * it 'sees' that the state it has was the accepted state on-chain at some point since the supplied block
    * number.
    * @param  { Number }  blockNumber The block number to sync from.
+   * @param  { Bool }    saveHistoricalStates Whether to save historical (valid) states while syncing
    * @return {Promise}               A promise that resolves once the state is up-to-date
    */
-  async sync(blockNumber) {
+  async sync(blockNumber, saveHistoricalStates = false) {
     // Get the events
     const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
     filter.fromBlock = blockNumber;
@@ -758,11 +761,115 @@ class ReputationMiner {
         if (localHash !== hash || !localNNodes.eq(nNodes)) {
           console.log("WARNING: Sync seems to have failed");
         }
+        if (saveHistoricalStates) {
+          await this.saveCurrentState(event.blockNumber); // eslint-disable-line no-await-in-loop
+        }
       }
       if (applyLogs === false && localHash === hash) {
         applyLogs = true;
       }
     }
+  }
+
+  async saveCurrentState() {
+    const db = await sqlite.open(this.dbPath, { Promise });
+
+    const currentRootHash = await this.getRootHash();
+    let res = await db.run(`INSERT OR IGNORE INTO reputation_states (root_hash, n_nodes) VALUES ('${currentRootHash}', ${this.nReputations})`);
+
+    for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
+      const key = Object.keys(this.reputations)[i];
+      const value = this.reputations[key];
+      let [colonyAddress, skillId, userAddress] = await ReputationMiner.breakKeyInToElements(key); // eslint-disable-line no-await-in-loop
+      colonyAddress = `0x${colonyAddress}`;
+      skillId = parseInt(skillId, 16);
+      userAddress = `0x${userAddress}`;
+
+      res = await db.run(`INSERT OR IGNORE INTO colonies (address) VALUES ('${colonyAddress}')`); // eslint-disable-line no-await-in-loop
+      res = await db.run(`INSERT OR IGNORE INTO users (address) VALUES ('${userAddress}')`); // eslint-disable-line no-await-in-loop
+      res = await db.run(`INSERT OR IGNORE INTO skills (skill_id) VALUES ('${skillId}')`); // eslint-disable-line no-await-in-loop
+
+      // eslint-disable-next-line no-await-in-loop
+      let query;
+      query = `SELECT COUNT ( * ) AS "n"
+        FROM reputations
+        INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+        INNER JOIN users ON users.rowid=reputations.user_rowid
+        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+        WHERE reputation_states.root_hash="${currentRootHash}"
+        AND colonies.address="${colonyAddress}"
+        AND reputations.skill_id="${skillId}"
+        AND users.address="${userAddress}"`;
+      res = await db.get(query); // eslint-disable-line no-await-in-loop
+
+      if (res.n === 0) {
+        query = `INSERT INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
+          SELECT
+          (SELECT reputation_states.rowid FROM reputation_states WHERE reputation_states.root_hash='${currentRootHash}'),
+          (SELECT colonies.rowid FROM colonies WHERE colonies.address='${colonyAddress}'),
+          ${skillId},
+          (SELECT users.rowid FROM users WHERE users.address='${userAddress}'),
+          '${value}'`;
+        await db.run(query); // eslint-disable-line no-await-in-loop
+      }
+    }
+    await db.close();
+  }
+
+  async loadState(reputationRootHash) {
+    const db = await sqlite.open(this.dbPath, { Promise });
+    this.nReputations = ethers.utils.bigNumberify(0);
+    this.reputations = {};
+
+    const res = await db.all(
+      `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
+       FROM reputations
+       INNER JOIN colonies ON colonies.rowid=reputations.colony_rowid
+       INNER JOIN users ON users.rowid=reputations.user_rowid
+       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
+       WHERE reputation_states.root_hash="${reputationRootHash}"`
+    );
+    this.nReputations = ethers.utils.bigNumberify(res.length);
+    for (let i = 0; i < res.length; i += 1) {
+      const row = res[i];
+      const key = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address); // eslint-disable-line no-await-in-loop
+      await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
+      this.reputations[key] = row.value;
+    }
+    const currentStateHash = await this.reputationTree.getRootHash();
+    if (currentStateHash !== reputationRootHash) {
+      console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
+    }
+    await db.close();
+  }
+
+  async createDB() {
+    const db = await sqlite.open(this.dbPath, { Promise });
+    await db.run("CREATE TABLE IF NOT EXISTS users ( address text NOT NULL UNIQUE )");
+    await db.run("CREATE TABLE IF NOT EXISTS reputation_states ( root_hash text NOT NULL UNIQUE, n_nodes INTEGER NOT NULL)");
+    await db.run("CREATE TABLE IF NOT EXISTS colonies ( address text NOT NULL UNIQUE )");
+    await db.run("CREATE TABLE IF NOT EXISTS skills ( skill_id INTEGER PRIMARY KEY )");
+    await db.run(
+      `CREATE TABLE IF NOT EXISTS reputations (
+        reputation_rowid text NOT NULL,
+        colony_rowid INTEGER NOT NULL,
+        skill_id INTEGER NOT NULL,
+        user_rowid INTEGER NOT NULL,
+        value text NOT NULL
+      )`
+    );
+    await db.close();
+  }
+
+  async resetDB() {
+    const db = await sqlite.open(this.dbPath, { Promise });
+    await db.run(`DROP TABLE IF EXISTS users`);
+    await db.run(`DROP TABLE IF EXISTS colonies`);
+    await db.run(`DROP TABLE IF EXISTS skills`);
+    await db.run(`DROP TABLE IF EXISTS reputations`);
+    await db.run(`DROP TABLE IF EXISTS reputation_states`);
+    await db.close();
+    await this.createDB();
   }
 }
 

@@ -1,5 +1,3 @@
-const path = require("path");
-const jsonfile = require("jsonfile");
 const ethers = require("ethers");
 const express = require("express");
 const BN = require("bn.js");
@@ -12,11 +10,10 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider }) {
+  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider, useJSTree }) {
     this._loader = loader;
-    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort });
+    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, dbPath: file, useJSTree });
     this._seed = seed;
-    this._file = path.resolve(process.cwd(), file);
 
     this._app = express();
     this._app.get("/:colonyAddress/:skillId/:userAddress", async (req, res) => {
@@ -47,39 +44,30 @@ class ReputationMinerClient {
 
     this.repCycleContractDef = await this._loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
 
-    try {
-      // TODO: I don't really like writing properties like that. We might need a setReputations() method on the miner
-      // It can also then set the nReputations
-      this._miner.reputations = jsonfile.readFileSync(this._file);
-      console.log("💾 Restored from JSON file");
-    } catch (err) {
-      this._miner.reputations = {};
+    // TODO: Get latest state from database, then sync to current state on-chain.
+    // However, for now, we're the only miner, so we can just load the current saved state and go from there.
+    const latestReputationHash = await this._miner.colonyNetwork.getReputationRootHash();
+    await this._miner.createDB();
+    await this._miner.loadState(latestReputationHash);
+    if (this._miner.nReputations.eq(0)) {
       console.log("No existing reputations found - starting from scratch");
-    }
-    this._miner.nReputations = Object.keys(this._miner.reputations).length;
+      if (this._seed) {
+        // Temporary data if --seed is set and there's nothing to restore from.
+        const ADDRESS1 = "0x309e642dbf573119ca75153b25f5b8462ff1b90b";
+        const ADDRESS2 = "0xbc13dbc1a954b3443d6f75297a232faa513774b3";
+        const ADDRESS3 = "0x2b183746bd1403cdec8e4fe45139339da20bcf3d";
+        const ADDRESS4 = "0xcd0751d4181acda4f8edb2f3b33b915f91abeef0";
+        const ADDRESS0 = "0x0000000000000000000000000000000000000000";
+        await this._miner.insert(ADDRESS1, 1, ADDRESS2, new BN("999999999"));
+        await this._miner.insert(ADDRESS1, 1, ADDRESS0, new BN("999999999"));
+        await this._miner.insert(ADDRESS1, 2, ADDRESS2, new BN("888888888888888"));
+        await this._miner.insert(ADDRESS1, 2, ADDRESS0, new BN("888888888888888"));
+        await this._miner.insert(ADDRESS3, 1, ADDRESS2, new BN("100000000"));
+        await this._miner.insert(ADDRESS3, 1, ADDRESS4, new BN("100000000"));
+        await this._miner.insert(ADDRESS3, 1, ADDRESS0, new BN("200000000"));
+        console.log("💾 Writing initialised state with dummy data to database");
 
-    if (this._miner.nReputations === 0 && this._seed) {
-      // Temporary data if --seed is set and there's nothing to restore from.
-      const ADDRESS1 = "0x309e642dbf573119ca75153b25f5b8462ff1b90b";
-      const ADDRESS2 = "0xbc13dbc1a954b3443d6f75297a232faa513774b3";
-      const ADDRESS3 = "0x2b183746bd1403cdec8e4fe45139339da20bcf3d";
-      const ADDRESS4 = "0xcd0751d4181acda4f8edb2f3b33b915f91abeef0";
-      const ADDRESS0 = "0x0000000000000000000000000000000000000000";
-      await this._miner.insert(ADDRESS1, 1, ADDRESS2, new BN("999999999"));
-      await this._miner.insert(ADDRESS1, 1, ADDRESS0, new BN("999999999"));
-      await this._miner.insert(ADDRESS1, 2, ADDRESS2, new BN("888888888888888"));
-      await this._miner.insert(ADDRESS1, 2, ADDRESS0, new BN("888888888888888"));
-      await this._miner.insert(ADDRESS3, 1, ADDRESS2, new BN("100000000"));
-      await this._miner.insert(ADDRESS3, 1, ADDRESS4, new BN("100000000"));
-      await this._miner.insert(ADDRESS3, 1, ADDRESS0, new BN("200000000"));
-      console.log("💾 Writing initialised state with dummy data to JSON file");
-
-      jsonfile.writeFileSync(this._file, this._miner.reputations);
-    } else {
-      // TODO: It would be good to have an interface on the miner for that, I'm pretty sure this logic is already somewhere in there
-      for (let i = 0; i < Object.keys(this._miner.reputations).length; i += 1) {
-        const key = Object.keys(this._miner.reputations)[i];
-        await this._miner.reputationTree.insert(key, this._miner.reputations[key], { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
+        await this._miner.saveCurrentState();
       }
     }
 
@@ -95,7 +83,8 @@ class ReputationMinerClient {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
 
-    const windowOpened = await repCycle.reputationMiningWindowOpenTimestamp();
+    let windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
+    windowOpened = windowOpened.toNumber();
 
     const block = await this._miner.realProvider.getBlock("latest");
     const now = block.timestamp;
@@ -104,8 +93,8 @@ class ReputationMinerClient {
       // If so, process the log
       await this._miner.addLogContentsToReputationTree();
 
-      console.log("💾 Writing new reputation state to JSON file");
-      jsonfile.writeFileSync(this._file, this._miner.reputations);
+      console.log("💾 Writing new reputation state to database");
+      await this._miner.saveCurrentState();
 
       console.log("#️⃣ Submitting new reputation hash");
 
