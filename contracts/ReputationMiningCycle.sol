@@ -25,9 +25,6 @@ import "./ITokenLocking.sol";
 import "./ReputationMiningCycleStorage.sol";
 
 
-// TODO: Can we handle all possible disputes regarding the very first hash that should be set?
-// Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
-// A possible workaround would be to 'kick off' reputation mining with a known dummy state...
 contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
 
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
