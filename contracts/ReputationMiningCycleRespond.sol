@@ -25,9 +25,10 @@ import "./ITokenLocking.sol";
 import "./ReputationMiningCycleStorage.sol";
 
 
-// TODO: Can we handle all possible disputes regarding the very first hash that should be set?
+// TODO (post CCv1, possibly never): Can we handle all possible disputes regarding the very first hash that should be set?
 // Currently, at the very least, we can't handle a dispute if the very first entry is disputed.
 // A possible workaround would be to 'kick off' reputation mining with a known dummy state...
+// Given the approach we a taking for launch, we are able to guarantee that we are the only reputation miner for 100+ of the first cycles, even if we decided to lengthen a cycle length. As a result, maybe we just don't care about this special case?
 contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
 
   /// @notice A modifier that checks if the challenge corresponding to the hash in the passed `round` and `id` is open
@@ -114,7 +115,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       // Freeze the reputation mining system.
     } */
   }
-  
+
   /////////////////////////
   // Internal functions
   /////////////////////////
@@ -307,7 +308,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     if (agreeStateReputationUID != 0) {
       // i.e. if this was an existing reputation, then require that the ID hasn't changed.
-      // TODO: Situation where it is not an existing reputation
       require(agreeStateReputationUID==disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
     } else {
       uint256 previousNewReputationUID;

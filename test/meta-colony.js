@@ -332,10 +332,9 @@ contract("Meta Colony", accounts => {
       const domainCount = await colony.getDomainCount();
       assert.equal(domainCount.toNumber(), 4);
 
-      // TODO: I think newDomain1 is the root domain of the colony?
-      const newDomain1 = await colony.getDomain(1);
-      assert.equal(newDomain1[0].toNumber(), 4);
-      assert.equal(newDomain1[1].toNumber(), 1);
+      const rootDomain = await colony.getDomain(1);
+      assert.equal(rootDomain[0].toNumber(), 4);
+      assert.equal(rootDomain[1].toNumber(), 1);
 
       const newDomain2 = await colony.getDomain(2);
       assert.equal(newDomain2[0].toNumber(), 5);
