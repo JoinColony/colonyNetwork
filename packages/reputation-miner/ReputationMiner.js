@@ -229,7 +229,6 @@ class ReputationMiner {
       const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockNumber });
       if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
-        // TODO If it's not already this value, then something has gone wrong, and we're working with the wrong state.
         interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
         jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
       }
