@@ -41,7 +41,7 @@ contract ReputationMiningCycleStorage is DSAuth {
   address colonyNetworkAddress;
   address tokenLockingAddress;
   address clnyTokenAddress;
-  // TODO: Do we need both these mappings?
+  
   mapping (bytes32 => mapping( uint256 => address[])) submittedHashes;
   mapping (address => Submission) reputationHashSubmissions;
   uint256 reputationMiningWindowOpenTimestamp;
