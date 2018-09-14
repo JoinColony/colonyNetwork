@@ -17,7 +17,7 @@ step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
     command: |
-      yarn --pure-lockfile
+      yarn --pure-lockfile --network-concurrency 1
       # Trigger husky install manually due to https://github.com/typicode/husky/issues/227
       node node_modules/husky/lib/installer/bin install
       git submodule update --init
