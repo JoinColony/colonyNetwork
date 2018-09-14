@@ -47,6 +47,7 @@
   "devDependencies": {
     "@colony/colony-js-contract-loader-fs": "1.5.4",
     "@colony/eslint-config-colony": "5.0.0",
+    "async-request": "^1.2.0",
     "babel-cli": "^6.26.0",
     "babel-eslint": "^8.2.3",
     "babel-plugin-transform-runtime": "^6.23.0",

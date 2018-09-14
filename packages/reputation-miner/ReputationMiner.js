@@ -545,7 +545,9 @@ class ReputationMiner {
        INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
        WHERE reputation_states.root_hash="${rootHash}"`
     );
-
+    if (res.length === 0) {
+      return new Error("No such reputation state");
+    }
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
       const rowKey = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address); // eslint-disable-line no-await-in-loop
@@ -566,6 +568,10 @@ class ReputationMiner {
       AND reputations.skill_id="${skillId}"
       AND colonies.address="0x${colonyAddress}"`
     );
+
+    if (res.length === 0) {
+      return new Error("No such reputation");
+    }
 
     await db.close();
     const [branchMask, siblings] = await tree.getProof(key);
