@@ -3036,7 +3036,7 @@ contract("ColonyNetworkMining", accounts => {
         contractDir: path.resolve(process.cwd(), "build", "contracts")
       });
 
-      client = new ReputationMinerClient({ loader, minerAddress: MAIN_ACCOUNT, useJSTree: true, auto: false });
+      client = new ReputationMinerClient({ loader, realProviderPort: REAL_PROVIDER_PORT, minerAddress: MAIN_ACCOUNT, useJSTree: true, auto: false });
       await client.initialise(colonyNetwork.address);
     });
 
@@ -3048,7 +3048,6 @@ contract("ColonyNetworkMining", accounts => {
       const rootHash = await goodClient.getRootHash();
       const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MAIN_ACCOUNT}`;
       const res = await request(url);
-
       assert.equal(res.statusCode, 200);
       const oracleProofObject = JSON.parse(res.body);
       const key = makeReputationKey(metaColony.address, 2, MAIN_ACCOUNT);
@@ -3089,17 +3088,19 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(value, oracleProofObject.value);
     });
 
-    it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
-      const rootHash = await goodClient.getRootHash();
-      const startingBlock = await currentBlock();
-      const startingBlockNumber = startingBlock.number;
-      await advanceTimeSubmitAndConfirmHash();
-      await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
-      const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
-      const res = await request(url);
-      assert.equal(res.statusCode, 400);
-      assert.equal(JSON.parse(res.body).message, "Requested reputation does not exist or invalid request");
-    });
+    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+      ? it.skip
+      : it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
+          const rootHash = await goodClient.getRootHash();
+          const startingBlock = await currentBlock();
+          const startingBlockNumber = startingBlock.number;
+          await advanceTimeSubmitAndConfirmHash();
+          await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
+          const res = await request(url);
+          assert.equal(res.statusCode, 400);
+          assert.equal(JSON.parse(res.body).message, "Requested reputation does not exist or invalid request");
+        });
 
     it("should correctly respond to a request for a valid key in an invalid reputation state", async () => {
       const rootHash = await goodClient.getRootHash();
