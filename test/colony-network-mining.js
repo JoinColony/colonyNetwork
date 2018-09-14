@@ -1394,13 +1394,10 @@ contract("ColonyNetworkMining", accounts => {
       const keys = Object.keys(goodClient.reputations);
       for (let i = 0; i < keys.length; i += 1) {
         const key = keys[i];
-        const colonyAddress = key.slice(0, 42);
-        const skillId = key.slice(42, 106);
-        const userAddress = key.slice(106);
         const value = goodClient.reputations[key];
         const score = new BN(value.slice(2, 66), 16);
 
-        await badClient.insert(colonyAddress, skillId, userAddress, score, 0); // eslint-disable-line no-await-in-loop
+        await badClient.insert(key, score, 0); // eslint-disable-line no-await-in-loop
       }
 
       righthash = await goodClient.getRootHash();
@@ -2329,23 +2326,14 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
+      const globalKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, "0x0000000000000000000000000000000000000000");
+      const userKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
 
-      await goodClient.insert(
-        metaColony.address,
-        rootGlobalSkill,
-        "0x0000000000000000000000000000000000000000",
-        new BN("2").pow(new BN("256")).subn(2),
-        0
-      );
-      await goodClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
-      await badClient.insert(
-        metaColony.address,
-        rootGlobalSkill,
-        "0x0000000000000000000000000000000000000000",
-        new BN("2").pow(new BN("256")).subn(2),
-        0
-      );
-      await badClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
+      await goodClient.insert(globalKey, new BN("2").pow(new BN("256")).subn(2), 0);
+      await goodClient.insert(userKey, new BN("2").pow(new BN("256")).subn(2), 0);
+      await badClient.insert(globalKey, new BN("2").pow(new BN("256")).subn(2), 0);
+      await badClient.insert(userKey, new BN("2").pow(new BN("256")).subn(2), 0);
+
       const rootHash = await goodClient.getRootHash();
       await fundColonyWithTokens(metaColony, clny, new BN("4").mul(new BN("10").pow(new BN("75"))).toString());
       const taskId = await setupRatedTask({
@@ -2394,23 +2382,14 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
+      const globalKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, "0x0000000000000000000000000000000000000000");
+      const userKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
 
-      await goodClient.insert(
-        metaColony.address,
-        rootGlobalSkill,
-        "0x0000000000000000000000000000000000000000",
-        new BN("2").pow(new BN("256")).subn(2),
-        0
-      );
-      await goodClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
-      await badClient.insert(
-        metaColony.address,
-        rootGlobalSkill,
-        "0x0000000000000000000000000000000000000000",
-        new BN("2").pow(new BN("256")).subn(2),
-        0
-      );
-      await badClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("2").pow(new BN("256")).subn(2), 0);
+      await goodClient.insert(globalKey, new BN("2").pow(new BN("256")).subn(2), 0);
+      await goodClient.insert(userKey, new BN("2").pow(new BN("256")).subn(2), 0);
+      await badClient.insert(globalKey, new BN("2").pow(new BN("256")).subn(2), 0);
+      await badClient.insert(userKey, new BN("2").pow(new BN("256")).subn(2), 0);
+
       const rootHash = await goodClient.getRootHash();
 
       await repCycle.submitRootHash(rootHash, 2, 10);
@@ -2768,11 +2747,14 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
+      const globalKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, "0x0000000000000000000000000000000000000000");
+      const userKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
 
-      await goodClient.insert(metaColony.address, rootGlobalSkill, "0x0000000000000000000000000000000000000000", new BN("1"), 0);
-      await goodClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("1"), 0);
-      await badClient.insert(metaColony.address, rootGlobalSkill, "0x0000000000000000000000000000000000000000", new BN("1"), 0);
-      await badClient.insert(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT, new BN("1"), 0);
+      await goodClient.insert(globalKey, new BN("1"), 0);
+      await goodClient.insert(userKey, new BN("1"), 0);
+      await badClient.insert(globalKey, new BN("1"), 0);
+      await badClient.insert(userKey, new BN("1"), 0);
+
       const rootHash = await goodClient.getRootHash();
 
       await repCycle.submitRootHash(rootHash, 2, 10);
@@ -2820,13 +2802,10 @@ contract("ColonyNetworkMining", accounts => {
       const keys = Object.keys(goodClient.reputations);
       for (let i = 0; i < keys.length; i += 1) {
         const key = keys[i];
-        const colonyAddress = key.slice(0, 42);
-        const skillId = key.slice(42, 106);
-        const userAddress = key.slice(106);
         const value = goodClient.reputations[key];
         const score = new BN(value.slice(2, 66), 16);
-
-        await badClient.insert(colonyAddress, skillId, userAddress, score, 0); // eslint-disable-line no-await-in-loop
+        console.log(key, score);
+        await badClient.insert(key, score, 0); // eslint-disable-line no-await-in-loop
       }
 
       await goodClient.addLogContentsToReputationTree();
