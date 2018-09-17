@@ -189,8 +189,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     _;
   }
 
-  function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
-  public view
+  function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings) public view
   stoppable
   verifyKey(key)
   returns (bool)
