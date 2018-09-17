@@ -568,12 +568,16 @@ class ReputationMiner {
       AND reputations.skill_id="${skillId}"
       AND colonies.address="0x${colonyAddress}"`
     );
+    await db.close();
 
     if (res.length === 0) {
       return new Error("No such reputation");
     }
 
-    await db.close();
+    if (res.length > 1) {
+      return new Error("Multiple such reputations found. Something is wrong!");
+    }
+
     const [branchMask, siblings] = await tree.getProof(key);
     const retBranchMask = ReputationMiner.getHexString(branchMask);
     return [retBranchMask, siblings, res[0].value];

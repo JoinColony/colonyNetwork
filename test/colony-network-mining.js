@@ -3032,11 +3032,13 @@ contract("ColonyNetworkMining", accounts => {
       await advanceTimeSubmitAndConfirmHash();
       await goodClient.saveCurrentState();
 
-      const loader = new TruffleLoader({
-        contractDir: path.resolve(process.cwd(), "build", "contracts")
+      client = new ReputationMinerClient({
+        loader: contractLoader,
+        realProviderPort: REAL_PROVIDER_PORT,
+        minerAddress: MAIN_ACCOUNT,
+        useJSTree: true,
+        auto: false
       });
-
-      client = new ReputationMinerClient({ loader, realProviderPort: REAL_PROVIDER_PORT, minerAddress: MAIN_ACCOUNT, useJSTree: true, auto: false });
       await client.initialise(colonyNetwork.address);
     });
 
