@@ -13,3 +13,4 @@ lib/dappsys
 ganache-accounts.json
 .vscode/
 yarn-error.log
+reputationStates.sqlite

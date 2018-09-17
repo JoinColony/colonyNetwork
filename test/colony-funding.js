@@ -705,8 +705,8 @@ contract("Colony Funding", accounts => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-
-      await miningClient.insert(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000", toBN(10), 0);
+      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000");
+      await miningClient.insert(globalKey, toBN(10), 0);
 
       await forwardTime(3600, this);
       await miningClient.submitRootHash();
@@ -950,7 +950,8 @@ contract("Colony Funding", accounts => {
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
 
-      await miningClient.insert(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000", toBN(0), 0);
+      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000");
+      await miningClient.insert(globalKey, toBN(0), 0);
 
       await forwardTime(3600, this);
       await miningClient.submitRootHash();
@@ -1038,7 +1039,9 @@ contract("Colony Funding", accounts => {
       const rootDomainSkill = result.skillId;
 
       await colony.bootstrapColony([userAddress1], [userTokens3]);
-      await miningClient.insert(colony.address, rootDomainSkill, userAddress3, toBN(0), 0);
+
+      const userKey = await ReputationMiner.getKey(colony.address, rootDomainSkill, userAddress3);
+      await miningClient.insert(userKey, toBN(0), 0);
 
       await miningClient.addLogContentsToReputationTree();
       await forwardTime(3600, this);

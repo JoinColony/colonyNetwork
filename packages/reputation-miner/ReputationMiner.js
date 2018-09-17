@@ -252,14 +252,11 @@ class ReputationMiner {
       })
     );
 
-    const [colonyAddress, skillId, userAddress] = await ReputationMiner.breakKeyInToElements(key);
     // TODO: Include updates for all child skills if x.amount is negative
     // We update colonywide sums first (children, parents, skill)
     // Then the user-specifc sums in the order children, parents, skill.
 
-    // Converting to decimal, since its going to be converted to hex inside `insert`
-    const skillIdDecimal = new BN(skillId, 16).toString();
-    await this.insert(colonyAddress, skillIdDecimal, userAddress, score, updateNumber);
+    await this.insert(key, score, updateNumber);
   }
 
   /**
@@ -288,6 +285,14 @@ class ReputationMiner {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
 
+    let base = 10;
+    let skillId = _skillId.toString();
+    if (skillId.slice(0, 2) === "0x") {
+      // We've been passed a hex string
+      skillId = skillId.slice(2);
+      base = 16;
+    }
+
     let isAddress = web3Utils.isAddress(colonyAddress);
     // TODO should we return errors here?
     if (!isAddress) {
@@ -305,10 +310,10 @@ class ReputationMiner {
     }
     colonyAddress = colonyAddress.toLowerCase();
     userAddress = userAddress.toLowerCase();
-    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(_skillId.toString()).toString(16, 64)}${new BN(userAddress, 16).toString(
-      16,
-      40
-    )}`;
+    const key = `0x${new BN(colonyAddress, 16).toString(16, 40)}${new BN(skillId.toString(), base).toString(16, 64)}${new BN(
+      userAddress,
+      16
+    ).toString(16, 40)}`;
     return key;
   }
 
@@ -375,7 +380,7 @@ class ReputationMiner {
     const colonyAddress = key.slice(2, 42);
     const skillId = key.slice(42, 106);
     const userAddress = key.slice(106);
-    return [colonyAddress, skillId, userAddress];
+    return [`0x${colonyAddress}`, `0x${skillId}`, `0x${userAddress}`];
   }
 
   /**
@@ -675,15 +680,12 @@ class ReputationMiner {
 
   /**
    * Insert (or update) the reputation for a user in the local reputation tree
-   * @param  {string}  _colonyAddress  Hex address of the colony in which the reputation is being updated
-   * @param  {Number or BigNumber or String}  skillId        The id of the skill being updated
-   * @param  {string}  _userAddress    Hex address of the user who is having their reputation being updated
+   * @param  {string}  key  The key of the reputation that is being updated
    * @param  {Number of BigNumber or String}  reputationScore The amount the reputation changes by
    * @param  {Number or BigNumber}  index           The index of the log entry being considered
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
-  async insert(_colonyAddress, skillId, _userAddress, _reputationScore, index) {
-    const key = await ReputationMiner.getKey(_colonyAddress, skillId, _userAddress);
+  async insert(key, _reputationScore, index) {
     // const keyAlreadyExists = await this.keyExists(key);
     // If we already have this key, then we lookup the unique identifier we assigned this key.
     // Otherwise, give it the new one.
@@ -779,10 +781,9 @@ class ReputationMiner {
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
-      let [colonyAddress, skillId, userAddress] = await ReputationMiner.breakKeyInToElements(key); // eslint-disable-line no-await-in-loop
-      colonyAddress = `0x${colonyAddress}`;
-      skillId = parseInt(skillId, 16);
-      userAddress = `0x${userAddress}`;
+      const keyElements = await ReputationMiner.breakKeyInToElements(key); // eslint-disable-line no-await-in-loop
+      const [colonyAddress, , userAddress] = keyElements;
+      const skillId = parseInt(keyElements[1], 16);
 
       res = await db.run(`INSERT OR IGNORE INTO colonies (address) VALUES ('${colonyAddress}')`); // eslint-disable-line no-await-in-loop
       res = await db.run(`INSERT OR IGNORE INTO users (address) VALUES ('${userAddress}')`); // eslint-disable-line no-await-in-loop
