@@ -470,7 +470,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   /// @notice Get the timestamp that the current reputation mining window opened
-  function getReputationMiningWindowOpenTimestamp() public returns (uint256) {
+  function getReputationMiningWindowOpenTimestamp() public view returns (uint256) {
     return reputationMiningWindowOpenTimestamp;
   }
 

@@ -138,7 +138,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
   }
 
-  function checkKey(uint256[11] memory u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
+  function checkKey(uint256[11] memory u, bytes memory _reputationKey, bytes memory _reputationValue) internal view {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -150,7 +150,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
   }
 
-  function checkKeyDecay(uint256 _updateNumber, bytes memory _reputationValue) internal {
+  function checkKeyDecay(uint256 _updateNumber, bytes memory _reputationValue) internal pure {
     uint256 uid;
     bytes memory reputationValue = new bytes(64);
     reputationValue = _reputationValue;
@@ -165,7 +165,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(uid-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
-  function checkKeyLogEntry(uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal {
+  function checkKeyLogEntry(uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal view {
     uint256 updateNumber = disputeRounds[round][idx].lowerBound - 1 - IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
 
     ReputationLogEntry storage logEntry = reputationUpdateLog[logEntryNumber];
@@ -368,7 +368,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     if (_agreeStateReputationUID != 0) {
       // i.e. if this was an existing reputation, then require that the ID hasn't changed.
-      // TODO: Situation where it is not an existing reputation
       require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
     } else {
       uint256 previousNewReputationUID;
@@ -436,24 +435,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         // TODO: Is this safe? I think so, because even if there's over/underflows, they should
         // still be the same number.
         require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
-      }
-    }
-  }
-
-  function validateUID(
-    uint256[12] u,
-    uint256 _agreeStateReputationUID,
-    uint256 _disagreeStateReputationUID,
-    bytes _previousNewReputationValue
-  ) internal pure
-  {
-    if (_agreeStateReputationUID != 0) {
-      // i.e. if this was an existing reputation, then require that the ID hasn't changed.
-      require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
-    } else {
-      uint256 previousNewReputationUID;
-      assembly {
-        previousNewReputationUID := mload(add(_previousNewReputationValue, 64))
       }
     }
   }
