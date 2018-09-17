@@ -2804,7 +2804,6 @@ contract("ColonyNetworkMining", accounts => {
         const key = keys[i];
         const value = goodClient.reputations[key];
         const score = new BN(value.slice(2, 66), 16);
-        console.log(key, score);
         await badClient.insert(key, score, 0); // eslint-disable-line no-await-in-loop
       }
 
