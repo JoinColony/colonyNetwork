@@ -60,7 +60,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
   uint constant U_LOG_ENTRY_NUMBER = 8;
   uint constant U_DECAY_TRANSITION = 9;
-  uint constant U_ORIGIN_SKILL_REPUTATION_VALUE = 10;
+  uint constant U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK = 10;
 
   function respondToChallenge(
     uint256[11] u, //An array of 11 UINT Params, ordered as given above.
@@ -308,7 +308,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes previousNewReputationValueBytes,
     bytes32[] previousNewReputationSiblings,
     bytes originReputationKey,
-    bytes originReputationValue,
+    bytes originReputationValueBytes,
     bytes32[] originReputationSiblings
   ) internal
   {
@@ -316,12 +316,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256 disagreeStateReputationValue;
     uint256 agreeStateReputationUID;
     uint256 disagreeStateReputationUID;
+    uint256 originReputationValue;
 
     assembly {
         agreeStateReputationValue := mload(add(agreeStateReputationValueBytes, 32))
         disagreeStateReputationValue := mload(add(disagreeStateReputationValueBytes, 32))
         agreeStateReputationUID := mload(add(agreeStateReputationValueBytes, 64))
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
+        originReputationValue := mload(add(originReputationValueBytes, 64))
     }
 
     proveUID(
@@ -374,7 +376,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256[11] u,
     uint256 _agreeStateReputationValue,
     uint256 _disagreeStateReputationValue,
-    bytes _originReputationValue
+    uint256 _originReputationValue
   ) internal view 
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
