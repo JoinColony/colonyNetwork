@@ -520,7 +520,7 @@ class ReputationMiner {
     let entryIndex;
     const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    for (let i = ethers.utils.bigNumberify(startIndex); i.lt(balance.div(10 ** 15)); i = i.add(1)) {
+    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(10 ** 15)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
       const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash); // eslint-disable-line no-await-in-loop
 

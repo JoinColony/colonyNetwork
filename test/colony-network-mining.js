@@ -1545,10 +1545,10 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
 
-      await forwardTime(3540, this);
+      await forwardTime(3500, this);
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
-      await forwardTime(60, this);
+      await forwardTime(100, this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2072,6 +2072,25 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToChallenge();
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
+    });
+
+    it("should refuse to confirmNewHash while the minimum submission window has not elapsed", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await forwardTime(1800, this);
+      await goodClient.submitRootHash();
+      await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-submission-window-still-open");
+
+      // Cleanup
+      await forwardTime(1800, this);
+      await repCycle.confirmNewHash(0);
     });
 
     [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 9, badClient2Argument: -1 }].forEach(
