@@ -60,7 +60,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
   uint constant U_LOG_ENTRY_NUMBER = 8;
   uint constant U_DECAY_TRANSITION = 9;
-  uint constant U_ORIGIN_SKILL_REPUTATION_VALUE = 10;
+  uint constant U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK = 10;
 
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
@@ -324,19 +324,24 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory agreeStateSiblings,
     bytes memory previousNewReputationKey,
     bytes memory previousNewReputationValueBytes,
-    bytes32[] memory previousNewReputationSiblings
+    bytes32[] memory previousNewReputationSiblings,
+    bytes memory originReputationKey,
+    bytes memory originReputationValueBytes,
+    bytes32[] memory originReputationSiblings
   ) internal view
   {
     uint256 agreeStateReputationValue;
     uint256 disagreeStateReputationValue;
     uint256 agreeStateReputationUID;
     uint256 disagreeStateReputationUID;
+    uint256 originReputationValue;
 
     assembly {
         agreeStateReputationValue := mload(add(agreeStateReputationValueBytes, 32))
         disagreeStateReputationValue := mload(add(disagreeStateReputationValueBytes, 32))
         agreeStateReputationUID := mload(add(agreeStateReputationValueBytes, 64))
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
+        originReputationValue := mload(add(originReputationValueBytes, 64))
     }
 
     proveUID(
@@ -389,7 +394,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256[11] u,
     uint256 _agreeStateReputationValue,
     uint256 _disagreeStateReputationValue,
-    bytes _originReputationValue
+    uint256 _originReputationValue
   ) internal view 
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
