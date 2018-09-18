@@ -556,7 +556,7 @@ class ReputationMiner {
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
     const [colonyAddress, , userAddress] = keyElements;
-    const skillId = new BN(keyElements[1]).toString();
+    const skillId = parseInt(keyElements[1], 16);
     res = await db.all(
       `SELECT reputations.value
       FROM reputations
@@ -564,9 +564,9 @@ class ReputationMiner {
       INNER JOIN users ON users.rowid=reputations.user_rowid
       INNER JOIN reputation_states ON reputation_states.rowid=reputations.reputation_rowid
       WHERE reputation_states.root_hash="${rootHash}"
-      AND users.address="0x${userAddress}"
+      AND users.address="${userAddress}"
       AND reputations.skill_id="${skillId}"
-      AND colonies.address="0x${colonyAddress}"`
+      AND colonies.address="${colonyAddress}"`
     );
     await db.close();
 
