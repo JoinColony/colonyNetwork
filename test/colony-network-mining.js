@@ -2035,7 +2035,7 @@ contract("ColonyNetworkMining", accounts => {
 
       reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
-      await forwardTime(3200, this);
+      await forwardTime(1800, this);
       for (let i = 0; i < clients.length; i += 1) {
         // Doing these individually rather than in a big loop because with many instances of the EVM
         // churning away at once, I *think* it's slower.
@@ -2043,7 +2043,7 @@ contract("ColonyNetworkMining", accounts => {
         await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
         console.log(`Client ${i} of ${clients.length - 1} submitted JRH`); // eslint-disable-line no-console
       }
-      await forwardTime(400, this);
+      await forwardTime(1800, this);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       let nRemainingHashes = nSubmittedHashes.toNumber();
