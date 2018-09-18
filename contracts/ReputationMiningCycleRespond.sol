@@ -259,8 +259,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline solidity
       mstore(add(jhLeafValue, 0x40), x)
     }
-    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
-    // agree on.
+    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
 
     if (reputationValue == 0 && impliedRoot != jrh) {
@@ -298,8 +297,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       u[U_REPUTATION_BRANCH_MASK],
       reputationSiblings
     );
-    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
-    // agree on.
+    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
     bytes memory jhLeafValue = new bytes(64);
 
     assembly {
