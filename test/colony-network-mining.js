@@ -12,7 +12,8 @@ import {
   makeReputationKey,
   makeReputationValue,
   currentBlock,
-  getValidEntryNumber
+  getValidEntryNumber,
+  submitAndForwardTimeToDispute
 } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 
@@ -364,15 +365,9 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
       const addr = await colonyNetwork.getReputationMiningCycle(true);
 
-      await forwardTime(3500, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
       const repCycle = await IReputationMiningCycle.at(addr);
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-
-      await forwardTime(100, this);
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
       const newAddr = await colonyNetwork.getReputationMiningCycle(true);
@@ -391,19 +386,10 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
 
+      await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
+
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
-
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-      await badClient2.addLogContentsToReputationTree();
-
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await badClient2.submitRootHash();
-
-      await forwardTime(100, this);
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await accommodateChallengeAndInvalidateHash(this, badClient2); // Invalidate the 'null' that partners the third hash submitted.
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2);
@@ -424,17 +410,10 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
-
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-
-      await forwardTime(100, this);
       await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-final-round-not-completed");
       const newAddr = await colonyNetwork.getReputationMiningCycle(true);
       assert(newAddr !== 0x0);
@@ -448,14 +427,8 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
 
-      await forwardTime(3500, this);
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-
-      await forwardTime(100, this);
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await checkErrorRevert(accommodateChallengeAndInvalidateHash(this, goodClient), "colony-reputation-mining-cannot-invalidate-final-hash");
     });
@@ -465,19 +438,10 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
 
+      await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-      await badClient2.addLogContentsToReputationTree();
-
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await badClient2.submitRootHash();
-
-      await forwardTime(100, this);
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await accommodateChallengeAndInvalidateHash(this, badClient2);
       await forwardTime(600, this);
@@ -492,16 +456,10 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-
-      await forwardTime(100, this);
       await goodClient.submitJustificationRootHash();
       await forwardTime(600, this);
 
@@ -515,17 +473,11 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-
-      await forwardTime(100, this);
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-proposed-hash-empty");
     });
@@ -535,17 +487,9 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
 
+      await submitAndForwardTimeToDispute([badClient, badClient2, goodClient], this);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
-
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-      await badClient2.addLogContentsToReputationTree();
-
-      await badClient.submitRootHash();
-      await badClient2.submitRootHash();
-      await goodClient.submitRootHash();
 
       await forwardTime(600, this);
       await repCycle.invalidateHash(0, 1);
@@ -557,8 +501,8 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
+      await forwardTime(1800, this);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
       const repCycle = await IReputationMiningCycle.at(addr);
 
       await goodClient.addLogContentsToReputationTree();
@@ -567,8 +511,8 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
 
-      await forwardTime(100, this);
       await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-failed-to-respond-in-time");
+      await forwardTime(1800, this);
       await checkErrorRevert(repCycle.confirmNewHash(1), "colony-reputation-mining-final-round-not-completed");
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
@@ -613,13 +557,14 @@ contract("ColonyNetworkMining", accounts => {
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3500, this);
+      await forwardTime(1800, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
       const entryNumber2 = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x87654321");
       await checkErrorRevert(repCycle.submitRootHash("0x87654321", 10, entryNumber2), "colony-reputation-mining-submitting-different-hash");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
+      await forwardTime(1800, this);
     });
 
     it("should not allow a user to back the same hash with different number of nodes in a single cycle", async () => {
@@ -627,13 +572,14 @@ contract("ColonyNetworkMining", accounts => {
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3500, this);
+      await forwardTime(1800, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
 
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 11, entryNumber), "colony-reputation-mining-submitting-different-nnodes");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
+      await forwardTime(1800, this);
     });
 
     it("should not allow a user to submit the same entry for the same hash twice in a single cycle", async () => {
@@ -641,7 +587,7 @@ contract("ColonyNetworkMining", accounts => {
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3500, this);
+      await forwardTime(1800, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
 
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
@@ -649,6 +595,7 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, entryNumber), "colony-reputation-mining-submitting-same-entry-index");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
+      await forwardTime(1800, this);
     });
 
     it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
@@ -656,7 +603,7 @@ contract("ColonyNetworkMining", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3500, this);
+      await forwardTime(1800, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       const entryNumber2 = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", entryNumber + 1);
 
@@ -664,7 +611,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.submitRootHash("0x12345678", 10, entryNumber2);
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
-      await forwardTime(100, this);
+      await forwardTime(1800, this);
       await repCycle.confirmNewHash(0);
 
       // Check that they received the reward
@@ -714,7 +661,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3500, this);
+      await forwardTime(3600, this);
       const repCycle = await IReputationMiningCycle.at(addr);
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 1000000000000), "colony-reputation-mining-stake-minimum-not-met");
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x87654321");
@@ -750,14 +697,7 @@ contract("ColonyNetworkMining", accounts => {
       );
       badClient2.initialise(colonyNetwork.address);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-      await badClient2.addLogContentsToReputationTree();
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await badClient2.submitRootHash();
+      await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
@@ -774,13 +714,13 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
 
-      await forwardTime(3500, this);
+      await forwardTime(1800, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       const entryNumber2 = await getValidEntryNumber(colonyNetwork, OTHER_ACCOUNT, "0x12345678");
 
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
       await repCycle.submitRootHash("0x12345678", 10, entryNumber2, { from: OTHER_ACCOUNT });
-      await forwardTime(100, this);
+      await forwardTime(1800, this);
       await repCycle.confirmNewHash(0);
 
       // Check that they have had their balance increase
@@ -874,18 +814,11 @@ contract("ColonyNetworkMining", accounts => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      await goodClient.addLogContentsToReputationTree();
-
-      await badClient.addLogContentsToReputationTree();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert.equal(nSubmittedHashes, 2);
@@ -937,16 +870,11 @@ contract("ColonyNetworkMining", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
@@ -985,21 +913,16 @@ contract("ColonyNetworkMining", accounts => {
         badClient.entryToFalsify = badIndex.toString();
 
         await repCycle.confirmNewHash(0);
-        addr = await colonyNetwork.getReputationMiningCycle(true);
-        repCycle = await IReputationMiningCycle.at(addr);
 
-        await goodClient.addLogContentsToReputationTree();
-        await badClient.addLogContentsToReputationTree();
+        await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
         const righthash = await goodClient.getRootHash();
         const wronghash = await badClient.getRootHash();
         assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
 
-        await forwardTime(3500, this);
-        await goodClient.submitRootHash();
-        await badClient.submitRootHash();
-        await forwardTime(100, this);
-
         await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+        addr = await colonyNetwork.getReputationMiningCycle(true);
+        repCycle = await IReputationMiningCycle.at(addr);
         await repCycle.confirmNewHash(1);
       });
     });
@@ -1031,24 +954,18 @@ contract("ColonyNetworkMining", accounts => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      await goodClient.addLogContentsToReputationTree();
-
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         12,
         "0xfffffffff"
       );
       await badClient.initialise(colonyNetwork.address);
-      await badClient.addLogContentsToReputationTree();
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert.equal(nSubmittedHashes, 2);
@@ -1169,25 +1086,18 @@ contract("ColonyNetworkMining", accounts => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      await goodClient.addLogContentsToReputationTree();
-
       badClient = new MaliciousReputationMinerWrongUID(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         12,
         "0xfffffffff"
       );
       await badClient.initialise(colonyNetwork.address);
-      await badClient.addLogContentsToReputationTree();
 
-      let righthash = await goodClient.getRootHash();
-      let wronghash = await badClient.getRootHash();
-      righthash = await goodClient.getRootHash();
-      wronghash = await badClient.getRootHash();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1249,25 +1159,18 @@ contract("ColonyNetworkMining", accounts => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      await goodClient.addLogContentsToReputationTree();
-
       badClient = new MaliciousReputationMinerReuseUID(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         3,
         1
       );
       await badClient.initialise(colonyNetwork.address);
-      await badClient.addLogContentsToReputationTree();
 
-      let righthash = await goodClient.getRootHash();
-      let wronghash = await badClient.getRootHash();
-      righthash = await goodClient.getRootHash();
-      wronghash = await badClient.getRootHash();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1347,15 +1250,9 @@ contract("ColonyNetworkMining", accounts => {
         0xfffffffff
       );
       await badClient2.initialise(colonyNetwork.address);
-
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
       await badClient2.addLogContentsToReputationTree();
 
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1399,25 +1296,18 @@ contract("ColonyNetworkMining", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         1,
         "0xfffffffff"
       );
       await badClient.initialise(colonyNetwork.address);
-      await badClient.addLogContentsToReputationTree();
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
       let righthash = await goodClient.getRootHash();
       let wronghash = await badClient.getRootHash();
-      righthash = await goodClient.getRootHash();
-      wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
 
@@ -1447,17 +1337,11 @@ contract("ColonyNetworkMining", accounts => {
       repCycle = await IReputationMiningCycle.at(addr);
       await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
 
-      await badClient.addLogContentsToReputationTree();
-      await goodClient.addLogContentsToReputationTree();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       righthash = await goodClient.getRootHash();
       wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
@@ -1472,13 +1356,7 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       const jrh = await goodClient.justificationTree.getRootHash();
       const [branchMask1, siblings1] = await goodClient.justificationTree.getProof(`0x${new BN("0").toString(16, 64)}`);
@@ -1542,13 +1420,8 @@ contract("ColonyNetworkMining", accounts => {
         0xfffffffff
       );
       await badClient.initialise(colonyNetwork.address);
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
 
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1652,13 +1525,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient.entryToFalsify = "1";
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1758,13 +1625,8 @@ contract("ColonyNetworkMining", accounts => {
         0xfffffffff
       );
       await badClient.initialise(colonyNetwork.address);
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
 
-      await forwardTime(3200, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(400, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1924,13 +1786,7 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1947,13 +1803,7 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -1982,13 +1832,8 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
 
@@ -2045,13 +1890,7 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2123,19 +1962,15 @@ contract("ColonyNetworkMining", accounts => {
 
           await goodClient.initialise(colonyNetwork.address);
           await goodClient.addLogContentsToReputationTree();
+
           await badClient.initialise(colonyNetwork.address);
-          await badClient.addLogContentsToReputationTree();
           await badClient2.initialise(colonyNetwork.address);
-          await badClient2.addLogContentsToReputationTree();
+
+          await submitAndForwardTimeToDispute([badClient, badClient2], this);
 
           const righthash = await badClient.getRootHash();
           const wronghash = await badClient2.getRootHash();
           assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-          await forwardTime(1800, this);
-          await badClient.submitRootHash();
-          await badClient2.submitRootHash();
-          await forwardTime(1800, this);
 
           await badClient2.submitJustificationRootHash();
           await badClient.submitJustificationRootHash();
@@ -2279,13 +2114,7 @@ contract("ColonyNetworkMining", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2336,13 +2165,7 @@ contract("ColonyNetworkMining", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2383,13 +2206,7 @@ contract("ColonyNetworkMining", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2440,13 +2257,7 @@ contract("ColonyNetworkMining", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2487,13 +2298,7 @@ contract("ColonyNetworkMining", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2764,24 +2569,18 @@ contract("ColonyNetworkMining", accounts => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      await goodClient.addLogContentsToReputationTree();
-
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         40, // Skill 4
         "0xfffffffff"
       );
       await badClient.initialise(colonyNetwork.address);
-      await badClient.addLogContentsToReputationTree();
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
@@ -2861,13 +2660,7 @@ contract("ColonyNetworkMining", accounts => {
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(1800, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
       await badClient.submitJustificationRootHash();
@@ -2898,13 +2691,7 @@ contract("ColonyNetworkMining", accounts => {
         await badClient.insert(key, score, 0); // eslint-disable-line no-await-in-loop
       }
 
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-
-      await forwardTime(3500, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await forwardTime(100, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
 

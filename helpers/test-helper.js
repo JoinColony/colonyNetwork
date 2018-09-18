@@ -350,3 +350,12 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   }
   return new Error("No valid submission found");
 }
+
+export async function submitAndForwardTimeToDispute(clients, test) {
+  await forwardTime(1800, test);
+  for (let i = 0; i < clients.length; i += 1) {
+    await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
+    await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
+  }
+  await forwardTime(1800, test);
+}
