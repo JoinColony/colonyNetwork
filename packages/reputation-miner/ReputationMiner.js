@@ -984,7 +984,6 @@ class ReputationMiner {
       res = await db.run(`INSERT OR IGNORE INTO users (address) VALUES ('${userAddress}')`); // eslint-disable-line no-await-in-loop
       res = await db.run(`INSERT OR IGNORE INTO skills (skill_id) VALUES ('${skillId}')`); // eslint-disable-line no-await-in-loop
 
-      // eslint-disable-next-line no-await-in-loop
       let query;
       query = `SELECT COUNT ( * ) AS "n"
         FROM reputations
