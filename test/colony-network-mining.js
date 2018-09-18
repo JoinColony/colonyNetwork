@@ -3,6 +3,7 @@
 import path from "path";
 import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
+import request from "async-request";
 
 import {
   forwardTime,
@@ -20,6 +21,8 @@ import MaliciousReputationMinerWrongUID from "../packages/reputation-miner/test/
 import MaliciousReputationMinerReuseUID from "../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
 import MaliciousReputationMinerWrongProofLogEntry from "../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry";
 import MaliciousReputationMinerWrongNewestReputation from "../packages/reputation-miner/test/MaliciousReputationMinerWrongNewestReputation";
+
+import ReputationMinerClient from "../packages/reputation-miner/ReputationMinerClient";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
@@ -2827,18 +2830,18 @@ contract("ColonyNetworkMining", accounts => {
     it.skip("should abort if a deposit did not complete correctly");
   });
 
+  async function advanceTimeSubmitAndConfirmHash(test) {
+    await forwardTime(3600, test);
+    await goodClient.addLogContentsToReputationTree();
+    await goodClient.submitRootHash();
+    const addr = await colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = await IReputationMiningCycle.at(addr);
+    await repCycle.confirmNewHash(0);
+  }
+
   describe("Miner syncing functionality", () => {
     let startingBlockNumber;
     let goodClient2;
-
-    async function advanceTimeSubmitAndConfirmHash(test) {
-      await forwardTime(3600, test);
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.submitRootHash();
-      const addr = await colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
-    }
 
     beforeEach(async () => {
       const startingBlock = await currentBlock();
@@ -2989,6 +2992,124 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient2.loadState(client1Hash);
       const client2Hash = await goodClient2.reputationTree.getRootHash();
       assert.equal(client1Hash, client2Hash);
+    });
+
+    it("should be able to correctly get the proof for a reputation in a historical state without affecting the current miner state", async () => {
+      await goodClient.resetDB();
+      await goodClient.saveCurrentState();
+      const clientHash1 = await goodClient.reputationTree.getRootHash();
+      const key = Object.keys(goodClient.reputations)[0];
+      const value = goodClient.reputations[key];
+      const [branchMask, siblings] = await goodClient.getProof(key);
+
+      await advanceTimeSubmitAndConfirmHash(this);
+      // So now we have a different state
+      await goodClient.saveCurrentState();
+
+      const clientHash2 = await goodClient.reputationTree.getRootHash();
+      assert.notEqual(clientHash1, clientHash2);
+
+      const [retrievedBranchMask, retrievedSiblings, retrievedValue] = await goodClient.getHistoricalProofAndValue(clientHash1, key);
+
+      // Check they're right
+      assert.equal(value, retrievedValue);
+      assert.equal(branchMask, retrievedBranchMask);
+      assert.equal(siblings.length, retrievedSiblings.length);
+      for (let i = 0; i < retrievedSiblings.length; i += 1) {
+        assert.equal(siblings[i], retrievedSiblings[i]);
+        assert.equal(siblings[i], retrievedSiblings[i]);
+      }
+
+      const clientHash3 = await goodClient.reputationTree.getRootHash();
+      assert.equal(clientHash2, clientHash3);
+    });
+  });
+
+  describe("Reputation Mining Client", () => {
+    let client;
+    beforeEach(async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await advanceTimeSubmitAndConfirmHash();
+      await goodClient.saveCurrentState();
+
+      client = new ReputationMinerClient({
+        loader: contractLoader,
+        realProviderPort: REAL_PROVIDER_PORT,
+        minerAddress: MAIN_ACCOUNT,
+        useJSTree: true,
+        auto: false
+      });
+      await client.initialise(colonyNetwork.address);
+    });
+
+    afterEach(async () => {
+      client.close();
+    });
+
+    it("should correctly respond to a request for a reputation state in the current state", async () => {
+      const rootHash = await goodClient.getRootHash();
+      const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MAIN_ACCOUNT}`;
+      const res = await request(url);
+      assert.equal(res.statusCode, 200);
+      const oracleProofObject = JSON.parse(res.body);
+      const key = makeReputationKey(metaColony.address, 2, MAIN_ACCOUNT);
+
+      const [branchMask, siblings] = await goodClient.getProof(key);
+      const value = goodClient.reputations[key];
+
+      assert.equal(branchMask, oracleProofObject.branchMask);
+      assert.equal(siblings.length, oracleProofObject.siblings.length);
+      for (let i = 0; i < oracleProofObject.siblings.length; i += 1) {
+        assert.equal(siblings[i], oracleProofObject.siblings[i]);
+        assert.equal(siblings[i], oracleProofObject.siblings[i]);
+      }
+      assert.equal(key, oracleProofObject.key);
+      assert.equal(value, oracleProofObject.value);
+    });
+
+    it("should correctly respond to a request for a reputation state in a previous state", async () => {
+      const rootHash = await goodClient.getRootHash();
+      const key = makeReputationKey(metaColony.address, 2, MAIN_ACCOUNT);
+      const [branchMask, siblings] = await goodClient.getProof(key);
+      const value = goodClient.reputations[key];
+
+      await advanceTimeSubmitAndConfirmHash();
+
+      const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MAIN_ACCOUNT}`;
+      const res = await request(url);
+      assert.equal(res.statusCode, 200);
+      const oracleProofObject = JSON.parse(res.body);
+
+      assert.equal(branchMask, oracleProofObject.branchMask);
+      assert.equal(siblings.length, oracleProofObject.siblings.length);
+      for (let i = 0; i < oracleProofObject.siblings.length; i += 1) {
+        assert.equal(siblings[i], oracleProofObject.siblings[i]);
+        assert.equal(siblings[i], oracleProofObject.siblings[i]);
+      }
+      assert.equal(key, oracleProofObject.key);
+      assert.equal(value, oracleProofObject.value);
+    });
+
+    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+      ? it.skip
+      : it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
+          const rootHash = await goodClient.getRootHash();
+          const startingBlock = await currentBlock();
+          const startingBlockNumber = startingBlock.number;
+          await advanceTimeSubmitAndConfirmHash();
+          await client._miner.sync(startingBlockNumber); // eslint-disable-line no-underscore-dangle
+          const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
+          const res = await request(url);
+          assert.equal(res.statusCode, 400);
+          assert.equal(JSON.parse(res.body).message, "Requested reputation does not exist or invalid request");
+        });
+
+    it("should correctly respond to a request for a valid key in an invalid reputation state", async () => {
+      const rootHash = await goodClient.getRootHash();
+      const url = `http://127.0.0.1:3000/${rootHash.slice(4)}0000/${metaColony.address}/2/${MAIN_ACCOUNT}`;
+      const res = await request(url);
+      assert.equal(res.statusCode, 400);
+      assert.equal(JSON.parse(res.body).message, "Requested reputation does not exist or invalid request");
     });
   });
 });

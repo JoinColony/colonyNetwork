@@ -10,22 +10,33 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider, useJSTree }) {
+  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider, useJSTree, auto }) {
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, dbPath: file, useJSTree });
     this._seed = seed;
+    this._auto = auto || true;
 
     this._app = express();
-    this._app.get("/:colonyAddress/:skillId/:userAddress", async (req, res) => {
+    this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
       const key = await ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
-      if (this._miner.reputations[key]) {
-        const proof = await this._miner.getReputationProofObject(key);
-        delete proof.nNodes;
-        proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
+      const currentHash = await this._miner.getRootHash();
+      if (currentHash === req.params.rootHash) {
+        if (this._miner.reputations[key]) {
+          const proof = await this._miner.getReputationProofObject(key);
+          delete proof.nNodes;
+          proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
+          return res.status(200).send(proof);
+        }
+        return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+      }
 
-        res.status(200).send(proof);
-      } else {
-        res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
+      try {
+        const [branchMask, siblings, value] = await this._miner.getHistoricalProofAndValue(req.params.rootHash, key);
+        const proof = { branchMask: `${branchMask.toString(16)}`, siblings, key, value };
+        proof.reputationAmount = ethers.utils.bigNumberify(`0x${proof.value.slice(2, 66)}`).toString();
+        return res.status(200).send(proof);
+      } catch (err) {
+        return res.status(400).send({ message: "Requested reputation does not exist or invalid request" });
       }
     });
 
@@ -72,7 +83,14 @@ class ReputationMinerClient {
     }
 
     console.log("🏁 Initialised");
-    setTimeout(() => this.checkSubmissionWindow(), 0);
+    if (this.auto) {
+      this.timeout = setTimeout(() => this.checkSubmissionWindow(), 0);
+    }
+  }
+
+  close() {
+    clearTimeout(this.timeout);
+    this.server.close();
   }
 
   async checkSubmissionWindow() {
@@ -113,15 +131,15 @@ class ReputationMinerClient {
       tx = await repCycle.confirmNewHash(0, { gasLimit: 3500000, nonce: tx.nonce + 1 });
 
       console.log("✅ New reputation hash confirmed, via TX", tx);
-      // setTimeout(() => this.checkSubmissionWindow(), 3660000);
+      // this.timeout = setTimeout(() => this.checkSubmissionWindow(), 3660000);
       // console.log("⌛️ will next check in one hour and one minute");
-      setTimeout(() => this.checkSubmissionWindow(), 10000);
+      this.timeout = setTimeout(() => this.checkSubmissionWindow(), 10000);
     } else {
       // Set a timeout for 3610 - (now - windowOpened)
-      setTimeout(() => this.checkSubmissionWindow(), 10000);
+      this.timeout = setTimeout(() => this.checkSubmissionWindow(), 10000);
       // const timeout = Math.max(3610 - (now - windowOpened), 10);
       // console.log("⌛️ will next check in ", timeout, "seconds");
-      // setTimeout(() => this.checkSubmissionWindow(), timeout * 1000);
+      // this.timeout = setTimeout(() => this.checkSubmissionWindow(), timeout * 1000);
     }
   }
 }
