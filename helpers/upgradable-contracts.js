@@ -93,13 +93,13 @@ export async function setupUpgradableColonyNetwork(
   colonyNetwork,
   colonyNetworkMining,
   colonyNetworkAuction,
-  colonyNetworkRegistrar
+  colonyNetworkENS
 ) {
   const deployedImplementations = {};
   deployedImplementations.ColonyNetwork = colonyNetwork.address;
   deployedImplementations.ColonyNetworkMining = colonyNetworkMining.address;
   deployedImplementations.ColonyNetworkAuction = colonyNetworkAuction.address;
-  deployedImplementations.ColonyNetworkRegistrar = colonyNetworkRegistrar.address;
+  deployedImplementations.ColonyNetworkENS = colonyNetworkENS.address;
 
   await setupEtherRouter("IColonyNetwork", deployedImplementations, resolver);
 
