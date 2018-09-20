@@ -1,3 +1,4 @@
+/* globals artifacts */
 /* eslint-disable no-console */
 import shortid from "shortid";
 import { assert } from "chai";
@@ -5,6 +6,10 @@ import web3Utils from "web3-utils";
 import ethUtils from "ethereumjs-util";
 import BN from "bn.js";
 import fs from "fs";
+
+const IColony = artifacts.require("IColony");
+const ITokenLocking = artifacts.require("ITokenLocking");
+const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 export function web3GetNetwork() {
   return new Promise((resolve, reject) => {
@@ -307,4 +312,50 @@ export function makeReputationKey(colonyAddress, skill, accountAddress = undefin
 
 export function makeReputationValue(value, repuationId) {
   return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(repuationId)).toString(16, 64)}`; // eslint-disable-line
+}
+
+export async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
+  const reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
+  const repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
+
+  const metaColonyAddress = await colonyNetwork.getMetaColony();
+  const metaColony = await IColony.at(metaColonyAddress);
+  const clnyAddress = await metaColony.getToken();
+
+  // First, get user balance
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+  const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+  const userLockInformation = await tokenLocking.getUserLock(clnyAddress, account);
+  const userBalance = userLockInformation.amount;
+
+  // What's the largest entry they can submit?
+  const nIter = userBalance.div(new BN(10).pow(new BN(15)));
+  // Work out the target
+  const constant = new BN(2)
+    .pow(new BN(256))
+    .subn(1)
+    .divn(3600);
+  const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+
+  // Iterate from `startingEntryNumber ` up until the largest entry, until we find one we can submit now
+  // or return an error
+  //
+  const timestamp = await currentBlockTime();
+  for (let i = startingEntryNumber; i <= nIter; i += 1) {
+    const entryHash = await repCycle.getEntryHash(account, i, hash); // eslint-disable-line no-await-in-loop
+    const target = new BN(timestamp).sub(reputationMiningWindowOpenTimestamp).mul(constant);
+    if (new BN(entryHash.slice(2), 16).lt(target)) {
+      return i;
+    }
+  }
+  return new Error("No valid submission found");
+}
+
+export async function submitAndForwardTimeToDispute(clients, test) {
+  await forwardTime(1800, test);
+  for (let i = 0; i < clients.length; i += 1) {
+    await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
+    await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
+  }
+  await forwardTime(1800, test);
 }

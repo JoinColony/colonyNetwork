@@ -233,7 +233,6 @@ contract("All", accounts => {
       let repCycle = await IReputationMiningCycle.at(repCycleAddr);
       await repCycle.submitRootHash("0x00", 0, 1);
       await repCycle.confirmNewHash(0);
-      await oneHourLater();
 
       repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(repCycleAddr);
@@ -257,9 +256,11 @@ contract("All", accounts => {
       await badClient.addLogContentsToReputationTree();
       await badClient2.addLogContentsToReputationTree();
 
+      await forwardTime(1800, this);
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
       await badClient2.submitRootHash();
+      await forwardTime(1800, this);
 
       // Session of respond / invalidate between our 3 submissions
       await goodClient.submitJustificationRootHash();
