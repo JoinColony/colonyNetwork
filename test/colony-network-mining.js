@@ -1633,6 +1633,8 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
+      // TODO: Amending the global skills tree is messing up with the "happy path" tests as that
+      // also amends the tree in its `before`. Deal with this when we do test refactoring in #317
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
       // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
@@ -2576,8 +2578,6 @@ contract("ColonyNetworkMining", accounts => {
     before(async () => {
       // We're not resetting the global skills tree as the Network is not reset
       // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);
       await metaColony.addGlobalSkill(6);
       await metaColony.addGlobalSkill(7);
