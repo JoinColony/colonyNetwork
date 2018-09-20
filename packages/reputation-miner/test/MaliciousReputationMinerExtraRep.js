@@ -9,7 +9,7 @@ class MaliciousReputationMinerExtraRep extends ReputationMiner {
     this.amountToFalsify = amountToFalsify.toString();
   }
 
-  getScore(i, _score) {
+  getAmount(i, _score) {
     let score = _score;
     if (i.toString() === this.entryToFalsify) {
       score = score.add(this.amountToFalsify);
