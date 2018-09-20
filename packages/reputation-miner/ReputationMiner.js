@@ -173,7 +173,7 @@ class ReputationMiner {
     let justUpdatedProof;
     let originReputationProof;
     let logEntry;
-    let score;
+    let amount;
 
     interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
     jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
@@ -206,7 +206,7 @@ class ReputationMiner {
         newReputation = reputation.mul(numerator).div(denominator);
       }
       const reputationChange = newReputation.sub(reputation);
-      score = this.getScore(updateNumber, reputationChange);
+      amount = this.getAmount(updateNumber, reputationChange);
     } else {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber, blockNumber);
@@ -218,12 +218,12 @@ class ReputationMiner {
         }
       }
       const reputationChange = ethers.utils.bigNumberify(logEntry.amount);
-      score = this.getScore(updateNumber, reputationChange);
+      amount = this.getAmount(updateNumber, reputationChange);
 
-      // When reputation score update is negative, adjust its value for child reputation updates
+      // When reputation amount update is negative, adjust its value for child reputation updates
       // We update colonywide sums first (children, parents, skill)
       // Then the user-specifc sums in the order children, parents, skill.
-      if (score.lt(0)) {
+      if (amount.lt(0)) {
         // For reputation loss, when updating child skills, adjust reputation amount lost
         const nUpdates = logEntry[4];
         const [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
@@ -231,17 +231,17 @@ class ReputationMiner {
           .div(2)
           .sub(1)
           .sub(nParents);
-        const innerUpdateNumber = updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog);
+        const relativeUpdateNumber = updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog);
 
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
         // and user-specific updates located in the first nChildUpdates of the second half of the nUpdates set.
         if (
-          innerUpdateNumber.lt(nChildUpdates) ||
-          (innerUpdateNumber.gte(nUpdates.div(2)) && innerUpdateNumber.lt(nUpdates.div(2).add(nChildUpdates)))
+          relativeUpdateNumber.lt(nChildUpdates) ||
+          (relativeUpdateNumber.gte(nUpdates.div(2)) && relativeUpdateNumber.lt(nUpdates.div(2).add(nChildUpdates)))
         ) {
           // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
           const originSkillUpdateNumber = updateNumber
-            .sub(innerUpdateNumber)
+            .sub(relativeUpdateNumber)
             .add(nUpdates)
             .sub(1);
           const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
@@ -255,7 +255,7 @@ class ReputationMiner {
             if (!originSkillValue.isZero()) {
               let key;
               // For colony wide reputation updates, consider the key of the origin user reputation
-              if (innerUpdateNumber.lt(nChildUpdates)) {
+              if (relativeUpdateNumber.lt(nChildUpdates)) {
                 const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
                 key = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
               } else {
@@ -266,16 +266,16 @@ class ReputationMiner {
               if (keyExists) {
                 const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
                 // todo bn.js doesn't have decimals so is fraction precision enough here?
-                const targetScore = reputation.mul(score).div(originSkillValue);
-                score = targetScore;
+                const targetScore = reputation.mul(amount).div(originSkillValue);
+                amount = targetScore;
               } else {
-                score = ethers.utils.bigNumberify("0");
+                amount = ethers.utils.bigNumberify("0");
               }
             }
 
             originReputationProof = await this.getReputationProofObject(originSkillKey);
           } else {
-            score = ethers.utils.bigNumberify("0");
+            amount = ethers.utils.bigNumberify("0");
           }
         }
       }
@@ -312,7 +312,7 @@ class ReputationMiner {
       })
     );
 
-    await this.insert(key, score, updateNumber);
+    await this.insert(key, amount, updateNumber);
   }
 
   /**
@@ -459,7 +459,7 @@ class ReputationMiner {
       // Following the destructuring rule, this line would be [skillAddress] = logEntry, which I think is very misleading
     }
     const nUpdates = logEntry[4];
-    const score = this.getScore(updateNumber.add(this.nReputationsBeforeLatestLog), logEntry[1]);
+    const amount = this.getAmount(updateNumber.add(this.nReputationsBeforeLatestLog), logEntry[1]);
 
     const [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
     let skillId;
@@ -468,10 +468,10 @@ class ReputationMiner {
     let nChildUpdates;
     // Accidentally commited with gt rather than gte, and everything still
     // worked; was worried this showed a gap in our tests, but the 'else'
-    // branch evaluates to zero if score is 0 (because when nUpdates was
-    // calculated on-chain, nChildUpdates was zero if score == 0.
+    // branch evaluates to zero if amount is 0 (because when nUpdates was
+    // calculated on-chain, nChildUpdates was zero if amount == 0.
     // Restored gte for clarity, but leaving this note for completeness.
-    if (score.gte(0)) {
+    if (amount.gte(0)) {
       nChildUpdates = ethers.constants.Zero;
     } else {
       nChildUpdates = nUpdates
@@ -518,7 +518,7 @@ class ReputationMiner {
 
   /**
    * Formats `reputation` and `uid` in to the format used for the Reputation Tree
-   * @param  {bigNumber or string} reputation The reputation score
+   * @param  {bigNumber or string} reputation The reputation amount
    * @param  {bigNumber or string} uid        The global UID assigned to this reputation
    * @return {string}            Appropriately formatted hex string
    */
@@ -534,8 +534,8 @@ class ReputationMiner {
    * @dev The version of this function in malicious.js uses `this`, but not this version.
    */
   // eslint-disable-next-line class-methods-use-this
-  getScore(i, score) {
-    return score;
+  getAmount(i, amount) {
+    return amount;
   }
 
   /**
