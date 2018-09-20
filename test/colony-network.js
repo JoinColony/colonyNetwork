@@ -323,6 +323,9 @@ contract("ColonyNetwork", accounts => {
       const username2 = "test2";
       const hash = namehash.hash("test.user.joincolony.eth");
 
+      // User cannot register blank label
+      await checkErrorRevert(colonyNetwork.registerUserLabel("", orbitDBAddress, { from: accounts[1] }), "colony-user-label-invalid");
+
       // User can register unique label
       await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
 
@@ -364,6 +367,9 @@ contract("ColonyNetwork", accounts => {
 
       // Non-owner can't register label for colony
       await checkErrorRevert(colony.registerColonyLabel(colonyName, { from: accounts[1] }));
+
+      // Owner cannot register blank label
+      await checkErrorRevert(colony.registerColonyLabel("", { from: accounts[0] }), "colony-colony-label-invalid");
 
       // Owner can register label for colony
       await colony.registerColonyLabel(colonyName, { from: accounts[0] });
