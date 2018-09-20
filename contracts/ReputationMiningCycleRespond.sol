@@ -378,7 +378,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       }
       require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
 
-      // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
+      // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
+      // i.e. the reputation they supplied is in the 'agree' state.
       checkPreviousReputationInState(
         u,
         _agreeStateSiblings,
