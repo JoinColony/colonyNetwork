@@ -20,6 +20,12 @@ pragma experimental "v0.5.0";
 
 
 contract IReputationMiningCycle {
+  
+  /// @notice Event logged when a reputation UID is proven to be correct in a challenge
+  event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
+  
+  /// @notice Event logged when a reputation value is proven to be correct in a challenge
+  event ProveValueSuccess(uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue, uint256 _originReputationValue);
 
   /// @notice The getter for the disputeRounds mapping of array of dispute rounds.
   /// @param _round The dispute round to query
