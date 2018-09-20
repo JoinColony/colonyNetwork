@@ -70,6 +70,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
   modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
     // Check the ticket is a winning one.
+    // All entries are acceptable if the hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
       // x = floor(uint((2**256 - 1) / 3600)
       uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
@@ -79,8 +80,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     _;
   }
 
-  modifier submissionsOpen() {
+  modifier submissionPossible() {
+    // A submission is possible if this has become the active cycle (i.e. window opened) and...
     require(reputationMiningWindowOpenTimestamp > 0, "colony-reputation-mining-cycle-not-open");
+    // the window has not closed or no-one has submitted
     require(!submissionWindowClosed() || nSubmittedHashes == 0, "colony-reputation-mining-cycle-submissions-closed");
     _;
   }
@@ -123,7 +126,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function submitRootHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex) public
-  submissionsOpen()
+  submissionPossible()
   entryQualifies(newHash, nNodes, entryIndex)
   withinTarget(newHash, entryIndex)
   {
