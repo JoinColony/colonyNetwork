@@ -61,4 +61,10 @@ contract ReputationMiningCycleDataTypes {
                                           // determines which part of the tree the search continues down looking for the first discrepancy in the 
                                           // Justification tree.
   }
+
+  /// @notice Event logged when a reputation UID is proven to be correct in a challenge
+  event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
+  
+  /// @notice Event logged when a reputation value is proven to be correct in a challenge
+  event ProveValueSuccess(uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue, uint256 _originReputationValue);
 }

@@ -31,6 +31,9 @@ import "./ReputationMiningCycleStorage.sol";
 // Given the approach we a taking for launch, we are able to guarantee that we are the only reputation miner for 100+ of the first cycles, even if we decided to lengthen a cycle length. As a result, maybe we just don't care about this special case?
 contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
 
+  event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
+  event ProveValueSuccess(uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue, uint256 _originReputationValue);
+
   /// @notice A modifier that checks if the challenge corresponding to the hash in the passed `round` and `id` is open
   /// @param round The round number of the hash under consideration
   /// @param idx The index in the round of the hash under consideration
@@ -339,7 +342,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         disagreeStateReputationValue := mload(add(disagreeStateReputationValueBytes, 32))
         agreeStateReputationUID := mload(add(agreeStateReputationValueBytes, 64))
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
-        originReputationValue := mload(add(originReputationValueBytes, 64))
+        originReputationValue := mload(add(originReputationValueBytes, 32))
     }
 
     proveUID(
@@ -367,6 +370,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     if (_agreeStateReputationUID != 0) {
       // i.e. if this was an existing reputation, then require that the ID hasn't changed.
       require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
+      emit ProveUIDSuccess(_agreeStateReputationUID, _disagreeStateReputationUID, true);
     } else {
       uint256 previousNewReputationUID;
       assembly {
@@ -384,6 +388,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
       // Save the index for tiebreak scenarios later.
       saveProvedReputation(u, _previousNewReputationValue);
+
+      emit ProveUIDSuccess(previousNewReputationUID, _disagreeStateReputationUID, false);
     }
   }
 
@@ -392,7 +398,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256 _agreeStateReputationValue,
     uint256 _disagreeStateReputationValue,
     uint256 _originReputationValue
-  ) internal view 
+  ) internal 
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
@@ -406,35 +412,41 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         require(_disagreeStateReputationValue == (_agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
       }
     } else {
-      uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
-      int256 amount = logEntry.amount;
-      // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is
-      // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill"
-      if (amount < 0) {
-        uint nParents;
-        (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
-        uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
-
-        if (relativeUpdateNumber < nChildUpdates) {
-          int originSkillReputationValue;
-          assembly {
-              originSkillReputationValue := mload(add(_originReputationValue, 32))
+      int amount = logEntry.amount;
+      if (amount >= 0) {
+        // Don't allow reputation to overflow
+        if (uint(amount) + _agreeStateReputationValue < _agreeStateReputationValue) {
+          require(_disagreeStateReputationValue == 2**256 - 1, "colony-reputation-mining-reputation-not-max-uint");
+        } else {
+          // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
+          // Can't we convert `amount` to uint instead of these explicit converstions to (int)? For sufficiently large uints this converstion would produce the wrong results?
+          require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+        }
+      } else {
+        // Don't allow reputation to underflow
+        if (uint(amount * -1) > _agreeStateReputationValue) {
+          require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
+        } else {
+          uint nParents;
+          (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
+          uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
+          // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is 
+          // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill
+          uint relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
+          if (relativeUpdateNumber < nChildUpdates ||
+            ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
+            // We are working with a child update! Check adjusted amount instead of this impossible calculation
+            // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
+            require((_agreeStateReputationValue - _disagreeStateReputationValue) == ((uint(amount * -1) * _agreeStateReputationValue) / _originReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+          } else {
+            // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
+            require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
           }
-          amount = (amount*int(_agreeStateReputationValue))/originSkillReputationValue;
         }
       }
-
-      if (amount < 0 && uint(amount * -1) > _agreeStateReputationValue ) {
-        require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
-      } else if (uint(amount) + _agreeStateReputationValue < _agreeStateReputationValue) {
-        // We also don't allow reputation to overflow
-        require(_disagreeStateReputationValue == 2**256 - 1, "colony-reputation-mining-reputation-not-max-uint");
-      } else {
-        // TODO: Is this safe? I think so, because even if there's over/underflows, they should
-        // still be the same number.
-        require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
-      }
     }
+
+    emit ProveValueSuccess(_agreeStateReputationValue, _disagreeStateReputationValue, _originReputationValue);
   }
 
   function getRelativeUpdateNumber(uint256[11] u, ReputationLogEntry logEntry) internal view returns (uint256) {
@@ -472,7 +484,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
-  function saveProvedReputation(uint256[12] memory u, bytes memory previousNewReputationValue) internal {
+  function saveProvedReputation(uint256[11] memory u, bytes memory previousNewReputationValue) internal {
     uint256 previousReputationUID;
     assembly {
       previousReputationUID := mload(add(previousNewReputationValue,0x40))
