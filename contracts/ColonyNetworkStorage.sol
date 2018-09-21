@@ -23,7 +23,6 @@ import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
 
-
 contract ColonyNetworkStorage is DSAuth, DSMath {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver;
