@@ -288,7 +288,7 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(1, false), "colony-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(1, false), "colony-caller-must-be-colony");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 1);

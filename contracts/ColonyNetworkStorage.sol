@@ -97,12 +97,12 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   mapping (bytes32 => ENSRecord) records;
 
   modifier calledByColony() {
-    require(_isColony[msg.sender], "colony-must-be-colony");
+    require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;
   }
 
   modifier notCalledByColony() {
-    require(!_isColony[msg.sender], "colony-must-not-be-colony");
+    require(!_isColony[msg.sender], "colony-caller-must-not-be-colony");
     _;
   }
 }

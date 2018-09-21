@@ -170,7 +170,7 @@ contract("Colony Reputation Updates", accounts => {
 
     it("should not be able to be appended by an account that is not a colony", async () => {
       const lengthBefore = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2), "colony-must-be-colony");
+      await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2), "colony-caller-must-be-colony");
       const lengthAfter = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
     });

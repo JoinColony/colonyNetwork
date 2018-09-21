@@ -34,7 +34,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (globalSkill) {
       require(msg.sender == metaColony, "colony-must-be-meta-colony");
     } else {
-      require(_isColony[msg.sender] || msg.sender == address(this), "colony-must-be-colony");
+      require(_isColony[msg.sender] || msg.sender == address(this), "colony-caller-must-be-colony");
     }
     _;
   }
