@@ -31,7 +31,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
   bytes32 constant COLONY_HASH = keccak256("colony");
 
   modifier unowned(bytes32 node, string domainName) {
-    address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(domainName))));
+    address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(domainName)))));
     require(currentOwner == 0, "colony-label-already-owned");
     _;
   }
@@ -64,7 +64,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
   {
     require(bytes(username).length > 0, "colony-user-label-invalid");
     require(bytes(userLabels[msg.sender]).length == 0, "colony-user-label-already-owned");
-    bytes32 subnode = keccak256(username);
+    bytes32 subnode = keccak256(abi.encodePacked(username));
     ENS(ens).setSubnodeOwner(userNode, subnode, this);
     bytes32 node = keccak256(abi.encodePacked(userNode, subnode));
     ENS(ens).setResolver(node, this);
@@ -81,7 +81,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
   {
     require(bytes(colonyName).length > 0, "colony-colony-label-invalid");
     require(bytes(colonyLabels[msg.sender]).length == 0, "colony-already-labeled");
-    bytes32 subnode = keccak256(colonyName);
+    bytes32 subnode = keccak256(abi.encodePacked(colonyName));
 
     ENS(ens).setSubnodeOwner(colonyNode, subnode, this);
     bytes32 node = keccak256(abi.encodePacked(colonyNode, subnode));
@@ -95,7 +95,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     return records[node].orbitdb;
   }
 
-  function lookupUsername(address addr) public view returns(string) {
+  function lookupRegisteredENSDomain(address addr) public view returns(string) {
     if (bytes(userLabels[addr]).length != 0) {
       return string(abi.encodePacked(userLabels[addr], ".user.joincolony.eth"));
     } else if (bytes(colonyLabels[addr]).length != 0) {

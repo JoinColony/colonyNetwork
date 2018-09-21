@@ -341,7 +341,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(owner, colonyNetwork.address);
 
       // Check reverse lookup
-      const lookedUpENSDomain = await colonyNetwork.lookupUsername(accounts[1]);
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
       assert.equal(lookedUpENSDomain, "test.user.joincolony.eth");
 
       // Get stored orbitdb address
@@ -386,7 +386,7 @@ contract("ColonyNetwork", accounts => {
       assert.equal(resolvedAddress, colonyAddress);
 
       // Check reverse lookup
-      const lookedUpENSDomain = await colonyNetwork.lookupUsername(colonyAddress);
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
       assert.equal(lookedUpENSDomain, "test.colony.joincolony.eth");
 
       // Can't register two labels for a colony
@@ -407,24 +407,24 @@ contract("ColonyNetwork", accounts => {
       await colony.registerColonyLabel("test", { from: accounts[0] });
 
       // Check reverse lookup for colony
-      const lookedUpENSDomainColony = await colonyNetwork.lookupUsername(colonyAddress);
+      const lookedUpENSDomainColony = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
       assert.equal(lookedUpENSDomainColony, "test.colony.joincolony.eth");
 
       // Check reverse lookup
-      const lookedUpENSDomainUser = await colonyNetwork.lookupUsername(accounts[1]);
+      const lookedUpENSDomainUser = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
       assert.equal(lookedUpENSDomainUser, "test.user.joincolony.eth");
     });
 
     it("should return a blank address if looking up an address with no Colony-based ENS name", async () => {
-      const lookedUpENSDomain = await colonyNetwork.lookupUsername(accounts[2]);
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(accounts[2]);
       assert.equal(lookedUpENSDomain, "");
     });
 
     it("should respond correctly to queries regarding ENS interfaces it supports", async () => {
       let response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'supportsInterface(bytes4)'
-      assert(response);
+      assert.isTrue(response);
       response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'addr(bytes32)'
-      assert(response);
+      assert.isTrue(response);
     });
   });
 });
