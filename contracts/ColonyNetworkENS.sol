@@ -30,14 +30,22 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
   bytes32 constant USER_HASH = keccak256("user");
   bytes32 constant COLONY_HASH = keccak256("colony");
 
-  modifier unowned(bytes32 node, string username) {
-    address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(username))));
+  modifier unowned(bytes32 node, string domainName) {
+    address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(domainName))));
     require(currentOwner == 0, "colony-label-already-owned");
     _;
   }
 
   event UserLabelRegistered(address indexed user, bytes32 label);
   event ColonyLabelRegistered(address indexed colony, bytes32 label);
+
+  bytes4 constant INTERFACE_META_ID = 0x01ffc9a7;
+  bytes4 constant ADDR_INTERFACE_ID = 0x3b3b57de;
+
+  function supportsInterface(bytes4 interfaceID) external pure returns (bool) {
+    return (interfaceID == INTERFACE_META_ID ||
+      interfaceID == ADDR_INTERFACE_ID );
+  }
 
   function setupRegistrar(address _ens, bytes32 _rootNode) public auth {
     ens = _ens;
@@ -50,6 +58,8 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   function registerUserLabel(string username, string orbitdb)
   public
+  // NB there is no way to call this as a colony yet - this is just future proofing us once there is
+  notCalledByColony
   unowned(userNode, username)
   {
     require(bytes(username).length > 0, "colony-user-label-invalid");
@@ -93,16 +103,6 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     } else {
       return "";
     }
-  }
-
-  // ENS Resolver functions
-
-  bytes4 constant INTERFACE_META_ID = 0x01ffc9a7;
-  bytes4 constant ADDR_INTERFACE_ID = 0x3b3b57de;
-
-  function supportsInterface(bytes4 interfaceID) public view returns (bool) {
-    return (interfaceID == INTERFACE_META_ID ||
-      interfaceID == ADDR_INTERFACE_ID );
   }
 
   function addr(bytes32 node) public view returns (address) {

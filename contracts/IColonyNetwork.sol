@@ -47,6 +47,13 @@ contract IColonyNetwork {
   /// @param nNodes The number of nodes in the reputation state
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
 
+  /// @notice Query if a contract implements an interface
+  /// @param interfaceID The interface identifier, as specified in ERC-165
+  /// @dev Interface identification is specified in ERC-165.
+  /// @return `true` if the contract implements `interfaceID`
+  function supportsInterface(bytes4 interfaceID) external returns (bool);
+
+
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0
   function getMetaColony() public view returns (address colonyAddress);
@@ -200,12 +207,6 @@ contract IColonyNetwork {
   /// @param addr The address we wish to find the corresponding ENS domain for (if any)
   /// @return domain A string containing the colony-based ENS name corresponding to addr
   function lookupUsername(address addr) public view returns(string domain);
-
-  /// @notice Query if a contract implements an interface
-  /// @param interfaceID The interface identifier, as specified in ERC-165
-  /// @dev Interface identification is specified in ERC-165.
-  /// @return `true` if the contract implements `interfaceID`
-  function supportsInterface(bytes4 interfaceID) public view returns (bool);
 
   /// @notice Returns the address the supplied node resolves do, if we are the resolver
   /// @param node The namehash of the ENS address being requested

@@ -317,8 +317,9 @@ contract("ColonyNetwork", accounts => {
       assert.equal(owner, colonyNetwork.address);
     });
 
+    const orbitDBAddress = "QmPFtHi3cmfZerxtH9ySLdzpg1yFhocYDZgEZywdUXHxFU/my-db-name";
+
     it("should be able to register one unique label per user", async () => {
-      const orbitDBAddress = "QmPFtHi3cmfZerxtH9ySLdzpg1yFhocYDZgEZywdUXHxFU/my-db-name";
       const username = "test";
       const username2 = "test2";
       const hash = namehash.hash("test.user.joincolony.eth");
@@ -340,8 +341,8 @@ contract("ColonyNetwork", accounts => {
       assert.equal(owner, colonyNetwork.address);
 
       // Check reverse lookup
-      const lookedUpAddress = await colonyNetwork.lookupUsername(accounts[1]);
-      assert.equal(lookedUpAddress, "test.user.joincolony.eth");
+      const lookedUpENSDomain = await colonyNetwork.lookupUsername(accounts[1]);
+      assert.equal(lookedUpENSDomain, "test.user.joincolony.eth");
 
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
@@ -385,11 +386,45 @@ contract("ColonyNetwork", accounts => {
       assert.equal(resolvedAddress, colonyAddress);
 
       // Check reverse lookup
-      const lookedUpAddress = await colonyNetwork.lookupUsername(colonyAddress);
-      assert.equal(lookedUpAddress, "test.colony.joincolony.eth");
+      const lookedUpENSDomain = await colonyNetwork.lookupUsername(colonyAddress);
+      assert.equal(lookedUpENSDomain, "test.colony.joincolony.eth");
 
       // Can't register two labels for a colony
       await checkErrorRevert(colony.registerColonyLabel(colonyName2, { from: accounts[0] }), "colony-already-labeled");
+    });
+
+    it("should be able to register same name for user and a colony, and reverse lookup still work", async () => {
+      // Register user
+      await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
+
+      // Set up colony
+      const token = await Token.new(...TOKEN_ARGS);
+      const { logs } = await colonyNetwork.createColony(token.address);
+      const { colonyAddress } = logs[0].args;
+      const colony = await Colony.at(colonyAddress);
+      // Register colony
+      // Owner can register label for colony
+      await colony.registerColonyLabel("test", { from: accounts[0] });
+
+      // Check reverse lookup for colony
+      const lookedUpENSDomainColony = await colonyNetwork.lookupUsername(colonyAddress);
+      assert.equal(lookedUpENSDomainColony, "test.colony.joincolony.eth");
+
+      // Check reverse lookup
+      const lookedUpENSDomainUser = await colonyNetwork.lookupUsername(accounts[1]);
+      assert.equal(lookedUpENSDomainUser, "test.user.joincolony.eth");
+    });
+
+    it("should return a blank address if looking up an address with no Colony-based ENS name", async () => {
+      const lookedUpENSDomain = await colonyNetwork.lookupUsername(accounts[2]);
+      assert.equal(lookedUpENSDomain, "");
+    });
+
+    it("should respond correctly to queries regarding ENS interfaces it supports", async () => {
+      let response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'supportsInterface(bytes4)'
+      assert(response);
+      response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'addr(bytes32)'
+      assert(response);
     });
   });
 });

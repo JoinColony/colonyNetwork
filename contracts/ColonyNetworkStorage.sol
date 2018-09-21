@@ -100,4 +100,9 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
     require(_isColony[msg.sender], "colony-must-be-colony");
     _;
   }
+
+  modifier notCalledByColony() {
+    require(!_isColony[msg.sender], "colony-must-not-be-colony");
+    _;
+  }
 }
