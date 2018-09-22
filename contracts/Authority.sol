@@ -46,7 +46,7 @@ contract Authority is DSRoles {
     // Upgrade colony
     setOwnerRoleCapability(colony, "upgrade(uint256)");
     // Claim colony ENS label
-    setOwnerRoleCapability(colony, "registerColonyLabel(bytes32)");
+    setOwnerRoleCapability(colony, "registerColonyLabel(string)");
 
     // Allocate funds
     setAdminRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");

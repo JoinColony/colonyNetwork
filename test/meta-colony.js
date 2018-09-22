@@ -356,7 +356,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a new local skill by anyone but a Colony", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(2, false), "colony-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(2, false), "colony-caller-must-be-colony");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 4);
@@ -366,7 +366,7 @@ contract("Meta Colony", accounts => {
       const skillCountBefore = await colonyNetwork.getSkillCount();
       const rootDomain = await colony.getDomain(1);
       const rootLocalSkillId = rootDomain[0].toNumber();
-      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false), "colony-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false), "colony-caller-must-be-colony");
       const skillCountAfter = await colonyNetwork.getSkillCount();
 
       assert.equal(skillCountBefore.toNumber(), skillCountAfter.toNumber());

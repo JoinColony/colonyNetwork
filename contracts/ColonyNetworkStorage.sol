@@ -85,12 +85,24 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   // Namehash of the colony node that we administer (i.e. namehash("colony.joincolony.eth"))
   bytes32 colonyNode;
   // Mapping from colony address to claimed colony label
-  mapping (address => bytes32) colonyLabels;
+  mapping (address => string) colonyLabels;
   // Mapping from user address to claimed user label
-  mapping (address => bytes32) userLabels;
+  mapping (address => string) userLabels;
+
+  struct ENSRecord {
+    address addr;
+    string orbitdb;
+  }
+
+  mapping (bytes32 => ENSRecord) records;
 
   modifier calledByColony() {
-    require(_isColony[msg.sender], "colony-must-be-colony");
+    require(_isColony[msg.sender], "colony-caller-must-be-colony");
+    _;
+  }
+
+  modifier notCalledByColony() {
+    require(!_isColony[msg.sender], "colony-caller-must-not-be-colony");
     _;
   }
 }

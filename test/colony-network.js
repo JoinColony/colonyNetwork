@@ -4,7 +4,6 @@ import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectE
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
-const web3utils = require("web3-utils");
 
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -289,7 +288,7 @@ contract("ColonyNetwork", accounts => {
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(1, false), "colony-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(1, false), "colony-caller-must-be-colony");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 1);
@@ -318,25 +317,47 @@ contract("ColonyNetwork", accounts => {
       assert.equal(owner, colonyNetwork.address);
     });
 
+    const orbitDBAddress = "QmPFtHi3cmfZerxtH9ySLdzpg1yFhocYDZgEZywdUXHxFU/my-db-name";
+
     it("should be able to register one unique label per user", async () => {
-      const label = web3utils.soliditySha3("test");
+      const username = "test";
+      const username2 = "test2";
       const hash = namehash.hash("test.user.joincolony.eth");
 
+      // User cannot register blank label
+      await checkErrorRevert(colonyNetwork.registerUserLabel("", orbitDBAddress, { from: accounts[1] }), "colony-user-label-invalid");
+
       // User can register unique label
-      await colonyNetwork.registerUserLabel(label, { from: accounts[1] });
+      await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
+
+      // Check label resolves correctly.
+      // First, query the registry to get the resolver
+      const resolverAddress = await ensRegistry.resolver(hash);
+      assert.equal(resolverAddress, colonyNetwork.address);
+      // Then query the resolver
+      const resolvedAddress = await colonyNetwork.addr(hash);
+      assert.equal(resolvedAddress, accounts[1]);
       const owner = await ensRegistry.owner(hash);
-      assert.equal(owner, accounts[1]);
+      assert.equal(owner, colonyNetwork.address);
+
+      // Check reverse lookup
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
+      assert.equal(lookedUpENSDomain, "test.user.joincolony.eth");
+
+      // Get stored orbitdb address
+      const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
+      assert.equal(retrievedOrbitDB, orbitDBAddress);
 
       // Label already in use
-      await checkErrorRevert(colonyNetwork.registerUserLabel(label, { from: accounts[2] }), "colony-label-already-owned");
+      await checkErrorRevert(colonyNetwork.registerUserLabel(username, orbitDBAddress, { from: accounts[2] }), "colony-label-already-owned");
 
       // Can't register two labels for a user
-      const newLabel = web3utils.soliditySha3("test2");
-      await checkErrorRevert(colonyNetwork.registerUserLabel(newLabel, { from: accounts[1] }), "colony-user-label-already-owned");
+      await checkErrorRevert(colonyNetwork.registerUserLabel(username2, orbitDBAddress, { from: accounts[1] }), "colony-user-label-already-owned");
     });
 
     it("should be able to register one unique label per colony, if owner", async () => {
-      const label = web3utils.soliditySha3("test");
+      const colonyName = "test";
+      const colonyName2 = "test2";
       const hash = namehash.hash("test.colony.joincolony.eth");
 
       // Cargo-cult colony generation
@@ -346,16 +367,64 @@ contract("ColonyNetwork", accounts => {
       const colony = await Colony.at(colonyAddress);
 
       // Non-owner can't register label for colony
-      await checkErrorRevert(colony.registerColonyLabel(label, { from: accounts[1] }));
+      await checkErrorRevert(colony.registerColonyLabel(colonyName, { from: accounts[1] }));
+
+      // Owner cannot register blank label
+      await checkErrorRevert(colony.registerColonyLabel("", { from: accounts[0] }), "colony-colony-label-invalid");
 
       // Owner can register label for colony
-      await colony.registerColonyLabel(label, { from: accounts[0] });
+      await colony.registerColonyLabel(colonyName, { from: accounts[0] });
       const owner = await ensRegistry.owner(hash);
-      assert.equal(owner, colony.address);
+      assert.equal(owner, colonyNetwork.address);
+
+      // Check label resolves correctly
+      // First, query the registry to get the resolver
+      const resolverAddress = await ensRegistry.resolver(hash);
+      assert.equal(resolverAddress, colonyNetwork.address);
+      // Then query the resolver
+      const resolvedAddress = await colonyNetwork.addr(hash);
+      assert.equal(resolvedAddress, colonyAddress);
+
+      // Check reverse lookup
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
+      assert.equal(lookedUpENSDomain, "test.colony.joincolony.eth");
 
       // Can't register two labels for a colony
-      const newLabel = web3utils.soliditySha3("test2");
-      await checkErrorRevert(colony.registerColonyLabel(newLabel, { from: accounts[0] }), "colony-already-labeled");
+      await checkErrorRevert(colony.registerColonyLabel(colonyName2, { from: accounts[0] }), "colony-already-labeled");
+    });
+
+    it("should be able to register same name for user and a colony, and reverse lookup still work", async () => {
+      // Register user
+      await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
+
+      // Set up colony
+      const token = await Token.new(...TOKEN_ARGS);
+      const { logs } = await colonyNetwork.createColony(token.address);
+      const { colonyAddress } = logs[0].args;
+      const colony = await Colony.at(colonyAddress);
+      // Register colony
+      // Owner can register label for colony
+      await colony.registerColonyLabel("test", { from: accounts[0] });
+
+      // Check reverse lookup for colony
+      const lookedUpENSDomainColony = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
+      assert.equal(lookedUpENSDomainColony, "test.colony.joincolony.eth");
+
+      // Check reverse lookup
+      const lookedUpENSDomainUser = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
+      assert.equal(lookedUpENSDomainUser, "test.user.joincolony.eth");
+    });
+
+    it("should return a blank address if looking up an address with no Colony-based ENS name", async () => {
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(accounts[2]);
+      assert.equal(lookedUpENSDomain, "");
+    });
+
+    it("should respond correctly to queries regarding ENS interfaces it supports", async () => {
+      let response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'supportsInterface(bytes4)'
+      assert.isTrue(response);
+      response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'addr(bytes32)'
+      assert.isTrue(response);
     });
   });
 });

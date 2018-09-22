@@ -5,7 +5,7 @@ const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contract
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
-const ColonyNetworkRegistrar = artifacts.require("./ColonyNetworkRegistrar");
+const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
@@ -15,7 +15,7 @@ module.exports = deployer => {
   let colonyNetwork;
   let colonyNetworkMining;
   let colonyNetworkAuction;
-  let colonyNetworkRegistrar;
+  let colonyNetworkENS;
   deployer
     .then(() => ColonyNetwork.deployed())
     .then(instance => {
@@ -28,10 +28,10 @@ module.exports = deployer => {
     })
     .then(instance => {
       colonyNetworkAuction = instance;
-      return ColonyNetworkRegistrar.deployed();
+      return ColonyNetworkENS.deployed();
     })
     .then(instance => {
-      colonyNetworkRegistrar = instance;
+      colonyNetworkENS = instance;
       return EtherRouter.deployed();
     })
     .then(instance => {
@@ -40,7 +40,7 @@ module.exports = deployer => {
     })
     .then(instance => {
       resolver = instance;
-      return setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkMining, colonyNetworkAuction, colonyNetworkRegistrar);
+      return setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkMining, colonyNetworkAuction, colonyNetworkENS);
     })
     .then(() => {
       console.log("### Colony Network setup with Resolver", resolver.address, "and EtherRouter", etherRouter.address);

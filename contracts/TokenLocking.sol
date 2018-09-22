@@ -9,7 +9,7 @@ import "../lib/dappsys/math.sol";
 
 
 contract TokenLocking is TokenLockingStorage, DSMath {
-  modifier onlyColony() {
+  modifier calledByColony() {
     require(IColonyNetwork(colonyNetwork).isColony(msg.sender), "colony-token-locking-sender-not-colony");
     _;
   }
@@ -46,13 +46,13 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return colonyNetwork;
   }
 
-  function lockToken(address _token) public onlyColony returns (uint256) {
+  function lockToken(address _token) public calledByColony returns (uint256) {
     totalLockCount[_token] += 1;
     return totalLockCount[_token];
   }
 
-  function unlockTokenForUser(address _token, address _user, uint256 _lockId) public 
-  onlyColony 
+  function unlockTokenForUser(address _token, address _user, uint256 _lockId) public
+  calledByColony
   {
     uint256 lockCountDelta = sub(_lockId, userLocks[_token][_user].lockCount);
     require(lockCountDelta != 0, "colony-token-already-unlocked");

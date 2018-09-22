@@ -178,8 +178,8 @@ contract IColony {
   function mintTokensForColonyNetwork(uint256 _wad) public;
 
   /// @notice Register colony's ENS label
-  /// @param _subnode The keccak256 hash of the label to register.
-  function registerColonyLabel(bytes32 _subnode) public;
+  /// @param colonyName The label to register.
+  function registerColonyLabel(string colonyName) public;
 
   /// @notice Add a new global skill, under skill `_parentSkillId`
   /// Can only be called from the Meta Colony

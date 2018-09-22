@@ -47,6 +47,12 @@ contract IColonyNetwork {
   /// @param nNodes The number of nodes in the reputation state
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
 
+  /// @notice Query if a contract implements an interface
+  /// @param interfaceID The interface identifier, as specified in ERC-165
+  /// @dev Interface identification is specified in ERC-165.
+  /// @return `true` if the contract implements `interfaceID`
+  function supportsInterface(bytes4 interfaceID) external pure returns (bool);
+
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0
   function getMetaColony() public view returns (address colonyAddress);
@@ -183,12 +189,28 @@ contract IColonyNetwork {
   function setupRegistrar(address _ens, bytes32 _rootNode) public;
 
   /// @notice Register a "user.joincolony.eth" label.
-  /// @param subnode The keccak256 hash of the label to register.
-  function registerUserLabel(bytes32 subnode) public;
+  /// @param username The label to register
+  /// @param orbitdb  The path of the orbitDB database associated with the user profile
+  function registerUserLabel(string username, string orbitdb) public;
 
   /// @notice Register a "colony.joincolony.eth" label. Can only be called by a Colony.
-  /// @param subnode The keccak256 hash of the label to register.
-  function registerColonyLabel(bytes32 subnode) public;
+  /// @param colonyName The label to register.
+  function registerColonyLabel(string colonyName) public;
+
+  /// @notice Retrieve the orbitdb address corresponding to a registered account
+  /// @param node The Namehash of the account being queried.
+  /// @return orbitDB A string containing the address of the orbit database
+  function getProfileDBAddress(bytes32 node) public view returns (string orbitDB);
+
+  /// @notice Reverse lookup a username from an address.
+  /// @param addr The address we wish to find the corresponding ENS domain for (if any)
+  /// @return domain A string containing the colony-based ENS name corresponding to addr
+  function lookupRegisteredENSDomain(address addr) public view returns(string domain);
+
+  /// @notice Returns the address the supplied node resolves do, if we are the resolver
+  /// @param node The namehash of the ENS address being requested
+  /// @return address The address the supplied node resolves to
+  function addr(bytes32 node) public view returns (address);
 
   /// @notice Set the resolver to be used by new instances of ReputationMiningCycle
   /// @param miningResolverAddress The address of the Resolver contract with the functions correctly wired.
