@@ -1699,17 +1699,10 @@ contract("ColonyNetworkMining", accounts => {
       const currentGoodClientState = await goodClient.getRootHash();
       await badClient.loadState(currentGoodClientState);
 
-      // Updating state with the latest reputation log entries
-      await badClient.addLogContentsToReputationTree();
-      await goodClient.addLogContentsToReputationTree();
-
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
-      await forwardTime(3600, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
