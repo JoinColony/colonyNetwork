@@ -438,6 +438,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
             // We are working with a child update! Check adjusted amount instead of this impossible calculation
             // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
+            // TODO: There is still a potential overflow at the multiplication below. Look to eliminate that
             require((_agreeStateReputationValue - _disagreeStateReputationValue) == ((uint(amount * -1) * _agreeStateReputationValue) / _originReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
           } else {
             // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
