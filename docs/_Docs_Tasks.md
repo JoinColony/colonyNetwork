@@ -55,7 +55,9 @@ At any time before a task is finalized, the task can be canceled, which allows a
 ### Rate
 After the work has been submitted (or the due date has passed), the work rating period begins.
 
-Task payouts are determined by work rating, which is rated on the basis of 3 possible outcomes:
+One large determiner of reputation within a colony is the rating that one has earned for completing tasks within the colony. In addition to serving as a quick reference for one's ability and commitment to the shared values of the organization, reputation (combined with token holdings) grant one a portion of the colony's revenue, paid out in rewards. 
+
+Reputation changes are determined by work rating, which is rated on the basis of 3 possible outcomes:
 * `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the native token payout.
 * `[2]` **Satisfactory**. The work done met the established expectations. Worker is awarded reputation equal to the native token payout.
 * `[3]` **Excellent**. The work done exceeded the expectations of the manager. Reputation is awarded at 1.5 times the native token payout.
