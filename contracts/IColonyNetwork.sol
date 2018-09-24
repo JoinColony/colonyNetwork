@@ -67,29 +67,48 @@ contract IColonyNetwork {
   /// @return inRecoveryMode Return true if recovery mode is active, false otherwise
   function isInRecoveryMode() public view returns (bool inRecoveryMode);
 
-  /// @notice Sets reputation state
-  /// @dev Can only be called in recovery mode
-  /// @param _rootHash Reputation root hash
-  /// @param _nNodes Number of nodes
-  function setReputationState(bytes32 _rootHash, uint256 _nNodes) public;
+  /// @notice Set a replacement log Entry if we're in recovery mode.
+  /// @param _reputationMiningCycle The address of the reputation mining cycle that the log was in.
+  /// @param _id The number of the log entry in the reputation mining cycle in question.
+  /// @param _user The address of the user earning / losing the reputation
+  /// @param _amount The amount of reputation being earned / lost
+  /// @param _skillId The id of the origin skill for the reputation update
+  /// @param _colony The address of the colony being updated
+  /// @param _nUpdates The number of updates the log entry corresponds to
+  /// @param _nPreviousUpdates The number of updates in the log before this entry
+  /// @dev Note that strictly, _nUpdates and _nPreviousUpdates don't need to be set - they're only used during
+  /// dispute resolution, which these replacement log entries are never used for. However, for ease of resyncing
+  /// the client, I have decided to include them for now.
+  function setReplacementReputationUpdateLogEntry(
+    address _reputationMiningCycle,
+    uint256 _id,
+    address _user,
+    int _amount,
+    uint256 _skillId,
+    address _colony,
+    uint256 _nUpdates,
+    uint256 _nPreviousUpdates
+    ) public;
 
-  /// @notice Sets storage slot in reputation mining cycle contract
-  /// @param _slot Id of the slot we want to change
-  /// @param _value Value we want to set
-  /// @param _active Active or inactive reputation mining cycle
-  function setReputationMiningCycleStorageSlot(uint256 _slot, bytes32 _value, bool _active) public;
+  /// @notice Get a replacement log entry (if set) for the log entry _id in the mining cycle that was at the address _reputationMiningCycle
+  /// @param _reputationMiningCycle The address of the reputation mining cycle we are asking about
+  /// @param _id The log entry number we wish to see if there is a replacement for
+  /// @return (address, int256, uint256, address, uint256, uint256) An object with the details of the log entry (if it exists)
+  /// @dev colonyAddress will always be set if the replacement exists
+  function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
+    (address userAddress, int256 amount, uint256 skillId, address colonyAddress, uint256 nUpdates, uint256);
 
-  /// @notice Set which update logs are work, on specified reputation mining cycle contract
-  /// @dev Can only be called while mining cycle is in recovery mode
-  /// @dev Logs will be ignored by mining client
-  /// @param _reputationMiningCycle Address of the reputation mining cycle
-  /// @param _updateLogs Array of indexes of the logs we want to ignore
-  function setCorruptedReputationUpdateLogs(address _reputationMiningCycle, uint256[] _updateLogs) public;
+  /// @notice Get whether any replacement log entries have been set for the supplied reputation mining cycle.
+  /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
+  /// @param _reputationMiningCycle The reputation mining cycle address we want to know if any entries have been replaced in.
+  function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool);
 
-  /// @notice Get corrupted/wrong update logs for specific mining cycle
-  /// @param _reputationMiningCycle Address of reputation mining cycle
-  /// @return updateLogs Array of indexes of update logs
-  function getCorruptedReputationUpdateLogs(address _reputationMiningCycle) public view returns (uint256[] updateLogs);
+  /// @notice Update value of arbitrary storage variable.
+  /// Can only be called by user with recovery role.
+  /// @param _slot Uint address of storage slot to be updated
+  /// @param _value Bytes32 word of data to be set
+  /// @dev certain critical variables are protected from editing in this function
+  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
 
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165

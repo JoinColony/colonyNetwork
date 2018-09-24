@@ -28,7 +28,7 @@ function hexAdd(hex, n) {
   return result;
 }
 
-contract("Colony Network", accounts => {
+contract.only("Colony Network", accounts => {
   let colonyNetwork;
   let miningClient;
   let startingBlockNumber;
@@ -190,8 +190,10 @@ contract("Colony Network", accounts => {
       await colonyNetwork.exitRecoveryMode();
     });
 
-    it.only("should be able to ignore wrong reputation update logs from mining cycles that are self destructed", async () => {
+    it("miner should be able to correctly interpret reputation logs replaced during recovery mode", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], toBN(10).pow(toBN(18)));
+      await miningClient.saveCurrentState();
+      const startingHash = await miningClient.getRootHash();
 
       const newMiningClient = new ReputationMiner({
         loader: contractLoader,
@@ -209,8 +211,8 @@ contract("Colony Network", accounts => {
       await token.setOwner(colonyAddress);
       const colony = await IColony.at(colonyAddress);
 
-      await colony.mintTokens(1);
-      await colony.bootstrapColony([accounts[0]], [1]);
+      await colony.mintTokens(1000000000000000);
+      await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(false);
       let repCycle = await IReputationMiningCycle.at(addr);
@@ -229,25 +231,53 @@ contract("Colony Network", accounts => {
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
       repCycle = await IReputationMiningCycle.at(addr);
+
+      const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
+      invalidEntry.amount = 0;
+
       await repCycle.confirmNewHash(0);
-
-      await colonyNetwork.enterRecoveryMode();
-      await colonyNetwork.setCorruptedReputationUpdateLogs(addr, [5]);
-
-      await miningClient.sync(startingBlockNumber, true);
-      const rootHash = await miningClient.getRootHash();
-      const nNodes = await miningClient.nReputations;
-      await colonyNetwork.setReputationState(rootHash, nNodes);
-
-      await colonyNetwork.approveExitRecovery();
-      await colonyNetwork.exitRecoveryMode();
 
       const domain = await colony.getDomain(1);
       const rootSkill = domain[0];
       const reputationKey = makeReputationKey(colony.address, rootSkill.toNumber(), accounts[0]);
-      const value = newMiningClient.reputations[reputationKey].slice(2, 66);
+      const originalValue = miningClient.reputations[reputationKey].slice(2, 66);
+      assert.equal(parseInt(originalValue, 16), 1000000000000000);
+
+      await colonyNetwork.enterRecoveryMode();
+
+      await colonyNetwork.setReplacementReputationUpdateLogEntry(
+        addr,
+        5,
+        invalidEntry.user,
+        invalidEntry.amount,
+        invalidEntry.skillId,
+        invalidEntry.colony,
+        invalidEntry.nUpdates,
+        invalidEntry.nPreviousUpdates
+      );
+      await miningClient.loadState(startingHash);
+      // This sync call will log an error - this is because we've changed a log entry, but the root hash
+      // on-chain which .sync() does a sanity check against hasn't been updated.
+      await miningClient.sync(startingBlockNumber, true);
+      console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
+      const rootHash = await miningClient.getRootHash();
+      const nNodes = await miningClient.nReputations;
+      // slots 16 and 17 are hash and nodes respectively
+      await colonyNetwork.setStorageSlotRecovery(16, rootHash);
+      await colonyNetwork.setStorageSlotRecovery(17, `0x${padLeft(nNodes.toString(16), 64)}`);
+
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+
+      const newHash = await colonyNetwork.getReputationRootHash();
+      const newHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
+
+      assert.equal(newHash, rootHash);
+      assert.equal(newHashNNodes.toNumber(), nNodes);
+
       await newMiningClient.sync(startingBlockNumber);
-      assert.equal(new BN(value, 16).toNumber(), 0);
+      const newValue = newMiningClient.reputations[reputationKey].slice(2, 66);
+      assert.equal(new BN(newValue, 16).toNumber(), 0);
     });
   });
 });

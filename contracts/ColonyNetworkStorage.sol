@@ -23,6 +23,7 @@ import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
 
+
 contract ColonyNetworkStorage is DSAuth, DSMath {
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver;
@@ -65,7 +66,7 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   address activeReputationMiningCycle;
   // Address of the next active reputation mining cycle contract, which is where new reputation updates are put.
   address inactiveReputationMiningCycle;
-    // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
+  // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
   bytes32 reputationRootHash;
   // The number of nodes in the reputation state tree that was accepted at the end of the last mining cycle
   uint256 reputationRootHashNNodes;
@@ -101,7 +102,16 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   uint64 recoveryApprovalCount;
   uint256 recoveryEditedTimestamp;
   mapping (address => uint256) recoveryApprovalTimestamps;
-  mapping (address => uint256[]) corruptedReputationUpdateLogs;
+  struct ReputationLogEntry {
+    address user;
+    int amount;
+    uint256 skillId;
+    address colony;
+    uint256 nUpdates;
+    uint256 nPreviousUpdates;
+  }
+  mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog;
+  mapping (address => bool) replacementReputationUpdateLogsExist;
 
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");

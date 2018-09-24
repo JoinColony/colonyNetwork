@@ -29,7 +29,6 @@ import {
 import {
   getTokenArgs,
   web3GetBalance,
-  web3GetStorageAt,
   checkErrorRevert,
   expectEvent,
   expectAllEvents,

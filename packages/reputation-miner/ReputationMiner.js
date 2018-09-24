@@ -163,9 +163,10 @@ class ReputationMiner {
     }
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1), { blockNumber });
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
-
+    const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);
+    const replacementLogEntriesExist = nReplacementLogEntries > 0;
     for (let i = ethers.utils.bigNumberify("0"); i.lt(totalnUpdates); i = i.add(1)) {
-      await this.addSingleReputationUpdate(i, repCycle, blockNumber, a); // eslint-disable-line no-await-in-loop
+      await this.addSingleReputationUpdate(i, repCycle, blockNumber, replacementLogEntriesExist); // eslint-disable-line no-await-in-loop
     }
     const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1), blockNumber);
     const justUpdatedProof = await this.getReputationProofObject(prevKey);
@@ -190,9 +191,13 @@ class ReputationMiner {
   /**
    * Process the `j`th update and add to the current reputation state and the justificationtree.
    * @param  {BigNumber}  updateNumber     The number of the update that should be considered.
+   * @param  {Contract}     repCycle         The contract object representing reputation mining cycle contract we're processing the logs of
+   * @param  {String or Number} blockNumber The block number to query the repCycle contract. If it has self destructed, and we are
+   *                                       are syncing from scratch, if we queried at "latest", we wouldn't find the logs
+   * @param  {bool}       checkForReplacement A boolean that controls whether we query getReplacementReputationUpdateLogEntry for the log entry.
    * @return {Promise}
    */
-  async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, a) {
+  async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {
     let interimHash;
     let jhLeafValue;
     let justUpdatedProof;
@@ -230,12 +235,13 @@ class ReputationMiner {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber, blockNumber);
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
-      let invalidUpdates = await this.colonyNetwork.getCorruptedReputationUpdateLogs(repCycle.address);
-      invalidUpdates = invalidUpdates.map(i => i.toNumber());
-      let reputationChange = logEntry[1];
-      if (invalidUpdates.includes(logEntryUpdateNumber.toNumber())) {
-        reputationChange = ethers.utils.bigNumberify("0");
+      if (checkForReplacement) {
+        const potentialReplacementLogEntry = await this.colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, logEntryNumber);
+        if (potentialReplacementLogEntry[3] !== "0x0000000000000000000000000000000000000000") {
+          logEntry = potentialReplacementLogEntry;
+        }
       }
+      const reputationChange = logEntry[1];
       score = this.getScore(updateNumber, reputationChange);
     }
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
@@ -869,7 +875,7 @@ class ReputationMiner {
         localHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
         const localNNodes = this.nReputations;
         if (localHash !== hash || !localNNodes.eq(nNodes)) {
-          console.log("WARNING: Sync seems to have failed");
+          console.log("WARNING: Either sync has failed, or some log entries have been replaced. Continuing sync, as we might recover");
         }
         if (saveHistoricalStates) {
           await this.saveCurrentState(event.blockNumber); // eslint-disable-line no-await-in-loop
@@ -878,6 +884,17 @@ class ReputationMiner {
       if (applyLogs === false && localHash === hash) {
         applyLogs = true;
       }
+    }
+
+    // Check final state
+    const currentHash = await this.colonyNetwork.getReputationRootHash();
+    const currentNNodes = await this.colonyNetwork.getReputationRootHashNNodes();
+    localHash = await this.reputationTree.getRootHash();
+    const localNNodes = await this.nReputations;
+    if (localHash !== currentHash || !currentNNodes.eq(localNNodes)) {
+      console.log("ERROR: Sync failed and did not recover");
+    } else {
+      console.log("Sync successful, even if there were warnings above");
     }
   }
 
@@ -929,6 +946,17 @@ class ReputationMiner {
     const db = await sqlite.open(this.dbPath, { Promise });
     this.nReputations = ethers.utils.bigNumberify(0);
     this.reputations = {};
+
+    if (this.useJsTree) {
+      this.reputationTree = new patriciaJs.PatriciaTree();
+    } else {
+      this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+
+      const abstractContract = new ethers.Contract(null, this.patriciaTreeContractDef.abi, this.ganacheWallet);
+      const contract = await abstractContract.deploy(this.patriciaTreeContractDef.bytecode);
+      await contract.deployed();
+      this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
+    }
 
     const res = await db.all(
       `SELECT reputations.skill_id, reputations.value, reputation_states.root_hash, colonies.address as colony_address, users.address as user_address
