@@ -317,14 +317,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256 disagreeStateReputationValue;
     uint256 agreeStateReputationUID;
     uint256 disagreeStateReputationUID;
-    uint256 originReputationValue;
 
     assembly {
         agreeStateReputationValue := mload(add(agreeStateReputationValueBytes, 32))
         disagreeStateReputationValue := mload(add(disagreeStateReputationValueBytes, 32))
         agreeStateReputationUID := mload(add(agreeStateReputationValueBytes, 64))
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
-        originReputationValue := mload(add(originReputationValueBytes, 32))
     }
 
     proveUID(
@@ -336,7 +334,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       previousNewReputationValueBytes,
       previousNewReputationSiblings);
 
-    proveValue(u, agreeStateReputationValue, disagreeStateReputationValue, originReputationValue);
+    proveValue(
+      u,
+      agreeStateReputationValue,
+      agreeStateSiblings,
+      disagreeStateReputationValue,
+      originReputationKey,
+      originReputationValueBytes,
+      originReputationSiblings);
   }
 
   function proveUID(
@@ -379,11 +384,19 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   function proveValue(
     uint256[11] u,
     uint256 _agreeStateReputationValue,
+    bytes32[] _agreeStateSiblings,
     uint256 _disagreeStateReputationValue,
-    uint256 _originReputationValue
+    bytes _originReputationKey,
+    bytes _originReputationValueBytes,
+    bytes32[] _originReputationSiblings
   ) internal 
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
+    
+    uint256 originReputationValue;
+    assembly {
+        originReputationValue := mload(add(_originReputationValueBytes, 32))
+    }
     
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
@@ -421,7 +434,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             // We are working with a child update! Check adjusted amount instead of this impossible calculation
             // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
             // TODO: There is still a potential overflow at the multiplication below. Look to eliminate that
-            require((_agreeStateReputationValue - _disagreeStateReputationValue) == ((uint(amount * -1) * _agreeStateReputationValue) / _originReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+            require((_agreeStateReputationValue - _disagreeStateReputationValue) == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+            checkOriginReputationInState(
+              u,
+              _agreeStateSiblings,
+              _originReputationKey,
+              _originReputationValueBytes,
+              _originReputationSiblings);
           } else {
             // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
             require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
@@ -430,7 +449,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       }
     }
 
-    emit ProveValueSuccess(_agreeStateReputationValue, _disagreeStateReputationValue, _originReputationValue);
+    emit ProveValueSuccess(_agreeStateReputationValue, _disagreeStateReputationValue, originReputationValue);
   }
 
   function getRelativeUpdateNumber(uint256[11] u, ReputationLogEntry logEntry) internal view returns (uint256) {
@@ -468,6 +487,36 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
+  }
+
+  function checkOriginReputationInState(
+    uint256[11] u,
+    bytes32[] agreeStateSiblings,
+    bytes originReputationKey,
+    bytes originReputationValueBytes,
+    bytes32[] originReputationStateSiblings
+    ) internal view
+  {
+    // We binary searched to the first disagreement, so the last agreement is the one before
+    uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
+
+    bytes32 reputationRootHash = getImpliedRoot(
+      originReputationKey,
+      originReputationValueBytes,
+      u[U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
+      originReputationStateSiblings
+    );
+    bytes memory jhLeafValue = new bytes(64);
+    bytes memory lastAgreeIdxBytes = new bytes(32);
+    assembly {
+      mstore(add(jhLeafValue, 0x20), reputationRootHash)
+      let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline assembly
+      mstore(add(jhLeafValue, 0x40), x)
+      mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
+    }
+    // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
+    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-origin-skill-state-disagreement");
   }
 
   function saveProvedReputation(uint256[11] u, bytes previousNewReputationValue) internal {
