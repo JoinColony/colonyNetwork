@@ -434,7 +434,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         } else {
           // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
           // Can't we convert `amount` to uint instead of these explicit converstions to (int)? For sufficiently large uints this converstion would produce the wrong results?
-          require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+          require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-reputation-value-incorrect");
         }
       } else {
         // Don't allow reputation to underflow
@@ -452,7 +452,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             // We are working with a child update! Check adjusted amount instead of this impossible calculation
             // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
             // TODO: There is still a potential overflow at the multiplication below. Look to eliminate that
-            require((_agreeStateReputationValue - _disagreeStateReputationValue) == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+            require((_agreeStateReputationValue - _disagreeStateReputationValue) == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-child-reputation-value-incorrect");
             checkOriginReputationInState(
               u,
               _agreeStateSiblings,
@@ -461,7 +461,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
               _originReputationSiblings);
           } else {
             // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
-            require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-invalid-newest-reputation-proof");
+            require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-child-reputation-colony-wide-value-incorrect");
           }
         }
       }
