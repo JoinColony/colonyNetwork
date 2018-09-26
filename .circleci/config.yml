@@ -18,41 +18,18 @@ step_setup_global_packages: &step_setup_global_packages
     name: "Set up global packages"
     command: |
       yarn --pure-lockfile --network-concurrency 1
-      # Trigger husky install manually due to https://github.com/typicode/husky/issues/227
-      node node_modules/husky/lib/installer/bin install
       git submodule update --init
-step_setup_greenkeeper: &step_setup_greenkeeper
-  run:
-    name: "Add greenkeeper-lockfile-update"
-    command: yarn global add greenkeeper-lockfile@1
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc 0.4.23 docker image"
       command: docker pull ethereum/solc:0.4.23
 jobs:
-  greenkeeper-updates:
-    <<: *job_common
-    steps:
-      - checkout
-      - <<: *step_restore_cache
-      - <<: *step_setup_global_packages
-      - run:
-          name: "Remove .git/hooks/pre-commit"
-          command: rm .git/hooks/pre-commit
-      - <<: *step_setup_greenkeeper
-      - run:
-          name: "Run Greenkeeper lockfile update"
-          command: $(yarn global bin)/greenkeeper-lockfile-update
-          environment:
-            GK_LOCK_YARN_OPTS: "--ignore-workspace-root-check"
-      - <<: *step_save_cache
   lint-and-unit-test:
     <<: *job_common
     steps:
       - checkout
       - <<: *step_restore_cache
       - <<: *step_setup_global_packages
-      - <<: *step_setup_greenkeeper
       - setup_remote_docker
       - <<: *step_pull_solc_docker
       - run:
@@ -99,9 +76,6 @@ jobs:
           name: "Running colony-contract-loader-network tests"
           command: cd packages/colony-js-contract-loader-network && yarn run test
       - <<: *step_save_cache
-      - run:
-          name: "Greenkeeper uploading lockfile"
-          command: $(yarn global bin)/greenkeeper-lockfile-upload
       # Save test results
       - store_test_results:
           path: test-results.xml
@@ -126,10 +100,5 @@ workflows:
   version: 2
   commit:
     jobs:
-      - greenkeeper-updates
-      - lint-and-unit-test:
-          requires:
-            - greenkeeper-updates
-      - test-coverage:
-          requires:
-            - greenkeeper-updates
+      - lint-and-unit-test
+      - test-coverage
