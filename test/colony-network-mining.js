@@ -1628,16 +1628,20 @@ contract("ColonyNetworkMining", accounts => {
       repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(1);
     });
+  });
 
-    it("if a colony wide total calculation as a result of a child reputation update is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-
+  describe("disagreement over child reputation updates", () => {
+    before(async () => {
       // TODO: Amending the global skills tree is messing up with the "happy path" tests as that
       // also amends the tree in its `before`. Deal with this when we do test refactoring in #317
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
       // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
+    });
+
+    it("if a colony wide total calculation as a result of a child reputation update is wrong, it should be handled correctly", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
       const taskId1 = await setupRatedTask({
         colonyNetwork,
@@ -1691,7 +1695,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        28,
+        27,
         "0xfffffffff"
       );
       // Moving the state to the bad client
@@ -1738,6 +1742,80 @@ contract("ColonyNetworkMining", accounts => {
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout: 5000000000000,
+        managerRating: 1,
+        workerRating: 1,
+        worker: OTHER_ACCOUNT
+      });
+      await metaColony.finalizeTask(taskId2);
+      await goodClient.resetDB();
+      await goodClient.addLogContentsToReputationTree();
+      await forwardTime(3600, this);
+      await goodClient.submitRootHash();
+      await goodClient.saveCurrentState();
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await repCycle.confirmNewHash(0);
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation update for one task completion (manager, worker, evaluator);
+      // That's five in total.
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nLogEntries.toNumber(), 5);
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        30,
+        "0xfffffffff"
+      );
+      // Moving the state to the bad client
+      await badClient.initialise(colonyNetwork.address);
+      const currentGoodClientState = await goodClient.getRootHash();
+      await badClient.loadState(currentGoodClientState);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("if a large child reputation amount calculation is wrong, it should be handled correctly", async () => {
+      await fundColonyWithTokens(metaColony, clny, new BN(2).pow(new BN(252)).toString());
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      const taskId1 = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skill: 5,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: new BN(2).pow(new BN(220)).toString(),
+        managerRating: 3,
+        workerRating: 2,
+        worker: OTHER_ACCOUNT
+      });
+      await metaColony.finalizeTask(taskId1);
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(3600, this);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      const taskId2 = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skill: 4,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 69719476739, // This will make child rep calculation overflow
         managerRating: 1,
         workerRating: 1,
         worker: OTHER_ACCOUNT

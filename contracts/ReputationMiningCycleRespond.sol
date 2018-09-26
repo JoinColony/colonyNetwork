@@ -451,8 +451,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
             // We are working with a child update! Check adjusted amount instead of this impossible calculation
             // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
-            // TODO: There is still a potential overflow at the multiplication below. Look to eliminate that
-            require((_agreeStateReputationValue - _disagreeStateReputationValue) == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-child-reputation-value-incorrect");
+            // Very large reputation amounts are calculated the 'other way around' to avoid overflows.
+            if (uint(amount * -1) > uint256(2**256 - 1) / _agreeStateReputationValue) {
+              require(_agreeStateReputationValue - _disagreeStateReputationValue == ((_agreeStateReputationValue / originReputationValue) * uint(amount * -1)), "colony-reputation-mining-child-reputation-value-incorrect1");
+            } else {
+              require(_agreeStateReputationValue - _disagreeStateReputationValue == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-child-reputation-value-incorrect2");
+            }
+      
             checkOriginReputationInState(
               u,
               _agreeStateSiblings,

@@ -252,6 +252,7 @@ class ReputationMiner {
             const originSkillValueBytes = this.reputations[originSkillKey];
             const originSkillValue = ethers.utils.bigNumberify(`0x${originSkillValueBytes.slice(2, 66)}`);
 
+            // TODO: What do we do if the origin skill rep is 0?
             if (!originSkillValue.isZero()) {
               let key;
               // For colony wide reputation updates, consider the key of the origin user reputation
@@ -259,14 +260,30 @@ class ReputationMiner {
                 const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
                 key = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
               } else {
+                // TODO: This key is always undefined..
                 key = await this.getKeyForUpdateNumber(updateNumber);
               }
 
               const keyExists = this.reputations[key] !== undefined;
               if (keyExists) {
                 const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
-                // todo bn.js doesn't have decimals so is fraction precision enough here?
-                const targetScore = reputation.mul(amount).div(originSkillValue);
+
+                let targetScore;
+                const absAmount = amount.mul(-1);
+                if (
+                  absAmount.gt(
+                    ethers.utils
+                      .bigNumberify("2")
+                      .pow(256)
+                      .sub(1)
+                      .div(reputation)
+                  )
+                ) {
+                  targetScore = reputation.div(originSkillValue).mul(amount);
+                } else {
+                  targetScore = reputation.mul(amount).div(originSkillValue);
+                }
+
                 amount = targetScore;
               } else {
                 amount = ethers.utils.bigNumberify("0");
@@ -806,6 +823,7 @@ class ReputationMiner {
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
     const lastAgreeKey = ReputationMiner.getHexString(lastAgreeIdx, 64);
     const firstDisagreeKey = ReputationMiner.getHexString(firstDisagreeIdx, 64);
+
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
     let logEntryNumber = ethers.constants.Zero;
