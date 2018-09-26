@@ -136,15 +136,15 @@ class ReputationMiner {
     const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);
     const replacementLogEntriesExist = nReplacementLogEntries > 0;
     for (let i = ethers.utils.bigNumberify("0"); i.lt(totalnUpdates); i = i.add(1)) {
-      await this.addSingleReputationUpdate(i, repCycle, blockNumber, replacementLogEntriesExist); // eslint-disable-line no-await-in-loop
+      await this.addSingleReputationUpdate(i, repCycle, blockNumber, replacementLogEntriesExist);
     }
     const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1), blockNumber);
     const justUpdatedProof = await this.getReputationProofObject(prevKey);
     const newestReputationProof = await this.getNewestReputationProofObject(totalnUpdates);
-    const interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+    const interimHash = await this.reputationTree.getRootHash();
     const jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     const nextUpdateProof = {};
-    await this.justificationTree.insert(ReputationMiner.getHexString(totalnUpdates, 64), jhLeafValue, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
+    await this.justificationTree.insert(ReputationMiner.getHexString(totalnUpdates, 64), jhLeafValue, { gasLimit: 4000000 });
 
     this.justificationHashes[ReputationMiner.getHexString(totalnUpdates, 64)] = JSON.parse(
       JSON.stringify({
@@ -159,7 +159,7 @@ class ReputationMiner {
   }
 
   /**
-   * Process the `j`th update and add to the current reputation state and the justificationtree.
+   * Process a single update and add to the current reputation state and the justificationtree.
    * @param  {BigNumber}  updateNumber     The number of the update that should be considered.
    * @param  {Contract}   repCycle         The contract object representing reputation mining cycle contract we're processing the logs of
    * @param  {String or Number} blockNumber The block number to query the repCycle contract. If it has self destructed, and we are
@@ -175,7 +175,7 @@ class ReputationMiner {
     let logEntry;
     let amount;
 
-    interimHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+    interimHash = await this.reputationTree.getRootHash();
     jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
     originReputationProof = await this.getReputationProofObject(
       "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
@@ -189,18 +189,10 @@ class ReputationMiner {
       // is very slightly less than one (0.5 ** (1/2160) for a 1-hr mining cycle, 0.5 ** (1/90) for a 24-hr cycle).
       // Disabling prettier on the next line so we can have these two values aligned so it's easy to see
       // the fraction will be slightly less than one.
-      const numerator   = ethers.utils.bigNumberify("992327946262944");  // eslint-disable-line prettier/prettier
+      const numerator   = ethers.utils.bigNumberify("992327946262944");
       const denominator = ethers.utils.bigNumberify("1000000000000000");
 
-      if (
-        reputation.gt(
-          ethers.utils
-            .bigNumberify("2")
-            .pow(256)
-            .sub(1)
-            .div(denominator)
-        )
-      ) {
+      if (reputation.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(denominator))) {
         newReputation = reputation.div(denominator).mul(numerator);
       } else {
         newReputation = reputation.mul(numerator).div(denominator);
@@ -227,10 +219,7 @@ class ReputationMiner {
         // For reputation loss, when updating child skills, adjust reputation amount lost
         const nUpdates = logEntry[4];
         const [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
-        const nChildUpdates = nUpdates
-          .div(2)
-          .sub(1)
-          .sub(nParents);
+        const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
         const relativeUpdateNumber = updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog);
 
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
@@ -240,10 +229,7 @@ class ReputationMiner {
           (relativeUpdateNumber.gte(nUpdates.div(2)) && relativeUpdateNumber.lt(nUpdates.div(2).add(nChildUpdates)))
         ) {
           // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
-          const originSkillUpdateNumber = updateNumber
-            .sub(relativeUpdateNumber)
-            .add(nUpdates)
-            .sub(1);
+          const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
           const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
 
           const keyAlreadyExists = this.reputations[originSkillKey] !== undefined;
@@ -260,7 +246,6 @@ class ReputationMiner {
                 const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
                 key = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
               } else {
-                // TODO: This key is always undefined..
                 key = await this.getKeyForUpdateNumber(updateNumber);
               }
 
@@ -270,26 +255,16 @@ class ReputationMiner {
 
                 let targetScore;
                 const absAmount = amount.mul(-1);
-                if (
-                  absAmount.gt(
-                    ethers.utils
-                      .bigNumberify("2")
-                      .pow(256)
-                      .sub(1)
-                      .div(reputation)
-                  )
-                ) {
+                if (absAmount.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(reputation))) {
                   targetScore = reputation.div(originSkillValue).mul(amount);
                 } else {
                   targetScore = reputation.mul(amount).div(originSkillValue);
                 }
-
                 amount = targetScore;
               } else {
                 amount = ethers.utils.bigNumberify("0");
               }
             }
-
             originReputationProof = await this.getReputationProofObject(originSkillKey);
           } else {
             amount = ethers.utils.bigNumberify("0");
@@ -304,7 +279,7 @@ class ReputationMiner {
       const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockTag: blockNumber });
       if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
-        interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
+        interimHash = await this.colonyNetwork.getReputationRootHash();
         jhLeafValue = this.getJRHEntryValueAsBytes(interimHash, this.nReputations);
       }
     } else {
@@ -312,7 +287,7 @@ class ReputationMiner {
       justUpdatedProof = await this.getReputationProofObject(prevKey);
     }
     const newestReputationProof = await this.getNewestReputationProofObject(updateNumber);
-    await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
+    await this.justificationTree.insert(ReputationMiner.getHexString(updateNumber, 64), jhLeafValue, { gasLimit: 4000000 });
 
     const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
@@ -343,7 +318,7 @@ class ReputationMiner {
     let value;
     let key = _key;
     if (this.reputations[key]) {
-      [branchMask, siblings] = await this.getProof(key); // eslint-disable-line no-await-in-loop
+      [branchMask, siblings] = await this.getProof(key);
       value = this.reputations[key];
     } else {
       // Doesn't exist yet.
@@ -491,10 +466,7 @@ class ReputationMiner {
     if (amount.gte(0)) {
       nChildUpdates = ethers.constants.Zero;
     } else {
-      nChildUpdates = nUpdates
-        .div(2)
-        .sub(1)
-        .sub(nParents);
+      nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
     }
     // The list of skill ids to be updated is the same for the first half and the second half of the list of updates this
     // log entry implies, it's just the skillAddress that is different, which we've already established. So
@@ -591,14 +563,16 @@ class ReputationMiner {
     const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
     for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
-      const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash); // eslint-disable-line no-await-in-loop
+      const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
+
       const miningCycleDuration = 60 * 60 * 24;
       const constant = ethers.utils
         .bigNumberify(2)
         .pow(256)
         .sub(1)
         .div(miningCycleDuration);
-      const block = await this.realProvider.getBlock("latest"); // eslint-disable-line no-await-in-loop
+
+      const block = await this.realProvider.getBlock("latest");
       const { timestamp } = block;
       const target = ethers.utils
         .bigNumberify(timestamp)
@@ -664,8 +638,8 @@ class ReputationMiner {
     }
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const rowKey = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address); // eslint-disable-line no-await-in-loop
-      await tree.insert(rowKey, row.value); // eslint-disable-line no-await-in-loop
+      const rowKey = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      await tree.insert(rowKey, row.value);
     }
 
     const keyElements = ReputationMiner.breakKeyInToElements(key);
@@ -731,7 +705,7 @@ class ReputationMiner {
     while (submission[0] !== submittedHash || submission[1].toString() !== submittedNNodes.toString() || submission[4] !== jrh) {
       try {
         index = index.add(1);
-        submission = await repCycle.getDisputeRounds(round, index); // eslint-disable-line no-await-in-loop
+        submission = await repCycle.getDisputeRounds(round, index);
       } catch (err) {
         round = round.add(1);
         index = ethers.constants.NegativeOne;
@@ -962,14 +936,14 @@ class ReputationMiner {
       if (applyLogs) {
         const nNodes = ethers.utils.bigNumberify(`0x${event.data.slice(66, 130)}`);
         const previousBlock = event.blockNumber - 1;
-        await this.addLogContentsToReputationTree(previousBlock); // eslint-disable-line no-await-in-loop
-        localHash = await this.reputationTree.getRootHash(); // eslint-disable-line no-await-in-loop
+        await this.addLogContentsToReputationTree(previousBlock);
+        localHash = await this.reputationTree.getRootHash();
         const localNNodes = this.nReputations;
         if (localHash !== hash || !localNNodes.eq(nNodes)) {
           console.log("WARNING: Either sync has failed, or some log entries have been replaced. Continuing sync, as we might recover");
         }
         if (saveHistoricalStates) {
-          await this.saveCurrentState(event.blockNumber); // eslint-disable-line no-await-in-loop
+          await this.saveCurrentState(event.blockNumber);
         }
       }
       if (applyLogs === false && localHash === hash) {
@@ -998,13 +972,13 @@ class ReputationMiner {
     for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
       const key = Object.keys(this.reputations)[i];
       const value = this.reputations[key];
-      const keyElements = ReputationMiner.breakKeyInToElements(key); // eslint-disable-line no-await-in-loop
+      const keyElements = ReputationMiner.breakKeyInToElements(key);
       const [colonyAddress, , userAddress] = keyElements;
       const skillId = parseInt(keyElements[1], 16);
 
-      res = await db.run(`INSERT OR IGNORE INTO colonies (address) VALUES ('${colonyAddress}')`); // eslint-disable-line no-await-in-loop
-      res = await db.run(`INSERT OR IGNORE INTO users (address) VALUES ('${userAddress}')`); // eslint-disable-line no-await-in-loop
-      res = await db.run(`INSERT OR IGNORE INTO skills (skill_id) VALUES ('${skillId}')`); // eslint-disable-line no-await-in-loop
+      res = await db.run(`INSERT OR IGNORE INTO colonies (address) VALUES ('${colonyAddress}')`);
+      res = await db.run(`INSERT OR IGNORE INTO users (address) VALUES ('${userAddress}')`);
+      res = await db.run(`INSERT OR IGNORE INTO skills (skill_id) VALUES ('${skillId}')`);
 
       let query;
       query = `SELECT COUNT ( * ) AS "n"
@@ -1016,7 +990,7 @@ class ReputationMiner {
         AND colonies.address="${colonyAddress}"
         AND reputations.skill_id="${skillId}"
         AND users.address="${userAddress}"`;
-      res = await db.get(query); // eslint-disable-line no-await-in-loop
+      res = await db.get(query);
 
       if (res.n === 0) {
         query = `INSERT INTO reputations (reputation_rowid, colony_rowid, skill_id, user_rowid, value)
@@ -1026,7 +1000,7 @@ class ReputationMiner {
           ${skillId},
           (SELECT users.rowid FROM users WHERE users.address='${userAddress}'),
           '${value}'`;
-        await db.run(query); // eslint-disable-line no-await-in-loop
+        await db.run(query);
       }
     }
     await db.close();
@@ -1058,8 +1032,8 @@ class ReputationMiner {
     this.nReputations = ethers.utils.bigNumberify(res.length);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const key = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address); // eslint-disable-line no-await-in-loop
-      await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 }); // eslint-disable-line no-await-in-loop
+      const key = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
       this.reputations[key] = row.value;
     }
     const currentStateHash = await this.reputationTree.getRootHash();
