@@ -216,7 +216,6 @@ class ReputationMiner {
       // We update colonywide sums first (children, parents, skill)
       // Then the user-specifc sums in the order children, parents, skill.
       if (amount.lt(0)) {
-        // For reputation loss, when updating child skills, adjust reputation amount lost
         const nUpdates = logEntry[4];
         const [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
         const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
@@ -231,42 +230,47 @@ class ReputationMiner {
           // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
           const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
           const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+          originReputationProof = await this.getReputationProofObject(originSkillKey);
 
-          const keyAlreadyExists = this.reputations[originSkillKey] !== undefined;
-          if (keyAlreadyExists) {
+          const originSkillKeyExists = this.reputations[originSkillKey] !== undefined;
+          if (originSkillKeyExists) {
             // Look up value from our JSON.
             const originSkillValueBytes = this.reputations[originSkillKey];
             const originSkillValue = ethers.utils.bigNumberify(`0x${originSkillValueBytes.slice(2, 66)}`);
 
-            // TODO: What do we do if the origin skill rep is 0?
             if (!originSkillValue.isZero()) {
               let key;
               // For colony wide reputation updates, consider the key of the origin user reputation
               if (relativeUpdateNumber.lt(nChildUpdates)) {
-                const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
+               const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
                 key = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
               } else {
                 key = await this.getKeyForUpdateNumber(updateNumber);
               }
 
-              const keyExists = this.reputations[key] !== undefined;
-              if (keyExists) {
-                const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
+              const childSkillKeyExists = this.reputations[key] !== undefined;
+              if (childSkillKeyExists) {
+                const childSkillReputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
 
-                let targetScore;
+                let targetAmount;
                 const absAmount = amount.mul(-1);
-                if (absAmount.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(reputation))) {
-                  targetScore = reputation.div(originSkillValue).mul(amount);
+                // Ensure we don't overflow the calculation
+                if (absAmount.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(childSkillReputation))) {
+                  targetAmount = childSkillReputation.div(originSkillValue).mul(amount);
                 } else {
-                  targetScore = reputation.mul(amount).div(originSkillValue);
+                  targetAmount = childSkillReputation.mul(amount).div(originSkillValue);
                 }
-                amount = targetScore;
+                amount = targetAmount;
               } else {
+                // Set to 0, if the child skill does not exist yet, as that cannot go negative
                 amount = ethers.utils.bigNumberify("0");
               }
+            } else {
+              // Set to 0, if origin skill exists but is 0, as that cannot go negative
+              amount = ethers.utils.bigNumberify("0");
             }
-            originReputationProof = await this.getReputationProofObject(originSkillKey);
           } else {
+            // Set to 0, if the origin skill does not exist yet and therefore has no value that can be used in calulations
             amount = ethers.utils.bigNumberify("0");
           }
         }
@@ -866,7 +870,6 @@ class ReputationMiner {
    * @return {Promise}                 Resolves to `true` or `false` depending on whether the insertion was successful
    */
   async insert(key, _reputationScore, index) {
-    // const keyAlreadyExists = await this.keyExists(key);
     // If we already have this key, then we lookup the unique identifier we assigned this key.
     // Otherwise, give it the new one.
     let value;
