@@ -1927,7 +1927,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("if a large child reputation amount calculation is wrong, it should be handled correctly", async () => {
+    it.skip("if a large child reputation amount calculation is wrong, it should be handled correctly", async () => {
       await fundColonyWithTokens(metaColony, clny, new BN(2).pow(new BN(252)).toString());
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
