@@ -113,6 +113,9 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog;
   mapping (address => bool) replacementReputationUpdateLogsExist;
 
+  // Using the same value as we did in Colony to (hopefully) avoid confusion.
+  uint8 constant RECOVERY_ROLE = 2;
+
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;

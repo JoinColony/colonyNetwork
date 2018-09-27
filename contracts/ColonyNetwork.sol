@@ -28,7 +28,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   uint256 constant AUTHORITY_SLOT = 0;
   uint256 constant OWNER_SLOT = 1;
   uint256 constant RESOLVER_SLOT = 2;
-  
+
   event ColonyAdded(uint256 indexed id, address indexed colonyAddress);
   event SkillAdded(uint256 skillId, uint256 parentSkillId);
 
@@ -63,10 +63,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function getMetaColony() public view returns (address) {
     return metaColony;
-  }
-
-  function getSomething(uint256 a) public view returns (uint256) {
-    return a;
   }
 
   function getColonyCount() public view returns (uint256) {
@@ -322,6 +318,24 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     recoveryMode = false;
   }
+
+  // Can only be called by the owner role.
+  function setRecoveryRole(address _user) public stoppable auth {
+    require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
+    if (!Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
+      Authority(authority).setUserRole(_user, RECOVERY_ROLE, true);
+      recoveryRolesCount++;
+    }
+  }
+
+  // Can only be called by the owner role.
+  function removeRecoveryRole(address _user) public stoppable auth {
+    if (Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
+      Authority(authority).setUserRole(_user, RECOVERY_ROLE, false);
+      recoveryRolesCount--;
+    }
+  }
+
 
 
 }
