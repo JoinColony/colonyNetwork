@@ -35,8 +35,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
-    require(nSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-completed");
-    require(disputeRounds[roundNumber].length == 1, "colony-reputation-mining-final-round-not-completed"); //i.e. this is the final round
+    require(nSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-completed1");
+    require(disputeRounds[roundNumber].length == 1, "colony-reputation-mining-final-round-not-completed2"); //i.e. this is the final round
     // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
     // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
     // element is zeroed. If this functionality of 'delete' is ever changed, this will have to change too.
