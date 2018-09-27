@@ -18,15 +18,15 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
 import "./Authority.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
+import "./CommonStorage.sol";
 
 
-contract ColonyStorage is DSAuth, DSMath {
+contract ColonyStorage is CommonStorage, DSMath {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
@@ -34,7 +34,6 @@ contract ColonyStorage is DSAuth, DSMath {
   event DomainAdded(uint256 indexed id);
   event PotAdded(uint256 indexed id);
 
-  address resolver;
   address colonyNetworkAddress;
   ERC20Extended token;
 

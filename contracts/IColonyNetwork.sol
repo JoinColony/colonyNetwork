@@ -110,6 +110,8 @@ contract IColonyNetwork {
   /// @dev certain critical variables are protected from editing in this function
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
 
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public;
+
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165
   /// @dev Interface identification is specified in ERC-165.

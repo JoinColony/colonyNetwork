@@ -44,27 +44,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }
 
-  // Can only be called by the owner role.
-  function setRecoveryRole(address _user) public stoppable auth {
-    require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
-    if (!Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
-      Authority(authority).setUserRole(_user, RECOVERY_ROLE, true);
-      recoveryRolesCount++;
-    }
-  }
-
-  // Can only be called by the owner role.
-  function removeRecoveryRole(address _user) public stoppable auth {
-    if (Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
-      Authority(authority).setUserRole(_user, RECOVERY_ROLE, false);
-      recoveryRolesCount--;
-    }
-  }
-
-  function numRecoveryRoles() public view returns(uint64) {
-    return recoveryRolesCount;
-  }
-
   function setToken(address _token) public
   stoppable
   auth
@@ -213,58 +192,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     e.setResolver(newResolver);
   }
 
-  function enterRecoveryMode() public stoppable auth {
-    recoveryMode = true;
-    recoveryApprovalCount = 0;
-    recoveryEditedTimestamp = now;
-  }
-
-  uint256 constant AUTHORITY_SLOT = 0;
-  uint256 constant OWNER_SLOT = 1;
-  uint256 constant RESOLVER_SLOT = 2;
-  uint256 constant COLONY_NETWORK_ADDRESS_SLOT = 3;
-
-  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
-    require(_slot != AUTHORITY_SLOT, "colony-protected-variable");
-    require(_slot != OWNER_SLOT, "colony-protected-variable");
-    require(_slot != RESOLVER_SLOT, "colony-protected-variable");
-    require(_slot != COLONY_NETWORK_ADDRESS_SLOT, "colony-protected-variable");
-
-    // Protect key variables
-    uint64 _recoveryRolesCount = recoveryRolesCount;
-
-    // Make recovery edit
-    uint x = _slot;
-    bytes32 y = _value;
-    assembly {
-      sstore(x, y)
-    }
-
-    // Restore key variables
-    recoveryRolesCount = _recoveryRolesCount;
-
-    // Reset recovery state
-    recoveryMode = true;
-    recoveryApprovalCount = 0;
-    recoveryEditedTimestamp = now;
-  }
-
-  function approveExitRecovery() public recovery auth {
-    require(recoveryApprovalTimestamps[msg.sender] < recoveryEditedTimestamp, "colony-recovery-approval-already-given");
-    recoveryApprovalTimestamps[msg.sender] = now;
-    recoveryApprovalCount++;
-  }
-
-  function exitRecoveryMode(uint256 _newVersion) public recovery auth {
-    uint numRequired = recoveryRolesCount / 2 + 1;
-    require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
-
-    recoveryMode = false;
-    if (_newVersion > version()) {
-      upgrade(_newVersion);
-    }
-  }
-
   function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
   private
   {
@@ -290,4 +217,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit DomainAdded(domainCount);
     emit PotAdded(potCount);
   }
+
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public {
+    uint256 slot = _slot;
+    assembly {
+      if eq(slot, colonyNetworkAddress_slot) { revert (0, "colony-protected-variable")}
+    }
+
+  }
+
 }

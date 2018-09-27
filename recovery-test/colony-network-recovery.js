@@ -50,7 +50,7 @@ contract("Colony Network", accounts => {
     let addr = await colonyNetwork.getReputationMiningCycle.call(true);
     await forwardTime(3600, this);
     let repCycle = await IReputationMiningCycle.at(addr);
-    await repCycle.submitRootHash("0x00", 0, 0);
+    await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
@@ -66,7 +66,7 @@ contract("Colony Network", accounts => {
     addr = await colonyNetwork.getReputationMiningCycle.call(true);
     repCycle = await IReputationMiningCycle.at(addr);
     await forwardTime(3600, this);
-    await repCycle.submitRootHash("0x00", 0, 0);
+    await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
     const block = await currentBlock();
@@ -75,7 +75,7 @@ contract("Colony Network", accounts => {
     startingBlockNumber = block.number + 1;
   });
 
-  describe("Recovery Mode", () => {
+  describe.only("Recovery Mode", () => {
     it("should not be able to call recovery functions while not in recovery mode", async () => {
       await checkErrorRevert(colonyNetwork.approveExitRecovery(), "colony-not-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.exitRecoveryMode(), "colony-not-in-recovery-mode");
@@ -86,7 +86,7 @@ contract("Colony Network", accounts => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
       await forwardTime(3600, this);
-      await repCycle.submitRootHash("0x01", 0, 0);
+      await repCycle.submitRootHash("0x01", 0, 10);
       await repCycle.confirmNewHash(0);
 
       let rootHash = await colonyNetwork.getReputationRootHash();
@@ -96,8 +96,8 @@ contract("Colony Network", accounts => {
 
       await colonyNetwork.enterRecoveryMode();
 
-      await colonyNetwork.setStorageSlotRecovery(16, "0x02");
-      await colonyNetwork.setStorageSlotRecovery(17, `0x${new BN(7).toString(16, 64)}`);
+      await colonyNetwork.setStorageSlotRecovery(19, "0x02");
+      await colonyNetwork.setStorageSlotRecovery(20, `0x${new BN(7).toString(16, 64)}`);
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
@@ -179,9 +179,9 @@ contract("Colony Network", accounts => {
       console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
       const rootHash = await miningClient.getRootHash();
       const nNodes = await miningClient.nReputations;
-      // slots 16 and 17 are hash and nodes respectively
-      await colonyNetwork.setStorageSlotRecovery(16, rootHash);
-      await colonyNetwork.setStorageSlotRecovery(17, `0x${padLeft(nNodes.toString(16), 64)}`);
+      // slots 19 and 20 are hash and nodes respectively
+      await colonyNetwork.setStorageSlotRecovery(19, rootHash);
+      await colonyNetwork.setStorageSlotRecovery(20, `0x${padLeft(nNodes.toString(16), 64)}`);
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
@@ -331,8 +331,8 @@ contract("Colony Network", accounts => {
       }
 
       // Set the new cycles
-      await colonyNetwork.setStorageSlotRecovery(14, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
-      await colonyNetwork.setStorageSlotRecovery(15, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
+      await colonyNetwork.setStorageSlotRecovery(17, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
+      await colonyNetwork.setStorageSlotRecovery(18, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
       const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       assert.equal(retrievedActiveCycleAddress, newActiveCycle.address);
       const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);

@@ -18,15 +18,13 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
+import "./CommonStorage.sol";
 
 
-contract ColonyNetworkStorage is DSAuth, DSMath {
-  // Address of the Resolver contract used by EtherRouter for lookups and routing
-  address resolver;
+contract ColonyNetworkStorage is CommonStorage, DSMath {
   // Number of colonies in the network
   uint256 colonyCount;
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -96,12 +94,6 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
 
   mapping (bytes32 => ENSRecord) records;
 
-  // Recovery variables
-  bool recoveryMode;
-  uint64 recoveryRolesCount;
-  uint64 recoveryApprovalCount;
-  uint256 recoveryEditedTimestamp;
-  mapping (address => uint256) recoveryApprovalTimestamps;
   struct ReputationLogEntry {
     address user;
     int amount;

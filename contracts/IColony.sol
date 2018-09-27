@@ -235,6 +235,9 @@ contract IColony {
   /// @param _newVersion Resolver version to upgrade to (>= current version)
   function exitRecoveryMode(uint256 _newVersion) public;
 
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public;
+
+
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
   /// @param _specificationHash Database identifier where the task specification is stored
