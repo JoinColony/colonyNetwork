@@ -434,39 +434,45 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         } else {
           // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
           // Can't we convert `amount` to uint instead of these explicit converstions to (int)? For sufficiently large uints this converstion would produce the wrong results?
-          require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-reputation-value-incorrect");
+          require(int(_agreeStateReputationValue) + amount == int(_disagreeStateReputationValue), "colony-reputation-mining-increased-reputation-value-incorrect");
         }
       } else {
-        // Don't allow reputation to underflow
-        if (uint(amount * -1) > _agreeStateReputationValue) {
-          require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
-        } else {
-          uint nParents;
-          (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
-          uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
-          // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is
-          // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill
-          uint relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
-          if (relativeUpdateNumber < nChildUpdates ||
+        // We are working with a negative amount, which needs to be treated differently for child updates and everything else
+        // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is
+        // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill"
+
+        uint relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
+        uint nParents;
+        (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
+        uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
+
+        if (relativeUpdateNumber < nChildUpdates ||
             ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
-            // We are working with a child update! Check adjusted amount instead of this impossible calculation
-            // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
-            // Very large reputation amounts are calculated the 'other way around' to avoid overflows.
-            if (uint(amount * -1) > uint256(2**256 - 1) / _agreeStateReputationValue) {
-              require(_agreeStateReputationValue - _disagreeStateReputationValue == ((_agreeStateReputationValue / originReputationValue) * uint(amount * -1)), "colony-reputation-mining-child-reputation-value-incorrect1");
-            } else {
-              require(_agreeStateReputationValue - _disagreeStateReputationValue == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-child-reputation-value-incorrect2");
-            }
-      
-            checkOriginReputationInState(
-              u,
-              _agreeStateSiblings,
-              _originReputationKey,
-              _originReputationValueBytes,
-              _originReputationSiblings);
+          // We are working with a child update! Check adjusted amount instead of this impossible calculation
+          // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
+          // TODO: There is a potential overflow here (see below) which we're agreed to deal with via limiting the reputation amount to a uint128 max value
+          // if (uint(amount * -1) > uint256(2**256 - 1) / _agreeStateReputationValue)
+
+          // Don't allow origin reputation to underflow
+          if (uint(amount * -1) > originReputationValue) {
+            require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
+          } else {
+            require(_agreeStateReputationValue - _disagreeStateReputationValue == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-child-reputation-value-incorrect");
+          }
+
+          checkOriginReputationInState(
+            u,
+            _agreeStateSiblings,
+            _originReputationKey,
+            _originReputationValueBytes,
+            _originReputationSiblings);
+        } else {
+          // Don't allow reputation to underflow
+          if (uint(amount * -1) > _agreeStateReputationValue) {
+            require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
           } else {
             // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
-            require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-child-reputation-colony-wide-value-incorrect");
+            require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-decreased-reputation-value-incorrect");
           }
         }
       }

@@ -230,15 +230,15 @@ class ReputationMiner {
           // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
           const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
           const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
-          originReputationProof = await this.getReputationProofObject(originSkillKey);
 
           const originSkillKeyExists = this.reputations[originSkillKey] !== undefined;
           if (originSkillKeyExists) {
             // Look up value from our JSON.
-            const originSkillValueBytes = this.reputations[originSkillKey];
-            const originSkillValue = ethers.utils.bigNumberify(`0x${originSkillValueBytes.slice(2, 66)}`);
+            const originReputationValueBytes = this.reputations[originSkillKey];
+            const originReputationValue = ethers.utils.bigNumberify(`0x${originReputationValueBytes.slice(2, 66)}`);
+            originReputationProof = await this.getReputationProofObject(originSkillKey);
 
-            if (!originSkillValue.isZero()) {
+            if (!originReputationValue.isZero()) {
               let key;
               // For colony wide reputation updates, consider the key of the origin user reputation
               if (relativeUpdateNumber.lt(nChildUpdates)) {
@@ -254,13 +254,17 @@ class ReputationMiner {
 
                 let targetAmount;
                 const absAmount = amount.mul(-1);
-                // Ensure we don't overflow the calculation
-                if (absAmount.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(childSkillReputation))) {
-                  targetAmount = childSkillReputation.div(originSkillValue).mul(amount);
+                if (absAmount.gt(originReputationValue)) {
+                  amount = originReputationValue;
                 } else {
-                  targetAmount = childSkillReputation.mul(amount).div(originSkillValue);
+                  // Ensure we don't overflow the calculation
+                  if (absAmount.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(childSkillReputation))) {
+                    targetAmount = childSkillReputation.div(originReputationValue).mul(amount);
+                  } else {
+                    targetAmount = childSkillReputation.mul(amount).div(originReputationValue);
+                  }
+                  amount = targetAmount;
                 }
-                amount = targetAmount;
               } else {
                 // Set to 0, if the child skill does not exist yet, as that cannot go negative
                 amount = ethers.utils.bigNumberify("0");
