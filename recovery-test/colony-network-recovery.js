@@ -11,7 +11,8 @@ import {
   currentBlock,
   currentBlockTime,
   checkErrorRevert,
-  submitAndForwardTimeToDispute
+  submitAndForwardTimeToDispute,
+  web3GetStorageAt
 } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
@@ -19,7 +20,6 @@ import { setupEtherRouter } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ColonyNetworkAuthority = artifacts.require("ColonyNetworkAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const IColony = artifacts.require("IColony");
 const Token = artifacts.require("Token");
@@ -38,12 +38,10 @@ contract("Colony Network", accounts => {
   let colonyNetwork;
   let miningClient;
   let startingBlockNumber;
+  let clnyAddress;
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-
-    const colonyNetworkAuthority = await ColonyNetworkAuthority.new(colonyNetwork.address);
-    await colonyNetwork.setAuthority(colonyNetworkAuthority.address);
   });
 
   beforeEach(async () => {
@@ -54,6 +52,9 @@ contract("Colony Network", accounts => {
     await repCycle.confirmNewHash(0);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    const metaColony = await IColony.at(metaColonyAddress);
+    clnyAddress = await metaColony.getToken();
 
     miningClient = new ReputationMiner({
       loader: contractLoader,
@@ -75,7 +76,121 @@ contract("Colony Network", accounts => {
     startingBlockNumber = block.number + 1;
   });
 
-  describe.only("Recovery Mode", () => {
+  afterEach(async () => {
+    await colonyNetwork.removeRecoveryRole(accounts[1]);
+    await colonyNetwork.removeRecoveryRole(accounts[2]);
+  });
+
+  describe("Recovery Mode", () => {
+    it("should be able to add and remove recovery roles when not in recovery", async () => {
+      const owner = accounts[0];
+      let numRecoveryRoles;
+
+      numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 0);
+      colonyNetwork.setRecoveryRole(owner);
+      await colonyNetwork.setRecoveryRole(accounts[1]);
+      await colonyNetwork.setRecoveryRole(accounts[2]);
+      numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 3);
+
+      // Can remove recovery roles
+      await colonyNetwork.removeRecoveryRole(accounts[2]);
+      numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 2);
+
+      // Can't remove twice
+      await colonyNetwork.removeRecoveryRole(accounts[2]);
+      numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 2);
+
+      await colonyNetwork.removeRecoveryRole(owner);
+      numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
+      assert.equal(numRecoveryRoles.toNumber(), 1);
+    });
+
+    it("should not be able to add and remove roles when in recovery", async () => {
+      await colonyNetwork.setRecoveryRole(accounts[1]);
+      await colonyNetwork.enterRecoveryMode();
+      await checkErrorRevert(colonyNetwork.setRecoveryRole(accounts[1]), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.removeRecoveryRole(accounts[1]), "colony-in-recovery-mode");
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.approveExitRecovery({ from: accounts[1] });
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("should not be able to call normal functions while in recovery", async () => {
+      await colonyNetwork.enterRecoveryMode();
+      await checkErrorRevert(colonyNetwork.createColony(clnyAddress), "colony-in-recovery-mode");
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("should exit recovery mode with sufficient approvals", async () => {
+      await colonyNetwork.setRecoveryRole(accounts[1]);
+      await colonyNetwork.setRecoveryRole(accounts[2]);
+
+      await colonyNetwork.enterRecoveryMode();
+      await colonyNetwork.setStorageSlotRecovery(5, "0xdeadbeef");
+
+      // 0/3 approve
+      await checkErrorRevert(colonyNetwork.exitRecoveryMode(), "colony-recovery-exit-insufficient-approvals");
+
+      // 1/3 approve
+      await colonyNetwork.approveExitRecovery();
+      await checkErrorRevert(colonyNetwork.exitRecoveryMode(), "colony-recovery-exit-insufficient-approvals");
+
+      // 2/3 approve
+      await colonyNetwork.approveExitRecovery({ from: accounts[1] });
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("recovery users can work in recovery mode", async () => {
+      await colonyNetwork.setRecoveryRole(accounts[1]);
+
+      await colonyNetwork.enterRecoveryMode();
+      await colonyNetwork.setStorageSlotRecovery(5, "0xdeadbeef", { from: accounts[1] });
+
+      // 2/2 approve
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.approveExitRecovery({ from: accounts[1] });
+      await colonyNetwork.exitRecoveryMode({ from: accounts[1] });
+    });
+
+    it("users cannot approve twice", async () => {
+      await colonyNetwork.enterRecoveryMode();
+      await colonyNetwork.setStorageSlotRecovery(5, "0xdeadbeef");
+
+      await colonyNetwork.approveExitRecovery();
+      await checkErrorRevert(colonyNetwork.approveExitRecovery(), "colony-recovery-approval-already-given");
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("users cannot approve if unauthorized", async () => {
+      await colonyNetwork.enterRecoveryMode();
+      await checkErrorRevert(colonyNetwork.approveExitRecovery({ from: accounts[1] }));
+      await colonyNetwork.approveExitRecovery({ from: accounts[0] });
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("should allow editing of general variables", async () => {
+      await colonyNetwork.enterRecoveryMode();
+      await colonyNetwork.setStorageSlotRecovery(5, "0xdeadbeef");
+
+      const unprotected = await web3GetStorageAt(colonyNetwork.address, 5);
+      assert.equal(unprotected.toString(), `0xdeadbeef${"0".repeat(56)}`);
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+    });
+
+    it("should not allow editing of protected variables", async () => {
+      const protectedLoc = 0;
+      await colonyNetwork.enterRecoveryMode();
+      await checkErrorRevert(colonyNetwork.setStorageSlotRecovery(protectedLoc, "0xdeadbeef"), "colony-common-protected-variable");
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+    });
+
     it("should not be able to call recovery functions while not in recovery mode", async () => {
       await checkErrorRevert(colonyNetwork.approveExitRecovery(), "colony-not-in-recovery-mode");
       await checkErrorRevert(colonyNetwork.exitRecoveryMode(), "colony-not-in-recovery-mode");
@@ -267,7 +382,7 @@ contract("Colony Network", accounts => {
       const tokenLockingAddress = await colonyNetwork.getTokenLocking();
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IColony.at(metaColonyAddress);
-      const clnyAddress = await metaColony.getToken();
+      clnyAddress = await metaColony.getToken();
 
       // slot 4: colonyNetworkAddress
       // slot 5: tokenLockingAddress

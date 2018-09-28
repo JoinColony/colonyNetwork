@@ -100,13 +100,6 @@ contract ColonyStorage is CommonStorage, DSMath {
   uint8 constant CANCELLED = 1;
   uint8 constant FINALIZED = 2;
 
-  // Variables for recovery mode
-  bool recoveryMode;
-  uint64 recoveryRolesCount;
-  uint64 recoveryApprovalCount;
-  uint256 recoveryEditedTimestamp;
-  mapping (address => uint256) recoveryApprovalTimestamps;
-
   // Mapping task id to current "active" nonce for executing task changes
   mapping (uint256 => uint256) taskChangeNonces;
 
@@ -211,6 +204,10 @@ contract ColonyStorage is CommonStorage, DSMath {
 
   modifier stoppable() {
     require(!recoveryMode, "colony-in-recovery-mode");
+    _;
+  }
+
+  modifier always() {
     _;
   }
 

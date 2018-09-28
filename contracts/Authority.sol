@@ -74,7 +74,7 @@ contract Authority is DSRoles {
     // Update arbitrary storage value
     setRecoveryRoleCapability(colony, "setStorageSlotRecovery(uint256,bytes32)");
     // Exit recovery mode and set resolver version
-    setRecoveryRoleCapability(colony, "exitRecoveryMode(uint256)");
+    setRecoveryRoleCapability(colony, "exitRecoveryMode()");
   }
 
   function setOwnerRoleCapability(address colony, bytes sig) private {

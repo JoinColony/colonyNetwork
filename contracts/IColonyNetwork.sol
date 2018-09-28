@@ -67,6 +67,20 @@ contract IColonyNetwork {
   /// @return inRecoveryMode Return true if recovery mode is active, false otherwise
   function isInRecoveryMode() public view returns (bool inRecoveryMode);
 
+  /// @notice Set new colony recovery role.
+  /// Can be called by owner.
+  /// @param _user User we want to give a recovery role to
+  function setRecoveryRole(address _user) public;
+
+  /// @notice Remove colony recovery role.
+  /// Can only be called by owner role.
+  /// @param _user User we want to remove recovery role from
+  function removeRecoveryRole(address _user) public;
+
+  /// @notice Return number of recovery roles.
+  /// @return numRoles Number of users with the recovery role (excluding owner)
+  function numRecoveryRoles() public view returns(uint64 numRoles);
+
   /// @notice Set a replacement log Entry if we're in recovery mode.
   /// @param _reputationMiningCycle The address of the reputation mining cycle that the log was in.
   /// @param _id The number of the log entry in the reputation mining cycle in question.

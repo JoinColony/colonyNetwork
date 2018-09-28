@@ -23,7 +23,7 @@ import "./ColonyNetworkStorage.sol";
 contract ColonyNetworkAuction is ColonyNetworkStorage {
   event AuctionCreated(address auction, address token, uint256 quantity);
 
-  function startTokenAuction(address _token) public {
+  function startTokenAuction(address _token) public stoppable {
     uint lastAuctionTimestamp = recentAuctions[_token];
     require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
     address clny = IColony(metaColony).getToken();

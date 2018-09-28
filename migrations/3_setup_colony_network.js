@@ -2,6 +2,7 @@
 /* eslint-disable no-console */
 const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");
 
+const AuthorityNetwork = artifacts.require("./AuthorityNetwork");
 const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
@@ -18,6 +19,7 @@ module.exports = deployer => {
   let colonyNetworkAuction;
   let colonyNetworkENS;
   let contractRecovery;
+  let authorityNetwork;
   deployer
     .then(() => ColonyNetwork.deployed())
     .then(instance => {
@@ -56,8 +58,22 @@ module.exports = deployer => {
         contractRecovery
       );
     })
+    .then(() => AuthorityNetwork.new(etherRouter.address))
+    .then(instance => {
+      authorityNetwork = instance;
+      return authorityNetwork.setOwner(etherRouter.address);
+    })
+    .then(() => ColonyNetwork.at(etherRouter.address))
+    .then(instance => instance.setAuthority(authorityNetwork.address))
     .then(() => {
-      console.log("### Colony Network setup with Resolver", resolver.address, "and EtherRouter", etherRouter.address);
+      console.log(
+        "### Colony Network setup with Resolver",
+        resolver.address,
+        ", EtherRouter",
+        etherRouter.address,
+        " and Authority ",
+        authorityNetwork.address
+      );
     })
     .catch(err => {
       console.log("### Error occurred ", err);

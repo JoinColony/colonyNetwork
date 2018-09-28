@@ -232,11 +232,11 @@ contract IColony {
   function approveExitRecovery() public;
 
   /// @notice Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
-  /// @param _newVersion Resolver version to upgrade to (>= current version)
-  function exitRecoveryMode(uint256 _newVersion) public;
+  function exitRecoveryMode() public;
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public;
 
+  function isInRecoveryMode() public returns (bool inRecoveryMode);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members

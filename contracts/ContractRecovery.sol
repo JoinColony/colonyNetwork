@@ -30,8 +30,12 @@ contract ContractRecovery is CommonStorage {
     _;
   }
 
-  modifier stoppable {
+  modifier stoppable() {
     require(!recoveryMode, "colony-in-recovery-mode");
+    _;
+  }
+
+  modifier always() {
     _;
   }
 
@@ -40,7 +44,7 @@ contract ContractRecovery is CommonStorage {
     require(_slot != OWNER_SLOT, "colony-common-protected-variable");
     require(_slot != RESOLVER_SLOT, "colony-common-protected-variable");
 
-    // This isn't necessarily a colony - could be ColonyNetwork.
+    // NB. This isn't necessarily a colony - could be ColonyNetwork. But they both have this function, so it's okay.
     IColony(this).checkNotAdditionalProtectedVariable(_slot);
 
     // Protect key variables
@@ -79,9 +83,11 @@ contract ContractRecovery is CommonStorage {
   }
 
   function exitRecoveryMode() public recovery auth {
-    uint numRequired = recoveryRolesCount / 2 + 1;
+    uint totalAuthorized = recoveryRolesCount;
+    // Don't double count the owner (if set);
+    if (owner != 0x0 && !Authority(authority).hasUserRole(owner, RECOVERY_ROLE)) { totalAuthorized += 1; }
+    uint numRequired = totalAuthorized / 2 + 1;
     require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
-
     recoveryMode = false;
   }
 

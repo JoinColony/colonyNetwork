@@ -181,7 +181,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return true;
   }
 
-  function upgrade(uint256 _newVersion) public stoppable auth {
+  function upgrade(uint256 _newVersion) public always auth {
     // Upgrades can only go up in version
     uint256 currentVersion = version();
     require(_newVersion > currentVersion, "colony-version-must-be-newer");
@@ -218,12 +218,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit PotAdded(potCount);
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public recovery {
     uint256 slot = _slot;
+    bool protected = false;
     assembly {
-      if eq(slot, colonyNetworkAddress_slot) { revert (0, "colony-protected-variable")}
+      if eq(slot, colonyNetworkAddress_slot) { protected := 1 }
     }
-
+    require(!protected, "colony-protected-variable");
   }
 
 }

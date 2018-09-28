@@ -112,7 +112,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return miningCycleResolver;
   }
 
-  function createMetaColony(address _tokenAddress) public
+  function createMetaColony(address _tokenAddress) public stoppable
   auth
   {
     require(metaColony == 0, "colony-meta-colony-exists-already");
@@ -129,7 +129,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     this.addSkill(skillCount, false);
   }
 
-  function createColony(address _tokenAddress) public returns (address) {
+  function createColony(address _tokenAddress) public stoppable returns (address) {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
@@ -174,7 +174,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return colonies[_id];
   }
 
-  function addSkill(uint _parentSkillId, bool _globalSkill) public
+  function addSkill(uint _parentSkillId, bool _globalSkill) public stoppable
   skillExists(_parentSkillId)
   allowedToAddSkill(_globalSkill)
   nonZero(_parentSkillId)
@@ -236,7 +236,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skill.children[_childSkillIndex];
   }
 
-  function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
+  function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public stoppable
   calledByColony
   skillExists(_skillId)
   {
@@ -268,6 +268,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public recovery {
   }
 }
