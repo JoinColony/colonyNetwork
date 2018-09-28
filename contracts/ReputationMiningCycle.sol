@@ -35,8 +35,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
-    require(nSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-completed1");
-    require(disputeRounds[roundNumber].length == 1, "colony-reputation-mining-final-round-not-completed2"); //i.e. this is the final round
+    require(nSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-complete");
+    require(disputeRounds[roundNumber].length == 1, "colony-reputation-mining-not-final-round"); //i.e. this is the final round
     // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
     // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
     // element is zeroed. If this functionality of 'delete' is ever changed, this will have to change too.
@@ -402,7 +402,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
   function appendReputationUpdateLog(
     address _user,
-    int _amount,
+    int256 _amount,
     uint256 _skillId,
     address _colonyAddress,
     uint256 _nParents,
@@ -419,9 +419,18 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     if (_amount < 0) {
       nUpdates += 2 * _nChildren;
     }
+
+    int256 amount = _amount;
+    // Cap reputation amount to max int128
+    if (_amount > MAX_INT128) {
+      amount = MAX_INT128;
+    } else if (_amount < MIN_INT128) {
+      amount = MIN_INT128;
+    }
+
     reputationUpdateLog.push(ReputationLogEntry(
       _user,
-      _amount,
+      amount, // Potentially adjusted amount to int128 scoe
       _skillId,
       _colonyAddress,
       nUpdates,
@@ -458,6 +467,13 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     for (uint256 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
+
+      int256 amount = int256(reward);
+      // Cap reputation amount to int128
+      if (amount > MAX_INT128) {
+        amount = MAX_INT128;
+      }
+
       reputationUpdateLog.push(ReputationLogEntry(
         stakers[i],
         int256(wmul(reward, weights[i])),

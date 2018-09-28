@@ -32,7 +32,7 @@ import "./ReputationMiningCycleStorage.sol";
 contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
 
   event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
-  event ProveValueSuccess(uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue, uint256 _originReputationValue);
+  event ProveValueSuccess(int256 _agreeStateReputationValue, int256 _disagreeStateReputationValue, int256 _originReputationValue);
 
   /// @notice A modifier that checks if the challenge corresponding to the hash in the passed `round` and `id` is open
   /// @param round The round number of the hash under consideration
@@ -343,6 +343,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         disagreeStateReputationUID := mload(add(disagreeStateReputationValueBytes, 64))
     }
 
+    require(agreeStateReputationValue <= uint(MAX_INT128), "colony-reputation-mining-agreed-state-value-exceeds-max");
+    require(disagreeStateReputationValue <= uint(MAX_INT128), "colony-reputation-mining-disagree-state-value-exceeds-max");
+
     proveUID(
       u,
       agreeStateReputationUID,
@@ -354,9 +357,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     proveValue(
       u,
-      agreeStateReputationValue,
+      int256(agreeStateReputationValue),
       agreeStateSiblings,
-      disagreeStateReputationValue,
+      int256(disagreeStateReputationValue),
       originReputationKey,
       originReputationValueBytes,
       originReputationSiblings);
@@ -401,9 +404,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function proveValue(
     uint256[11] u,
-    uint256 _agreeStateReputationValue,
+    int256 _agreeStateReputationValue,
     bytes32[] _agreeStateSiblings,
-    uint256 _disagreeStateReputationValue,
+    int256 _disagreeStateReputationValue,
     bytes _originReputationKey,
     bytes _originReputationValueBytes,
     bytes32[] _originReputationSiblings
@@ -411,30 +414,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
-    uint256 originReputationValue;
+    uint256 _originReputationValue;
     assembly {
-        originReputationValue := mload(add(_originReputationValueBytes, 32))
+      _originReputationValue := mload(add(_originReputationValueBytes, 32))
     }
+    require(_originReputationValue <= uint(MAX_INT128), "colony-reputation-mining-origin-value-exceeds-max");
+    int256 originReputationValue = int256(_originReputationValue);
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
     if (u[U_DECAY_TRANSITION] == 1) {
-      // Very large reputation decays are calculated the 'other way around' to avoid overflows.
-      if (agreeStateReputationValue > uint256(2**256 - 1)/uint256(10**15)) {
-        require(_disagreeStateReputationValue == (_agreeStateReputationValue/DECAY_DENOMINATOR)*DECAY_NUMERATOR, "colony-reputation-mining-decay-incorrect");
-      } else {
-        require(_disagreeStateReputationValue == (_agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
-      }
+      require(_disagreeStateReputationValue == (_agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
     } else {
-      int amount = logEntry.amount;
+      int256 amount = logEntry.amount;
       if (amount >= 0) {
         // Don't allow reputation to overflow
-        if (uint(amount) + _agreeStateReputationValue < _agreeStateReputationValue) {
-          require(_disagreeStateReputationValue == 2**256 - 1, "colony-reputation-mining-reputation-not-max-uint");
+        if (_agreeStateReputationValue + logEntry.amount >= MAX_INT128) {
+          require(_disagreeStateReputationValue == MAX_INT128, "colony-reputation-mining-reputation-not-max-int128");
         } else {
-          // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
-          // Can't we convert `amount` to uint instead of these explicit converstions to (int)? For sufficiently large uints this converstion would produce the wrong results?
-          require(int(_agreeStateReputationValue) + amount == int(_disagreeStateReputationValue), "colony-reputation-mining-increased-reputation-value-incorrect");
+          require(_agreeStateReputationValue + amount == _disagreeStateReputationValue, "colony-reputation-mining-increased-reputation-value-incorrect");
         }
       } else {
         // We are working with a negative amount, which needs to be treated differently for child updates and everything else
@@ -446,18 +444,17 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
         uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
 
+        // Check if we are working with a child reputation update
         if (relativeUpdateNumber < nChildUpdates ||
             ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
-          // We are working with a child update! Check adjusted amount instead of this impossible calculation
-          // int childAmount = amount * _agreeStateReputationValue / _originSkillReputationValue
-          // TODO: There is a potential overflow here (see below) which we're agreed to deal with via limiting the reputation amount to a uint128 max value
-          // if (uint(amount * -1) > uint256(2**256 - 1) / _agreeStateReputationValue)
-
-          // Don't allow origin reputation to underflow
-          if (uint(amount * -1) > originReputationValue) {
+          // Don't allow origin reputation to become negative
+          if (originReputationValue + amount < 0) {
             require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
+          } else if (originReputationValue == 0) {
+            require(_agreeStateReputationValue == _disagreeStateReputationValue, "colony-reputation-mining-reputation-values-changed");
           } else {
-            require(_agreeStateReputationValue - _disagreeStateReputationValue == ((uint(amount * -1) * _agreeStateReputationValue) / originReputationValue), "colony-reputation-mining-child-reputation-value-incorrect");
+            int256 childAmount = amount * _agreeStateReputationValue / originReputationValue;
+            require(_agreeStateReputationValue + childAmount == _disagreeStateReputationValue, "colony-reputation-mining-child-reputation-value-incorrect");
           }
 
           checkOriginReputationInState(
@@ -467,12 +464,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             _originReputationValueBytes,
             _originReputationSiblings);
         } else {
-          // Don't allow reputation to underflow
-          if (uint(amount * -1) > _agreeStateReputationValue) {
+          // Don't allow reputation to become negative
+          if (_agreeStateReputationValue + amount < 0) {
             require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
           } else {
-            // TODO: Is this safe? I think so, because even if there's over/underflows, they should still be the same number.
-            require(int(_agreeStateReputationValue)+amount == int(_disagreeStateReputationValue), "colony-reputation-mining-decreased-reputation-value-incorrect");
+            require(_agreeStateReputationValue + amount == _disagreeStateReputationValue, "colony-reputation-mining-decreased-reputation-value-incorrect");
           }
         }
       }

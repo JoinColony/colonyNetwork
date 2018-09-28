@@ -22,7 +22,7 @@ contract ReputationMiningCycleDataTypes {
 
   struct ReputationLogEntry {
     address user;
-    int amount;
+    int256 amount;
     uint256 skillId;
     address colony;
     uint256 nUpdates;

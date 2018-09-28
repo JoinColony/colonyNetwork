@@ -161,11 +161,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param _nChildren The number of child skills the skill defined by the skillId has
   function appendReputationUpdateLog(
     address _user,
-    int _amount,
-    uint _skillId,
+    int256 _amount,
+    uint256 _skillId,
     address _colonyAddress,
-    uint _nParents,
-    uint _nChildren
+    uint256 _nParents,
+    uint256 _nChildren
     ) public;
 
   /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract

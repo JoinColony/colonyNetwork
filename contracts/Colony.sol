@@ -105,7 +105,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     for (uint i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
-
+      
       token.transfer(_users[i], uint(_amounts[i]));
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }

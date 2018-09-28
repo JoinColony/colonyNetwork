@@ -9,6 +9,7 @@ import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
   UINT256_MAX,
+  INT128_MAX,
   WAD,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
@@ -1371,13 +1372,13 @@ contract("Colony Funding", accounts => {
         totalAmountOfPayoutTokens: new BN(90000000000)
       },
       {
-        totalReputation: new BN(10).pow(new BN(76)).muln(3),
-        totalAmountOfPayoutTokens: new BN(10).pow(new BN(76)).muln(9)
+        totalReputation: new BN(3).mul(new BN(10).pow(new BN(35))),
+        totalAmountOfPayoutTokens: new BN(9).mul(new BN(10).pow(new BN(35)))
       },
       {
         // This is highest possible value for colony-wide reputation that can be used for reward payouts
-        totalReputation: bnSqrt(UINT256_MAX).pow(new BN(2)),
-        totalAmountOfPayoutTokens: UINT256_MAX
+        totalReputation: bnSqrt(INT128_MAX).pow(new BN(2)),
+        totalAmountOfPayoutTokens: INT128_MAX
       }
     ];
 

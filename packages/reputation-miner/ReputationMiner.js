@@ -192,11 +192,7 @@ class ReputationMiner {
       const numerator   = ethers.utils.bigNumberify("992327946262944");
       const denominator = ethers.utils.bigNumberify("1000000000000000");
 
-      if (reputation.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(denominator))) {
-        newReputation = reputation.div(denominator).mul(numerator);
-      } else {
-        newReputation = reputation.mul(numerator).div(denominator);
-      }
+      const newReputation = reputation.mul(numerator).div(denominator);
       const reputationChange = newReputation.sub(reputation);
       amount = this.getAmount(updateNumber, reputationChange);
     } else {
@@ -239,32 +235,29 @@ class ReputationMiner {
             originReputationProof = await this.getReputationProofObject(originSkillKey);
 
             if (!originReputationValue.isZero()) {
-              let key;
+              let keyUsedInCalculations;
               // For colony wide reputation updates, consider the key of the origin user reputation
               if (relativeUpdateNumber.lt(nChildUpdates)) {
-               const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
-                key = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
+                const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
+                keyUsedInCalculations = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
               } else {
-                key = await this.getKeyForUpdateNumber(updateNumber);
+                keyUsedInCalculations = await this.getKeyForUpdateNumber(updateNumber);
               }
 
-              const childSkillKeyExists = this.reputations[key] !== undefined;
+              const childSkillKeyExists = this.reputations[keyUsedInCalculations] !== undefined;
               if (childSkillKeyExists) {
-                const childSkillReputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
+                const childSkillReputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
 
                 let targetAmount;
-                const absAmount = amount.mul(-1);
-                if (absAmount.gt(originReputationValue)) {
-                  amount = originReputationValue;
+
+                if (originReputationValue.add(amount).lt(0)) {
+                  targetAmount = originReputationValue.mul(-1);
                 } else {
-                  // Ensure we don't overflow the calculation
-                  if (absAmount.gt(ethers.utils.bigNumberify("2").pow(256).sub(1).div(childSkillReputation))) {
-                    targetAmount = childSkillReputation.div(originReputationValue).mul(amount);
-                  } else {
-                    targetAmount = childSkillReputation.mul(amount).div(originReputationValue);
-                  }
-                  amount = targetAmount;
+                  targetAmount = childSkillReputation.mul(amount).div(originReputationValue);
+                  // Ensure the child reputation update doesn't underflow
+                  targetAmount = childSkillReputation.add(targetAmount).lt(0) ? childSkillReputation.mul(-1) : targetAmount;
                 }
+                amount = targetAmount;
               } else {
                 // Set to 0, if the child skill does not exist yet, as that cannot go negative
                 amount = ethers.utils.bigNumberify("0");
@@ -891,7 +884,7 @@ class ReputationMiner {
       }
       const upperLimit = ethers.utils
         .bigNumberify(2)
-        .pow(256)
+        .pow(127)
         .sub(1);
 
       if (newValue.gt(upperLimit)) {
@@ -903,6 +896,7 @@ class ReputationMiner {
       if (newValue.lt(0)) {
         newValue = ethers.constants.Zero;
       }
+
       // A new value can never overflow, so we don't need a 'capping' check here
       value = this.getValueAsBytes(newValue, this.nReputations.add(1), index);
       this.nReputations = this.nReputations.add(1);
