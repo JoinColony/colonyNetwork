@@ -28,7 +28,7 @@ contract ReputationMiningCycleStorage is DSAuth {
   ReputationLogEntry[] reputationUpdateLog;
   struct ReputationLogEntry {
     address user;
-    int amount;
+    int256 amount;
     uint256 skillId;
     address colony;
     uint256 nUpdates;
@@ -84,4 +84,6 @@ contract ReputationMiningCycleStorage is DSAuth {
   // Otherwise, people could keep submitting the same entry.
   mapping (bytes32 => mapping(address => mapping(uint256 => bool))) submittedEntries;
 
+  int256 constant MAX_INT128 = 2**127 - 1;
+  int256 constant MIN_INT128 = (2**127)*(-1);
 }

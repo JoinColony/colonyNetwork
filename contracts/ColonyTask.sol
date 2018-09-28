@@ -474,7 +474,7 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  function getReputation(int payout, uint8 rating, bool rateFail) internal pure returns(int reputation) {
+  function getReputation(int payout, uint8 rating, bool rateFail) internal pure returns(int256 reputation) {
     require(rating > 0 && rating <= 3, "colony-task-rating-invalid");
 
     // -1, 1, 1.5 multipliers, -0.5 penalty
