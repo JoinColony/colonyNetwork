@@ -1544,18 +1544,18 @@ contract("Colony Funding", accounts => {
         totalAmountOfPayoutTokens: toBN(90000000000)
       },
       {
-        totalReputation: toBN(3).mul(toBN(10).pow(toBN(76))),
-        totalAmountOfPayoutTokens: toBN(9).mul(toBN(10).pow(toBN(76)))
+        totalReputation: toBN(3).mul(toBN(10).pow(toBN(35))),
+        totalAmountOfPayoutTokens: toBN(9).mul(toBN(10).pow(toBN(35)))
       },
       {
         // This is highest possible value for colony-wide reputation that can be used for reward payouts
         totalReputation: bnSqrt(
           toBN(2)
-            .pow(toBN(256))
+            .pow(toBN(127))
             .sub(toBN(1))
         ).pow(toBN(2)),
         totalAmountOfPayoutTokens: toBN(2)
-          .pow(toBN(256))
+          .pow(toBN(127))
           .sub(toBN(1))
       }
     ];

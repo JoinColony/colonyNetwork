@@ -25,7 +25,7 @@ contract IReputationMiningCycle {
   event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
   
   /// @notice Event logged when a reputation value is proven to be correct in a challenge
-  event ProveValueSuccess(uint256 _agreeStateReputationValue, uint256 _disagreeStateReputationValue, uint256 _originReputationValue);
+  event ProveValueSuccess(int256 _agreeStateReputationValue, int256 _disagreeStateReputationValue, int256 _originReputationValue);
 
   /// @notice The getter for the disputeRounds mapping of array of dispute rounds.
   /// @param _round The dispute round to query
@@ -181,11 +181,11 @@ contract IReputationMiningCycle {
   /// @param _nChildren The number of child skills the skill defined by the skillId has
   function appendReputationUpdateLog(
     address _user,
-    int _amount,
-    uint _skillId,
+    int256 _amount,
+    uint256 _skillId,
     address _colonyAddress,
-    uint _nParents,
-    uint _nChildren
+    uint256 _nParents,
+    uint256 _nChildren
     ) public;
 
   /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract
@@ -216,7 +216,7 @@ contract IReputationMiningCycle {
   /// @dev Only callable by colonyNetwork
   /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
-  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public;
+  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint256 reward, uint miningSkillId) public;
 
   /// @notice Get the timestamp that the current reputation mining window opened
   function getReputationMiningWindowOpenTimestamp() public view returns (uint256 timestamp);
