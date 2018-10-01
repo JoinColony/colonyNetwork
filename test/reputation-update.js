@@ -22,6 +22,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("Colony Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -44,10 +45,12 @@ contract("Colony Reputation Updates", accounts => {
     const colonyFunding = await ColonyFunding.new();
     const colonyTask = await ColonyTask.new();
     const resolver = await Resolver.new();
+    const contractRecovery = await ContractRecovery.new();
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+
     const tokenArgs = getTokenArgs();
     colonyToken = await Token.new(...tokenArgs);
     await colonyNetwork.createMetaColony(colonyToken.address);

@@ -42,6 +42,7 @@ const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 const oneHourLater = async () => forwardTime(3600, this);
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -66,6 +67,7 @@ contract("All", accounts => {
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
+  let contractRecovery;
 
   before(async () => {
     colony = await Colony.new();
@@ -74,8 +76,9 @@ contract("All", accounts => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     colonyTask = await ColonyTask.new();
     colonyFunding = await ColonyFunding.new();
+    contractRecovery = await ContractRecovery.new();
 
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
 

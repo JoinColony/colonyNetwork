@@ -14,6 +14,7 @@ const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
 const Authority = artifacts.require("Authority");
 const Token = artifacts.require("Token");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("Colony contract upgrade", accounts => {
   const ACCOUNT_ONE = accounts[0];
@@ -26,6 +27,7 @@ contract("Colony contract upgrade", accounts => {
   let colonyNetwork;
   let updatedColony;
   let updatedColonyVersion;
+  let contractRecovery;
 
   let dueDate;
 
@@ -42,6 +44,7 @@ contract("Colony contract upgrade", accounts => {
     colony = await IColony.at(colonyAddress);
     colonyTask = await ColonyTask.new();
     colonyFunding = await ColonyFunding.new();
+    contractRecovery = await ContractRecovery.new();
     const authorityAddress = await colony.authority();
     authority = await Authority.at(authorityAddress);
     const tokenAddress = await colony.getToken();
@@ -53,7 +56,8 @@ contract("Colony contract upgrade", accounts => {
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", updatedColonyContract.address);
-    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, resolver, colonyNetwork);
+    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+
     // Check new Colony contract version is registered successfully
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
 
