@@ -127,4 +127,8 @@ contract ColonyNetworkStorage is CommonStorage, DSMath {
     require(!recoveryMode, "colony-in-recovery-mode");
     _;
   }
+
+  modifier always {
+    _;
+  }
 }

@@ -91,6 +91,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function setTokenLocking(address _tokenLocking) public
+  stoppable
   auth
   {
     // Token locking address can't be changed
@@ -103,12 +104,13 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function setMiningResolver(address _miningResolver) public
+  stoppable
   auth
   {
     miningCycleResolver = _miningResolver;
   }
 
-  function getMiningResolver() public returns (address) {
+  function getMiningResolver() public view returns (address) {
     return miningCycleResolver;
   }
 
@@ -162,6 +164,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function addColonyVersion(uint _version, address _resolver) public
+  always
   auth
   {
     colonyVersionResolver[_version] = _resolver;
@@ -236,7 +239,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skill.children[_childSkillIndex];
   }
 
-  function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public stoppable
+  function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
+  stoppable
   calledByColony
   skillExists(_skillId)
   {

@@ -47,7 +47,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
       interfaceID == ADDR_INTERFACE_ID );
   }
 
-  function setupRegistrar(address _ens, bytes32 _rootNode) public auth {
+  function setupRegistrar(address _ens, bytes32 _rootNode) public auth stoppable {
     ens = _ens;
     rootNode = _rootNode;
     userNode = keccak256(abi.encodePacked(rootNode, USER_HASH));
@@ -58,6 +58,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   function registerUserLabel(string username, string orbitdb)
   public
+  stoppable
   // NB there is no way to call this as a colony yet - this is just future proofing us once there is
   notCalledByColony
   unowned(userNode, username)
@@ -78,6 +79,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
   public
   calledByColony
   unowned(colonyNode, colonyName)
+  stoppable
   {
     require(bytes(colonyName).length > 0, "colony-colony-label-invalid");
     require(bytes(colonyLabels[msg.sender]).length == 0, "colony-already-labeled");
