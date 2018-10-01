@@ -192,6 +192,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     e.setResolver(newResolver);
   }
 
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public recovery {
+    bool protected = false;
+    uint256 networkAddressSlot;
+    assembly {
+      // Use this if statement once https://github.com/sc-forks/solidity-coverage/issues/287 fixed
+      // if eq(slot, colonyNetworkAddress_slot) { protected := 1 }
+      networkAddressSlot := colonyNetworkAddress_slot
+    }
+    if (networkAddressSlot==_slot) {
+      protected = true;
+    }
+    require(!protected, "colony-protected-variable");
+  }
+
   function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
   private
   {
@@ -216,15 +230,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     emit DomainAdded(domainCount);
     emit PotAdded(potCount);
-  }
-
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public recovery {
-    uint256 slot = _slot;
-    bool protected = false;
-    assembly {
-      if eq(slot, colonyNetworkAddress_slot) { protected := 1 }
-    }
-    require(!protected, "colony-protected-variable");
   }
 
 }

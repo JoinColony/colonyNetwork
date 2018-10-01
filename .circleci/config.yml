@@ -64,9 +64,6 @@ jobs:
           name: "Running unit tests"
           command: yarn run test:contracts
       - run:
-          name: "Running recovery mode tests"
-          command: yarn run test:contracts:recovery
-      - run:
           name: "Running upgrade tests"
           command: yarn run test:contracts:upgrade
       - run:
