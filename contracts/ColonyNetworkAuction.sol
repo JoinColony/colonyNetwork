@@ -20,7 +20,6 @@ pragma experimental "v0.5.0";
 
 import "./ColonyNetworkStorage.sol";
 
-
 contract ColonyNetworkAuction is ColonyNetworkStorage {
   event AuctionCreated(address auction, address token, uint256 quantity);
 
@@ -28,7 +27,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     uint lastAuctionTimestamp = recentAuctions[_token];
     require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
     address clny = IColony(metaColony).getToken();
-    DutchAuction auction = new DutchAuction(clny, _token);
+    DutchAuction auction = new DutchAuction(clny, _token, metaColony);
     uint availableTokens = ERC20Extended(_token).balanceOf(this);
     ERC20Extended(_token).transfer(auction, availableTokens);
     auction.start();
@@ -40,6 +39,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
 
 contract DutchAuction is DSMath {
   address public colonyNetwork;
+  address public metaColony;
   ERC20Extended public clnyToken;
   ERC20Extended public token;
 
@@ -99,8 +99,9 @@ contract DutchAuction is DSMath {
   event AuctionClaim(address indexed _recipient, uint _sentAmount);
   event AuctionFinalized(uint _finalPrice);
 
-  constructor(address _clnyToken, address _token) public {
+  constructor(address _clnyToken, address _token, address _metaColony) public {
     colonyNetwork = msg.sender;
+    metaColony = _metaColony;
     require(_clnyToken != 0x0 && _token != 0x0, "colony-auction-invalid-token");
     assert(_token != _clnyToken);
     clnyToken = ERC20Extended(_clnyToken);
@@ -174,8 +175,8 @@ contract DutchAuction is DSMath {
   auctionClosed
   auctionNotFinalized
   {
-    // Give the network all CLNY sent to the auction in bids
-    clnyToken.transfer(colonyNetwork, receivedTotal);
+    // Give the metacolony all CLNY sent to the auction in bids
+    clnyToken.transfer(metaColony, receivedTotal);
     finalPrice = add((mul(receivedTotal, TOKEN_MULTIPLIER) / quantity), 1);
     finalized = true;
     emit AuctionFinalized(finalPrice);

@@ -315,12 +315,12 @@ contract("ColonyNetworkAuction", accounts => {
       assert.isTrue(finalized);
     });
 
-    it("Colony network gets all CLNY sent to the auction in bids", async () => {
-      const balanceBefore = await clny.balanceOf(colonyNetwork.address);
+    it("The metacolony gets all CLNY sent to the auction in bids", async () => {
+      const balanceBefore = await clny.balanceOf(metaColony.address);
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
       assert.isFalse(receivedTotal.isZero());
-      const balanceAfter = await clny.balanceOf(colonyNetwork.address);
+      const balanceAfter = await clny.balanceOf(metaColony.address);
       assert.equal(balanceBefore.add(receivedTotal).toString(), balanceAfter.toString());
     });
 
