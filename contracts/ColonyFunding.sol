@@ -135,7 +135,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
 
-    // TODO Only allow sending from created pots - perhaps not necessary explicitly, but if not, note as such here.
+    // Preventing sending from non-existent pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
+    // prevent sending to nonexistent pots) but doing this check explicitly gives us the error message for clients.
+    require(_fromPot <= potCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
     require(_toPot <= potCount, "colony-funding-nonexistent-pot"); // Only allow sending to created pots
 
     uint fromTaskId = pots[_fromPot].taskId;
