@@ -47,11 +47,6 @@ contract IColonyNetwork {
   /// @param nNodes The number of nodes in the reputation state
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
 
-  // Implemented in DSAuth.sol
-  /// @notice Set the `Authority` for the colony
-  /// @param _authority The `Authority` contract address
-  function setAuthority(address _authority) public;
-
   /// @notice Put colony network mining into recovery mode.
   /// Can only be called by user with recovery role.
   function enterRecoveryMode() public;
@@ -63,7 +58,7 @@ contract IColonyNetwork {
   /// Can only be called by user with recovery role.
   function approveExitRecovery() public;
 
-  /// @notice Is colony network mining in recovery mode
+  /// @notice Is colony network in recovery mode
   /// @return inRecoveryMode Return true if recovery mode is active, false otherwise
   function isInRecoveryMode() public view returns (bool inRecoveryMode);
 
@@ -124,7 +119,12 @@ contract IColonyNetwork {
   /// @dev certain critical variables are protected from editing in this function
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public;
+  /// @notice Check whether the supplied slot is a protected variable specific to this contract
+  /// @param _slot The storage slot number to check.
+  /// @dev No return value, but should throw if protected.
+  /// @dev This is public, but is only expected to be called from ContractRecovery; no need to
+  /// @dev expose this to any users.
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view;
 
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165

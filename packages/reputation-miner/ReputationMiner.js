@@ -158,9 +158,7 @@ class ReputationMiner {
 
     // How many updates from the logs do we have?
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
-    if (nLogEntries.toNumber() === 0) {
-      return;
-    }
+
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1), { blockNumber });
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
     const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);

@@ -63,8 +63,7 @@ module.exports = deployer => {
       authorityNetwork = instance;
       return authorityNetwork.setOwner(etherRouter.address);
     })
-    .then(() => ColonyNetwork.at(etherRouter.address))
-    .then(instance => instance.setAuthority(authorityNetwork.address))
+    .then(() => etherRouter.setAuthority(authorityNetwork.address))
     .then(() => {
       console.log(
         "### Colony Network setup with Resolver",

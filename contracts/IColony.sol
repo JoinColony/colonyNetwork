@@ -234,9 +234,16 @@ contract IColony {
   /// @notice Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
   function exitRecoveryMode() public;
 
+  /// @notice Check whether the supplied slot is a protected variable specific to this contract
+  /// @param _slot The storage slot number to check.
+  /// @dev No return value, but should throw if protected.
+  /// @dev This is public, but is only expected to be called from ContractRecovery; no need to
+  /// @dev expose this to any users.
   function checkNotAdditionalProtectedVariable(uint256 _slot) public;
 
-  function isInRecoveryMode() public returns (bool inRecoveryMode);
+  /// @notice Returns whether the Contract is currently in recovery mode
+  /// @return bool True if in recovery mode, false otherwise
+  function isInRecoveryMode() public view returns (bool inRecoveryMode);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
