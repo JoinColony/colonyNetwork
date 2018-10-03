@@ -73,7 +73,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   // To get all payouts for a task iterate over roles.length
-  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256) {
+  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256) {
     Task storage task = tasks[_id];
     bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
     return unsatisfactory ? 0 : task.payouts[_role][_token];
@@ -87,7 +87,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return totalPayouts;
   }
 
-  function claimPayout(uint256 _id, uint256 _role, address _token) public
+  function claimPayout(uint256 _id, uint8 _role, address _token) public
   stoppable
   taskFinalized(_id)
   {
@@ -375,7 +375,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) private
+  function setTaskPayout(uint256 _id, uint8 _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotFinalized(_id)
   {

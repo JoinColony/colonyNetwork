@@ -123,9 +123,9 @@ contract ColonyStorage is DSAuth, DSMath {
     uint256[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
-    mapping (uint256 => Role) roles;
+    mapping (uint8 => Role) roles;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
-    mapping (uint256 => mapping (address => uint256)) payouts;
+    mapping (uint8 => mapping (address => uint256)) payouts;
   }
 
   enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }

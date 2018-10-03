@@ -465,7 +465,7 @@ contract IColony {
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Payout amount
-  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256 amount);
+  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256 amount);
 
   /// @notice Get total payout amount in `_token` denomination for task `_id`
   /// @param _id Id of the task
@@ -506,7 +506,7 @@ contract IColony {
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether
-  function claimPayout(uint256 _id, uint256 _role, address _token) public;
+  function claimPayout(uint256 _id, uint8 _role, address _token) public;
 
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
