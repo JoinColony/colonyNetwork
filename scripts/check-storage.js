@@ -46,12 +46,13 @@ walkSync("./contracts/").forEach(contractName => {
   // Filters out an unknown number of 'pragmas' that we have.
   const contract = result.children.filter(child => child.type === "ContractDefinition")[0];
   // Check for non-constant storage variables
+
   if (contract.subNodes.filter(child => child.type === "StateVariableDeclaration" && !child.variables[0].isDeclaredConst).length > 0) {
     console.log(
       "The contract ",
       contractName,
       " contains state variable declarations. ",
-      "Add new state variables to ColonyStorage instead to guarantee that the storage layout is the same between contracts."
+      "Add new state variables to relevant Storage contract instead, to guarantee that the storage layout is the same between contracts."
     );
     process.exit(1);
   }
