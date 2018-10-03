@@ -425,6 +425,13 @@ contract("Colony Funding", accounts => {
       assert.equal(colonyPotBalance.toNumber(), 99);
     });
 
+    it("should not allow attempts to move funds from nonexistent pots", async () => {
+      await fundColonyWithTokens(colony, otherToken, 100);
+      await checkErrorRevert(colony.moveFundsBetweenPots(5, 1, 40, otherToken.address), "colony-funding-from-nonexistent-pot");
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      assert.equal(colonyPotBalance.toNumber(), 99);
+    });
+
     it("should not allow funds to be removed from a task with payouts to go", async () => {
       await fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token: otherToken });
