@@ -316,9 +316,19 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // Require we've not submitted already.
     require(disputeRounds[round][index].jrh == 0x0, "colony-reputation-mining-hash-already-submitted");
 
+    // Get reputation root hash NNodes, which we need in both of the following checkJRHProofs
+    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
+
     // Check the proofs for the JRH
-    checkJRHProof1(jrh, branchMask1, siblings1);
-    checkJRHProof2(round, index, jrh, branchMask2, siblings2);
+    checkJRHProof1(jrh, branchMask1, siblings1, reputationRootHashNNodes);
+    checkJRHProof2(
+      round,
+      index,
+      jrh,
+      branchMask2,
+      siblings2,
+      reputationRootHashNNodes
+    );
 
     // Store their JRH
     disputeRounds[round][index].jrh = jrh;
@@ -506,10 +516,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
   }
 
-  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1) internal view {
+  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1, uint256 reputationRootHashNNodes) internal view {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
-    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     bytes memory jhLeafValue = new bytes(64);
     bytes memory zero = new bytes(32);
     assembly {
@@ -520,18 +529,24 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-1");
   }
 
-  function checkJRHProof2(uint256 round, uint256 index, bytes32 jrh, uint256 branchMask2, bytes32[] siblings2) internal {
+  function checkJRHProof2(
+    uint256 round,
+    uint256 index,
+    bytes32 jrh,
+    uint256 branchMask2,
+    bytes32[] siblings2,
+    uint256 reputationRootHashNNodes
+  ) internal
+  {
     // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
     // key is the number of updates implied by the contents of the reputation update log (implemented)
     // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)
     uint256 nLogEntries = reputationUpdateLog.length;
     // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
     // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
-    // TODO: we're calling this twice during submitJRH. Should only need to call once.
-    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
 
     uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
-    reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
+      reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;
