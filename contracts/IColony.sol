@@ -81,6 +81,13 @@ contract IColony is IRecovery {
   /// @param id Id of the finalized task
   event TaskFinalized(uint256 indexed id);
 
+  /// @notice Event logged when a task payout is claimed
+  /// @param id Id of the task
+  /// @param role Task role for which the payout is being claimed
+  /// @param token Token of the payout claim
+  /// @param amount Amount of the payout claim
+  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
+
   /// @notice Event logged when a task has been canceled
   /// @param id Id of the canceled task
   event TaskCanceled(uint256 indexed id);
@@ -467,7 +474,7 @@ contract IColony is IRecovery {
   /// @param _managerAmount Payout amount for manager
   /// @param _evaluatorAmount Payout amount for evaluator
   /// @param _workerAmount Payout amount for worker
-  function setAllTaskPayouts(uint256 _id,address _token,uint256 _managerAmount,uint256 _evaluatorAmount,uint256 _workerAmount) public;
+  function setAllTaskPayouts(uint256 _id, address _token, uint256 _managerAmount, uint256 _evaluatorAmount, uint256 _workerAmount) public;
 
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
   /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
