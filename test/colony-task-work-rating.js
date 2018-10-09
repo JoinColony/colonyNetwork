@@ -190,7 +190,7 @@ contract("Colony Task Work Rating", accounts => {
       assert.equal(ratingSecrets[0].toNumber(), 0);
     });
 
-    it("should fail if I try to submit work for a task using an invalid id", async () => {
+    it("should fail if I try to rate task using an invalid id", async () => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony });
 
       await checkErrorRevert(colony.submitTaskWorkRating(10, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }), "colony-task-does-not-exist");
