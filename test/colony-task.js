@@ -1346,7 +1346,7 @@ contract("ColonyTask", accounts => {
       dueDate += SECONDS_PER_DAY * 7;
 
       const taskId = await makeTask({ colony, dueDate });
-      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000, { from: OTHER }), "colony-funding-must-be-manager");
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000, { from: OTHER }), "colony-task-role-identity-mismatch");
       await colony.setAllTaskPayouts(taskId, 0x0, 5000, 1000, 98000);
 
       const taskPayoutManager = await colony.getTaskPayout(taskId, MANAGER_ROLE, 0x0);
