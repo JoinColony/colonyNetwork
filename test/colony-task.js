@@ -962,6 +962,26 @@ contract("ColonyTask", accounts => {
       );
     });
 
+    it("should fail to change task manager, if the task is complete", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const dueDate = await currentBlockTime();
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token, dueDate });
+      await forwardTime(SECONDS_PER_DAY);
+      await colony.completeTask(taskId);
+
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId,
+          functionName: "setTaskManagerRole",
+          signers: [MANAGER, COLONY_ADMIN],
+          sigTypes: [0, 0],
+          args: [taskId, COLONY_ADMIN]
+        }),
+        "colony-task-role-assignment-execution-failed"
+      );
+    });
+
     it("should log a TaskBriefChanged event, if the task brief gets changed", async () => {
       const taskId = await makeTask({ colony });
 

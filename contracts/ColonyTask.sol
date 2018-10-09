@@ -586,9 +586,9 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  // TODO: Check if we are changing a role before due date and before work has been submitted
   function setTaskRoleUser(uint256 _id, uint8 _role, address _user) private
   taskExists(_id)
+  taskNotComplete(_id)
   taskNotFinalized(_id)
   {
     tasks[_id].roles[_role] = Role({
