@@ -1186,7 +1186,7 @@ contract("ColonyTask", accounts => {
   describe("when cancelling a task", () => {
     it('should set the task "status" property to "cancelled"', async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
 
       await colony.cancelTask(taskId);
       const task = await colony.getTask(taskId);
@@ -1250,11 +1250,11 @@ contract("ColonyTask", accounts => {
       expect(originalDomainOtherTokenBalance.add(originalTaskOtherTokenBalance)).to.eq.BN(cancelledDomainOtherTokenBalance);
     });
 
-    it("should fail if manager tries to cancel a task that was finalized", async () => {
+    it("should fail if manager tries to cancel a task that was completed", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.cancelTask(taskId), "colony-task-already-finalized");
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
+      await colony.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER });
+      await checkErrorRevert(colony.cancelTask(taskId), "colony-task-complete");
     });
 
     it("should fail if manager tries to cancel a task with invalid id", async () => {
@@ -1265,7 +1265,7 @@ contract("ColonyTask", accounts => {
 
     it("should log a TaskCanceled event", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
       await expectEvent(colony.cancelTask(taskId), "TaskCanceled");
     });
   });

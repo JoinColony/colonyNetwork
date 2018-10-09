@@ -442,7 +442,7 @@ contract ColonyTask is ColonyStorage {
   stoppable
   auth
   taskExists(_id)
-  taskNotFinalized(_id)
+  taskNotComplete(_id)
   {
     tasks[_id].status = CANCELLED;
 
