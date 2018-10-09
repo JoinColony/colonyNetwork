@@ -381,7 +381,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   function setTaskPayout(uint256 _id, uint8 _role, address _token, uint256 _amount) private
   taskExists(_id)
-  taskNotFinalized(_id)
+  taskNotComplete(_id)
   {
     uint currentTotalAmount = getTotalTaskPayout(_id, _token);
     tasks[_id].payouts[_role][_token] = _amount;

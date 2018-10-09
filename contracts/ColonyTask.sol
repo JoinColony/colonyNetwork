@@ -61,16 +61,6 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  modifier taskComplete(uint256 _id) {
-    require(tasks[_id].completionTimestamp > 0, "colony-task-not-complete");
-    _;
-  }
-
-  modifier taskNotComplete(uint256 _id) {
-    require(tasks[_id].completionTimestamp == 0, "colony-task-complete");
-    _;
-  }
-
   modifier afterDueDate(uint256 _id) {
     uint dueDate = tasks[_id].dueDate;
     /* require(dueDate > 0, "colony-task-due-date-not-set"); */
@@ -344,8 +334,8 @@ contract ColonyTask is ColonyStorage {
   function setTaskDomain(uint256 _id, uint256 _domainId) public
   stoppable
   taskExists(_id)
-  taskNotFinalized(_id)
   domainExists(_domainId)
+  taskNotComplete(_id)
   confirmTaskRoleIdentity(_id, MANAGER)
   {
     tasks[_id].domainId = _domainId;
@@ -356,8 +346,8 @@ contract ColonyTask is ColonyStorage {
   function setTaskSkill(uint256 _id, uint256 _skillId) public
   stoppable
   taskExists(_id)
-  taskNotFinalized(_id)
   skillExists(_skillId)
+  taskNotComplete(_id)
   globalSkill(_skillId)
   self()
   {
@@ -369,7 +359,7 @@ contract ColonyTask is ColonyStorage {
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
   stoppable
   taskExists(_id)
-  taskNotFinalized(_id)
+  taskNotComplete(_id)
   self()
   {
     tasks[_id].specificationHash = _specificationHash;
@@ -380,7 +370,7 @@ contract ColonyTask is ColonyStorage {
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
   stoppable
   taskExists(_id)
-  taskNotFinalized(_id)
+  taskNotComplete(_id)
   self()
   {
     require (_dueDate > 0, "colony-task-due-date-cannot-be-zero");
@@ -589,7 +579,6 @@ contract ColonyTask is ColonyStorage {
   function setTaskRoleUser(uint256 _id, uint8 _role, address _user) private
   taskExists(_id)
   taskNotComplete(_id)
-  taskNotFinalized(_id)
   {
     tasks[_id].roles[_role] = Role({
       user: _user,

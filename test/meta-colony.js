@@ -415,11 +415,11 @@ contract("Meta Colony", accounts => {
       assert.equal(task[7].toNumber(), 1);
     });
 
-    it("should NOT be able to set a domain on finalized task", async () => {
+    it("should NOT be able to set a domain on completed task", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.setTaskDomain(taskId, 1), "colony-task-already-finalized");
+      await checkErrorRevert(colony.setTaskDomain(taskId, 1), "colony-task-complete");
     });
 
     it("should be able to set global skill on task", async () => {
@@ -455,13 +455,13 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(10, 1), "colony-task-does-not-exist");
     });
 
-    it("should NOT be able to set global skill on finalized task", async () => {
+    it("should NOT be able to set global skill on completed task", async () => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(5);
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-already-finalized");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-complete");
 
       const task = await colony.getTask(taskId);
       assert.equal(task[8][0].toNumber(), 1);

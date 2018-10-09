@@ -186,6 +186,16 @@ contract ColonyStorage is CommonStorage, DSMath {
     _;
   }
 
+  modifier taskComplete(uint256 _id) {
+    require(tasks[_id].completionTimestamp > 0, "colony-task-not-complete");
+    _;
+  }
+
+  modifier taskNotComplete(uint256 _id) {
+    require(tasks[_id].completionTimestamp == 0, "colony-task-complete");
+    _;
+  }
+
   modifier isInBootstrapPhase() {
     require(taskCount == 0, "colony-not-in-bootstrap-mode");
     _;
