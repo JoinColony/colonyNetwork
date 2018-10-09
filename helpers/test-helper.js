@@ -243,8 +243,8 @@ export async function createSignatures(colony, taskId, signers, value, data) {
     let user = signers[i].toString();
     user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
-    const prefixedMessageHash = ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
-    const sig = ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
+    const prefixedMessageHash = await ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex")); // eslint-disable-line no-await-in-loop
+    const sig = await ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex")); // eslint-disable-line no-await-in-loop
 
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);
@@ -339,7 +339,6 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 
   // Iterate from `startingEntryNumber ` up until the largest entry, until we find one we can submit now
   // or return an error
-  //
   const timestamp = await currentBlockTime();
   for (let i = startingEntryNumber; i <= nIter; i += 1) {
     const entryHash = await repCycle.getEntryHash(account, i, hash); // eslint-disable-line no-await-in-loop
