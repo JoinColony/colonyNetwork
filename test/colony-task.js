@@ -1458,14 +1458,9 @@ contract("ColonyTask", accounts => {
       expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(toBN(100 * 1e18));
     });
 
-    it.skip("should payout agreed ether for a task", async () => {
+    it("should payout agreed ether for a task", async () => {
       await colony.send(400);
       await colony.claimColonyFunds(0x0);
-
-      const pot0Balance1 = await colony.getPotBalance(0, 0x0);
-      const pot1Balance1 = await colony.getPotBalance(1, 0x0);
-      console.log("pot 0 balance 1", pot0Balance1.toString());
-      console.log("pot 1 balance 1", pot1Balance1.toString());
 
       let dueDate = await currentBlockTime();
       dueDate -= 1;
@@ -1483,20 +1478,14 @@ contract("ColonyTask", accounts => {
       const taskPotId = task[5].toNumber();
       const potBalanceBefore = await colony.getPotBalance(taskPotId, 0x0);
       const metaColonyAddress = await colonyNetwork.getMetaColony();
-      const managerBalanceBefore = await web3GetBalance(WORKER);
+      const workerBalanceBefore = await web3GetBalance(WORKER);
       const metaBalanceBefore = await web3GetBalance(metaColonyAddress);
 
       await colony.finalizeTask(taskId);
-      const x = await colony.getPotBalance(taskPotId, 0x0);
-      console.log("task pot ETH balance is", x.toNumber());
+      await colony.claimPayout(taskId, WORKER_ROLE, 0x0, { from: WORKER, gasPrice: 0 });
 
-      const y = await colony.getNonRewardPotsTotal(0x0);
-      console.log("nonRewardPotsTotal", y.toNumber());
-
-      await colony.claimPayout(taskId, WORKER_ROLE, 0x0, { from: WORKER });
-
-      const managerBalanceAfter = await web3GetBalance(WORKER);
-      expect(toBN(managerBalanceAfter).sub(toBN(managerBalanceBefore))).to.eq.BN(toBN(198));
+      const workerBalanceAfter = await web3GetBalance(WORKER);
+      expect(toBN(workerBalanceAfter).sub(toBN(workerBalanceBefore))).to.eq.BN(toBN(198));
 
       const metaBalanceAfter = await web3GetBalance(metaColonyAddress);
       expect(toBN(metaBalanceAfter).sub(toBN(metaBalanceBefore))).to.eq.BN(2);
