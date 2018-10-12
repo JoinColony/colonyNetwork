@@ -34,7 +34,7 @@ const contractLoader = new TruffleLoader({
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("Colony Network", accounts => {
+contract("Colony Network Recovery", accounts => {
   let colonyNetwork;
   let miningClient;
   let startingBlockNumber;
@@ -81,7 +81,7 @@ contract("Colony Network", accounts => {
     await colonyNetwork.removeRecoveryRole(accounts[2]);
   });
 
-  describe("Recovery Mode", () => {
+  describe("when using recovery mode", () => {
     it("should be able to add and remove recovery roles when not in recovery", async () => {
       const owner = accounts[0];
       let numRecoveryRoles;
