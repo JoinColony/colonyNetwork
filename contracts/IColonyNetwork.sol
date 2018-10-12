@@ -18,10 +18,11 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
+import "./IRecovery.sol";
 
 /// @title Colony Network interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColonyNetwork {
+contract IColonyNetwork is IRecovery {
 
   /// @notice Event logged when a new colony is added
   /// @dev Emitted from `IColonyNetwork.createColony` function
@@ -46,35 +47,6 @@ contract IColonyNetwork {
   /// @param hash The root hash of the newly accepted reputation state
   /// @param nNodes The number of nodes in the reputation state
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
-
-  /// @notice Put colony network mining into recovery mode.
-  /// Can only be called by user with recovery role.
-  function enterRecoveryMode() public;
-
-  /// @notice Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
-  function exitRecoveryMode() public;
-
-  /// @notice Indicate approval to exit recovery mode.
-  /// Can only be called by user with recovery role.
-  function approveExitRecovery() public;
-
-  /// @notice Is colony network in recovery mode
-  /// @return inRecoveryMode Return true if recovery mode is active, false otherwise
-  function isInRecoveryMode() public view returns (bool inRecoveryMode);
-
-  /// @notice Set new colony recovery role.
-  /// Can be called by owner.
-  /// @param _user User we want to give a recovery role to
-  function setRecoveryRole(address _user) public;
-
-  /// @notice Remove colony recovery role.
-  /// Can only be called by owner role.
-  /// @param _user User we want to remove recovery role from
-  function removeRecoveryRole(address _user) public;
-
-  /// @notice Return number of recovery roles.
-  /// @return numRoles Number of users with the recovery role (excluding owner)
-  function numRecoveryRoles() public view returns(uint64 numRoles);
 
   /// @notice Set a replacement log Entry if we're in recovery mode.
   /// @param _reputationMiningCycle The address of the reputation mining cycle that the log was in.
@@ -111,20 +83,6 @@ contract IColonyNetwork {
   /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
   /// @param _reputationMiningCycle The reputation mining cycle address we want to know if any entries have been replaced in.
   function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool);
-
-  /// @notice Update value of arbitrary storage variable.
-  /// Can only be called by user with recovery role.
-  /// @param _slot Uint address of storage slot to be updated
-  /// @param _value Bytes32 word of data to be set
-  /// @dev certain critical variables are protected from editing in this function
-  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
-
-  /// @notice Check whether the supplied slot is a protected variable specific to this contract
-  /// @param _slot The storage slot number to check.
-  /// @dev No return value, but should throw if protected.
-  /// @dev This is public, but is only expected to be called from ContractRecovery; no need to
-  /// @dev expose this to any users.
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view;
 
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165

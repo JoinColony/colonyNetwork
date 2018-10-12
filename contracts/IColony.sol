@@ -18,10 +18,11 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
+import "./IRecovery.sol";
 
 /// @title Colony interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColony {
+contract IColony is IRecovery {
   // Events
   /// @notice Event logged when a new task is added
   /// @param id The newly added task id
@@ -139,20 +140,6 @@ contract IColony {
   /// @param _user User we want to remove admin role from
   function removeAdminRole(address _user) public;
 
-  /// @notice Set new colony recovery role.
-  /// Can be called by owner.
-  /// @param _user User we want to give a recovery role to
-  function setRecoveryRole(address _user) public;
-
-  /// @notice Remove colony recovery role.
-  /// Can only be called by owner role.
-  /// @param _user User we want to remove recovery role from
-  function removeRecoveryRole(address _user) public;
-
-  /// @notice Return number of recovery roles.
-  /// @return numRoles Number of users with the recovery role (excluding owner)
-  function numRecoveryRoles() public view returns(uint64 numRoles);
-
   /// @notice Get the colony token
   /// @return tokenAddress Address of the token contract
   function getToken() public view returns (address tokenAddress);
@@ -215,35 +202,6 @@ contract IColony {
   /// reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function
   /// is not currently exposed on the Colony's EtherRouter.
   function verifyReputationProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool isValid);
-
-  /// @notice Put colony into recovery mode.
-  /// Can only be called by user with recovery role.
-  function enterRecoveryMode() public;
-
-  /// @notice Update value of arbitrary storage variable.
-  /// Can only be called by user with recovery role.
-  /// @param _slot Uint address of storage slot to be updated
-  /// @param _value Bytes32 word of data to be set
-  /// @dev certain critical variables are protected from editing in this function
-  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
-
-  /// @notice Indicate approval to exit recovery mode.
-  /// Can only be called by user with recovery role.
-  function approveExitRecovery() public;
-
-  /// @notice Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
-  function exitRecoveryMode() public;
-
-  /// @notice Check whether the supplied slot is a protected variable specific to this contract
-  /// @param _slot The storage slot number to check.
-  /// @dev No return value, but should throw if protected.
-  /// @dev This is public, but is only expected to be called from ContractRecovery; no need to
-  /// @dev expose this to any users.
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view;
-
-  /// @notice Returns whether the Contract is currently in recovery mode
-  /// @return bool True if in recovery mode, false otherwise
-  function isInRecoveryMode() public view returns (bool inRecoveryMode);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members

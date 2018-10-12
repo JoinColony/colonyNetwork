@@ -272,6 +272,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     }
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public recovery {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
   }
 }

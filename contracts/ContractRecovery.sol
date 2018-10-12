@@ -20,9 +20,10 @@ pragma experimental "v0.5.0";
 
 import "./CommonStorage.sol";
 import "./CommonAuthority.sol";
-import "./IColony.sol";
+import "./IRecovery.sol";
 
-
+/// @title Used for recovery in both ColonyNetwork and Colony instances
+/// @notice Implements functions defined in IRecovery interface
 contract ContractRecovery is CommonStorage {
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
@@ -31,7 +32,7 @@ contract ContractRecovery is CommonStorage {
     require(_slot != RESOLVER_SLOT, "colony-common-protected-variable");
 
     // NB. This isn't necessarily a colony - could be ColonyNetwork. But they both have this function, so it's okay.
-    IColony(this).checkNotAdditionalProtectedVariable(_slot);
+    IRecovery(this).checkNotAdditionalProtectedVariable(_slot);
 
     // Protect key variables
     uint64 _recoveryRolesCount = recoveryRolesCount;
@@ -97,5 +98,4 @@ contract ContractRecovery is CommonStorage {
   function numRecoveryRoles() public view returns(uint64) {
     return recoveryRolesCount;
   }
-
 }
