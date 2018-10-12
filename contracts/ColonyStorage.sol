@@ -88,7 +88,6 @@ contract ColonyStorage is CommonStorage, DSMath {
   // Colony-wide roles
   uint8 constant OWNER_ROLE = 0;
   uint8 constant ADMIN_ROLE = 1;
-  uint8 constant RECOVERY_ROLE = 2;
 
   // Task Roles
   uint8 constant MANAGER = 0;
@@ -194,20 +193,6 @@ contract ColonyStorage is CommonStorage, DSMath {
 
   modifier isAdmin(address _user) {
     require(ColonyAuthority(authority).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
-    _;
-  }
-
-  modifier recovery() {
-    require(recoveryMode, "colony-not-in-recovery-mode");
-    _;
-  }
-
-  modifier stoppable() {
-    require(!recoveryMode, "colony-in-recovery-mode");
-    _;
-  }
-
-  modifier always() {
     _;
   }
 

@@ -105,9 +105,6 @@ contract ColonyNetworkStorage is CommonStorage, DSMath {
   mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog;
   mapping (address => bool) replacementReputationUpdateLogsExist;
 
-  // Using the same value as we did in Colony to (hopefully) avoid confusion.
-  uint8 constant RECOVERY_ROLE = 2;
-
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;
@@ -115,20 +112,6 @@ contract ColonyNetworkStorage is CommonStorage, DSMath {
 
   modifier notCalledByColony() {
     require(!_isColony[msg.sender], "colony-caller-must-not-be-colony");
-    _;
-  }
-
-  modifier recovery() {
-    require(recoveryMode, "colony-not-in-recovery-mode");
-    _;
-  }
-
-  modifier stoppable {
-    require(!recoveryMode, "colony-in-recovery-mode");
-    _;
-  }
-
-  modifier always {
     _;
   }
 }

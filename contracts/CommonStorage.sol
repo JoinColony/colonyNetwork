@@ -38,4 +38,17 @@ contract CommonStorage is DSAuth {
   uint256 recoveryEditedTimestamp;
   mapping (address => uint256) recoveryApprovalTimestamps;
 
+  modifier recovery() {
+    require(recoveryMode, "colony-not-in-recovery-mode");
+    _;
+  }
+
+  modifier stoppable() {
+    require(!recoveryMode, "colony-in-recovery-mode");
+    _;
+  }
+
+  modifier always() {
+    _;
+  }
 }

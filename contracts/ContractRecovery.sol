@@ -25,20 +25,6 @@ import "./IColony.sol";
 
 contract ContractRecovery is CommonStorage {
 
-  modifier recovery() {
-    require(recoveryMode, "colony-not-in-recovery-mode");
-    _;
-  }
-
-  modifier stoppable() {
-    require(!recoveryMode, "colony-in-recovery-mode");
-    _;
-  }
-
-  modifier always() {
-    _;
-  }
-
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
     require(_slot != AUTHORITY_SLOT, "colony-common-protected-variable");
     require(_slot != OWNER_SLOT, "colony-common-protected-variable");
