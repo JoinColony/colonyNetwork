@@ -169,7 +169,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
-  public
+  public view
   stoppable
   verifyKey(key)
   returns (bool)
@@ -192,7 +192,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     e.setResolver(newResolver);
   }
 
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public recovery {
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
     bool protected = false;
     uint256 networkAddressSlot;
     assembly {

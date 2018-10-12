@@ -239,7 +239,7 @@ contract IColony {
   /// @dev No return value, but should throw if protected.
   /// @dev This is public, but is only expected to be called from ContractRecovery; no need to
   /// @dev expose this to any users.
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public;
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view;
 
   /// @notice Returns whether the Contract is currently in recovery mode
   /// @return bool True if in recovery mode, false otherwise
