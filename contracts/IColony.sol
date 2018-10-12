@@ -96,8 +96,8 @@ contract IColony {
   event PotAdded(uint256 indexed id);
 
   // Implemented in DSAuth.sol
-  /// @notice Get the `Authority` for the colony
-  /// @return authority The `Authority` contract address
+  /// @notice Get the `ColonyAuthority` for the colony
+  /// @return authority The `ColonyAuthority` contract address
   function authority() public view returns (address authority);
 
   /// @notice Get the colony `owner` address. This should be 0x0 at all times

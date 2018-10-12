@@ -19,7 +19,7 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "./CommonStorage.sol";
-import "./Authority.sol";
+import "./ColonyAuthority.sol";
 import "./IColony.sol";
 
 
@@ -85,7 +85,7 @@ contract ContractRecovery is CommonStorage {
   function exitRecoveryMode() public recovery auth {
     uint totalAuthorized = recoveryRolesCount;
     // Don't double count the owner (if set);
-    if (owner != 0x0 && !Authority(authority).hasUserRole(owner, RECOVERY_ROLE)) { totalAuthorized += 1; }
+    if (owner != 0x0 && !ColonyAuthority(authority).hasUserRole(owner, RECOVERY_ROLE)) { totalAuthorized += 1; }
     uint numRequired = totalAuthorized / 2 + 1;
     require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
     recoveryMode = false;
@@ -94,16 +94,16 @@ contract ContractRecovery is CommonStorage {
   // Can only be called by the owner role.
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
-    if (!Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
-      Authority(authority).setUserRole(_user, RECOVERY_ROLE, true);
+    if (!ColonyAuthority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
+      ColonyAuthority(authority).setUserRole(_user, RECOVERY_ROLE, true);
       recoveryRolesCount++;
     }
   }
 
   // Can only be called by the owner role.
   function removeRecoveryRole(address _user) public stoppable auth {
-    if (Authority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
-      Authority(authority).setUserRole(_user, RECOVERY_ROLE, false);
+    if (ColonyAuthority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
+      ColonyAuthority(authority).setUserRole(_user, RECOVERY_ROLE, false);
       recoveryRolesCount--;
     }
   }

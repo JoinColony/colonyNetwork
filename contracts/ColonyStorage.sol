@@ -21,7 +21,7 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
-import "./Authority.sol";
+import "./ColonyAuthority.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
 import "./CommonStorage.sol";
 
@@ -193,7 +193,7 @@ contract ColonyStorage is CommonStorage, DSMath {
   }
 
   modifier isAdmin(address _user) {
-    require(Authority(authority).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
+    require(ColonyAuthority(authority).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
     _;
   }
 

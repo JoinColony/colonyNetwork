@@ -30,18 +30,18 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function setOwnerRole(address _user) public stoppable auth {
     // To allow only one address to have owner role at a time, we have to remove current owner from their role
-    Authority colonyAuthority = Authority(authority);
+    ColonyAuthority colonyAuthority = ColonyAuthority(authority);
     colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
     colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
   }
 
   function setAdminRole(address _user) public stoppable auth {
-    Authority(authority).setUserRole(_user, ADMIN_ROLE, true);
+    ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, true);
   }
 
   // Can only be called by the owner role.
   function removeAdminRole(address _user) public stoppable auth {
-    Authority(authority).setUserRole(_user, ADMIN_ROLE, false);
+    ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }
 
   function setToken(address _token) public

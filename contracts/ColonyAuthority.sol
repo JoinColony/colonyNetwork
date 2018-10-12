@@ -21,7 +21,7 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/roles.sol";
 
 
-contract Authority is DSRoles {
+contract ColonyAuthority is DSRoles {
   uint8 ownerRole = 0;
   uint8 adminRole = 1;
   uint8 recoveryRole = 2;

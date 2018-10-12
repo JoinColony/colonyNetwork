@@ -12,7 +12,7 @@ const ColonyTask = artifacts.require("ColonyTask");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
-const Authority = artifacts.require("Authority");
+const ColonyAuthority = artifacts.require("ColonyAuthority");
 const Token = artifacts.require("Token");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
@@ -46,7 +46,7 @@ contract("Colony contract upgrade", accounts => {
     colonyFunding = await ColonyFunding.new();
     contractRecovery = await ContractRecovery.new();
     const authorityAddress = await colony.authority();
-    authority = await Authority.at(authorityAddress);
+    authority = await ColonyAuthority.at(authorityAddress);
     const tokenAddress = await colony.getToken();
     token = await Token.at(tokenAddress);
 

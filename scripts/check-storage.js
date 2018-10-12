@@ -15,7 +15,7 @@ walkSync("./contracts/").forEach(contractName => {
   // Contracts listed here are allowed to have storage variables
   if (
     [
-      "contracts/Authority.sol",
+      "contracts/ColonyAuthority.sol",
       "contracts/AuthorityNetwork.sol",
       "contracts/ColonyNetworkStorage.sol",
       "contracts/ColonyStorage.sol",

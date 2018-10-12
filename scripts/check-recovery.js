@@ -32,7 +32,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/PatriciaTree/IPatriciaTree.sol",
       "contracts/PatriciaTree/PatriciaTree.sol",
       "contracts/PatriciaTree/PatriciaTreeProofs.sol",
-      "contracts/Authority.sol",
+      "contracts/ColonyAuthority.sol",
       "contracts/AuthorityNetwork.sol",
       "contracts/ColonyNetworkStorage.sol",
       "contracts/ColonyStorage.sol",

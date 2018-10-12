@@ -18,7 +18,7 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "./Authority.sol";
+import "./ColonyAuthority.sol";
 import "./EtherRouter.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IReputationMiningCycle.sol";
@@ -140,7 +140,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     colony.setToken(_tokenAddress);
 
     // Creating new instance of colony's authority
-    Authority authority = new Authority(colony);
+    ColonyAuthority authority = new ColonyAuthority(colony);
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
