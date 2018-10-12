@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");
 
-const AuthorityNetwork = artifacts.require("./AuthorityNetwork");
+const ColonyNetworkAuthority = artifacts.require("./ColonyNetworkAuthority");
 const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
@@ -58,7 +58,7 @@ module.exports = deployer => {
         contractRecovery
       );
     })
-    .then(() => AuthorityNetwork.new(etherRouter.address))
+    .then(() => ColonyNetworkAuthority.new(etherRouter.address))
     .then(instance => {
       authorityNetwork = instance;
       return authorityNetwork.setOwner(etherRouter.address);

@@ -21,18 +21,18 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/roles.sol";
 
 
-contract AuthorityNetwork is DSRoles {
+contract CommonAuthority is DSRoles {
   uint8 recoveryRole = 2;
 
-  constructor(address colonyNetwork) public {
-    setRecoveryRoleCapability(colonyNetwork, "enterRecoveryMode()");
-    setRecoveryRoleCapability(colonyNetwork, "approveExitRecovery()");
-    setRecoveryRoleCapability(colonyNetwork, "setStorageSlotRecovery(uint256,bytes32)");
-    setRecoveryRoleCapability(colonyNetwork, "exitRecoveryMode()");
+  constructor(address contractAddress) public {
+    setRecoveryRoleCapability(contractAddress, "enterRecoveryMode()");
+    setRecoveryRoleCapability(contractAddress, "approveExitRecovery()");
+    setRecoveryRoleCapability(contractAddress, "setStorageSlotRecovery(uint256,bytes32)");
+    setRecoveryRoleCapability(contractAddress, "exitRecoveryMode()");
   }
 
-  function setRecoveryRoleCapability(address colonyNetwork, bytes sig) private {
+  function setRecoveryRoleCapability(address contractAddress, bytes sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(recoveryRole, colonyNetwork, functionSig, true);
+    setRoleCapability(recoveryRole, contractAddress, functionSig, true);
   }
 }

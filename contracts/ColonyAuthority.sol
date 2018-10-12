@@ -18,15 +18,14 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/roles.sol";
+import "./CommonAuthority.sol";
 
 
-contract ColonyAuthority is DSRoles {
+contract ColonyAuthority is CommonAuthority {
   uint8 ownerRole = 0;
   uint8 adminRole = 1;
-  uint8 recoveryRole = 2;
 
-  constructor(address colony) public {
+  constructor(address colony) public CommonAuthority(colony) {
     // Set token
     setOwnerRoleCapability(colony, "setToken(address)");
     // Bootstrap colony
@@ -66,15 +65,6 @@ contract ColonyAuthority is DSRoles {
     // Set admin
     setAdminRoleCapability(colony, "setAdminRole(address)");
     setOwnerRoleCapability(colony, "setAdminRole(address)");
-
-    // Enter recovery mode
-    setRecoveryRoleCapability(colony, "enterRecoveryMode()");
-    // Approve recovery exit
-    setRecoveryRoleCapability(colony, "approveExitRecovery()");
-    // Update arbitrary storage value
-    setRecoveryRoleCapability(colony, "setStorageSlotRecovery(uint256,bytes32)");
-    // Exit recovery mode and set resolver version
-    setRecoveryRoleCapability(colony, "exitRecoveryMode()");
   }
 
   function setOwnerRoleCapability(address colony, bytes sig) private {
@@ -85,10 +75,5 @@ contract ColonyAuthority is DSRoles {
   function setAdminRoleCapability(address colony, bytes sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(adminRole, colony, functionSig, true);
-  }
-
-  function setRecoveryRoleCapability(address colony, bytes sig) private {
-    bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(recoveryRole, colony, functionSig, true);
   }
 }
