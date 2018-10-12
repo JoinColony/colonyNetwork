@@ -20,6 +20,7 @@ pragma experimental "v0.5.0";
 
 import "./IRecovery.sol";
 
+
 /// @title Colony interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
 contract IColony is IRecovery {

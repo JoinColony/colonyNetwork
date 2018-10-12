@@ -22,6 +22,7 @@ import "./CommonStorage.sol";
 import "./CommonAuthority.sol";
 import "./IRecovery.sol";
 
+
 /// @title Used for recovery in both ColonyNetwork and Colony instances
 /// @notice Implements functions defined in IRecovery interface
 contract ContractRecovery is CommonStorage {
@@ -72,7 +73,9 @@ contract ContractRecovery is CommonStorage {
   function exitRecoveryMode() public recovery auth {
     uint totalAuthorized = recoveryRolesCount;
     // Don't double count the owner (if set);
-    if (owner != 0x0 && !CommonAuthority(authority).hasUserRole(owner, RECOVERY_ROLE)) { totalAuthorized += 1; }
+    if (owner != 0x0 && !CommonAuthority(authority).hasUserRole(owner, RECOVERY_ROLE)) { 
+      totalAuthorized += 1; 
+    }
     uint numRequired = totalAuthorized / 2 + 1;
     require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
     recoveryMode = false;

@@ -256,6 +256,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
       nChildren
     );
   }
+  
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
+  }
 
   function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {
     if (_parentSkillNumber == 0) {
@@ -270,8 +273,5 @@ contract ColonyNetwork is ColonyNetworkStorage {
         return ascendSkillTree(_newSkillId, _newParentSkillNumber);
       }
     }
-  }
-
-  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
   }
 }

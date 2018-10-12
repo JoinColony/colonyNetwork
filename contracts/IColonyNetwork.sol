@@ -20,6 +20,7 @@ pragma experimental "v0.5.0";
 
 import "./IRecovery.sol";
 
+
 /// @title Colony Network interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
 contract IColonyNetwork is IRecovery {
@@ -47,6 +48,12 @@ contract IColonyNetwork is IRecovery {
   /// @param hash The root hash of the newly accepted reputation state
   /// @param nNodes The number of nodes in the reputation state
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
+
+  /// @notice Query if a contract implements an interface
+  /// @param interfaceID The interface identifier, as specified in ERC-165
+  /// @dev Interface identification is specified in ERC-165.
+  /// @return `true` if the contract implements `interfaceID`
+  function supportsInterface(bytes4 interfaceID) external pure returns (bool);
 
   /// @notice Set a replacement log Entry if we're in recovery mode.
   /// @param _reputationMiningCycle The address of the reputation mining cycle that the log was in.
@@ -83,12 +90,6 @@ contract IColonyNetwork is IRecovery {
   /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
   /// @param _reputationMiningCycle The reputation mining cycle address we want to know if any entries have been replaced in.
   function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool);
-
-  /// @notice Query if a contract implements an interface
-  /// @param interfaceID The interface identifier, as specified in ERC-165
-  /// @dev Interface identification is specified in ERC-165.
-  /// @return `true` if the contract implements `interfaceID`
-  function supportsInterface(bytes4 interfaceID) external pure returns (bool);
 
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0

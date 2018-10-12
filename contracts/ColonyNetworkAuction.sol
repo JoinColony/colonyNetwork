@@ -20,6 +20,7 @@ pragma experimental "v0.5.0";
 
 import "./ColonyNetworkStorage.sol";
 
+
 contract ColonyNetworkAuction is ColonyNetworkStorage {
   event AuctionCreated(address auction, address token, uint256 quantity);
 
