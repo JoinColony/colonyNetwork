@@ -18,7 +18,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
-const Authority = artifacts.require("Authority");
+const ColonyAuthority = artifacts.require("ColonyAuthority");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
@@ -65,7 +65,7 @@ contract("Colony", accounts => {
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
     const authorityAddress = await colony.authority();
-    authority = await Authority.at(authorityAddress);
+    authority = await ColonyAuthority.at(authorityAddress);
   });
 
   describe("when initialised", () => {
@@ -214,10 +214,6 @@ contract("Colony", accounts => {
       assert.equal(canCall, true);
 
       functionSig = getFunctionSignature("startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
-      canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.equal(canCall, true);
-
-      functionSig = getFunctionSignature("cancelTask(uint256)");
       canCall = await authority.canCall(user3, colony.address, functionSig);
       assert.equal(canCall, true);
 

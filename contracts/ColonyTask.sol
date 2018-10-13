@@ -430,9 +430,9 @@ contract ColonyTask is ColonyStorage {
 
   function cancelTask(uint256 _id) public
   stoppable
-  auth
   taskExists(_id)
   taskNotComplete(_id)
+  self()
   {
     tasks[_id].status = CANCELLED;
 

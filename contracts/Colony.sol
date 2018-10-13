@@ -69,6 +69,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), MANAGER, EVALUATOR);
     setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), MANAGER, WORKER);
 
     setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));

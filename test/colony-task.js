@@ -1185,10 +1185,16 @@ contract("ColonyTask", accounts => {
 
   describe("when cancelling a task", () => {
     it('should set the task "status" property to "cancelled"', async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFundedTask({ colonyNetwork, colony, token });
+      const taskId = await makeTask({ colony });
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "cancelTask",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId]
+      });
 
-      await colony.cancelTask(taskId);
       const task = await colony.getTask(taskId);
       assert.equal(task[2].toNumber(), CANCELLED_TASK_STATE);
     });
@@ -1225,7 +1231,15 @@ contract("ColonyTask", accounts => {
       const originalTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
 
       // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
-      await colony.cancelTask(taskId);
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "cancelTask",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId]
+      });
+
       await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskEtherBalance, 0x0);
       await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskTokenBalance, token.address);
       await colony.moveFundsBetweenPots(taskPotId, domainPotId, originalTaskOtherTokenBalance, otherToken.address);
@@ -1254,19 +1268,51 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
       await colony.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER });
-      await checkErrorRevert(colony.cancelTask(taskId), "colony-task-complete");
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId,
+          functionName: "cancelTask",
+          signers: [MANAGER, WORKER],
+          sigTypes: [0, 0],
+          args: [taskId]
+        }),
+        "colony-task-change-execution-failed"
+      );
     });
 
     it("should fail if manager tries to cancel a task with invalid id", async () => {
+      const taskId = await makeTask({ colony });
       const taskCount = await colony.getTaskCount();
-      const invalidTaskId = taskCount.addn(10).toNumber();
-      await checkErrorRevert(colony.cancelTask(invalidTaskId), "colony-task-does-not-exist");
+      const invalidTaskId = taskCount.addn(10).toString();
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId,
+          functionName: "cancelTask",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [invalidTaskId]
+        }),
+        "colony-task-does-not-exist"
+      );
     });
 
     it("should log a TaskCanceled event", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
-      await expectEvent(colony.cancelTask(taskId), "TaskCanceled");
+      await expectEvent(
+        executeSignedTaskChange({
+          colony,
+          taskId,
+          functionName: "cancelTask",
+          signers: [MANAGER, WORKER],
+          sigTypes: [0, 0],
+          args: [taskId]
+        }),
+        "TaskCanceled"
+      );
     });
   });
 
