@@ -128,7 +128,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     // (which I've fingered-in-the-air, but could easily have an OBOE hiding inside).
     assert(reward < uint256(int256(-1))); // We do a cast later, so make sure we don't overflow.
 
-    IColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
+    IMetaColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
 
     // This gives them reputation in the next update cycle.
     IReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward, rootGlobalSkillId + 2);

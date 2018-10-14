@@ -27,7 +27,7 @@ import MaliciousReputationMinerWrongNewestReputation from "../packages/reputatio
 import ReputationMinerClient from "../packages/reputation-miner/ReputationMinerClient";
 
 const EtherRouter = artifacts.require("EtherRouter");
-const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
@@ -58,7 +58,7 @@ contract("ColonyNetworkMining", accounts => {
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
   });

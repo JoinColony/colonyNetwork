@@ -35,6 +35,7 @@ import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/
 const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyFunding = artifacts.require("ColonyFunding");
@@ -93,7 +94,7 @@ contract("All", accounts => {
     await IColony.defaults({ gasPrice });
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);

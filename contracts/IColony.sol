@@ -167,27 +167,9 @@ contract IColony is IRecovery {
   /// @param _wad Amount to mint
   function mintTokens(uint256 _wad) public;
 
-  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network
-  /// Only allowed to be called on the Meta Colony by the colony network
-  /// @param _wad Amount to mint and transfer to the colony network
-  function mintTokensForColonyNetwork(uint256 _wad) public;
-
   /// @notice Register colony's ENS label
   /// @param colonyName The label to register.
   function registerColonyLabel(string colonyName) public;
-
-  /// @notice Add a new global skill, under skill `_parentSkillId`
-  /// Can only be called from the Meta Colony
-  /// @dev Calls `IColonyNetwork.addSkill`
-  /// @param _parentSkillId Id of the skill under which the new skill will be added
-  /// @return skillId Id of the added skill
-  function addGlobalSkill(uint256 _parentSkillId) public returns (uint256 skillId);
-
-  /// @notice Set the Colony Network fee inverse amount
-  /// Can only be called from the Meta Colony
-  /// @dev Calls `IColonyNetwork.setFeeInverse`
-  /// @param _feeInverse Nonzero amount for the fee inverse
-  function setNetworkFeeInverse(uint256 _feeInverse) public;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here

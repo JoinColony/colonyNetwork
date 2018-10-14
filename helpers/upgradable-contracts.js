@@ -80,7 +80,7 @@ export async function setupColonyVersionResolver(colony, colonyTask, colonyFundi
   deployedImplementations.ColonyFunding = colonyFunding.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
-  await setupEtherRouter("IColony", deployedImplementations, resolver);
+  await setupEtherRouter("IMetaColony", deployedImplementations, resolver);
 
   const version = await colony.version();
   await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);

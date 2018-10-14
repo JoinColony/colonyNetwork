@@ -24,6 +24,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const ITokenLocking = artifacts.require("ITokenLocking");
@@ -737,7 +738,7 @@ contract("Colony Funding", accounts => {
       await fundColonyWithTokens(colony, token, funding.toString());
 
       const metaColonyAddress = await colonyNetwork.getMetaColony();
-      const metaColony = await IColony.at(metaColonyAddress);
+      const metaColony = await IMetaColony.at(metaColonyAddress);
 
       await metaColony.addGlobalSkill(1);
       const id = await colonyNetwork.getChildSkillId(1, 0);

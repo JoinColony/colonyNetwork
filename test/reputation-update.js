@@ -14,7 +14,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
-const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Resolver = artifacts.require("Resolver");
 const Colony = artifacts.require("Colony");
@@ -56,7 +56,7 @@ contract("Colony Reputation Updates", accounts => {
     await colonyNetwork.createMetaColony(colonyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     await colonyToken.setOwner(metaColonyAddress);
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
     const amount = new BN(10)
       .pow(new BN(18))
       .mul(new BN(1000))

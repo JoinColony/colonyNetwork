@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
+import "./IMetaColony.sol";
 import "./CommonStorage.sol";
 
 
