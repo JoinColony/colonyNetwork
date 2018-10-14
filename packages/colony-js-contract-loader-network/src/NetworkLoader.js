@@ -5,7 +5,7 @@ import config from "../config.json";
 
 const NETWORKS = ["rinkeby"];
 const { LATEST_VERSION, VERSIONS } = config;
-const VERSIONED_CONTRACT_NAMES = ["IColony", "IColonyNetwork", "CommonAuthority"];
+const VERSIONED_CONTRACT_NAMES = ["IColony", "IColonyNetwork", "Authority"];
 const STATIC_CONTRACT_NAMES = ["EtherRouter", "Token"];
 
 const STATIC_CONTRACTS = Object.assign(
