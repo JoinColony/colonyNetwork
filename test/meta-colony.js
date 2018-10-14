@@ -543,4 +543,26 @@ contract("Meta Colony", accounts => {
       assert.isFalse(localSkill[2]);
     });
   });
+
+  describe("when setting the network fee", () => {
+    it("should allow the meta colony owner to set the fee", async () => {
+      await metaColony.setNetworkFeeInverse(234);
+      const fee = await colonyNetwork.getFeeInverse();
+      assert.equal(fee, 234);
+    });
+
+    it("should not allow anyone else but the meta colony owner to set the fee", async () => {
+      await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }));
+      const fee = await colonyNetwork.getFeeInverse();
+      assert.equal(fee, 0);
+    });
+
+    it("should not allow another account, than the meta colony, to set the fee", async () => {
+      await checkErrorRevert(colonyNetwork.setFeeInverse(100), "colony-caller-must-be-meta-colony");
+    });
+
+    it("should now allow the fee to be set to zero", async () => {
+      await checkErrorRevert(metaColony.setNetworkFeeInverse(0), "colony-network-fee-inverse-cannot-be-zero");
+    });
+  });
 });

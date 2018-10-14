@@ -57,6 +57,7 @@ contract("ColonyTask", accounts => {
   const COLONY_ADMIN = accounts[4];
 
   let colony;
+  let metaColony;
   let token;
   let otherToken;
   let colonyNetwork;
@@ -64,6 +65,9 @@ contract("ColonyTask", accounts => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
 
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
@@ -1017,10 +1021,6 @@ contract("ColonyTask", accounts => {
 
     it("should log a TaskSkillChanged event, if the task skill gets changed", async () => {
       const taskId = await makeTask({ colony });
-
-      // Acquire meta colony, create new global skill, assign new task's skill
-      const metaColonyAddress = await colonyNetwork.getMetaColony();
-      const metaColony = await IColony.at(metaColonyAddress);
       await metaColony.addGlobalSkill(1);
 
       const skillCount = await colonyNetwork.getSkillCount();
@@ -1533,9 +1533,9 @@ contract("ColonyTask", accounts => {
       const task = await colony.getTask(taskId);
       const taskPotId = task[5].toNumber();
       const potBalanceBefore = await colony.getPotBalance(taskPotId, 0x0);
-      const metaColonyAddress = await colonyNetwork.getMetaColony();
+
       const workerBalanceBefore = await web3GetBalance(WORKER);
-      const metaBalanceBefore = await web3GetBalance(metaColonyAddress);
+      const metaBalanceBefore = await web3GetBalance(metaColony.address);
 
       await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, WORKER_ROLE, 0x0, { from: WORKER, gasPrice: 0 });
@@ -1543,7 +1543,7 @@ contract("ColonyTask", accounts => {
       const workerBalanceAfter = await web3GetBalance(WORKER);
       expect(toBN(workerBalanceAfter).sub(toBN(workerBalanceBefore))).to.eq.BN(toBN(198));
 
-      const metaBalanceAfter = await web3GetBalance(metaColonyAddress);
+      const metaBalanceAfter = await web3GetBalance(metaColony.address);
       expect(toBN(metaBalanceAfter).sub(toBN(metaBalanceBefore))).to.eq.BN(2);
 
       const potBalanceAfter = await colony.getPotBalance(taskPotId, 0x0);

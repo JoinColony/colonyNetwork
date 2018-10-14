@@ -183,6 +183,12 @@ contract IColony is IRecovery {
   /// @return skillId Id of the added skill
   function addGlobalSkill(uint256 _parentSkillId) public returns (uint256 skillId);
 
+  /// @notice Set the Colony Network fee inverse amount
+  /// Can only be called from the Meta Colony
+  /// @dev Calls `IColonyNetwork.setFeeInverse`
+  /// @param _feeInverse Nonzero amount for the fee inverse
+  function setNetworkFeeInverse(uint256 _feeInverse) public;
+
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
   /// @param _parentDomainId Id of the domain under which the new one will be added
@@ -426,11 +432,6 @@ contract IColony is IRecovery {
   /// @return rateFail Whether the user failed to rate their counterpart
   /// @return rating Rating the user received
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
-
-  // Implemented in ColonyFunding.sol
-  /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
-  /// @return feeInverse The inverse of the network fee
-  function getFeeInverse() public pure returns (uint256 feeInverse);
 
   /// @notice Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100
   /// @return rewardInverse The inverse of the reward

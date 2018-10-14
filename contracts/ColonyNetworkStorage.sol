@@ -33,6 +33,8 @@ contract ColonyNetworkStorage is CommonStorage, DSMath {
   address metaColony;
   // Address of token locking contract
   address tokenLocking;
+  // Network fee inverse value, e.g 5% => 100/5=20, 1% => 100/1=100 etc.
+  uint256 feeInverse;
   // Maps index to colony address
   mapping (uint256 => address) colonies;
   mapping (address => bool) _isColony;
@@ -112,6 +114,11 @@ contract ColonyNetworkStorage is CommonStorage, DSMath {
 
   modifier notCalledByColony() {
     require(!_isColony[msg.sender], "colony-caller-must-not-be-colony");
+    _;
+  }
+
+  modifier calledByMetaColony() {
+    require(msg.sender == metaColony, "colony-caller-must-be-meta-colony");
     _;
   }
 }

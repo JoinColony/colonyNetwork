@@ -260,6 +260,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
   }
 
+  function getFeeInverse() public view returns (uint256 _feeInverse) {
+    return feeInverse;
+  }
+
+  function setFeeInverse(uint256 _feeInverse) public 
+  calledByMetaColony
+  {
+    require(_feeInverse > 0, "colony-network-fee-inverse-cannot-be-zero");
+    feeInverse = _feeInverse;
+  }
+
   function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {
     if (_parentSkillNumber == 0) {
       return _skillId;

@@ -254,7 +254,15 @@ contract IColonyNetwork is IRecovery {
   /// @param miningResolverAddress The address of the Resolver contract with the functions correctly wired.
   function setMiningResolver(address miningResolverAddress) public;
 
-  /// @notice get the resolver to be used by new instances of ReputationMiningCycle
+  /// @notice Get the resolver to be used by new instances of ReputationMiningCycle
   /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
   function getMiningResolver() public view returns (address miningResolverAddress);
+
+  /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
+  /// @return feeInverse The inverse of the network fee
+  function getFeeInverse() public view returns (uint256 _feeInverse);
+
+  /// @notice Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), return 100
+  /// @param _feeInverse The inverse of the network fee to set
+  function setFeeInverse(uint256 _feeInverse) public;
 }
