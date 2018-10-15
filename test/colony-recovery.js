@@ -7,6 +7,7 @@ import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const Colony = artifacts.require("Colony");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -16,7 +17,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
-contract("Colony", accounts => {
+contract("Colony Recovery", accounts => {
   let colony;
   let colonyNetwork;
   let clnyToken;
@@ -39,7 +40,7 @@ contract("Colony", accounts => {
     await colonyNetwork.createMetaColony(clnyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IColony.at(metaColonyAddress);
-
+    await metaColony.setNetworkFeeInverse(100);
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
     const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
@@ -49,7 +50,7 @@ contract("Colony", accounts => {
   });
 
   beforeEach(async () => {
-    const { logs } = await colonyNetwork.createColony(clnyToken.address);
+    const { logs } = await colonyNetwork.createColony(clnyToken.address, 100);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
   });
@@ -99,6 +100,10 @@ contract("Colony", accounts => {
       const owner = accounts[0];
       await colony.setRecoveryRole(owner);
       await colony.enterRecoveryMode();
+
+      await metaColony.setRecoveryRole(owner);
+      await metaColony.enterRecoveryMode();
+
       await checkErrorRevert(colony.initialiseColony("0x0"), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-in-recovery-mode");
