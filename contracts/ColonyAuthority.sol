@@ -50,6 +50,8 @@ contract ColonyAuthority is CommonAuthority {
     setOwnerRoleCapability(colony, "setNetworkFeeInverse(uint256)");
     // Set Network fee inverse
     setOwnerRoleCapability(colony, "setRewardInverse(uint256)");
+    // Add colony version to the network
+    setOwnerRoleCapability(colony, "addNetworkColonyVersion(uint256,address)");
 
     // Allocate funds
     setAdminRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");

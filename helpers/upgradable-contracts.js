@@ -81,11 +81,7 @@ export async function setupColonyVersionResolver(colony, colonyTask, colonyFundi
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
   await setupEtherRouter("IMetaColony", deployedImplementations, resolver);
-
-  const version = await colony.version();
-  await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);
-  const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-  assert.equal(version, currentColonyVersion.toNumber());
+  await colonyNetwork.initialise(resolver.address);
 }
 
 export async function setupUpgradableColonyNetwork(

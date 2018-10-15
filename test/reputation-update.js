@@ -49,6 +49,7 @@ contract("Colony Reputation Updates", accounts => {
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
 
     const tokenArgs = getTokenArgs();

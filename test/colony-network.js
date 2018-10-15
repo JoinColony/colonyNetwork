@@ -1,13 +1,20 @@
 /* globals artifacts */
+import chai from "chai";
+import bnChai from "bn-chai";
+
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
 
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
+
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Colony = artifacts.require("Colony");
+const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
@@ -23,6 +30,7 @@ contract("ColonyNetwork", accounts => {
   let resolver;
   let resolverColonyNetworkDeployed;
   let colonyNetwork;
+  let metaColony;
   let createColonyGas;
   let version;
   let contractRecovery;
@@ -45,7 +53,12 @@ contract("ColonyNetwork", accounts => {
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyFunding, colonyTask, contractRecovery, resolver, colonyNetwork);
+
+    const metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
+    await colonyNetwork.createMetaColony(metaColonyToken.address, 100);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
   });
 
   describe("when initialised", () => {
@@ -69,7 +82,7 @@ contract("ColonyNetwork", accounts => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const updatedVersion = currentColonyVersion.addn(1).toNumber();
-      await colonyNetwork.addColonyVersion(updatedVersion, sampleResolver);
+      await metaColony.addNetworkColonyVersion(updatedVersion, sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       assert.equal(updatedColonyVersion.toNumber(), updatedVersion);
@@ -80,7 +93,7 @@ contract("ColonyNetwork", accounts => {
     it("when registering a lower version of the Colony contract, should NOT update the current (latest) colony version", async () => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      await colonyNetwork.addColonyVersion(currentColonyVersion.subn(1).toNumber(), sampleResolver);
+      await metaColony.addNetworkColonyVersion(currentColonyVersion.subn(1).toNumber(), sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       assert.equal(updatedColonyVersion.toNumber(), currentColonyVersion.toNumber());
@@ -94,7 +107,7 @@ contract("ColonyNetwork", accounts => {
       const { colonyAddress } = logs[0].args;
       const colonyCount = await colonyNetwork.getColonyCount();
       assert.notEqual(colonyAddress, 0x0);
-      assert.equal(colonyCount.toNumber(), 1);
+      expect(colonyCount).to.eq.BN(2);
     });
 
     it("should maintain correct count of colonies", async () => {
@@ -107,29 +120,29 @@ contract("ColonyNetwork", accounts => {
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       const colonyCount = await colonyNetwork.getColonyCount();
-      assert.equal(colonyCount.toNumber(), 7);
+      expect(colonyCount).to.eq.BN(8);
     });
 
     it("when meta colony is created, should have the root global and local skills initialised, plus the local mining skill", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       await colonyNetwork.createMetaColony(token.address);
       const skillCount = await colonyNetwork.getSkillCount();
-      assert.equal(skillCount.toNumber(), 3);
+      expect(skillCount).to.eq.BN(3);
       const rootGlobalSkill = await colonyNetwork.getSkill(1);
-      assert.equal(rootGlobalSkill[0].toNumber(), 0);
-      assert.equal(rootGlobalSkill[1].toNumber(), 0);
+      expect(rootGlobalSkill[0]).to.be.zero;
+      expect(rootGlobalSkill[1]).to.be.zero;
 
       const globalSkill1 = await colonyNetwork.getSkill(1);
-      assert.isTrue(globalSkill1[2]);
+      expect(globalSkill1[2]).to.be.true;
 
       const globalSkill2 = await colonyNetwork.getSkill(2);
-      assert.isFalse(globalSkill2[2]);
+      expect(globalSkill2[2]).to.be.false;
 
       const localSkill1 = await colonyNetwork.getSkill(3);
-      assert.isFalse(localSkill1[2]);
+      expect(localSkill1[2]).to.be.false;
 
       const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId();
-      assert.equal(rootGlobalSkillId, 1);
+      expect(rootGlobalSkillId).to.eq.BN(1);
     });
 
     it("should fail to create meta colony if it already exists", async () => {
@@ -146,20 +159,20 @@ contract("ColonyNetwork", accounts => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const rootLocalSkill = await colonyNetwork.getSkill(1);
-      assert.equal(rootLocalSkill[0].toNumber(), 0);
-      assert.equal(rootLocalSkill[1].toNumber(), 0);
+      expect(rootLocalSkill[0]).to.be.zero;
+      expect(rootLocalSkill[1]).to.be.zero;
 
-      const skill = await colonyNetwork.getSkill(2);
-      assert.isFalse(skill[2]);
+      const skill = await colonyNetwork.getSkill(skillCount.addn(1));
+      expect(skill[2]).to.be.false;
 
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);
       const rootDomain = await colony.getDomain(1);
-      assert.equal(rootDomain[0].toNumber(), 1);
-      assert.equal(rootDomain[1].toNumber(), 1);
+      expect(rootDomain[0]).to.eq.BN(4);
+      expect(rootDomain[1]).to.eq.BN(1);
 
       const domainCount = await colony.getDomainCount();
-      assert.equal(domainCount.toNumber(), 1);
+      expect(domainCount).to.eq.BN(1);
     });
 
     it("should fail if ETH is sent", async () => {
@@ -167,7 +180,7 @@ contract("ColonyNetwork", accounts => {
       await checkErrorRevert(colonyNetwork.createColony(token.address, { value: 1, gas: createColonyGas }));
 
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
-      assert.equal(0, colonyNetworkBalance);
+      expect(colonyNetworkBalance).to.be.zero;
     });
 
     it("should log a ColonyAdded event", async () => {
@@ -183,12 +196,12 @@ contract("ColonyNetwork", accounts => {
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       const colonyAddress = await colonyNetwork.getColony(3);
-      assert.notEqual(colonyAddress, "0x0000000000000000000000000000000000000000");
+      expect(colonyAddress).to.not.equal("0x0000000000000000000000000000000000000000");
     });
 
     it("should return an empty address if there is no colony for the index provided", async () => {
       const colonyAddress = await colonyNetwork.getColony(15);
-      assert.equal(colonyAddress, "0x0000000000000000000000000000000000000000");
+      expect(colonyAddress).to.equal("0x0000000000000000000000000000000000000000");
     });
 
     it("should be able to get the Colony version", async () => {
@@ -197,7 +210,7 @@ contract("ColonyNetwork", accounts => {
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);
       const actualColonyVersion = await colony.version();
-      assert.equal(version.toNumber(), actualColonyVersion.toNumber());
+      expect(version).to.eq.BN(actualColonyVersion);
     });
   });
 
@@ -212,7 +225,7 @@ contract("ColonyNetwork", accounts => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1).toNumber();
-      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+      await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
 
       await colony.upgrade(newVersion);
       const colonyResolver = await colonyEtherRouter.resolver();
@@ -228,7 +241,7 @@ contract("ColonyNetwork", accounts => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1).toNumber();
-      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+      await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
       await checkErrorRevert(colony.setResolver(sampleResolver));
     });
 
@@ -241,10 +254,10 @@ contract("ColonyNetwork", accounts => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.subn(1).toNumber();
-      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+      await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
 
       await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-newer");
-      assert.equal(version.toNumber(), currentColonyVersion.toNumber());
+      expect(version).to.eq.BN(currentColonyVersion);
     });
 
     it("should NOT be able to upgrade a colony to a nonexistent version", async () => {
@@ -256,7 +269,7 @@ contract("ColonyNetwork", accounts => {
       const colony = await Colony.at(colonyAddress);
 
       await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-registered");
-      assert.equal(version.toNumber(), currentColonyVersion.toNumber());
+      expect(version).to.eq.BN(currentColonyVersion);
     });
 
     it("should NOT be able to upgrade a colony if sender don't have owner role", async () => {
@@ -270,10 +283,10 @@ contract("ColonyNetwork", accounts => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1).toNumber();
-      await colonyNetwork.addColonyVersion(newVersion, sampleResolver);
+      await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
 
       await checkErrorRevert(colony.upgrade(newVersion, { from: OTHER_ACCOUNT }));
-      assert.notEqual(colonyResolver, sampleResolver);
+      expect(colonyResolver).to.not.equal(sampleResolver);
     });
   });
 
@@ -287,15 +300,10 @@ contract("ColonyNetwork", accounts => {
 
     it("should not be able to add a global skill, by an address that is not the meta colony ", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1, true), "colony-must-be-meta-colony");
-      const skillCount = await colonyNetwork.getSkillCount();
-      assert.equal(skillCount.toNumber(), 1);
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1, false), "colony-caller-must-be-colony");
-
-      const skillCount = await colonyNetwork.getSkillCount();
-      assert.equal(skillCount.toNumber(), 1);
     });
   });
 

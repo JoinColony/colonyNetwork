@@ -134,8 +134,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function createColony(address _tokenAddress) public
   stoppable
-  returns (address) 
+  returns (address)
   {
+    require(currentColonyVersion > 0, "colony-network-not-initialised-cannot-create-colony");
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
@@ -169,12 +170,23 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function addColonyVersion(uint _version, address _resolver) public
   always
-  auth
+  calledByMetaColony
   {
+    require(currentColonyVersion > 0, "colony-network-not-intialised-cannot-add-colony-version");
+    
     colonyVersionResolver[_version] = _resolver;
     if (_version > currentColonyVersion) {
       currentColonyVersion = _version;
     }
+  }
+
+  function initialise(address _resolver) public 
+  auth 
+  stoppable
+  {
+    require(currentColonyVersion == 0, "colony-network-already-initialised");
+    colonyVersionResolver[1] = _resolver;
+    currentColonyVersion = 1;
   }
 
   function getColony(uint256 _id) public view returns (address) {

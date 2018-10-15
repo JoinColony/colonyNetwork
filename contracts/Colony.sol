@@ -137,6 +137,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.setFeeInverse(_feeInverse);
   }
 
+  function addNetworkColonyVersion(uint256 _version, address _resolver) public
+  stoppable
+  auth
+  {
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    return colonyNetwork.addColonyVersion(_version, _resolver);
+  }
+
   function addDomain(uint256 _parentDomainId) public
   stoppable
   auth

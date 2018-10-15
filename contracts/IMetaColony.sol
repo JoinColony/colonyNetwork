@@ -39,4 +39,10 @@ contract IMetaColony is IColony {
   /// @dev Calls `IColonyNetwork.setFeeInverse`
   /// @param _feeInverse Nonzero amount for the fee inverse
   function setNetworkFeeInverse(uint256 _feeInverse) public;
+
+  /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
+  /// @dev Calls `IColonyNetwork.addColonyVersion`
+  /// @param _version The new Colony contract version
+  /// @param _resolver Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
+  function addNetworkColonyVersion(uint256 _version, address _resolver) public;
 }
