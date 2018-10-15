@@ -1626,5 +1626,37 @@ contract("ColonyTask", accounts => {
 
       await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }), "colony-claim-payout-access-denied");
     });
+
+    it("should payout correct rounded up network fees, for small task payouts", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({
+        colonyNetwork,
+        colony,
+        token,
+        managerPayout: 99,
+        workerPayout: 1,
+        evaluatorPayout: 2,
+        managerRating: 2,
+        workerRating: 2
+      });
+      await colony.finalizeTask(taskId);
+
+      const networkBalance1 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceBefore = await token.balanceOf(MANAGER);
+
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
+      const networkBalance2 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceAfter = await token.balanceOf(MANAGER);
+      expect(networkBalance2.sub(networkBalance1)).to.eq.BN(1);
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(98);
+
+      const workerBalanceBefore = await token.balanceOf(WORKER);
+
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      const networkBalance3 = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceAfter = await token.balanceOf(WORKER);
+      expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+    });
   });
 });
