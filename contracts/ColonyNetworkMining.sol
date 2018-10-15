@@ -32,7 +32,42 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     _;
   }
 
+  function setReplacementReputationUpdateLogEntry(
+    address _reputationMiningCycle,
+    uint256 _id,
+    address _user,
+    int _amount,
+    uint256 _skillId,
+    address _colony,
+    uint256 _nUpdates,
+    uint256 _nPreviousUpdates)
+    public recovery auth
+    {
+    replacementReputationUpdateLogsExist[_reputationMiningCycle] = true;
+
+    replacementReputationUpdateLog[_reputationMiningCycle][_id] = ReputationLogEntry(
+      _user,
+      _amount,
+      _skillId,
+      _colony,
+      _nUpdates,
+      _nPreviousUpdates
+    );
+  }
+
+  function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
+    (address, int256, uint256, address, uint256, uint256)
+    {
+    ReputationLogEntry storage x = replacementReputationUpdateLog[_reputationMiningCycle][_id];
+    return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+  }
+
+  function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool) {
+    return replacementReputationUpdateLogsExist[_reputationMiningCycle];
+  }
+
   function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public
+  stoppable
   onlyReputationMiningCycle
   {
     reputationRootHash = newHash;
@@ -43,7 +78,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     rewardStakers(stakers);
   }
 
-  function initialiseReputationMining() public {
+  function initialiseReputationMining() public stoppable {
     require(inactiveReputationMiningCycle == 0x0, "colony-reputation-mining-already-initialised");
     address clnyToken = IColony(metaColony).getToken();
     require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
@@ -55,7 +90,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
 
-  function startNextCycle() public {
+  function startNextCycle() public stoppable {
     address clnyToken = IColony(metaColony).getToken();
     require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
     require(activeReputationMiningCycle == 0x0, "colony-reputation-mining-still-active");

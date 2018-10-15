@@ -18,7 +18,7 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "./Authority.sol";
+import "./ColonyAuthority.sol";
 import "./EtherRouter.sol";
 import "./ColonyNetworkStorage.sol";
 import "./IReputationMiningCycle.sol";
@@ -91,6 +91,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function setTokenLocking(address _tokenLocking) public
+  stoppable
   auth
   {
     // Token locking address can't be changed
@@ -103,16 +104,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function setMiningResolver(address _miningResolver) public
+  stoppable
   auth
   {
     miningCycleResolver = _miningResolver;
   }
 
-  function getMiningResolver() public returns (address) {
+  function getMiningResolver() public view returns (address) {
     return miningCycleResolver;
   }
 
-  function createMetaColony(address _tokenAddress) public
+  function createMetaColony(address _tokenAddress) public stoppable
   auth
   {
     require(metaColony == 0, "colony-meta-colony-exists-already");
@@ -129,7 +131,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     this.addSkill(skillCount, false);
   }
 
-  function createColony(address _tokenAddress) public returns (address) {
+  function createColony(address _tokenAddress) public stoppable returns (address) {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
@@ -138,7 +140,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     colony.setToken(_tokenAddress);
 
     // Creating new instance of colony's authority
-    Authority authority = new Authority(colony);
+    ColonyAuthority authority = new ColonyAuthority(colony);
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
@@ -162,6 +164,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function addColonyVersion(uint _version, address _resolver) public
+  always
   auth
   {
     colonyVersionResolver[_version] = _resolver;
@@ -174,7 +177,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return colonies[_id];
   }
 
-  function addSkill(uint _parentSkillId, bool _globalSkill) public
+  function addSkill(uint _parentSkillId, bool _globalSkill) public stoppable
   skillExists(_parentSkillId)
   allowedToAddSkill(_globalSkill)
   nonZero(_parentSkillId)
@@ -237,6 +240,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
+  stoppable
   calledByColony
   skillExists(_skillId)
   {
@@ -251,6 +255,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
       nParents,
       nChildren
     );
+  }
+  
+  function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
   }
 
   function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {

@@ -2,6 +2,7 @@
 /* eslint-disable no-undef, no-console */
 
 const SafeMath = artifacts.require("./SafeMath");
+const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyTask = artifacts.require("./ColonyTask");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
@@ -32,4 +33,5 @@ module.exports = (deployer, network) => {
   deployer.deploy(ENSRegistry);
   deployer.deploy(EtherRouter);
   deployer.deploy(Resolver);
+  deployer.deploy(ContractRecovery);
 };

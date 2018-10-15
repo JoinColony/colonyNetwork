@@ -13,6 +13,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Resolver = artifacts.require("Resolver");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("ColonyNetwork", accounts => {
   const TOKEN_ARGS = getTokenArgs();
@@ -24,6 +25,7 @@ contract("ColonyNetwork", accounts => {
   let colonyNetwork;
   let createColonyGas;
   let version;
+  let contractRecovery;
 
   before(async () => {
     const network = await web3GetNetwork();
@@ -37,11 +39,13 @@ contract("ColonyNetwork", accounts => {
     resolver = await Resolver.new();
     colonyFunding = await ColonyFunding.new();
     colonyTask = await ColonyTask.new();
+    contractRecovery = await ContractRecovery.new();
 
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await setupColonyVersionResolver(colony, colonyFunding, colonyTask, resolver, colonyNetwork);
+
+    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
   });
 
   describe("when initialised", () => {

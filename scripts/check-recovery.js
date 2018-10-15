@@ -14,13 +14,14 @@ const walkSync = (dir, filelist = []) => {
 function correctRecoveryModifier(functionDef) {
   const isPrivate = ["private", "internal"].indexOf(functionDef.visibility) > -1;
   const isView = ["view", "pure"].indexOf(functionDef.stateMutability) > -1;
-  const hasModifier = functionDef.modifiers.filter(mod => ["stoppable", "recovery"].indexOf(mod.name) > -1).length > 0;
+  const hasModifier = functionDef.modifiers.filter(mod => ["stoppable", "recovery", "always"].indexOf(mod.name) > -1).length > 0;
   return isPrivate || (isView || hasModifier);
 }
 
 walkSync("./contracts/").forEach(contractName => {
   // These contracts don't need to be checked, since they're not used in recovery mode
   // Basically only Colony.sol, ColonyFunding.sol, and ColonyTask.sol are
+  // ColonyNetwork, ColonyNetworkAuction, ColonyNetworkENS, ColonyNetworkMining
   if (
     [
       "contracts/ens/ENS.sol",
@@ -31,16 +32,16 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/PatriciaTree/IPatriciaTree.sol",
       "contracts/PatriciaTree/PatriciaTree.sol",
       "contracts/PatriciaTree/PatriciaTreeProofs.sol",
-      "contracts/Authority.sol",
-      "contracts/ColonyNetwork.sol",
-      "contracts/ColonyNetworkAuction.sol",
-      "contracts/ColonyNetworkMining.sol",
-      "contracts/ColonyNetworkENS.sol",
+      "contracts/CommonAuthority.sol",
+      "contracts/ColonyAuthority.sol",
+      "contracts/ColonyNetworkAuthority.sol",
       "contracts/ColonyNetworkStorage.sol",
       "contracts/ColonyStorage.sol",
+      "contracts/ContractEditing.sol",
       "contracts/ERC20Extended.sol",
       "contracts/EtherRouter.sol",
       "contracts/IColony.sol",
+      "contracts/IRecovery.sol",
       "contracts/IColonyNetwork.sol",
       "contracts/IReputationMiningCycle.sol",
       "contracts/ITokenLocking.sol",

@@ -18,10 +18,12 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
+import "./IRecovery.sol";
+
 
 /// @title Colony Network interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColonyNetwork {
+contract IColonyNetwork is IRecovery {
 
   /// @notice Event logged when a new colony is added
   /// @dev Emitted from `IColonyNetwork.createColony` function
@@ -52,6 +54,42 @@ contract IColonyNetwork {
   /// @dev Interface identification is specified in ERC-165.
   /// @return `true` if the contract implements `interfaceID`
   function supportsInterface(bytes4 interfaceID) external pure returns (bool);
+
+  /// @notice Set a replacement log Entry if we're in recovery mode.
+  /// @param _reputationMiningCycle The address of the reputation mining cycle that the log was in.
+  /// @param _id The number of the log entry in the reputation mining cycle in question.
+  /// @param _user The address of the user earning / losing the reputation
+  /// @param _amount The amount of reputation being earned / lost
+  /// @param _skillId The id of the origin skill for the reputation update
+  /// @param _colony The address of the colony being updated
+  /// @param _nUpdates The number of updates the log entry corresponds to
+  /// @param _nPreviousUpdates The number of updates in the log before this entry
+  /// @dev Note that strictly, _nUpdates and _nPreviousUpdates don't need to be set - they're only used during
+  /// dispute resolution, which these replacement log entries are never used for. However, for ease of resyncing
+  /// the client, I have decided to include them for now.
+  function setReplacementReputationUpdateLogEntry(
+    address _reputationMiningCycle,
+    uint256 _id,
+    address _user,
+    int _amount,
+    uint256 _skillId,
+    address _colony,
+    uint256 _nUpdates,
+    uint256 _nPreviousUpdates
+    ) public;
+
+  /// @notice Get a replacement log entry (if set) for the log entry _id in the mining cycle that was at the address _reputationMiningCycle
+  /// @param _reputationMiningCycle The address of the reputation mining cycle we are asking about
+  /// @param _id The log entry number we wish to see if there is a replacement for
+  /// @return (address, int256, uint256, address, uint256, uint256) An object with the details of the log entry (if it exists)
+  /// @dev colonyAddress will always be set if the replacement exists
+  function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
+    (address userAddress, int256 amount, uint256 skillId, address colonyAddress, uint256 nUpdates, uint256);
+
+  /// @notice Get whether any replacement log entries have been set for the supplied reputation mining cycle.
+  /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
+  /// @param _reputationMiningCycle The reputation mining cycle address we want to know if any entries have been replaced in.
+  function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool);
 
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0

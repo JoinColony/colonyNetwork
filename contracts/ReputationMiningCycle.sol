@@ -26,7 +26,6 @@ import "./ReputationMiningCycleStorage.sol";
 
 
 contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
-
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
