@@ -489,7 +489,7 @@ contract("Colony Funding", accounts => {
       let colonyEtherBalance = await web3GetBalance(colony.address);
       let colonyRewardBalance = await colony.getPotBalance(0, 0x0);
       assert.equal(colonyEtherBalance, 100);
-      expect(colonyPotBalance).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(colonyPotBalance).to.be.zero;
       await colony.claimColonyFunds(0x0);
       colonyPotBalance = await colony.getPotBalance(1, 0x0);
       colonyEtherBalance = await web3GetBalance(colony.address);

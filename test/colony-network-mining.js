@@ -2781,7 +2781,7 @@ contract("ColonyNetworkMining", accounts => {
 
     // Because these tests rely on a custom, teeny-tiny-hacked version of ganache-cli, they don't work with solidity-coverage.
     // But that's okay, because these tests don't test anything meaningful in the contracts.
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("The client should be able to correctly sync to the current state from scratch just from on-chain interactions", async () => {
           // Now sync goodClient2
@@ -2793,7 +2793,7 @@ contract("ColonyNetworkMining", accounts => {
           assert.equal(client1Hash, client2Hash);
         });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("The client should be able to correctly sync to the current state from an old, correct state", async () => {
           // Bring client up to date
@@ -2837,7 +2837,7 @@ contract("ColonyNetworkMining", accounts => {
           assert.equal(client1Hash, client2Hash);
         });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("The client should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
           // Save to the database
@@ -2969,7 +2969,7 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(value, oracleProofObject.value);
     });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
           const rootHash = await goodClient.getRootHash();

@@ -222,7 +222,7 @@ contract("Colony Network Recovery", accounts => {
       assert.equal(nNodes.toNumber(), 7);
     });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], toBN(10).pow(toBN(18)));
@@ -314,7 +314,7 @@ contract("Colony Network Recovery", accounts => {
           assert.equal(new BN(newValue, 16).toNumber(), 0);
         });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("the ReputationMiningCycle being replaced mid-cycle should be able to be managed okay by miners (new and old)", async () => {
           await miningClient.saveCurrentState();

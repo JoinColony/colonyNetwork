@@ -1572,10 +1572,10 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.be.zero;
 
       const workerBalanceAfter = await token.balanceOf(WORKER);
-      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);
       const evaluatorPayout = EVALUATOR_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
@@ -1610,7 +1610,7 @@ contract("ColonyTask", accounts => {
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.eq.BN(workerPayout);
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);
-      expect(evaluatorBalanceAfter.sub(evaluatorBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(evaluatorBalanceAfter.sub(evaluatorBalanceBefore)).to.be.zero;
     });
 
     it("should return error when task is not finalized", async () => {
@@ -1656,7 +1656,7 @@ contract("ColonyTask", accounts => {
       const networkBalance3 = await token.balanceOf(colonyNetwork.address);
       const workerBalanceAfter = await token.balanceOf(WORKER);
       expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
-      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
     });
   });
 });
