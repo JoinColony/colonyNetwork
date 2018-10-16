@@ -34,6 +34,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ColonyToken = artifacts.require("../lib/colonyToken/contracts/Token");
 
 contract("Colony", accounts => {
   const OTHER = accounts[3];
@@ -58,7 +59,7 @@ contract("Colony", accounts => {
     await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
     await colonyNetwork.initialise(resolver.address);
 
-    const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
+    const clnyToken = await ColonyToken.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);

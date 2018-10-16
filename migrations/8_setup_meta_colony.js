@@ -7,7 +7,7 @@ const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 const ITokenLocking = artifacts.require("./ITokenLocking");
 const EtherRouter = artifacts.require("./EtherRouter");
-const Token = artifacts.require("./Token");
+const ColonyToken = artifacts.require("../lib/colonyToken/contracts/Token");
 
 const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
 
@@ -23,7 +23,7 @@ module.exports = deployer => {
     .then(_etherRouter => IColonyNetwork.at(_etherRouter.address))
     .then(instance => {
       colonyNetwork = instance;
-      return Token.new("Colony Network Token", "CLNY", 18);
+      return ColonyToken.new("Colony Network Token", "CLNY", 18);
     })
     .then(tokenInstance => {
       token = tokenInstance;

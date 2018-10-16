@@ -15,6 +15,7 @@ const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DutchAuction = artifacts.require("DutchAuction");
 const Token = artifacts.require("Token");
+const ColonyToken = artifacts.require("../lib/colonyToken/contracts/Token");
 
 contract("ColonyNetworkAuction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -41,7 +42,7 @@ contract("ColonyNetworkAuction", accounts => {
   });
 
   beforeEach(async () => {
-    clny = await Token.new("Colony Network Token", "CLNY", 18);
+    clny = await ColonyToken.new("Colony Network Token", "CLNY", 18);
     await metaColony.setToken(clny.address);
     await clny.setOwner(metaColony.address);
 
