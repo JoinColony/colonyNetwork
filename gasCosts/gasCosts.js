@@ -79,7 +79,8 @@ contract("All", accounts => {
     colonyFunding = await ColonyFunding.new();
     contractRecovery = await ContractRecovery.new();
 
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
 

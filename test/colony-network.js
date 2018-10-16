@@ -53,7 +53,8 @@ contract("Colony Network", accounts => {
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    await setupColonyVersionResolver(colony, colonyFunding, colonyTask, contractRecovery, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colony, colonyFunding, colonyTask, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
 
     const metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(metaColonyToken.address, 100);

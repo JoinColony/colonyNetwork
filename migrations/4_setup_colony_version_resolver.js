@@ -50,8 +50,9 @@ module.exports = deployer => {
     .then(instance => {
       colonyNetwork = instance;
       // Register the new Colony contract version with the newly setup Resolver
-      return setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+      return setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver);
     })
+    .then(() => colonyNetwork.initialise(resolver.address))
     .then(() => {
       console.log("### Colony version", version, "set to Resolver", resolver.address);
     })
