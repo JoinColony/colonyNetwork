@@ -22,7 +22,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Resolver = artifacts.require("Resolver");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
-contract("ColonyNetwork", accounts => {
+contract("Colony Network", accounts => {
   const TOKEN_ARGS = getTokenArgs();
   const OTHER_ACCOUNT = accounts[1];
   let colonyFunding;
@@ -70,7 +70,7 @@ contract("ColonyNetwork", accounts => {
 
     it("should have the correct current Colony version set", async () => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      assert.equal(version.toNumber(), currentColonyVersion.toNumber());
+      expect(currentColonyVersion).to.eq.BN(1);
     });
 
     it("should have the Resolver for current Colony version set", async () => {
