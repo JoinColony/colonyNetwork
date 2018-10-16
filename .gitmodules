@@ -1,3 +1,6 @@
 [submodule "lib/dappsys"]
 	path = lib/dappsys
 	url = https://github.com/dapphub/dappsys-monolithic.git
+[submodule "lib/colonyToken"]
+	path = lib/colonyToken
+	url = https://github.com/JoinColony/colonyToken.git

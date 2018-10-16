@@ -9,7 +9,7 @@ parityPassword
 **/build/*
 coverage
 coverage.json
-lib/dappsys
+lib/*
 ganache-accounts.json
 .vscode/
 yarn-error.log
