@@ -63,6 +63,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), MANAGER, WORKER);
     setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskDomain(uint256,uint256)")), MANAGER, WORKER);
     // We are setting a manager to both reviewers, but it will require just one signature from manager
     setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), MANAGER, MANAGER);
     setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), MANAGER, EVALUATOR);

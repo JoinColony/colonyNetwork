@@ -123,9 +123,6 @@ contract("All", accounts => {
     it("when working with a Task", async () => {
       const taskId = await makeTask({ colony });
 
-      // setTaskDomain
-      await colony.setTaskDomain(taskId, 1);
-
       // setTaskSkill
       await executeSignedTaskChange({
         colony,

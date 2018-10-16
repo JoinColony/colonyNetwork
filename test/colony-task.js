@@ -1041,7 +1041,17 @@ contract("ColonyTask", accounts => {
     it("should log a TaskDomainChanged event, if the task domain gets changed", async () => {
       const taskId = await makeTask({ colony });
       await colony.addDomain(1);
-      await expectEvent(colony.setTaskDomain(taskId, 2), "TaskDomainChanged");
+      await expectEvent(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, 2]
+        }),
+        "TaskDomainChanged"
+      );
     });
 
     it("should log a TaskRoleUserChanged event, if a task role's user gets changed", async () => {

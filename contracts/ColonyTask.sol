@@ -336,7 +336,7 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   domainExists(_domainId)
   taskNotComplete(_id)
-  confirmTaskRoleIdentity(_id, MANAGER)
+  self()
   {
     tasks[_id].domainId = _domainId;
 

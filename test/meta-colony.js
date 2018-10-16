@@ -1,7 +1,7 @@
 /* globals artifacts */
-import { INITIAL_FUNDING } from "../helpers/constants";
+import { INITIAL_FUNDING, SPECIFICATION_HASH } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupFundedTask, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
@@ -19,6 +19,7 @@ contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
+  const WORKER = accounts[2];
 
   let metaColony;
   let metaColonyToken;
@@ -389,7 +390,14 @@ contract("Meta Colony", accounts => {
       await colony.addDomain(1);
       const taskId = await makeTask({ colony });
 
-      await colony.setTaskDomain(taskId, 2);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskDomain",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 2]
+      });
 
       const task = await colony.getTask(taskId);
       assert.equal(task[7].toNumber(), 2);
@@ -397,29 +405,75 @@ contract("Meta Colony", accounts => {
 
     it("should NOT allow a non-manager to set domain on task", async () => {
       await colony.addDomain(1);
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }), "colony-task-role-identity-mismatch");
-      const task = await colony.getTask(1);
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [OTHER_ACCOUNT],
+          sigTypes: [0],
+          args: [taskId, 2]
+        }),
+        "colony-task-signatures-do-not-match-reviewer-1"
+      );
+
+      const task = await colony.getTask(taskId);
       assert.equal(task[7].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
-      await checkErrorRevert(colony.setTaskDomain(10, 3), "colony-task-does-not-exist");
+      const taskId = await makeTask({ colony });
+      const nonexistentTaskId = taskId.addn(10).toNumber();
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [nonexistentTaskId, 1]
+        }),
+        "colony-task-change-execution-failed"
+      );
     });
 
     it("should NOT be able to set a nonexistent domain on task", async () => {
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskDomain(1, 20), "colony-domain-does-not-exist");
+      const taskId = await makeTask({ colony });
 
-      const task = await colony.getTask(1);
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, 20]
+        }),
+        "colony-task-change-execution-failed"
+      );
+
+      const task = await colony.getTask(taskId);
       assert.equal(task[7].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on completed task", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony });
-      await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.setTaskDomain(taskId, 1), "colony-task-complete");
+      const taskId = await setupFundedTask({ colonyNetwork, colony });
+      await colony.submitTaskDeliverable(taskId, SPECIFICATION_HASH);
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER, WORKER],
+          sigTypes: [0, 0],
+          args: [taskId, 1]
+        }),
+        "colony-task-complete"
+      );
     });
 
     it("should be able to set global skill on task", async () => {
