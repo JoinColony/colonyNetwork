@@ -1183,7 +1183,7 @@ contract("ColonyTask", accounts => {
       await setupRatedTask({ colonyNetwork, colony, token });
       const taskCount = await colony.getTaskCount();
       const nonExistentTaskId = taskCount.addn(10).toNumber();
-      await checkErrorRevert(colony.finalizeTask(nonExistentTaskId), "colony-task-does-not-exist");
+      await checkErrorRevert(colony.finalizeTask(nonExistentTaskId), "colony-task-not-complete");
     });
 
     it("should log a TaskFinalized event", async () => {

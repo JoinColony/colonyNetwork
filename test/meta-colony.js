@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { INITIAL_FUNDING, SPECIFICATION_HASH } from "../helpers/constants";
+import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupFundedTask, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
@@ -435,7 +435,7 @@ contract("Meta Colony", accounts => {
           sigTypes: [0],
           args: [nonexistentTaskId, 1]
         }),
-        "colony-task-change-execution-failed"
+        "colony-task-does-not-exist"
       );
     });
 
@@ -461,7 +461,7 @@ contract("Meta Colony", accounts => {
     it("should NOT be able to set a domain on completed task", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony });
-      await colony.submitTaskDeliverable(taskId, SPECIFICATION_HASH);
+      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
 
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -472,7 +472,7 @@ contract("Meta Colony", accounts => {
           sigTypes: [0, 0],
           args: [taskId, 1]
         }),
-        "colony-task-complete"
+        "colony-task-change-execution-failed"
       );
     });
 

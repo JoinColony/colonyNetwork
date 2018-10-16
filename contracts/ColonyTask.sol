@@ -264,7 +264,6 @@ contract ColonyTask is ColonyStorage {
 
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
   stoppable
-  taskExists(_id)
   taskComplete(_id)
   userCanRateRole(_id, _role)
   ratingSecretDoesNotExist(_id, _role)
@@ -409,7 +408,6 @@ contract ColonyTask is ColonyStorage {
 
   function finalizeTask(uint256 _id) public
   stoppable
-  taskExists(_id)
   taskComplete(_id)
   taskWorkRatingsComplete(_id)
   taskNotFinalized(_id)
