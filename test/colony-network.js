@@ -14,14 +14,9 @@ chai.use(bnChai(web3.utils.BN));
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Colony = artifacts.require("Colony");
-<<<<<<< HEAD
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
-||||||| merged common ancestors
-const Token = artifacts.require("Token");
-=======
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
->>>>>>> Rename Token to ERC20ExtendedToken
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -62,9 +57,7 @@ contract("Colony Network", accounts => {
     await setupColonyVersionResolver(colony, colonyFunding, colonyTask, contractRecovery, resolver);
     await colonyNetwork.initialise(resolver.address);
 
-    const metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createMetaColony(metaColonyToken.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    const { metaColonyAddress, } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
     metaColony = await IMetaColony.at(metaColonyAddress);
   });
 

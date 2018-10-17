@@ -23,6 +23,7 @@ const ethers = require("ethers");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
+const TokenAuthority = artifacts.require("./TokenAuthority");
 
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 0, dueDate = 0 }) {
   const { logs } = await colony.makeTask(hash, domainId, skillId, dueDate);
@@ -293,6 +294,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await clny.transfer(ZERO_ADDRESS, mainBalance.sub(amount).sub(mainStartingBalance));
   await clny.transfer(address, amount);
   mainBalance = await clny.balanceOf(manager);
+
   if (address !== manager) {
     await clny.transfer(ZERO_ADDRESS, mainBalance.sub(mainStartingBalance));
   }
@@ -337,4 +339,26 @@ export async function fundColonyWithTokens(colony, token, tokenAmount) {
     await token.transfer(colony.address, tokenAmountBN);
   }
   await colony.claimColonyFunds(token.address);
+}
+
+export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
+  const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
+  await colonyNetwork.createMetaColony(clnyToken.address);
+  await metaColony.setNetworkFeeInverse(100);
+  const metaColonyAddress = await colonyNetwork.getMetaColony();
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+  // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
+  const tokenAuthority = await TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, tokenLockingAddress);
+  await clnyToken.setAuthority(tokenAuthority.address);
+  // Set the CLNY token owner to a dedicated account representing the Colony Multisig
+  const accounts = await web3GetAccounts();
+  await clnyToken.setOwner(accounts[11]);
+  const clnyTokenAddress = clnyToken.address;
+  return { metaColonyAddress, clnyTokenAddress };
+}
+
+export async function setupMetaColonyWithUNLockedCLNYToken(colonyNetwork) {
+  await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+  // TODO Unlock CLNY
+  // const metaColonyAddress = await colonyNetwork.getMetaColony();
 }

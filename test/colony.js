@@ -17,6 +17,7 @@ import {
 } from "../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
 import { makeTask } from "../helpers/test-data-generator";
+
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
@@ -26,7 +27,6 @@ const Colony = artifacts.require("Colony");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ColonyAuthority = artifacts.require("ColonyAuthority");
@@ -34,8 +34,6 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const Token = artifacts.require("Token");
-const TokenAuthority = artifacts.require("TokenAuthority");
 
 contract("Colony", accounts => {
   const OTHER = accounts[3];
@@ -44,7 +42,6 @@ contract("Colony", accounts => {
   let token;
   let authority;
   let colonyNetwork;
-  let metaColony;
 
   before(async () => {
     const resolverColonyNetworkDeployed = await Resolver.deployed();
@@ -60,14 +57,7 @@ contract("Colony", accounts => {
     await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
     await colonyNetwork.initialise(resolver.address);
 
-    const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createMetaColony(clnyToken.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
-
-    const tokenAuthority = await TokenAuthority.new(token.address, 0x0, metaColonyAddress, 0x0);
-    await clnyToken.setAuthority(tokenAuthority.address);
+    await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
