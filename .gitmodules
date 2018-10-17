@@ -4,3 +4,4 @@
 [submodule "lib/colonyToken"]
 	path = lib/colonyToken
 	url = https://github.com/JoinColony/colonyToken.git
+  branch = feature/upgrade-token-authority-for-colony-network
