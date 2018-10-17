@@ -32,7 +32,7 @@ module.exports = deployer => {
     .then(() => TokenLocking.at(etherRouter.address))
     .then(tokenLocking => tokenLocking.setColonyNetwork(colonyNetworkEtherRouter.address))
     .then(() => {
-      console.log("### Token locking setup at ", etherRouter.address, "with Resolver", resolver.address);
+      console.log("### TokenLocking setup at ", etherRouter.address, "with Resolver", resolver.address);
     })
     .catch(err => {
       console.log("### Error occurred ", err);

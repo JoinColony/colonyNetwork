@@ -15,7 +15,8 @@ const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DutchAuction = artifacts.require("DutchAuction");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
-const ColonyToken = artifacts.require("../lib/colonyToken/contracts/Token");
+const Token = artifacts.require("../lib/colonyToken/contracts/Token");
+const TokenAuthority = artifacts.require("../lib/colonyToken/contracts/TokenAuthority");
 
 contract("ColonyNetworkAuction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -27,7 +28,7 @@ contract("ColonyNetworkAuction", accounts => {
   let tokenAuction;
   let quantity;
   let clnyNeededForMaxPriceAuctionSellout;
-  let clny;
+  let clnyToken;
   let token;
   let createAuctionTxReceipt;
 
@@ -42,24 +43,19 @@ contract("ColonyNetworkAuction", accounts => {
   });
 
   beforeEach(async () => {
-    clny = await ColonyToken.new("Colony Network Token", "CLNY", 18);
-    await metaColony.setToken(clny.address);
-    await clny.setOwner(metaColony.address);
+    clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
+    const tokenAuthority = await TokenAuthority.new(token.address, 0x0);
+    await clnyToken.setAuthority(tokenAuthority.address);
+    // todo: who would be the ultimate clnyToken owner?
+    // await clnyToken.setOwner(colonyMultiSig.address);
+
+    await metaColony.setToken(clnyToken.address);
+    await clnyToken.setOwner(metaColony.address);
 
     const args = getTokenArgs();
-<<<<<<< HEAD
-    token = await Token.new(...args);
+    token = await ERC20ExtendedToken.new(...args);
     await token.mint(quantity);
     await token.transfer(colonyNetwork.address, quantity);
-||||||| merged common ancestors
-    token = await Token.new(...args);
-    await token.mint(quantity.toString());
-    await token.transfer(colonyNetwork.address, quantity.toString());
-=======
-    token = await ERC20ExtendedToken.new(...args);
-    await token.mint(quantity.toString());
-    await token.transfer(colonyNetwork.address, quantity.toString());
->>>>>>> Rename Token to ERC20ExtendedToken
     const { logs, receipt } = await colonyNetwork.startTokenAuction(token.address);
     createAuctionTxReceipt = receipt;
     const auctionAddress = logs[0].args.auction;
@@ -69,7 +65,7 @@ contract("ColonyNetworkAuction", accounts => {
   describe("when initialising an auction", async () => {
     it("should initialise auction with correct given parameters", async () => {
       const clnyAddress = await tokenAuction.clnyToken();
-      assert.equal(clnyAddress, clny.address);
+      assert.equal(clnyAddress, clnyToken.address);
       const tokenAddress = await tokenAuction.token();
       assert.equal(tokenAddress, token.address);
     });
@@ -231,7 +227,7 @@ contract("ColonyNetworkAuction", accounts => {
   describe("when bidding", async () => {
     it("can bid", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "1000000000000000000");
-      await clny.approve(tokenAuction.address, "1000000000000000000", { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, "1000000000000000000", { from: BIDDER_1 });
       await tokenAuction.bid("1000000000000000000", { from: BIDDER_1 });
       const bid = await tokenAuction.bids(BIDDER_1);
       assert.equal(bid, "1000000000000000000");
@@ -241,15 +237,23 @@ contract("ColonyNetworkAuction", accounts => {
 
     it("bid tokens are locked", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "1000000000000000000");
-      await clny.approve(tokenAuction.address, "1000000000000000000", { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, "1000000000000000000", { from: BIDDER_1 });
       await tokenAuction.bid("1000000000000000000", { from: BIDDER_1 });
+<<<<<<< HEAD
       const lockedTokens = await clny.balanceOf(tokenAuction.address);
       assert.equal(lockedTokens, "1000000000000000000");
+||||||| merged common ancestors
+      const lockedTokens = await clny.balanceOf(tokenAuction.address);
+      assert.equal(lockedTokens.toString(), "1000000000000000000");
+=======
+      const lockedTokens = await clnyToken.balanceOf(tokenAuction.address);
+      assert.equal(lockedTokens.toString(), "1000000000000000000");
+>>>>>>> Rename ColonyToken back to Token
     });
 
     it("can bid more than once", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "2000000000000000000");
-      await clny.approve(tokenAuction.address, "2000000000000000000", { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, "2000000000000000000", { from: BIDDER_1 });
       await tokenAuction.bid("1100000000000000000", { from: BIDDER_1 });
       await tokenAuction.bid("900000000000000000", { from: BIDDER_1 });
       const bidCount = await tokenAuction.bidCount();
@@ -261,9 +265,9 @@ contract("ColonyNetworkAuction", accounts => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_2, amount);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_3, amount);
-      await clny.approve(tokenAuction.address, amount, { from: BIDDER_1 });
-      await clny.approve(tokenAuction.address, amount, { from: BIDDER_2 });
-      await clny.approve(tokenAuction.address, amount, { from: BIDDER_3 });
+      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_2 });
+      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_3 });
       await tokenAuction.bid(amount, { from: BIDDER_1 });
       await tokenAuction.bid(amount, { from: BIDDER_2 });
 
@@ -281,7 +285,7 @@ contract("ColonyNetworkAuction", accounts => {
     it("if bid overshoots the target quantity, it is only partially accepted", async () => {
       const amount = clnyNeededForMaxPriceAuctionSellout.addn(20);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
-      await clny.approve(tokenAuction.address, amount, { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_1 });
       const totalToEndAuction = await tokenAuction.totalToEndAuction();
       await tokenAuction.bid(amount, { from: BIDDER_1 });
       const receivedTotal = await tokenAuction.receivedTotal();
@@ -292,15 +296,25 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("after target is sold, bid is rejected", async () => {
+<<<<<<< HEAD
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.addn(1));
       await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.addn(1), { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+||||||| merged common ancestors
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.addn(1).toString());
+      await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.addn(1).toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+=======
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.addn(1).toString());
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.addn(1).toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+>>>>>>> Rename ColonyToken back to Token
       await checkErrorRevert(tokenAuction.bid(1, { from: BIDDER_1 }), "colony-auction-closed");
     });
 
     it("cannot finalize when target not reached", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "3000");
-      await clny.approve(tokenAuction.address, "3000", { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, "3000", { from: BIDDER_1 });
       await tokenAuction.bid("3000", { from: BIDDER_1 });
       await checkErrorRevert(tokenAuction.finalize(), "colony-auction-not-closed");
     });
@@ -312,9 +326,19 @@ contract("ColonyNetworkAuction", accounts => {
 
   describe("when finalizing auction", async () => {
     beforeEach(async () => {
+<<<<<<< HEAD
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout);
       await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+||||||| merged common ancestors
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.toString());
+      await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+=======
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.toString());
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+>>>>>>> Rename ColonyToken back to Token
     });
 
     it("sets correct final token price", async () => {
@@ -333,22 +357,38 @@ contract("ColonyNetworkAuction", accounts => {
       assert.isTrue(finalized);
     });
 
+<<<<<<< HEAD
     it("All CLNY sent to the auction in bids is burned", async () => {
       const balanceBefore = await clny.balanceOf(tokenAuction.address);
       const supplyBefore = await clny.totalSupply();
+||||||| merged common ancestors
+    it("The metacolony gets all CLNY sent to the auction in bids", async () => {
+      const balanceBefore = await clny.balanceOf(metaColony.address);
+=======
+    it("The metacolony gets all CLNY sent to the auction in bids", async () => {
+      const balanceBefore = await clnyToken.balanceOf(metaColony.address);
+>>>>>>> Rename ColonyToken back to Token
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
       assert.isFalse(receivedTotal.isZero());
+<<<<<<< HEAD
       const balanceAfter = await clny.balanceOf(tokenAuction.address);
       assert.equal(balanceAfter.toString(), "0");
       const supplyAfter = await clny.totalSupply();
       assert.equal(supplyBefore.sub(supplyAfter).toString(), balanceBefore.toString());
+||||||| merged common ancestors
+      const balanceAfter = await clny.balanceOf(metaColony.address);
+      assert.equal(balanceBefore.add(receivedTotal).toString(), balanceAfter.toString());
+=======
+      const balanceAfter = await clnyToken.balanceOf(metaColony.address);
+      assert.equal(balanceBefore.add(receivedTotal).toString(), balanceAfter.toString());
+>>>>>>> Rename ColonyToken back to Token
     });
 
     it("cannot bid after finalized", async () => {
       await tokenAuction.finalize();
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 1000);
-      await clny.approve(tokenAuction.address, 1000, { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, 1000, { from: BIDDER_1 });
       await checkErrorRevert(tokenAuction.bid(1000, { from: BIDDER_1 }), "colony-auction-closed");
     });
 
@@ -368,12 +408,28 @@ contract("ColonyNetworkAuction", accounts => {
       const bidAmount2 = new BN(10).pow(new BN(38));
       const bidAmount3 = new BN(10).pow(new BN(36)).muln(199);
 
+<<<<<<< HEAD
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount1);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_2, bidAmount2);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_3, bidAmount3);
       await clny.approve(tokenAuction.address, bidAmount1, { from: BIDDER_1 });
       await clny.approve(tokenAuction.address, bidAmount2, { from: BIDDER_2 });
       await clny.approve(tokenAuction.address, bidAmount3, { from: BIDDER_3 });
+||||||| merged common ancestors
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount1.toString());
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, bidAmount2.toString());
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_3, bidAmount3.toString());
+      await clny.approve(tokenAuction.address, bidAmount1.toString(), { from: BIDDER_1 });
+      await clny.approve(tokenAuction.address, bidAmount2.toString(), { from: BIDDER_2 });
+      await clny.approve(tokenAuction.address, bidAmount3.toString(), { from: BIDDER_3 });
+=======
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount1.toString());
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, bidAmount2.toString());
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_3, bidAmount3.toString());
+      await clnyToken.approve(tokenAuction.address, bidAmount1.toString(), { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, bidAmount2.toString(), { from: BIDDER_2 });
+      await clnyToken.approve(tokenAuction.address, bidAmount3.toString(), { from: BIDDER_3 });
+>>>>>>> Rename ColonyToken back to Token
 
       await tokenAuction.bid(bidAmount1, { from: BIDDER_1 }); // Bids at near max price of 1e36 CLNY per 1e18 Tokens
       await forwardTime(1382400, this); // Gets us near price of 1e20 CLNY per 1e18 Tokens
@@ -413,9 +469,19 @@ contract("ColonyNetworkAuction", accounts => {
     });
 
     it("should set the bid amount to 0", async () => {
+<<<<<<< HEAD
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout);
       await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+||||||| merged common ancestors
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.toString());
+      await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+=======
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.toString());
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+>>>>>>> Rename ColonyToken back to Token
       await tokenAuction.finalize();
       await tokenAuction.claim({ from: BIDDER_1 });
       const bid = await tokenAuction.bids(BIDDER_1);
@@ -425,9 +491,19 @@ contract("ColonyNetworkAuction", accounts => {
 
   describe("when destructing the auction", async () => {
     beforeEach(async () => {
+<<<<<<< HEAD
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout);
       await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+||||||| merged common ancestors
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.toString());
+      await clny.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+=======
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout.toString());
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout.toString(), { from: BIDDER_1 });
+>>>>>>> Rename ColonyToken back to Token
     });
 
     it("should be able to destruct the auction and kill the auction contract", async () => {
@@ -452,7 +528,7 @@ contract("ColonyNetworkAuction", accounts => {
       await tokenAuction.claim({ from: BIDDER_1 });
       await metaColony.mintTokens(100);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 100);
-      await clny.transfer(tokenAuction.address, 100, { from: BIDDER_1 });
+      await clnyToken.transfer(tokenAuction.address, 100, { from: BIDDER_1 });
       await checkErrorRevert(tokenAuction.destruct());
     });
   });

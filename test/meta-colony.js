@@ -8,6 +8,7 @@ import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const Colony = artifacts.require("Colony");
+const Token = artifacts.require("Token");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -15,16 +16,16 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ContractRecovery = artifacts.require("ContractRecovery");
-const ColonyToken = artifacts.require("../lib/colonyToken/contracts/Token");
+const TokenAuthority = artifacts.require("TokenAuthority");
 
-contract("Meta Colony", accounts => {
+contract.only("Meta Colony", accounts => {
   let TOKEN_ARGS;
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const WORKER = accounts[2];
 
   let metaColony;
-  let metaColonyToken;
+  let clnyToken;
   let colony;
   let token;
   let colonyNetwork;
@@ -46,8 +47,10 @@ contract("Meta Colony", accounts => {
     await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
     await colonyNetwork.initialise(resolver.address);
 
-    metaColonyToken = await ColonyToken.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createMetaColony(metaColonyToken.address);
+    clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
+    const tokenAuthority = await TokenAuthority.new(token.address, 0x0);
+    await clnyToken.setAuthority(tokenAuthority.address);
+    await colonyNetwork.createMetaColony(clnyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
@@ -62,17 +65,17 @@ contract("Meta Colony", accounts => {
 
   describe("when working with ERC20 properties of Meta Colony token", () => {
     it("token `symbol` property is correct", async () => {
-      const tokenSymbol = await metaColonyToken.symbol();
+      const tokenSymbol = await clnyToken.symbol();
       assert.equal(tokenSymbol, "CLNY");
     });
 
     it("token `decimals` property is correct", async () => {
-      const tokenDecimals = await metaColonyToken.decimals();
+      const tokenDecimals = await clnyToken.decimals();
       assert.equal(tokenDecimals.toString(), "18");
     });
 
     it("token `name` property is correct", async () => {
-      const tokenName = await metaColonyToken.name();
+      const tokenName = await clnyToken.name();
       assert.equal(tokenName, "Colony Network Token");
     });
   });
