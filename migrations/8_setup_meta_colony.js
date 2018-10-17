@@ -3,21 +3,21 @@
 
 const assert = require("assert");
 
-const Token = artifacts.require("../lib/colonyToken/contracts/Token");
+const Token = artifacts.require("./Token");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const IMetaColony = artifacts.require("./IMetaColony");
 const ITokenLocking = artifacts.require("./ITokenLocking");
 const EtherRouter = artifacts.require("./EtherRouter");
-const TokenAuthority = artifacts.require("../lib/colonyToken/contracts/TokenAuthority");
+const TokenAuthority = artifacts.require("./TokenAuthority");
 
 const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
 
 module.exports = deployer => {
-  // Create the meta colony
   let colonyNetwork;
-  let tokenLocking;
+  let tokenLockingAddress;
   let clnyToken;
   let metaColony;
+  let metaColonyAddress;
 
   deployer
     .then(() => EtherRouter.deployed())
@@ -28,26 +28,29 @@ module.exports = deployer => {
     })
     .then(tokenInstance => {
       clnyToken = tokenInstance;
-      return clnyToken.mint(DEFAULT_STAKE);
-    })
-    .then(() => TokenAuthority.new(clnyToken.address, 0x0))
-    .then(tokenAuthority => {
-      clnyToken.setAuthority(tokenAuthority.address);
+      return colonyNetwork.createMetaColony(clnyToken.address);
     })
     // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
     // but is useful when playing around with the network to get reputation mining going.
-    .then(() => colonyNetwork.createMetaColony(clnyToken.address))
-    .then(() => colonyNetwork.getTokenLocking())
+    .then(() => colonyNetwork.getMetaColony())
+    .then(_metaColonyAddress => {
+      metaColonyAddress = _metaColonyAddress;
+      return colonyNetwork.getTokenLocking();
+    })
     .then(address => {
-      tokenLocking = address;
-      return clnyToken.approve(tokenLocking, DEFAULT_STAKE);
+      tokenLockingAddress = address;
+      return TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, tokenLockingAddress);
     })
     .then(() => ITokenLocking.at(tokenLocking))
+    .then(tokenAuthority => clnyToken.setAuthority(tokenAuthority.address))
+    .then(() => clnyToken.mint(DEFAULT_STAKE))
+    .then(() => clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE))
+    .then(() => ITokenLocking.at(tokenLockingAddress))
     .then(iTokenLocking => iTokenLocking.deposit(clnyToken.address, DEFAULT_STAKE))
     .then(() => colonyNetwork.initialiseReputationMining())
     .then(() => colonyNetwork.startNextCycle())
     .then(() => colonyNetwork.getSkillCount())
-    .then(skillCount => {
+    .then(async skillCount => {
       assert.equal(skillCount.toNumber(), 3);
       return colonyNetwork.getMetaColony();
     })

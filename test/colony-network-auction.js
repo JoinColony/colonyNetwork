@@ -15,8 +15,8 @@ const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DutchAuction = artifacts.require("DutchAuction");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
-const Token = artifacts.require("../lib/colonyToken/contracts/Token");
-const TokenAuthority = artifacts.require("../lib/colonyToken/contracts/TokenAuthority");
+const Token = artifacts.require("Token");
+const TokenAuthority = artifacts.require("TokenAuthority");
 
 contract("ColonyNetworkAuction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -44,11 +44,8 @@ contract("ColonyNetworkAuction", accounts => {
 
   beforeEach(async () => {
     clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    const tokenAuthority = await TokenAuthority.new(token.address, 0x0);
+    const tokenAuthority = await TokenAuthority.new(token.address, 0x0, metaColony.address, 0x0);
     await clnyToken.setAuthority(tokenAuthority.address);
-    // todo: who would be the ultimate clnyToken owner?
-    // await clnyToken.setOwner(colonyMultiSig.address);
-
     await metaColony.setToken(clnyToken.address);
     await clnyToken.setOwner(metaColony.address);
 

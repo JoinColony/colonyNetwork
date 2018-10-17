@@ -5,9 +5,8 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { INT256_MAX, WAD, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
-import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
+import { checkErrorRevert } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask, setupFinalizedTask } from "../helpers/test-data-generator";
-
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
@@ -53,8 +52,7 @@ contract("Colony Reputation Updates", accounts => {
     await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver);
     await colonyNetwork.initialise(resolver.address);
 
-    const tokenArgs = getTokenArgs();
-    colonyToken = await Token.new(...tokenArgs);
+    colonyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(colonyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     await colonyToken.setOwner(metaColonyAddress);

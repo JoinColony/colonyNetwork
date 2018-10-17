@@ -18,7 +18,7 @@ const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const TokenAuthority = artifacts.require("TokenAuthority");
 
-contract.only("Meta Colony", accounts => {
+contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
@@ -48,11 +48,17 @@ contract.only("Meta Colony", accounts => {
     await colonyNetwork.initialise(resolver.address);
 
     clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    const tokenAuthority = await TokenAuthority.new(token.address, 0x0);
-    await clnyToken.setAuthority(tokenAuthority.address);
     await colonyNetwork.createMetaColony(clnyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
+<<<<<<< HEAD
     metaColony = await IMetaColony.at(metaColonyAddress);
+||||||| merged common ancestors
+    metaColony = await IColony.at(metaColonyAddress);
+=======
+    metaColony = await IColony.at(metaColonyAddress);
+    const tokenAuthority = await TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, 0x0);
+    await clnyToken.setAuthority(tokenAuthority.address);
+>>>>>>> Wire TokenAuthority to CLNY token instances
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);

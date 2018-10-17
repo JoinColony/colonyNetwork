@@ -13,8 +13,8 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
-const Token = artifacts.require("../lib/colonyToken/contracts/Token");
-const TokenAuthority = artifacts.require("../lib/colonyToken/contracts/TokenAuthority");
+const Token = artifacts.require("Token");
+const TokenAuthority = artifacts.require("TokenAuthority");
 
 contract("Colony Recovery", accounts => {
   let colony;
@@ -37,12 +37,11 @@ contract("Colony Recovery", accounts => {
     await colonyNetwork.initialise(resolver.address);
 
     clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    const tokenAuthority = await TokenAuthority.new(clnyToken.address, 0x0);
-    await clnyToken.setAuthority(tokenAuthority.address);
-    // TODO await clnyToken.setOwner()
-
     await colonyNetwork.createMetaColony(clnyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
+    const tokenAuthority = await TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, 0x0);
+    await clnyToken.setAuthority(tokenAuthority.address);
+
     metaColony = await IMetaColony.at(metaColonyAddress);
     await metaColony.setNetworkFeeInverse(100);
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
