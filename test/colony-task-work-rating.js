@@ -20,7 +20,7 @@ import { fundColonyWithTokens, setupAssignedTask, setupRatedTask } from "../help
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Colony Task Work Rating", accounts => {
   const MANAGER = accounts[0];
@@ -39,12 +39,12 @@ contract("Colony Task Work Rating", accounts => {
 
   beforeEach(async () => {
     const tokenArgs = getTokenArgs();
-    const colonyToken = await Token.new(...tokenArgs);
+    const colonyToken = await ERC20ExtendedToken.new(...tokenArgs);
     const { logs } = await colonyNetwork.createColony(colonyToken.address);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
     const otherTokenArgs = getTokenArgs();
-    token = await Token.new(...otherTokenArgs);
+    token = await ERC20ExtendedToken.new(...otherTokenArgs);
   });
 
   describe("when rating task work", () => {

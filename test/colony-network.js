@@ -14,8 +14,14 @@ chai.use(bnChai(web3.utils.BN));
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Colony = artifacts.require("Colony");
+<<<<<<< HEAD
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
+||||||| merged common ancestors
+const Token = artifacts.require("Token");
+=======
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+>>>>>>> Rename Token to ERC20ExtendedToken
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -103,7 +109,7 @@ contract("Colony Network", accounts => {
 
   describe("when creating new colonies", () => {
     it("should allow users to create new colonies", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colonyCount = await colonyNetwork.getColonyCount();
@@ -112,7 +118,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should maintain correct count of colonies", async () => {
-      const token = await Token.new(...getTokenArgs());
+      const token = await ERC20ExtendedToken.new(...getTokenArgs());
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
@@ -145,12 +151,12 @@ contract("Colony Network", accounts => {
     });
 
     it("should fail to create meta colony if it already exists", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       await checkErrorRevert(colonyNetwork.createMetaColony(token.address), "colony-meta-colony-exists-already");
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const rootLocalSkill = await colonyNetwork.getSkill(1);
       expect(rootLocalSkill[0]).to.be.zero;
@@ -171,7 +177,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should fail if ETH is sent", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       await checkErrorRevert(colonyNetwork.createColony(token.address, { value: 1, gas: createColonyGas }));
 
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
@@ -179,14 +185,14 @@ contract("Colony Network", accounts => {
     });
 
     it("should log a ColonyAdded event", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       await expectEvent(colonyNetwork.createColony(token.address), "ColonyAdded");
     });
   });
 
   describe("when getting existing colonies", () => {
     it("should allow users to get the address of a colony by its index", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
@@ -200,7 +206,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should be able to get the Colony version", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);
@@ -210,8 +216,16 @@ contract("Colony Network", accounts => {
   });
 
   describe("when upgrading a colony", () => {
+<<<<<<< HEAD
     it("should be able to upgrade a colony, if a sender has founder role", async () => {
       const token = await Token.new(...TOKEN_ARGS);
+||||||| merged common ancestors
+    it("should be able to upgrade a colony, if a sender has owner role", async () => {
+      const token = await Token.new(...TOKEN_ARGS);
+=======
+    it("should be able to upgrade a colony, if a sender has owner role", async () => {
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
+>>>>>>> Rename Token to ERC20ExtendedToken
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colonyEtherRouter = await EtherRouter.at(colonyAddress);
@@ -228,7 +242,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not be able to set colony resolver by directly calling `setResolver`", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colony = await EtherRouter.at(colonyAddress);
@@ -241,7 +255,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);
@@ -256,7 +270,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a nonexistent version", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
@@ -267,8 +281,16 @@ contract("Colony Network", accounts => {
       expect(version).to.eq.BN(currentColonyVersion);
     });
 
+<<<<<<< HEAD
     it("should NOT be able to upgrade a colony if sender don't have founder role", async () => {
       const token = await Token.new(...TOKEN_ARGS);
+||||||| merged common ancestors
+    it("should NOT be able to upgrade a colony if sender don't have owner role", async () => {
+      const token = await Token.new(...TOKEN_ARGS);
+=======
+    it("should NOT be able to upgrade a colony if sender don't have owner role", async () => {
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
+>>>>>>> Rename Token to ERC20ExtendedToken
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colonyEtherRouter = await EtherRouter.at(colonyAddress);
@@ -287,7 +309,7 @@ contract("Colony Network", accounts => {
 
   describe("when adding a skill", () => {
     beforeEach(async () => {
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       await token.setOwner(colonyAddress);
@@ -368,7 +390,7 @@ contract("Colony Network", accounts => {
       const hash = namehash.hash("test.colony.joincolony.eth");
 
       // Cargo-cult colony generation
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);
@@ -408,7 +430,7 @@ contract("Colony Network", accounts => {
       await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
 
       // Set up colony
-      const token = await Token.new(...TOKEN_ARGS);
+      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);

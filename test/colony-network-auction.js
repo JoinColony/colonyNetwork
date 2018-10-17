@@ -14,7 +14,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DutchAuction = artifacts.require("DutchAuction");
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ColonyToken = artifacts.require("../lib/colonyToken/contracts/Token");
 
 contract("ColonyNetworkAuction", accounts => {
@@ -47,9 +47,19 @@ contract("ColonyNetworkAuction", accounts => {
     await clny.setOwner(metaColony.address);
 
     const args = getTokenArgs();
+<<<<<<< HEAD
     token = await Token.new(...args);
     await token.mint(quantity);
     await token.transfer(colonyNetwork.address, quantity);
+||||||| merged common ancestors
+    token = await Token.new(...args);
+    await token.mint(quantity.toString());
+    await token.transfer(colonyNetwork.address, quantity.toString());
+=======
+    token = await ERC20ExtendedToken.new(...args);
+    await token.mint(quantity.toString());
+    await token.transfer(colonyNetwork.address, quantity.toString());
+>>>>>>> Rename Token to ERC20ExtendedToken
     const { logs, receipt } = await colonyNetwork.startTokenAuction(token.address);
     createAuctionTxReceipt = receipt;
     const auctionAddress = logs[0].args.auction;
@@ -83,7 +93,7 @@ contract("ColonyNetworkAuction", accounts => {
 
     it("should fail with zero quantity", async () => {
       const args = getTokenArgs();
-      const otherToken = await Token.new(...args);
+      const otherToken = await ERC20ExtendedToken.new(...args);
       await checkErrorRevert(colonyNetwork.startTokenAuction(otherToken.address));
     });
   });
@@ -99,7 +109,7 @@ contract("ColonyNetworkAuction", accounts => {
 
     it("should set the minimum price correctly for quantity < 1e18", async () => {
       const args = getTokenArgs();
-      const otherToken = await Token.new(...args);
+      const otherToken = await ERC20ExtendedToken.new(...args);
       await otherToken.mint(new BN(10).pow(new BN(17)));
       await otherToken.transfer(colonyNetwork.address, new BN(10).pow(new BN(17)));
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);

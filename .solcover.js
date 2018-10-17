@@ -3,7 +3,7 @@ module.exports = {
       'Migrations.sol',
       'EtherRouter.sol',
       'gnosis',
-      'Token.sol',
+      'ERC20ExtendedToken.sol',
       'PatriciaTree'
     ],
     compileCommand: '../node_modules/.bin/truffle compile',

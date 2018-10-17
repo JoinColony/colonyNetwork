@@ -24,7 +24,7 @@ import "../lib/dappsys/base.sol";
 import "./ERC20Extended.sol";
 
 
-contract Token is DSTokenBase(0), DSAuth, ERC20Extended {
+contract ERC20ExtendedToken is DSTokenBase(0), DSAuth, ERC20Extended {
   uint8 public decimals;
   string public symbol;
   string public name;

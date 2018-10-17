@@ -11,7 +11,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -39,9 +39,9 @@ contract("TokenLocking", addresses => {
 
   beforeEach(async () => {
     let tokenArgs = getTokenArgs();
-    token = await Token.new(...tokenArgs);
+    token = await ERC20ExtendedToken.new(...tokenArgs);
     tokenArgs = getTokenArgs();
-    otherToken = await Token.new(...tokenArgs);
+    otherToken = await ERC20ExtendedToken.new(...tokenArgs);
 
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
@@ -246,7 +246,7 @@ contract("TokenLocking", addresses => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
 
       const tokenArgs = getTokenArgs();
-      const newToken = await Token.new(...tokenArgs);
+      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
       await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
 
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);

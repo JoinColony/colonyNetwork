@@ -13,7 +13,7 @@ const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const ColonyToken = artifacts.require("../lib/colonyToken/contracts/Token");
 
@@ -316,12 +316,12 @@ contract("Meta Colony", accounts => {
   describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
       TOKEN_ARGS = getTokenArgs();
-      const newToken = await Token.new(...TOKEN_ARGS);
+      const newToken = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       colony = await IColony.at(colonyAddress);
       const tokenAddress = await colony.getToken();
-      token = await Token.at(tokenAddress);
+      token = await ERC20ExtendedToken.at(tokenAddress);
     });
 
     it("someone who does not have founder role should not be able to add domains", async () => {
@@ -382,7 +382,7 @@ contract("Meta Colony", accounts => {
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
       TOKEN_ARGS = getTokenArgs();
-      token = await Token.new(...TOKEN_ARGS);
+      token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       await token.setOwner(colonyAddress);

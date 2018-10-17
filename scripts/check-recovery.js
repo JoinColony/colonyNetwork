@@ -51,7 +51,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/ReputationMiningCycleRespond.sol",
       "contracts/Resolver.sol",
       "contracts/SafeMath.sol",
-      "contracts/Token.sol",
+      "contracts/ERC20ExtendedToken.sol",
       "contracts/TokenLocking.sol",
       "contracts/TokenLockingStorage.sol"
     ].indexOf(contractName) > -1

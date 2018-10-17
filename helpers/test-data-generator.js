@@ -22,7 +22,7 @@ const ethers = require("ethers");
 
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const Token = artifacts.require("Token");
+const ColonyToken = artifacts.require("ColonyToken");
 
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 0, dueDate = 0 }) {
   const { logs } = await colony.makeTask(hash, domainId, skillId, dueDate);
@@ -274,7 +274,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
-  const clny = await Token.at(clnyAddress);
+  const clny = await ColonyToken.at(clnyAddress);
   const mainStartingBalance = await clny.balanceOf(manager);
   const targetStartingBalance = await clny.balanceOf(address);
   await metaColony.mintTokens(amount.muln(3));
@@ -311,7 +311,7 @@ export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
-  const clny = await Token.at(clnyAddress);
+  const clny = await ColonyToken.at(clnyAddress);
 
   await giveUserCLNYTokens(colonyNetwork, address, amount);
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
