@@ -1,9 +1,22 @@
-<img align="center" src="./img/colonyNetwork_color.svg" />
+<div align="center">
+  <img src="/docs/img/colonyNetwork_color.svg" width="600" />
+</div>
+<div align="center">
+  <a href="https://circleci.com/gh/JoinColony/colonyNetwork">
+    <img src="https://circleci.com/gh/JoinColony/colonyNetwork.svg?style=shield" />
+  </a>
+  <a href="https://greenkeeper.io/">
+    <img src="https://badges.greenkeeper.io/JoinColony/colonyNetwork.svg" />
+  </a>
+  <a href="https://gitter.im/JoinColony/colonyNetwork">
+    <img src="https://img.shields.io/gitter/room/TechnologyAdvice/Stardust.svg" />
+  </a>
+  <a href="https://build.colony.io/">
+    <img src="https://img.shields.io/discourse/https/build.colony.io/status.svg" />
+  </a>
+</div>
 
 # The Colony Network
-[![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/JoinColony/colonyNetwork)
-[![CircleCI](https://circleci.com/gh/JoinColony/colonyNetwork/tree/develop.svg?style=shield&circle-token=3091a867864d55d39aa8f4f552ecb2257376cb0f)](https://circleci.com/gh/JoinColony/colonyNetwork/tree/develop)
-[![Greenkeeper badge](https://badges.greenkeeper.io/JoinColony/colonyNetwork.svg?token=12a1f49a1f7f9afa0b0af1370e6a4646c989cba0d90ec0d5b3872cb95c08facc&ts=1505828301742)](https://greenkeeper.io/)
 
 Contracts for running the Colony Network as defined in the [Colony White Paper](https://colony.io/whitepaper.pdf)
 
