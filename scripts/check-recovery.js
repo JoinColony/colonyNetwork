@@ -53,7 +53,9 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/SafeMath.sol",
       "contracts/ERC20ExtendedToken.sol",
       "contracts/TokenLocking.sol",
-      "contracts/TokenLockingStorage.sol"
+      "contracts/TokenLockingStorage.sol",
+      "contracts/Token.sol", // Imported from colonyToken repo
+      "contracts/TokenAuthority.sol" // Imported from colonyToken repo
     ].indexOf(contractName) > -1
   ) {
     return;

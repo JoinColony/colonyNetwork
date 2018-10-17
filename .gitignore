@@ -2,6 +2,8 @@ node_modules
 parity-genesis.json
 contracts/Updated*
 contracts/IUpdated*
+contracts/Token.sol
+contracts/TokenAuthority.sol
 keys/*
 test-results.xml
 0

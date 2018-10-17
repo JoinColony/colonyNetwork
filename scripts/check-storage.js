@@ -29,7 +29,9 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/PatriciaTree/PatriciaTree.sol", // Used by ReputationMiningCycle, which does not use EtherRouter
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
       "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
-      "contracts/ReputationMiningCycleStorage.sol"
+      "contracts/ReputationMiningCycleStorage.sol",
+      "contracts/Token.sol", // Imported from colonyToken repo
+      "contracts/TokenAuthority.sol" // Imported from colonyToken repo
     ].indexOf(contractName) > -1
   ) {
     return;

@@ -18,7 +18,8 @@ step_setup_global_packages: &step_setup_global_packages
     name: "Set up global packages"
     command: |
       yarn --pure-lockfile --network-concurrency 1
-      git submodule update --init
+      git submodule update --remote --init
+      yarn run provision:token:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc 0.4.23 docker image"
