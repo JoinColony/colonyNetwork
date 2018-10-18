@@ -354,11 +354,22 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const accounts = await web3GetAccounts();
   await clnyToken.setOwner(accounts[11]);
   const clnyTokenAddress = clnyToken.address;
+
+  const locked = await clnyToken.locked();
+  assert.isTrue(locked);
+
   return { metaColonyAddress, clnyTokenAddress };
 }
 
 export async function setupMetaColonyWithUNLockedCLNYToken(colonyNetwork) {
-  await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-  // TODO Unlock CLNY
-  // const metaColonyAddress = await colonyNetwork.getMetaColony();
+  const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+  // Unlock CLNY
+  const clnyToken = await Token.at(clnyTokenAddress);
+  const accounts = await web3GetAccounts();
+  await clnyToken.unlock({ from: accounts[11] });
+
+  const locked = await clnyToken.locked();
+  assert.isFalse(locked);
+
+  return { metaColonyAddress, clnyTokenAddress };
 }
