@@ -4,18 +4,24 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../helpers/test-helper";
-import { giveUserCLNYTokens, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
 import { ZERO_ADDRESS, WAD } from "../helpers/constants";
+import { giveUserCLNYTokens, setupMetaColonyWithUNLockedCLNYToken } from "../helpers/test-data-generator";
+import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
-const IColony = artifacts.require("IColony");
+const Resolver = artifacts.require("Resolver");
+const Colony = artifacts.require("Colony");
+const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyTask = artifacts.require("ColonyTask");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DutchAuction = artifacts.require("DutchAuction");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const Token = artifacts.require("Token");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -34,14 +40,32 @@ contract("Colony Network Auction", accounts => {
   before(async () => {
     quantity = new BN(10).pow(new BN(36)).muln(3);
     clnyNeededForMaxPriceAuctionSellout = new BN(10).pow(new BN(54)).muln(3);
-    const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {
-    const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    metaColony = await IColony.at(metaColonyAddress);
+    const resolverColonyNetworkDeployed = await Resolver.deployed();
+    const colonyTemplate = await Colony.new();
+    const colonyFunding = await ColonyFunding.new();
+    const colonyTask = await ColonyTask.new();
+    const resolver = await Resolver.new();
+    const contractRecovery = await ContractRecovery.new();
+    const etherRouter = await EtherRouter.new();
+    await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
+
+    const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithUNLockedCLNYToken(colonyNetwork);
+    metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
     clnyToken = await Token.at(clnyTokenAddress);
+
+    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+    await colonyNetwork.initialiseReputationMining();
+    await colonyNetwork.startNextCycle();
 
     const args = getTokenArgs();
     token = await ERC20ExtendedToken.new(...args);
@@ -66,16 +90,14 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("should burn tokens if auction is initialised for the CLNY token", async () => {
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "1000000000000000000");
-      const supplyBefore = await clny.totalSupply();
-      const balanceBefore = await clny.balanceOf(colonyNetwork.address);
-      await colonyNetwork.startTokenAuction(clny.address);
-      const supplyAfter = await clny.totalSupply();
-      const balanceAfter = await clny.balanceOf(colonyNetwork.address);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
+      const supplyBefore = await clnyToken.totalSupply();
+      const balanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
+      await colonyNetwork.startTokenAuction(clnyToken.address);
+      const supplyAfter = await clnyToken.totalSupply();
+      const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
       assert.equal(balanceAfter.toString(), "0");
       assert.equal(supplyBefore.sub(balanceBefore).toString(), supplyAfter.toString());
-      // Can do it again straight away
-      await colonyNetwork.startTokenAuction(clny.address);
     });
 
     it("should fail with zero quantity", async () => {
@@ -217,21 +239,21 @@ contract("Colony Network Auction", accounts => {
 
   describe("when bidding", async () => {
     it("can bid", async () => {
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "1000000000000000000");
-      await clnyToken.approve(tokenAuction.address, "1000000000000000000", { from: BIDDER_1 });
-      await tokenAuction.bid("1000000000000000000", { from: BIDDER_1 });
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
+      await clnyToken.approve(tokenAuction.address, WAD, { from: BIDDER_1 });
+      await tokenAuction.bid(WAD, { from: BIDDER_1 });
       const bid = await tokenAuction.bids(BIDDER_1);
-      assert.equal(bid, "1000000000000000000");
+      assert.equal(bid.toString(), WAD.toString());
       const bidCount = await tokenAuction.bidCount();
       assert.equal(bidCount.toNumber(), 1);
     });
 
     it("bid tokens are locked", async () => {
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "1000000000000000000");
-      await clnyToken.approve(tokenAuction.address, "1000000000000000000", { from: BIDDER_1 });
-      await tokenAuction.bid("1000000000000000000", { from: BIDDER_1 });
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
+      await clnyToken.approve(tokenAuction.address, WAD, { from: BIDDER_1 });
+      await tokenAuction.bid(WAD, { from: BIDDER_1 });
       const lockedTokens = await clnyToken.balanceOf(tokenAuction.address);
-      assert.equal(lockedTokens, "1000000000000000000");
+      assert.equal(lockedTokens.toString(), WAD.toString());
     });
 
     it("can bid more than once", async () => {
@@ -321,15 +343,15 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("all CLNY sent to the auction in bids is burned", async () => {
-      const balanceBefore = await clny.balanceOf(tokenAuction.address);
-      const supplyBefore = await clny.totalSupply();
+      const balanceBefore = await clnyToken.balanceOf(tokenAuction.address);
+      const supplyBefore = await clnyToken.totalSupply();
       const receivedTotal = await tokenAuction.receivedTotal();
       assert.isFalse(receivedTotal.isZero());
       await tokenAuction.finalize();
 
-      const balanceAfter = await clny.balanceOf(tokenAuction.address);
+      const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
       assert.equal(balanceAfter.toString(), "0");
-      const supplyAfter = await clny.totalSupply();
+      const supplyAfter = await clnyToken.totalSupply();
       assert.equal(supplyBefore.sub(supplyAfter).toString(), balanceBefore.toString());
     });
 

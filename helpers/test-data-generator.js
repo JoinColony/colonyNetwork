@@ -257,7 +257,6 @@ export async function setupFinalizedTask({
   });
 
   await colony.finalizeTask(taskId);
-
   return taskId;
 }
 
@@ -275,7 +274,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
-  const clny = await ColonyToken.at(clnyAddress);
+  const clny = await Token.at(clnyAddress);
   const mainStartingBalance = await clny.balanceOf(manager);
   const targetStartingBalance = await clny.balanceOf(address);
   await metaColony.mintTokens(amount.muln(3));
@@ -283,8 +282,8 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await metaColony.claimColonyFunds(clny.address);
   const taskId = await setupFinalizedTask({
     colonyNetwork,
-    colony: metaColony, // NOTE: CLNY is native token
-    managerPayout: amount.mul(new BN("2")),
+    colony: metaColony,
+    managerPayout: amount.muln(2),
     evaluatorPayout: new BN("0"),
     workerPayout: new BN("0")
   });
@@ -344,7 +343,7 @@ export async function fundColonyWithTokens(colony, token, tokenAmount) {
 export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
-  await metaColony.setNetworkFeeInverse(100);
+
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
@@ -367,6 +366,10 @@ export async function setupMetaColonyWithUNLockedCLNYToken(colonyNetwork) {
   const clnyToken = await Token.at(clnyTokenAddress);
   const accounts = await web3GetAccounts();
   await clnyToken.unlock({ from: accounts[11] });
+
+  // Transfer ownership to MetaColony and clear the Authority
+  // await clnyToken.setAuthority(0x0, { from: accounts[11] });
+  await clnyToken.setOwner(metaColonyAddress, { from: accounts[11] });
 
   const locked = await clnyToken.locked();
   assert.isFalse(locked);
