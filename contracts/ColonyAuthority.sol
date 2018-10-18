@@ -48,7 +48,7 @@ contract ColonyAuthority is CommonAuthority {
     setOwnerRoleCapability(colony, "registerColonyLabel(string)");
     // Set Network fee inverse
     setOwnerRoleCapability(colony, "setNetworkFeeInverse(uint256)");
-    // Set Network fee inverse
+    // Set Reward fee inverse
     setOwnerRoleCapability(colony, "setRewardInverse(uint256)");
     // Add colony version to the network
     setOwnerRoleCapability(colony, "addNetworkColonyVersion(uint256,address)");

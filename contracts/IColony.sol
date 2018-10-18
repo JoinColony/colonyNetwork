@@ -417,7 +417,7 @@ contract IColony is IRecovery {
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
 
   /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
-  /// @return _rewardInverse The inverse of the reward
+  /// @param _rewardInverse The inverse of the reward
   function setRewardInverse(uint256 _rewardInverse) public;
 
   /// @notice Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100
