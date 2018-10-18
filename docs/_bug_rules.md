@@ -1,38 +1,41 @@
 ---
 title: Bug Bounty Program
-section: Bug Bounty
+section: Rules and Scope
 order: 0
 ---
-## Colony Bug Bounty Program
 
 The Colony Network is a set of smart contracts designed to manage shared resources of multiple individuals in a secure and predictable manner. The system is designed to handle a potentially large amount of digital assets; it is therefore imperative that the system behaves as the Bagginses did before Bilbo: without ever doing anything unexpected.
 
 To this end, Colony is offering substantial rewards to external developers who report bugs and flaws in the colonyNetwork contracts.
 
-Interested? Read on.
+==TOC==
 
 ## Rules
 
 All bugs reported must be done _either_ through the creation of an issue in the colonyNetwork github repo, or by an email sent to security@colony.io (if the bug is deemed by the finder to be sensitive to public disclosure).
 
+(see [another page] for more information?)
+
 ## Scope
 This bug bounty program extends to all contracts within the [colonyNetwork Github repo](https://github.com/JoinColony/colonyNetwork).
 
+This includes, but is not limited to:
 * Reputation Mining vulnerabilities
 * Task, Domain, and Skill workflow exploits
-* Attacks during a network upgrade.
+* Attacks during a network upgrade
 
-## Ineligible Bugs
+Essentially, if it lives in the repo* and affects the Colony smart contracts, it's fair game.
 
-To qualify for a bounty a bug must be vulnerability or flaw expressed in the colonyNetwork codebase*.
+* * There are some components of the colonyNetwork repository that are not created by the Colony team, but which still could be relevant to overall security. If a bug or exploit makes use of any external libraries or submodules, it will be considered on a case-by-case basis for elegibility.
 
-* *If a vulnerability makes use of a flaw in an imported submodule (dappsys libraries), it is at the discretion of Colony to decide whether it qualifies for a bounty or not.*
+### Ineligible Bugs
 
 Any vulnerabilities or flaws in other software tools created by Colony (e.g. colonyJS, purser, tailor, etc.) are not eligible. Flaws in these software tools are welcome disclosures, but will not be awarded bounties for this bug bounty program.
 
 Additional examples of ineligible bugs:
 * Attacks and vulnerabilities that depend on compromised keys or other security flaws outside the colonyNetwork codebase (keyloggers, intercepted communications, etc.).
 * Attacks that are accounted for in the system design, i.e. Ethereum network spamming, malicious reputation mining, malfeasance in colony administration.
+* Critiques of the Colony Protocol and overall mechanism design. We welcome suggestions and constructive criticism, and ask that it be directed to hello@colony.io or the [Build with Colony Forums](https://build.colony.io/)
 
 
 ## Bug Severity and Bounties
@@ -47,46 +50,3 @@ It is at the *sole discretion of Colony* to decide whether or not a bug report q
 * Medium: Up to $5,000 USD
 * High: Up to $10,000 USD
 * Critical: Up to $20,000 USD
-
-
-
-## Eligibility and Participation Requirements
-
-
-## Service Level Agreement
-
-Response within 3 days determining whether or not the report qualifies for any bounty
-
-If the report qualifies, determination of severity and size of reward within 7 business days.
-
-Once the severity and bounty is decided, the Colony team will begin work on patching the bug.
-
-In this case, a PR will be opened that references the issue of original report. This PR may request more information from the submitter of the bug, and may accept input from external developers for fixing.
-
-When the PR closing the referenced issue is merged to the `/develop` branch (and, in the case of a live mainnet deployment, an upgrade has been successfully deployed), the issue will be considered "resolved" and payment can take place.
-
-Time to remediation:
-* Critical: within 3 days
-* High: within 9 business days
-* Medium: within 30 business days
-* Low, within 60 business days
-
-
-
-
-
-## Terms and Conditions
-
-### 1. Definitions
-
-#### 1.1 "Bounty"
-
-#### 1.2 "Bug Report Issue"
-
-#### 1.3 "Bug Bounty Program"
-
-#### 1.4 "Colony"
-
-#### 1.5 "Issue"
-
-#### 1.6 "Remediation"
