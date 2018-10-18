@@ -488,6 +488,19 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-proposed-hash-empty");
     });
 
+    it("should not allow a hash to be invalidated and then moved on to the next stage by invalidating its now non-existent opponent", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-opponent-already-progressed");
+    });
+
     it("should invalidate a hash and its partner if both have timed out", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
@@ -889,7 +902,7 @@ contract("ColonyNetworkMining", accounts => {
     // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
     // correctly. Unsure if I should force them to be run every time.
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].forEach(async badIndex => {
-      it(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
+      it.skip(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
         await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
         await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
@@ -1144,7 +1157,19 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.invalidateHash(0, 1);
     });
 
-    it("if a new reputation's uniqueID is wrong, that disagreement should be handled correctly", async () => {
+    it.skip("if a new reputation's uniqueID is wrong, that disagreement should be handled correctly", async () => {
+      // I think this test is now obsoleted. If a new reputation's UID is wrong:
+      // 1. It could be too small. But then either
+      //    a) If we provide the right previousNewRepuationID for the new UID we're claiming, it will be too small
+      //       compared to nNodes in the lastAgree state in the JRHs, and respondToChallenge will fail with
+      //       colony-reputation-mining-proved-uid-inconsistent
+      //    b) If we supply the right previousNewReputationID when compared to lastAgreeState, then respondToChallenge will
+      //       fail with colony-reputation-mining-new-uid-incorrect
+      // 2. It could be too large. We can't provide the right previousNewRepuationID for the new UID we're claiming, so only
+      //    the equivalent of b) above is possible
+      // This doesn't quite hold if the two submissions are both malicious, and agreed on an invliad state for the lastAgreeState.
+      // However, only one will still be able to be 'right', and so the dispute resoultion will continue as intended with at least
+      // one of those submissions being eliminated.
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
@@ -1618,6 +1643,9 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
 
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
@@ -2095,6 +2123,9 @@ contract("ColonyNetworkMining", accounts => {
       // Cleanup
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
 
       await forwardTime(600, this);
       await goodClient.respondToChallenge();
