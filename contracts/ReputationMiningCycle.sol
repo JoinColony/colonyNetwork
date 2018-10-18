@@ -280,9 +280,11 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] siblings
   ) public
   {
-    // TODO: Check this challenge is active.
-    // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
     require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
+    require(
+      2**(disputeRounds[round][idx].challengeStepCompleted - 1) < disputeRounds[round][idx].jrhNnodes,
+      "colony-reputation-mining-binary-search-already-complete"
+    );
 
     uint256 targetNode = add(
       disputeRounds[round][idx].lowerBound,
@@ -300,6 +302,44 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // If require hasn't thrown, proof is correct.
     // Process the consequences
     processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode);
+  }
+
+  function confirmBinarySearchResult(
+    uint256 round,
+    uint256 idx,
+    bytes jhIntermediateValue,
+    uint256 branchMask,
+    bytes32[] siblings
+  ) public
+  {
+    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
+    require(
+      2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNnodes,
+      "colony-reputation-binary-search-result-already-confirmed"
+    );
+
+    uint256 targetNode = disputeRounds[round][idx].lowerBound;
+    bytes32 jrh = disputeRounds[round][idx].jrh;
+
+    bytes memory targetNodeBytes = new bytes(32);
+    assembly {
+      mstore(add(targetNodeBytes, 0x20), targetNode)
+    }
+
+    bytes32 impliedRoot = getImpliedRoot(targetNodeBytes, jhIntermediateValue, branchMask, siblings);
+    require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-confirmation");
+    bytes32 intermediateReputationHash;
+    uint256 intermediateReputationNNodes;
+    assembly {
+      intermediateReputationHash := mload(add(jhIntermediateValue, 0x20))
+      intermediateReputationNNodes := mload(add(jhIntermediateValue, 0x40))
+    }
+    disputeRounds[round][idx].intermediateReputationHash = intermediateReputationHash;
+    disputeRounds[round][idx].intermediateReputationNNodes = intermediateReputationNNodes;
+    while (2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNnodes) {
+      disputeRounds[round][idx].challengeStepCompleted += 1;
+    }
+
   }
 
   function submitJustificationRootHash(
@@ -508,6 +548,18 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // If the number of nodes in the reputation state are different, then we are disagreeing on whether this log entry
     // corresponds to an existing reputation entry or not.
     // If the hashes are different, then it's a calculation error.
+    // However, the intermediate hashes saved might not be the ones that correspond to the first disagreement, based on how exactly the last
+    // step of the binary challenge came to be.
+
+    // If complete, mark that the binary search is completed (but the intermediate hashes may or may not be correct) by setting
+    // challengeStepCompleted to the maximum it could be for the number of nodes we had to search through, plus one to indicate
+    // they've submitted their jrh
+    if (disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound) {
+      if (2**(disputeRounds[round][idx].challengeStepCompleted-1) < disputeRounds[round][idx].jrhNnodes) {
+        disputeRounds[round][idx].challengeStepCompleted += 1;
+        disputeRounds[round][opponentIdx].challengeStepCompleted += 1;
+      }
+    }
 
     // Our opponent responded to this step of the challenge before we did, so we should
     // reset their 'last response' time to now, as they aren't able to respond

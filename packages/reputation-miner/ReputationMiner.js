@@ -288,11 +288,10 @@ class ReputationMiner {
     let branchMask;
     let siblings;
     let value;
-
-    try {
+    if (this.reputations[key]) {
       [branchMask, siblings] = await this.getProof(key); // eslint-disable-line no-await-in-loop
       value = this.reputations[key];
-    } catch (err) {
+    } else {
       // Doesn't exist yet.
       branchMask = 0x0;
       siblings = [];
@@ -703,6 +702,26 @@ class ReputationMiner {
   }
 
   /**
+   * Respond to the next stage in the binary search occurring on `ReputationMiningCycle` contract in order to find
+   * the first log entry where our submitted hash and the hash we are paired off against differ.
+   * @return {Promise} Resolves to the tx hash of the response
+   */
+  async confirmBinarySearchResult() {
+    const [round, index] = await this.getMySubmissionRoundAndIndex();
+    const repCycle = await this.getActiveRepCycle();
+    const submission = await repCycle.getDisputeRounds(round, index);
+    const targetNode = submission[8];
+    const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
+
+    const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
+    const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
+    const tx = await repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
+      gasLimit: 1000000
+    });
+    return tx;
+  }
+
+  /**
    * Respond to a specific challenge over the effect of a specific log entry once the binary search has been completed to establish
    * the log entry where the two submitted hashes differ.
    * @return {Promise} Resolves to tx hash of the response
@@ -728,41 +747,30 @@ class ReputationMiner {
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
-    // console.log('get justification tree done');
+    // console.log(
+    //   [
+    //     round,
+    //     index,
+    //     this.justificationHashes[firstDisagreeKey].justUpdatedProof.branchMask,
+    //     this.justificationHashes[lastAgreeKey].nextUpdateProof.nNodes,
+    //     ReputationMiner.getHexString(agreeStateBranchMask),
+    //     this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
+    //     ReputationMiner.getHexString(disagreeStateBranchMask),
+    //     this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
+    //     "0",
+    //     logEntryNumber,
+    //     "0"
+    //   ],
+    //   reputationKey,
+    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
+    //   this.justificationHashes[lastAgreeKey].nextUpdateProof.value,
+    //   agreeStateSiblings,
+    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.value,
+    //   disagreeStateSiblings,
+    //   this.justificationHashes[lastAgreeKey].newestReputationProof.key,
+    //   this.justificationHashes[lastAgreeKey].newestReputationProof.value,
+    //   this.justificationHashes[lastAgreeKey].newestReputationProof.siblings);
 
-    // These comments can help with debugging. This implied root is the intermediate root hash that is implied
-    // const impliedRoot = await this.justificationTree.getImpliedRoot(
-    //   reputationKey,
-    //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value,
-    //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.branchMask,
-    //   this.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.siblings
-    // );
-    // console.log('intermediatRootHash', impliedRoot);
-    // // This one is the JRH implied by the proof provided alongside the above implied root - we expect this to
-    // // be the JRH that has been submitted.
-    // const impliedRoot2 = await this.justificationTree.getImpliedRoot(
-    //   `0x${new BN(lastAgreeIdx).toString(16, 64)}`,
-    //   impliedRoot,
-    //   agreeStateBranchMask,
-    //   agreeStateSiblings
-    // );
-    // const jrh = await this.justificationTree.getRootHash();
-    // console.log('implied jrh', impliedRoot2)
-    // console.log('actual jrh', jrh)
-    // const impliedRoot3 = await this.justificationTree.getImpliedRoot(
-    //   reputationKey,
-    //   this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.value,
-    //   this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask,
-    //   this.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings
-    // );
-    // const impliedRoot4 = await this.justificationTree.getImpliedRoot(
-    //   `0x${new BN(firstDisagreeIdx).toString(16, 64)}`,
-    //   impliedRoot3,
-    //   disagreeStateBranchMask,
-    //   disagreeStateSiblings
-    // );
-    // console.log('intermediatRootHash2', impliedRoot3);
-    // console.log('implied jrh from irh2', impliedRoot4);
     const tx = await repCycle.respondToChallenge(
       [
         round,
