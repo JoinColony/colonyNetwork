@@ -2010,6 +2010,117 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should not allow stages to be skipped even if the number of updates is a power of 2", async () => {
+      // Note that our jrhNNodes can never be a power of two, because we always have an even number of updates (because every reputation change
+      // has a user-specific an a colony-specific effect, and we always have one extra state in the Justification Tree because we include the last
+      // accepted hash as the first node. jrhNNodes is always odd, therefore, and can never be a power of two.
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      let addr = await colonyNetwork.getReputationMiningCycle(false);
+      let inactiveRepCycle = await IReputationMiningCycle.at(addr);
+
+      const taskId = await setupRatedTask( // eslint-disable-line
+        {
+          colonyNetwork,
+          colony: metaColony,
+          colonyToken: clny,
+          workerRating: 1,
+          managerPayout: 1,
+          evaluatorPayout: 1,
+          workerPayout: 1
+        }
+      );
+      await metaColony.finalizeTask(taskId);
+      await advanceTimeSubmitAndConfirmHash(this);
+      await advanceTimeSubmitAndConfirmHash(this);
+      addr = await colonyNetwork.getReputationMiningCycle(false);
+      inactiveRepCycle = await IReputationMiningCycle.at(addr);
+
+      let powerTwoEntries = false;
+      while (!powerTwoEntries) {
+        const taskId = await setupRatedTask( // eslint-disable-line
+          {
+            colonyNetwork,
+            colony: metaColony,
+            colonyToken: clny,
+            workerRating: 1,
+            managerPayout: 1,
+            evaluatorPayout: 1,
+            workerPayout: 1
+          }
+        );
+        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
+        const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength(); // eslint-disable-line no-await-in-loop
+        const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1); // eslint-disable-line no-await-in-loop
+        const currentHashNNodes = await colonyNetwork.getReputationRootHashNNodes(); // eslint-disable-line no-await-in-loop
+        const nUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(currentHashNNodes);
+        // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
+        // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
+        if (parseInt(nUpdates.toString(2).slice(1), 10) === 0) {
+          powerTwoEntries = true;
+        }
+      }
+      await advanceTimeSubmitAndConfirmHash(this);
+      await goodClient.resetDB();
+      await goodClient.saveCurrentState();
+      const savedHash = await goodClient.reputationTree.getRootHash();
+
+      await badClient.loadState(savedHash);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+
+      let tx;
+      let receipt;
+      // We need one more response to binary search from each side. Check we can't confirm early
+      tx = await goodClient.confirmBinarySearchResult();
+      receipt = await web3GetTransactionReceipt(tx);
+      assert(receipt.status === false);
+
+      await goodClient.respondToBinarySearchForChallenge();
+
+      // Check we can't confirm even if we're done, but our opponent isn't
+      tx = await goodClient.confirmBinarySearchResult();
+      receipt = await web3GetTransactionReceipt(tx);
+      assert(receipt.status === false);
+
+      await badClient.respondToBinarySearchForChallenge();
+
+      // Now we can confirm
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      // Check we can't continue confirming
+      tx = await goodClient.respondToBinarySearchForChallenge();
+      receipt = await web3GetTransactionReceipt(tx);
+      assert(receipt.status === false);
+
+      await goodClient.respondToChallenge();
+
+      // Check we can't respond again
+      tx = await goodClient.respondToChallenge();
+      receipt = await web3GetTransactionReceipt(tx);
+      assert(receipt.status === false);
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await forwardTime(600, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should fail to respondToBinarySearchForChallenge if not consistent with JRH", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
