@@ -1,6 +1,6 @@
 ---
-title: Bug Bounty Program
-section: Terms and Conditions
+title: Terms and Conditions
+section: Bug Bounty Program
 order: 1
 ---
 ## Eligibility and Participation Requirements

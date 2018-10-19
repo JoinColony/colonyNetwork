@@ -1,6 +1,6 @@
 ---
-title: Bug Bounty Program
-section: Rules and Scope
+title: Overview
+section: Bug Bounty Program
 order: 0
 ---
 
@@ -10,11 +10,8 @@ To this end, Colony is offering substantial rewards to external developers who r
 
 ==TOC==
 
-## Rules
-
-All bugs reported must be done _either_ through the creation of an issue in the colonyNetwork github repo, or by an email sent to security@colony.io (if the bug is deemed by the finder to be sensitive to public disclosure).
-
 ## Scope
+
 This bug bounty program extends to all contracts within the [colonyNetwork Github repo](https://github.com/JoinColony/colonyNetwork).
 
 This includes, but is not limited to:
@@ -27,6 +24,8 @@ Essentially, if it lives in the repo* and affects the Colony smart contracts, it
 * * There are some components of the colonyNetwork repository that are not created by the Colony team, but which still could be relevant to overall security. If a bug or exploit makes use of any external libraries or submodules, it will be considered on a case-by-case basis for elegibility.
 
 ### Submission Guidelines
+
+All bugs reported must be done _either_ through the creation of an issue in the colonyNetwork github repo, or by an email sent to security@colony.io (if the bug is deemed by the finder to be sensitive to public disclosure).
 
 Unless there is a specific reason for a private disclosure, bugs should be submitted as issues on the colonyNetwork GitHub repository, and tagged with the 'bug' label.
 
