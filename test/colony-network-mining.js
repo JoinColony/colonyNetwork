@@ -2010,6 +2010,54 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should incorrectly confirming a binary search result should fail", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        3,
+        0xffffffffffff
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+
+      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
+      const submission = await repCycle.getDisputeRounds(round, index);
+      const targetNode = submission[8];
+      const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
+
+      const [branchMask, siblings] = await goodClient.justificationTree.getProof(targetNodeKey);
+      await checkErrorRevert(
+        repCycle.confirmBinarySearchResult(round, index, "0x00", branchMask, siblings, {
+          gasLimit: 1000000
+        }),
+        "colony-reputation-mining-invalid-binary-search-confirmation"
+      );
+
+      // Cleanup
+      await goodClient.confirmBinarySearchResult();
+      await forwardTime(600, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should not allow stages to be skipped even if the number of updates is a power of 2", async () => {
       // Note that our jrhNNodes can never be a power of two, because we always have an even number of updates (because every reputation change
       // has a user-specific an a colony-specific effect, and we always have one extra state in the Justification Tree because we include the last
@@ -2019,6 +2067,14 @@ contract("ColonyNetworkMining", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle(false);
       let inactiveRepCycle = await IReputationMiningCycle.at(addr);
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        5,
+        0xfffffffff
+      );
+
+      await badClient.initialise(colonyNetwork.address);
 
       const taskId = await setupRatedTask( // eslint-disable-line
         {
@@ -2088,6 +2144,11 @@ contract("ColonyNetworkMining", accounts => {
       receipt = await web3GetTransactionReceipt(tx);
       assert(receipt.status === false);
 
+      // Check we can't respond to challenge before we've completed the binary search
+      tx = await goodClient.respondToChallenge();
+      receipt = await web3GetTransactionReceipt(tx);
+      assert(receipt.status === false);
+
       await goodClient.respondToBinarySearchForChallenge();
 
       // Check we can't confirm even if we're done, but our opponent isn't
@@ -2096,6 +2157,11 @@ contract("ColonyNetworkMining", accounts => {
       assert(receipt.status === false);
 
       await badClient.respondToBinarySearchForChallenge();
+
+      // Check we can't respond to challenge before confirming result
+      tx = await goodClient.respondToChallenge();
+      receipt = await web3GetTransactionReceipt(tx);
+      assert(receipt.status === false);
 
       // Now we can confirm
       await goodClient.confirmBinarySearchResult();

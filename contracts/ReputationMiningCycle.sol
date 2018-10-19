@@ -282,10 +282,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   ) public
   {
     require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
-    require(
-      2**(disputeRounds[round][idx].challengeStepCompleted - 1) < disputeRounds[round][idx].jrhNnodes,
-      "colony-reputation-mining-binary-search-already-complete"
-    );
 
     uint256 targetNode = add(
       disputeRounds[round][idx].lowerBound,
