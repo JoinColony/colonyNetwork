@@ -59,9 +59,6 @@ contract ColonyAuthority is CommonAuthority {
     // Start next reward payout
     setAdminRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
     setOwnerRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
-    // Cancel task
-    setAdminRoleCapability(colony, "cancelTask(uint256)");
-    setOwnerRoleCapability(colony, "cancelTask(uint256)");
     // Set admin
     setAdminRoleCapability(colony, "setAdminRole(address)");
     setOwnerRoleCapability(colony, "setAdminRole(address)");

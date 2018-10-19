@@ -26,6 +26,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   event RewardPayoutCycleStarted(uint256 indexed id);
   event RewardPayoutCycleEnded(uint256 indexed id);
   event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
+  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
 
   function getFeeInverse() public pure returns (uint256) {
     // TODO: refer to ColonyNetwork
@@ -60,10 +61,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   )
   public
   stoppable
+  confirmTaskRoleIdentity(_id, MANAGER)
   {
     Task storage task = tasks[_id];
 
-    require(task.roles[MANAGER].user == msg.sender, "colony-funding-must-be-manager");
     require(task.roles[EVALUATOR].user == task.roles[MANAGER].user || task.roles[EVALUATOR].user == 0x0, "colony-funding-evaluator-already-set");
     require(task.roles[WORKER].user == task.roles[MANAGER].user || task.roles[WORKER].user == 0x0, "colony-funding-worker-already-set");
 
@@ -109,7 +110,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     if (_token == 0x0) {
       // Payout ether
-      task.roles[_role].user.transfer(remainder);
+      address user = task.roles[_role].user;
+      user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address metaColonyAddress = colonyNetworkContract.getMetaColony();
@@ -122,6 +124,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       payoutToken.transfer(task.roles[_role].user, remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
     }
+
+    emit TaskPayoutClaimed(_id, _role, _token, remainder);
   }
 
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256) {
@@ -377,7 +381,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   function setTaskPayout(uint256 _id, uint8 _role, address _token, uint256 _amount) private
   taskExists(_id)
-  taskNotFinalized(_id)
+  taskNotComplete(_id)
   {
     uint currentTotalAmount = getTotalTaskPayout(_id, _token);
     tasks[_id].payouts[_role][_token] = _amount;
