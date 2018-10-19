@@ -5,7 +5,16 @@ order: 1
 ---
 ## Eligibility and Participation Requirements
 
+To participate in this bug bounty you must:
 
+* Not be employed by Colony
+* Not be in vialation of any national state, or local law or regulation with respect to any activities directly or indirectly related to the Bug Bounty Program.
+
+To qualify for a bounty you must:
+* Be the first to report a specific vulnerability
+* Report a vulnerability through the process outlined in the [Rules and Scope](link)
+* Disclose the vulnerability responsibly and directly to Colony. Disclosure to other third parties before or during bug review will invalidate the submission
+* Not seek or leverage the vulnerability for additional or external bounties or rewards
 
 ## Service Level Agreement
 
