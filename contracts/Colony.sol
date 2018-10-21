@@ -54,6 +54,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return ColonyAuthority(authority).hasUserRole(_user, _role);
   }
 
+  function getColonyNetworkAddress() public view returns (address) {
+    return colonyNetworkAddress;
+  }
+
   function setToken(address _token) public
   stoppable
   auth
@@ -68,7 +72,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function initialiseColony(address _colonyNetworkAddress) public stoppable {
-    require(colonyNetworkAddress == 0x0, "colony-initialise-bad-address");
+    require(colonyNetworkAddress == address(0x0), "colony-initialise-bad-address");
     colonyNetworkAddress = _colonyNetworkAddress;
 
     // Initialise the task update reviewers
