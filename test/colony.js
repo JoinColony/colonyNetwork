@@ -318,4 +318,22 @@ contract("Colony", accounts => {
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });
   });
+
+  describe("when setting the reward inverse", () => {
+    it("should allow the colony owner to set it", async () => {
+      await colony.setRewardInverse(234);
+      const fee = await colony.getRewardInverse();
+      assert.equal(fee, 234);
+    });
+
+    it("should not allow anyone else but the colony owner to set it", async () => {
+      await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }));
+      const fee = await colony.getRewardInverse();
+      assert.equal(fee, 100);
+    });
+
+    it("should not allow the amount to be set to zero", async () => {
+      await checkErrorRevert(colony.setRewardInverse(0), "colony-reward-inverse-cannot-be-zero");
+    });
+  });
 });

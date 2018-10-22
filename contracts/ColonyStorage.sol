@@ -36,6 +36,7 @@ contract ColonyStorage is CommonStorage, DSMath {
 
   address colonyNetworkAddress;
   ERC20Extended token;
+  uint256 rewardInverse;
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;

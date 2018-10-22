@@ -20,6 +20,7 @@ contract("Colony", accounts => {
   let colony;
   let colonyNetwork;
   let clnyToken;
+  let metaColony;
 
   before(async () => {
     const resolverColonyNetworkDeployed = await Resolver.deployed();
@@ -36,6 +37,9 @@ contract("Colony", accounts => {
 
     clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IColony.at(metaColonyAddress);
+
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
     const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
@@ -97,7 +101,7 @@ contract("Colony", accounts => {
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.initialiseColony("0x0"), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.addGlobalSkill(0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-in-recovery-mode");
       await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, 0, 0), "colony-in-recovery-mode");
     });
 

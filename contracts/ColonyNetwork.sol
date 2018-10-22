@@ -114,7 +114,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return miningCycleResolver;
   }
 
-  function createMetaColony(address _tokenAddress) public stoppable
+  function createMetaColony(address _tokenAddress) public
+  stoppable
   auth
   {
     require(metaColony == 0, "colony-meta-colony-exists-already");
@@ -131,7 +132,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     this.addSkill(skillCount, false);
   }
 
-  function createColony(address _tokenAddress) public stoppable returns (address) {
+  function createColony(address _tokenAddress) public
+  stoppable
+  returns (address) 
+  {
     EtherRouter etherRouter = new EtherRouter();
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);

@@ -153,8 +153,9 @@ contract IColony is IRecovery {
   function getToken() public view returns (address tokenAddress);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
-  /// @param _network Address of the colony network
-  function initialiseColony(address _network) public;
+  /// @dev Sets the reward inverse to the uint max 2**256 - 1
+  /// @param _address Address of the colony network
+  function initialiseColony(address _address) public;
 
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users`
   /// This reputation is assigned in the colony-wide domain. Secured function to authorised members
@@ -415,9 +416,13 @@ contract IColony is IRecovery {
   /// @return rating Rating the user received
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
 
+  /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
+  /// @return _rewardInverse The inverse of the reward
+  function setRewardInverse(uint256 _rewardInverse) public;
+
   /// @notice Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100
   /// @return rewardInverse The inverse of the reward
-  function getRewardInverse() public pure returns (uint256 rewardInverse);
+  function getRewardInverse() public view returns (uint256 rewardInverse);
 
   /// @notice Get payout amount in `_token` denomination for role `_role` in task `_id`
   /// @param _id Id of the task
