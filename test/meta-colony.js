@@ -562,7 +562,7 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colonyNetwork.setFeeInverse(100), "colony-caller-must-be-meta-colony");
     });
 
-    it("should now allow the fee to be set to zero", async () => {
+    it("should not allow the fee to be set to zero", async () => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(0), "colony-network-fee-inverse-cannot-be-zero");
     });
   });

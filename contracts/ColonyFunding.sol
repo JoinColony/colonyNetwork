@@ -399,10 +399,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint256 feeInverse = colonyNetworkContract.getFeeInverse();
 
-    if (_payout < feeInverse) {
-      fee = (_payout + feeInverse - 1) / feeInverse;
+    if (_payout == 0 || feeInverse == 1) { 
+      fee = _payout; 
     } else {
-      fee = _payout / feeInverse;
+      fee = _payout/feeInverse + 1;
     }
   }
 }
