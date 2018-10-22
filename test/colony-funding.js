@@ -63,6 +63,7 @@ contract("Colony Funding", accounts => {
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
+    await colony.setRewardInverse(100);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
   });
@@ -710,6 +711,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
@@ -884,6 +886,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
 
       await newToken.setOwner(newColony.address);
       await newColony.mintTokens(userTokens.toString());
@@ -952,6 +955,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
       await newToken.mint(10);
       await newToken.transfer(userAddress1, 10);
 
@@ -1273,10 +1277,12 @@ contract("Colony Funding", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
+      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
+      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -1400,10 +1406,12 @@ contract("Colony Funding", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
+      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
+      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -1557,6 +1565,7 @@ contract("Colony Funding", accounts => {
         const { colonyAddress } = logs[0].args;
         await newToken.setOwner(colonyAddress);
         const newColony = await IColony.at(colonyAddress);
+        await newColony.setRewardInverse(100);
 
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await Token.new(...payoutTokenArgs);

@@ -121,7 +121,7 @@ contract("Colony Network Recovery", accounts => {
 
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
-      await checkErrorRevert(colonyNetwork.createColony(clnyAddress, 100), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clnyAddress), "colony-in-recovery-mode");
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
     });
@@ -239,7 +239,7 @@ contract("Colony Network Recovery", accounts => {
 
           const tokenArgs = getTokenArgs();
           const token = await Token.new(...tokenArgs);
-          const { logs } = await colonyNetwork.createColony(token.address, 100);
+          const { logs } = await colonyNetwork.createColony(token.address);
           const { colonyAddress } = logs[0].args;
 
           await token.setOwner(colonyAddress);
@@ -330,7 +330,7 @@ contract("Colony Network Recovery", accounts => {
 
           const tokenArgs = getTokenArgs();
           const token = await Token.new(...tokenArgs);
-          const { logs } = await colonyNetwork.createColony(token.address, 100);
+          const { logs } = await colonyNetwork.createColony(token.address);
           const { colonyAddress } = logs[0].args;
 
           await token.setOwner(colonyAddress);

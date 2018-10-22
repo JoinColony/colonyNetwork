@@ -57,7 +57,7 @@ contract("Colony Network", accounts => {
     await colonyNetwork.initialise(resolver.address);
 
     const metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createMetaColony(metaColonyToken.address, 100);
+    await colonyNetwork.createMetaColony(metaColonyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
   });
@@ -125,8 +125,6 @@ contract("Colony Network", accounts => {
     });
 
     it("when meta colony is created, should have the root global and local skills initialised, plus the local mining skill", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
-      await colonyNetwork.createMetaColony(token.address);
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
       const rootGlobalSkill = await colonyNetwork.getSkill(1);
@@ -148,12 +146,7 @@ contract("Colony Network", accounts => {
 
     it("should fail to create meta colony if it already exists", async () => {
       const token = await Token.new(...TOKEN_ARGS);
-      await colonyNetwork.createMetaColony(token.address);
-      const metaColonyAddress1 = await colonyNetwork.getMetaColony();
-
       await checkErrorRevert(colonyNetwork.createMetaColony(token.address), "colony-meta-colony-exists-already");
-      const metaColonyAddress2 = await colonyNetwork.getMetaColony();
-      assert.equal(metaColonyAddress1, metaColonyAddress2);
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
@@ -163,6 +156,7 @@ contract("Colony Network", accounts => {
       expect(rootLocalSkill[0]).to.be.zero;
       expect(rootLocalSkill[1]).to.be.zero;
 
+      const skillCount = await colonyNetwork.getSkillCount();
       const skill = await colonyNetwork.getSkill(skillCount.addn(1));
       expect(skill[2]).to.be.false;
 

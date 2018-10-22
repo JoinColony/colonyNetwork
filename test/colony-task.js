@@ -45,6 +45,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
@@ -66,7 +67,7 @@ contract("ColonyTask", accounts => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
     await metaColony.setNetworkFeeInverse(100);
 
     const tokenArgs = getTokenArgs();
@@ -75,6 +76,7 @@ contract("ColonyTask", accounts => {
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
+    await colony.setRewardInverse(100);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
 
@@ -1505,10 +1507,10 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
 
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
-      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(toBN(1 * 1e18));
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(toBN(1 * 1e18).addn(1));
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(toBN(99 * 1e18));
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(toBN(99 * 1e18).subn(1));
 
       const potBalanceAfter = await colony.getPotBalance(taskPotId, token.address);
       expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(toBN(100 * 1e18));
@@ -1541,10 +1543,10 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, WORKER_ROLE, 0x0, { from: WORKER, gasPrice: 0 });
 
       const workerBalanceAfter = await web3GetBalance(WORKER);
-      expect(toBN(workerBalanceAfter).sub(toBN(workerBalanceBefore))).to.eq.BN(toBN(198));
+      expect(toBN(workerBalanceAfter).sub(toBN(workerBalanceBefore))).to.eq.BN(toBN(197));
 
       const metaBalanceAfter = await web3GetBalance(metaColony.address);
-      expect(toBN(metaBalanceAfter).sub(toBN(metaBalanceBefore))).to.eq.BN(2);
+      expect(toBN(metaBalanceAfter).sub(toBN(metaBalanceBefore))).to.eq.BN(3);
 
       const potBalanceAfter = await colony.getPotBalance(taskPotId, 0x0);
       expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(toBN(200));
@@ -1578,7 +1580,9 @@ contract("ColonyTask", accounts => {
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);
-      const evaluatorPayout = EVALUATOR_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      const evaluatorPayout = EVALUATOR_PAYOUT.divn(100)
+        .muln(99)
+        .subn(1); // "Subtract" 1% fee
       expect(evaluatorBalanceAfter.sub(evaluatorBalanceBefore)).to.eq.BN(evaluatorPayout);
     });
 
@@ -1602,11 +1606,15 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      const managerPayout = MANAGER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      const managerPayout = MANAGER_PAYOUT.divn(100)
+        .muln(99)
+        .subn(1); // "Subtract" 1% fee
       expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(managerPayout);
 
       const workerBalanceAfter = await token.balanceOf(WORKER);
-      const workerPayout = WORKER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      const workerPayout = WORKER_PAYOUT.divn(100)
+        .muln(99)
+        .subn(1); // "Subtract" 1% fee
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.eq.BN(workerPayout);
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);

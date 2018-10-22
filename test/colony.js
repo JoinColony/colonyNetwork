@@ -1,6 +1,7 @@
 /* globals artifacts */
 
 import { toBN } from "web3-utils";
+import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
@@ -10,6 +11,7 @@ import { makeTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
+const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const Colony = artifacts.require("Colony");
@@ -322,16 +324,23 @@ contract("Colony", accounts => {
   });
 
   describe("when setting the reward inverse", () => {
+    it("should have a default reward inverse set to max uint", async () => {
+      const defaultRewardInverse = await colony.getRewardInverse();
+      const maxUIntNumber = new BN(2).pow(new BN(256)).sub(new BN(1));
+      expect(defaultRewardInverse).to.eq.BN(maxUIntNumber);
+    });
+
     it("should allow the colony owner to set it", async () => {
       await colony.setRewardInverse(234);
-      const fee = await colony.getRewardInverse();
-      assert.equal(fee, 234);
+      const defaultRewardInverse = await colony.getRewardInverse();
+      expect(defaultRewardInverse).to.eq.BN(234);
     });
 
     it("should not allow anyone else but the colony owner to set it", async () => {
+      await colony.setRewardInverse(100);
       await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }));
-      const fee = await colony.getRewardInverse();
-      assert.equal(fee, 100);
+      const defaultRewardInverse = await colony.getRewardInverse();
+      expect(defaultRewardInverse).to.eq.BN(100);
     });
 
     it("should not allow the amount to be set to zero", async () => {

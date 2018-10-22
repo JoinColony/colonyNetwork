@@ -40,7 +40,7 @@ contract("Colony Recovery", accounts => {
     clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
     await metaColony.setNetworkFeeInverse(100);
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
@@ -51,7 +51,7 @@ contract("Colony Recovery", accounts => {
   });
 
   beforeEach(async () => {
-    const { logs } = await colonyNetwork.createColony(clnyToken.address, 100);
+    const { logs } = await colonyNetwork.createColony(clnyToken.address);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
   });
