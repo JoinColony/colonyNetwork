@@ -702,6 +702,9 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
 
+      let userLock0 = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
+      assert(userLock0[1].eq(new BN("1000000000000000000")));
+
       let userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
       assert(userLock1[1].eq(new BN("1000000000000000000")));
 
@@ -717,10 +720,14 @@ contract("ColonyNetworkMining", accounts => {
       badClient2.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
-
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+
+      userLock0 = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
+      assert.equal(userLock0[1].toString(), "3000000000000000000", "Account was not rewarded properly");
+
       userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
       assert.equal(userLock1[1].toString(), "0", "Account was not punished properly");
+
       userLock2 = await tokenLocking.getUserLock(clny.address, accounts[2]);
       assert.equal(userLock2[1].toString(), "0", "Account was not punished properly");
     });

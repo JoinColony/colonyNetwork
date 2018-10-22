@@ -40,8 +40,9 @@ contract ITokenLocking {
 
   /// @notice Function called to punish people who staked against a new reputation root hash that turned out to be incorrect
   /// @dev While public, it can only be called successfully by the current ReputationMiningCycle.
-  /// @param stakers Array of the addresses of stakers to punish
-  function punishStakers(address[] stakers) public;
+  /// @param _stakers Array of the addresses of stakers to punish
+  /// @param _beneficiary Address of beneficiary to receive forfeited stake
+  function punishStakers(address[] _stakers, address _beneficiary) public;
 
   /// @notice Get global lock count for a specific token
   /// @param _token Address of the token
