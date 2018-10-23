@@ -268,7 +268,7 @@ contract IColonyNetwork is IRecovery {
   /// @return feeInverse The inverse of the network fee
   function getFeeInverse() public view returns (uint256 _feeInverse);
 
-  /// @notice Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), return 100
+  /// @notice Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as _feeInverse
   /// @param _feeInverse The inverse of the network fee to set
   function setFeeInverse(uint256 _feeInverse) public;
 }
