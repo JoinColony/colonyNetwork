@@ -8,6 +8,7 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const ColonyTask = artifacts.require("ColonyTask");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const UpdatedColony = artifacts.require("UpdatedColony");
@@ -19,6 +20,7 @@ const ContractRecovery = artifacts.require("ContractRecovery");
 contract("Colony contract upgrade", accounts => {
   const ACCOUNT_ONE = accounts[0];
 
+  let metaColony;
   let colony;
   let colonyTask;
   let colonyFunding;
@@ -34,6 +36,8 @@ contract("Colony contract upgrade", accounts => {
   before(async () => {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
     dueDate = await currentBlockTime();
 
@@ -56,7 +60,10 @@ contract("Colony contract upgrade", accounts => {
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", updatedColonyContract.address);
-    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, contractRecovery, resolver);
+
+    updatedColonyVersion = await updatedColonyContract.version();
+    await metaColony.addNetworkColonyVersion(updatedColonyVersion.toNumber(), resolver.address);
 
     // Check new Colony contract version is registered successfully
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();

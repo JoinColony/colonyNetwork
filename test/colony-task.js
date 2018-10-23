@@ -45,6 +45,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
@@ -57,6 +58,7 @@ contract("ColonyTask", accounts => {
   const COLONY_ADMIN = accounts[4];
 
   let colony;
+  let metaColony;
   let token;
   let otherToken;
   let colonyNetwork;
@@ -64,6 +66,9 @@ contract("ColonyTask", accounts => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
 
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
@@ -71,6 +76,7 @@ contract("ColonyTask", accounts => {
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
+    await colony.setRewardInverse(100);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
 
@@ -1017,10 +1023,6 @@ contract("ColonyTask", accounts => {
 
     it("should log a TaskSkillChanged event, if the task skill gets changed", async () => {
       const taskId = await makeTask({ colony });
-
-      // Acquire meta colony, create new global skill, assign new task's skill
-      const metaColonyAddress = await colonyNetwork.getMetaColony();
-      const metaColony = await IColony.at(metaColonyAddress);
       await metaColony.addGlobalSkill(1);
 
       const skillCount = await colonyNetwork.getSkillCount();
@@ -1505,10 +1507,10 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
 
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
-      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(toBN(1 * 1e18));
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(toBN(1 * 1e18).addn(1));
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(toBN(99 * 1e18));
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(toBN(99 * 1e18).subn(1));
 
       const potBalanceAfter = await colony.getPotBalance(taskPotId, token.address);
       expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(toBN(100 * 1e18));
@@ -1533,18 +1535,18 @@ contract("ColonyTask", accounts => {
       const task = await colony.getTask(taskId);
       const taskPotId = task[5].toNumber();
       const potBalanceBefore = await colony.getPotBalance(taskPotId, 0x0);
-      const metaColonyAddress = await colonyNetwork.getMetaColony();
+
       const workerBalanceBefore = await web3GetBalance(WORKER);
-      const metaBalanceBefore = await web3GetBalance(metaColonyAddress);
+      const metaBalanceBefore = await web3GetBalance(metaColony.address);
 
       await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, WORKER_ROLE, 0x0, { from: WORKER, gasPrice: 0 });
 
       const workerBalanceAfter = await web3GetBalance(WORKER);
-      expect(toBN(workerBalanceAfter).sub(toBN(workerBalanceBefore))).to.eq.BN(toBN(198));
+      expect(toBN(workerBalanceAfter).sub(toBN(workerBalanceBefore))).to.eq.BN(toBN(197));
 
-      const metaBalanceAfter = await web3GetBalance(metaColonyAddress);
-      expect(toBN(metaBalanceAfter).sub(toBN(metaBalanceBefore))).to.eq.BN(2);
+      const metaBalanceAfter = await web3GetBalance(metaColony.address);
+      expect(toBN(metaBalanceAfter).sub(toBN(metaBalanceBefore))).to.eq.BN(3);
 
       const potBalanceAfter = await colony.getPotBalance(taskPotId, 0x0);
       expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(toBN(200));
@@ -1572,13 +1574,15 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.be.zero;
 
       const workerBalanceAfter = await token.balanceOf(WORKER);
-      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);
-      const evaluatorPayout = EVALUATOR_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      const evaluatorPayout = EVALUATOR_PAYOUT.divn(100)
+        .muln(99)
+        .subn(1); // "Subtract" 1% fee
       expect(evaluatorBalanceAfter.sub(evaluatorBalanceBefore)).to.eq.BN(evaluatorPayout);
     });
 
@@ -1602,15 +1606,19 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      const managerPayout = MANAGER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      const managerPayout = MANAGER_PAYOUT.divn(100)
+        .muln(99)
+        .subn(1); // "Subtract" 1% fee
       expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(managerPayout);
 
       const workerBalanceAfter = await token.balanceOf(WORKER);
-      const workerPayout = WORKER_PAYOUT.divn(100).muln(99); // "Subtract" 1% fee
+      const workerPayout = WORKER_PAYOUT.divn(100)
+        .muln(99)
+        .subn(1); // "Subtract" 1% fee
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.eq.BN(workerPayout);
 
       const evaluatorBalanceAfter = await token.balanceOf(evaluator);
-      expect(evaluatorBalanceAfter.sub(evaluatorBalanceBefore)).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(evaluatorBalanceAfter.sub(evaluatorBalanceBefore)).to.be.zero;
     });
 
     it("should return error when task is not finalized", async () => {
@@ -1625,6 +1633,38 @@ contract("ColonyTask", accounts => {
       await colony.finalizeTask(taskId);
 
       await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }), "colony-claim-payout-access-denied");
+    });
+
+    it("should payout correct rounded up network fees, for small task payouts", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({
+        colonyNetwork,
+        colony,
+        token,
+        managerPayout: 99,
+        workerPayout: 1,
+        evaluatorPayout: 2,
+        managerRating: 2,
+        workerRating: 2
+      });
+      await colony.finalizeTask(taskId);
+
+      const networkBalance1 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceBefore = await token.balanceOf(MANAGER);
+
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
+      const networkBalance2 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceAfter = await token.balanceOf(MANAGER);
+      expect(networkBalance2.sub(networkBalance1)).to.eq.BN(1);
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(98);
+
+      const workerBalanceBefore = await token.balanceOf(WORKER);
+
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      const networkBalance3 = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceAfter = await token.balanceOf(WORKER);
+      expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
     });
   });
 });

@@ -10,6 +10,7 @@ const Resolver = artifacts.require("Resolver");
 const Colony = artifacts.require("Colony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
@@ -41,12 +42,12 @@ contract("Meta Colony", accounts => {
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
-
+    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
     metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(metaColonyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
@@ -541,6 +542,28 @@ contract("Meta Colony", accounts => {
     it("should return a false flag if the skill is local", async () => {
       const localSkill = await colonyNetwork.getSkill(2);
       assert.isFalse(localSkill[2]);
+    });
+  });
+
+  describe("when setting the network fee", () => {
+    it("should allow the meta colony owner to set the fee", async () => {
+      await metaColony.setNetworkFeeInverse(234);
+      const fee = await colonyNetwork.getFeeInverse();
+      assert.equal(fee, 234);
+    });
+
+    it("should not allow anyone else but the meta colony owner to set the fee", async () => {
+      await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }));
+      const fee = await colonyNetwork.getFeeInverse();
+      assert.equal(fee, 0);
+    });
+
+    it("should not allow another account, than the meta colony, to set the fee", async () => {
+      await checkErrorRevert(colonyNetwork.setFeeInverse(100), "colony-caller-must-be-meta-colony");
+    });
+
+    it("should not allow the fee to be set to zero", async () => {
+      await checkErrorRevert(metaColony.setNetworkFeeInverse(0), "colony-network-fee-inverse-cannot-be-zero");
     });
   });
 });

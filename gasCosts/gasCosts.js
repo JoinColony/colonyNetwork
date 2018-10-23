@@ -20,7 +20,7 @@ import {
   SECONDS_PER_DAY
 } from "../helpers/constants";
 import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+
 import {
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
@@ -32,17 +32,13 @@ import {
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
-const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ColonyTask = artifacts.require("ColonyTask");
-const ColonyFunding = artifacts.require("ColonyFunding");
-const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const ContractRecovery = artifacts.require("ContractRecovery");
 
 const oneHourLater = async () => forwardTime(3600, this);
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
@@ -62,23 +58,16 @@ contract("All", accounts => {
   let token;
   let tokenAddress;
   let otherToken;
-  let colonyTask;
-  let colonyFunding;
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
-  let contractRecovery;
 
   before(async () => {
-    colony = await Colony.new();
-    const resolver = await Resolver.new();
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    colonyTask = await ColonyTask.new();
-    colonyFunding = await ColonyFunding.new();
-    contractRecovery = await ContractRecovery.new();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
 
@@ -91,9 +80,6 @@ contract("All", accounts => {
     colony = await IColony.at(colonyAddress);
     tokenAddress = await colony.getToken();
     await IColony.defaults({ gasPrice });
-
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);

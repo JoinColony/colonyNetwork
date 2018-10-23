@@ -24,6 +24,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const ITokenLocking = artifacts.require("ITokenLocking");
@@ -62,6 +63,7 @@ contract("Colony Funding", accounts => {
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
+    await colony.setRewardInverse(100);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
   });
@@ -488,7 +490,7 @@ contract("Colony Funding", accounts => {
       let colonyEtherBalance = await web3GetBalance(colony.address);
       let colonyRewardBalance = await colony.getPotBalance(0, 0x0);
       assert.equal(colonyEtherBalance, 100);
-      expect(colonyPotBalance).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(colonyPotBalance).to.be.zero;
       await colony.claimColonyFunds(0x0);
       colonyPotBalance = await colony.getPotBalance(1, 0x0);
       colonyEtherBalance = await web3GetBalance(colony.address);
@@ -709,6 +711,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
@@ -737,7 +740,7 @@ contract("Colony Funding", accounts => {
       await fundColonyWithTokens(colony, token, funding.toString());
 
       const metaColonyAddress = await colonyNetwork.getMetaColony();
-      const metaColony = await IColony.at(metaColonyAddress);
+      const metaColony = await IMetaColony.at(metaColonyAddress);
 
       await metaColony.addGlobalSkill(1);
       const id = await colonyNetwork.getChildSkillId(1, 0);
@@ -883,6 +886,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
 
       await newToken.setOwner(newColony.address);
       await newColony.mintTokens(userTokens.toString());
@@ -951,6 +955,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
       await newToken.mint(10);
       await newToken.transfer(userAddress1, 10);
 
@@ -1272,10 +1277,12 @@ contract("Colony Funding", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
+      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
+      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -1399,10 +1406,12 @@ contract("Colony Funding", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
+      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
+      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -1556,6 +1565,7 @@ contract("Colony Funding", accounts => {
         const { colonyAddress } = logs[0].args;
         await newToken.setOwner(colonyAddress);
         const newColony = await IColony.at(colonyAddress);
+        await newColony.setRewardInverse(100);
 
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await Token.new(...payoutTokenArgs);

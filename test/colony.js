@@ -1,6 +1,7 @@
 /* globals artifacts */
 
 import { toBN } from "web3-utils";
+import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
@@ -10,12 +11,14 @@ import { makeTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
+const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const Colony = artifacts.require("Colony");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const ColonyAuthority = artifacts.require("ColonyAuthority");
@@ -31,6 +34,7 @@ contract("Colony", accounts => {
   let token;
   let authority;
   let colonyNetwork;
+  let metaColony;
 
   before(async () => {
     const resolverColonyNetworkDeployed = await Resolver.deployed();
@@ -43,10 +47,14 @@ contract("Colony", accounts => {
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
 
     const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
@@ -312,6 +320,31 @@ contract("Colony", accounts => {
       await colony.mintTokens(toBN(14 * 1e18).toString());
       await makeTask({ colony });
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
+    });
+  });
+
+  describe("when setting the reward inverse", () => {
+    it("should have a default reward inverse set to max uint", async () => {
+      const defaultRewardInverse = await colony.getRewardInverse();
+      const maxUIntNumber = new BN(2).pow(new BN(256)).sub(new BN(1));
+      expect(defaultRewardInverse).to.eq.BN(maxUIntNumber);
+    });
+
+    it("should allow the colony owner to set it", async () => {
+      await colony.setRewardInverse(234);
+      const defaultRewardInverse = await colony.getRewardInverse();
+      expect(defaultRewardInverse).to.eq.BN(234);
+    });
+
+    it("should not allow anyone else but the colony owner to set it", async () => {
+      await colony.setRewardInverse(100);
+      await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }));
+      const defaultRewardInverse = await colony.getRewardInverse();
+      expect(defaultRewardInverse).to.eq.BN(100);
+    });
+
+    it("should not allow the amount to be set to zero", async () => {
+      await checkErrorRevert(colony.setRewardInverse(0), "colony-reward-inverse-cannot-be-zero");
     });
   });
 });

@@ -73,19 +73,14 @@ export async function setupUpgradableToken(token, resolver, etherRouter) {
   assert.equal(registeredResolver, resolver.address);
 }
 
-export async function setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork) {
+export async function setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
   deployedImplementations.ColonyTask = colonyTask.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
-  await setupEtherRouter("IColony", deployedImplementations, resolver);
-
-  const version = await colony.version();
-  await colonyNetwork.addColonyVersion(version.toNumber(), resolver.address);
-  const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-  assert.equal(version, currentColonyVersion.toNumber());
+  await setupEtherRouter("IMetaColony", deployedImplementations, resolver);
 }
 
 export async function setupUpgradableColonyNetwork(

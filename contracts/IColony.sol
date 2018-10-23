@@ -153,8 +153,9 @@ contract IColony is IRecovery {
   function getToken() public view returns (address tokenAddress);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
-  /// @param _network Address of the colony network
-  function initialiseColony(address _network) public;
+  /// @dev Sets the reward inverse to the uint max 2**256 - 1
+  /// @param _address Address of the colony network
+  function initialiseColony(address _address) public;
 
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users`
   /// This reputation is assigned in the colony-wide domain. Secured function to authorised members
@@ -167,21 +168,9 @@ contract IColony is IRecovery {
   /// @param _wad Amount to mint
   function mintTokens(uint256 _wad) public;
 
-  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network
-  /// Only allowed to be called on the Meta Colony by the colony network
-  /// @param _wad Amount to mint and transfer to the colony network
-  function mintTokensForColonyNetwork(uint256 _wad) public;
-
   /// @notice Register colony's ENS label
   /// @param colonyName The label to register.
   function registerColonyLabel(string colonyName) public;
-
-  /// @notice Add a new global skill, under skill `_parentSkillId`
-  /// Can only be called from the Meta Colony
-  /// @dev Calls `IColonyNetwork.addSkill`
-  /// @param _parentSkillId Id of the skill under which the new skill will be added
-  /// @return skillId Id of the added skill
-  function addGlobalSkill(uint256 _parentSkillId) public returns (uint256 skillId);
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
@@ -427,14 +416,13 @@ contract IColony is IRecovery {
   /// @return rating Rating the user received
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
 
-  // Implemented in ColonyFunding.sol
-  /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
-  /// @return feeInverse The inverse of the network fee
-  function getFeeInverse() public pure returns (uint256 feeInverse);
+  /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
+  /// @param _rewardInverse The inverse of the reward
+  function setRewardInverse(uint256 _rewardInverse) public;
 
   /// @notice Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100
   /// @return rewardInverse The inverse of the reward
-  function getRewardInverse() public pure returns (uint256 rewardInverse);
+  function getRewardInverse() public view returns (uint256 rewardInverse);
 
   /// @notice Get payout amount in `_token` denomination for role `_role` in task `_id`
   /// @param _id Id of the task

@@ -158,9 +158,15 @@ contract IColonyNetwork is IRecovery {
   function createColony(address _tokenAddress) public returns (address colonyAddress);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
+  /// Allowed to be called by the Meta Colony only
   /// @param _version The new Colony contract version
   /// @param _resolver Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
   function addColonyVersion(uint256 _version, address _resolver) public;
+
+  /// @notice Initialises the colony network by setting the first Colony version resolver to `_resolver` address
+  /// @dev Only allowed to be run once, by the Network owner before any Colony versions are added
+  /// @param _resolver Address of the resolver for Colony contract version 1
+  function initialise(address _resolver) public;
 
   /// @notice Get a colony address by its Id in the network
   /// @param _id Id of the colony to get
@@ -254,7 +260,15 @@ contract IColonyNetwork is IRecovery {
   /// @param miningResolverAddress The address of the Resolver contract with the functions correctly wired.
   function setMiningResolver(address miningResolverAddress) public;
 
-  /// @notice get the resolver to be used by new instances of ReputationMiningCycle
+  /// @notice Get the resolver to be used by new instances of ReputationMiningCycle
   /// @return miningResolverAddress The address of the mining cycle resolver currently used by new instances
   function getMiningResolver() public view returns (address miningResolverAddress);
+
+  /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
+  /// @return feeInverse The inverse of the network fee
+  function getFeeInverse() public view returns (uint256 _feeInverse);
+
+  /// @notice Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as _feeInverse
+  /// @param _feeInverse The inverse of the network fee to set
+  function setFeeInverse(uint256 _feeInverse) public;
 }

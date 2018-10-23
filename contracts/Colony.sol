@@ -80,6 +80,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 rootLocalSkill = colonyNetwork.getSkillCount();
     initialiseDomain(rootLocalSkill);
+
+    // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
+    rewardInverse = 2**256 - 1;
   }
 
   function bootstrapColony(address[] _users, int[] _amounts) public
@@ -124,6 +127,22 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     return colonyNetwork.addSkill(_parentSkillId, true);
+  }
+
+  function setNetworkFeeInverse(uint256 _feeInverse) public
+  stoppable
+  auth
+  {
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    return colonyNetwork.setFeeInverse(_feeInverse);
+  }
+
+  function addNetworkColonyVersion(uint256 _version, address _resolver) public
+  stoppable
+  auth
+  {
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
   function addDomain(uint256 _parentDomainId) public

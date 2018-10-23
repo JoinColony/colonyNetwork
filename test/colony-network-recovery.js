@@ -211,8 +211,8 @@ contract("Colony Network Recovery", accounts => {
 
       await colonyNetwork.enterRecoveryMode();
 
-      await colonyNetwork.setStorageSlotRecovery(19, "0x02");
-      await colonyNetwork.setStorageSlotRecovery(20, `0x${new BN(7).toString(16, 64)}`);
+      await colonyNetwork.setStorageSlotRecovery(20, "0x02");
+      await colonyNetwork.setStorageSlotRecovery(21, `0x${new BN(7).toString(16, 64)}`);
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
@@ -222,7 +222,7 @@ contract("Colony Network Recovery", accounts => {
       assert.equal(nNodes.toNumber(), 7);
     });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], toBN(10).pow(toBN(18)));
@@ -297,8 +297,8 @@ contract("Colony Network Recovery", accounts => {
           const rootHash = await miningClient.getRootHash();
           const nNodes = await miningClient.nReputations;
           // slots 19 and 20 are hash and nodes respectively
-          await colonyNetwork.setStorageSlotRecovery(19, rootHash);
-          await colonyNetwork.setStorageSlotRecovery(20, `0x${padLeft(nNodes.toString(16), 64)}`);
+          await colonyNetwork.setStorageSlotRecovery(20, rootHash);
+          await colonyNetwork.setStorageSlotRecovery(21, `0x${padLeft(nNodes.toString(16), 64)}`);
 
           await colonyNetwork.approveExitRecovery();
           await colonyNetwork.exitRecoveryMode();
@@ -314,7 +314,7 @@ contract("Colony Network Recovery", accounts => {
           assert.equal(new BN(newValue, 16).toNumber(), 0);
         });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("the ReputationMiningCycle being replaced mid-cycle should be able to be managed okay by miners (new and old)", async () => {
           await miningClient.saveCurrentState();
@@ -450,8 +450,8 @@ contract("Colony Network Recovery", accounts => {
           }
 
           // Set the new cycles
-          await colonyNetwork.setStorageSlotRecovery(17, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
-          await colonyNetwork.setStorageSlotRecovery(18, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
+          await colonyNetwork.setStorageSlotRecovery(18, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
+          await colonyNetwork.setStorageSlotRecovery(19, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
           const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
           assert.equal(retrievedActiveCycleAddress, newActiveCycle.address);
           const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);

@@ -7,6 +7,7 @@ import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const Colony = artifacts.require("Colony");
 const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -16,10 +17,11 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
-contract("Colony", accounts => {
+contract("Colony Recovery", accounts => {
   let colony;
   let colonyNetwork;
   let clnyToken;
+  let metaColony;
 
   before(async () => {
     const resolverColonyNetworkDeployed = await Resolver.deployed();
@@ -32,10 +34,14 @@ contract("Colony", accounts => {
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
-    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver, colonyNetwork);
+    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
 
     clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(clnyToken.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
     const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
@@ -95,9 +101,13 @@ contract("Colony", accounts => {
       const owner = accounts[0];
       await colony.setRecoveryRole(owner);
       await colony.enterRecoveryMode();
+
+      await metaColony.setRecoveryRole(owner);
+      await metaColony.enterRecoveryMode();
+
       await checkErrorRevert(colony.initialiseColony("0x0"), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.addGlobalSkill(0), "colony-in-recovery-mode");
+      await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-in-recovery-mode");
       await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, 0, 0), "colony-in-recovery-mode");
     });
 

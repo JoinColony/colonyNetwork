@@ -28,16 +28,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
   event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
 
-  function getFeeInverse() public pure returns (uint256) {
-    // TODO: refer to ColonyNetwork
-    return 100;
-  }
-
-  function getRewardInverse() public pure returns (uint256) {
-    // TODO: Make settable by colony
-    return 100;
-  }
-
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, MANAGER, _token, _amount);
   }
@@ -105,7 +95,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     pots[task.potId].balance[_token] = sub(pots[task.potId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
 
-    uint fee = payout / getFeeInverse();
+    uint fee = calculateNetworkFeeForPayout(payout);
     uint remainder = sub(payout, fee);
 
     if (_token == 0x0) {
@@ -279,6 +269,18 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
+  function setRewardInverse(uint256 _rewardInverse) public 
+  stoppable
+  auth 
+  {
+    require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
+    rewardInverse = _rewardInverse;
+  }
+
+  function getRewardInverse() public view returns (uint256) {
+    return rewardInverse;
+  }
+
   function checkReputation(
     bytes32 rootHash,
     uint256 skillId,
@@ -287,7 +289,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     bytes value,
     uint256 branchMask,
     bytes32[] siblings
-  ) internal returns (uint256)
+  ) internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRoot(key, value, branchMask, siblings);
     require(rootHash == impliedRoot, "colony-reputation-invalid-root-hash");
@@ -391,5 +393,16 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     getTotalTaskPayout(_id, _token);
 
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
+  }
+
+  function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    uint256 feeInverse = colonyNetworkContract.getFeeInverse();
+
+    if (_payout == 0 || feeInverse == 1) { 
+      fee = _payout; 
+    } else {
+      fee = _payout/feeInverse + 1;
+    }
   }
 }
