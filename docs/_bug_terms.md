@@ -8,7 +8,7 @@ order: 1
 To participate in this bug bounty you must:
 
 * Not be employed by Colony
-* Not be in violation of any national state, or local law or regulation with respect to any activities directly or indirectly related to the Bug Bounty Program.
+* Not be in violation of any national state, or local law or regulation with respect to any activities directly or indirectly related to the Bug Bounty Program
 
 To qualify for a bounty you must:
 * Be the first to report a specific vulnerability
@@ -16,23 +16,28 @@ To qualify for a bounty you must:
 * Disclose the vulnerability responsibly and directly to Colony. Disclosure to other third parties before or during bug review will invalidate the submission
 * Not seek or leverage the vulnerability for additional or external bounties or rewards
 
+### Good Faith Participation
+All participants in the Bug Bounty Program must act in good faith when investigating vulnerabilities. "Good Faith" means:
+
+* Play by the Rules -- Abide by the terms and conditions specified herein. If you have any questions or concerns about the terms and conditions, please reach out directly to the Colony team about it
+* Don't be a jerk. You should never illegally or in bad faith leverage the existence of a vulnerability or access to sensitive or confidential information, such as making extortionate demands or ransom requests or trying to shake us down. In other words, if you find a vulnerability, report it to us with no conditions attached
+* Work for Good --  You should never leave a system or users in a more vulnerable state than when you found them. This means that you should not engage in testing or related activities that degrades, damages, or destroys information within our systems, or that may impact our users, such as denial of service, social engineering, or spam
+
+Failure to act in good faith will result in immediate disqualification from the Bug Bounty Program and ineligibility for receiving any benefit of the Bug Bounty Program
+
 ## Service Level Agreement
 
-Response within 3 days determining whether or not the report qualifies for any bounty
+After a vulnerability has been submitted either as an [issue on GitHub](https://github.com/JoinColony/colonyNetwork/issues) or as an email to `security@colony.io`, the Colony team will evaluate and determine if the vulnerability is eligible for a bounty within 3 days.
 
-If the report qualifies, determination of severity and size of reward within 7 business days.
+Accepted bounties will be graded and assigned a severity according to the team's assesment within 7 days after being accepted.
 
-Once the severity and bounty is decided, the Colony team will begin work on patching the bug.
-
-In this case, a PR will be opened that references the issue of original report. This PR may request more information from the submitter of the bug, and may accept input from external developers for fixing.
+Once the severity and bounty is decided, the Colony team will begin work on patching the bug. In this case, a PR will be opened that references the issue of original report. This PR may request more information from the submitter of the bug, and may accept input from external developers for fixing. Participation in resolving a vulnerability is welcome but not required to receive a bounty.
 
 When the PR closing the referenced issue is merged to the `/develop` branch (and, in the case of a live mainnet deployment, an upgrade has been successfully deployed), the issue will be considered "resolved" and payment can take place.
 
-Time to remediation:
-* Critical: within 3 days
-* High: within 9 business days
-* Medium: within 30 business days
-* Low, within 60 business days
+Payment will be disbursed as DAI through the Gitcoin platform to the account which submitted the bounty report, unless otherwise requested by the submitter. Payment will take place as soon as possible following the report's resolution, but may take up to 30 days to process.
+
+You must comply with all applicable laws in connection with your participation in this program. You are also responsible for any applicable taxes associated with any reward you receive.
 
 ### Limitation of Liability
 
@@ -42,19 +47,22 @@ YOUR PARTICIPATION IN THE BUG BOUNTY PROGRAM IS AT YOUR OWN RISK. COLONY HEREBY 
 
 The Bug Bounty Program is not open to any of the following persons (“Ineligible Persons”): (1) anyone who is not at least the legal age of majority, at the time of Entry, to form valid contracts in their respective country, province or state of legal residence; (2) anyone who does not satisfy any applicable legal requirements under United States and other applicable jurisdictional legal requirements for participation; or (3) in, a country, state, province or territory where the laws of the United States or local law prohibits participating or receiving a prize in the Hackathon (including, but not limited to, Brazil, Quebec, and Cuba, Sudan, Iran, North Korea, Syria, Myanmar (formerly Burma) and any other country designated by the United States Treasury's Office of Foreign Assets Control) . Employees, independent contractors under a current services agreement with Colony and members of their immediate families (defined as parents, children, siblings and spouse, regardless of where they reside and/or those living in the same household of each) are not eligible to participate in the Bug Bounty Program. Colony reserves the right to verify eligibility and to adjudicate on any dispute at any time.
 
+### Additional Terms
 
-## Terms and Conditions
+We may modify the terms of this program or terminate this program at any time. We won’t apply any changes we make to these program terms retroactively.
+
+All conditions specified in the [general terms agreement of colony.io](https://colony.io/terms/) apply to this program.
 
 ### 1. Definitions
 
-#### 1.1 "Bounty"
+### 1.1 "Bounty", "Prize", "Payout", "Reward"
+The monetary reward for submitting a vulnerability that is accepted, graded, and resolved by the process defined in the terms and conditions herein.
 
-#### 1.2 "Bug Report Issue"
+### 1.2 "Bug", "Vulnerability", "Exploit", "Bug Report", "Bug Report Issue"
+A disclosure of any software flaw or attack vector submitted to the bug bounty program, and any related documentation thereof.
 
-#### 1.3 "Bug Bounty Program"
+### 1.4 "Colony"
+ This program is sponsored by Collectively Intelligent Ltd (3 Butler House, 49-51 Curtain Road, London, United Kingdom EC2A 3PT ("Colony"). Colony is responsible for any website hosting, marketing, bug report assessment, prize disbursement, and any other activities not listed here related to the Bug Bounty Program.
 
-#### 1.4 "Colony"
-
-#### 1.5 "Issue"
-
-#### 1.6 "Remediation"
+### 1.7 "Submitter", or "Participant"
+The individual or individuals disclosing a vulnerability in the bug bounty program. In the case of this program, this implies the owner of the Github account which creates and submits the bug report as an issue. This may also mean the holder of an Ethereum account requesting a prize for a submitted vulnerability, or the owner of the email address submitting a bounty privately to security@colony.io

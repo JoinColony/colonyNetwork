@@ -29,22 +29,22 @@ _\* There are some components of the colonyNetwork repository that are not creat
 
 ### Submission Guidelines
 
-All bugs reported must be done through the creation of an issue in the colonyNetwork github repo, or _if necessary_ by an email sent to security@colony.io.
+All bugs reported must be done through the creation of an issue in the colonyNetwork github repo, or _if the submitter wishes to disclose privately, or to remain anonymous_ by an email sent to security@colony.io.
 
 Unless there is a specific reason for a private disclosure, bugs should be submitted as issues on the colonyNetwork GitHub repository, and tagged with the 'bug' label.
 
 It is requested that all submissions follow the format defined in the issue template -- clarity of description and thoroughness of documentation will be a consideration for reward amount, in addition to impact and likelihood.
 
-(In the case of private bug disclosure, all relevant materials should be sent in email to `security@colony.io` -- and should follow the same template as a public issue.
+In the case of private bug disclosure, all relevant materials should be sent in email to `security@colony.io` -- and should follow the same template as a public issue.
 
 Once submitted, the issue will be responded to, verified, accepted, and rewarded according to the timelines defined on our [service level agreement](link).
 
 ### Bug Severity and Bounties
 In the same manner as the [Ethereum Bug Bounty Program](https://bounty.ethereum.org/), submissions will be evaluated by the Colony team according to the OWASP risk rating  methodology, which grades based on both _Impact_ and _Likelihood_.
 
-Issues reported may or may not constitute a security risk for the colonyNetwork contracts. The key consideration for bugs is whether or not a flaw in the contracts could potentially result in either the loss of funds, or a situation in which the contracts arrive in an un-desirable state that *cannot be rectified through existing contract mechanisms, such as 'emergency mode' or through a network upgrade.
+It is at the *sole discretion of Colony* to decide whether or not a bug report qualifies for a bounty, and to determine the severity of the issue
 
-It is at the *sole discretion of Colony* to decide whether or not a bug report qualifies for a bounty, and to determine the severity of the issue.
+Severity levels:
 
 * *Note*: Up to $500 USD (min. $100)
 * *Low*: Up to $2,000 USD (min. $500)
@@ -52,13 +52,7 @@ It is at the *sole discretion of Colony* to decide whether or not a bug report q
 * *High*: Up to $10,000 USD (min. $5,000)
 * *Critical*: Up to $20,000 USD (min. $10,000)
 
-### Payment
-
-Unless otherwise decided, payment will be disbursed as DAI transferred through gitcoin to the Github account that submitted the vulnerability.
-
-Payment means and timing are decided at the sole discretion of Colony. If the submitter would like an alternative means of bounty payment, a request should be written and sent to security@colony.io with reference to the issue submitted.
-
-In the case of multiple individuals working on the same bounty, Colony is not responsible for decisions on the division or distribution of the bounty among or between team members or Business Entities. Instead, it is the responsibility of the team to divide any prize money after the bounty disburses to the account which submitted the vulnerability.
+Issues reported may or may not constitute a security risk for the colonyNetwork contracts. A higher severity will be awarded to vulnerabilities submitted that could potentially result in either the loss of funds, or a situation in which the contracts arrive in an undesirable state that cannot be rectified through existing contract mechanisms, such as 'emergency mode' or through a network upgrade. However, all submitted bugs and vulnerabilities will be considered for prizes.
 
 ### Ineligible Bugs
 
@@ -68,3 +62,5 @@ Additional examples of ineligible bugs:
 * Attacks and vulnerabilities that depend on compromised keys or other security flaws outside the colonyNetwork codebase (keyloggers, intercepted communications, social engineering exploits, etc.).
 * Attacks that are accounted for in the system design, i.e. Ethereum network spamming, malicious reputation mining, malfeasance in colony administration.
 * Critiques of the Colony Protocol and overall mechanism design. We welcome suggestions and constructive criticism, and ask that it be directed to hello@colony.io or the [Build with Colony Forums](https://build.colony.io/)
+
+Please read the [terms and conditions]() for more information. 
