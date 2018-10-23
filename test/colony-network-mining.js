@@ -1855,8 +1855,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    // eslint-disable-next-line max-len
-    it.skip("if a child reputation calculation is wrong, it should be handled correctly if that user has never had that reputation before", async () => {
+    it("if a child reputation calculation is wrong, it should be handled correctly if that user has never had that reputation before", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 

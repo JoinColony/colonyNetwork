@@ -426,13 +426,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     if (u[U_DECAY_TRANSITION] == 1) {
       require(_disagreeStateReputationValue == (_agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
     } else {
-      int256 amount = logEntry.amount;
-      if (amount >= 0) {
+      if (logEntry.amount >= 0) {
         // Don't allow reputation to overflow
         if (_agreeStateReputationValue + logEntry.amount >= MAX_INT128) {
           require(_disagreeStateReputationValue == MAX_INT128, "colony-reputation-mining-reputation-not-max-int128");
         } else {
-          require(_agreeStateReputationValue + amount == _disagreeStateReputationValue, "colony-reputation-mining-increased-reputation-value-incorrect");
+          require(_agreeStateReputationValue + logEntry.amount == _disagreeStateReputationValue, "colony-reputation-mining-increased-reputation-value-incorrect");
         }
       } else {
         // We are working with a negative amount, which needs to be treated differently for child updates and everything else
@@ -448,27 +447,34 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         if (relativeUpdateNumber < nChildUpdates ||
             ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
           // Don't allow origin reputation to become negative
-          if (originReputationValue + amount < 0) {
+          if (originReputationValue + logEntry.amount < 0) {
             require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
           } else if (originReputationValue == 0) {
             require(_agreeStateReputationValue == _disagreeStateReputationValue, "colony-reputation-mining-reputation-values-changed");
           } else {
-            int256 childAmount = amount * _agreeStateReputationValue / originReputationValue;
+            int256 childAmount = logEntry.amount * _agreeStateReputationValue / originReputationValue;
             require(_agreeStateReputationValue + childAmount == _disagreeStateReputationValue, "colony-reputation-mining-child-reputation-value-incorrect");
           }
 
-          checkOriginReputationInState(
-            u,
-            _agreeStateSiblings,
-            _originReputationKey,
-            _originReputationValueBytes,
-            _originReputationSiblings);
+          uint256 originReputationUID;
+          assembly {
+            originReputationUID := mload(add(_originReputationValueBytes, 64))
+          }
+          // If origin skill reputation exists, check it 
+          if (originReputationUID != 0) {
+            checkOriginReputationInState(
+              u,
+              _agreeStateSiblings,
+              _originReputationKey,
+              _originReputationValueBytes,
+              _originReputationSiblings);
+          }
         } else {
           // Don't allow reputation to become negative
-          if (_agreeStateReputationValue + amount < 0) {
+          if (_agreeStateReputationValue + logEntry.amount < 0) {
             require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
           } else {
-            require(_agreeStateReputationValue + amount == _disagreeStateReputationValue, "colony-reputation-mining-decreased-reputation-value-incorrect");
+            require(_agreeStateReputationValue + logEntry.amount == _disagreeStateReputationValue, "colony-reputation-mining-decreased-reputation-value-incorrect");
           }
         }
       }
