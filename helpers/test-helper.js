@@ -310,6 +310,7 @@ export function makeReputationKey(colonyAddress, skill, accountAddress = undefin
   return key;
 }
 
+// Note: value can be anything with a `.toString()` method -- a string, number, or BN.
 export function makeReputationValue(value, repuationId) {
   return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(repuationId)).toString(16, 64)}`; // eslint-disable-line
 }
@@ -329,7 +330,7 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const userBalance = userLockInformation.amount;
 
   // What's the largest entry they can submit?
-  const nIter = userBalance.div(new BN(10).pow(new BN(15)));
+  const nIter = userBalance.div(new BN(10).pow(new BN(18)).muln(2000));
   // Work out the target
   const constant = new BN(2)
     .pow(new BN(256))

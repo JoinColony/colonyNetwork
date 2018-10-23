@@ -57,7 +57,13 @@ contract("TokenLocking", addresses => {
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], toBN(10).pow(toBN(18)));
+    await giveUserCLNYTokensAndStake(
+      colonyNetwork,
+      addresses[4],
+      toBN(10)
+        .pow(toBN(18))
+        .muln(10 * 2000)
+    );
 
     const miningClient = new ReputationMiner({
       loader: contractLoader,
