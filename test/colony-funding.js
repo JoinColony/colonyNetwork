@@ -1391,8 +1391,14 @@ contract("Colony Funding", accounts => {
       const rewardPotBalanceAfterClaimInPayout1 = await colony1.getPotBalance(0, otherToken.address);
       const rewardPotBalanceAfterClaimInPayout2 = await colony2.getPotBalance(0, otherToken.address);
 
-      const claimInPayout1 = amountAvailableForPayout1.sub(rewardPotBalanceAfterClaimInPayout1);
-      const claimInPayout2 = amountAvailableForPayout2.sub(rewardPotBalanceAfterClaimInPayout2);
+      const feeInverse = await colonyNetwork.getFeeInverse();
+
+      let claimInPayout1 = amountAvailableForPayout1.sub(rewardPotBalanceAfterClaimInPayout1);
+      const fee1 = claimInPayout1.div(feeInverse).addn(1);
+      claimInPayout1 = claimInPayout1.sub(fee1);
+      let claimInPayout2 = amountAvailableForPayout2.sub(rewardPotBalanceAfterClaimInPayout2);
+      const fee2 = claimInPayout2.div(feeInverse).addn(1);
+      claimInPayout2 = claimInPayout2.sub(fee2);
 
       const userBalance = await otherToken.balanceOf(userAddress1);
       assert.equal(userBalance.toString(), claimInPayout1.add(claimInPayout2).toString());
@@ -1649,7 +1655,10 @@ contract("Colony Funding", accounts => {
         const denominator = bnSqrt(totalTokensHeldByUsers.mul(data.totalReputation));
         const factor = toBN(10).pow(toBN(100));
         const percent = numerator.mul(factor).div(denominator);
-        const reward = amountAvailableForPayout.mul(percent).div(factor);
+        let reward = amountAvailableForPayout.mul(percent).div(factor);
+        const feeInverse = await colonyNetwork.getFeeInverse();
+        const fee = reward.div(feeInverse).addn(1);
+        reward = reward.sub(fee);
 
         // Calculating square roots locally, to avoid big gas costs. This can be proven on chain easily
         const userReputationSqrt = bnSqrt(reputationPerUser);
@@ -1674,15 +1683,25 @@ contract("Colony Funding", accounts => {
         ({ key, value, branchMask, siblings } = await miningClient.getReputationProofObject(userReputationKey));
         const userReputationProofForColony1 = [key, value, branchMask, siblings];
 
+        const colonyNetworkBalanceBeforeClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
+
         await newColony.claimRewardPayout(payoutId, squareRoots, ...userReputationProofForColony1, {
           from: userAddress1
         });
 
         const remainingAfterClaim1 = await newColony.getPotBalance(0, payoutToken.address);
         const user1BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
-        assert.equal(user1BalanceAfterClaim.toString(), amountAvailableForPayout.sub(remainingAfterClaim1).toString());
+        const colonyNetworkBalanceAfterClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
+        const colonyNetworkFeeClaim1 = colonyNetworkBalanceAfterClaim1.sub(colonyNetworkBalanceBeforeClaim1);
+        assert.equal(
+          user1BalanceAfterClaim.toString(),
+          amountAvailableForPayout
+            .sub(remainingAfterClaim1)
+            .sub(colonyNetworkFeeClaim1)
+            .toString()
+        );
 
-        const solidityReward = amountAvailableForPayout.sub(remainingAfterClaim1);
+        const solidityReward = amountAvailableForPayout.sub(remainingAfterClaim1).sub(colonyNetworkFeeClaim1);
         console.log("\nCorrect (Javascript): ", reward.toString());
         console.log("Approximation (Solidity): ", solidityReward.toString());
 
@@ -1708,13 +1727,18 @@ contract("Colony Funding", accounts => {
           from: userAddress2
         });
 
+        const colonyNetworkBalanceAfterClaim2 = await payoutToken.balanceOf(colonyNetwork.address);
+        const colonyNetworkFeeClaim2 = colonyNetworkBalanceAfterClaim2.sub(colonyNetworkBalanceAfterClaim1);
+
         const remainingAfterClaim2 = await newColony.getPotBalance(0, payoutToken.address);
         const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         assert.equal(
           user2BalanceAfterClaim.toString(),
           amountAvailableForPayout
             .sub(user1BalanceAfterClaim)
+            .sub(colonyNetworkFeeClaim1)
             .sub(remainingAfterClaim2)
+            .sub(colonyNetworkFeeClaim2)
             .toString()
         );
 
@@ -1728,6 +1752,9 @@ contract("Colony Funding", accounts => {
           from: userAddress3
         });
 
+        const colonyNetworkBalanceAfterClaim3 = await payoutToken.balanceOf(colonyNetwork.address);
+        const colonyNetworkFeeClaim3 = colonyNetworkBalanceAfterClaim3.sub(colonyNetworkBalanceAfterClaim2);
+
         const remainingAfterClaim3 = await newColony.getPotBalance(0, payoutToken.address);
         const user3BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         assert.equal(
@@ -1735,6 +1762,9 @@ contract("Colony Funding", accounts => {
           amountAvailableForPayout
             .sub(user1BalanceAfterClaim)
             .sub(user2BalanceAfterClaim)
+            .sub(colonyNetworkFeeClaim1)
+            .sub(colonyNetworkFeeClaim2)
+            .sub(colonyNetworkFeeClaim3)
             .sub(remainingAfterClaim3)
             .toString()
         );

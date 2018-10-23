@@ -25,11 +25,24 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
   event AuctionCreated(address auction, address token, uint256 quantity);
 
   function startTokenAuction(address _token) public stoppable {
+    require(_token != 0x0, "colony-auction-invalid-token");
+
     uint lastAuctionTimestamp = recentAuctions[_token];
     require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
+
     address clny = IColony(metaColony).getToken();
-    DutchAuction auction = new DutchAuction(clny, _token, metaColony);
+    require(clny != 0x0, "colony-auction-invalid-token");
+
     uint availableTokens = ERC20Extended(_token).balanceOf(this);
+
+    if (_token==clny) {
+      // We don't auction CLNY. We just burn it instead.
+      // Note we can do this more often than every 30 days.
+      ERC20Extended(clny).burn(availableTokens);
+      return;
+    }
+
+    DutchAuction auction = new DutchAuction(clny, _token, metaColony);
     ERC20Extended(_token).transfer(auction, availableTokens);
     auction.start();
     recentAuctions[_token] = now;
@@ -103,8 +116,6 @@ contract DutchAuction is DSMath {
   constructor(address _clnyToken, address _token, address _metaColony) public {
     colonyNetwork = msg.sender;
     metaColony = _metaColony;
-    require(_clnyToken != 0x0 && _token != 0x0, "colony-auction-invalid-token");
-    assert(_token != _clnyToken);
     clnyToken = ERC20Extended(_clnyToken);
     token = ERC20Extended(_token);
   }
@@ -176,8 +187,8 @@ contract DutchAuction is DSMath {
   auctionClosed
   auctionNotFinalized
   {
-    // Give the metacolony all CLNY sent to the auction in bids
-    clnyToken.transfer(metaColony, receivedTotal);
+    // Burn all CLNY received
+    clnyToken.burn(receivedTotal);
     finalPrice = add((mul(receivedTotal, TOKEN_MULTIPLIER) / quantity), 1);
     finalized = true;
     emit AuctionFinalized(finalPrice);

@@ -241,9 +241,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint256 reward;
     (tokenAddress, reward) = calculateRewardForUser(_payoutId, _squareRoots, userReputation);
 
+    uint fee = calculateNetworkFeeForPayout(reward);
+    uint remainder = sub(reward, fee);
+
     pots[0].balance[tokenAddress] = sub(pots[0].balance[tokenAddress], reward);
 
-    ERC20Extended(tokenAddress).transfer(msg.sender, reward);
+    ERC20Extended(tokenAddress).transfer(msg.sender, remainder);
+    ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee);
   }
 
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
@@ -269,9 +273,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
-  function setRewardInverse(uint256 _rewardInverse) public 
+  function setRewardInverse(uint256 _rewardInverse) public
   stoppable
-  auth 
+  auth
   {
     require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
     rewardInverse = _rewardInverse;
@@ -399,8 +403,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint256 feeInverse = colonyNetworkContract.getFeeInverse();
 
-    if (_payout == 0 || feeInverse == 1) { 
-      fee = _payout; 
+    if (_payout == 0 || feeInverse == 1) {
+      fee = _payout;
     } else {
       fee = _payout/feeInverse + 1;
     }
