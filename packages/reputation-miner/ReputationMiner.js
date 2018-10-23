@@ -226,44 +226,41 @@ class ReputationMiner {
           // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
           const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
           const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+          originReputationProof = await this.getReputationProofObject(originSkillKey);
 
           const originSkillKeyExists = this.reputations[originSkillKey] !== undefined;
           if (originSkillKeyExists) {
             // Look up value from our JSON.
             const originReputationValueBytes = this.reputations[originSkillKey];
             const originReputationValue = ethers.utils.bigNumberify(`0x${originReputationValueBytes.slice(2, 66)}`);
-            originReputationProof = await this.getReputationProofObject(originSkillKey);
 
-            if (!originReputationValue.isZero()) {
-              let keyUsedInCalculations;
-              // For colony wide reputation updates, consider the key of the origin user reputation
-              if (relativeUpdateNumber.lt(nChildUpdates)) {
-                const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
-                keyUsedInCalculations = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
-              } else {
-                keyUsedInCalculations = await this.getKeyForUpdateNumber(updateNumber);
-              }
-
-              const childSkillKeyExists = this.reputations[keyUsedInCalculations] !== undefined;
-              if (childSkillKeyExists) {
-                const childSkillReputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
-
-                let targetAmount;
-
-                if (originReputationValue.add(amount).lt(0)) {
-                  targetAmount = originReputationValue.mul(-1);
-                } else {
-                  targetAmount = childSkillReputation.mul(amount).div(originReputationValue);
-                  // Ensure the child reputation update doesn't underflow
-                  targetAmount = childSkillReputation.add(targetAmount).lt(0) ? childSkillReputation.mul(-1) : targetAmount;
-                }
-                amount = targetAmount;
-              } else {
-                // Set to 0, if the child skill does not exist yet, as that cannot go negative
-                amount = ethers.utils.bigNumberify("0");
-              }
+            let keyUsedInCalculations;
+            // For colony wide reputation updates, consider the key of the origin user reputation
+            // For child skill reputation updates, consider the actual child skill reputation
+            if (relativeUpdateNumber.lt(nChildUpdates)) {
+              const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
+              keyUsedInCalculations = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
             } else {
-              // Set to 0, if origin skill exists but is 0, as that cannot go negative
+              keyUsedInCalculations = await this.getKeyForUpdateNumber(updateNumber);
+            }
+
+            const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
+            if (keyExists) {
+              const childSkillReputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
+
+              let targetAmount;
+              if (originReputationValue.add(amount).lt(0)) {
+                targetAmount = originReputationValue.mul(-1);
+              } else if (originReputationValue.isZero()) {
+                targetAmount = ethers.utils.bigNumberify("0");;
+              } else {
+                targetAmount = childSkillReputation.mul(amount).div(originReputationValue);
+                // Ensure the child reputation update doesn't underflow
+                targetAmount = childSkillReputation.add(targetAmount).lt(0) ? childSkillReputation.mul(-1) : targetAmount;
+              }
+              amount = targetAmount;
+            } else {
+              // Set to 0, if the child skill does not exist yet, as that cannot go negative
               amount = ethers.utils.bigNumberify("0");
             }
           } else {
@@ -273,6 +270,7 @@ class ReputationMiner {
         }
       }
     }
+
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
       const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockTag: blockNumber });
