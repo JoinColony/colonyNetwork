@@ -9,6 +9,8 @@ const ITokenLocking = artifacts.require("./ITokenLocking");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Token = artifacts.require("./Token");
 
+const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
+
 module.exports = deployer => {
   // Create the meta colony
   let colonyNetwork;
@@ -25,7 +27,7 @@ module.exports = deployer => {
     })
     .then(tokenInstance => {
       token = tokenInstance;
-      return token.mint("10000000000000000");
+      return token.mint(DEFAULT_STAKE);
     })
     // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
     // but is useful when playing around with the network to get reputation mining going.
@@ -33,10 +35,10 @@ module.exports = deployer => {
     .then(() => colonyNetwork.getTokenLocking())
     .then(address => {
       tokenLocking = address;
-      return token.approve(tokenLocking, "10000000000000000");
+      return token.approve(tokenLocking, DEFAULT_STAKE);
     })
     .then(() => ITokenLocking.at(tokenLocking))
-    .then(iTokenLocking => iTokenLocking.deposit(token.address, "10000000000000000"))
+    .then(iTokenLocking => iTokenLocking.deposit(token.address, DEFAULT_STAKE))
     .then(() => colonyNetwork.initialiseReputationMining())
     .then(() => colonyNetwork.startNextCycle())
     .then(() => colonyNetwork.getSkillCount())

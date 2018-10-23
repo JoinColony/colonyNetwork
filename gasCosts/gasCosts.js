@@ -3,7 +3,6 @@
 
 import path from "path";
 import { toBN } from "web3-utils";
-import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
@@ -17,7 +16,8 @@ import {
   RATING_2_SECRET,
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
-  SECONDS_PER_DAY
+  SECONDS_PER_DAY,
+  DEFAULT_STAKE
 } from "../helpers/constants";
 import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
 
@@ -205,13 +205,9 @@ contract("All", accounts => {
       const STAKER3 = accounts[2];
 
       // Setup the stakers balance
-      const bigStr = "1000000000000000000";
-      const lessBigStr = "10000000000000000";
-      const big = new BN(bigStr);
-
-      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER1, big);
-      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER2, big);
-      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER3, big);
+      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER1, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER2, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER3, DEFAULT_STAKE);
 
       let repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
 
@@ -306,7 +302,7 @@ contract("All", accounts => {
 
       const clnyToken = await metaColony.getToken();
       // withdraw
-      await tokenLocking.withdraw(clnyToken, lessBigStr, { from: STAKER1 });
+      await tokenLocking.withdraw(clnyToken, DEFAULT_STAKE.divn(4), { from: STAKER1 });
     });
 
     it("when working with reward payouts", async () => {
@@ -333,7 +329,7 @@ contract("All", accounts => {
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
 
       const miningClient = new ReputationMiner({
         loader: contractLoader,
