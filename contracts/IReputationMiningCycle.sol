@@ -104,33 +104,34 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   ///      the log entry index corresponding to the update to avoid us having to iterate over the log.
   /// *10. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// *11. Origin skill reputation branch mask. Nonzero for child reputation updates.
+  ///
+  /// * 12. The amount of reputation that the entry in the tree under dispute has in the agree state
+  /// * 13. The UID that the entry in the tree under dispute has in the agree state
+  /// * 14. The amount of reputation that the entry in the tree under dispute has in the disagree state
+  /// * 15. The UID that the entry in the tree under dispute has in the disagree state
+  /// * 16. The amount of reputation that the most recently added entry in the tree has in the state being disputed
+  /// * 17. The UID that the most recently added entry in the tree has in the state being disputed
+  /// * 18. The amount of reputation that the origin reputation entry in the tree has in the state being disputed
+  /// * 19. The UID that the origin reputation entry in the tree has in the state being disputed
   /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
-  /// @param agreeStateReputationValue The value of the reputation at key `_reputationKey` in the last reputation state the submitted hashes agreed on
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
-  /// @param disagreeStateReputationValue The value of the reputation at key `_reputationKey` in the first reputation state the submitted hashes disagree on
   /// @param disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
   /// @param previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @param previousNewReputationValue The value of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param previousNewReputationSiblings The siblings of the Merkle proof of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param originReputationKey Nonzero for child updates only. The key of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @param originReputationValue Nonzero for child updates only. The value of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param originReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[11] memory u, //An array of 11 UINT Params, ordered as given above.
+    uint256[19] memory u, //An array of 19 UINT Params, ordered as given above.
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
-    bytes memory agreeStateReputationValue,
     bytes32[] memory agreeStateSiblings,
-    bytes memory disagreeStateReputationValue,
     bytes32[] memory disagreeStateSiblings,
     bytes memory previousNewReputationKey,
-    bytes memory previousNewReputationValue,
     bytes32[] memory previousNewReputationSiblings,
     bytes memory originReputationKey,
-    bytes memory originReputationValue,
     bytes32[] memory originReputationSiblings) public;
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible

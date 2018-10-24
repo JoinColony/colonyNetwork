@@ -2463,19 +2463,23 @@ contract("ColonyNetworkMining", accounts => {
             // this.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
             logEntryNumber,
             0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid
           ],
           reputationKey,
           goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.value,
           agreeStateSiblings,
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.value,
           disagreeStateSiblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.value,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.value,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings
         ),
         "colony-reputation-mining-last-state-disagreement"
@@ -2567,7 +2571,7 @@ contract("ColonyNetworkMining", accounts => {
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
       const submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
-      const firstDisagreeIdx = new BN(submission[8].toString());
+      const firstDisagreeIdx = new BN(submission.lowerBound);
       const lastAgreeIdx = firstDisagreeIdx.subn(1);
       const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
       const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
@@ -2578,32 +2582,35 @@ contract("ColonyNetworkMining", accounts => {
           [
             round.toString(),
             index.toString(),
-            goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
-            goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
             agreeStateBranchMask.toString(),
-            goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
             disagreeStateBranchMask.toString(),
-            goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.branchMask,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
             logEntryNumber.toString(),
             0,
             // This is the wrong value
-            0x0
+            0x0,
             // This is the correct line, for future reference
-            // goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.branchMask
+            // goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid
           ],
           reputationKey,
-          goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,
-          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].nextUpdateProof.value,
+          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
           agreeStateSiblings,
-          goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.value,
           disagreeStateSiblings,
-          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.key,
-          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.value,
-          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.siblings,
-          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.key,
-          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.value,
-          goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.siblings,
-          { gasLimit: 4000000 }
+          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
+          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
+          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
+          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings
         ),
         "colony-reputation-mining-origin-skill-state-disagreement"
       );
@@ -2647,8 +2654,12 @@ contract("ColonyNetworkMining", accounts => {
       const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
       const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
 
-      const jhash = goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`];
-      const agreeStateReputationValueFake = new BN(jhash.nextUpdateProof.value.slice(2), 16).addn(1).toString(16, 128);
+      const agreeStateReputationUIDFake = new BN(
+        goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid.slice(2),
+        16
+      )
+        .addn(1)
+        .toString(16, 64);
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
@@ -2663,21 +2674,25 @@ contract("ColonyNetworkMining", accounts => {
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
             logEntryNumber,
             0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
+            // This is the correct line
+            // goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
+            agreeStateReputationUIDFake,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid
           ],
           reputationKey,
           goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          `0x${agreeStateReputationValueFake}`,
-          // This is the right line
-          // goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.value,
           agreeStateSiblings,
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.value,
           disagreeStateSiblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.value,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.value,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings
         ),
         "colony-reputation-mining-uid-not-decay"
@@ -2745,19 +2760,23 @@ contract("ColonyNetworkMining", accounts => {
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
             logEntryNumber,
             0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid
           ],
           reputationKey,
           goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.value,
           agreeStateSiblings,
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.value,
           disagreeStateSiblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.value,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.value,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings
         ),
         "colony-reputation-mining-invalid-before-reputation-proof"
@@ -2780,20 +2799,24 @@ contract("ColonyNetworkMining", accounts => {
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
             logEntryNumber,
             0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
+            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
+            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid
           ],
           reputationKey,
           goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.value,
           agreeStateSiblings,
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.value,
           disagreeStateSiblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.value,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
           goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.value,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings}
+          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings
         ),
         "colony-reputation-mining-invalid-after-reputation-proof"
       );
@@ -3113,37 +3136,19 @@ contract("ColonyNetworkMining", accounts => {
       )}`;
 
       await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          wrongColonyKey,
-          [],
-          "0x00",
-          [],
-          "0x00",
-          [],
-          "0x00",
-          "0x00",
-          [],
-          "0x00",
-          "0x00",
-          []
-        ),
+        repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], wrongColonyKey, [], [], [], "0x00", [], "0x00", []),
         "colony-reputation-mining-colony-address-mismatch"
       );
 
       await checkErrorRevert(
         repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
           wrongReputationKey,
           [],
-          "0x00",
+          [],
           [],
           "0x00",
           [],
-          "0x00",
-          "0x00",
-          [],
-          "0x00",
           "0x00",
           []
         ),
@@ -3151,21 +3156,7 @@ contract("ColonyNetworkMining", accounts => {
       );
 
       await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          wrongUserKey,
-          [],
-          "0x00",
-          [],
-          "0x00",
-          [],
-          "0x00",
-          "0x00",
-          [],
-          "0x00",
-          "0x00",
-          []
-        ),
+        repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], wrongUserKey, [], [], [], "0x00", [], "0x00", []),
         "colony-reputation-mining-user-address-mismatch"
       );
 
@@ -3189,7 +3180,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
 
       await checkErrorRevert(
-        repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "0x00", [], "0x00", [], "0x00", [], "0x00", "0x00", [], "0x00", "0x00", []),
+        repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "0x00", [], [], [], "0x00", [], "0x00", []),
         "colony-reputation-binary-search-incomplete"
       );
 
