@@ -282,7 +282,7 @@ class ReputationMiner {
               if (keyExists) {
                 const reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
                 targetAmount = reputation.mul(amount).div(originReputation);
-                
+
                 // Ensure the child reputation update doesn't underflow
                 targetAmount = reputation.add(targetAmount).lt(0) ? reputation.mul(-1) : targetAmount;
               } else {
@@ -353,7 +353,9 @@ class ReputationMiner {
       siblings = [];
       value = this.getValueAsBytes(0, 0);
     }
-    return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, nNodes: this.nReputations.toString() };
+    const reputation = `0x${value.slice(2,66)}`;
+    const uid = `0x${value.slice(-64)}`;
+    return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, reputation, uid, nNodes: this.nReputations.toString() };
   }
 
   static async getKey(_colonyAddress, _skillId, _userAddress) {
@@ -834,19 +836,23 @@ class ReputationMiner {
         this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
         logEntryNumber,
         "0",
-        this.justificationHashes[lastAgreeKey].originReputationProof.branchMask
+        this.justificationHashes[lastAgreeKey].originReputationProof.branchMask,
+        this.justificationHashes[lastAgreeKey].nextUpdateProof.reputation,
+        this.justificationHashes[lastAgreeKey].nextUpdateProof.uid,
+        this.justificationHashes[firstDisagreeKey].justUpdatedProof.reputation,
+        this.justificationHashes[firstDisagreeKey].justUpdatedProof.uid,
+        this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
+        this.justificationHashes[lastAgreeKey].originReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].originReputationProof.uid,
       ],
       reputationKey,
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
-      this.justificationHashes[lastAgreeKey].nextUpdateProof.value,
       agreeStateSiblings,
-      this.justificationHashes[firstDisagreeKey].justUpdatedProof.value,
       disagreeStateSiblings,
       this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-      this.justificationHashes[lastAgreeKey].newestReputationProof.value,
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].originReputationProof.key,
-      this.justificationHashes[lastAgreeKey].originReputationProof.value,
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
       { gasLimit: 4000000 }
     );
