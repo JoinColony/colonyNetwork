@@ -168,11 +168,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       ERC20Extended targetToken = ERC20Extended(_token);
       toClaim = sub(sub(targetToken.balanceOf(this), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     }
+
     feeToPay = toClaim / getRewardInverse();
-    if (token == _token) { // Well this line isn't easy to understand
-      // Basically, if we're using our own tokens, then we don't siphon off a chunk for rewards
-      feeToPay = 0;
-    }
     remainder = sub(toClaim, feeToPay);
     nonRewardPotsTotal[_token] = add(nonRewardPotsTotal[_token], remainder);
     pots[1].balance[_token] = add(pots[1].balance[_token], remainder);
