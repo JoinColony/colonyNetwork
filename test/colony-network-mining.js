@@ -49,6 +49,7 @@ import MaliciousReputationMinerWrongJRH from "../packages/reputation-miner/test/
 import MaliciousReputationMinerWrongNNodes from "../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes";
 import MaliciousReputationMinerWrongNNodes2 from "../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes2";
 
+import MaliciousReputationMinerClaimWrongOriginReputation from "../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation";
 import ReputationMinerClient from "../packages/reputation-miner/ReputationMinerClient";
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -1634,6 +1635,82 @@ contract("ColonyNetworkMining", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(4);
       // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
+    });
+
+    it.only("if one person lies about what the origin skill is when there is an origin skill, should be handled correctly", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(3600, this);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
+      // any update caused by the second task
+      let taskId = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skill: 5,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 5000000000000,
+        managerRating: 3,
+        workerRating: 3,
+        worker: OTHER_ACCOUNT
+      });
+      await metaColony.finalizeTask(taskId);
+      await advanceTimeSubmitAndConfirmHash();
+
+      // Task two payouts are less so that the reputation should bee nonzero afterwards
+      taskId = await setupRatedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skill: 4,
+        managerPayout: 100000000000,
+        evaluatorPayout: 100000000,
+        workerPayout: 500000000000,
+        managerRating: 1,
+        workerRating: 1,
+        worker: OTHER_ACCOUNT
+      });
+      await metaColony.finalizeTask(taskId);
+      await advanceTimeSubmitAndConfirmHash();
+
+      await goodClient.resetDB();
+      await goodClient.saveCurrentState();
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for one task completion (manager, worker (domain and skill), evaluator);
+      // That's five in total.
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nLogEntries.toNumber(), 5);
+      badClient = new MaliciousReputationMinerClaimWrongOriginReputation(
+        {
+          loader: contractLoader,
+          minerAddress: OTHER_ACCOUNT,
+          realProviderPort: REAL_PROVIDER_PORT,
+          useJsTree
+        },
+        30,
+        29
+      );
+      // Moving the state to the bad client
+      await badClient.initialise(colonyNetwork.address);
+      const currentGoodClientState = await goodClient.getRootHash();
+      await badClient.loadState(currentGoodClientState);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+
+      await repCycle.confirmNewHash(1);
     });
 
     it("if a colony wide total calculation as a result of a child reputation update is wrong, it should be handled correctly", async () => {
