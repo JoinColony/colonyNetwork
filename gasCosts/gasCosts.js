@@ -270,6 +270,9 @@ contract("All", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
       // We now know where they disagree
       await goodClient.respondToChallenge();
       // badClient will fail this if we try
@@ -291,6 +294,9 @@ contract("All", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient2.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
       await oneHourLater();

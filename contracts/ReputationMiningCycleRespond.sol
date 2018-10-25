@@ -35,8 +35,18 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /// @param round The round number of the hash under consideration
   /// @param idx The index in the round of the hash under consideration
   modifier challengeOpen(uint256 round, uint256 idx) {
-    // TODO: More checks that this is an appropriate time to respondToChallenge
+    // Check the binary search has finished, but not necessarily confirmed
     require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-closed");
+    // Check the binary search result has been confirmed
+    require(
+      2**(disputeRounds[round][idx].challengeStepCompleted-2)>disputeRounds[round][idx].jrhNnodes,
+      "colony-reputation-mining-binary-search-result-not-confirmed"
+    );
+    // Check that we have not already responded to the challenge
+    require(
+      2**(disputeRounds[round][idx].challengeStepCompleted-3)<=disputeRounds[round][idx].jrhNnodes,
+      "colony-reputation-mining-challenge-already-responded"
+    );
     _;
   }
 
@@ -95,16 +105,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Perform the reputation calculation ourselves.
     performReputationCalculation(u, agreeStateReputationValue, disagreeStateReputationValue, previousNewReputationValue);
 
-    // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState
-    if (u[U_REQUIRE_REPUTATION_CHECK]==1) {
-      checkPreviousReputationInState(
-        u,
-        agreeStateSiblings,
-        previousNewReputationKey,
-        previousNewReputationValue,
-        previousNewReputationSiblings);
-      saveProvedReputation(u, previousNewReputationValue);
-    }
+    // Check the supplied previousNewRepuation is, in fact, in the same reputation state as the agreeState0
+    checkPreviousReputationInState(
+      u,
+      agreeStateSiblings,
+      previousNewReputationKey,
+      previousNewReputationValue,
+      previousNewReputationSiblings);
+    saveProvedReputation(u, previousNewReputationValue);
 
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
@@ -315,10 +323,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         previousNewReputationUID := mload(add(previousNewReputationValueBytes, 64))
       }
       require(previousNewReputationUID + 1 == disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
-      // Flag that we need to check that the reputation they supplied is in the 'agree' state.
-      // This feels like it might be being a bit clever, using this array to pass a 'return' value out of
-      // this function, without adding a new variable to the stack in the parent function...
-      u[U_REQUIRE_REPUTATION_CHECK] = 1;
     }
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
@@ -379,6 +383,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     assembly {
       previousReputationUID := mload(add(previousNewReputationValue,0x40))
     }
+    // Require that it is at least plausible
+    uint256 delta = disputeRounds[u[U_ROUND]][u[U_IDX]].intermediateReputationNNodes - previousReputationUID;
+    // Could be zero if this is an update to an existing reputation, or it could be 1 if we have just added a new
+    // reputation. Anything else is inconsistent.
+    // We don't care about over/underflowing, and don't want to use `sub` so that this require message is returned.
+    require(delta == 0 || delta == 1, "colony-reputation-mining-proved-uid-inconsistent");
     // Save the index for tiebreak scenarios later.
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
   }
