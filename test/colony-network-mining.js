@@ -2009,7 +2009,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("should incorrectly confirming a binary search result should fail", async () => {
+    it("incorrectly confirming a binary search result should fail", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
@@ -2064,9 +2064,6 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
 
-      let addr = await colonyNetwork.getReputationMiningCycle(false);
-      let inactiveRepCycle = await IReputationMiningCycle.at(addr);
-
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         5,
@@ -2089,8 +2086,8 @@ contract("ColonyNetworkMining", accounts => {
       await metaColony.finalizeTask(taskId);
       await advanceTimeSubmitAndConfirmHash(this);
       await advanceTimeSubmitAndConfirmHash(this);
-      addr = await colonyNetwork.getReputationMiningCycle(false);
-      inactiveRepCycle = await IReputationMiningCycle.at(addr);
+      let addr = await colonyNetwork.getReputationMiningCycle(false);
+      const inactiveRepCycle = await IReputationMiningCycle.at(addr);
 
       let powerTwoEntries = false;
       while (!powerTwoEntries) {
