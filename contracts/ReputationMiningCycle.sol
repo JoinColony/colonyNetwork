@@ -224,8 +224,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       }
     } else {
       require(disputeRounds[round].length > opponentIdx, "colony-reputation-mining-dispute-id-not-in-range");
+      // If we are invalidating hash for idx then opponentIdx hash has to exist, so it is passed onto the next round
       require(disputeRounds[round][opponentIdx].proposedNewRootHash != "", "colony-reputation-mining-proposed-hash-empty");
-      require(disputeRounds[round][idx].proposedNewRootHash != "", "colony-reputation-mining-opponent-already-progressed");
+      require(disputeRounds[round][idx].proposedNewRootHash != "", "colony-reputation-mining-hash-already-progressed");
 
       // Require that this is not better than its opponent.
       require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");

@@ -498,7 +498,7 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await IReputationMiningCycle.at(addr);
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
-      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-opponent-already-progressed");
+      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-hash-already-progressed");
     });
 
     it("should invalidate a hash and its partner if both have timed out", async () => {
