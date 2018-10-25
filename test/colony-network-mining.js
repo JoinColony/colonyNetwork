@@ -1003,20 +1003,20 @@ contract("ColonyNetworkMining", accounts => {
       let badSubmission = await repCycle.getDisputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 1); // Challenge steps completed
       assert.equal(goodSubmission[8].toNumber(), 0); // Lower bound for binary search
-      assert.equal(goodSubmission[9].toNumber(), 29); // Upper bound for binary search
+      assert.equal(goodSubmission[9].toNumber(), 28); // Upper bound for binary search
       assert.equal(badSubmission[3].toNumber(), 1);
       assert.equal(badSubmission[8].toNumber(), 0);
-      assert.equal(badSubmission[9].toNumber(), 29);
+      assert.equal(badSubmission[9].toNumber(), 28);
       await goodClient.respondToBinarySearchForChallenge();
 
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
       badSubmission = await repCycle.getDisputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 2);
       assert.equal(goodSubmission[8].toNumber(), 0);
-      assert.equal(goodSubmission[9].toNumber(), 29);
+      assert.equal(goodSubmission[9].toNumber(), 28);
       assert.equal(badSubmission[3].toNumber(), 1);
       assert.equal(badSubmission[8].toNumber(), 0);
-      assert.equal(badSubmission[9].toNumber(), 29);
+      assert.equal(badSubmission[9].toNumber(), 28);
 
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
@@ -1401,7 +1401,6 @@ contract("ColonyNetworkMining", accounts => {
       // Check badclient respondToChallenge failed
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
-
       assert.equal(goodSubmissionAfterResponseToChallenge[3].sub(badSubmissionAfterResponseToChallenge[3]).toNumber(), 2);
 
       await forwardTime(600, this);

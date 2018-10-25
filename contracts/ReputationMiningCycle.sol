@@ -372,7 +372,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][index].challengeStepCompleted += 1;
 
     // Set bounds for first binary search if it's going to be needed
-    disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
+    disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes - 1;
   }
 
   function appendReputationUpdateLog(
@@ -612,7 +612,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
   function startMemberOfPair(uint256 roundNumber, uint256 index) internal {
     disputeRounds[roundNumber][index].lastResponseTimestamp = now;
-    disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNnodes;
+    disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNnodes - 1;
     disputeRounds[roundNumber][index].lowerBound = 0;
     disputeRounds[roundNumber][index].provedPreviousReputationUID = 0;
     if (disputeRounds[roundNumber][index].jrh != 0x0) {
