@@ -1,7 +1,7 @@
 /* globals artifacts */
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey } from "../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, currentBlockTime } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
 import { MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
 
@@ -105,6 +105,25 @@ contract("TokenLocking", addresses => {
 
       const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
       assert.equal(tokenLockingContractBalance.toNumber(), usersTokens);
+    });
+
+    it("should correctly set deposit timestamp", async () => {
+      await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
+      const deposit = usersTokens / 2;
+
+      const time1 = await currentBlockTime();
+      await tokenLocking.deposit(token.address, deposit, { from: userAddress });
+      const info1 = await tokenLocking.getUserLock(token.address, userAddress);
+      assert.equal(info1[2].toNumber(), time1);
+
+      await forwardTime(3600);
+
+      const time2 = await currentBlockTime();
+      await tokenLocking.deposit(token.address, deposit, { from: userAddress });
+      const info2 = await tokenLocking.getUserLock(token.address, userAddress);
+
+      const avgTime = (time1 + time2) / 2;
+      assert.closeTo(info2[2].toNumber(), avgTime, 1); // Tolerance of 1 second
     });
 
     it("should not be able to deposit tokens if they are not approved", async () => {

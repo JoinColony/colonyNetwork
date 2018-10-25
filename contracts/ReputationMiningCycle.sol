@@ -54,16 +54,18 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @param entryIndex The number of the entry the submitter hash asked us to consider.
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
     uint256 balance;
-    (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
+    (, balance,) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
     require(entryIndex <= balance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
+
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
       // ...require that they are submitting the same hash ...
       require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
       // ...require that they are submitting the same number of nodes for that hash ...
       require(nNodes == reputationHashSubmissions[msg.sender].nNodes, "colony-reputation-mining-submitting-different-nnodes");
-      require(submittedEntries[newHash][msg.sender][entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index"); // ... but not this exact entry
+      // ... but not this exact entry
+      require(submittedEntries[newHash][msg.sender][entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
     }
     _;
   }

@@ -67,14 +67,28 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     userLocks[_token][msg.sender].lockCount = _lockId;
   }
 
+  uint256 constant UINT192_MAX = 2**192 - 1; // Used for updating the deposit timestamp
+
   function deposit(address _token, uint256 _amount) public
   tokenNotLocked(_token)
   {
     require(_amount > 0, "colony-token-locking-invalid-amount");
-
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed");
 
-    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(userLocks[_token][msg.sender].balance, _amount));
+    Lock storage lock = userLocks[_token][msg.sender];
+
+    uint256 prevWeight = lock.balance;
+    uint256 currWeight = _amount;
+
+    // Needed to prevent overflows in the timestamp calculation
+    while ((prevWeight >= UINT192_MAX) || (currWeight >= UINT192_MAX)) {
+      prevWeight /= 2;
+      currWeight /= 2;
+    }
+
+    uint256 timestamp = add(mul(prevWeight, lock.timestamp), mul(currWeight, now)) / add(prevWeight, currWeight);
+
+    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(lock.balance, _amount), timestamp);
   }
 
   function withdraw(address _token, uint256 _amount) public
@@ -105,7 +119,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return totalLockCount[_token];
   }
 
-  function getUserLock(address _token, address _user) public view returns (uint256, uint256) {
-    return (userLocks[_token][_user].lockCount, userLocks[_token][_user].balance);
+  function getUserLock(address _token, address _user) public view returns (uint256, uint256, uint256) {
+    Lock storage lock = userLocks[_token][_user];
+    return (lock.lockCount, lock.balance, lock.timestamp);
   }
 }

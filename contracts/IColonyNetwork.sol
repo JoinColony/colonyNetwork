@@ -196,6 +196,12 @@ contract IColonyNetwork is IRecovery {
   /// @return repMiningCycleAddress address of active or inactive ReputationMiningCycle
   function getReputationMiningCycle(bool _active) public view returns (address repMiningCycleAddress);
 
+  /// @notice Calculate raw miner weight in WADs
+  /// @param _timeStaked Amount of time (in seconds) that the miner has staked their CLNY
+  /// @param _submissonIndex Index of reputation hash submission (between 1 and 12)
+  /// @return minerWeight The weight of miner reward
+  function calculateMinerWeight(uint256 _timeStaked, uint256 _submissonIndex) public view returns (uint256 minerWeight);
+
   /// @notice Get the `Resolver` address for Colony contract version `_version`
   /// @param _version The Colony contract version
   /// @return resolverAddress Address of the `Resolver` contract
