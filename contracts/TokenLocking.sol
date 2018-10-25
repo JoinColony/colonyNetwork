@@ -71,10 +71,12 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   tokenNotLocked(_token)
   {
     require(_amount > 0, "colony-token-locking-invalid-amount");
-
     require(ERC20Extended(_token).transferFrom(msg.sender, address(this), _amount), "colony-token-locking-transfer-failed");
 
-    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(userLocks[_token][msg.sender].balance, _amount));
+    Lock storage lock = userLocks[_token][msg.sender];
+    uint256 timestamp = add(mul(lock.balance, lock.timestamp), mul(_amount, now)) / add(lock.balance, _amount);
+
+    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(lock.balance, _amount), timestamp);
   }
 
   function withdraw(address _token, uint256 _amount) public
@@ -108,7 +110,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return totalLockCount[_token];
   }
 
-  function getUserLock(address _token, address _user) public view returns (uint256, uint256) {
-    return (userLocks[_token][_user].lockCount, userLocks[_token][_user].balance);
+  function getUserLock(address _token, address _user) public view returns (uint256, uint256, uint256) {
+    Lock storage lock = userLocks[_token][_user];
+    return (lock.lockCount, lock.balance, lock.timestamp);
   }
 }

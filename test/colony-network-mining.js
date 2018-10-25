@@ -39,8 +39,8 @@ const contractLoader = new TruffleLoader({
 
 const useJsTree = true;
 
-const TOKEN_BASE = new BN(10).pow(new BN(18));
-const MIN_STAKE = TOKEN_BASE.muln(2000);
+const WAD = new BN(10).pow(new BN(18));
+const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(12);
 
 contract("ColonyNetworkMining", accounts => {
@@ -360,6 +360,36 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevert(repCycle.resetWindow(), "colony-reputation-mining-sender-not-network");
       const windowOpenTimestampAfter = await repCycle.getReputationMiningWindowOpenTimestamp();
       assert.equal(windowOpenTimestampBefore.toString(), windowOpenTimestampAfter.toString());
+    });
+
+    it("should correctly calculate the miner weight", async () => {
+      const UINT256_MAX = new BN(0).notn(256);
+      const UINT32_MAX = new BN(0).notn(32);
+      let weight;
+
+      // Large weight (staked for UINT256_MAX, first submission)
+      weight = await colonyNetwork.calculateMinerWeight(UINT256_MAX, 1);
+      assert.equal("999999964585636861", weight.toString());
+
+      // Large weight (staked for UINT32_MAX, first submission)
+      weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 1);
+      assert.equal("999999964585636861", weight.toString());
+
+      // Middle weight (staked for UINT32_MAX, last submission)
+      weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 12);
+      assert.equal("541666647483886633", weight.toString());
+
+      // Middle weight I (staked for T, first submission)
+      weight = await colonyNetwork.calculateMinerWeight(7776000, 1);
+      assert.equal("625000000000000000", weight.toString());
+
+      // Middle weight II (staked for T, last submission)
+      weight = await colonyNetwork.calculateMinerWeight(7776000, 12);
+      assert.equal("338541666666666667", weight.toString());
+
+      // Smallest weight (staked for 0, last submission)
+      weight = await colonyNetwork.calculateMinerWeight(0, 12);
+      assert.equal("0", weight.toString());
     });
   });
 

@@ -14,6 +14,8 @@ contract TokenLockingStorage is DSAuth {
     uint256 lockCount;
     // Deposited balance
     uint256 balance;
+    // Timestamp of last deposit
+    uint256 timestamp;
   }
 
   // Maps token to user to Lock struct
