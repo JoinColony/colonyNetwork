@@ -31,7 +31,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
 
     address clny = IColony(metaColony).getToken();
-    require(clny != 0x0, "colony-auction-invalid-token");
+    require(clny != 0x0, "colony-auction-invalid-clny-token");
 
     uint availableTokens = ERC20Extended(_token).balanceOf(this);
 
