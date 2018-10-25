@@ -87,14 +87,14 @@ contract("Colony Funding", accounts => {
       assert.equal(colonyRewardPotBalance.toNumber(), 1);
     });
 
-    it("should not put its own tokens in to the reward pot", async () => {
+    it("should syphon off own tokens in to the reward pot", async () => {
       await fundColonyWithTokens(colony, token, 100);
       const colonyRewardPotBalance = await colony.getPotBalance(0, token.address);
       const colonyPotBalance = await colony.getPotBalance(1, token.address);
       const colonyTokenBalance = await token.balanceOf(colony.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
-      assert.equal(colonyPotBalance.toNumber(), 100);
-      assert.equal(colonyRewardPotBalance.toNumber(), 0);
+      assert.equal(colonyPotBalance.toNumber(), 99);
+      assert.equal(colonyRewardPotBalance.toNumber(), 1);
     });
 
     it("should let tokens be moved between pots", async () => {
