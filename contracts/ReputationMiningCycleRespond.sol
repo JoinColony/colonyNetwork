@@ -123,6 +123,18 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       originReputationValue,
       originReputationSiblings);
 
+    // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
+    // i.e. the reputation they supplied is in the 'agree' state.
+    checkPreviousReputationInState(
+      u,
+      agreeStateSiblings,
+      previousNewReputationKey,
+      previousNewReputationValue,
+      previousNewReputationSiblings);
+
+    // Save the index for tiebreak scenarios later.
+    saveProvedReputation(u, previousNewReputationValue);
+
     confirmChallengeCompleted(u);
 
     // Safety net?
@@ -385,18 +397,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         previousNewReputationUID := mload(add(_previousNewReputationValue, 64))
       }
       require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
-
-      // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
-      // i.e. the reputation they supplied is in the 'agree' state.
-      checkPreviousReputationInState(
-        u,
-        _agreeStateSiblings,
-        _previousNewReputationKey,
-        _previousNewReputationValue,
-        _previousNewReputationSiblings);
-
-      // Save the index for tiebreak scenarios later.
-      saveProvedReputation(u, _previousNewReputationValue);
 
       emit ProveUIDSuccess(previousNewReputationUID, _disagreeStateReputationUID, false);
     }
