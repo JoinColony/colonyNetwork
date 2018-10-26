@@ -115,7 +115,7 @@ export async function checkErrorRevert(promise, errorMessage) {
     assert.equal(reason, errorMessage);
   }
   // Check the receipt `status` to ensure transaction failed.
-  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected error ${errorMessage}`);
+  assert.isFalse(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`);
 }
 
 export function getRandomString(_length) {
