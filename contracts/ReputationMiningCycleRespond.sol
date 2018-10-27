@@ -244,7 +244,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // We binary searched to the first disagreement, so the last agreement is the one before.
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes memory agreeStateReputationValue = concatenateToBytes64(u[U_AGREE_STATE_REPUTATION_VALUE], u[U_AGREE_STATE_REPUTATION_UID]);
+    bytes memory agreeStateReputationValue = concatenateToBytes(u[U_AGREE_STATE_REPUTATION_VALUE], u[U_AGREE_STATE_REPUTATION_UID]);
 
     bytes32 reputationRootHash = getImpliedRootHashKey(_reputationKey, agreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
     bytes memory jhLeafValue = concatenateToBytes64(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
@@ -345,10 +345,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       require(_agreeStateReputationUID == _disagreeStateReputationUID, "colony-reputation-mining-uid-changed-for-existing-reputation");
       emit ProveUIDSuccess(_agreeStateReputationUID, _disagreeStateReputationUID, true);
     } else {
-      uint256 previousNewReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
-      require(previousNewReputationUID + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
+      require(u[U_PREVIOUS_NEW_REPUTATION_UID] + 1 == _disagreeStateReputationUID, "colony-reputation-mining-new-uid-incorrect");
 
-      emit ProveUIDSuccess(previousNewReputationUID, _disagreeStateReputationUID, false);
+      emit ProveUIDSuccess(u[U_PREVIOUS_NEW_REPUTATION_UID], _disagreeStateReputationUID, false);
     }
   }
 
@@ -404,7 +403,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           // If origin skill reputation exists, check it
           if (u[U_ORIGIN_REPUTATION_UID] != 0) {
 
-            bytes memory originReputationValueBytes = concatenateToBytes64(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
+            bytes memory originReputationValueBytes = concatenateToBytes(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
 
             checkOriginReputationInState(
               u,
@@ -478,34 +477,39 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       u[U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       originReputationStateSiblings
     );
-    bytes memory jhLeafValue = concatenateToBytes64(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
-    bytes memory lastAgreeIdxBytes = new bytes(32);
-    assembly {
-      mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
-    }
+    bytes memory jhLeafValue = concatenateToBytes(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
+    bytes memory lastAgreeIdxBytes = concatenateToBytes(lastAgreeIdx);
+
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-origin-skill-state-disagreement");
   }
 
   function saveProvedReputation(uint256[19] memory u) internal {
-    uint256 previousReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
     // Require that it is at least plausible
-    uint256 delta = disputeRounds[u[U_ROUND]][u[U_IDX]].intermediateReputationNNodes - previousReputationUID;
+    uint256 delta = disputeRounds[u[U_ROUND]][u[U_IDX]].intermediateReputationNNodes - u[U_PREVIOUS_NEW_REPUTATION_UID];
     // Could be zero if this is an update to an existing reputation, or it could be 1 if we have just added a new
     // reputation. Anything else is inconsistent.
     // We don't care about over/underflowing, and don't want to use `sub` so that this require message is returned.
     require(delta == 0 || delta == 1, "colony-reputation-mining-proved-uid-inconsistent");
     // Save the index for tiebreak scenarios later.
-    disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
+    disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
   }
 
-  function concatenateToBytes64(uint256 a, uint256 b) internal pure returns (bytes) {
+  function concatenateToBytes(uint256 a, uint256 b) internal pure returns (bytes) {
     bytes memory retValue = new bytes(64);
     assembly {
       // Seems as if you access an external variable by name, you get the value, straight up...?
       mstore(add(retValue, 0x20), a)
       mstore(add(retValue, 0x40), b)
+    }
+    return retValue;
+  }
+
+  function concatenateToBytes(uint256 a) internal pure returns (bytes) {
+    bytes memory retValue = new bytes(32);
+    assembly {
+      mstore(add(retValue, 0x20), a)
     }
     return retValue;
   }
