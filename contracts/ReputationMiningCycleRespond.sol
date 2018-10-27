@@ -113,9 +113,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       agreeStateReputationValue,
       disagreeStateReputationValue,
       agreeStateSiblings,
-      previousNewReputationKey,
       previousNewReputationValue,
-      previousNewReputationSiblings,
       originReputationKey,
       originReputationValue,
       originReputationSiblings);
@@ -317,9 +315,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes agreeStateReputationValueBytes,
     bytes disagreeStateReputationValueBytes,
     bytes32[] agreeStateSiblings,
-    bytes previousNewReputationKey,
     bytes previousNewReputationValueBytes,
-    bytes32[] previousNewReputationSiblings,
     bytes originReputationKey,
     bytes originReputationValueBytes,
     bytes32[] originReputationSiblings
@@ -341,13 +337,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(disagreeStateReputationValue <= uint(MAX_INT128), "colony-reputation-mining-disagree-state-value-exceeds-max");
 
     proveUID(
-      u,
       agreeStateReputationUID,
       disagreeStateReputationUID,
-      agreeStateSiblings,
-      previousNewReputationKey,
-      previousNewReputationValueBytes,
-      previousNewReputationSiblings);
+      previousNewReputationValueBytes);
 
     proveValue(
       u,
@@ -360,13 +352,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveUID(
-    uint256[11] u,
     uint256 _agreeStateReputationUID,
     uint256 _disagreeStateReputationUID,
-    bytes32[] _agreeStateSiblings,
-    bytes _previousNewReputationKey,
-    bytes _previousNewReputationValue,
-    bytes32[] _previousNewReputationSiblings
+    bytes _previousNewReputationValue
   ) internal 
   {
     if (_agreeStateReputationUID != 0) {
