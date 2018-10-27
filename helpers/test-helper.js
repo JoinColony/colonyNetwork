@@ -312,7 +312,7 @@ export function makeReputationKey(colonyAddress, skill, accountAddress = undefin
 
 // Note: value can be anything with a `.toString()` method -- a string, number, or BN.
 export function makeReputationValue(value, reputationId) {
-  return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(repuationId)).toString(16, 64)}`; // eslint-disable-line
+  return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(reputationId)).toString(16, 64)}`; // eslint-disable-line
 }
 
 export async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
