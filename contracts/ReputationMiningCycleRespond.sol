@@ -31,9 +31,6 @@ import "./ReputationMiningCycleStorage.sol";
 // Given the approach we a taking for launch, we are able to guarantee that we are the only reputation miner for 100+ of the first cycles, even if we decided to lengthen a cycle length. As a result, maybe we just don't care about this special case?
 contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
 
-  event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
-  event ProveValueSuccess(int256 _agreeStateReputationValue, int256 _disagreeStateReputationValue, int256 _originReputationValue);
-
   /// @notice A modifier that checks if the challenge corresponding to the hash in the passed `round` and `id` is open
   /// @param round The round number of the hash under consideration
   /// @param idx The index in the round of the hash under consideration
@@ -246,24 +243,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     // We binary searched to the first disagreement, so the last agreement is the one before.
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
-    uint256 reputationValue = u[U_AGREE_STATE_REPUTATION_VALUE];
 
-    bytes memory agreeStateReputationValue = new bytes(64);
-    assembly {
-      let x := mload(add(u, mul(32,11))) // 11 = U_AGREE_STATE_REPUTATION_VALUE. Constants not supported by inline solidity
-      mstore(add(agreeStateReputationValue, 0x20), x)
-      x := mload(add(u, mul(32,12))) // 12 = U_AGREE_STATE_REPUTATION_UID. Constants not supported by inline solidity
-      mstore(add(agreeStateReputationValue, 0x40), x)
-    }
+    bytes memory agreeStateReputationValue = concatenateToBytes64(u[U_AGREE_STATE_REPUTATION_VALUE], u[U_AGREE_STATE_REPUTATION_UID]);
 
-    bytes32 reputationRootHash = getImpliedRootHashKey(
-      _reputationKey,
-      agreeStateReputationValue,
-      u[U_REPUTATION_BRANCH_MASK],
-      reputationSiblings
-    );
+    bytes32 reputationRootHash = getImpliedRootHashKey(_reputationKey, agreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
+    bytes memory jhLeafValue = concatenateToBytes64(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
 
-    bytes memory jhLeafValue = new bytes(64);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline solidity
@@ -272,7 +257,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
 
-    if (reputationValue == 0 && impliedRoot != jrh) {
+    if (u[U_AGREE_STATE_REPUTATION_VALUE] == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
       // Check they have incremented nNodes by one 
       require(u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1, "colony-reputation-mining-nnodes-changed-by-not-1");
@@ -331,24 +316,20 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory originReputationSiblings
   ) internal
   {
-    uint256 agreeStateReputationValue = u[U_AGREE_STATE_REPUTATION_VALUE];
-    uint256 disagreeStateReputationValue = u[U_DISAGREE_STATE_REPUTATION_VALUE];
-    uint256 agreeStateReputationUID = u[U_AGREE_STATE_REPUTATION_UID];
-    uint256 disagreeStateReputationUID = u[U_DISAGREE_STATE_REPUTATION_UID];
 
-    require(agreeStateReputationValue <= uint(MAX_INT128), "colony-reputation-mining-agreed-state-value-exceeds-max");
-    require(disagreeStateReputationValue <= uint(MAX_INT128), "colony-reputation-mining-disagree-state-value-exceeds-max");
+    require(u[U_AGREE_STATE_REPUTATION_VALUE] <= uint(MAX_INT128), "colony-reputation-mining-agreed-state-value-exceeds-max");
+    require(u[U_DISAGREE_STATE_REPUTATION_VALUE] <= uint(MAX_INT128), "colony-reputation-mining-disagree-state-value-exceeds-max");
 
     proveUID(
       u,
-      agreeStateReputationUID,
-      disagreeStateReputationUID);
+      u[U_AGREE_STATE_REPUTATION_UID],
+      u[U_DISAGREE_STATE_REPUTATION_UID]);
 
     proveValue(
       u,
-      int256(agreeStateReputationValue),
+      int256(u[U_AGREE_STATE_REPUTATION_VALUE]),
       agreeStateSiblings,
-      int256(disagreeStateReputationValue),
+      int256(u[U_DISAGREE_STATE_REPUTATION_VALUE]),
       originReputationKey,
       originReputationSiblings);
   }
@@ -382,9 +363,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
-    uint256 _originReputationValue = u[U_ORIGIN_REPUTATION_VALUE];
-    require(_originReputationValue <= uint(MAX_INT128), "colony-reputation-mining-origin-value-exceeds-max");
-    int256 originReputationValue = int256(_originReputationValue);
+    require(u[U_ORIGIN_REPUTATION_VALUE] <= uint(MAX_INT128), "colony-reputation-mining-origin-value-exceeds-max");
+    int256 originReputationValue = int256(u[U_ORIGIN_REPUTATION_VALUE]);
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
@@ -421,16 +401,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             require(_agreeStateReputationValue + childAmount == _disagreeStateReputationValue, "colony-reputation-mining-child-reputation-value-incorrect");
           }
 
-          uint256 originReputationUID = u[U_ORIGIN_REPUTATION_UID];
-
           // If origin skill reputation exists, check it
-          if (originReputationUID != 0) {
+          if (u[U_ORIGIN_REPUTATION_UID] != 0) {
 
-            bytes memory originReputationValueBytes = new bytes(64);
-            assembly {
-              mstore(add(originReputationValueBytes, 0x20), mload(add(u, mul(32,17)))) // 17 = U_ORIGIN_REPUTATION_VALUE. Constants not supported by inline solidity
-              mstore(add(originReputationValueBytes, 0x40), mload(add(u, mul(32,18)))) // 18 = U_ORIGIN_REPUTATION_UID. Constants not supported by inline solidity
-            }
+            bytes memory originReputationValueBytes = concatenateToBytes64(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
 
             checkOriginReputationInState(
               u,
@@ -504,12 +478,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       u[U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       originReputationStateSiblings
     );
-    bytes memory jhLeafValue = new bytes(64);
+    bytes memory jhLeafValue = concatenateToBytes64(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
     bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
-      mstore(add(jhLeafValue, 0x20), reputationRootHash)
-      let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline assembly
-      mstore(add(jhLeafValue, 0x40), x)
       mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
@@ -527,5 +498,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(delta == 0 || delta == 1, "colony-reputation-mining-proved-uid-inconsistent");
     // Save the index for tiebreak scenarios later.
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
+  }
+
+  function concatenateToBytes64(uint256 a, uint256 b) internal pure returns (bytes) {
+    bytes memory retValue = new bytes(64);
+    assembly {
+      // Seems as if you access an external variable by name, you get the value, straight up...?
+      mstore(add(retValue, 0x20), a)
+      mstore(add(retValue, 0x40), b)
+    }
+    return retValue;
   }
 }
