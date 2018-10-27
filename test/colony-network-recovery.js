@@ -1,6 +1,6 @@
 /* globals artifacts */
 
-import { toBN, padLeft, soliditySha3 } from "web3-utils";
+import { padLeft, soliditySha3 } from "web3-utils";
 import BN from "bn.js";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
@@ -17,6 +17,7 @@ import {
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import { setupEtherRouter } from "../helpers/upgradable-contracts";
+import { DEFAULT_STAKE } from "../helpers/constants";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -51,7 +52,8 @@ contract("Colony Network Recovery", accounts => {
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
+    await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
+
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     const metaColony = await IColony.at(metaColonyAddress);
     clnyAddress = await metaColony.getToken();
@@ -225,7 +227,7 @@ contract("Colony Network Recovery", accounts => {
     process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
-          await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], toBN(10).pow(toBN(18)));
+          await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
           await miningClient.saveCurrentState();
           const startingHash = await miningClient.getRootHash();
 

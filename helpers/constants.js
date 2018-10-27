@@ -27,6 +27,10 @@ const ACTIVE_TASK_STATE = 0;
 const CANCELLED_TASK_STATE = 1;
 const FINALIZED_TASK_STATE = 2;
 
+const WAD = web3Utils.toBN(10).pow(web3Utils.toBN(18));
+const MIN_STAKE = WAD.muln(2000);
+const DEFAULT_STAKE = MIN_STAKE.muln(1000);
+
 module.exports = {
   MANAGER_ROLE,
   EVALUATOR_ROLE,
@@ -48,5 +52,8 @@ module.exports = {
   RATING_2_SECRET,
   ACTIVE_TASK_STATE,
   CANCELLED_TASK_STATE,
-  FINALIZED_TASK_STATE
+  FINALIZED_TASK_STATE,
+  WAD,
+  MIN_STAKE,
+  DEFAULT_STAKE
 };

@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
+import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING, DEFAULT_STAKE } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlockTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
@@ -663,7 +663,7 @@ contract("Colony Funding", accounts => {
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
 
       miningClient = new ReputationMiner({
         loader: contractLoader,

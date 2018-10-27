@@ -1,9 +1,9 @@
 /* globals artifacts */
-import { toBN } from "web3-utils";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
+import { DEFAULT_STAKE } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
@@ -57,7 +57,7 @@ contract("TokenLocking", addresses => {
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], toBN(10).pow(toBN(18)));
+    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
 
     const miningClient = new ReputationMiner({
       loader: contractLoader,
@@ -356,7 +356,10 @@ contract("TokenLocking", addresses => {
     });
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
-      await checkErrorRevert(tokenLocking.punishStakers([addresses[0], addresses[1]]), "colony-token-locking-sender-not-reputation-mining-cycle");
+      await checkErrorRevert(
+        tokenLocking.punishStakers([addresses[0], addresses[1]], 0x0),
+        "colony-token-locking-sender-not-reputation-mining-cycle"
+      );
     });
   });
 });

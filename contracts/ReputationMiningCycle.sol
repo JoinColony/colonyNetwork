@@ -26,6 +26,9 @@ import "./ReputationMiningCycleStorage.sol";
 
 
 contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
+  /// @notice Minimum reputation mining stake in CLNY
+  uint256 constant MIN_STAKE = 2000 * 10**18;
+
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
@@ -47,11 +50,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @param nNodes The number of nodes in the reputation tree that `newHash` is the root hash of
   /// @param entryIndex The number of the entry the submitter hash asked us to consider.
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
-    // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
-    // Here, the minimum stake is 10**15.
     uint256 balance;
     (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
-    require(entryIndex <= balance / 10**15, "colony-reputation-mining-stake-minimum-not-met");
+    require(entryIndex <= balance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
@@ -259,7 +260,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         nInvalidatedHashes += 2;
         // Punish the people who proposed our opponent
         ITokenLocking(tokenLockingAddress).punishStakers(
-          submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes]
+          submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes],
+          msg.sender
         );
       }
 
@@ -268,7 +270,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
       // Punish the people who proposed the hash that was rejected
       ITokenLocking(tokenLockingAddress).punishStakers(
-        submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes]
+        submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes],
+        msg.sender
       );
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
