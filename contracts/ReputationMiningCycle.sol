@@ -194,7 +194,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     IColonyNetwork(colonyNetworkAddress).setReputationRootHash(
       submission.proposedNewRootHash,
       submission.nNodes,
-      submittedHashes[submission.proposedNewRootHash][submission.nNodes]
+      submittedHashes[submission.proposedNewRootHash][submission.nNodes],
+      1200 * WAD // TODO: Make this a function of reputation state
     );
     selfdestruct(colonyNetworkAddress);
   }
@@ -485,17 +486,25 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     );
   }
 
-  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint256 reward, uint256 miningSkillId) public {
+  function rewardStakersWithReputation(
+    address[] stakers,
+    uint256[] weights,
+    address metaColonyAddress,
+    uint256 reward,
+    uint256 miningSkillId
+  ) public
+  {
     require(msg.sender == colonyNetworkAddress, "colony-reputation-mining-sender-not-network");
     require(reputationUpdateLog.length == 0, "colony-reputation-mining-log-length-non-zero");
+    require(stakers.length == weights.length, "colony-reputation-mining-staker-weight-mismatch");
     for (uint256 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
       reputationUpdateLog.push(ReputationLogEntry(
         stakers[i],
-        int256(reward),
+        int256(wmul(reward, weights[i])),
         miningSkillId, //This should be the special 'mining' skill.
-        commonColonyAddress, // They earn this reputation in the common colony.
+        metaColonyAddress, // They earn this reputation in the meta colony.
         4, // Updates the user's skill, and the colony's skill, both globally and for the special 'mining' skill
         i*4 //We're zero indexed, so this is the number of updates that came before in the reputation log.
       ));

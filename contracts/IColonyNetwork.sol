@@ -211,7 +211,8 @@ contract IColonyNetwork is IRecovery {
   /// @param newHash The reputation root hash
   /// @param newNNodes The updated nodes count value
   /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public;
+  /// @param reward Amount of CLNY to be distributed as reward to miners
+  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers, uint256 reward) public;
 
   /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`

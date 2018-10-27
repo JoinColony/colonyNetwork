@@ -199,12 +199,13 @@ contract IReputationMiningCycle {
 
   /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
   /// @param stakers The array of stakers addresses to receive the reward.
-  /// @param commonColonyAddress The address of the common colony, which the special mining skill is earned in
+  /// @param weights The array of weights determining the proportion of reward to go to each staker
+  /// @param metaColonyAddress The address of the meta colony, which the special mining skill is earned in
   /// @param reward The amount of reputation to be rewarded to each staker
   /// @dev Only callable by colonyNetwork
   /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
-  function rewardStakersWithReputation(address[] stakers, address commonColonyAddress, uint reward, uint miningSkillId) public;
+  function rewardStakersWithReputation(address[] stakers, uint256[] weights, address metaColonyAddress, uint reward, uint miningSkillId) public;
 
   /// @notice Get the timestamp that the current reputation mining window opened
   function getReputationMiningWindowOpenTimestamp() public view returns (uint256 timestamp);

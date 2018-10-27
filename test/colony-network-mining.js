@@ -43,6 +43,8 @@ const contractLoader = new TruffleLoader({
 
 const useJsTree = true;
 
+const REWARD = WAD.muln(1200); // 1200 CLNY
+
 contract("ColonyNetworkMining", accounts => {
   const MAIN_ACCOUNT = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
@@ -668,7 +670,7 @@ contract("ColonyNetworkMining", accounts => {
 
       // Check that they received the reward
       const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
-      assert.equal(balance1Updated.toString(), new BN("2").mul(WAD).toString(), "Account was not rewarded properly");
+      assert.equal(balance1Updated.toString(), REWARD.toString(), "Account was not rewarded properly");
 
       addr = await colonyNetwork.getReputationMiningCycle(false);
       repCycle = await IReputationMiningCycle.at(addr);
@@ -676,7 +678,7 @@ contract("ColonyNetworkMining", accounts => {
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
+      assert.isTrue(repLogEntryMiner[1].sub(REWARD.divn(2)).gtn(0));
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -684,7 +686,7 @@ contract("ColonyNetworkMining", accounts => {
 
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
+      assert.isTrue(repLogEntryMiner[1].sub(REWARD.divn(2)).ltn(0));
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -768,7 +770,6 @@ contract("ColonyNetworkMining", accounts => {
     it("should reward all stakers if they submitted the agreed new hash", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
@@ -784,9 +785,14 @@ contract("ColonyNetworkMining", accounts => {
 
       // Check that they have had their balance increase
       const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
-      assert.equal(balance1Updated.toString(), new BN("1").mul(WAD).toString(), "Account was not rewarded properly");
       const balance2Updated = await clny.balanceOf(OTHER_ACCOUNT);
-      assert.equal(balance2Updated.toString(), new BN("1").mul(WAD).toString(), "Account was not rewarded properly");
+
+      // More than half of the reward
+      assert.isTrue(balance1Updated.sub(REWARD.divn(2)).gtn(0), "Account was not rewarded properly");
+      // Less than half of the reward
+      assert.isTrue(balance2Updated.sub(REWARD.divn(2)).ltn(0), "Account was not rewarded properly");
+      // Sum is total reward within 100 wei of precision error
+      assert.closeTo(balance1Updated.add(balance2Updated).sub(REWARD).toNumber(), 0, 100); // eslint-disable-line prettier/prettier
 
       addr = await colonyNetwork.getReputationMiningCycle(false);
       repCycle = await IReputationMiningCycle.at(addr);
@@ -794,7 +800,7 @@ contract("ColonyNetworkMining", accounts => {
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
+      assert.equal(repLogEntryMiner[1].toString(), balance1Updated.toString());
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -802,7 +808,7 @@ contract("ColonyNetworkMining", accounts => {
 
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryMiner[0], OTHER_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
+      assert.equal(repLogEntryMiner[1].toString(), balance2Updated.toString());
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -816,7 +822,7 @@ contract("ColonyNetworkMining", accounts => {
   describe("Function permissions", () => {
     it('should not allow "setReputationRootHash" to be called from an account that is not not reputationMiningCycle', async () => {
       await checkErrorRevert(
-        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]]),
+        colonyNetwork.setReputationRootHash("0x000001", 10, [accounts[0], accounts[1]], 0),
         "colony-reputation-mining-sender-not-active-reputation-cycle"
       );
     });
@@ -831,7 +837,7 @@ contract("ColonyNetworkMining", accounts => {
     it('should not allow "rewardStakersWithReputation" to be called by someone not the colonyNetwork', async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await checkErrorRevert(repCycle.rewardStakersWithReputation([MAIN_ACCOUNT], 0x0, 10000, 3), "colony-reputation-mining-sender-not-network");
+      await checkErrorRevert(repCycle.rewardStakersWithReputation([MAIN_ACCOUNT], [1], 0x0, 10000, 3), "colony-reputation-mining-sender-not-network");
     });
 
     it('should not allow "initialise" to be called on either the active or inactive ReputationMiningCycle', async () => {
@@ -2827,7 +2833,6 @@ contract("ColonyNetworkMining", accounts => {
       // 5. Worker reputation for metacolony's root skill
       // 6. Colony-wide total reputation for global skill task was in
       // 7. Worker reputation for global skill task was in
-      //
 
       const GLOBAL_SKILL = 1;
       const META_ROOT_SKILL = 2;
@@ -2839,22 +2844,22 @@ contract("ColonyNetworkMining", accounts => {
       // These should be:
       // 1. Colony-wide total reputation for metacolony's root skill
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL);
-      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(WAD), 1);
+      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(REWARD), 1);
       assert.equal(client.reputations[key], value);
 
       // 2. Colony-wide total reputation for mining skill
       key = makeReputationKey(metaColony.address, MINING_SKILL);
-      value = makeReputationValue(1000000000000000000, 2);
+      value = makeReputationValue(REWARD, 2);
       assert.equal(client.reputations[key], value);
 
       // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL, MAIN_ACCOUNT);
-      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(WAD), 3);
+      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(REWARD), 3);
       assert.equal(client.reputations[key], value);
 
       // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputation hash
       key = makeReputationKey(metaColony.address, MINING_SKILL, MAIN_ACCOUNT);
-      value = makeReputationValue(1000000000000000000, 4);
+      value = makeReputationValue(REWARD, 4);
       assert.equal(client.reputations[key], value);
 
       // 5. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
@@ -2923,10 +2928,10 @@ contract("ColonyNetworkMining", accounts => {
       const MINING_SKILL = 3;
 
       const reputationProps = [
-        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: DEFAULT_STAKE.muln(2).add(new BN("1000003000000000000")) },
-        { id: 2, skill: MINING_SKILL, account: undefined, value: 1000000000000000000 },
-        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: DEFAULT_STAKE.muln(2).add(new BN("1000001000000000000")) },
-        { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: 1000000000000000000 },
+        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: DEFAULT_STAKE.muln(2).add(REWARD).add(new BN("3000000000000")) }, // eslint-disable-line prettier/prettier
+        { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD },
+        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: DEFAULT_STAKE.muln(2).add(REWARD).add(new BN("1000000000000")) }, // eslint-disable-line prettier/prettier
+        { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: REWARD },
         { id: 5, skill: META_ROOT_SKILL, account: accounts[2], value: 1000000000000 },
         { id: 6, skill: 1, account: undefined, value: 1000000000000 },
         { id: 7, skill: 1, account: accounts[2], value: 0 },
