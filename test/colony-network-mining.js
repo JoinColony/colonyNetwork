@@ -3816,9 +3816,9 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(Object.keys(client.reputations).length, 23);
 
       const reputationProps = [
-        { id: 1, skill: 2, account: undefined, value: 3000005802000000000 },
+        { id: 1, skill: 2, account: undefined, value: "4000001000005802000000000" },
         { id: 2, skill: 3, account: undefined, value: 1000000000000000000 },
-        { id: 3, skill: 2, account: accounts[0], value: 3000002500000000000 },
+        { id: 3, skill: 2, account: accounts[0], value: "4000001000002500000000000" },
         { id: 4, skill: 3, account: accounts[0], value: 1000000000000000000 },
         { id: 5, skill: 2, account: accounts[2], value: 3300000000000 },
         { id: 6, skill: 1, account: undefined, value: 3300000000000 },
