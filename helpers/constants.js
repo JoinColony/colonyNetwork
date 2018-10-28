@@ -32,6 +32,10 @@ const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(1000);
 
 const MINING_CYCLE_DURATION = 60 * 60; // 1 hour
+const DECAY_RATE = {
+  NUMERATOR:    web3Utils.toBN("999679150010888"), // eslint-disable-line prettier/prettier
+  DENOMINATOR: web3Utils.toBN("1000000000000000")
+};
 
 module.exports = {
   MANAGER_ROLE,
@@ -58,5 +62,6 @@ module.exports = {
   WAD,
   MIN_STAKE,
   DEFAULT_STAKE,
-  MINING_CYCLE_DURATION
+  MINING_CYCLE_DURATION,
+  DECAY_RATE
 };

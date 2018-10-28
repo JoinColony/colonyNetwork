@@ -16,7 +16,7 @@ import {
   submitAndForwardTimeToDispute
 } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
-import { WAD, DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
+import { WAD, DEFAULT_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -2717,14 +2717,14 @@ contract("ColonyNetworkMining", accounts => {
       const largeCalculationResult = new BN("2")
         .pow(new BN("256"))
         .subn(2)
-        .div(new BN("1000000000000000"))
-        .mul(new BN("999679150010888"));
+        .div(DECAY_RATE.DENOMINATOR)
+        .mul(DECAY_RATE.NUMERATOR);
 
       const smallCalculationResult = new BN("2")
         .pow(new BN("256"))
         .subn(2)
-        .mul(new BN("999679150010888"))
-        .div(new BN("1000000000000000"));
+        .mul(DECAY_RATE.NUMERATOR)
+        .div(DECAY_RATE.DENOMINATOR);
 
       const decayKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
       assert.notEqual(smallCalculationResult.toString(16, 64), goodClient.reputations[decayKey].slice(2, 66));
