@@ -31,6 +31,8 @@ const WAD = web3Utils.toBN(10).pow(web3Utils.toBN(18));
 const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(1000);
 
+const MINING_CYCLE_DURATION = 60 * 60; // 1 hour
+
 module.exports = {
   MANAGER_ROLE,
   EVALUATOR_ROLE,
@@ -55,5 +57,6 @@ module.exports = {
   FINALIZED_TASK_STATE,
   WAD,
   MIN_STAKE,
-  DEFAULT_STAKE
+  DEFAULT_STAKE,
+  MINING_CYCLE_DURATION
 };

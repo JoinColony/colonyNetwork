@@ -17,7 +17,7 @@ import {
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import { setupEtherRouter } from "../helpers/upgradable-contracts";
-import { DEFAULT_STAKE } from "../helpers/constants";
+import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -47,7 +47,7 @@ contract("Colony Network Recovery", accounts => {
 
   beforeEach(async () => {
     let addr = await colonyNetwork.getReputationMiningCycle.call(true);
-    await forwardTime(3600, this);
+    await forwardTime(MINING_CYCLE_DURATION, this);
     let repCycle = await IReputationMiningCycle.at(addr);
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
@@ -68,7 +68,7 @@ contract("Colony Network Recovery", accounts => {
 
     addr = await colonyNetwork.getReputationMiningCycle.call(true);
     repCycle = await IReputationMiningCycle.at(addr);
-    await forwardTime(3600, this);
+    await forwardTime(MINING_CYCLE_DURATION, this);
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
@@ -202,7 +202,7 @@ contract("Colony Network Recovery", accounts => {
     it("should be able to fix reputation state", async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x01", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -254,7 +254,7 @@ contract("Colony Network Recovery", accounts => {
           let repCycle = await IReputationMiningCycle.at(addr);
 
           await miningClient.addLogContentsToReputationTree();
-          await forwardTime(3600, this);
+          await forwardTime(MINING_CYCLE_DURATION, this);
           await miningClient.submitRootHash();
 
           addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -262,7 +262,7 @@ contract("Colony Network Recovery", accounts => {
           await repCycle.confirmNewHash(0);
 
           await miningClient.addLogContentsToReputationTree();
-          await forwardTime(3600, this);
+          await forwardTime(MINING_CYCLE_DURATION, this);
           await miningClient.submitRootHash();
 
           addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -342,7 +342,7 @@ contract("Colony Network Recovery", accounts => {
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
           // A well intentioned miner makes a submission
-          await forwardTime(3600, this);
+          await forwardTime(MINING_CYCLE_DURATION, this);
           await ignorantMiningClient.addLogContentsToReputationTree();
           await ignorantMiningClient.submitRootHash();
 

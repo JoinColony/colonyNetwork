@@ -3,7 +3,7 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
-import { DEFAULT_STAKE } from "../helpers/constants";
+import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
@@ -52,7 +52,7 @@ contract("TokenLocking", addresses => {
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
     let addr = await colonyNetwork.getReputationMiningCycle.call(true);
-    await forwardTime(3600, this);
+    await forwardTime(MINING_CYCLE_DURATION, this);
     let repCycle = await IReputationMiningCycle.at(addr);
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
@@ -67,7 +67,7 @@ contract("TokenLocking", addresses => {
     });
     await miningClient.initialise(colonyNetwork.address);
     await miningClient.addLogContentsToReputationTree();
-    await forwardTime(3600, this);
+    await forwardTime(MINING_CYCLE_DURATION, this);
     await miningClient.submitRootHash();
 
     addr = await colonyNetwork.getReputationMiningCycle.call(true);
