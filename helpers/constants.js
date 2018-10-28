@@ -31,9 +31,9 @@ const WAD = web3Utils.toBN(10).pow(web3Utils.toBN(18));
 const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(1000);
 
-const MINING_CYCLE_DURATION = 60 * 60; // 1 hour
+const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
 const DECAY_RATE = {
-  NUMERATOR:    web3Utils.toBN("999679150010888"), // eslint-disable-line prettier/prettier
+  NUMERATOR:    web3Utils.toBN("992327946262944"), // eslint-disable-line prettier/prettier
   DENOMINATOR: web3Utils.toBN("1000000000000000")
 };
 

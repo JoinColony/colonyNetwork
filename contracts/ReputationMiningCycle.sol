@@ -30,7 +30,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   uint256 constant MIN_STAKE = 2000 * 10**18;
 
   /// @notice Size of mining window in seconds
-  uint256 constant MINING_WINDOW_SIZE = 60 * 60; // 1 hour
+  uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round

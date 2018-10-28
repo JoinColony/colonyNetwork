@@ -62,7 +62,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_LOG_ENTRY_NUMBER = 9;
   uint constant U_DECAY_TRANSITION = 10;
 
-  uint constant DECAY_NUMERATOR =    999679150010888; // 1-hr mining cycles
+  uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function respondToChallenge(

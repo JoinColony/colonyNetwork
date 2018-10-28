@@ -335,7 +335,7 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const constant = new BN(2)
     .pow(new BN(256))
     .subn(1)
-    .divn(3600);
+    .divn(60 * 60 * 24); // TODO: use MINING_CYCLE_DURATION from constants.js
   const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
 
   // Iterate from `startingEntryNumber ` up until the largest entry, until we find one we can submit now
@@ -352,10 +352,10 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 }
 
 export async function submitAndForwardTimeToDispute(clients, test) {
-  await forwardTime(1800, test);
+  await forwardTime(60 * 60 * 12, test); // TODO: use MINING_CYCLE_DURATION from constants.js
   for (let i = 0; i < clients.length; i += 1) {
     await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
     await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
   }
-  await forwardTime(1800, test);
+  await forwardTime(60 * 60 * 12, test);
 }
