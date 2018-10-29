@@ -17,7 +17,8 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
   SECONDS_PER_DAY,
-  DEFAULT_STAKE
+  DEFAULT_STAKE,
+  MINING_CYCLE_DURATION
 } from "../helpers/constants";
 import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
 
@@ -40,7 +41,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
-const oneHourLater = async () => forwardTime(3600, this);
+const oneMiningCycleDurationLater = async () => forwardTime(MINING_CYCLE_DURATION, this);
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const contractLoader = new TruffleLoader({
@@ -211,7 +212,7 @@ contract("All", accounts => {
 
       let repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
 
-      await oneHourLater();
+      await oneMiningCycleDurationLater();
       let repCycle = await IReputationMiningCycle.at(repCycleAddr);
       await repCycle.submitRootHash("0x00", 0, 1);
       await repCycle.confirmNewHash(0);
@@ -237,12 +238,11 @@ contract("All", accounts => {
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
       await badClient2.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
       await badClient2.submitRootHash();
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       // Session of respond / invalidate between our 3 submissions
       await goodClient.submitJustificationRootHash();
@@ -273,7 +273,7 @@ contract("All", accounts => {
       await goodClient.respondToChallenge();
       // badClient will fail this if we try
       // await badClient.respondToChallenge();
-      await oneHourLater();
+      await oneMiningCycleDurationLater();
       await repCycle.invalidateHash(0, 1);
 
       await goodClient.respondToBinarySearchForChallenge();
@@ -295,7 +295,7 @@ contract("All", accounts => {
       await badClient.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
-      await oneHourLater();
+      await oneMiningCycleDurationLater();
       await repCycle.invalidateHash(1, 0);
 
       await repCycle.confirmNewHash(2);
@@ -324,7 +324,7 @@ contract("All", accounts => {
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
@@ -339,7 +339,7 @@ contract("All", accounts => {
       });
       await miningClient.initialise(colonyNetwork.address);
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);

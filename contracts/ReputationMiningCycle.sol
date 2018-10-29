@@ -29,6 +29,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @notice Minimum reputation mining stake in CLNY
   uint256 constant MIN_STAKE = 2000 * 10**18;
 
+  /// @notice Size of mining window in seconds
+  uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
+
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
@@ -65,6 +68,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     _;
   }
 
+  uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant X = UINT256_MAX / MINING_WINDOW_SIZE;
+
   /// @notice A modifier that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
@@ -72,9 +78,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // Check the ticket is a winning one.
     // All entries are acceptable if the hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
-      // x = floor(uint((2**256 - 1) / 3600)
-      uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
-      uint256 target = (now - reputationMiningWindowOpenTimestamp) * x;
+      uint256 target = (now - reputationMiningWindowOpenTimestamp) * X;
       require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
     }
     _;
@@ -504,7 +508,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /////////////////////////
 
   function submissionWindowClosed() internal view returns(bool) {
-    return now - reputationMiningWindowOpenTimestamp >= 3600;
+    return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
   }
 
   function processBinaryChallengeSearchResponse(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 targetNode) internal {

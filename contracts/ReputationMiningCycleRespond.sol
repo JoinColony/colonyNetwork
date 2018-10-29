@@ -62,6 +62,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_LOG_ENTRY_NUMBER = 9;
   uint constant U_DECAY_TRANSITION = 10;
 
+  uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
+  uint constant DECAY_DENOMINATOR = 1000000000000000;
+
   function respondToChallenge(
     uint256[11] u, //An array of 11 UINT Params, ordered as given above.
     bytes _reputationKey,
@@ -330,9 +333,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     if (u[U_DECAY_TRANSITION] == 1) {
       // Very large reputation decays are calculated the 'other way around' to avoid overflows.
       if (agreeStateReputationValue > uint256(2**256 - 1)/uint256(10**15)) {
-        require(disagreeStateReputationValue == (agreeStateReputationValue/1000000000000000)*999679150010888, "colony-reputation-mining-decay-incorrect");
+        require(disagreeStateReputationValue == (agreeStateReputationValue/DECAY_DENOMINATOR)*DECAY_NUMERATOR, "colony-reputation-mining-decay-incorrect");
       } else {
-        require(disagreeStateReputationValue == (agreeStateReputationValue*999679150010888)/1000000000000000, "colony-reputation-mining-decay-incorrect");
+        require(disagreeStateReputationValue == (agreeStateReputationValue*DECAY_NUMERATOR)/DECAY_DENOMINATOR, "colony-reputation-mining-decay-incorrect");
       }
     } else {
       if (logEntry.amount < 0 && uint(logEntry.amount * -1) > agreeStateReputationValue ) {

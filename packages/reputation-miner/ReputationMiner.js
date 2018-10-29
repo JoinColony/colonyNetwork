@@ -189,7 +189,7 @@ class ReputationMiner {
   /**
    * Process the `j`th update and add to the current reputation state and the justificationtree.
    * @param  {BigNumber}  updateNumber     The number of the update that should be considered.
-   * @param  {Contract}     repCycle         The contract object representing reputation mining cycle contract we're processing the logs of
+   * @param  {Contract}   repCycle         The contract object representing reputation mining cycle contract we're processing the logs of
    * @param  {String or Number} blockNumber The block number to query the repCycle contract. If it has self destructed, and we are
    *                                       are syncing from scratch, if we queried at "latest", we wouldn't find the logs
    * @param  {bool}       checkForReplacement A boolean that controls whether we query getReplacementReputationUpdateLogEntry for the log entry.
@@ -208,10 +208,10 @@ class ReputationMiner {
       const reputation = ethers.utils.bigNumberify(`0x${this.reputations[key].slice(2, 66)}`);
       let newReputation;
       // These are the numerator and the denominator of the fraction we wish to reduce the reputation by. It
-      // is very slightly less than one.
+      // is very slightly less than one (0.5 ** (1/2160) for a 1-hr mining cycle, 0.5 ** (1/90) for a 24-hr cycle).
       // Disabling prettier on the next line so we can have these two values aligned so it's easy to see
       // the fraction will be slightly less than one.
-      const numerator   = ethers.utils.bigNumberify("999679150010888");  // eslint-disable-line prettier/prettier
+      const numerator   = ethers.utils.bigNumberify("992327946262944");  // eslint-disable-line prettier/prettier
       const denominator = ethers.utils.bigNumberify("1000000000000000");
 
       if (
@@ -537,11 +537,12 @@ class ReputationMiner {
       // Iterate over entries until we find one that passes
       const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash); // eslint-disable-line no-await-in-loop
 
+      const miningCycleDuration = 60 * 60 * 24;
       const constant = ethers.utils
         .bigNumberify(2)
         .pow(256)
         .sub(1)
-        .div(3600);
+        .div(miningCycleDuration);
 
       const block = await this.realProvider.getBlock("latest"); // eslint-disable-line no-await-in-loop
       const { timestamp } = block;
