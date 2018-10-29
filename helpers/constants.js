@@ -39,8 +39,8 @@ const MAX_UINT256 = toBN(2)
 
 const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
 const DECAY_RATE = {
-  NUMERATOR:    web3Utils.toBN("992327946262944"), // eslint-disable-line prettier/prettier
-  DENOMINATOR: web3Utils.toBN("1000000000000000")
+  NUMERATOR:    toBN("992327946262944"), // eslint-disable-line prettier/prettier
+  DENOMINATOR: toBN("1000000000000000")
 };
 
 module.exports = {
