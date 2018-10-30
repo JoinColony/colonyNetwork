@@ -1404,15 +1404,7 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(confirmedHash, righthash);
     });
 
-<<<<<<< HEAD
-    it("If respondToChallenge is attempted to be called multiple times, it should fail", async () => {
-||||||| merged common ancestors
-    it("If respondToChallenge is attempted to be called multiple times, it should fail", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-=======
     it("if respondToChallenge is attempted to be called multiple times, it should fail", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
->>>>>>> Fix post rebase
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(3));
@@ -1877,7 +1869,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("if a colony wide total calculation as a result of a child reputation update is wrong, it should be handled correctly", async () => {
+    it("if a colony wide total calculation (for a parent skill) is wrong, it should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -1933,7 +1925,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        27,
+        32,
         "0xfffffffff"
       );
       // Moving the state to the bad client
@@ -2006,7 +1998,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        30,
+        26,
         "0xfffffffff"
       );
       // Moving the state to the bad client
@@ -2023,19 +2015,9 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-<<<<<<< HEAD
     it("if origin skill reputation calculation is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-||||||| merged common ancestors
-    it("if origin skill reputation calculation overflows and is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-=======
-    it("if a child reputation calculation is wrong, it should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
->>>>>>> Fix post rebase
 
       await setupFinalizedTask({
         colonyNetwork,
@@ -2088,7 +2070,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        33,
+        32,
         "0xf"
       );
       // Moving the state to the bad client
@@ -2237,19 +2219,9 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-<<<<<<< HEAD
-    it("if main skill (in a negative update) reputation calculation overflows and is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-||||||| merged common ancestors
-    it("if main skill (in a negative update) reputation calculation is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-=======
     it("if main skill (in a negative update) reputation calculation is wrong, it should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
->>>>>>> Fix post rebase
 
       const taskId1 = await setupRatedTask({
         colonyNetwork,
@@ -2320,7 +2292,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("if a colony-wide main skill reputation amount calculation underflows and is wrong, it should be handled correctly", async () => {
+    it("if a colony-wide child skill reputation amount calculation underflows and is wrong, it should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
