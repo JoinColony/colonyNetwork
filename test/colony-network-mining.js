@@ -1725,7 +1725,7 @@ contract("ColonyNetworkMining", accounts => {
       // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
     });
 
-    it.skip("if one person claims an origin skill doesn't exist but the other does (and proves such), should be handled correctly", async () => {
+    it("if one person claims an origin skill doesn't exist but the other does (and proves such), should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -1801,7 +1801,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it.skip("if one person lies about what the origin skill is when there is an origin skill, should be handled correctly", async () => {
+    it("if one person lies about what the origin skill is when there is an origin skill, should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
