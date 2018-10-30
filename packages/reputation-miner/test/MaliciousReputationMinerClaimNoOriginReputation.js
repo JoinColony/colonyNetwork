@@ -92,19 +92,23 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
         this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
         logEntryNumber,
         "0",
-        this.justificationHashes[lastAgreeKey].originReputationProof.branchMask
+        this.justificationHashes[lastAgreeKey].originReputationProof.branchMask,
+        this.justificationHashes[lastAgreeKey].nextUpdateProof.reputation,
+        this.justificationHashes[lastAgreeKey].nextUpdateProof.uid,
+        this.justificationHashes[firstDisagreeKey].justUpdatedProof.reputation,
+        this.justificationHashes[firstDisagreeKey].justUpdatedProof.uid,
+        this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
+        "0x0",
+        "0x0"
       ],
       reputationKey,
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
-      this.justificationHashes[lastAgreeKey].nextUpdateProof.value,
       agreeStateSiblings,
-      this.justificationHashes[firstDisagreeKey].justUpdatedProof.value,
       disagreeStateSiblings,
       this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-      this.justificationHashes[lastAgreeKey].newestReputationProof.value,
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].originReputationProof.key,
-      "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
       { gasLimit: 4000000 }
     );

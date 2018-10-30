@@ -116,10 +116,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     proveAfterReputationValue(u, _reputationKey, reputationSiblings, disagreeStateSiblings);
 
     // Perform the reputation calculation ourselves.
-    performReputationCalculation(
+    performReputationCalculation(u);
+
+    bytes memory originReputationValueBytes = concatenateToBytes(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
+    checkOriginReputationInState(
       u,
       agreeStateSiblings,
       originReputationKey,
+      originReputationValueBytes,
       originReputationSiblings);
 
     // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
@@ -293,10 +297,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function performReputationCalculation(
-    uint256[19] u,
-    bytes32[] agreeStateSiblings,
-    bytes originReputationKey,
-    bytes32[] originReputationSiblings
+    uint256[19] u
   ) internal
   {
 
@@ -311,10 +312,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     proveValue(
       u,
       int256(u[U_AGREE_STATE_REPUTATION_VALUE]),
-      agreeStateSiblings,
-      int256(u[U_DISAGREE_STATE_REPUTATION_VALUE]),
-      originReputationKey,
-      originReputationSiblings);
+      int256(u[U_DISAGREE_STATE_REPUTATION_VALUE]));
   }
 
   function proveUID(
@@ -337,10 +335,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   function proveValue(
     uint256[19] u,
     int256 _agreeStateReputationValue,
-    bytes32[] _agreeStateSiblings,
-    int256 _disagreeStateReputationValue,
-    bytes _originReputationKey,
-    bytes32[] _originReputationSiblings
+    int256 _disagreeStateReputationValue
   ) internal
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
@@ -381,19 +376,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           } else {
             int256 childAmount = logEntry.amount * _agreeStateReputationValue / originReputationValue;
             require(_agreeStateReputationValue + childAmount == _disagreeStateReputationValue, "colony-reputation-mining-child-reputation-value-incorrect");
-          }
-
-          // If origin skill reputation exists, check it
-          if (u[U_ORIGIN_REPUTATION_UID] != 0) {
-
-            bytes memory originReputationValueBytes = concatenateToBytes(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
-
-            checkOriginReputationInState(
-              u,
-              _agreeStateSiblings,
-              _originReputationKey,
-              originReputationValueBytes,
-              _originReputationSiblings);
           }
         } else {
           // Don't allow reputation to become negative
