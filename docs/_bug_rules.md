@@ -8,7 +8,7 @@ The Colony Network is a set of smart contracts designed to manage shared resourc
 
 To this end, Colony is offering substantial rewards to external developers who report bugs and flaws in the colonyNetwork contracts ([terms apply](https://docs.colony.io/colonynetwork/bug-bounty-program-terms-and-conditions/)).
 
-This bug bounty does *not* apply to Colony tools such as Purser. See [Ineligible bugs](https://docs.colony.io/colonynetwork/bug-bounty-program-overview/#ineligible-bugs) for more information. 
+This bug bounty does *not* apply to Colony tools such as Purser. See [Ineligible bugs](https://docs.colony.io/colonynetwork/bug-bounty-program-overview/#ineligible-bugs) for more information.
 
 ==TOC==
 
@@ -40,6 +40,13 @@ It is requested that all submissions follow the format defined in the [issue tem
 In the case of private bug disclosure, all relevant materials should be sent in email to `security@colony.io` -- and should follow the same template as a public issue.
 
 Once submitted, the issue will be responded to, verified, accepted, and rewarded according to the timelines defined on our [service level agreement](link).
+
+### Submission Branches
+Participants in the program are free to submit bugs on two different branches in the colonyNetwork codebase:
+* the current testnet release (tagged on the `master` branch) and deployed to Rinkeby
+* against the `develop` branch where we merge ongoing work
+
+Rinkeby deployments will be updated as _greenfield_ deployments, every one month. 
 
 ### Bug Severity and Bounties
 In the same manner as the [Ethereum Bug Bounty Program](https://bounty.ethereum.org/), submissions will be evaluated by the Colony team according to the [OWASP risk rating methodology](https://www.owasp.org/index.php/OWASP_Risk_Rating_Methodology), which grades based on both _Impact_ and _Likelihood_.
