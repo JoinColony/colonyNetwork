@@ -7,7 +7,7 @@ order: 1
 
 To participate in this bug bounty you must:
 
-* Not be employed by Colony
+* Not be employed by Colony, a family member of a person employed by Colony, or a contractor of Colony.
 * Not be in violation of any national state, or local law or regulation with respect to any activities directly or indirectly related to the Bug Bounty Program
 
 To qualify for a bounty you must:
@@ -29,7 +29,7 @@ Failure to act in good faith will result in immediate disqualification from the 
 
 After a vulnerability has been submitted either as an [issue on GitHub](https://github.com/JoinColony/colonyNetwork/issues) or as an email to `security@colony.io`, the Colony team will evaluate and determine if the vulnerability is eligible for a bounty within 3 days.
 
-Accepted bounties will be graded and assigned a severity according to the team's assesment within 7 days after being accepted.
+Accepted bounties will be graded and assigned a severity according to the team's assesment within 7 days, or a total of 10 days from first submission.
 
 Once the severity and bounty is decided, the Colony team will begin work on patching the bug. In this case, a PR will be opened that references the issue of original report. This PR may request more information from the submitter of the bug, and may accept input from external developers for fixing. Participation in resolving a vulnerability is welcome but not required to receive a bounty.
 
@@ -45,7 +45,7 @@ YOUR PARTICIPATION IN THE BUG BOUNTY PROGRAM IS AT YOUR OWN RISK. COLONY HEREBY 
 
 ### Ineligible Persons
 
-The Bug Bounty Program is not open to any of the following persons (“Ineligible Persons”): (1) anyone who is not at least the legal age of majority, at the time of Entry, to form valid contracts in their respective country, province or state of legal residence; (2) anyone who does not satisfy any applicable legal requirements under United States and other applicable jurisdictional legal requirements for participation; or (3) in, a country, state, province or territory where the laws of the United States or local law prohibits participating or receiving a prize in the Hackathon (including, but not limited to, Brazil, Quebec, and Cuba, Sudan, Iran, North Korea, Syria, Myanmar (formerly Burma) and any other country designated by the United States Treasury's Office of Foreign Assets Control) . Employees, independent contractors under a current services agreement with Colony and members of their immediate families (defined as parents, children, siblings and spouse, regardless of where they reside and/or those living in the same household of each) are not eligible to participate in the Bug Bounty Program. Colony reserves the right to verify eligibility and to adjudicate on any dispute at any time.
+The Bug Bounty Program is not open to any of the following persons (“Ineligible Persons”): (1) anyone who is not at least the legal age of majority, at the time of Entry, to form valid contracts in their respective country, province or state of legal residence; or (2) in, a country, state, province or territory where the laws of the United States or local law prohibits participating or receiving a prize in the Bug Bounty program (including, but not limited to, Brazil, Quebec, and Cuba, Sudan, Iran, North Korea, Syria, Myanmar (formerly Burma) and any other country designated by the United States Treasury's Office of Foreign Assets Control) . Employees, independent contractors under a current services agreement with Colony and members of their immediate families (defined as parents, children, siblings and spouse, regardless of where they reside and/or those living in the same household of each) are not eligible to participate in the Bug Bounty Program. Colony reserves the right to verify eligibility and to adjudicate on any dispute at any time.
 
 ### Additional Terms
 

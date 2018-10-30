@@ -6,7 +6,9 @@ order: 0
 
 The Colony Network is a set of smart contracts designed to manage shared resources of multiple individuals in a secure and predictable manner. These digital assets could be of great value; it is therefore imperative that the system behaves as the Bagginses did before Bilbo: without ever doing anything unexpected.
 
-To this end, Colony is offering substantial rewards to external developers who report bugs and flaws in the colonyNetwork contracts.
+To this end, Colony is offering substantial rewards to external developers who report bugs and flaws in the colonyNetwork contracts ([terms apply](https://docs.colony.io/colonynetwork/bug-bounty-program-terms-and-conditions/)).
+
+This bug bounty does *not* apply to Colony tools such as Purser. See [Ineligible bugs](https://docs.colony.io/colonynetwork/bug-bounty-program-overview/#ineligible-bugs) for more information. 
 
 ==TOC==
 
@@ -29,18 +31,18 @@ _\* There are some components of the colonyNetwork repository that are not creat
 
 ### Submission Guidelines
 
-All bugs reported must be done through the creation of an issue in the colonyNetwork github repo, or _if the submitter wishes to disclose privately, or to remain anonymous_ by an email sent to security@colony.io.
+All bugs reported must be done through the creation of an issue in the colonyNetwork github repo, or _if the submitter wishes to disclose privately, or to remain anonymous_ by an email sent to security@colony.io. Private submissions are still eligible for a bounty.
 
 Unless there is a specific reason for a private disclosure, bugs should be submitted as issues on the colonyNetwork GitHub repository, and tagged with the 'bug' label.
 
-It is requested that all submissions follow the format defined in the issue template -- clarity of description and thoroughness of documentation will be a consideration for reward amount, in addition to impact and likelihood.
+It is requested that all submissions follow the format defined in the [issue template](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/ISSUE_TEMPLATE.md) -- clarity of description and thoroughness of documentation will be a consideration for reward amount, in addition to impact and likelihood.
 
 In the case of private bug disclosure, all relevant materials should be sent in email to `security@colony.io` -- and should follow the same template as a public issue.
 
 Once submitted, the issue will be responded to, verified, accepted, and rewarded according to the timelines defined on our [service level agreement](link).
 
 ### Bug Severity and Bounties
-In the same manner as the [Ethereum Bug Bounty Program](https://bounty.ethereum.org/), submissions will be evaluated by the Colony team according to the OWASP risk rating  methodology, which grades based on both _Impact_ and _Likelihood_.
+In the same manner as the [Ethereum Bug Bounty Program](https://bounty.ethereum.org/), submissions will be evaluated by the Colony team according to the [OWASP risk rating methodology](https://www.owasp.org/index.php/OWASP_Risk_Rating_Methodology), which grades based on both _Impact_ and _Likelihood_.
 
 It is at the *sole discretion of Colony* to decide whether or not a bug report qualifies for a bounty, and to determine the severity of the issue
 
@@ -63,4 +65,4 @@ Additional examples of ineligible bugs:
 * Attacks that are accounted for in the system design, i.e. Ethereum network spamming, malicious reputation mining, malfeasance in colony administration.
 * Critiques of the Colony Protocol and overall mechanism design. We welcome suggestions and constructive criticism, and ask that it be directed to hello@colony.io or the [Build with Colony Forums](https://build.colony.io/)
 
-Please read the [terms and conditions]() for more information. 
+Please read the [terms and conditions]() for more information.
