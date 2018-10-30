@@ -20,6 +20,11 @@
 
 Contracts for running the Colony Network as defined in the [Colony White Paper](https://colony.io/whitepaper.pdf)
 
+## Bug Bounty Program
+Colony is offering substantial rewards to external developers who report bugs and flaws in the colonyNetwork contracts.
+
+See the [Bug Bounty program overview](./_bug_rules.md) for more information about bounties, rules, and terms.
+
 ## Install
 ```
 git clone https://github.com/JoinColony/colonyNetwork.git
