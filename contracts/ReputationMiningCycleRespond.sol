@@ -140,21 +140,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /////////////////////////
   // Internal functions
   /////////////////////////
-  function isChildReputationUpdate(uint256[19] u) internal view returns (bool) {
+  function getNChildUpdatesForLogEntry(uint256[19] u) internal view returns (uint256) {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     if (logEntry.amount < 0) {
-      uint relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
       uint nParents;
       (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
       uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
-
-      if (relativeUpdateNumber < nChildUpdates ||
-         ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) 
-      {
-        return true;
-      }
-
-      return false;
+      return nChildUpdates;
+    } else {
+      return 0;
     }
   }
 
@@ -165,45 +159,49 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes originReputationKey,
     bytes32[] originReputationSiblings) internal 
   {
-    bool isChildUpdate = isChildReputationUpdate(u);
+    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
+    uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
+    uint256 nChildUpdates = getNChildUpdatesForLogEntry(u);
 
     // Skip origin reputation checks for anything but child reputation updates
-    if (!isChildUpdate) {
-      return;
+    if (relativeUpdateNumber < nChildUpdates ||
+         ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
+      // Check the origin reputation key matches the colony, user address and skill id of the child skill
+      address colonyAddressOriginRep;
+      address userAddressOriginRep;
+      uint256 skillIdOriginRep;
+      assembly {
+          colonyAddressOriginRep := mload(add(originReputationKey,20))
+          skillIdOriginRep := mload(add(originReputationKey, 52))
+          userAddressOriginRep := mload(add(originReputationKey,72))
+      }
+
+      address colonyAddressChildRep;
+      address userAddressChildRep;
+      assembly {
+          colonyAddressChildRep := mload(add(reputationKey,20))
+          userAddressChildRep := mload(add(reputationKey,72))
+      }
+
+      require(colonyAddressOriginRep == colonyAddressChildRep, "colony-reputation-mining-origin-colony-incorrect");
+      require(skillIdOriginRep == logEntry.skillId, "colony-reputation-mining-origin-skill-incorrect");
+
+      // For colony wide updates the reputation key userAddress is 0x0, otherwise ensure it the user address of the origin and child skills match
+      if (relativeUpdateNumber < nChildUpdates) {
+        require(userAddressChildRep == 0x0, "colony-reputation-mining-colony-wide-update-user-nonzero");
+      } else {
+        require(userAddressOriginRep == userAddressChildRep, "colony-reputation-mining-origin-user-incorrect");
+      }
+
+      bytes memory originReputationValueBytes = concatenateToBytes(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
+      
+      checkOriginReputationInState(
+        u,
+        agreeStateSiblings,
+        originReputationKey,
+        originReputationValueBytes,
+        originReputationSiblings);
     }
-
-    // For negative reputation updates, validate the origin reputation
-    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
-
-    // Check the origin reputation key matches the colony, user address and skill id of the child skill
-    address colonyAddressOriginRep;
-    address userAddressOriginRep;
-    uint256 skillIdOriginRep;
-    assembly {
-        colonyAddressOriginRep := mload(add(originReputationKey,20))
-        skillIdOriginRep := mload(add(originReputationKey, 52))
-        userAddressOriginRep := mload(add(originReputationKey,72))
-    }
-
-    address colonyAddressChildRep;
-    address userAddressChildRep;
-    assembly {
-        colonyAddressChildRep := mload(add(reputationKey,20))
-        userAddressChildRep := mload(add(reputationKey,72))
-    }
-
-    require(colonyAddressOriginRep == colonyAddressChildRep, "colony-reputation-mining-origin-colony-incorrect");
-    require(skillIdOriginRep == logEntry.skillId, "colony-reputation-mining-origin-skill-incorrect");
-    require(userAddressOriginRep == userAddressChildRep, "colony-reputation-mining-origin-user-incorrect");
-
-    bytes memory originReputationValueBytes = concatenateToBytes(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
-    
-    checkOriginReputationInState(
-      u,
-      agreeStateSiblings,
-      originReputationKey,
-      originReputationValueBytes,
-      originReputationSiblings);
   }
 
   function confirmChallengeCompleted(uint256[19] u) internal {
@@ -448,8 +446,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is
         // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill"
         // Check if we are working with a child reputation update
-        bool isChildUpdate = isChildReputationUpdate(u);
-        if (isChildUpdate) {
+        ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
+        uint relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
+        uint256 nChildUpdates = getNChildUpdatesForLogEntry(u);
+
+        // Skip origin reputation checks for anything but child reputation updates
+        if (relativeUpdateNumber < nChildUpdates ||
+          ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
           // Don't allow origin reputation to become negative
           if (originReputationValue + logEntry.amount < 0) {
             require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
