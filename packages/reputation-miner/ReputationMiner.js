@@ -302,6 +302,9 @@ class ReputationMiner {
       })
     );
 
+    // console.log("updateNumber", updateNumber.toString());
+    // console.log("key", key);
+    // console.log("amount", amount.toString());
     await this.insert(key, amount, updateNumber);
   }
 
@@ -814,19 +817,27 @@ class ReputationMiner {
     //     this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
     //     ReputationMiner.getHexString(disagreeStateBranchMask),
     //     this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
-    //     "0",
     //     logEntryNumber,
-    //     "0"
+    //     "0",
+    //     this.justificationHashes[lastAgreeKey].originReputationProof.branchMask,
+    //     this.justificationHashes[lastAgreeKey].nextUpdateProof.reputation,
+    //     this.justificationHashes[lastAgreeKey].nextUpdateProof.uid,
+    //     this.justificationHashes[firstDisagreeKey].justUpdatedProof.reputation,
+    //     this.justificationHashes[firstDisagreeKey].justUpdatedProof.uid,
+    //     this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
+    //     this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
+    //     this.justificationHashes[lastAgreeKey].originReputationProof.reputation,
+    //     this.justificationHashes[lastAgreeKey].originReputationProof.uid,
     //   ],
     //   reputationKey,
     //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
-    //   this.justificationHashes[lastAgreeKey].nextUpdateProof.value,
     //   agreeStateSiblings,
-    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.value,
     //   disagreeStateSiblings,
     //   this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-    //   this.justificationHashes[lastAgreeKey].newestReputationProof.value,
-    //   this.justificationHashes[lastAgreeKey].newestReputationProof.siblings);
+    //   this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
+
+    //   this.justificationHashes[lastAgreeKey].originReputationProof.key,
+    //   this.justificationHashes[lastAgreeKey].originReputationProof.siblings);
 
     return repCycle.respondToChallenge(
       [
