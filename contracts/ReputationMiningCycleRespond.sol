@@ -140,18 +140,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /////////////////////////
   // Internal functions
   /////////////////////////
-  function getNChildUpdatesForLogEntry(uint256[19] u) internal view returns (uint256) {
-    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
-    if (logEntry.amount < 0) {
-      uint nParents;
-      (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
-      uint nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
-      return nChildUpdates;
-    } else {
-      return 0;
-    }
-  }
-
   function checkOriginReputation(
     uint256[19] u,
     bytes reputationKey,
@@ -161,7 +149,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
-    uint256 nChildUpdates = getNChildUpdatesForLogEntry(u);
+    uint256 nChildUpdates;
+    (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
 
     // Skip origin reputation checks for anything but child reputation updates
     if (relativeUpdateNumber < nChildUpdates ||
@@ -218,7 +207,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       checkKeyDecay(u, updateNumber);
       u[U_DECAY_TRANSITION] = 1;
     } else {
-      checkKeyLogEntry(u[U_ROUND], u[U_IDX], u[U_LOG_ENTRY_NUMBER], _reputationKey);
+      checkKeyLogEntry(u, _reputationKey);
     }
   }
 
@@ -229,19 +218,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(u[U_AGREE_STATE_REPUTATION_UID]-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
-  function checkKeyLogEntry(uint256 round, uint256 idx, uint256 logEntryNumber, bytes memory _reputationKey) internal view {
-    uint256 updateNumber = disputeRounds[round][idx].lowerBound - 1 - IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
+  function checkKeyLogEntry(uint256[19] u, bytes memory _reputationKey) internal view {
+    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
-    ReputationLogEntry storage logEntry = reputationUpdateLog[logEntryNumber];
-
-    // Check that the supplied log entry corresponds to this update number
-    require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
-    require(
-      updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates,
-      "colony-reputation-mining-update-number-part-of-following-log-entry-updates");
-    uint expectedSkillId;
+    uint256 expectedSkillId;
     address expectedAddress;
-    (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(logEntry, updateNumber);
+    (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(u, logEntry);
 
     bytes memory reputationKey = new bytes(20+32+20);
     reputationKey = _reputationKey;
@@ -261,12 +243,17 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(expectedSkillId == skillId, "colony-reputation-mining-skill-id-mismatch");
   }
 
-  function getExpectedSkillIdAndAddress(ReputationLogEntry storage logEntry, uint256 updateNumber) internal view
+  function getExpectedSkillIdAndAddress(uint256[19] u, ReputationLogEntry storage logEntry) internal view
   returns (uint256 expectedSkillId, address expectedAddress)
   {
+    uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
+    uint256 nChildUpdates;
+    uint256 nParentUpdates;
+    (nChildUpdates, nParentUpdates) = getChildAndParentNUpdatesForLogEntry(u);
+
     // Work out the expected userAddress and skillId for this updateNumber in this logEntry.
-    if ((updateNumber - logEntry.nPreviousUpdates + 1) <= logEntry.nUpdates / 2 ) {
-      // Then we're updating a colony-wide total, so we expect an address of address(0x0)
+    if (relativeUpdateNumber < logEntry.nUpdates / 2) {
+      // Then we're updating a colony-wide total, so we expect an address of 0x0
       expectedAddress = address(0x0);
     } else {
       // We're updating a user-specific total
@@ -276,19 +263,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Expected skill Id
     // We update skills in the order children, then parents, then the skill listed in the log itself.
     // If the amount in the log is positive, then no children are being updated.
-    uint nParents = IColonyNetwork(colonyNetworkAddress).getSkillNParents(logEntry.skillId);
-    uint nChildUpdates;
-    if (logEntry.amount < 0) {
-      nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
-      // NB This is not necessarily the same as nChildren. However, this is the number of child updates
-      // that this entry in the log was expecting at the time it was created.
-    }
-
-    uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
-    if (relativeUpdateNumber < nChildUpdates) {
-      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, relativeUpdateNumber);
-    } else if (relativeUpdateNumber < (nChildUpdates+nParents)) {
-      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getParentSkillId(logEntry.skillId, relativeUpdateNumber - nChildUpdates);
+    uint256 _relativeUpdateNumber = relativeUpdateNumber % (logEntry.nUpdates/2);
+    if (_relativeUpdateNumber < nChildUpdates) {
+      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, _relativeUpdateNumber);
+    } else if (_relativeUpdateNumber < (nChildUpdates+nParentUpdates)) {
+      expectedSkillId = IColonyNetwork(colonyNetworkAddress).getParentSkillId(logEntry.skillId, _relativeUpdateNumber - nChildUpdates);
     } else {
       expectedSkillId = logEntry.skillId;
     }
@@ -307,7 +286,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     bytes memory agreeStateReputationValue = concatenateToBytes(u[U_AGREE_STATE_REPUTATION_VALUE], u[U_AGREE_STATE_REPUTATION_UID]);
 
-    bytes32 reputationRootHash = getImpliedRootHashKey(_reputationKey, agreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
+    bytes32 reputationRootHash = getImpliedRootHashKey(
+      _reputationKey,
+      agreeStateReputationValue,
+      u[U_REPUTATION_BRANCH_MASK],
+      reputationSiblings);
     bytes memory jhLeafValue = concatenateToBytes64(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
 
     assembly {
@@ -371,19 +354,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function performReputationCalculation(
-<<<<<<< HEAD
-    uint256[19] memory u,
-    bytes32[] memory agreeStateSiblings,
-    bytes memory originReputationKey,
-    bytes32[] memory originReputationSiblings
-||||||| merged common ancestors
-    uint256[19] u,
-    bytes32[] agreeStateSiblings,
-    bytes originReputationKey,
-    bytes32[] originReputationSiblings
-=======
-    uint256[19] u
->>>>>>> Move origin reputation checks and run edge case tests
+    uint256[19] memory u
   ) internal
   {
 
@@ -447,7 +418,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill"
         // Check if we are working with a child reputation update
         uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
-        uint256 nChildUpdates = getNChildUpdatesForLogEntry(u);
+        uint256 nChildUpdates;
+        (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
 
         // Skip origin reputation checks for anything but child reputation updates
         if (relativeUpdateNumber < nChildUpdates ||
@@ -480,8 +452,31 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   function getRelativeUpdateNumber(uint256[19] u, ReputationLogEntry logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1 - nNodes;
+
+    // Check that the supplied log entry corresponds to this update number
+    require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
+    require(
+      updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates,
+      "colony-reputation-mining-update-number-part-of-following-log-entry-updates");
+
+
     uint256 relativeUpdateNumber = updateNumber - logEntry.nPreviousUpdates;
     return relativeUpdateNumber;
+  }
+
+  function getChildAndParentNUpdatesForLogEntry(uint256[19] u) internal view returns (uint256, uint256) {
+    ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
+    uint nParents;
+    (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
+
+    uint nChildUpdates;
+    if (logEntry.amount < 0) {
+      nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
+      // NB This is not necessarily the same as nChildren. However, this is the number of child updates
+      // that this entry in the log was expecting at the time it was created
+    }
+    
+    return (nChildUpdates, nParents);
   }
 
   function checkPreviousReputationInState(
