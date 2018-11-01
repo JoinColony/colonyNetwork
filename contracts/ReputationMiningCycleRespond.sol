@@ -446,8 +446,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         // Child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is
         // of the user's reputation in skill given by logEntry.skillId, i.e. the "origin skill"
         // Check if we are working with a child reputation update
-        ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
-        uint relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
+        uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
         uint256 nChildUpdates = getNChildUpdatesForLogEntry(u);
 
         // Skip origin reputation checks for anything but child reputation updates
@@ -476,10 +475,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     emit ProveValueSuccess(_agreeStateReputationValue, _disagreeStateReputationValue, originReputationValue);
   }
 
+  // Get the update number relative in the context of the log entry currently considered
+  // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive) 
   function getRelativeUpdateNumber(uint256[19] u, ReputationLogEntry logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1 - nNodes;
-    uint256 relativeUpdateNumber = (updateNumber - logEntry.nPreviousUpdates) % (logEntry.nUpdates/2);
+    uint256 relativeUpdateNumber = updateNumber - logEntry.nPreviousUpdates;
     return relativeUpdateNumber;
   }
 
