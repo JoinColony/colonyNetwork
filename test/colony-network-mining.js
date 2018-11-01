@@ -122,8 +122,9 @@ contract("ColonyNetworkMining", accounts => {
     if (client2 !== undefined) {
       // Submit JRH for submission 1 if needed
       // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
-      if (submission1before.jrh === "0x0000000000000000000000000000000000000000000000000000000000000000") {
-        await client1.submitJustificationRootHash();
+
+      if (submission1before.jrhNNodes === "0") {
+        await client1.confirmJustificationRootHash();
       }
 
       [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
@@ -136,8 +137,8 @@ contract("ColonyNetworkMining", accounts => {
           .eq(1),
         "Clients are not facing each other in this round"
       );
-      if (submission2before.jrh === "0x0000000000000000000000000000000000000000000000000000000000000000") {
-        await client2.submitJustificationRootHash();
+      if (submission2before.jrhNNodes === "0") {
+        await client2.confirmJustificationRootHash();
       }
       // Loop while doing the binary search, checking we were successful at each point
       // Binary search will error when it is complete.

@@ -49,8 +49,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Submit a new reputation root hash
   /// @param newHash The proposed new reputation root hash
   /// @param nNodes Number of nodes in tree with root `newHash`
+  /// @param jrh The justifcation root hash for this submission
   /// @param entryIndex The entry number for the given `newHash` and `nNodes`
-  function submitRootHash(bytes32 newHash, uint256 nNodes, uint256 entryIndex) public;
+  function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public;
 
   /// @notice Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
   /// or the last one standing after all others have been proved wrong.
@@ -118,10 +119,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes previousNewReputationValue,
     bytes32[] previousNewReputationSiblings) public;
 
-  /// @notice Submit the Justification Root Hash (JRH) for a submitted reputation hash.
+  /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
   /// @param round The round that the hash is currently in.
   /// @param index The index in the round that the hash is currently in
-  /// @param jrh The JRH being submitted
   /// @param branchMask1 The branchmask for the Merkle proof that the currently accepted reputation state (given by `ColonyNetwork.getReputationRootHash()` + `ColonyNetwork.getReputationRootHashNNodes()`, where `+` is concatenation) is at key 0x000..000 in the submitted JRH
   /// @param siblings1 The siblings for the same Merkle proof
   /// @param branchMask2 The branchmask for the Merkle proof that the proposed new reputation state is at the key corresponding to the number of transactions expected in this update in the submitted JRH. This key should be the number of decay transactions plus the number of transactions the log indicates are to happen.
@@ -130,10 +130,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev Note that it is possible for this function to be required to be called in every round - the hash getting the bye can wait until they will also be awarded the bye in the next round, if
   /// one is going to exist. There is an incentive to do so from a gas-cost perspective, but they don't know for sure there's going to be a bye until the submission window has expired, so I think
   /// this is okay.
-  function submitJustificationRootHash(
+  function confirmJustificationRootHash(
     uint256 round,
     uint256 index,
-    bytes32 jrh,
     uint branchMask1,
     bytes32[] siblings1,
     uint branchMask2,
@@ -196,6 +195,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Get the address that made a particular submission
   /// @param hash The hash that was submitted
   /// @param nNodes The number of nodes that was submitted
+  /// @param jrh The JRH of that was submitted
   /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
-  function getSubmittedHashes(bytes32 hash, uint256 nNodes, uint256 index) public view returns (address user);
+  function getSubmittedHashes(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address user);
 }
