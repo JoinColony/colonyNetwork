@@ -116,7 +116,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Perform the reputation calculation ourselves.
     performReputationCalculation(u);
 
-    checkOriginReputation(u, _reputationKey, agreeStateSiblings, originReputationKey, originReputationSiblings);
+    if (u[U_DECAY_TRANSITION] == 0) {
+      checkOriginReputation(u, _reputationKey, agreeStateSiblings, originReputationKey, originReputationSiblings);
+    }
 
     // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
     // i.e. the reputation they supplied is in the 'agree' state.
@@ -148,6 +150,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] originReputationSiblings) internal 
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
+    if (logEntry.amount > 0) {
+      return;
+    }
+
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
     uint256 nChildUpdates;
     (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
@@ -451,14 +457,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive) 
   function getRelativeUpdateNumber(uint256[19] u, ReputationLogEntry logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
-    uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1 - nNodes;
+    uint256 updateNumber = sub(sub(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound, 1), nNodes);
 
     // Check that the supplied log entry corresponds to this update number
     require(updateNumber >= logEntry.nPreviousUpdates, "colony-reputation-mining-update-number-part-of-previous-log-entry-updates");
     require(
       updateNumber < logEntry.nUpdates + logEntry.nPreviousUpdates,
       "colony-reputation-mining-update-number-part-of-following-log-entry-updates");
-
 
     uint256 relativeUpdateNumber = updateNumber - logEntry.nPreviousUpdates;
     return relativeUpdateNumber;
