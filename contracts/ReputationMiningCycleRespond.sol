@@ -161,8 +161,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
 
     // Skip origin reputation checks for anything but child reputation updates
-    if (relativeUpdateNumber < nChildUpdates ||
-         ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
+    if (relativeUpdateNumber % (logEntry.nUpdates/2) < nChildUpdates) {
       // Check the origin reputation key matches the colony, user address and skill id of the child skill
       address colonyAddressOriginRep;
       address userAddressOriginRep;
@@ -406,8 +405,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
 
         // Skip origin reputation checks for anything but child reputation updates
-        if (relativeUpdateNumber < nChildUpdates ||
-          ((relativeUpdateNumber >= logEntry.nUpdates/2) && relativeUpdateNumber < (logEntry.nUpdates/2+nChildUpdates))) {
+        if (relativeUpdateNumber % (logEntry.nUpdates/2) < nChildUpdates) {
           // Don't allow origin reputation to become negative
           if (originReputationValue + logEntry.amount < 0) {
             require(_disagreeStateReputationValue == 0, "colony-reputation-mining-reputation-value-non-zero");
