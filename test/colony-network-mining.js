@@ -27,8 +27,8 @@ import MaliciousReputationMinerWrongProofLogEntry from "../packages/reputation-m
 import MaliciousReputationMinerWrongNewestReputation from "../packages/reputation-miner/test/MaliciousReputationMinerWrongNewestReputation";
 import MaliciousReputationMinerClaimNew from "../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
 import MaliciousReputationMinerUnsure from "../packages/reputation-miner/test/MaliciousReputationMinerUnsure";
-import MaliciousReputationMinerClaimNoOriginReputation from "../packages/reputation-miner/test/MaliciousReputationMinerClaimNoOriginReputation";
-import MaliciousReputationMinerClaimWrongOriginReputation from "../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation";
+import MaliciousReputationMinerClaimNoOriginReputation from "../packages/reputation-miner/test/MaliciousReputationMiningNoOriginReputation";
+import MaliciousReputationMinerClaimWrongOriginReputation from "../packages/reputation-miner/test/MaliciousReputationMiningWrongOriginReputation";
 import ReputationMinerClient from "../packages/reputation-miner/ReputationMinerClient";
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -1325,9 +1325,9 @@ contract("ColonyNetworkMining", accounts => {
 
       await goodClient.respondToChallenge();
       await badClient.respondToChallenge();
-      // These calls should throw
-      await badClient.respondToChallenge();
-      await badClient.respondToChallenge();
+
+      await checkErrorRevert(badClient.respondToChallenge());
+      await checkErrorRevert(badClient.respondToChallenge());
 
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
