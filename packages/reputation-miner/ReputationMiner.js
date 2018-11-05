@@ -10,51 +10,6 @@ const patriciaJs = require("./patricia");
 // const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
 
-// Adapted from https://github.com/ethers-io/ethers.js/issues/59
-// ===================================
-function RPCSigner(minerAddress, provider) {
-  this.address = minerAddress;
-  this.provider = provider;
-  const signer = this;
-  this.sendTransaction = async function sendTransaction(transaction) {
-    const tx = await this.buildTx(transaction);
-    return signer.provider.send("eth_sendTransaction", [tx]);
-  };
-
-  this._ethersType = "Signer";
-
-  this.getAddress = () => this.address;
-
-  this.estimateGas = async function estimateGas(transaction) {
-    const tx = this.buildTx(transaction);
-    const res = await signer.provider.send("eth_estimateGas", [tx]);
-    return ethers.utils.bigNumberify(res);
-  };
-
-  this.buildTx = async function buildTx(transaction) {
-    const tx = {
-      from: this.address
-    };
-    if (transaction.to != null) {
-      tx.to = await transaction.to;
-    }
-    if (transaction.data !== null) {
-      tx.data = transaction.data;
-    }
-
-    ["gasPrice", "nonce", "value"].forEach(key => {
-      if (transaction[key] != null) {
-        tx[key] = ethers.utils.hexlify(transaction[key]);
-      }
-    });
-    if (transaction.gasLimit != null) {
-      tx.gas = ethers.utils.hexlify(transaction.gasLimit);
-    }
-    return tx;
-  };
-}
-// ===================================
-
 class ReputationMiner {
   /**
    * Constructor for ReputationMiner
@@ -84,6 +39,7 @@ class ReputationMiner {
       this.ganacheWallet = new ethers.Wallet(secretKey, this.ganacheProvider);
     }
 
+    // This will have to support provider.getSigner https://docs.ethers.io/ethers.js/html/api-providers.html#jsonrpcprovider
     if (provider) {
       this.realProvider = provider;
     } else {
@@ -91,7 +47,7 @@ class ReputationMiner {
     }
 
     if (minerAddress) {
-      this.realWallet = new RPCSigner(minerAddress, this.realProvider);
+      this.realWallet = this.realProvider.getSigner(minerAddress);
     } else {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
       // TODO: Check that this wallet can stake?
@@ -111,7 +67,6 @@ class ReputationMiner {
     this.colonyContractDef = await this.loader.load({ contractName: "IColony" }, { abi: true, address: false });
 
     this.colonyNetwork = new ethers.Contract(colonyNetworkAddress, this.colonyNetworkContractDef.abi, this.realWallet);
-
     const tokenLockingAddress = await this.colonyNetwork.getTokenLocking();
     this.tokenLocking = new ethers.Contract(tokenLockingAddress, this.tokenLockingContractDef.abi, this.realWallet);
     const metaColonyAddress = await this.colonyNetwork.getMetaColony();
@@ -148,7 +103,7 @@ class ReputationMiner {
     }
 
     this.justificationHashes = {};
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
+    const addr = await this.colonyNetwork.getReputationMiningCycle.call(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     // Do updates
@@ -157,9 +112,9 @@ class ReputationMiner {
     // This is also the number of decays we have.
 
     // How many updates from the logs do we have?
-    const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
+    const nLogEntries = await repCycle.getReputationUpdateLogLength.call({ blockTag: blockNumber });
 
-    const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1), { blockNumber });
+    const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1), { blockTag: blockNumber });
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
     const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);
     const replacementLogEntriesExist = nReplacementLogEntries > 0;
@@ -232,7 +187,7 @@ class ReputationMiner {
     } else {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber, blockNumber);
-      logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
+      logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
       if (checkForReplacement) {
         const potentialReplacementLogEntry = await this.colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, logEntryNumber);
         if (potentialReplacementLogEntry[3] !== "0x0000000000000000000000000000000000000000") {
@@ -244,9 +199,9 @@ class ReputationMiner {
     }
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
-      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockNumber });
+      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockTag: blockNumber });
       const localRootHash = await this.reputationTree.getRootHash();
-      const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockNumber });
+      const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockTag: blockNumber });
       if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
         interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
@@ -356,15 +311,15 @@ class ReputationMiner {
    */
   async getLogEntryNumberForLogUpdateNumber(_i, blockNumber) {
     const updateNumber = _i;
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
+    const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockTag: blockNumber });
     let lower = ethers.utils.bigNumberify("0");
     let upper = nLogEntries.sub(1);
 
     while (!upper.eq(lower)) {
       const testIdx = lower.add(upper.sub(lower).div(2));
-      const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockNumber }); // eslint-disable-line no-await-in-loop
+      const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockTag: blockNumber }); // eslint-disable-line no-await-in-loop
       if (testLogEntry[5].gt(updateNumber)) {
         upper = testIdx.sub(1);
       } else if (testLogEntry[5].lte(updateNumber) && testLogEntry[5].add(testLogEntry[4]).gt(updateNumber)) {
@@ -386,10 +341,10 @@ class ReputationMiner {
     }
     // Else it's from a log entry
     const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog), blockNumber);
-    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
-    const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
+    const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
 
     const key = await this.getKeyForUpdateInLogEntry(updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog), logEntry);
     return key;
@@ -536,17 +491,14 @@ class ReputationMiner {
     for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
       const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash); // eslint-disable-line no-await-in-loop
-
       const miningCycleDuration = 60 * 60 * 24;
       const constant = ethers.utils
         .bigNumberify(2)
         .pow(256)
         .sub(1)
         .div(miningCycleDuration);
-
       const block = await this.realProvider.getBlock("latest"); // eslint-disable-line no-await-in-loop
       const { timestamp } = block;
-
       const target = ethers.utils
         .bigNumberify(timestamp)
         .sub(reputationMiningWindowOpenTimestamp)
@@ -562,7 +514,6 @@ class ReputationMiner {
     //
     // Submit that entry
     const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, entryIndex);
-
     return repCycle.submitRootHash(hash, this.nReputations, entryIndex, { gasLimit: `0x${gas.mul(2).toString()}` });
   }
 
