@@ -311,7 +311,7 @@ class ReputationMiner {
    * @param  {Number}  _i The update number we wish to determine which log entry in the reputationUpdateLog creates
    * @return {Promise}   A promise that resolves to the number of the corresponding log entry.
    */
-  async getLogEntryNumberForLogUpdateNumber(_i, blockNumber) {
+  async getLogEntryNumberForLogUpdateNumber(_i, blockNumber = "latest") {
     const updateNumber = _i;
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
@@ -335,7 +335,7 @@ class ReputationMiner {
     return lower;
   }
 
-  async getKeyForUpdateNumber(_i, blockNumber) {
+  async getKeyForUpdateNumber(_i, blockNumber = "latest") {
     const updateNumber = ethers.utils.bigNumberify(_i);
     if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
       // Then it's a decay
