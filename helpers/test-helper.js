@@ -107,7 +107,13 @@ export async function checkErrorRevert(promise, errorMessage) {
     // If the promise is from Truffle, then we have the receipt already.
     // If this tx has come from the mining client, the promise has just resolved to a tx hash and we need to do the following
     if (!receipt) {
-      const txid = await promise;
+      console.log("no receipt returned");
+      let txid;
+      txid = await promise;
+      // TODO: make this logic better. `ethers` returns a full transaction response from calls
+      if (txid.hash) {
+        txid = txid.hash;
+      }
       receipt = await web3GetTransactionReceipt(txid);
     }
   } catch (err) {
