@@ -103,7 +103,7 @@ class ReputationMiner {
     }
 
     this.justificationHashes = {};
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call(true, { blockTag: blockNumber });
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     // Do updates
@@ -112,9 +112,11 @@ class ReputationMiner {
     // This is also the number of decays we have.
 
     // How many updates from the logs do we have?
-    const nLogEntries = await repCycle.getReputationUpdateLogLength.call({ blockTag: blockNumber });
+    const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
 
-    const lastLogEntry = await repCycle.getReputationUpdateLogEntry.call(nLogEntries.sub(1), { blockTag: blockNumber });
+    const nLogEntriesString = nLogEntries.sub(1).toString();
+    const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntriesString, { blockNumber });
+
     const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
     const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);
     const replacementLogEntriesExist = nReplacementLogEntries > 0;
@@ -187,7 +189,7 @@ class ReputationMiner {
     } else {
       const logEntryUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog);
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(logEntryUpdateNumber, blockNumber);
-      logEntry = await repCycle.getReputationUpdateLogEntry.call(logEntryNumber, { blockTag: blockNumber });
+      logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
       if (checkForReplacement) {
         const potentialReplacementLogEntry = await this.colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, logEntryNumber);
         if (potentialReplacementLogEntry[3] !== "0x0000000000000000000000000000000000000000") {
@@ -199,9 +201,9 @@ class ReputationMiner {
     }
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
     if (updateNumber.eq(0)) {
-      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes.call({ blockTag: blockNumber });
+      const nNodes = await this.colonyNetwork.getReputationRootHashNNodes({ blockNumber });
       const localRootHash = await this.reputationTree.getRootHash();
-      const currentRootHash = await this.colonyNetwork.getReputationRootHash.call({ blockTag: blockNumber });
+      const currentRootHash = await this.colonyNetwork.getReputationRootHash({ blockNumber });
       if (!nNodes.eq(this.nReputations) || localRootHash !== currentRootHash) {
         console.log("Warning: client being initialized in bad state. Was the previous rootHash submitted correctly?");
         interimHash = await this.colonyNetwork.getReputationRootHash(); // eslint-disable-line no-await-in-loop
@@ -311,15 +313,15 @@ class ReputationMiner {
    */
   async getLogEntryNumberForLogUpdateNumber(_i, blockNumber) {
     const updateNumber = _i;
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call(true, { blockTag: blockNumber });
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    const nLogEntries = await repCycle.getReputationUpdateLogLength.call({ blockTag: blockNumber });
+    const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockNumber });
     let lower = ethers.utils.bigNumberify("0");
     let upper = nLogEntries.sub(1);
 
     while (!upper.eq(lower)) {
       const testIdx = lower.add(upper.sub(lower).div(2));
-      const testLogEntry = await repCycle.getReputationUpdateLogEntry.call(testIdx, { blockTag: blockNumber }); // eslint-disable-line no-await-in-loop
+      const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockNumber }); // eslint-disable-line no-await-in-loop
       if (testLogEntry[5].gt(updateNumber)) {
         upper = testIdx.sub(1);
       } else if (testLogEntry[5].lte(updateNumber) && testLogEntry[5].add(testLogEntry[4]).gt(updateNumber)) {
@@ -341,10 +343,10 @@ class ReputationMiner {
     }
     // Else it's from a log entry
     const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog), blockNumber);
-    const addr = await this.colonyNetwork.getReputationMiningCycle.call(true, { blockTag: blockNumber });
+    const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
-    const logEntry = await repCycle.getReputationUpdateLogEntry.call(logEntryNumber, { blockTag: blockNumber });
+    const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockNumber });
 
     const key = await this.getKeyForUpdateInLogEntry(updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog), logEntry);
     return key;
