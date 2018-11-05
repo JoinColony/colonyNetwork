@@ -451,7 +451,7 @@ class ReputationMinerClient {
     if (round && round.gte(0)) {
       let gasEstimate;
       if (process.env.SOLIDITY_COVERAGE || this.ganacheClient) {
-        gasEstimate = ethers.utils.bigNumberify(3500000);
+        gasEstimate = ethers.utils.bigNumberify(1500000);
       } else {
         gasEstimate = await repCycle.estimate.confirmNewHash(round);
       }
