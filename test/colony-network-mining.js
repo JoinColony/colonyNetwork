@@ -152,13 +152,14 @@ contract("ColonyNetworkMining", accounts => {
       // Binary search will error when it is complete.
       let noError = true;
       while (noError) {
-        let txHash = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-        let tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
+        let transactionObject;
+        transactionObject = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        let tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
         if (!tx.status) {
           noError = false;
         }
-        txHash = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-        tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
+        transactionObject = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
         if (!tx.status) {
           noError = false;
         }
