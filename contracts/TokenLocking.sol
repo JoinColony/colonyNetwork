@@ -91,14 +91,14 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   // This function is only used in context of reputation mining
   // TODO: After we add formula to calculate user's loss, refactor accordingly and/or
   // move some of the functionality to `ColonyNetworkMining` if needed
-  function punishStakers(address[] _stakers, address _beneficiary) public onlyReputationMiningCycle {
+  function punishStakers(address[] _stakers, address _beneficiary, uint256 _amount) public onlyReputationMiningCycle {
     address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     uint256 lostStake;
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.invalidateHash;
     for (uint256 i = 0; i < _stakers.length; i++) {
-      lostStake = userLocks[clnyToken][_stakers[i]].balance;
-      userLocks[clnyToken][_stakers[i]].balance = 0;
+      lostStake = min(userLocks[clnyToken][_stakers[i]].balance, _amount);
+      userLocks[clnyToken][_stakers[i]].balance = sub(userLocks[clnyToken][_stakers[i]].balance, lostStake);
       userLocks[clnyToken][_beneficiary].balance = add(userLocks[clnyToken][_beneficiary].balance, lostStake);
       // TODO: Lose rep?
     }
