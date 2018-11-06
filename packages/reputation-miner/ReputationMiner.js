@@ -77,9 +77,8 @@ class ReputationMiner {
     } else {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
 
-      const abstractContract = new ethers.Contract(null, this.patriciaTreeContractDef.abi, this.ganacheWallet);
-      const contract = await abstractContract.deploy(this.patriciaTreeContractDef.bytecode);
-      await contract.deployed();
+      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
+      const contract = await contractFactory.deploy();
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
@@ -96,9 +95,8 @@ class ReputationMiner {
     if (this.useJsTree) {
       this.justificationTree = new patriciaJs.PatriciaTree();
     } else {
-      const abstractContract = new ethers.Contract(null, this.patriciaTreeContractDef.abi, this.ganacheWallet);
-      const contract = await abstractContract.deploy(this.patriciaTreeContractDef.bytecode);
-      await contract.deployed();
+      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
+      const contract = await contractFactory.deploy();
       this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
@@ -909,9 +907,8 @@ class ReputationMiner {
     } else {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
 
-      const abstractContract = new ethers.Contract(null, this.patriciaTreeContractDef.abi, this.ganacheWallet);
-      const contract = await abstractContract.deploy(this.patriciaTreeContractDef.bytecode);
-      await contract.deployed();
+      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
+      const contract = await contractFactory.deploy();
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
