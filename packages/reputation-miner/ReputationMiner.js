@@ -649,10 +649,9 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    const tx = await repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask, siblings, {
+    return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask, siblings, {
       gasLimit: 1000000
     });
-    return tx;
   }
 
   /**
@@ -669,10 +668,9 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    const tx = await repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
+    return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
       gasLimit: 1000000
     });
-    return tx;
   }
 
   /**
@@ -725,7 +723,7 @@ class ReputationMiner {
     //   this.justificationHashes[lastAgreeKey].newestReputationProof.value,
     //   this.justificationHashes[lastAgreeKey].newestReputationProof.siblings);
 
-    const tx = await repCycle.respondToChallenge(
+    return repCycle.respondToChallenge(
       [
         round,
         index,
@@ -750,7 +748,6 @@ class ReputationMiner {
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       { gasLimit: 4000000 }
     );
-    return tx;
   }
 
   /**

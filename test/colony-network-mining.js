@@ -1405,7 +1405,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
-      await badClient.respondToChallenge();
+      await checkErrorRevert(badClient.respondToChallenge());
 
       // Check badclient respondToChallenge failed
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
@@ -2142,47 +2142,29 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
 
-      let tx;
-      let receipt;
       // We need one more response to binary search from each side. Check we can't confirm early
-      tx = await goodClient.confirmBinarySearchResult();
-      receipt = await web3GetTransactionReceipt(tx);
-      assert(receipt.status === false);
-
+      await checkErrorRevert(goodClient.confirmBinarySearchResult());
       // Check we can't respond to challenge before we've completed the binary search
-      tx = await goodClient.respondToChallenge();
-      receipt = await web3GetTransactionReceipt(tx);
-      assert(receipt.status === false);
-
+      await checkErrorRevert(goodClient.respondToChallenge());
       await goodClient.respondToBinarySearchForChallenge();
 
       // Check we can't confirm even if we're done, but our opponent isn't
-      tx = await goodClient.confirmBinarySearchResult();
-      receipt = await web3GetTransactionReceipt(tx);
-      assert(receipt.status === false);
-
+      await checkErrorRevert(goodClient.confirmBinarySearchResult());
       await badClient.respondToBinarySearchForChallenge();
 
       // Check we can't respond to challenge before confirming result
-      tx = await goodClient.respondToChallenge();
-      receipt = await web3GetTransactionReceipt(tx);
-      assert(receipt.status === false);
+      await checkErrorRevert(goodClient.respondToChallenge());
 
       // Now we can confirm
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
       // Check we can't continue confirming
-      tx = await goodClient.respondToBinarySearchForChallenge();
-      receipt = await web3GetTransactionReceipt(tx);
-      assert(receipt.status === false);
-
+      await checkErrorRevert(goodClient.respondToBinarySearchForChallenge());
       await goodClient.respondToChallenge();
 
       // Check we can't respond again
-      tx = await goodClient.respondToChallenge();
-      receipt = await web3GetTransactionReceipt(tx);
-      assert(receipt.status === false);
+      await checkErrorRevert(goodClient.respondToChallenge());
 
       addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
