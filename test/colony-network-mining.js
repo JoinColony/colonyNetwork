@@ -1077,7 +1077,7 @@ contract("ColonyNetworkMining", accounts => {
 
       // TODO: Split off in to  another test here, but can't be bothered to refactor right now.
       await goodClient.respondToChallenge();
-      await checkErrorRevert(badClient.respondToChallenge());
+      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-invalid-newest-reputation-proof");
 
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
@@ -1153,7 +1153,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
-      await checkErrorRevert(badClient.respondToChallenge());
+      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-uid-changed-for-existing-reputation");
 
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
@@ -1406,7 +1406,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
-      await checkErrorRevert(badClient.respondToChallenge());
+      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-proved-uid-inconsistent");
 
       // Check badclient respondToChallenge failed
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
@@ -1484,7 +1484,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
-      await checkErrorRevert(badClient2.respondToChallenge(), "colony-reputation-mining-less-challenge-rounds-completed");
+      await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-new-uid-incorrect");
       // Cleanup
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
@@ -2144,28 +2144,28 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
 
       // We need one more response to binary search from each side. Check we can't confirm early
-      await checkErrorRevert(goodClient.confirmBinarySearchResult());
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-incomplete");
       // Check we can't respond to challenge before we've completed the binary search
-      await checkErrorRevert(goodClient.respondToChallenge());
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-closed");
       await goodClient.respondToBinarySearchForChallenge();
 
       // Check we can't confirm even if we're done, but our opponent isn't
-      await checkErrorRevert(goodClient.confirmBinarySearchResult());
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-incomplete");
       await badClient.respondToBinarySearchForChallenge();
 
       // Check we can't respond to challenge before confirming result
-      await checkErrorRevert(goodClient.respondToChallenge());
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
 
       // Now we can confirm
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
       // Check we can't continue confirming
-      await checkErrorRevert(goodClient.respondToBinarySearchForChallenge());
+      await checkErrorRevertEthers(goodClient.respondToBinarySearchForChallenge(), "colony-reputation-mining-challenge-not-active");
       await goodClient.respondToChallenge();
 
       // Check we can't respond again
-      await checkErrorRevert(goodClient.respondToChallenge());
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-already-responded");
 
       addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -2377,8 +2377,17 @@ contract("ColonyNetworkMining", accounts => {
 
           await goodClient.confirmBinarySearchResult();
           await badClient.confirmBinarySearchResult();
-
-          await checkErrorRevert(badClient2.respondToChallenge());
+          if (args.word === "high") {
+            await checkErrorRevertEthers(
+              badClient2.respondToChallenge(),
+              "colony-reputation-mining-update-number-part-of-previous-log-entry-updates"
+            );
+          } else {
+            await checkErrorRevertEthers(
+              badClient2.respondToChallenge(),
+              "colony-reputation-mining-update-number-part-of-following-log-entry-updates"
+            );
+          }
 
           // Cleanup
           await goodClient.respondToChallenge();
