@@ -243,16 +243,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     bytes32 reputationRootHash = getImpliedRoot(_reputationKey, agreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
     bytes memory jhLeafValue = new bytes(64);
-    bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline solidity
       mstore(add(jhLeafValue, 0x40), x)
-      mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
     // agree on.
-    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
 
     if (reputationValue == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
@@ -283,16 +281,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
     // agree on.
     bytes memory jhLeafValue = new bytes(64);
-    bytes memory firstDisagreeIdxBytes = new bytes(32);
 
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       let x := mload(add(u, mul(32,5))) // 5 = U_DISAGREE_STATE_NNODES. Constants not supported by inline solidity.
       mstore(add(jhLeafValue, 0x40), x)
-      mstore(add(firstDisagreeIdxBytes, 0x20), firstDisagreeIdx)
     }
 
-    bytes32 impliedRoot = getImpliedRoot(firstDisagreeIdxBytes, jhLeafValue, u[U_DISAGREE_STATE_BRANCH_MASK], disagreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(firstDisagreeIdx), jhLeafValue, u[U_DISAGREE_STATE_BRANCH_MASK], disagreeStateSiblings);
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-after-reputation-proof");
   }
 
@@ -369,15 +365,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       previousNewReputationSiblings
     );
     bytes memory jhLeafValue = new bytes(64);
-    bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline assembly
       mstore(add(jhLeafValue, 0x40), x)
-      mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 

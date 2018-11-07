@@ -4,6 +4,7 @@ const ganache = require("ganache-core");
 const ethers = require("ethers");
 const sqlite = require("sqlite");
 const patriciaJs = require("./patricia");
+const patriciaJsNoHashKey = require("./patriciaNoHashKey");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -93,7 +94,7 @@ class ReputationMiner {
    */
   async addLogContentsToReputationTree(blockNumber = "latest") {
     if (this.useJsTree) {
-      this.justificationTree = new patriciaJs.PatriciaTree();
+      this.justificationTree = new patriciaJsNoHashKey.PatriciaTree();
     } else {
       const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
       const contract = await contractFactory.deploy();
@@ -624,12 +625,14 @@ class ReputationMiner {
    */
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
+    const submittedNNodes = await this.nReputations;
+    const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
 
     let index = ethers.utils.bigNumberify(-1);
     let round = ethers.utils.bigNumberify(0);
     let submission = [];
-    while (submission[0] !== submittedHash) {
+    while (submission[0] !== submittedHash || submission[1].toString() !== submittedNNodes.toString() || submission[4] !== jrh) {
       try {
         index = index.add(1);
         submission = await repCycle.getDisputeRounds(round, index); // eslint-disable-line no-await-in-loop
@@ -696,7 +699,6 @@ class ReputationMiner {
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
     const lastAgreeKey = ReputationMiner.getHexString(lastAgreeIdx, 64);
     const firstDisagreeKey = ReputationMiner.getHexString(firstDisagreeIdx, 64);
-
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
     let logEntryNumber = ethers.utils.bigNumberify(0);

@@ -305,12 +305,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     );
     bytes32 jrh = disputeRounds[round][idx].jrh;
 
-    bytes memory targetNodeBytes = new bytes(32);
-    assembly {
-      mstore(add(targetNodeBytes, 0x20), targetNode)
-    }
-
-    bytes32 impliedRoot = getImpliedRoot(targetNodeBytes, jhIntermediateValue, branchMask, siblings);
+    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(targetNode), jhIntermediateValue, branchMask, siblings);
     require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-response");
     // If require hasn't thrown, proof is correct.
     // Process the consequences
@@ -333,13 +328,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
     uint256 targetNode = disputeRounds[round][idx].lowerBound;
     bytes32 jrh = disputeRounds[round][idx].jrh;
-
-    bytes memory targetNodeBytes = new bytes(32);
-    assembly {
-      mstore(add(targetNodeBytes, 0x20), targetNode)
-    }
-
-    bytes32 impliedRoot = getImpliedRoot(targetNodeBytes, jhIntermediateValue, branchMask, siblings);
+    
+    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(targetNode), jhIntermediateValue, branchMask, siblings);
     require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-confirmation");
     bytes32 intermediateReputationHash;
     uint256 intermediateReputationNNodes;
@@ -537,12 +527,11 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     bytes memory jhLeafValue = new bytes(64);
-    bytes memory zero = new bytes(32);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       mstore(add(jhLeafValue, 0x40), reputationRootHashNNodes)
     }
-    bytes32 impliedRoot = getImpliedRoot(zero, jhLeafValue, branchMask1, siblings1);
+    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(0), jhLeafValue, branchMask1, siblings1);
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-1");
   }
 
@@ -564,7 +553,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
     uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
       reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
-    bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;
     uint256 submittedHashNNodes = disputeRounds[round][index].nNodes;
@@ -572,9 +560,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     assembly {
       mstore(add(jhLeafValue, 0x20), submittedHash)
       mstore(add(jhLeafValue, 0x40), submittedHashNNodes)
-      mstore(add(nUpdatesBytes, 0x20), nUpdates)
     }
-    bytes32 impliedRoot = getImpliedRoot(nUpdatesBytes, jhLeafValue, branchMask2, siblings2);
+    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(nUpdates), jhLeafValue, branchMask2, siblings2);
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-2");
 
   }
