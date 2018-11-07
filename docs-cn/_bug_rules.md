@@ -6,18 +6,20 @@ order: 0
 
 Colony Network是一组智能合约，旨在以安全和可预测的方式管理多人的共享资源。这些数字资产可能具有重要价值；因此，系统必须像Bilbo之前的Bagginses那样行事：没有任何意想不到的事情。
 
-为此，Colony向外部开发人员提供实质性奖励，用于报告 colonyNetwork 合约中的缺陷和漏洞（[适用条款](https://docs.colony.io/colonynetwork/bug-bounty-program-terms-and-conditions)。
+为此，Colony向外部开发人员提供实质性奖励，用于报告 colonyNetwork 合约中的缺陷和漏洞（[适用条款](https://docs.colony.io/colonynetwork/bug-bounty-program-terms-and-conditions)）。
 
 这个赏金*不*适用于像 Purser 这样的 Colony 工具。有关详细信息，请参阅[不合格的错误](https://docs.colony.io/colonynetwork/bug-bounty-program-overview/#ineligible-bugs)。
 
-==TOC==
+
+== TOC ==
+
 
 ## 范围
 
 该bug赏金计划扩展到[colonyNetwork Github repo](https://github.com/JoinColony/colonyNetwork)内的所有合约。
 
 潜在错误的奖励包括但不限于：
-* 声誉挖矿的漏洞
+* 声誉挖矿(reputation mining)的漏洞
 * 任务、领域及技能工作流程的漏洞
 * 网络升级期间的攻击
 * 授权和权限
@@ -72,4 +74,4 @@ Colony创建的其他软件工具中的任何漏洞或缺陷（例如colonyJS，
 * 系统设计中考虑的攻击，即以太网网络垃圾邮件，恶意信誉挖矿，colony管理中的渎职行为。
 * 对殖民地议定书和整体机制设计的批评。我们欢迎建议和建设性的批评，并要求将其发送至 hello@colony.io 或[Build with Colony Forums](https://build.colony.io/)
 
-请阅读[条款和条件]（./_ bug_terms.md）以获取更多信息。
+请阅读[条款和条件](./_ bug_terms.md) 以获取更多信息。
