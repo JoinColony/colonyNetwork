@@ -193,7 +193,7 @@ contract("ColonyNetworkMining", accounts => {
       // idx1.modn returns a javascript number, which is surprising!
       toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
     }
-    await repCycle.invalidateHash(round1.toString(), toInvalidateIdx.toString());
+    return repCycle.invalidateHash(round1.toString(), toInvalidateIdx.toString());
   }
 
   afterEach(async () => {
