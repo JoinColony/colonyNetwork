@@ -13,12 +13,25 @@ contract PatriciaTreeProofs {
   using Data for Data.Edge;
   using Data for Data.Label;
 
-  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public // solium-disable-line security/no-assign-params
+  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public
   pure returns (bytes32)
   {
-    Data.Label memory k = Data.Label(keccak256(key), 256);
+    return getImpliedRootFunctionality(keccak256(key), keccak256(value), branchMask, siblings);
+  }
+
+  function getImpliedRootNoHash(bytes32 key, bytes value, uint branchMask, bytes32[] siblings ) public
+  pure returns (bytes32)
+  {
+    return getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
+  }
+
+  // solium-disable-next-line security/no-assign-params
+  function getImpliedRootFunctionality(bytes32 keyHash, bytes32 valueHash, uint branchMask, bytes32[] siblings) private
+  pure returns (bytes32)
+  {
+    Data.Label memory k = Data.Label(keyHash, 256);
     Data.Edge memory e;
-    e.node = keccak256(value);
+    e.node = valueHash;
     for (uint i = 0; branchMask != 0; i++) {
       uint bitSet = branchMask.lowestBitSet();
       branchMask &= ~(uint(1) << bitSet);
