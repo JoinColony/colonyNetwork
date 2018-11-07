@@ -6,9 +6,9 @@ order: 0
 
 Colony Network是一组智能合约，旨在以安全和可预测的方式管理多人的共享资源。这些数字资产可能具有重要价值；因此，系统必须像Bilbo之前的Bagginses那样行事：没有任何意想不到的事情。
 
-为此，Colony向外部开发人员提供实质性奖励，用于报告 colonyNetwork 合约中的缺陷和漏洞（[适用条款]（https://docs.colony.io/colonynetwork/bug-bounty-program-terms-and-conditions /））。
+为此，Colony向外部开发人员提供实质性奖励，用于报告 colonyNetwork 合约中的缺陷和漏洞（[适用条款](https://docs.colony.io/colonynetwork/bug-bounty-program-terms-and-conditions)。
 
-这个赏金*不*适用于像 Purser 这样的 Colony 工具。有关详细信息，请参阅[不合格的错误]（https://docs.colony.io/colonynetwork/bug-bounty-program-overview/#ineligible-bugs）。
+这个赏金*不*适用于像 Purser 这样的 Colony 工具。有关详细信息，请参阅[不合格的错误](https://docs.colony.io/colonynetwork/bug-bounty-program-overview/#ineligible-bugs)。
 
 ==TOC==
 
@@ -29,16 +29,6 @@ _colonyNetwork 库的某些组件不是由 Colony 团队创建的，但仍可能
 ## 规则
 
 ### 提交指南
-
-All bugs reported must be done through the creation of an issue in the colonyNetwork github repo, or _if the submitter wishes to disclose privately, or to remain anonymous_ by an email sent to security@colony.io. Private submissions are still eligible for a bounty.
-
-Unless there is a specific reason for a private disclosure, bugs should be submitted as issues on the colonyNetwork GitHub repository, and tagged with the 'bug' label.
-
-It is requested that all submissions follow the format defined in the [issue template](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/ISSUE_TEMPLATE.md) -- clarity of description and thoroughness of documentation will be a consideration for reward amount, in addition to impact and likelihood.
-
-In the case of private bug disclosure, all relevant materials should be sent in email to `security@colony.io` -- and should follow the same template as a public issue.
-
-Once submitted, the issue will be responded to, verified, accepted, and rewarded according to the timelines defined on our [service level agreement](link).
 
 报告的所有错误必须通过在colonyNetwork github repo中[创建问题](https://github.com/JoinColony/colonyNetwork/issues/new) 来完成，如果提交者希望私下披露，可以发送邮件至 security@colony.io 的保持匿名。私人提交的作品仍有资格获得赏金。
 
