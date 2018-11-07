@@ -8,6 +8,7 @@ import request from "async-request";
 import {
   forwardTime,
   checkErrorRevert,
+  checkErrorRevertEthers,
   web3GetTransactionReceipt,
   makeReputationKey,
   makeReputationValue,
@@ -857,7 +858,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.submitJustificationRootHash();
 
       // Check that we can't re-submit a JRH
-      await checkErrorRevert(goodClient.submitJustificationRootHash());
+      await checkErrorRevertEthers(goodClient.submitJustificationRootHash(), "colony-reputation-mining-hash-already-submitted");
 
       const submissionAfterJRHSubmitted = await repCycle.getDisputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
