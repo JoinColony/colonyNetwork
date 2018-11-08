@@ -304,6 +304,54 @@ contract("Colony Network Auction", accounts => {
     it("cannot bid with 0 tokens", async () => {
       await checkErrorRevert(tokenAuction.bid(0), "colony-auction-invalid-bid");
     });
+
+    it.only("auction closes when the receivedTotal goes over the total amount to end the auction", async () => {
+      // Considers totalToEndAuction < receivedTotal as per colonyNetwork#416
+      // mul(quantity, price()) / TOKEN_MULTIPLIER < receivedTotal
+      // quantity * price() < receivedTotal * TOKEN_MULTIPLIER
+      // price() < (receivedTotal * TOKEN_MULTIPLIER) / quantity
+      // price() < (receivedTotal * 10^18) / quantity
+
+      // Aim: receivedTotal > _totalToEndAuction
+      const amount = clnyNeededForMaxPriceAuctionSellout.divn(3);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, amount);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_3, amount);
+      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_2 });
+      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_3 });
+
+      let price = await tokenAuction.price();
+      let totalToEndAuction = await tokenAuction.totalToEndAuction();
+      let receivedTotal = await tokenAuction.receivedTotal();
+      console.log("price", price.toString()); // 999937500000000000000000000000000000
+      console.log("totalToEndAuction", totalToEndAuction.toString()); // 2999812500000000000000000000000000000000000000000000000
+      console.log("receivedTotal", receivedTotal.toString()); // 0
+
+      await tokenAuction.bid(amount.divn(10), { from: BIDDER_1 });
+      await tokenAuction.bid(amount.divn(10), { from: BIDDER_2 });
+      await tokenAuction.bid(amount.divn(10), { from: BIDDER_3 });
+
+      await forwardTime(SECONDS_PER_DAY * 30, this);
+      price = await tokenAuction.price();
+      totalToEndAuction = await tokenAuction.totalToEndAuction();
+      receivedTotal = await tokenAuction.receivedTotal();
+      console.log("price", price.toString()); // 999937
+      console.log("totalToEndAuction", totalToEndAuction.toString()); // 2999811000000000000000000
+      console.log("receivedTotal", receivedTotal.toString()); // 300000000000000000000000000000000000000000000000000000
+
+      await tokenAuction.bid("3000000000000000000000000", { from: BIDDER_1 });
+
+      await tokenAuction.finalize();
+      receivedTotal = await tokenAuction.receivedTotal();
+      const endPrice = new BN(10)
+        .pow(new BN(18))
+        .mul(new BN(receivedTotal.toString(10)))
+        .div(quantity)
+        .addn(1);
+      const finalPrice = await tokenAuction.finalPrice();
+      assert.equal(endPrice.toString(), finalPrice.toString(10));
+    });
   });
 
   describe("when finalizing auction", async () => {
