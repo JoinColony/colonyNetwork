@@ -44,11 +44,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _;
   }
 
-  modifier nonZero(uint256 parentSkillId) {
-    require(parentSkillId > 0, "colony-invalid-parent-skill-id");
-    _;
-  }
-
   function isColony(address _colony) public view returns (bool) {
     return _isColony[_colony];
   }
@@ -196,7 +191,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function addSkill(uint _parentSkillId, bool _globalSkill) public stoppable
   skillExists(_parentSkillId)
   allowedToAddSkill(_globalSkill)
-  nonZero(_parentSkillId)
   returns (uint256)
   {
     skillCount += 1;
