@@ -92,6 +92,16 @@ contract IReputationMiningCycle {
   /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public;
 
+
+  /// @notice Confirm the result of a binary search - depending on how exactly the binary search finished, the saved binary search intermediate state might be incorrect.
+  /// @notice This function ensures that the intermediate hashes saved are correct.
+  /// @param round The round number the hash we are responding on behalf of is in
+  /// @param idx The index in the round that the hash we are responding on behalf of is in
+  /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
+  /// @param branchMask The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
+  /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
+  function confirmBinarySearchResult(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 branchMask, bytes32[] siblings) public;
+
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
   /// @param u A `uint256[10]` array. The elements of this array, in order are:
   /// * 1. The current round of the hash being responded on behalf of

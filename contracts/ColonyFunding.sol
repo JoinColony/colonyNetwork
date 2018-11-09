@@ -26,16 +26,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   event RewardPayoutCycleStarted(uint256 indexed id);
   event RewardPayoutCycleEnded(uint256 indexed id);
   event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
-
-  function getFeeInverse() public pure returns (uint256) {
-    // TODO: refer to ColonyNetwork
-    return 100;
-  }
-
-  function getRewardInverse() public pure returns (uint256) {
-    // TODO: Make settable by colony
-    return 100;
-  }
+  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
 
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, MANAGER, _token, _amount);
@@ -60,10 +51,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   )
   public
   stoppable
+  confirmTaskRoleIdentity(_id, MANAGER)
   {
     Task storage task = tasks[_id];
 
-    require(task.roles[MANAGER].user == msg.sender, "colony-funding-must-be-manager");
     require(task.roles[EVALUATOR].user == task.roles[MANAGER].user || task.roles[EVALUATOR].user == 0x0, "colony-funding-evaluator-already-set");
     require(task.roles[WORKER].user == task.roles[MANAGER].user || task.roles[WORKER].user == 0x0, "colony-funding-worker-already-set");
 
@@ -73,7 +64,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   // To get all payouts for a task iterate over roles.length
-  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256) {
+  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256) {
     Task storage task = tasks[_id];
     bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
     return unsatisfactory ? 0 : task.payouts[_role][_token];
@@ -87,7 +78,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return totalPayouts;
   }
 
-  function claimPayout(uint256 _id, uint256 _role, address _token) public
+  function claimPayout(uint256 _id, uint8 _role, address _token) public
   stoppable
   taskFinalized(_id)
   {
@@ -104,12 +95,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     pots[task.potId].balance[_token] = sub(pots[task.potId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
 
-    uint fee = payout / getFeeInverse();
+    uint fee = calculateNetworkFeeForPayout(payout);
     uint remainder = sub(payout, fee);
 
     if (_token == 0x0) {
       // Payout ether
-      task.roles[_role].user.transfer(remainder);
+      address user = task.roles[_role].user;
+      user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address metaColonyAddress = colonyNetworkContract.getMetaColony();
@@ -122,6 +114,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       payoutToken.transfer(task.roles[_role].user, remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
     }
+
+    emit TaskPayoutClaimed(_id, _role, _token, remainder);
   }
 
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256) {
@@ -174,11 +168,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       ERC20Extended targetToken = ERC20Extended(_token);
       toClaim = sub(sub(targetToken.balanceOf(this), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     }
+
     feeToPay = toClaim / getRewardInverse();
-    if (token == _token) { // Well this line isn't easy to understand
-      // Basically, if we're using our own tokens, then we don't siphon off a chunk for rewards
-      feeToPay = 0;
-    }
     remainder = sub(toClaim, feeToPay);
     nonRewardPotsTotal[_token] = add(nonRewardPotsTotal[_token], remainder);
     pots[1].balance[_token] = add(pots[1].balance[_token], remainder);
@@ -247,9 +238,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint256 reward;
     (tokenAddress, reward) = calculateRewardForUser(_payoutId, _squareRoots, userReputation);
 
+    uint fee = calculateNetworkFeeForPayout(reward);
+    uint remainder = sub(reward, fee);
+
     pots[0].balance[tokenAddress] = sub(pots[0].balance[tokenAddress], reward);
 
-    ERC20Extended(tokenAddress).transfer(msg.sender, reward);
+    ERC20Extended(tokenAddress).transfer(msg.sender, remainder);
+    ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee);
   }
 
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
@@ -275,6 +270,18 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     );
   }
 
+  function setRewardInverse(uint256 _rewardInverse) public
+  stoppable
+  auth
+  {
+    require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
+    rewardInverse = _rewardInverse;
+  }
+
+  function getRewardInverse() public view returns (uint256) {
+    return rewardInverse;
+  }
+
   function checkReputation(
     bytes32 rootHash,
     uint256 skillId,
@@ -283,7 +290,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     bytes value,
     uint256 branchMask,
     bytes32[] siblings
-  ) internal returns (uint256)
+  ) internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRoot(key, value, branchMask, siblings);
     require(rootHash == impliedRoot, "colony-reputation-invalid-root-hash");
@@ -375,9 +382,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  function setTaskPayout(uint256 _id, uint256 _role, address _token, uint256 _amount) private
+  function setTaskPayout(uint256 _id, uint8 _role, address _token, uint256 _amount) private
   taskExists(_id)
-  taskNotFinalized(_id)
+  taskNotComplete(_id)
   {
     uint currentTotalAmount = getTotalTaskPayout(_id, _token);
     tasks[_id].payouts[_role][_token] = _amount;
@@ -387,5 +394,16 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     getTotalTaskPayout(_id, _token);
 
     updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
+  }
+
+  function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    uint256 feeInverse = colonyNetworkContract.getFeeInverse();
+
+    if (_payout == 0 || feeInverse == 1) {
+      fee = _payout;
+    } else {
+      fee = _payout/feeInverse + 1;
+    }
   }
 }

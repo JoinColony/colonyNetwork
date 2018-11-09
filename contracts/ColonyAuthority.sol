@@ -18,15 +18,14 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/roles.sol";
+import "./CommonAuthority.sol";
 
 
-contract Authority is DSRoles {
+contract ColonyAuthority is CommonAuthority {
   uint8 ownerRole = 0;
   uint8 adminRole = 1;
-  uint8 recoveryRole = 2;
 
-  constructor(address colony) public {
+  constructor(address colony) public CommonAuthority(colony) {
     // Set token
     setOwnerRoleCapability(colony, "setToken(address)");
     // Bootstrap colony
@@ -46,7 +45,13 @@ contract Authority is DSRoles {
     // Upgrade colony
     setOwnerRoleCapability(colony, "upgrade(uint256)");
     // Claim colony ENS label
-    setOwnerRoleCapability(colony, "registerColonyLabel(string)");
+    setOwnerRoleCapability(colony, "registerColonyLabel(string,string)");
+    // Set Network fee inverse
+    setOwnerRoleCapability(colony, "setNetworkFeeInverse(uint256)");
+    // Set Reward fee inverse
+    setOwnerRoleCapability(colony, "setRewardInverse(uint256)");
+    // Add colony version to the network
+    setOwnerRoleCapability(colony, "addNetworkColonyVersion(uint256,address)");
 
     // Allocate funds
     setAdminRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");
@@ -60,21 +65,9 @@ contract Authority is DSRoles {
     // Start next reward payout
     setAdminRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
     setOwnerRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
-    // Cancel task
-    setAdminRoleCapability(colony, "cancelTask(uint256)");
-    setOwnerRoleCapability(colony, "cancelTask(uint256)");
     // Set admin
     setAdminRoleCapability(colony, "setAdminRole(address)");
     setOwnerRoleCapability(colony, "setAdminRole(address)");
-
-    // Enter recovery mode
-    setRecoveryRoleCapability(colony, "enterRecoveryMode()");
-    // Approve recovery exit
-    setRecoveryRoleCapability(colony, "approveExitRecovery()");
-    // Update arbitrary storage value
-    setRecoveryRoleCapability(colony, "setStorageSlotRecovery(uint256,bytes32)");
-    // Exit recovery mode and set resolver version
-    setRecoveryRoleCapability(colony, "exitRecoveryMode(uint256)");
   }
 
   function setOwnerRoleCapability(address colony, bytes sig) private {
@@ -85,10 +78,5 @@ contract Authority is DSRoles {
   function setAdminRoleCapability(address colony, bytes sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(adminRole, colony, functionSig, true);
-  }
-
-  function setRecoveryRoleCapability(address colony, bytes sig) private {
-    bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(recoveryRole, colony, functionSig, true);
   }
 }

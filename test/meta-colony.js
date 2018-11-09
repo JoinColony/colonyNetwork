@@ -1,7 +1,7 @@
 /* globals artifacts */
-import { INITIAL_FUNDING } from "../helpers/constants";
+import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupFundedTask, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
@@ -10,14 +10,17 @@ const Resolver = artifacts.require("Resolver");
 const Colony = artifacts.require("Colony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
+  const WORKER = accounts[2];
 
   let metaColony;
   let metaColonyToken;
@@ -35,15 +38,16 @@ contract("Meta Colony", accounts => {
     const colonyFunding = await ColonyFunding.new();
     const colonyTask = await ColonyTask.new();
     const resolver = await Resolver.new();
+    const contractRecovery = await ContractRecovery.new();
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, resolver, colonyNetwork);
-
+    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
     metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
     await colonyNetwork.createMetaColony(metaColonyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
@@ -387,7 +391,14 @@ contract("Meta Colony", accounts => {
       await colony.addDomain(1);
       const taskId = await makeTask({ colony });
 
-      await colony.setTaskDomain(taskId, 2);
+      await executeSignedTaskChange({
+        colony,
+        functionName: "setTaskDomain",
+        taskId,
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 2]
+      });
 
       const task = await colony.getTask(taskId);
       assert.equal(task[7].toNumber(), 2);
@@ -395,29 +406,75 @@ contract("Meta Colony", accounts => {
 
     it("should NOT allow a non-manager to set domain on task", async () => {
       await colony.addDomain(1);
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskDomain(1, 2, { from: OTHER_ACCOUNT }), "colony-task-role-identity-mismatch");
-      const task = await colony.getTask(1);
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [OTHER_ACCOUNT],
+          sigTypes: [0],
+          args: [taskId, 2]
+        }),
+        "colony-task-signatures-do-not-match-reviewer-1"
+      );
+
+      const task = await colony.getTask(taskId);
       assert.equal(task[7].toNumber(), 1);
     });
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
-      await checkErrorRevert(colony.setTaskDomain(10, 3), "colony-task-does-not-exist");
+      const taskId = await makeTask({ colony });
+      const nonexistentTaskId = taskId.addn(10).toNumber();
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [nonexistentTaskId, 1]
+        }),
+        "colony-task-does-not-exist"
+      );
     });
 
     it("should NOT be able to set a nonexistent domain on task", async () => {
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskDomain(1, 20), "colony-domain-does-not-exist");
+      const taskId = await makeTask({ colony });
 
-      const task = await colony.getTask(1);
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, 20]
+        }),
+        "colony-task-change-execution-failed"
+      );
+
+      const task = await colony.getTask(taskId);
       assert.equal(task[7].toNumber(), 1);
     });
 
-    it("should NOT be able to set a domain on finalized task", async () => {
+    it("should NOT be able to set a domain on completed task", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony });
-      await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.setTaskDomain(taskId, 1), "colony-task-already-finalized");
+      const taskId = await setupFundedTask({ colonyNetwork, colony });
+      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER, WORKER],
+          sigTypes: [0, 0],
+          args: [taskId, 1]
+        }),
+        "colony-task-change-execution-failed"
+      );
     });
 
     it("should be able to set global skill on task", async () => {
@@ -453,13 +510,13 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(10, 1), "colony-task-does-not-exist");
     });
 
-    it("should NOT be able to set global skill on finalized task", async () => {
+    it("should NOT be able to set global skill on completed task", async () => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(5);
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony });
       await colony.finalizeTask(taskId);
-      await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-already-finalized");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-complete");
 
       const task = await colony.getTask(taskId);
       assert.equal(task[8][0].toNumber(), 1);
@@ -485,6 +542,28 @@ contract("Meta Colony", accounts => {
     it("should return a false flag if the skill is local", async () => {
       const localSkill = await colonyNetwork.getSkill(2);
       assert.isFalse(localSkill[2]);
+    });
+  });
+
+  describe("when setting the network fee", () => {
+    it("should allow the meta colony owner to set the fee", async () => {
+      await metaColony.setNetworkFeeInverse(234);
+      const fee = await colonyNetwork.getFeeInverse();
+      assert.equal(fee, 234);
+    });
+
+    it("should not allow anyone else but the meta colony owner to set the fee", async () => {
+      await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }));
+      const fee = await colonyNetwork.getFeeInverse();
+      assert.equal(fee, 0);
+    });
+
+    it("should not allow another account, than the meta colony, to set the fee", async () => {
+      await checkErrorRevert(colonyNetwork.setFeeInverse(100), "colony-caller-must-be-meta-colony");
+    });
+
+    it("should not allow the fee to be set to zero", async () => {
+      await checkErrorRevert(metaColony.setNetworkFeeInverse(0), "colony-network-fee-inverse-cannot-be-zero");
     });
   });
 });

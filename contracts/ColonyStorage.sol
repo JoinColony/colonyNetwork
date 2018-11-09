@@ -18,15 +18,15 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
-import "./Authority.sol";
+import "./ColonyAuthority.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
+import "./CommonStorage.sol";
 
 
-contract ColonyStorage is DSAuth, DSMath {
+contract ColonyStorage is CommonStorage, DSMath {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
@@ -34,9 +34,9 @@ contract ColonyStorage is DSAuth, DSMath {
   event DomainAdded(uint256 indexed id);
   event PotAdded(uint256 indexed id);
 
-  address resolver;
   address colonyNetworkAddress;
   ERC20Extended token;
+  uint256 rewardInverse;
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
@@ -89,7 +89,6 @@ contract ColonyStorage is DSAuth, DSMath {
   // Colony-wide roles
   uint8 constant OWNER_ROLE = 0;
   uint8 constant ADMIN_ROLE = 1;
-  uint8 constant RECOVERY_ROLE = 2;
 
   // Task Roles
   uint8 constant MANAGER = 0;
@@ -100,13 +99,6 @@ contract ColonyStorage is DSAuth, DSMath {
   uint8 constant ACTIVE = 0;
   uint8 constant CANCELLED = 1;
   uint8 constant FINALIZED = 2;
-
-  // Variables for recovery mode
-  bool recoveryMode;
-  uint64 recoveryRolesCount;
-  uint64 recoveryApprovalCount;
-  uint256 recoveryEditedTimestamp;
-  mapping (address => uint256) recoveryApprovalTimestamps;
 
   // Mapping task id to current "active" nonce for executing task changes
   mapping (uint256 => uint256) taskChangeNonces;
@@ -123,9 +115,9 @@ contract ColonyStorage is DSAuth, DSMath {
     uint256[] skills;
 
     // TODO switch this mapping to a uint8 when all role instances are uint8-s specifically ColonyFunding source
-    mapping (uint256 => Role) roles;
+    mapping (uint8 => Role) roles;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
-    mapping (uint256 => mapping (address => uint256)) payouts;
+    mapping (uint8 => mapping (address => uint256)) payouts;
   }
 
   enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
@@ -195,23 +187,23 @@ contract ColonyStorage is DSAuth, DSMath {
     _;
   }
 
+  modifier taskComplete(uint256 _id) {
+    require(tasks[_id].completionTimestamp > 0, "colony-task-not-complete");
+    _;
+  }
+
+  modifier taskNotComplete(uint256 _id) {
+    require(tasks[_id].completionTimestamp == 0, "colony-task-complete");
+    _;
+  }
+
   modifier isInBootstrapPhase() {
     require(taskCount == 0, "colony-not-in-bootstrap-mode");
     _;
   }
 
   modifier isAdmin(address _user) {
-    require(Authority(authority).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
-    _;
-  }
-
-  modifier recovery() {
-    require(recoveryMode, "colony-not-in-recovery-mode");
-    _;
-  }
-
-  modifier stoppable() {
-    require(!recoveryMode, "colony-in-recovery-mode");
+    require(ColonyAuthority(authority).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
     _;
   }
 

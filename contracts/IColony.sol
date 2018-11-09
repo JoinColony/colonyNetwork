@@ -18,10 +18,12 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
+import "./IRecovery.sol";
+
 
 /// @title Colony interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColony {
+contract IColony is IRecovery {
   // Events
   /// @notice Event logged when a new task is added
   /// @param id The newly added task id
@@ -79,6 +81,13 @@ contract IColony {
   /// @param id Id of the finalized task
   event TaskFinalized(uint256 indexed id);
 
+  /// @notice Event logged when a task payout is claimed
+  /// @param id Id of the task
+  /// @param role Task role for which the payout is being claimed
+  /// @param token Token of the payout claim
+  /// @param amount Amount of the payout claim
+  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
+
   /// @notice Event logged when a task has been canceled
   /// @param id Id of the canceled task
   event TaskCanceled(uint256 indexed id);
@@ -96,8 +105,8 @@ contract IColony {
   event PotAdded(uint256 indexed id);
 
   // Implemented in DSAuth.sol
-  /// @notice Get the `Authority` for the colony
-  /// @return authority The `Authority` contract address
+  /// @notice Get the `ColonyAuthority` for the colony
+  /// @return authority The `ColonyAuthority` contract address
   function authority() public view returns (address authority);
 
   /// @notice Get the colony `owner` address. This should be 0x0 at all times
@@ -139,27 +148,14 @@ contract IColony {
   /// @param _user User we want to remove admin role from
   function removeAdminRole(address _user) public;
 
-  /// @notice Set new colony recovery role.
-  /// Can be called by owner.
-  /// @param _user User we want to give a recovery role to
-  function setRecoveryRole(address _user) public;
-
-  /// @notice Remove colony recovery role.
-  /// Can only be called by owner role.
-  /// @param _user User we want to remove recovery role from
-  function removeRecoveryRole(address _user) public;
-
-  /// @notice Return number of recovery roles.
-  /// @return numRoles Number of users with the recovery role (excluding owner)
-  function numRecoveryRoles() public view returns(uint64 numRoles);
-
   /// @notice Get the colony token
   /// @return tokenAddress Address of the token contract
   function getToken() public view returns (address tokenAddress);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
-  /// @param _network Address of the colony network
-  function initialiseColony(address _network) public;
+  /// @dev Sets the reward inverse to the uint max 2**256 - 1
+  /// @param _address Address of the colony network
+  function initialiseColony(address _address) public;
 
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users`
   /// This reputation is assigned in the colony-wide domain. Secured function to authorised members
@@ -172,21 +168,10 @@ contract IColony {
   /// @param _wad Amount to mint
   function mintTokens(uint256 _wad) public;
 
-  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network
-  /// Only allowed to be called on the Meta Colony by the colony network
-  /// @param _wad Amount to mint and transfer to the colony network
-  function mintTokensForColonyNetwork(uint256 _wad) public;
-
   /// @notice Register colony's ENS label
   /// @param colonyName The label to register.
-  function registerColonyLabel(string colonyName) public;
-
-  /// @notice Add a new global skill, under skill `_parentSkillId`
-  /// Can only be called from the Meta Colony
-  /// @dev Calls `IColonyNetwork.addSkill`
-  /// @param _parentSkillId Id of the skill under which the new skill will be added
-  /// @return skillId Id of the added skill
-  function addGlobalSkill(uint256 _parentSkillId) public returns (uint256 skillId);
+  /// @param orbitdb The path of the orbitDB database associated with the colony name
+  function registerColonyLabel(string colonyName, string orbitdb) public;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
@@ -215,25 +200,6 @@ contract IColony {
   /// reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function
   /// is not currently exposed on the Colony's EtherRouter.
   function verifyReputationProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool isValid);
-
-  /// @notice Put colony into recovery mode.
-  /// Can only be called by user with recovery role.
-  function enterRecoveryMode() public;
-
-  /// @notice Update value of arbitrary storage variable.
-  /// Can only be called by user with recovery role.
-  /// @param _slot Uint address of storage slot to be updated
-  /// @param _value Bytes32 word of data to be set
-  /// @dev certain critical variables are protected from editing in this function
-  function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public;
-
-  /// @notice Indicate approval to exit recovery mode.
-  /// Can only be called by user with recovery role.
-  function approveExitRecovery() public;
-
-  /// @notice Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
-  /// @param _newVersion Resolver version to upgrade to (>= current version)
-  function exitRecoveryMode(uint256 _newVersion) public;
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
@@ -451,21 +417,20 @@ contract IColony {
   /// @return rating Rating the user received
   function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
 
-  // Implemented in ColonyFunding.sol
-  /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
-  /// @return feeInverse The inverse of the network fee
-  function getFeeInverse() public pure returns (uint256 feeInverse);
+  /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
+  /// @param _rewardInverse The inverse of the reward
+  function setRewardInverse(uint256 _rewardInverse) public;
 
   /// @notice Return 1 / the reward to pay out from revenue. e.g. if the fee is 1% (or 0.01), return 100
   /// @return rewardInverse The inverse of the reward
-  function getRewardInverse() public pure returns (uint256 rewardInverse);
+  function getRewardInverse() public view returns (uint256 rewardInverse);
 
   /// @notice Get payout amount in `_token` denomination for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Payout amount
-  function getTaskPayout(uint256 _id, uint256 _role, address _token) public view returns (uint256 amount);
+  function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256 amount);
 
   /// @notice Get total payout amount in `_token` denomination for task `_id`
   /// @param _id Id of the task
@@ -498,7 +463,7 @@ contract IColony {
   /// @param _managerAmount Payout amount for manager
   /// @param _evaluatorAmount Payout amount for evaluator
   /// @param _workerAmount Payout amount for worker
-  function setAllTaskPayouts(uint256 _id,address _token,uint256 _managerAmount,uint256 _evaluatorAmount,uint256 _workerAmount) public;
+  function setAllTaskPayouts(uint256 _id, address _token, uint256 _managerAmount, uint256 _evaluatorAmount, uint256 _workerAmount) public;
 
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
   /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
@@ -506,7 +471,7 @@ contract IColony {
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @param _token Address of the token, `0x0` value indicates Ether
-  function claimPayout(uint256 _id, uint256 _role, address _token) public;
+  function claimPayout(uint256 _id, uint8 _role, address _token) public;
 
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.

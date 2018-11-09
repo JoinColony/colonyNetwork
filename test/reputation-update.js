@@ -14,7 +14,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
-const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Resolver = artifacts.require("Resolver");
 const Colony = artifacts.require("Colony");
@@ -22,6 +22,7 @@ const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("Colony Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -44,16 +45,20 @@ contract("Colony Reputation Updates", accounts => {
     const colonyFunding = await ColonyFunding.new();
     const colonyTask = await ColonyTask.new();
     const resolver = await Resolver.new();
+    const contractRecovery = await ContractRecovery.new();
     const etherRouter = await EtherRouter.new();
     await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
+
+    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver);
+    await colonyNetwork.initialise(resolver.address);
+
     const tokenArgs = getTokenArgs();
     colonyToken = await Token.new(...tokenArgs);
     await colonyNetwork.createMetaColony(colonyToken.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     await colonyToken.setOwner(metaColonyAddress);
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
     const amount = new BN(10)
       .pow(new BN(18))
       .mul(new BN(1000))

@@ -17,7 +17,7 @@ import {
 } from "./constants";
 import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
-const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 
@@ -248,7 +248,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   const accounts = await web3GetAccounts();
   const manager = accounts[0];
   const metaColonyAddress = await colonyNetwork.getMetaColony();
-  const metaColony = await IColony.at(metaColonyAddress);
+  const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
   const clny = await Token.at(clnyAddress);
   const amount = new BN(_amount);
@@ -286,7 +286,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
-  const metaColony = await IColony.at(metaColonyAddress);
+  const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
   const clny = await Token.at(clnyAddress);
 

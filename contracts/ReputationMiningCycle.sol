@@ -26,6 +26,11 @@ import "./ReputationMiningCycleStorage.sol";
 
 
 contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
+  /// @notice Minimum reputation mining stake in CLNY
+  uint256 constant MIN_STAKE = 2000 * WAD;
+
+  /// @notice Size of mining window in seconds
+  uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
 
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
@@ -48,11 +53,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @param nNodes The number of nodes in the reputation tree that `newHash` is the root hash of
   /// @param entryIndex The number of the entry the submitter hash asked us to consider.
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, uint256 entryIndex) {
-    // TODO: Require minimum stake, that is (much) more than the cost required to defend the valid submission.
-    // Here, the minimum stake is 10**15.
     uint256 balance;
     (, balance) = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender);
-    require(entryIndex <= balance / 10**15, "colony-reputation-mining-stake-minimum-not-met");
+    require(entryIndex <= balance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
@@ -65,6 +68,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     _;
   }
 
+  uint256 constant UINT256_MAX = 2**256 - 1;
+  uint256 constant X = UINT256_MAX / MINING_WINDOW_SIZE;
+
   /// @notice A modifier that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
@@ -72,9 +78,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // Check the ticket is a winning one.
     // All entries are acceptable if the hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
-      // x = floor(uint((2**256 - 1) / 3600)
-      uint256 x = 32164469232587832062103051391302196625908329073789045566515995557753647122;
-      uint256 target = (now - reputationMiningWindowOpenTimestamp) * x;
+      uint256 target = (now - reputationMiningWindowOpenTimestamp) * X;
       require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
     }
     _;
@@ -225,7 +229,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       }
     } else {
       require(disputeRounds[round].length > opponentIdx, "colony-reputation-mining-dispute-id-not-in-range");
+      // If we are invalidating hash for idx then opponentIdx hash has to exist, so it is passed onto the next round
       require(disputeRounds[round][opponentIdx].proposedNewRootHash != "", "colony-reputation-mining-proposed-hash-empty");
+      require(disputeRounds[round][idx].proposedNewRootHash != "", "colony-reputation-mining-hash-already-progressed");
 
       // Require that this is not better than its opponent.
       require(disputeRounds[round][opponentIdx].challengeStepCompleted >= disputeRounds[round][idx].challengeStepCompleted, "colony-reputation-mining-less-challenge-rounds-completed");
@@ -258,7 +264,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         nInvalidatedHashes += 2;
         // Punish the people who proposed our opponent
         ITokenLocking(tokenLockingAddress).punishStakers(
-          submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes]
+          submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes],
+          msg.sender,
+          MIN_STAKE
         );
       }
 
@@ -267,7 +275,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
       // Punish the people who proposed the hash that was rejected
       ITokenLocking(tokenLockingAddress).punishStakers(
-        submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes]
+        submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes],
+        msg.sender,
+        MIN_STAKE
       );
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
@@ -281,8 +291,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] siblings
   ) public
   {
-    // TODO: Check this challenge is active.
-    // This require is necessary, but not a sufficient check (need to check we have an opponent, at least).
     require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
 
     uint256 targetNode = add(
@@ -303,6 +311,44 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode);
   }
 
+  function confirmBinarySearchResult(
+    uint256 round,
+    uint256 idx,
+    bytes jhIntermediateValue,
+    uint256 branchMask,
+    bytes32[] siblings
+  ) public
+  {
+    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
+    require(
+      2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNnodes,
+      "colony-reputation-binary-search-result-already-confirmed"
+    );
+
+    uint256 targetNode = disputeRounds[round][idx].lowerBound;
+    bytes32 jrh = disputeRounds[round][idx].jrh;
+
+    bytes memory targetNodeBytes = new bytes(32);
+    assembly {
+      mstore(add(targetNodeBytes, 0x20), targetNode)
+    }
+
+    bytes32 impliedRoot = getImpliedRoot(targetNodeBytes, jhIntermediateValue, branchMask, siblings);
+    require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-confirmation");
+    bytes32 intermediateReputationHash;
+    uint256 intermediateReputationNNodes;
+    assembly {
+      intermediateReputationHash := mload(add(jhIntermediateValue, 0x20))
+      intermediateReputationNNodes := mload(add(jhIntermediateValue, 0x40))
+    }
+    disputeRounds[round][idx].intermediateReputationHash = intermediateReputationHash;
+    disputeRounds[round][idx].intermediateReputationNNodes = intermediateReputationNNodes;
+    while (2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNnodes) {
+      disputeRounds[round][idx].challengeStepCompleted += 1;
+    }
+
+  }
+
   function submitJustificationRootHash(
     uint256 round,
     uint256 index,
@@ -316,9 +362,19 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // Require we've not submitted already.
     require(disputeRounds[round][index].jrh == 0x0, "colony-reputation-mining-hash-already-submitted");
 
+    // Get reputation root hash NNodes, which we need in both of the following checkJRHProofs
+    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
+
     // Check the proofs for the JRH
-    checkJRHProof1(jrh, branchMask1, siblings1);
-    checkJRHProof2(round, index, jrh, branchMask2, siblings2);
+    checkJRHProof1(jrh, branchMask1, siblings1, reputationRootHashNNodes);
+    checkJRHProof2(
+      round,
+      index,
+      jrh,
+      branchMask2,
+      siblings2,
+      reputationRootHashNNodes
+    );
 
     // Store their JRH
     disputeRounds[round][index].jrh = jrh;
@@ -326,7 +382,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][index].challengeStepCompleted += 1;
 
     // Set bounds for first binary search if it's going to be needed
-    disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes;
+    disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes - 1;
   }
 
   function appendReputationUpdateLog(
@@ -454,7 +510,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /////////////////////////
 
   function submissionWindowClosed() internal view returns(bool) {
-    return now - reputationMiningWindowOpenTimestamp >= 3600;
+    return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
   }
 
   function processBinaryChallengeSearchResponse(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 targetNode) internal {
@@ -499,6 +555,18 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // If the number of nodes in the reputation state are different, then we are disagreeing on whether this log entry
     // corresponds to an existing reputation entry or not.
     // If the hashes are different, then it's a calculation error.
+    // However, the intermediate hashes saved might not be the ones that correspond to the first disagreement, based on how exactly the last
+    // step of the binary challenge came to be.
+
+    // If complete, mark that the binary search is completed (but the intermediate hashes may or may not be correct) by setting
+    // challengeStepCompleted to the maximum it could be for the number of nodes we had to search through, plus one to indicate
+    // they've submitted their jrh
+    if (disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound) {
+      if (2**(disputeRounds[round][idx].challengeStepCompleted-1) < disputeRounds[round][idx].jrhNnodes) {
+        disputeRounds[round][idx].challengeStepCompleted += 1;
+        disputeRounds[round][opponentIdx].challengeStepCompleted += 1;
+      }
+    }
 
     // Our opponent responded to this step of the challenge before we did, so we should
     // reset their 'last response' time to now, as they aren't able to respond
@@ -506,10 +574,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
   }
 
-  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1) internal view {
+  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1, uint256 reputationRootHashNNodes) internal view {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
-    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     bytes memory jhLeafValue = new bytes(64);
     bytes memory zero = new bytes(32);
     assembly {
@@ -520,18 +587,24 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-1");
   }
 
-  function checkJRHProof2(uint256 round, uint256 index, bytes32 jrh, uint256 branchMask2, bytes32[] siblings2) internal {
+  function checkJRHProof2(
+    uint256 round,
+    uint256 index,
+    bytes32 jrh,
+    uint256 branchMask2,
+    bytes32[] siblings2,
+    uint256 reputationRootHashNNodes
+  ) internal
+  {
     // Proof 2 needs to prove that they finished with the reputation root hash they submitted, and the
     // key is the number of updates implied by the contents of the reputation update log (implemented)
     // plus the number of nodes in the last accepted update, each of which will have decayed once (not implemented)
     uint256 nLogEntries = reputationUpdateLog.length;
     // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
     // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
-    // TODO: we're calling this twice during submitJRH. Should only need to call once.
-    uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
 
     uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
-    reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
+      reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
     bytes memory nUpdatesBytes = new bytes(32);
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;
@@ -549,7 +622,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
   function startMemberOfPair(uint256 roundNumber, uint256 index) internal {
     disputeRounds[roundNumber][index].lastResponseTimestamp = now;
-    disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNnodes;
+    disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNnodes - 1;
     disputeRounds[roundNumber][index].lowerBound = 0;
     disputeRounds[roundNumber][index].provedPreviousReputationUID = 0;
     if (disputeRounds[roundNumber][index].jrh != 0x0) {

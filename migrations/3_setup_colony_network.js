@@ -2,6 +2,8 @@
 /* eslint-disable no-console */
 const { setupUpgradableColonyNetwork } = require("../helpers/upgradable-contracts");
 
+const ColonyNetworkAuthority = artifacts.require("./ColonyNetworkAuthority");
+const ContractRecovery = artifacts.require("./ContractRecovery");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
@@ -16,6 +18,8 @@ module.exports = deployer => {
   let colonyNetworkMining;
   let colonyNetworkAuction;
   let colonyNetworkENS;
+  let contractRecovery;
+  let authorityNetwork;
   deployer
     .then(() => ColonyNetwork.deployed())
     .then(instance => {
@@ -40,10 +44,35 @@ module.exports = deployer => {
     })
     .then(instance => {
       resolver = instance;
-      return setupUpgradableColonyNetwork(etherRouter, resolver, colonyNetwork, colonyNetworkMining, colonyNetworkAuction, colonyNetworkENS);
+      return ContractRecovery.deployed();
     })
+    .then(instance => {
+      contractRecovery = instance;
+      return setupUpgradableColonyNetwork(
+        etherRouter,
+        resolver,
+        colonyNetwork,
+        colonyNetworkMining,
+        colonyNetworkAuction,
+        colonyNetworkENS,
+        contractRecovery
+      );
+    })
+    .then(() => ColonyNetworkAuthority.new(etherRouter.address))
+    .then(instance => {
+      authorityNetwork = instance;
+      return authorityNetwork.setOwner(etherRouter.address);
+    })
+    .then(() => etherRouter.setAuthority(authorityNetwork.address))
     .then(() => {
-      console.log("### Colony Network setup with Resolver", resolver.address, "and EtherRouter", etherRouter.address);
+      console.log(
+        "### Colony Network setup with Resolver",
+        resolver.address,
+        ", EtherRouter",
+        etherRouter.address,
+        " and Authority ",
+        authorityNetwork.address
+      );
     })
     .catch(err => {
       console.log("### Error occurred ", err);

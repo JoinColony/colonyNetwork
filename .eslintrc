@@ -15,7 +15,8 @@
     "prettier/prettier": ["error", {"printWidth": 150}],
     "flowtype/require-valid-file-annotation": "off",
     "import/named": "off",
-    "no-console": "off"
+    "no-console": "off",
+    "no-unused-expressions": "off"
   },
   "parserOptions": {
     "ecmaVersion": 2017

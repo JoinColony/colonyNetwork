@@ -66,8 +66,17 @@ contract("ColonyNetworkAuction", accounts => {
       await checkErrorRevert(colonyNetwork.startTokenAuction("0x0"), "colony-auction-invalid-token");
     });
 
-    it("should fail if auction is initialised for the CLNY token", async () => {
-      await checkErrorRevert(colonyNetwork.startTokenAuction(clny.address));
+    it("should burn tokens if auction is initialised for the CLNY token", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, "1000000000000000000");
+      const supplyBefore = await clny.totalSupply();
+      const balanceBefore = await clny.balanceOf(colonyNetwork.address);
+      await colonyNetwork.startTokenAuction(clny.address);
+      const supplyAfter = await clny.totalSupply();
+      const balanceAfter = await clny.balanceOf(colonyNetwork.address);
+      assert.equal(balanceAfter.toString(), "0");
+      assert.equal(supplyBefore.sub(balanceBefore).toString(), supplyAfter.toString());
+      // Can do it again straight away
+      await colonyNetwork.startTokenAuction(clny.address);
     });
 
     it("should fail with zero quantity", async () => {
@@ -315,13 +324,16 @@ contract("ColonyNetworkAuction", accounts => {
       assert.isTrue(finalized);
     });
 
-    it("The metacolony gets all CLNY sent to the auction in bids", async () => {
-      const balanceBefore = await clny.balanceOf(metaColony.address);
+    it("All CLNY sent to the auction in bids is burned", async () => {
+      const balanceBefore = await clny.balanceOf(tokenAuction.address);
+      const supplyBefore = await clny.totalSupply();
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
       assert.isFalse(receivedTotal.isZero());
-      const balanceAfter = await clny.balanceOf(metaColony.address);
-      assert.equal(balanceBefore.add(receivedTotal).toString(), balanceAfter.toString());
+      const balanceAfter = await clny.balanceOf(tokenAuction.address);
+      assert.equal(balanceAfter.toString(), "0");
+      const supplyAfter = await clny.totalSupply();
+      assert.equal(supplyBefore.sub(supplyAfter).toString(), balanceBefore.toString());
     });
 
     it("cannot bid after finalized", async () => {

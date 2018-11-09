@@ -8,6 +8,7 @@ import request from "async-request";
 import {
   forwardTime,
   checkErrorRevert,
+  checkErrorRevertEthers,
   web3GetTransactionReceipt,
   makeReputationKey,
   makeReputationValue,
@@ -16,6 +17,7 @@ import {
   submitAndForwardTimeToDispute
 } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
+import { WAD, MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -23,11 +25,13 @@ import MaliciousReputationMinerWrongUID from "../packages/reputation-miner/test/
 import MaliciousReputationMinerReuseUID from "../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
 import MaliciousReputationMinerWrongProofLogEntry from "../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry";
 import MaliciousReputationMinerWrongNewestReputation from "../packages/reputation-miner/test/MaliciousReputationMinerWrongNewestReputation";
+import MaliciousReputationMinerClaimNew from "../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
+import MaliciousReputationMinerUnsure from "../packages/reputation-miner/test/MaliciousReputationMinerUnsure";
 
 import ReputationMinerClient from "../packages/reputation-miner/ReputationMinerClient";
 
 const EtherRouter = artifacts.require("EtherRouter");
-const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
@@ -58,7 +62,7 @@ contract("ColonyNetworkMining", accounts => {
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
   });
@@ -82,13 +86,13 @@ contract("ColonyNetworkMining", accounts => {
     await badClient2.initialise(colonyNetwork.address);
     // Kick off reputation mining.
     // TODO: Tests for the first reputation cycle (when log empty) should be done in another file
-    await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+    await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
     // Advance one reputation cycle
     let addr = await colonyNetwork.getReputationMiningCycle(true);
     let repCycle = await IReputationMiningCycle.at(addr);
 
-    await forwardTime(3600, this);
+    await forwardTime(MINING_CYCLE_DURATION, this);
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
@@ -96,7 +100,7 @@ contract("ColonyNetworkMining", accounts => {
     addr = await colonyNetwork.getReputationMiningCycle(true);
     repCycle = await IReputationMiningCycle.at(addr);
 
-    await forwardTime(3600, this);
+    await forwardTime(MINING_CYCLE_DURATION, this);
     await repCycle.submitRootHash("0x00", 0, 10);
     await repCycle.confirmNewHash(0);
 
@@ -149,17 +153,22 @@ contract("ColonyNetworkMining", accounts => {
       // Binary search will error when it is complete.
       let noError = true;
       while (noError) {
-        let txHash = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-        let tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
+        let transactionObject;
+        transactionObject = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        let tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
         if (!tx.status) {
           noError = false;
         }
-        txHash = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-        tx = await web3GetTransactionReceipt(txHash); // eslint-disable-line no-await-in-loop
+        transactionObject = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+        tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
         if (!tx.status) {
           noError = false;
         }
       }
+
+      await client1.confirmBinarySearchResult();
+      await client2.confirmBinarySearchResult();
+
       // Respond to the challenge - usually, only one of these should work.
       // If both work, then the starting reputation is 0 and one client is lying
       // about whether the key already exists.
@@ -184,12 +193,12 @@ contract("ColonyNetworkMining", accounts => {
       // idx1.modn returns a javascript number, which is surprising!
       toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
     }
-    await repCycle.invalidateHash(round1.toString(), toInvalidateIdx.toString());
+    return repCycle.invalidateHash(round1.toString(), toInvalidateIdx.toString());
   }
 
   afterEach(async () => {
     // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
-    await forwardTime(3600, this);
+    await forwardTime(MINING_CYCLE_DURATION, this);
     const addr = await colonyNetwork.getReputationMiningCycle(true);
     const repCycle = await IReputationMiningCycle.at(addr);
     let nSubmittedHashes = await repCycle.getNSubmittedHashes();
@@ -265,10 +274,10 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should allow a new reputation hash to be submitted", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600);
+      await forwardTime(MINING_CYCLE_DURATION);
       const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       const submitterAddress = await repCycle.getSubmittedHashes("0x12345678", 10, 0);
@@ -276,11 +285,11 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should only allow the first submission after the window closes to be accepted", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(4000); // Well after the window has closed
+      await forwardTime(MINING_CYCLE_DURATION + 400); // Well after the window has closed
       const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await checkErrorRevert(
@@ -293,7 +302,7 @@ contract("ColonyNetworkMining", accounts => {
 
     it("should not allow someone to submit a new reputation hash if they are not staking", async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600);
+      await forwardTime(MINING_CYCLE_DURATION);
       const repCycle = await IReputationMiningCycle.at(addr);
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 0), "colony-reputation-mining-zero-entry-index-passed");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
@@ -301,9 +310,9 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow someone to withdraw their stake if they have submitted a hash this round", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       let userLock = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
@@ -312,14 +321,14 @@ contract("ColonyNetworkMining", accounts => {
         "colony-token-locking-hash-submitted"
       );
       userLock = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
-      assert(userLock[1].eq(new BN("1000000000000000000")));
+      assert(userLock[1].eq(DEFAULT_STAKE));
     });
 
     it("should allow a new reputation hash to be set if only one was submitted", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
@@ -334,7 +343,7 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow someone who is not ColonyNetwork to appendReputationUpdateLog", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -348,7 +357,7 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow someone who is not ColonyNetwork to reset the ReputationMiningCycle window", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -361,8 +370,8 @@ contract("ColonyNetworkMining", accounts => {
 
   describe("Elimination of submissions", () => {
     it("should allow a new reputation hash to be set if all but one submitted have been eliminated", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -382,9 +391,9 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
 
@@ -407,8 +416,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow a new reputation hash to be set if more than one was submitted and they have not been elimintated", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
@@ -424,8 +433,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow the last reputation hash to be eliminated", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
@@ -434,9 +443,9 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should fail if one tries to invalidate a hash that does not exist", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -444,7 +453,7 @@ contract("ColonyNetworkMining", accounts => {
 
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await accommodateChallengeAndInvalidateHash(this, badClient2);
-      await forwardTime(600, this);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await checkErrorRevert(repCycle.invalidateHash(1, 2), "colony-reputation-mining-dispute-id-not-in-range");
       // Cleanup after test
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2);
@@ -452,8 +461,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should fail if one tries to invalidate a hash that has completed more challenge rounds than its opponent", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -461,7 +470,7 @@ contract("ColonyNetworkMining", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await goodClient.submitJustificationRootHash();
-      await forwardTime(600, this);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
 
       await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-challenge-rounds-completed");
       // Cleanup after test
@@ -470,8 +479,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow a hash to be invalidated multiple times, which would move extra copies of its opponent to the next stage", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
@@ -482,26 +491,39 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-proposed-hash-empty");
     });
 
+    it("should not allow a hash to be invalidated and then moved on to the next stage by invalidating its now non-existent opponent", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-hash-already-progressed");
+    });
+
     it("should invalidate a hash and its partner if both have timed out", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([badClient, badClient2, goodClient], this);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
-      await forwardTime(600, this);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
       await accommodateChallengeAndInvalidateHash(this, goodClient);
       await repCycle.confirmNewHash(1);
     });
 
     it("should prevent invalidation of hashes before they have timed out on a challenge", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
 
@@ -512,7 +534,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.submitRootHash();
 
       await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-failed-to-respond-in-time");
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await checkErrorRevert(repCycle.confirmNewHash(1), "colony-reputation-mining-final-round-not-completed");
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
@@ -521,7 +543,7 @@ contract("ColonyNetworkMining", accounts => {
 
   describe("Submission eligibility", () => {
     it("should not allow someone to submit a new reputation hash if they are ineligible", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -531,7 +553,7 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow someone to submit a new reputation hash to the next ReputationMiningCycle", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -541,53 +563,53 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should allow someone to submit a new reputation hash if they are eligible inside the window", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, new BN("1000000000000000000"));
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
       // Find an entry that will be eligible in the last 60 seconds of the window
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
     });
 
     it("should not allow a user to back more than one hash in a single cycle", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
       const entryNumber2 = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x87654321");
       await checkErrorRevert(repCycle.submitRootHash("0x87654321", 10, entryNumber2), "colony-reputation-mining-submitting-different-hash");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
     });
 
     it("should not allow a user to back the same hash with different number of nodes in a single cycle", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
 
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 11, entryNumber), "colony-reputation-mining-submitting-different-nnodes");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
     });
 
     it("should not allow a user to submit the same entry for the same hash twice in a single cycle", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
 
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
@@ -595,15 +617,15 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, entryNumber), "colony-reputation-mining-submitting-same-entry-index");
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
     });
 
     it("should allow a user to back the same hash more than once in a same cycle with different entries, and be rewarded", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       const entryNumber2 = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", entryNumber + 1);
 
@@ -611,12 +633,12 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.submitRootHash("0x12345678", 10, entryNumber2);
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert(nSubmittedHashes.eq(new BN(1)));
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.confirmNewHash(0);
 
       // Check that they received the reward
       const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
-      assert.equal(balance1Updated.toString(), new BN("2").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
+      assert.equal(balance1Updated.toString(), new BN("2").mul(WAD).toString(), "Account was not rewarded properly");
 
       addr = await colonyNetwork.getReputationMiningCycle(false);
       repCycle = await IReputationMiningCycle.at(addr);
@@ -624,7 +646,7 @@ contract("ColonyNetworkMining", accounts => {
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
+      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -632,7 +654,7 @@ contract("ColonyNetworkMining", accounts => {
 
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
+      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -643,10 +665,10 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should only allow 12 entries to back a single hash in each cycle", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE.muln(2));
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3000, this);
+      await forwardTime(MINING_CYCLE_DURATION - 600, this);
       const repCycle = await IReputationMiningCycle.at(addr);
       let entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", 1);
       for (let i = 1; i <= 12; i += 1) {
@@ -657,19 +679,19 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should prevent submission of hashes with an invalid entry for the balance of a user", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 1000000000000), "colony-reputation-mining-stake-minimum-not-met");
+      await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, 1000000000000), "colony-reputation-mining-stake-minimum-not-met-for-index");
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x87654321");
       await repCycle.submitRootHash("0x87654321", 10, entryNumber, { from: OTHER_ACCOUNT });
     });
 
     it("should prevent submission of hashes with a valid entry, but invalid hash for the current time", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -679,15 +701,18 @@ contract("ColonyNetworkMining", accounts => {
 
   describe("Rewards and punishments of good and bad submissions", () => {
     it("should punish all stakers if they misbehave (and report a bad hash)", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], DEFAULT_STAKE);
+
+      let userLock0 = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
+      assert(userLock0[1].eq(DEFAULT_STAKE));
 
       let userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      assert(userLock1[1].eq(new BN("1000000000000000000")));
+      assert(userLock1[1].eq(DEFAULT_STAKE));
 
       let userLock2 = await tokenLocking.getUserLock(clny.address, accounts[2]);
-      assert(userLock2[1].eq(new BN("1000000000000000000")));
+      assert(userLock2[1].eq(DEFAULT_STAKE));
 
       // We want badclient2 to submit the same hash as badclient for this test.
       badClient2 = new MaliciousReputationMinerExtraRep(
@@ -698,36 +723,40 @@ contract("ColonyNetworkMining", accounts => {
       badClient2.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
-
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+
+      userLock0 = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
+      assert.equal(userLock0[1].toString(), DEFAULT_STAKE.add(MIN_STAKE.muln(2)).toString(), "Account was not rewarded properly");
+
       userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      assert.equal(userLock1[1].toString(), "0", "Account was not punished properly");
+      assert.equal(userLock1[1].toString(), DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
+
       userLock2 = await tokenLocking.getUserLock(clny.address, accounts[2]);
-      assert.equal(userLock2[1].toString(), "0", "Account was not punished properly");
+      assert.equal(userLock2[1].toString(), DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[2], DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
 
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       const entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678");
       const entryNumber2 = await getValidEntryNumber(colonyNetwork, OTHER_ACCOUNT, "0x12345678");
 
       await repCycle.submitRootHash("0x12345678", 10, entryNumber);
       await repCycle.submitRootHash("0x12345678", 10, entryNumber2, { from: OTHER_ACCOUNT });
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.confirmNewHash(0);
 
       // Check that they have had their balance increase
       const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
-      assert.equal(balance1Updated.toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
+      assert.equal(balance1Updated.toString(), new BN("1").mul(WAD).toString(), "Account was not rewarded properly");
       const balance2Updated = await clny.balanceOf(OTHER_ACCOUNT);
-      assert.equal(balance2Updated.toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString(), "Account was not rewarded properly");
+      assert.equal(balance2Updated.toString(), new BN("1").mul(WAD).toString(), "Account was not rewarded properly");
 
       addr = await colonyNetwork.getReputationMiningCycle(false);
       repCycle = await IReputationMiningCycle.at(addr);
@@ -735,7 +764,7 @@ contract("ColonyNetworkMining", accounts => {
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryMiner[0], MAIN_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
+      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -743,7 +772,7 @@ contract("ColonyNetworkMining", accounts => {
 
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(1);
       assert.equal(repLogEntryMiner[0], OTHER_ACCOUNT);
-      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(new BN("10").pow(new BN("18"))).toString());
+      assert.equal(repLogEntryMiner[1].toString(), new BN("1").mul(WAD).toString());
       assert.equal(repLogEntryMiner[2].toString(), "3");
       assert.equal(repLogEntryMiner[3], metaColony.address);
       assert.equal(repLogEntryMiner[4].toString(), "4");
@@ -764,7 +793,7 @@ contract("ColonyNetworkMining", accounts => {
 
     it('should not allow "startNextCycle" to be called if a cycle is in progress', async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       assert(parseInt(addr, 16) !== 0);
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-still-active");
     });
@@ -788,21 +817,21 @@ contract("ColonyNetworkMining", accounts => {
 
   describe("Types of disagreement", () => {
     it("in the event of a disagreement, allows a user to submit a JRH with proofs for a submission", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -829,7 +858,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.submitJustificationRootHash();
 
       // Check that we can't re-submit a JRH
-      await checkErrorRevert(goodClient.submitJustificationRootHash());
+      await checkErrorRevertEthers(goodClient.submitJustificationRootHash(), "colony-reputation-mining-hash-already-submitted");
 
       const submissionAfterJRHSubmitted = await repCycle.getDisputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
@@ -844,15 +873,15 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should cope if the wrong reputation transition is the first transition", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await goodClient.addLogContentsToReputationTree();
       await goodClient.submitRootHash();
 
@@ -884,20 +913,20 @@ contract("ColonyNetworkMining", accounts => {
     // correctly. Unsure if I should force them to be run every time.
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19].forEach(async badIndex => {
       it.skip(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
-        await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-        await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+        await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+        await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
         // Advance to next cycle
         let addr = await colonyNetwork.getReputationMiningCycle(true);
         let repCycle = await IReputationMiningCycle.at(addr);
-        await forwardTime(3600, this);
+        await forwardTime(MINING_CYCLE_DURATION, this);
         await repCycle.submitRootHash("0x12345678", 10, 10);
         await repCycle.confirmNewHash(0);
 
-        await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+        await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
         addr = await colonyNetwork.getReputationMiningCycle(true);
         repCycle = await IReputationMiningCycle.at(addr);
-        await forwardTime(3600, this);
+        await forwardTime(MINING_CYCLE_DURATION, this);
 
         await goodClient.addLogContentsToReputationTree();
         await goodClient.submitRootHash();
@@ -928,21 +957,21 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("in the event of a disagreement, allows a binary search between opponents to take place to find their first disagreement", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -984,20 +1013,20 @@ contract("ColonyNetworkMining", accounts => {
       let badSubmission = await repCycle.getDisputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 1); // Challenge steps completed
       assert.equal(goodSubmission[8].toNumber(), 0); // Lower bound for binary search
-      assert.equal(goodSubmission[9].toNumber(), 29); // Upper bound for binary search
+      assert.equal(goodSubmission[9].toNumber(), 28); // Upper bound for binary search
       assert.equal(badSubmission[3].toNumber(), 1);
       assert.equal(badSubmission[8].toNumber(), 0);
-      assert.equal(badSubmission[9].toNumber(), 29);
+      assert.equal(badSubmission[9].toNumber(), 28);
       await goodClient.respondToBinarySearchForChallenge();
 
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
       badSubmission = await repCycle.getDisputeRounds(0, 1);
       assert.equal(goodSubmission[3].toNumber(), 2);
       assert.equal(goodSubmission[8].toNumber(), 0);
-      assert.equal(goodSubmission[9].toNumber(), 29);
+      assert.equal(goodSubmission[9].toNumber(), 28);
       assert.equal(badSubmission[3].toNumber(), 1);
       assert.equal(badSubmission[8].toNumber(), 0);
-      assert.equal(badSubmission[9].toNumber(), 29);
+      assert.equal(badSubmission[9].toNumber(), 28);
 
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
@@ -1043,9 +1072,12 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(badSubmission[8].toNumber(), 13);
       assert.equal(badSubmission[9].toNumber(), 13);
 
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
       // TODO: Split off in to  another test here, but can't be bothered to refactor right now.
       await goodClient.respondToChallenge();
-      await checkErrorRevert(badClient.respondToChallenge());
+      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-invalid-newest-reputation-proof");
 
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
@@ -1055,26 +1087,26 @@ contract("ColonyNetworkMining", accounts => {
       // it's two, because we proved the starting reputation was in the starting reputation state, rather than claiming
       // it was a new reputation not in the tree with value 0.
 
-      await forwardTime(600, this);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
     });
 
     it("if an existing reputation's uniqueID is changed, that disagreement should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -1117,8 +1149,11 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
       await goodClient.respondToChallenge();
-      await checkErrorRevert(badClient.respondToChallenge());
+      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-uid-changed-for-existing-reputation");
 
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
@@ -1128,26 +1163,38 @@ contract("ColonyNetworkMining", accounts => {
       // it's two, because we proved the starting reputation was in the starting reputation state, rather than claiming
       // it was a new reputation not in the tree with value 0.
 
-      await forwardTime(600, this);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
     });
 
-    it("if a new reputation's uniqueID is wrong, that disagreement should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+    it.skip("if a new reputation's uniqueID is wrong, that disagreement should be handled correctly", async () => {
+      // I think this test is now obsoleted. If a new reputation's UID is wrong:
+      // 1. It could be too small. But then either
+      //    a) If we provide the right previousNewRepuationID for the new UID we're claiming, it will be too small
+      //       compared to nNodes in the lastAgree state in the JRHs, and respondToChallenge will fail with
+      //       colony-reputation-mining-proved-uid-inconsistent
+      //    b) If we supply the right previousNewReputationID when compared to lastAgreeState, then respondToChallenge will
+      //       fail with colony-reputation-mining-new-uid-incorrect
+      // 2. It could be too large. We can't provide the right previousNewRepuationID for the new UID we're claiming, so only
+      //    the equivalent of b) above is possible
+      // This doesn't quite hold if the two submissions are both malicious, and agreed on an invliad state for the lastAgreeState.
+      // However, only one will still be able to be 'right', and so the dispute resoultion will continue as intended with at least
+      // one of those submissions being eliminated.
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -1190,6 +1237,9 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
       await goodClient.respondToChallenge();
       await badClient.respondToChallenge();
 
@@ -1200,7 +1250,7 @@ contract("ColonyNetworkMining", accounts => {
       // Both sides have completed the same amount of challenges, but one has proved that a large number already exists
       // than the other, so when we call invalidate hash, only one will be eliminated.
 
-      await forwardTime(600, this);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       // Check that we can't invalidate the one that proved a higher reputation already existed
       await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-reputation-uids-proven");
 
@@ -1210,9 +1260,170 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(confirmedHash, righthash);
     });
 
+    it("If respondToChallenge is attempted to be called multiple times, it should fail", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, 10);
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for three task completions (manager, worker (skill and domain), evaluator);
+      // That's thirteen in total.
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nInactiveLogEntries.toNumber(), 13);
+
+      badClient = new MaliciousReputationMinerClaimNew(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        20
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await goodClient.respondToChallenge();
+      await badClient.respondToChallenge();
+      // These calls should throw
+      await badClient.respondToChallenge();
+      await badClient.respondToChallenge();
+
+      // Check
+      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
+      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
+
+      assert.equal(goodSubmissionAfterResponseToChallenge[3].sub(badSubmissionAfterResponseToChallenge[3]).toNumber(), 1);
+      // Both sides have completed the same amount of challenges, but one has proved that the reputation existed previously,
+      // whereas the other has not, and any respondToChallenges after the first didn't work.
+
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      // Check that we can't invalidate the good client submission
+      await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-challenge-rounds-completed");
+
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+      const confirmedHash = await colonyNetwork.getReputationRootHash();
+      assert.equal(confirmedHash, righthash);
+    });
+
+    it("if a log entry is claimed to make a new update, but shouldn't, that disagreement should be handled correctly", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x12345678", 10, 10);
+      await repCycle.confirmNewHash(0);
+
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, 10);
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for three task completions (manager, worker (skill and domain), evaluator);
+      // That's thirteen in total.
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nInactiveLogEntries.toNumber(), 13);
+
+      badClient = new MaliciousReputationMinerUnsure(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        20,
+        0xffff
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await goodClient.respondToChallenge();
+      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-proved-uid-inconsistent");
+
+      // Check badclient respondToChallenge failed
+      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
+      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
+      assert.equal(goodSubmissionAfterResponseToChallenge[3].sub(badSubmissionAfterResponseToChallenge[3]).toNumber(), 2);
+
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+      const confirmedHash = await colonyNetwork.getReputationRootHash();
+      assert.equal(confirmedHash, righthash);
+    });
+
     it("if a new reputation's UID is not proved right because a too-old previous ID is proved, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const taskId = await setupRatedTask({
         colonyNetwork,
@@ -1227,7 +1438,7 @@ contract("ColonyNetworkMining", accounts => {
       await metaColony.finalizeTask(taskId);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
@@ -1270,26 +1481,29 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
-      await checkErrorRevert(badClient2.respondToChallenge(), "colony-reputation-mining-less-challenge-rounds-completed");
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-new-uid-incorrect");
       // Cleanup
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
     });
 
     it(`if a reputation decay calculation is wrong, it should be handled correctly`, async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -1331,11 +1545,11 @@ contract("ColonyNetworkMining", accounts => {
       wronghash = await badClient.getRootHash();
       assert(righthash === wronghash, "Hashes from clients are not equal - not starting from the same state");
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
@@ -1350,8 +1564,8 @@ contract("ColonyNetworkMining", accounts => {
 
   describe("Misbehaviour during dispute resolution", () => {
     it("should prevent a user from submitting a JRH they can't prove is correct", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -1390,8 +1604,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should correctly check the proof of the previously newest reputation, if necessary", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const taskId = await setupRatedTask({
         colonyNetwork,
@@ -1407,7 +1621,7 @@ contract("ColonyNetworkMining", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -1438,6 +1652,9 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
 
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
@@ -1486,8 +1703,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should correctly check the UID of the reputation if the reputation update being disputed is a decay", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const taskId = await setupRatedTask({
         colonyNetwork,
@@ -1503,7 +1720,7 @@ contract("ColonyNetworkMining", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -1516,7 +1733,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await goodClient.submitRootHash();
       await repCycle.confirmNewHash(0);
 
@@ -1542,6 +1759,9 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
 
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
@@ -1596,8 +1816,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should correctly require the proof of the reputation under dispute before and after the change in question", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const taskId = await setupRatedTask({
         colonyNetwork,
@@ -1612,7 +1832,7 @@ contract("ColonyNetworkMining", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -1643,6 +1863,9 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
 
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
@@ -1728,7 +1951,7 @@ contract("ColonyNetworkMining", accounts => {
       assert(accounts.length >= 8, "Not enough accounts for test to run");
       const accountsForTest = accounts.slice(0, 8);
       for (let i = 0; i < 8; i += 1) {
-        await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], "1000000000000000000"); // eslint-disable-line no-await-in-loop
+        await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], DEFAULT_STAKE); // eslint-disable-line no-await-in-loop
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
         // right taskId, so if they're all created at once it messes up.
       }
@@ -1736,7 +1959,7 @@ contract("ColonyNetworkMining", accounts => {
       // We need to complete the current reputation cycle so that all the required log entries are present
       let reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -1756,7 +1979,7 @@ contract("ColonyNetworkMining", accounts => {
 
       reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       for (let i = 0; i < clients.length; i += 1) {
         // Doing these individually rather than in a big loop because with many instances of the EVM
         // churning away at once, I *think* it's slower.
@@ -1765,7 +1988,7 @@ contract("ColonyNetworkMining", accounts => {
         await clients[i].submitJustificationRootHash(); // eslint-disable-line no-await-in-loop
         console.log(`Client ${i} of ${clients.length - 1} submitted JRH`); // eslint-disable-line no-console
       }
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       await accommodateChallengeAndInvalidateHash(this, clients[0], clients[1]);
       await accommodateChallengeAndInvalidateHash(this, clients[2], clients[3]);
@@ -1780,8 +2003,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should only allow the last hash standing to be confirmed", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -1796,31 +2019,9 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("should fail to respondToBinarySearchForChallenge if not consistent with JRH", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-
-      const addr = await colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = await IReputationMiningCycle.at(addr);
-
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      await goodClient.submitJustificationRootHash();
-      await badClient.submitJustificationRootHash();
-
-      await checkErrorRevert(
-        repCycle.respondToBinarySearchForChallenge(0, 0, "0x00", 0x0, []),
-        "colony-reputation-mining-invalid-binary-search-response"
-      );
-
-      // Cleanup
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
-      await repCycle.confirmNewHash(1);
-    });
-
-    it("should fail to respondToChallenge if any part of the key is wrong", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+    it("incorrectly confirming a binary search result should fail", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -1845,6 +2046,187 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
+
+      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
+      const submission = await repCycle.getDisputeRounds(round, index);
+      const targetNode = submission[8];
+      const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
+
+      const [branchMask, siblings] = await goodClient.justificationTree.getProof(targetNodeKey);
+      await checkErrorRevert(
+        repCycle.confirmBinarySearchResult(round, index, "0x00", branchMask, siblings, {
+          gasLimit: 1000000
+        }),
+        "colony-reputation-mining-invalid-binary-search-confirmation"
+      );
+
+      // Cleanup
+      await goodClient.confirmBinarySearchResult();
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should not allow stages to be skipped even if the number of updates is a power of 2", async () => {
+      // Note that our jrhNNodes can never be a power of two, because we always have an even number of updates (because every reputation change
+      // has a user-specific an a colony-specific effect, and we always have one extra state in the Justification Tree because we include the last
+      // accepted hash as the first node. jrhNNodes is always odd, therefore, and can never be a power of two.
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        5,
+        0xfffffffff
+      );
+
+      await badClient.initialise(colonyNetwork.address);
+
+      const taskId = await setupRatedTask( // eslint-disable-line
+        {
+          colonyNetwork,
+          colony: metaColony,
+          colonyToken: clny,
+          workerRating: 1,
+          managerPayout: 1,
+          evaluatorPayout: 1,
+          workerPayout: 1
+        }
+      );
+      await metaColony.finalizeTask(taskId);
+      await advanceTimeSubmitAndConfirmHash(this);
+      await advanceTimeSubmitAndConfirmHash(this);
+      let addr = await colonyNetwork.getReputationMiningCycle(false);
+      const inactiveRepCycle = await IReputationMiningCycle.at(addr);
+
+      let powerTwoEntries = false;
+      while (!powerTwoEntries) {
+        const taskId = await setupRatedTask( // eslint-disable-line
+          {
+            colonyNetwork,
+            colony: metaColony,
+            colonyToken: clny,
+            workerRating: 1,
+            managerPayout: 1,
+            evaluatorPayout: 1,
+            workerPayout: 1
+          }
+        );
+        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
+        const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength(); // eslint-disable-line no-await-in-loop
+        const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1); // eslint-disable-line no-await-in-loop
+        const currentHashNNodes = await colonyNetwork.getReputationRootHashNNodes(); // eslint-disable-line no-await-in-loop
+        const nUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(currentHashNNodes);
+        // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
+        // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
+        if (parseInt(nUpdates.toString(2).slice(1), 10) === 0) {
+          powerTwoEntries = true;
+        }
+      }
+      await advanceTimeSubmitAndConfirmHash(this);
+      await goodClient.resetDB();
+      await goodClient.saveCurrentState();
+      const savedHash = await goodClient.reputationTree.getRootHash();
+
+      await badClient.loadState(savedHash);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+
+      // We need one more response to binary search from each side. Check we can't confirm early
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-incomplete");
+      // Check we can't respond to challenge before we've completed the binary search
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-closed");
+      await goodClient.respondToBinarySearchForChallenge();
+
+      // Check we can't confirm even if we're done, but our opponent isn't
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-incomplete");
+      await badClient.respondToBinarySearchForChallenge();
+
+      // Check we can't respond to challenge before confirming result
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
+
+      // Now we can confirm
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      // Check we can't continue confirming
+      await checkErrorRevertEthers(goodClient.respondToBinarySearchForChallenge(), "colony-reputation-mining-challenge-not-active");
+      await goodClient.respondToChallenge();
+
+      // Check we can't respond again
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-already-responded");
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should fail to respondToBinarySearchForChallenge if not consistent with JRH", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await checkErrorRevert(
+        repCycle.respondToBinarySearchForChallenge(0, 0, "0x00", 0x0, []),
+        "colony-reputation-mining-invalid-binary-search-response"
+      );
+
+      // Cleanup
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should fail to respondToChallenge if any part of the key is wrong", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        3,
+        0xffffffffffff
+      );
+      await badClient.initialise(colonyNetwork.address);
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      const repCycle = await IReputationMiningCycle.at(addr);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await goodClient.submitJustificationRootHash();
+      await badClient.submitJustificationRootHash();
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
 
       const logEntry = await repCycle.getReputationUpdateLogEntry(0);
 
@@ -1878,14 +2260,14 @@ contract("ColonyNetworkMining", accounts => {
         "colony-reputation-mining-user-address-mismatch"
       );
       await goodClient.respondToChallenge();
-      await forwardTime(600, this);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
 
     it("should fail to respondToChallenge if binary search for challenge is not complete yet", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -1907,15 +2289,18 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
 
-      await forwardTime(600, this);
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await goodClient.respondToChallenge();
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
 
     it("should refuse to confirmNewHash while the minimum submission window has not elapsed", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -1923,12 +2308,12 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
 
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await goodClient.submitRootHash();
       await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-submission-window-still-open");
 
       // Cleanup
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.confirmNewHash(0);
     });
 
@@ -1936,12 +2321,12 @@ contract("ColonyNetworkMining", accounts => {
       async args => {
         it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
           is too ${args.word}`, async () => {
-          await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-          await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+          await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+          await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
           let addr = await colonyNetwork.getReputationMiningCycle(true);
           let repCycle = await IReputationMiningCycle.at(addr);
-          await forwardTime(3600, this);
+          await forwardTime(MINING_CYCLE_DURATION, this);
 
           await repCycle.submitRootHash("0x00", 0, 10);
           await repCycle.confirmNewHash(0);
@@ -1989,11 +2374,24 @@ contract("ColonyNetworkMining", accounts => {
 
           await badClient2.respondToBinarySearchForChallenge();
           await badClient.respondToBinarySearchForChallenge();
-          await checkErrorRevert(badClient2.respondToChallenge());
+
+          await goodClient.confirmBinarySearchResult();
+          await badClient.confirmBinarySearchResult();
+          if (args.word === "high") {
+            await checkErrorRevertEthers(
+              badClient2.respondToChallenge(),
+              "colony-reputation-mining-update-number-part-of-previous-log-entry-updates"
+            );
+          } else {
+            await checkErrorRevertEthers(
+              badClient2.respondToChallenge(),
+              "colony-reputation-mining-update-number-part-of-following-log-entry-updates"
+            );
+          }
 
           // Cleanup
           await goodClient.respondToChallenge();
-          await forwardTime(600, this);
+          await forwardTime(MINING_CYCLE_DURATION / 6, this);
           await repCycle.invalidateHash(0, 0);
           await repCycle.confirmNewHash(1);
         });
@@ -2007,7 +2405,7 @@ contract("ColonyNetworkMining", accounts => {
       const nClients = Math.min(accounts.length, 7);
       // TODO: This test probably needs to be written more carefully to make sure all possible edge cases are dealt with
       for (let i = 0; i < nClients; i += 1) {
-        await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], "1000000000000000000"); // eslint-disable-line no-await-in-loop
+        await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], DEFAULT_STAKE); // eslint-disable-line no-await-in-loop
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
         // right taskId, so if they're all created at once it messes up.
       }
@@ -2015,7 +2413,7 @@ contract("ColonyNetworkMining", accounts => {
       // We need to complete the current reputation cycle so that all the required log entries are present
       let reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2035,7 +2433,7 @@ contract("ColonyNetworkMining", accounts => {
 
       reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       for (let i = 0; i < clients.length; i += 1) {
         // Doing these individually rather than in a big loop because with many instances of the EVM
         // churning away at once, I *think* it's slower.
@@ -2043,7 +2441,7 @@ contract("ColonyNetworkMining", accounts => {
         await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
         console.log(`Client ${i} of ${clients.length - 1} submitted JRH`); // eslint-disable-line no-console
       }
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       let nRemainingHashes = nSubmittedHashes.toNumber();
@@ -2075,7 +2473,7 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should be able to process a large reputation update log", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
         const taskId = await setupRatedTask( // eslint-disable-line
@@ -2095,21 +2493,21 @@ contract("ColonyNetworkMining", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
       // Do it again
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
     });
 
     it("should allow submitted hashes to go through multiple responses to a challenge", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
@@ -2128,15 +2526,18 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
 
-      await forwardTime(600, this);
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await goodClient.respondToChallenge();
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
 
     it("should cope if someone's existing reputation would go negative, setting it to zero instead", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         31,
@@ -2158,7 +2559,7 @@ contract("ColonyNetworkMining", accounts => {
       });
       await metaColony.finalizeTask(taskId);
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2175,8 +2576,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should cope if someone's new reputation would be negative, setting it to zero instead", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         31,
@@ -2199,7 +2600,7 @@ contract("ColonyNetworkMining", accounts => {
       });
       await metaColony.finalizeTask(taskId);
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2216,8 +2617,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should cope if someone's reputation would be overflow, setting it to the maximum value instead", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         29,
@@ -2250,7 +2651,7 @@ contract("ColonyNetworkMining", accounts => {
       });
       await metaColony.finalizeTask(taskId);
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash(rootHash, 2, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2267,8 +2668,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should calculate reputation decays differently if they are large", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         -1,
@@ -2289,7 +2690,7 @@ contract("ColonyNetworkMining", accounts => {
 
       const rootHash = await goodClient.getRootHash();
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash(rootHash, 2, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2309,14 +2710,14 @@ contract("ColonyNetworkMining", accounts => {
       const largeCalculationResult = new BN("2")
         .pow(new BN("256"))
         .subn(2)
-        .div(new BN("1000000000000000"))
-        .mul(new BN("999679150010888"));
+        .div(DECAY_RATE.DENOMINATOR)
+        .mul(DECAY_RATE.NUMERATOR);
 
       const smallCalculationResult = new BN("2")
         .pow(new BN("256"))
         .subn(2)
-        .mul(new BN("999679150010888"))
-        .div(new BN("1000000000000000"));
+        .mul(DECAY_RATE.NUMERATOR)
+        .div(DECAY_RATE.DENOMINATOR);
 
       const decayKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
       assert.notEqual(smallCalculationResult.toString(16, 64), goodClient.reputations[decayKey].slice(2, 66));
@@ -2324,10 +2725,10 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should keep reputation updates that occur during one update window for the next window", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await fundColonyWithTokens(metaColony, clny, "350000000000000000000");
@@ -2354,20 +2755,20 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("The reputation mining client should insert reputation updates from the log", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokens(colonyNetwork, accounts[2], "1000000000000000000");
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2408,7 +2809,7 @@ contract("ColonyNetworkMining", accounts => {
       // These should be:
       // 1. Colony-wide total reputation for metacolony's root skill
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL);
-      value = makeReputationValue(7000000000000000000, 1);
+      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(WAD), 1);
       assert.equal(client.reputations[key], value);
 
       // 2. Colony-wide total reputation for mining skill
@@ -2418,7 +2819,7 @@ contract("ColonyNetworkMining", accounts => {
 
       // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL, MAIN_ACCOUNT);
-      value = makeReputationValue(7000000000000000000, 3);
+      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(WAD), 3);
       assert.equal(client.reputations[key], value);
 
       // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputation hash
@@ -2455,7 +2856,7 @@ contract("ColonyNetworkMining", accounts => {
       // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
       // Make sure there's funding for the task
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       // Do the task
       const taskId = await setupRatedTask({
@@ -2474,7 +2875,7 @@ contract("ColonyNetworkMining", accounts => {
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2492,9 +2893,9 @@ contract("ColonyNetworkMining", accounts => {
       const MINING_SKILL = 3;
 
       const reputationProps = [
-        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: 3000003000000000000 },
+        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: DEFAULT_STAKE.muln(2).add(new BN("1000003000000000000")) },
         { id: 2, skill: MINING_SKILL, account: undefined, value: 1000000000000000000 },
-        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: 3000001000000000000 },
+        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: DEFAULT_STAKE.muln(2).add(new BN("1000001000000000000")) },
         { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: 1000000000000000000 },
         { id: 5, skill: META_ROOT_SKILL, account: accounts[2], value: 1000000000000 },
         { id: 6, skill: 1, account: undefined, value: 1000000000000 },
@@ -2540,8 +2941,8 @@ contract("ColonyNetworkMining", accounts => {
       // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
       // Do some tasks
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
@@ -2559,7 +2960,7 @@ contract("ColonyNetworkMining", accounts => {
       // Get current cycle & advance to next
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 0, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2587,15 +2988,15 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("Should allow a user to prove their reputation", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await repCycle.confirmNewHash(0);
-      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await forwardTime(3600, this);
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x00", 10, 10);
@@ -2606,7 +3007,7 @@ contract("ColonyNetworkMining", accounts => {
       await client.addLogContentsToReputationTree();
       const newRootHash = await client.getRootHash();
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash(newRootHash, 10, 10);
@@ -2623,8 +3024,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("Should correctly decay a reputation to zero, and then 'decay' to zero in subsequent cycles", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         1,
@@ -2645,7 +3046,7 @@ contract("ColonyNetworkMining", accounts => {
 
       const rootHash = await goodClient.getRootHash();
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash(rootHash, 2, 10);
       await repCycle.confirmNewHash(0);
 
@@ -2668,7 +3069,7 @@ contract("ColonyNetworkMining", accounts => {
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       // Check it decayed from 1 to 0.
       assert.equal(
@@ -2710,7 +3111,7 @@ contract("ColonyNetworkMining", accounts => {
   });
 
   async function advanceTimeSubmitAndConfirmHash(test) {
-    await forwardTime(3600, test);
+    await forwardTime(MINING_CYCLE_DURATION, test);
     await goodClient.addLogContentsToReputationTree();
     await goodClient.submitRootHash();
     const addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -2726,8 +3127,8 @@ contract("ColonyNetworkMining", accounts => {
       const startingBlock = await currentBlock();
       startingBlockNumber = startingBlock.number;
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       goodClient2 = new ReputationMiner({
         loader: contractLoader,
         minerAddress: OTHER_ACCOUNT,
@@ -2781,7 +3182,7 @@ contract("ColonyNetworkMining", accounts => {
 
     // Because these tests rely on a custom, teeny-tiny-hacked version of ganache-cli, they don't work with solidity-coverage.
     // But that's okay, because these tests don't test anything meaningful in the contracts.
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("The client should be able to correctly sync to the current state from scratch just from on-chain interactions", async () => {
           // Now sync goodClient2
@@ -2793,7 +3194,7 @@ contract("ColonyNetworkMining", accounts => {
           assert.equal(client1Hash, client2Hash);
         });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("The client should be able to correctly sync to the current state from an old, correct state", async () => {
           // Bring client up to date
@@ -2823,7 +3224,7 @@ contract("ColonyNetworkMining", accounts => {
           await forwardTime(1, this);
           await forwardTime(1, this);
           await forwardTime(1, this);
-          await forwardTime(3600, this);
+          await forwardTime(MINING_CYCLE_DURATION, this);
 
           await advanceTimeSubmitAndConfirmHash(this);
 
@@ -2837,7 +3238,7 @@ contract("ColonyNetworkMining", accounts => {
           assert.equal(client1Hash, client2Hash);
         });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("The client should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
           // Save to the database
@@ -2907,7 +3308,7 @@ contract("ColonyNetworkMining", accounts => {
   describe("Reputation Mining Client", () => {
     let client;
     beforeEach(async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, "1000000000000000000");
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await advanceTimeSubmitAndConfirmHash();
       await goodClient.saveCurrentState();
 
@@ -2969,7 +3370,7 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(value, oracleProofObject.value);
     });
 
-    process.env.SOLIDITY_COVERAGE // eslint-disable-line no-unused-expressions
+    process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("should correctly respond to a request for an invalid key in a valid past reputation state", async () => {
           const rootHash = await goodClient.getRootHash();

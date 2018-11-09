@@ -6,8 +6,18 @@ import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING } from "../helpers/constants";
+import {
+  MANAGER_ROLE,
+  EVALUATOR_ROLE,
+  WORKER_ROLE,
+  WORKER_PAYOUT,
+  INITIAL_FUNDING,
+  DEFAULT_STAKE,
+  MINING_CYCLE_DURATION
+} from "../helpers/constants";
+
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlockTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
+
 import {
   fundColonyWithTokens,
   setupRatedTask,
@@ -24,6 +34,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const ITokenLocking = artifacts.require("ITokenLocking");
@@ -62,6 +73,7 @@ contract("Colony Funding", accounts => {
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
+    await colony.setRewardInverse(100);
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
   });
@@ -85,14 +97,14 @@ contract("Colony Funding", accounts => {
       assert.equal(colonyRewardPotBalance.toNumber(), 1);
     });
 
-    it("should not put its own tokens in to the reward pot", async () => {
+    it("should syphon off own tokens in to the reward pot", async () => {
       await fundColonyWithTokens(colony, token, 100);
       const colonyRewardPotBalance = await colony.getPotBalance(0, token.address);
       const colonyPotBalance = await colony.getPotBalance(1, token.address);
       const colonyTokenBalance = await token.balanceOf(colony.address);
       assert.equal(colonyTokenBalance.toNumber(), 100);
-      assert.equal(colonyPotBalance.toNumber(), 100);
-      assert.equal(colonyRewardPotBalance.toNumber(), 0);
+      assert.equal(colonyPotBalance.toNumber(), 99);
+      assert.equal(colonyRewardPotBalance.toNumber(), 1);
     });
 
     it("should let tokens be moved between pots", async () => {
@@ -488,7 +500,7 @@ contract("Colony Funding", accounts => {
       let colonyEtherBalance = await web3GetBalance(colony.address);
       let colonyRewardBalance = await colony.getPotBalance(0, 0x0);
       assert.equal(colonyEtherBalance, 100);
-      expect(colonyPotBalance).to.be.zero; // eslint-disable-line no-unused-expressions
+      expect(colonyPotBalance).to.be.zero;
       await colony.claimColonyFunds(0x0);
       colonyPotBalance = await colony.getPotBalance(1, 0x0);
       colonyEtherBalance = await web3GetBalance(colony.address);
@@ -656,12 +668,12 @@ contract("Colony Funding", accounts => {
       ];
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
 
       miningClient = new ReputationMiner({
         loader: contractLoader,
@@ -671,7 +683,7 @@ contract("Colony Funding", accounts => {
       });
       await miningClient.initialise(colonyNetwork.address);
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -709,13 +721,14 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
       const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000");
       await miningClient.insert(globalKey, toBN(10), 0);
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       const addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -737,7 +750,7 @@ contract("Colony Funding", accounts => {
       await fundColonyWithTokens(colony, token, funding.toString());
 
       const metaColonyAddress = await colonyNetwork.getMetaColony();
-      const metaColony = await IColony.at(metaColonyAddress);
+      const metaColony = await IMetaColony.at(metaColonyAddress);
 
       await metaColony.addGlobalSkill(1);
       const id = await colonyNetwork.getChildSkillId(1, 0);
@@ -749,7 +762,7 @@ contract("Colony Funding", accounts => {
       await colony.finalizeTask(taskId);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -757,7 +770,7 @@ contract("Colony Funding", accounts => {
       await repCycle.confirmNewHash(0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -775,7 +788,7 @@ contract("Colony Funding", accounts => {
       await colony.bootstrapColony([userAddress2], [userReputation.toString()]);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -783,7 +796,7 @@ contract("Colony Funding", accounts => {
       await repCycle.confirmNewHash(0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -843,7 +856,7 @@ contract("Colony Funding", accounts => {
       });
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -851,7 +864,7 @@ contract("Colony Funding", accounts => {
       await repCycle.confirmNewHash(0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -883,6 +896,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
 
       await newToken.setOwner(newColony.address);
       await newColony.mintTokens(userTokens.toString());
@@ -892,7 +906,7 @@ contract("Colony Funding", accounts => {
       });
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -900,7 +914,7 @@ contract("Colony Funding", accounts => {
       await repCycle.confirmNewHash(0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -951,6 +965,7 @@ contract("Colony Funding", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
+      await newColony.setRewardInverse(100);
       await newToken.mint(10);
       await newToken.transfer(userAddress1, 10);
 
@@ -960,7 +975,7 @@ contract("Colony Funding", accounts => {
       const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000");
       await miningClient.insert(globalKey, toBN(0), 0);
 
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       const addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -985,7 +1000,7 @@ contract("Colony Funding", accounts => {
       });
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -993,7 +1008,7 @@ contract("Colony Funding", accounts => {
       await repCycle.confirmNewHash(0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1051,7 +1066,7 @@ contract("Colony Funding", accounts => {
       await miningClient.insert(userKey, toBN(0), 0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1059,7 +1074,7 @@ contract("Colony Funding", accounts => {
       await repCycle.confirmNewHash(0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1272,10 +1287,12 @@ contract("Colony Funding", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
+      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
+      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -1298,7 +1315,7 @@ contract("Colony Funding", accounts => {
 
       // Submit current hash in active reputation mining cycle
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1307,7 +1324,7 @@ contract("Colony Funding", accounts => {
 
       // Reputation added while bootstrapping the colony is now in active reputation mining cycle, so submit the hash
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1384,8 +1401,14 @@ contract("Colony Funding", accounts => {
       const rewardPotBalanceAfterClaimInPayout1 = await colony1.getPotBalance(0, otherToken.address);
       const rewardPotBalanceAfterClaimInPayout2 = await colony2.getPotBalance(0, otherToken.address);
 
-      const claimInPayout1 = amountAvailableForPayout1.sub(rewardPotBalanceAfterClaimInPayout1);
-      const claimInPayout2 = amountAvailableForPayout2.sub(rewardPotBalanceAfterClaimInPayout2);
+      const feeInverse = await colonyNetwork.getFeeInverse();
+
+      let claimInPayout1 = amountAvailableForPayout1.sub(rewardPotBalanceAfterClaimInPayout1);
+      const fee1 = claimInPayout1.div(feeInverse).addn(1);
+      claimInPayout1 = claimInPayout1.sub(fee1);
+      let claimInPayout2 = amountAvailableForPayout2.sub(rewardPotBalanceAfterClaimInPayout2);
+      const fee2 = claimInPayout2.div(feeInverse).addn(1);
+      claimInPayout2 = claimInPayout2.sub(fee2);
 
       const userBalance = await otherToken.balanceOf(userAddress1);
       assert.equal(userBalance.toString(), claimInPayout1.add(claimInPayout2).toString());
@@ -1399,10 +1422,12 @@ contract("Colony Funding", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
+      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
+      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -1425,7 +1450,7 @@ contract("Colony Funding", accounts => {
 
       // Submit current hash in active reputation mining cycle
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1434,7 +1459,7 @@ contract("Colony Funding", accounts => {
 
       // Reputation added while bootstrapping the colony is now in active reputation mining cycle, so submit the hash
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1556,6 +1581,7 @@ contract("Colony Funding", accounts => {
         const { colonyAddress } = logs[0].args;
         await newToken.setOwner(colonyAddress);
         const newColony = await IColony.at(colonyAddress);
+        await newColony.setRewardInverse(100);
 
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await Token.new(...payoutTokenArgs);
@@ -1575,7 +1601,7 @@ contract("Colony Funding", accounts => {
 
         // Submit current hash in active reputation mining cycle
         await miningClient.addLogContentsToReputationTree();
-        await forwardTime(3600, this);
+        await forwardTime(MINING_CYCLE_DURATION, this);
         await miningClient.submitRootHash();
 
         let addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1584,7 +1610,7 @@ contract("Colony Funding", accounts => {
 
         // Reputation added while bootstrapping the colony is now in active reputation mining cycle, so submit the hash
         await miningClient.addLogContentsToReputationTree();
-        await forwardTime(3600, this);
+        await forwardTime(MINING_CYCLE_DURATION, this);
         await miningClient.submitRootHash();
 
         addr = await colonyNetwork.getReputationMiningCycle.call(true);
@@ -1639,7 +1665,10 @@ contract("Colony Funding", accounts => {
         const denominator = bnSqrt(totalTokensHeldByUsers.mul(data.totalReputation));
         const factor = toBN(10).pow(toBN(100));
         const percent = numerator.mul(factor).div(denominator);
-        const reward = amountAvailableForPayout.mul(percent).div(factor);
+        let reward = amountAvailableForPayout.mul(percent).div(factor);
+        const feeInverse = await colonyNetwork.getFeeInverse();
+        const fee = reward.div(feeInverse).addn(1);
+        reward = reward.sub(fee);
 
         // Calculating square roots locally, to avoid big gas costs. This can be proven on chain easily
         const userReputationSqrt = bnSqrt(reputationPerUser);
@@ -1664,15 +1693,25 @@ contract("Colony Funding", accounts => {
         ({ key, value, branchMask, siblings } = await miningClient.getReputationProofObject(userReputationKey));
         const userReputationProofForColony1 = [key, value, branchMask, siblings];
 
+        const colonyNetworkBalanceBeforeClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
+
         await newColony.claimRewardPayout(payoutId, squareRoots, ...userReputationProofForColony1, {
           from: userAddress1
         });
 
         const remainingAfterClaim1 = await newColony.getPotBalance(0, payoutToken.address);
         const user1BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
-        assert.equal(user1BalanceAfterClaim.toString(), amountAvailableForPayout.sub(remainingAfterClaim1).toString());
+        const colonyNetworkBalanceAfterClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
+        const colonyNetworkFeeClaim1 = colonyNetworkBalanceAfterClaim1.sub(colonyNetworkBalanceBeforeClaim1);
+        assert.equal(
+          user1BalanceAfterClaim.toString(),
+          amountAvailableForPayout
+            .sub(remainingAfterClaim1)
+            .sub(colonyNetworkFeeClaim1)
+            .toString()
+        );
 
-        const solidityReward = amountAvailableForPayout.sub(remainingAfterClaim1);
+        const solidityReward = amountAvailableForPayout.sub(remainingAfterClaim1).sub(colonyNetworkFeeClaim1);
         console.log("\nCorrect (Javascript): ", reward.toString());
         console.log("Approximation (Solidity): ", solidityReward.toString());
 
@@ -1698,13 +1737,18 @@ contract("Colony Funding", accounts => {
           from: userAddress2
         });
 
+        const colonyNetworkBalanceAfterClaim2 = await payoutToken.balanceOf(colonyNetwork.address);
+        const colonyNetworkFeeClaim2 = colonyNetworkBalanceAfterClaim2.sub(colonyNetworkBalanceAfterClaim1);
+
         const remainingAfterClaim2 = await newColony.getPotBalance(0, payoutToken.address);
         const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         assert.equal(
           user2BalanceAfterClaim.toString(),
           amountAvailableForPayout
             .sub(user1BalanceAfterClaim)
+            .sub(colonyNetworkFeeClaim1)
             .sub(remainingAfterClaim2)
+            .sub(colonyNetworkFeeClaim2)
             .toString()
         );
 
@@ -1718,6 +1762,9 @@ contract("Colony Funding", accounts => {
           from: userAddress3
         });
 
+        const colonyNetworkBalanceAfterClaim3 = await payoutToken.balanceOf(colonyNetwork.address);
+        const colonyNetworkFeeClaim3 = colonyNetworkBalanceAfterClaim3.sub(colonyNetworkBalanceAfterClaim2);
+
         const remainingAfterClaim3 = await newColony.getPotBalance(0, payoutToken.address);
         const user3BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         assert.equal(
@@ -1725,6 +1772,9 @@ contract("Colony Funding", accounts => {
           amountAvailableForPayout
             .sub(user1BalanceAfterClaim)
             .sub(user2BalanceAfterClaim)
+            .sub(colonyNetworkFeeClaim1)
+            .sub(colonyNetworkFeeClaim2)
+            .sub(colonyNetworkFeeClaim3)
             .sub(remainingAfterClaim3)
             .toString()
         );

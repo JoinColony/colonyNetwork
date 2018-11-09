@@ -3,7 +3,6 @@
 
 import path from "path";
 import { toBN } from "web3-utils";
-import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
@@ -17,10 +16,12 @@ import {
   RATING_2_SECRET,
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
-  SECONDS_PER_DAY
+  SECONDS_PER_DAY,
+  DEFAULT_STAKE,
+  MINING_CYCLE_DURATION
 } from "../helpers/constants";
 import { getTokenArgs, currentBlockTime, forwardTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+
 import {
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
@@ -32,18 +33,15 @@ import {
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
-const Colony = artifacts.require("Colony");
 const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ColonyTask = artifacts.require("ColonyTask");
-const ColonyFunding = artifacts.require("ColonyFunding");
-const Resolver = artifacts.require("Resolver");
 const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
-const oneHourLater = async () => forwardTime(3600, this);
+const oneMiningCycleDurationLater = async () => forwardTime(MINING_CYCLE_DURATION, this);
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const contractLoader = new TruffleLoader({
@@ -61,21 +59,16 @@ contract("All", accounts => {
   let token;
   let tokenAddress;
   let otherToken;
-  let colonyTask;
-  let colonyFunding;
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
 
   before(async () => {
-    colony = await Colony.new();
-    const resolver = await Resolver.new();
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    colonyTask = await ColonyTask.new();
-    colonyFunding = await ColonyFunding.new();
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
-    await setupColonyVersionResolver(colony, colonyTask, colonyFunding, resolver, colonyNetwork);
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);
 
@@ -88,9 +81,6 @@ contract("All", accounts => {
     colony = await IColony.at(colonyAddress);
     tokenAddress = await colony.getToken();
     await IColony.defaults({ gasPrice });
-
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IColony.at(metaColonyAddress);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
@@ -119,9 +109,6 @@ contract("All", accounts => {
 
     it("when working with a Task", async () => {
       const taskId = await makeTask({ colony });
-
-      // setTaskDomain
-      await colony.setTaskDomain(taskId, 1);
 
       // setTaskSkill
       await executeSignedTaskChange({
@@ -219,17 +206,13 @@ contract("All", accounts => {
       const STAKER3 = accounts[2];
 
       // Setup the stakers balance
-      const bigStr = "1000000000000000000";
-      const lessBigStr = "10000000000000000";
-      const big = new BN(bigStr);
-
-      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER1, big);
-      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER2, big);
-      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER3, big);
+      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER1, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER2, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, STAKER3, DEFAULT_STAKE);
 
       let repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
 
-      await oneHourLater();
+      await oneMiningCycleDurationLater();
       let repCycle = await IReputationMiningCycle.at(repCycleAddr);
       await repCycle.submitRootHash("0x00", 0, 1);
       await repCycle.confirmNewHash(0);
@@ -255,12 +238,11 @@ contract("All", accounts => {
       await goodClient.addLogContentsToReputationTree();
       await badClient.addLogContentsToReputationTree();
       await badClient2.addLogContentsToReputationTree();
-
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
       await badClient2.submitRootHash();
-      await forwardTime(1800, this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       // Session of respond / invalidate between our 3 submissions
       await goodClient.submitJustificationRootHash();
@@ -284,11 +266,14 @@ contract("All", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
       // We now know where they disagree
       await goodClient.respondToChallenge();
       // badClient will fail this if we try
       // await badClient.respondToChallenge();
-      await oneHourLater();
+      await oneMiningCycleDurationLater();
       await repCycle.invalidateHash(0, 1);
 
       await goodClient.respondToBinarySearchForChallenge();
@@ -306,15 +291,18 @@ contract("All", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient2.respondToBinarySearchForChallenge();
 
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
       await goodClient.respondToChallenge();
-      await oneHourLater();
+      await oneMiningCycleDurationLater();
       await repCycle.invalidateHash(1, 0);
 
       await repCycle.confirmNewHash(2);
 
       const clnyToken = await metaColony.getToken();
       // withdraw
-      await tokenLocking.withdraw(clnyToken, lessBigStr, { from: STAKER1 });
+      await tokenLocking.withdraw(clnyToken, DEFAULT_STAKE.divn(4), { from: STAKER1 });
     });
 
     it("when working with reward payouts", async () => {
@@ -336,12 +324,12 @@ contract("All", accounts => {
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], toBN(10).pow(toBN(18)));
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
 
       const miningClient = new ReputationMiner({
         loader: contractLoader,
@@ -351,7 +339,7 @@ contract("All", accounts => {
       });
       await miningClient.initialise(colonyNetwork.address);
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(3600, this);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
       addr = await colonyNetwork.getReputationMiningCycle.call(true);

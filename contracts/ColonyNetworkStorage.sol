@@ -18,15 +18,14 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColony.sol";
+import "./IMetaColony.sol";
+import "./CommonStorage.sol";
 
 
-contract ColonyNetworkStorage is DSAuth, DSMath {
-  // Address of the Resolver contract used by EtherRouter for lookups and routing
-  address resolver;
+contract ColonyNetworkStorage is CommonStorage, DSMath {
   // Number of colonies in the network
   uint256 colonyCount;
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -35,6 +34,8 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   address metaColony;
   // Address of token locking contract
   address tokenLocking;
+  // Network fee inverse value, e.g 5% => 100/5=20, 1% => 100/1=100 etc.
+  uint256 feeInverse;
   // Maps index to colony address
   mapping (uint256 => address) colonies;
   mapping (address => bool) _isColony;
@@ -66,7 +67,7 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
   address activeReputationMiningCycle;
   // Address of the next active reputation mining cycle contract, which is where new reputation updates are put.
   address inactiveReputationMiningCycle;
-    // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
+  // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
   bytes32 reputationRootHash;
   // The number of nodes in the reputation state tree that was accepted at the end of the last mining cycle
   uint256 reputationRootHashNNodes;
@@ -96,6 +97,17 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
 
   mapping (bytes32 => ENSRecord) records;
 
+  struct ReputationLogEntry {
+    address user;
+    int amount;
+    uint256 skillId;
+    address colony;
+    uint256 nUpdates;
+    uint256 nPreviousUpdates;
+  }
+  mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog;
+  mapping (address => bool) replacementReputationUpdateLogsExist;
+
   modifier calledByColony() {
     require(_isColony[msg.sender], "colony-caller-must-be-colony");
     _;
@@ -103,6 +115,11 @@ contract ColonyNetworkStorage is DSAuth, DSMath {
 
   modifier notCalledByColony() {
     require(!_isColony[msg.sender], "colony-caller-must-not-be-colony");
+    _;
+  }
+
+  modifier calledByMetaColony() {
+    require(msg.sender == metaColony, "colony-caller-must-be-meta-colony");
     _;
   }
 }

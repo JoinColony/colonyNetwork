@@ -92,6 +92,44 @@ export function web3GetAccounts() {
   });
 }
 
+export function web3GetRawCall(params) {
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_call",
+    params: [params],
+    id: new Date().getTime()
+  };
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(packet, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res);
+    });
+  });
+}
+
+// Borrowed from `truffle` https://github.com/trufflesuite/truffle/blob/next/packages/truffle-contract/lib/reason.js
+export function extractReasonString(res) {
+  if (!res || (!res.error && !res.result)) return "";
+
+  const errorStringHash = "0x08c379a0";
+
+  const isObject = res && typeof res === "object" && res.error && res.error.data;
+  const isString = res && typeof res === "object" && typeof res.result === "string";
+
+  if (isObject) {
+    const { data } = res.error;
+    const hash = Object.keys(data)[0];
+
+    if (data[hash].return && data[hash].return.includes(errorStringHash)) {
+      return web3.eth.abi.decodeParameter("string", data[hash].return.slice(10));
+    }
+  } else if (isString && res.result.includes(errorStringHash)) {
+    return web3.eth.abi.decodeParameter("string", res.result.slice(10));
+  }
+  return "";
+}
+
 export async function checkErrorRevert(promise, errorMessage) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
@@ -116,6 +154,18 @@ export async function checkErrorRevert(promise, errorMessage) {
   }
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected error ${errorMessage}`);
+}
+
+export async function checkErrorRevertEthers(promise, errorMessage) {
+  const tx = await promise;
+  const txid = tx.hash;
+
+  const receipt = await web3GetTransactionReceipt(txid);
+  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected to fail`);
+
+  const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
+  const reason = extractReasonString(response);
+  assert.equal(reason, errorMessage);
 }
 
 export function getRandomString(_length) {
@@ -243,8 +293,8 @@ export async function createSignatures(colony, taskId, signers, value, data) {
     let user = signers[i].toString();
     user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
-    const prefixedMessageHash = ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
-    const sig = ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
+    const prefixedMessageHash = await ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex")); // eslint-disable-line no-await-in-loop
+    const sig = await ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex")); // eslint-disable-line no-await-in-loop
 
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);
@@ -310,6 +360,7 @@ export function makeReputationKey(colonyAddress, skill, accountAddress = undefin
   return key;
 }
 
+// Note: value can be anything with a `.toString()` method -- a string, number, or BN.
 export function makeReputationValue(value, repuationId) {
   return `0x${(new BN(value.toString())).toString(16, 64)}${(new BN(repuationId)).toString(16, 64)}`; // eslint-disable-line
 }
@@ -329,17 +380,16 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const userBalance = userLockInformation.amount;
 
   // What's the largest entry they can submit?
-  const nIter = userBalance.div(new BN(10).pow(new BN(15)));
+  const nIter = userBalance.div(new BN(10).pow(new BN(18)).muln(2000));
   // Work out the target
   const constant = new BN(2)
     .pow(new BN(256))
     .subn(1)
-    .divn(3600);
+    .divn(60 * 60 * 24); // TODO: use MINING_CYCLE_DURATION from constants.js
   const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
 
   // Iterate from `startingEntryNumber ` up until the largest entry, until we find one we can submit now
   // or return an error
-  //
   const timestamp = await currentBlockTime();
   for (let i = startingEntryNumber; i <= nIter; i += 1) {
     const entryHash = await repCycle.getEntryHash(account, i, hash); // eslint-disable-line no-await-in-loop
@@ -352,10 +402,10 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 }
 
 export async function submitAndForwardTimeToDispute(clients, test) {
-  await forwardTime(1800, test);
+  await forwardTime(60 * 60 * 12, test); // TODO: use MINING_CYCLE_DURATION from constants.js
   for (let i = 0; i < clients.length; i += 1) {
     await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
     await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
   }
-  await forwardTime(1800, test);
+  await forwardTime(60 * 60 * 12, test);
 }
