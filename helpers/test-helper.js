@@ -92,6 +92,44 @@ export function web3GetAccounts() {
   });
 }
 
+export function web3GetRawCall(params) {
+  const packet = {
+    jsonrpc: "2.0",
+    method: "eth_call",
+    params: [params],
+    id: new Date().getTime()
+  };
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(packet, (err, res) => {
+      if (err !== null) return reject(err);
+      return resolve(res);
+    });
+  });
+}
+
+// Borrowed from `truffle` https://github.com/trufflesuite/truffle/blob/next/packages/truffle-contract/lib/reason.js
+export function extractReasonString(res) {
+  if (!res || (!res.error && !res.result)) return "";
+
+  const errorStringHash = "0x08c379a0";
+
+  const isObject = res && typeof res === "object" && res.error && res.error.data;
+  const isString = res && typeof res === "object" && typeof res.result === "string";
+
+  if (isObject) {
+    const { data } = res.error;
+    const hash = Object.keys(data)[0];
+
+    if (data[hash].return && data[hash].return.includes(errorStringHash)) {
+      return web3.eth.abi.decodeParameter("string", data[hash].return.slice(10));
+    }
+  } else if (isString && res.result.includes(errorStringHash)) {
+    return web3.eth.abi.decodeParameter("string", res.result.slice(10));
+  }
+  return "";
+}
+
 export async function checkErrorRevert(promise, errorMessage) {
   // There is a discrepancy between how ganache-cli handles errors
   // (throwing an exception all the way up to these tests) and how geth/parity handle them
@@ -116,6 +154,18 @@ export async function checkErrorRevert(promise, errorMessage) {
   }
   // Check the receipt `status` to ensure transaction failed.
   assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected error ${errorMessage}`);
+}
+
+export async function checkErrorRevertEthers(promise, errorMessage) {
+  const tx = await promise;
+  const txid = tx.hash;
+
+  const receipt = await web3GetTransactionReceipt(txid);
+  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected to fail`);
+
+  const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
+  const reason = extractReasonString(response);
+  assert.equal(reason, errorMessage);
 }
 
 export function getRandomString(_length) {
