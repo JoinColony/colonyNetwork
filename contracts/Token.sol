@@ -42,6 +42,7 @@ contract Token is DSTokenBase(0), DSAuth, ERC20Extended {
     _supply = add(_supply, wad);
 
     emit Mint(msg.sender, wad);
+    emit Transfer(0x0, msg.sender, wad);
   }
 
   function burn(uint wad) public {
