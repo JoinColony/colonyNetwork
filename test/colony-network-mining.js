@@ -17,7 +17,7 @@ import {
   submitAndForwardTimeToDispute
 } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
-import { WAD, DEFAULT_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../helpers/constants";
+import { WAD, MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -726,13 +726,13 @@ contract("ColonyNetworkMining", accounts => {
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
 
       userLock0 = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
-      assert.equal(userLock0[1].toString(), DEFAULT_STAKE.muln(3).toString(), "Account was not rewarded properly");
+      assert.equal(userLock0[1].toString(), DEFAULT_STAKE.add(MIN_STAKE.muln(2)).toString(), "Account was not rewarded properly");
 
       userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      assert.equal(userLock1[1].toString(), "0", "Account was not punished properly");
+      assert.equal(userLock1[1].toString(), DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
 
       userLock2 = await tokenLocking.getUserLock(clny.address, accounts[2]);
-      assert.equal(userLock2[1].toString(), "0", "Account was not punished properly");
+      assert.equal(userLock2[1].toString(), DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {

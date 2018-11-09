@@ -27,7 +27,7 @@ import "./ReputationMiningCycleStorage.sol";
 
 contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProofs, DSMath {
   /// @notice Minimum reputation mining stake in CLNY
-  uint256 constant MIN_STAKE = 2000 * 10**18;
+  uint256 constant MIN_STAKE = 2000 * WAD;
 
   /// @notice Size of mining window in seconds
   uint256 constant MINING_WINDOW_SIZE = 60 * 60 * 24; // 24 hours
@@ -265,7 +265,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         // Punish the people who proposed our opponent
         ITokenLocking(tokenLockingAddress).punishStakers(
           submittedHashes[disputeRounds[round][opponentIdx].proposedNewRootHash][disputeRounds[round][opponentIdx].nNodes],
-          msg.sender
+          msg.sender,
+          MIN_STAKE
         );
       }
 
@@ -275,7 +276,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       // Punish the people who proposed the hash that was rejected
       ITokenLocking(tokenLockingAddress).punishStakers(
         submittedHashes[disputeRounds[round][idx].proposedNewRootHash][disputeRounds[round][idx].nNodes],
-        msg.sender
+        msg.sender,
+        MIN_STAKE
       );
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
