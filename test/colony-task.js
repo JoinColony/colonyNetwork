@@ -950,6 +950,22 @@ contract("ColonyTask", accounts => {
       );
     });
 
+    it("should fail to execute change of task brief, using invalid task id 0", async () => {
+      const taskId = 0;
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId,
+          functionName: "setTaskBrief",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, SPECIFICATION_HASH_UPDATED]
+        }),
+        "colony-task-signatures-do-not-match-reviewer-1"
+      );
+    });
+
     it("should fail to execute task change, if the task is already finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });

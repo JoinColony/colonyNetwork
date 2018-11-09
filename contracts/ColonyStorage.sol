@@ -154,7 +154,7 @@ contract ColonyStorage is CommonStorage, DSMath {
   }
 
   modifier taskExists(uint256 _id) {
-    require(_id <= taskCount, "colony-task-does-not-exist");
+    require(_id > 0 && _id <= taskCount, "colony-task-does-not-exist");
     _;
   }
 
