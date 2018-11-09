@@ -962,7 +962,35 @@ contract("ColonyTask", accounts => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "colony-task-signatures-do-not-match-reviewer-1"
+        "colony-task-does-not-exist"
+      );
+    });
+
+    it("should fail to execute task changes, when trying to set domain or skill to 0", async () => {
+      const taskId = await makeTask({ colony });
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, 0]
+        }),
+        "colony-task-change-execution-failed"
+      );
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskSkill",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, 0]
+        }),
+        "colony-task-change-execution-failed"
       );
     });
 

@@ -178,12 +178,12 @@ contract ColonyStorage is CommonStorage, DSMath {
 
   modifier skillExists(uint256 _skillId) {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    require(_skillId <= colonyNetworkContract.getSkillCount(), "colony-skill-does-not-exist");
+    require(_skillId > 0 && _skillId <= colonyNetworkContract.getSkillCount(), "colony-skill-does-not-exist");
     _;
   }
 
   modifier domainExists(uint256 _domainId) {
-    require(_domainId <= domainCount, "colony-domain-does-not-exist");
+    require(_domainId > 0 && _domainId <= domainCount, "colony-domain-does-not-exist");
     _;
   }
 

@@ -40,7 +40,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   modifier skillExists(uint skillId) {
-    require(skillCount >= skillId, "colony-invalid-skill-id");
+    require(skillId > 0 && skillCount >= skillId, "colony-invalid-skill-id");
     _;
   }
 

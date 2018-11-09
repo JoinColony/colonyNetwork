@@ -153,7 +153,7 @@ contract ColonyTask is ColonyStorage {
     bytes4 sig;
     uint256 taskId;
     (sig, taskId) = deconstructCall(_data);
-    require(taskId <= taskCount, "colony-task-does-not-exist");
+    require(taskId > 0 && taskId <= taskCount, "colony-task-does-not-exist");
     require(tasks[taskId].status != FINALIZED, "colony-task-finalized");
     require(!roleAssignmentSigs[sig], "colony-task-change-is-role-assignement");
 
