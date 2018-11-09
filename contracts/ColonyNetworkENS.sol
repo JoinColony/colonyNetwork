@@ -75,7 +75,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     emit UserLabelRegistered(msg.sender, subnode);
   }
 
-  function registerColonyLabel(string colonyName)
+  function registerColonyLabel(string colonyName, string orbitdb)
   public
   calledByColony
   unowned(colonyNode, colonyName)
@@ -89,6 +89,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     bytes32 node = keccak256(abi.encodePacked(colonyNode, subnode));
     ENS(ens).setResolver(node, this);
     records[node].addr = msg.sender;
+    records[node].orbitdb = orbitdb;
     colonyLabels[msg.sender] = colonyName;
     emit ColonyLabelRegistered(msg.sender, subnode);
   }
