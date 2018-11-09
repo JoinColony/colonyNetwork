@@ -98,6 +98,12 @@ contract("Colony", accounts => {
       assert.equal(taskChangeNonce, 0);
     });
 
+    it("should emit correct Transfer and Mint events when minting tokens", async () => {
+      const tokenArgs = getTokenArgs();
+      const otherToken = await Token.new(...tokenArgs);
+      await expectAllEvents(otherToken.mint(100), ["Mint", "Transfer"]);
+    });
+
     it("should fail if a non-admin tries to mint tokens", async () => {
       await checkErrorRevert(colony.mintTokens(100, { from: OTHER }));
     });
