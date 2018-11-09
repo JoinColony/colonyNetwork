@@ -270,7 +270,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a new root global skill", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-invalid-parent-skill-id");
+      await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-invalid-skill-id");
 
       const skillCount = await colonyNetwork.getSkillCount();
       assert.equal(skillCount.toNumber(), 3);

@@ -950,6 +950,50 @@ contract("ColonyTask", accounts => {
       );
     });
 
+    it("should fail to execute change of task brief, using invalid task id 0", async () => {
+      const taskId = 0;
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId,
+          functionName: "setTaskBrief",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, SPECIFICATION_HASH_UPDATED]
+        }),
+        "colony-task-does-not-exist"
+      );
+    });
+
+    it("should fail to execute task changes, when trying to set domain or skill to 0", async () => {
+      const taskId = await makeTask({ colony });
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskDomain",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, 0]
+        }),
+        "colony-task-change-execution-failed"
+      );
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          functionName: "setTaskSkill",
+          taskId,
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, 0]
+        }),
+        "colony-task-change-execution-failed"
+      );
+    });
+
     it("should fail to execute task change, if the task is already finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
