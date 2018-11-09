@@ -129,5 +129,39 @@ contract("Javascript Patricia Tree", accounts => {
         assert.equal(jsSiblings[i], realSiblings[i]);
       }
     });
+
+    it("should recover identical root hashes from proofs", async () => {
+      const dog = web3Utils.fromAscii("dog");
+      const fido = web3Utils.fromAscii("fido");
+      const ape = web3Utils.fromAscii("ape");
+      const bubbles = web3Utils.fromAscii("bubbles");
+      const rover = web3Utils.fromAscii("rover");
+
+      await jsClient.reputationTree.insert(dog, fido);
+      await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });
+      await realPatriciaTree.insert(dog, fido);
+
+      await jsClient.reputationTree.insert(ape, bubbles);
+      await solClient.reputationTree.insert(ape, bubbles, { gasLimit: 4000000 });
+      await realPatriciaTree.insert(ape, bubbles);
+
+      await jsClient.reputationTree.insert(dog, rover);
+      await solClient.reputationTree.insert(dog, rover, { gasLimit: 4000000 });
+      await realPatriciaTree.insert(dog, rover);
+
+      const [jsMask, jsSiblings] = await jsClient.reputationTree.getProof(dog);
+      const [solMask, solSiblings] = await solClient.reputationTree.getProof(dog);
+      // This is the difference between what an ethers contract returns (above) and what a
+      // truffle contract returns (below)
+      const res = await realPatriciaTree.getProof(dog);
+      const realMask = res["0"];
+      const realSiblings = res["1"];
+
+      const realRoot = await realPatriciaTree.getImpliedRoot(dog, fido, realMask, realSiblings);
+      const jsRoot = await jsClient.reputationTree.getImpliedRoot(dog, fido, jsMask, jsSiblings);
+      const solRoot = await solClient.reputationTree.getImpliedRoot(dog, fido, solMask, solSiblings);
+      assert.equal(realRoot.toString(), jsRoot.toString());
+      assert.equal(solRoot.toString(), jsRoot.toString());
+    });
   });
 });

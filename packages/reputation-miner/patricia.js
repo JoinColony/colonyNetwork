@@ -214,4 +214,25 @@ exports.PatriciaTree = function PatriciaTree() {
     this.tree.nodes[nodeHash.toString(16)] = node;
     return nodeHash;
   };
+
+  this.getImpliedRoot = function getImpliedRoot(key, value, _branchMask, siblings) {
+    let branchMask = new BN(_branchMask.toString());
+    let k = makeLabel(sha3(key), 256);
+    const valueHash = sha3(value);
+    const e = {};
+    e.nodeHash = valueHash;
+    for (let i = 0; branchMask.toString() !== "0"; i += 1) {
+      const bitSet = branchMask.zeroBits();
+      branchMask = branchMask.and(new BN(1).shln(bitSet).notn(256));
+      [k, e.label] = splitAt(k, 255 - bitSet);
+      const [bit, newLabel] = chopFirstBit(e.label);
+      e.label = newLabel;
+      const edgeHashes = [];
+      edgeHashes[bit] = edgeEncodingHash(e);
+      edgeHashes[1 - bit] = sha2bn(siblings[siblings.length - i - 1]);
+      e.nodeHash = sha2bn(web3Utils.soliditySha3(bn2hex64(edgeHashes[0]), bn2hex64(edgeHashes[1])));
+    }
+    e.label = k;
+    return bn2hex64(edgeEncodingHash(e));
+  };
 };
