@@ -108,6 +108,7 @@ export function web3GetRawCall(params) {
   });
 }
 
+// Borrowed from `truffle` https://github.com/trufflesuite/truffle/blob/next/packages/truffle-contract/lib/reason.js
 export function extractReasonString(res) {
   if (!res || (!res.error && !res.result)) return "";
 
