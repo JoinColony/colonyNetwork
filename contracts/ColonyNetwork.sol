@@ -40,12 +40,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   modifier skillExists(uint skillId) {
-    require(skillCount >= skillId, "colony-invalid-skill-id");
-    _;
-  }
-
-  modifier nonZero(uint256 parentSkillId) {
-    require(parentSkillId > 0, "colony-invalid-parent-skill-id");
+    require(skillId > 0 && skillCount >= skillId, "colony-invalid-skill-id");
     _;
   }
 
@@ -196,7 +191,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
   function addSkill(uint _parentSkillId, bool _globalSkill) public stoppable
   skillExists(_parentSkillId)
   allowedToAddSkill(_globalSkill)
-  nonZero(_parentSkillId)
   returns (uint256)
   {
     skillCount += 1;

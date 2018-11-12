@@ -374,13 +374,13 @@ contract("Colony Network", accounts => {
       const colony = await Colony.at(colonyAddress);
 
       // Non-owner can't register label for colony
-      await checkErrorRevert(colony.registerColonyLabel(colonyName, { from: accounts[1] }));
+      await checkErrorRevert(colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[1] }));
 
       // Owner cannot register blank label
-      await checkErrorRevert(colony.registerColonyLabel("", { from: accounts[0] }), "colony-colony-label-invalid");
+      await checkErrorRevert(colony.registerColonyLabel("", orbitDBAddress, { from: accounts[0] }), "colony-colony-label-invalid");
 
       // Owner can register label for colony
-      await colony.registerColonyLabel(colonyName, { from: accounts[0] });
+      await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
       const owner = await ensRegistry.owner(hash);
       assert.equal(owner, colonyNetwork.address);
 
@@ -395,9 +395,12 @@ contract("Colony Network", accounts => {
       // Check reverse lookup
       const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
       assert.equal(lookedUpENSDomain, "test.colony.joincolony.eth");
+      // Get stored orbitdb address
+      const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
+      assert.equal(retrievedOrbitDB, orbitDBAddress);
 
       // Can't register two labels for a colony
-      await checkErrorRevert(colony.registerColonyLabel(colonyName2, { from: accounts[0] }), "colony-already-labeled");
+      await checkErrorRevert(colony.registerColonyLabel(colonyName2, orbitDBAddress, { from: accounts[0] }), "colony-already-labeled");
     });
 
     it("should be able to register same name for user and a colony, and reverse lookup still work", async () => {
@@ -411,7 +414,7 @@ contract("Colony Network", accounts => {
       const colony = await Colony.at(colonyAddress);
       // Register colony
       // Owner can register label for colony
-      await colony.registerColonyLabel("test", { from: accounts[0] });
+      await colony.registerColonyLabel("test", orbitDBAddress, { from: accounts[0] });
 
       // Check reverse lookup for colony
       const lookedUpENSDomainColony = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);

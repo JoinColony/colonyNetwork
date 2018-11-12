@@ -170,7 +170,8 @@ contract IColony is IRecovery {
 
   /// @notice Register colony's ENS label
   /// @param colonyName The label to register.
-  function registerColonyLabel(string colonyName) public;
+  /// @param orbitdb The path of the orbitDB database associated with the colony name
+  function registerColonyLabel(string colonyName, string orbitdb) public;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here

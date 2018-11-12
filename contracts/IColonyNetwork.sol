@@ -234,12 +234,13 @@ contract IColonyNetwork is IRecovery {
 
   /// @notice Register a "user.joincolony.eth" label.
   /// @param username The label to register
-  /// @param orbitdb  The path of the orbitDB database associated with the user profile
+  /// @param orbitdb The path of the orbitDB database associated with the user profile
   function registerUserLabel(string username, string orbitdb) public;
 
   /// @notice Register a "colony.joincolony.eth" label. Can only be called by a Colony.
   /// @param colonyName The label to register.
-  function registerColonyLabel(string colonyName) public;
+  /// @param orbitdb The path of the orbitDB database associated with the colony name
+  function registerColonyLabel(string colonyName, string orbitdb) public;
 
   /// @notice Retrieve the orbitdb address corresponding to a registered account
   /// @param node The Namehash of the account being queried.

@@ -72,4 +72,5 @@ Additional examples of ineligible bugs:
 * Attacks that are accounted for in the system design, i.e. Ethereum network spamming, malicious reputation mining, malfeasance in colony administration.
 * Critiques of the Colony Protocol and overall mechanism design. We welcome suggestions and constructive criticism, and ask that it be directed to hello@colony.io or the [Build with Colony Forums](https://build.colony.io/)
 
+
 Please read the [terms and conditions](https://docs.colony.io/colonynetwork/bug-bounty-program-terms-and-conditions/) for more information.

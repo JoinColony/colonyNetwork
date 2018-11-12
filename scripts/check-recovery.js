@@ -71,10 +71,12 @@ walkSync("./contracts/").forEach(contractName => {
   const contract = result.children.filter(child => child.type === "ContractDefinition")[0];
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
-  contract.subNodes.filter(child => child.type === "FunctionDefinition").forEach(functionDef => {
-    if (!correctRecoveryModifier(functionDef)) {
-      console.log("The contract", contractName, "contains a missing stoppable/recovery modifier in function", functionDef.name, ".");
-      process.exit(1);
-    }
-  });
+  contract.subNodes
+    .filter(child => child.type === "FunctionDefinition")
+    .forEach(functionDef => {
+      if (!correctRecoveryModifier(functionDef)) {
+        console.log("The contract", contractName, "contains a missing stoppable/recovery modifier in function", functionDef.name, ".");
+        process.exit(1);
+      }
+    });
 });

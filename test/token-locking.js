@@ -3,7 +3,7 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
+import { MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
@@ -357,7 +357,7 @@ contract("TokenLocking", addresses => {
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
       await checkErrorRevert(
-        tokenLocking.punishStakers([addresses[0], addresses[1]], 0x0),
+        tokenLocking.punishStakers([addresses[0], addresses[1]], 0x0, MIN_STAKE),
         "colony-token-locking-sender-not-reputation-mining-cycle"
       );
     });

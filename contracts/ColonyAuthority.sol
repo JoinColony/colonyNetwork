@@ -45,7 +45,7 @@ contract ColonyAuthority is CommonAuthority {
     // Upgrade colony
     setOwnerRoleCapability(colony, "upgrade(uint256)");
     // Claim colony ENS label
-    setOwnerRoleCapability(colony, "registerColonyLabel(string)");
+    setOwnerRoleCapability(colony, "registerColonyLabel(string,string)");
     // Set Network fee inverse
     setOwnerRoleCapability(colony, "setNetworkFeeInverse(uint256)");
     // Set Reward fee inverse
