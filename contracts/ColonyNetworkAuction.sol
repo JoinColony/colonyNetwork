@@ -135,7 +135,7 @@ contract DutchAuction is DSMath {
   auctionStartedAndOpen
   returns (uint)
   {
-    return mul(quantity, price()) / TOKEN_MULTIPLIER;
+    return sub((mul(quantity, price()) / TOKEN_MULTIPLIER), 1);
   }
 
   // Get the price in CLNY per 10**18 Tokens (min 1 max 1e36)
