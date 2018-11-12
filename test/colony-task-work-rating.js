@@ -197,6 +197,20 @@ contract("Colony Task Work Rating", accounts => {
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
       assert.equal(ratingSecrets[0], 0);
     });
+
+    it.only("should fail if I try to rate work", async () => {
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+      await colony.completeTask(taskId);
+
+      const EMPTY_RATING_SECRET = web3.utils.fromAscii("");
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, EMPTY_RATING_SECRET, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, EMPTY_RATING_SECRET, { from: EVALUATOR });
+      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
+      assert.equal(ratingSecrets[0], 0);
+    });
   });
 
   describe("when revealing a task work rating", () => {
