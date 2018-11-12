@@ -198,17 +198,19 @@ contract("Colony Task Work Rating", accounts => {
       assert.equal(ratingSecrets[0], 0);
     });
 
-    it.only("should fail if I try to rate work", async () => {
+    it("should fail if I try to submit an empty rating", async () => {
       const dueDate = await currentBlockTime();
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.completeTask(taskId);
 
       const EMPTY_RATING_SECRET = web3.utils.fromAscii("");
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, EMPTY_RATING_SECRET, { from: EVALUATOR });
-      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, EMPTY_RATING_SECRET, { from: EVALUATOR });
-      await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      await checkErrorRevert(
+        colony.submitTaskWorkRating(taskId, WORKER_ROLE, EMPTY_RATING_SECRET, { from: EVALUATOR }),
+        "colony-task-rating-secret-missing"
+      );
 
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
+      // No rating was accepted. Ratings count is 0
       assert.equal(ratingSecrets[0], 0);
     });
   });
