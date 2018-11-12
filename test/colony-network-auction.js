@@ -343,7 +343,7 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.bid("3000000000000000000000000", { from: BIDDER_1 });
 
       await tokenAuction.finalize();
-      receivedTotal = await tokenAuction.receivedTotal();
+      const receivedTotal = await tokenAuction.receivedTotal();
       const endPrice = new BN(10)
         .pow(new BN(18))
         .mul(new BN(receivedTotal.toString(10)))
@@ -351,6 +351,32 @@ contract("Colony Network Auction", accounts => {
         .addn(1);
       const finalPrice = await tokenAuction.finalPrice();
       assert.equal(endPrice.toString(), finalPrice.toString(10));
+    });
+
+    it("functions correctly even when price is at minimum", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
+      await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
+
+      await forwardTime(SECONDS_PER_DAY * 34, this);
+      let endTime = await tokenAuction.endTime();
+      const amount = new BN(10).pow(new BN(17));
+
+      while (endTime.isZero()) {
+        await forwardTime(SECONDS_PER_DAY, this);
+        await tokenAuction.bid(amount, { from: BIDDER_1 });
+        // const price = await tokenAuction.price();
+        // const totalToEndAuction = await tokenAuction.totalToEndAuction();
+        // const receivedTotal = await tokenAuction.receivedTotal();
+        endTime = await tokenAuction.endTime();
+        // console.log("price", price.toString());
+        // console.log("totalToEndAuction", totalToEndAuction.toString());
+        // console.log("receivedTotal", receivedTotal.toString());
+      }
+
+      await tokenAuction.finalize();
+      // Check the final price is the minimum price
+      const finalPrice = await tokenAuction.finalPrice();
+      assert.equal(1, finalPrice.toString(10));
     });
   });
 
@@ -459,6 +485,7 @@ contract("Colony Network Auction", accounts => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout);
       await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+
       await tokenAuction.finalize();
       await tokenAuction.claim({ from: BIDDER_1 });
       const bid = await tokenAuction.bids(BIDDER_1);
