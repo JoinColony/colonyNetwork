@@ -86,9 +86,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
       currWeight /= 2;
     }
 
-    uint256 timestamp = add(mul(prevWeight, lock.timestamp), mul(currWeight, now)) / add(prevWeight, currWeight);
-
-    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(lock.balance, _amount), timestamp);
+    uint256 newTimestamp = add(mul(prevWeight, lock.timestamp), mul(currWeight, now)) / add(prevWeight, currWeight);
+    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(lock.balance, _amount), newTimestamp);
   }
 
   function withdraw(address _token, uint256 _amount) public

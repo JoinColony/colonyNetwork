@@ -375,27 +375,27 @@ contract("ColonyNetworkMining", accounts => {
       let weight;
 
       // Large weight (staked for UINT256_MAX, first submission)
-      weight = await colonyNetwork.calculateMinerWeight(UINT256_MAX, 1);
+      weight = await colonyNetwork.calculateMinerWeight(UINT256_MAX, 0);
       assert.equal("999999964585636861", weight.toString());
 
       // Large weight (staked for UINT32_MAX, first submission)
-      weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 1);
+      weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 0);
       assert.equal("999999964585636861", weight.toString());
 
       // Middle weight (staked for UINT32_MAX, last submission)
-      weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 12);
+      weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 11);
       assert.equal("541666647483886633", weight.toString());
 
       // Middle weight I (staked for T, first submission)
-      weight = await colonyNetwork.calculateMinerWeight(7776000, 1);
+      weight = await colonyNetwork.calculateMinerWeight(7776000, 0);
       assert.equal("625000000000000000", weight.toString());
 
       // Middle weight II (staked for T, last submission)
-      weight = await colonyNetwork.calculateMinerWeight(7776000, 12);
+      weight = await colonyNetwork.calculateMinerWeight(7776000, 11);
       assert.equal("338541666666666667", weight.toString());
 
       // Smallest weight (staked for 0, last submission)
-      weight = await colonyNetwork.calculateMinerWeight(0, 12);
+      weight = await colonyNetwork.calculateMinerWeight(0, 11);
       assert.equal("0", weight.toString());
     });
   });

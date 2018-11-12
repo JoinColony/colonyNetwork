@@ -205,7 +205,13 @@ contract IReputationMiningCycle {
   /// @dev Only callable by colonyNetwork
   /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
-  function rewardStakersWithReputation(address[] stakers, uint256[] weights, address metaColonyAddress, uint reward, uint miningSkillId) public;
+  function rewardStakersWithReputation(
+    address[] stakers,
+    uint256[] weights,
+    address metaColonyAddress,
+    uint256 reward,
+    uint256 miningSkillId
+    ) public;
 
   /// @notice Get the timestamp that the current reputation mining window opened
   function getReputationMiningWindowOpenTimestamp() public view returns (uint256 timestamp);

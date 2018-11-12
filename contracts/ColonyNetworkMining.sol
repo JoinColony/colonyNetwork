@@ -115,19 +115,19 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   // Constants for miner weight calculations
-  uint256 constant T = 7776000 * WAD; // Seconds in 90 days
-  uint256 constant N = 24 * WAD; // 2x maximum number of miners
+  uint256 constant T = 7776000 * WAD; // Seconds in 90 days * WAD
+  uint256 constant N = 24 * WAD; // 2x maximum number of miners * WAD
   uint256 constant UINT32_MAX = 4294967295;
 
-  function calculateMinerWeight(uint256 timeStaked, uint256 submissonIndex) public view returns (uint256) {
-    require((submissonIndex >= 1) && (submissonIndex <= 12), "colony-reputation-mining-invalid-submission-index");
+  function calculateMinerWeight(uint256 timeStaked, uint256 submissonIndex) public pure returns (uint256) {
+    require((submissonIndex >= 0) && (submissonIndex < 12), "colony-reputation-mining-invalid-submission-index");
     uint256 timeStakedMax = min(timeStaked, UINT32_MAX); // Maximum of ~136 years (uint32)
 
     // (1 - exp{-t_n/T}) * (1 - (n-1)/N), 3rd degree Taylor expansion for exponential term
     uint256 tnDivT = wdiv(timeStakedMax * WAD, T);
     uint256 expTnDivT = add(add(add(WAD, tnDivT), wmul(tnDivT, tnDivT) / 2), wmul(wmul(tnDivT, tnDivT), tnDivT) / 6);
     uint256 stakeTerm = sub(WAD, wdiv(WAD, expTnDivT));
-    uint256 submissionTerm = sub(WAD, wdiv((submissonIndex - 1) * WAD, N));
+    uint256 submissionTerm = sub(WAD, wdiv(submissonIndex * WAD, N));
     return wmul(stakeTerm, submissionTerm);
   }
 
@@ -147,7 +147,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
     for (i = 0; i < stakers.length; i++) {
       (,,timeStaked) = ITokenLocking(tokenLocking).getUserLock(clnyToken, stakers[i]);
-      minerWeights[i] = calculateMinerWeight(now - timeStaked, i + 1);
+      minerWeights[i] = calculateMinerWeight(now - timeStaked, i);
       minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
     }
 
