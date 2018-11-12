@@ -20,6 +20,8 @@ pragma experimental "v0.5.0";
 
 
 library SafeMath {
+  int256 constant MIN_INT256 = -(2**255);
+
   function safeToAddInt(int a, int b) public pure returns (bool) {
     return (b >= 0 && a + b >= a) || (b < 0 && a + b < a);
   }
@@ -29,6 +31,10 @@ library SafeMath {
   }
 
   function safeToMulInt(int a, int b) public pure returns (bool) {
+    // https://github.com/JoinColony/colonyNetwork/issues/417
+    // Note that if we ever add safeToDivInt, the same applies.
+    if (((a == -1) && (b == MIN_INT256)) || ((b == -1) && (a == MIN_INT256))) {return false;}
+
     return (b == 0) || (a * b / b == a);
   }
 
