@@ -146,6 +146,9 @@ contract DutchAuction is DSMath {
   {
     uint duration = sub(now, startTime);
     uint daysOpen = duration / 86400;
+    if (daysOpen > 36) {
+      return minPrice;
+    }
     uint r = duration % 86400;
     uint p = mul(10**sub(36, daysOpen), sub(864000, mul(9,r))) / 864000;
     p = p < minPrice ? minPrice : p;
