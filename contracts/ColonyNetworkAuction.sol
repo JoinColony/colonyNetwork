@@ -157,16 +157,24 @@ contract DutchAuction is DSMath {
   {
     require(_amount > 0, "colony-auction-invalid-bid");
     uint _totalToEndAuction = totalToEndAuction();
-    uint remainingToEndAuction = sub(_totalToEndAuction, receivedTotal);
 
+    uint remainingToEndAuction = 0;
+    if (_totalToEndAuction > receivedTotal) {
+      remainingToEndAuction = sub(_totalToEndAuction, receivedTotal);
+    }
     // Adjust the amount for final bid in case that takes us over the offered quantity at current price
     // Also conditionally set the auction endTime
     uint amount;
     if (remainingToEndAuction > _amount) {
       amount = _amount;
-    } else {
+    } else if (remainingToEndAuction != 0) {
+      // There is some amount left to auction but it is smaller than then required amount so adjust amount and close the auction
       amount = remainingToEndAuction;
       endTime = now;
+    } else {
+      // The remaining amount required to end the auction is zero so just close the auction and return
+      endTime = now;
+      return;
     }
 
     if (bids[msg.sender] == 0) {

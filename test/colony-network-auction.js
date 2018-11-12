@@ -305,7 +305,7 @@ contract("Colony Network Auction", accounts => {
       await checkErrorRevert(tokenAuction.bid(0), "colony-auction-invalid-bid");
     });
 
-    it.only("auction closes when the receivedTotal goes over the total amount to end the auction", async () => {
+    it("auction closes when the receivedTotal goes over the total amount to end the auction", async () => {
       // Considers totalToEndAuction < receivedTotal as per colonyNetwork#416
       // mul(quantity, price()) / TOKEN_MULTIPLIER < receivedTotal
       // quantity * price() < receivedTotal * TOKEN_MULTIPLIER
