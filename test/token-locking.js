@@ -1,4 +1,6 @@
 /* globals artifacts */
+
+import { toBN } from "web3-utils";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey } from "../helpers/test-helper";
@@ -10,6 +12,7 @@ import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
@@ -29,6 +32,7 @@ contract("TokenLocking", addresses => {
   let otherToken;
   let colonyNetwork;
   let colony;
+  let metaColony;
   let colonyWideReputationProof;
 
   before(async () => {
@@ -36,6 +40,21 @@ contract("TokenLocking", addresses => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
+    await forwardTime(2592000);
+    await metaColony.setTokenIssuanceRate(
+      toBN(2)
+        .pow(toBN(128))
+        .subn(1)
+        .toString()
+    );
   });
 
   beforeEach(async () => {
@@ -48,6 +67,12 @@ contract("TokenLocking", addresses => {
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
     await token.setOwner(colony.address);
+    await colony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
     await colony.mintTokens(usersTokens + otherUserTokens);
     await colony.bootstrapColony([userAddress], [usersTokens]);
 

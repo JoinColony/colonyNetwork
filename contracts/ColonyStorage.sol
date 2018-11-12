@@ -38,6 +38,22 @@ contract ColonyStorage is CommonStorage, DSMath {
   ERC20Extended token;
   uint256 rewardInverse;
 
+  struct TokenIssuanceRate {
+    // Amount describing how many tokens can be issued for one month
+    uint128 amount;
+    // Last time the token issuance rate is changed
+    // It is used to assure that rate can be changed once every 4 weeks
+    uint256 timestamp;
+    // Keeps track of how many tokens are issued in terms of seconds
+    // TODO: If we decide to mint entire available amount in `mintTokens`, there will be no need for this variable
+    uint256 totalAmountIssuedUnderRate;
+  }
+
+  // Keeps information about token issuance rate amount and last change timestamp
+  TokenIssuanceRate tokenIssuanceRate;
+  // Amount of tokens allowed in circulation
+  uint256 tokenSupplyCeiling;
+
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
 

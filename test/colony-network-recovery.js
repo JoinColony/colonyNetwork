@@ -1,6 +1,6 @@
 /* globals artifacts */
 
-import { padLeft, soliditySha3 } from "web3-utils";
+import { padLeft, soliditySha3, toBN } from "web3-utils";
 import BN from "bn.js";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
@@ -40,9 +40,25 @@ contract("Colony Network Recovery", accounts => {
   let miningClient;
   let startingBlockNumber;
   let clnyAddress;
+  let metaColony;
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IColony.at(metaColonyAddress);
+    await metaColony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
+    await forwardTime(2592000);
+    await metaColony.setTokenIssuanceRate(
+      toBN(2)
+        .pow(toBN(128))
+        .subn(1)
+        .toString()
+    );
   });
 
   beforeEach(async () => {
@@ -54,8 +70,6 @@ contract("Colony Network Recovery", accounts => {
 
     await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
 
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    const metaColony = await IColony.at(metaColonyAddress);
     clnyAddress = await metaColony.getToken();
 
     miningClient = new ReputationMiner({
@@ -247,6 +261,12 @@ contract("Colony Network Recovery", accounts => {
           await token.setOwner(colonyAddress);
           const colony = await IColony.at(colonyAddress);
 
+          await colony.setTokenSupplyCeiling(
+            toBN(2)
+              .pow(toBN(256))
+              .subn(1)
+              .toString()
+          );
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
@@ -338,6 +358,12 @@ contract("Colony Network Recovery", accounts => {
           await token.setOwner(colonyAddress);
           const colony = await IColony.at(colonyAddress);
 
+          await colony.setTokenSupplyCeiling(
+            toBN(2)
+              .pow(toBN(256))
+              .subn(1)
+              .toString()
+          );
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
@@ -386,8 +412,6 @@ contract("Colony Network Recovery", accounts => {
           // 'Initialise' the new mining cycles by hand
           const colonyNetworkAddress = colonyNetwork.address;
           const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-          const metaColonyAddress = await colonyNetwork.getMetaColony();
-          const metaColony = await IColony.at(metaColonyAddress);
           clnyAddress = await metaColony.getToken();
 
           // slot 4: colonyNetworkAddress

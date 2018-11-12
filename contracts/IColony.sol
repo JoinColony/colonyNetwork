@@ -164,9 +164,33 @@ contract IColony is IRecovery {
   /// @param _amount Amount of reputation/tokens for every address
   function bootstrapColony(address[] _users, int[] _amount) public;
 
-  /// @notice Mint `_wad` amount of colony tokens. Secured function to authorised members
-  /// @param _wad Amount to mint
-  function mintTokens(uint256 _wad) public;
+  /// @notice Mint `_amount` amount of colony tokens. Function secured to authorised members
+  /// Amount of tokens available for minting is dictated by issuance rate and the supply ceiling
+  /// @param _amount Amount to mint
+  function mintTokens(uint256 _amount) public;
+
+  /// @notice Sets colony's token issuance rate. Can only be called once every 4 weeks by authorised members
+  /// @param _amount Amount of tokens
+  function setTokenIssuanceRate(uint128 _amount) public;
+
+  /// @notice Get token issuance rate
+  /// @return amount Amount of tokens
+  /// @return timestamp Timestamp of the last change of issuance rate
+  /// @return totalAmountIssuedUnderRate How many tokens are issued in terms of seconds
+  function getTokenIssuanceRate() public view returns (uint256 amount, uint256 timestamp, uint256 totalAmountIssuedUnderRate);
+
+  /// @notice Get amount of available tokens for issuance and seconds since last issuance
+  /// @return amount Amount of tokens
+  /// @return secondsSinceLastIssuance Seconds since last issuance
+  function getAvailableIssuanceAmountAndSeconds() public view returns (uint256 amount, uint256 secondsSinceLastIssuance);
+
+  /// @notice Sets token supply ceiling
+  /// @param _amount Maximum amount of tokens allowed to be minted
+  function setTokenSupplyCeiling(uint256 _amount) public;
+
+  /// @notice Get token supply ceiling
+  /// @return tokenSupplyCeiling Token supply ceiling
+  function getTokenSupplyCeiling() public view returns (uint256 tokenSupplyCeiling);
 
   /// @notice Register colony's ENS label
   /// @param colonyName The label to register.

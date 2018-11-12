@@ -81,6 +81,20 @@ contract("ColonyTask", accounts => {
     otherToken = await Token.new(...otherTokenArgs);
 
     await colony.setAdminRole(COLONY_ADMIN);
+
+    await colony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
+    await forwardTime(2419200);
+    await colony.setTokenIssuanceRate(
+      toBN(2)
+        .pow(toBN(128))
+        .subn(1)
+        .toString()
+    );
   });
 
   describe("when creating tasks", () => {

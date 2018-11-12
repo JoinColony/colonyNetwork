@@ -2,6 +2,7 @@
 
 import path from "path";
 import BN from "bn.js";
+import { toBN } from "web3-utils";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import request from "async-request";
 
@@ -65,6 +66,17 @@ contract("ColonyNetworkMining", accounts => {
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
+    await metaColony.setTokenIssuanceRate(
+      toBN(2)
+        .pow(toBN(128).subn(1))
+        .toString()
+    );
+    await metaColony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
   });
 
   beforeEach(async () => {
@@ -2619,6 +2631,7 @@ contract("ColonyNetworkMining", accounts => {
     it("should cope if someone's reputation would be overflow, setting it to the maximum value instead", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await forwardTime(2592000);
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
         29,
@@ -2636,16 +2649,15 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.insert(userKey, new BN("2").pow(new BN("256")).subn(2), 0);
       await badClient.insert(globalKey, new BN("2").pow(new BN("256")).subn(2), 0);
       await badClient.insert(userKey, new BN("2").pow(new BN("256")).subn(2), 0);
-
       const rootHash = await goodClient.getRootHash();
-      await fundColonyWithTokens(metaColony, clny, new BN("4").mul(new BN("10").pow(new BN("75"))).toString());
+      await fundColonyWithTokens(metaColony, clny, new BN("4").mul(new BN("10").pow(new BN("36"))).toString());
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
         worker: MAIN_ACCOUNT,
-        managerPayout: new BN("10").pow(new BN("75")).toString(),
-        evaluatorPayout: new BN("10").pow(new BN("75")).toString(),
-        workerPayout: new BN("10").pow(new BN("75")).toString(),
+        managerPayout: new BN("10").pow(new BN("36")).toString(),
+        evaluatorPayout: new BN("10").pow(new BN("36")).toString(),
+        workerPayout: new BN("10").pow(new BN("36")).toString(),
         managerRating: 3,
         workerRating: 3
       });
@@ -2731,7 +2743,8 @@ contract("ColonyNetworkMining", accounts => {
       await forwardTime(MINING_CYCLE_DURATION, this);
       const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
-      await fundColonyWithTokens(metaColony, clny, "350000000000000000000");
+      await metaColony.mintTokens("350000000000000000000");
+      await metaColony.claimColonyFunds(clny.address);
       const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId1); // Creates an entry in the reputation log for the worker and manager
       addr = await colonyNetwork.getReputationMiningCycle(false);

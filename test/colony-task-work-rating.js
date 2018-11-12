@@ -1,5 +1,7 @@
 /* globals artifacts */
 
+import { toBN } from "web3-utils";
+
 import {
   MANAGER_RATING,
   WORKER_RATING,
@@ -43,6 +45,12 @@ contract("Colony Task Work Rating", accounts => {
     const { logs } = await colonyNetwork.createColony(colonyToken.address);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
+    await colony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
     const otherTokenArgs = getTokenArgs();
     token = await Token.new(...otherTokenArgs);
   });

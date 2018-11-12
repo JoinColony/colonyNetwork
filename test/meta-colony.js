@@ -1,4 +1,6 @@
 /* globals artifacts */
+
+import { toBN } from "web3-utils";
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupFundedTask, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
@@ -385,6 +387,12 @@ contract("Meta Colony", accounts => {
       const { colonyAddress } = logs[0].args;
       await token.setOwner(colonyAddress);
       colony = await IColony.at(colonyAddress);
+      await colony.setTokenSupplyCeiling(
+        toBN(2)
+          .pow(toBN(256))
+          .subn(1)
+          .toString()
+      );
     });
 
     it("should be able to set domain on task", async () => {

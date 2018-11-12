@@ -6,7 +6,15 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { MANAGER_RATING, WORKER_RATING, RATING_1_SALT, RATING_2_SALT, RATING_1_SECRET, RATING_2_SECRET } from "../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
+import {
+  getTokenArgs,
+  web3GetBalance,
+  checkErrorRevert,
+  expectAllEvents,
+  getFunctionSignature,
+  forwardTime,
+  currentBlockTime
+} from "../helpers/test-helper";
 import { makeTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
@@ -72,7 +80,13 @@ contract("Colony", accounts => {
     const { colonyAddress } = logs[0].args;
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
-    const authorityAddress = await colony.authority();
+    await colony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
+    const authorityAddress = await colony.authority.call();
     authority = await ColonyAuthority.at(authorityAddress);
   });
 
@@ -132,6 +146,330 @@ contract("Colony", accounts => {
       // A root skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
       assert.equal(domain[0].toNumber(), rootLocalSkillId.toNumber());
+    });
+  });
+
+  describe("when working with token supply ceiling", async () => {
+    let newColony;
+    let newToken;
+    beforeEach(async () => {
+      const tokenArgs = getTokenArgs();
+      newToken = await Token.new(...tokenArgs);
+      const { logs } = await colonyNetwork.createColony(newToken.address);
+      const { colonyAddress } = logs[0].args;
+      await newToken.setOwner(colonyAddress);
+      newColony = await IColony.at(colonyAddress);
+    });
+
+    it("should set token supply ceiling correctly", async () => {
+      await newColony.setTokenSupplyCeiling(100);
+
+      const tokenSupplyCeiling = await newColony.getTokenSupplyCeiling();
+      assert.equal(tokenSupplyCeiling.toNumber(), 100);
+    });
+
+    it("should not be able to mint any tokens if token supply ceiling is not set", async () => {
+      await checkErrorRevert(newColony.mintTokens(1), "token-issuance-amount-exceeds-supply-ceiling");
+
+      const balance = await newToken.balanceOf(newColony.address);
+      assert.equal(balance.toNumber(), 0);
+    });
+
+    it("should not be able to set supply ceiling less that the current token supply", async () => {
+      await newColony.setTokenSupplyCeiling(100);
+
+      await newColony.mintTokens(100);
+
+      await checkErrorRevert(newColony.setTokenSupplyCeiling(50), "token-supply-ceiling-bad-input");
+    });
+
+    it("should be able to mint tokens equal to the supply ceiling", async () => {
+      await newColony.setTokenSupplyCeiling(100);
+
+      await newColony.mintTokens(100);
+
+      const balance = await newToken.balanceOf(newColony.address);
+      assert.equal(balance.toNumber(), 100);
+    });
+
+    it("should not be able to mint more tokens than supply ceiling", async () => {
+      await newColony.setTokenSupplyCeiling(100);
+
+      await checkErrorRevert(newColony.mintTokens(101), "token-issuance-amount-exceeds-supply-ceiling");
+
+      const balance = await newToken.balanceOf(newColony.address);
+      assert.equal(balance.toNumber(), 0);
+    });
+
+    it("should not be able to mint more tokens than supply ceiling, when minting by rate", async () => {
+      await makeTask({ colony: newColony });
+      await newColony.setTokenSupplyCeiling(100);
+      await newColony.setTokenIssuanceRate(10);
+
+      await forwardTime(60 * 60 * 24 * 30 * 10, this);
+
+      await newColony.mintTokens(100);
+
+      await forwardTime(60 * 60 * 24 * 3, this);
+
+      await checkErrorRevert(newColony.mintTokens(1), "token-issuance-amount-exceeds-supply-ceiling");
+
+      const balance = await newToken.balanceOf(newColony.address);
+      assert.equal(balance.toNumber(), 100);
+    });
+  });
+
+  describe("when changing issuance rate", async () => {
+    it("should not be able to pass 0 value", async () => {
+      await checkErrorRevert(colony.setTokenIssuanceRate(0), "token-issuance-rate-bad-inputs");
+    });
+
+    it("should not be able to change issuance rate before 4 weeks has passed", async () => {
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+      const newRateAmount = 11;
+      await checkErrorRevert(colony.setTokenIssuanceRate(newRateAmount), "token-issuance-rate-change-not-allowed");
+    });
+
+    it("should be able to initially set any issuance rate", async () => {
+      const blockTimestamp = await currentBlockTime();
+      const initialRateAmount = 1000;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      const { amount, timestamp, totalAmountIssuedUnderRate } = await colony.getTokenIssuanceRate();
+      assert.equal(amount.toNumber(), initialRateAmount);
+      assert.closeTo(timestamp.toNumber(), blockTimestamp, 10);
+      assert.closeTo(totalAmountIssuedUnderRate.toNumber(), blockTimestamp, 10);
+    });
+
+    it("should mint remaining available amount when changing rate", async () => {
+      await makeTask({ colony });
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 4 weeks
+      await forwardTime(60 * 60 * 24 * 30, this);
+
+      const newRateAmount = 11;
+      await colony.setTokenIssuanceRate(newRateAmount);
+
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+    });
+
+    it("should be able to increase issuance rate by 10 percent", async () => {
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 4 weeks
+      await forwardTime(60 * 60 * 24 * 28, this);
+
+      const newRateAmount = 11;
+      await colony.setTokenIssuanceRate(newRateAmount);
+
+      const blockTimestamp = await currentBlockTime();
+
+      const { amount, timestamp, totalAmountIssuedUnderRate } = await colony.getTokenIssuanceRate();
+      assert.equal(amount.toNumber(), newRateAmount);
+      assert.closeTo(timestamp.toNumber(), blockTimestamp, 10);
+      assert.closeTo(totalAmountIssuedUnderRate.toNumber(), blockTimestamp, 10);
+    });
+
+    it("should not be able to increase issuance rate by more than 10 percent", async () => {
+      const blockTimestamp = await currentBlockTime();
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 4 weeks
+      await forwardTime(60 * 60 * 24 * 28, this);
+
+      // 20 percent more than initial rate
+      const newRateAmount = 12;
+      await checkErrorRevert(colony.setTokenIssuanceRate(newRateAmount), "token-issuance-rate-change-too-big");
+
+      const { amount, timestamp, totalAmountIssuedUnderRate } = await colony.getTokenIssuanceRate();
+      assert.equal(amount.toNumber(), initialRateAmount);
+      assert.closeTo(timestamp.toNumber(), blockTimestamp, 10);
+      assert.closeTo(totalAmountIssuedUnderRate.toNumber(), blockTimestamp, 10);
+    });
+
+    it("should not be able to decrease issuance rate by more than 10 percent", async () => {
+      const blockTimestamp = await currentBlockTime();
+      const initialRateAmount = 20;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 4 weeks
+      await forwardTime(60 * 60 * 24 * 28, this);
+
+      // 20 percent less than initial rate
+      const newRateAmount = 16;
+      await checkErrorRevert(colony.setTokenIssuanceRate(newRateAmount), "token-issuance-rate-change-too-big");
+
+      const { amount, timestamp, totalAmountIssuedUnderRate } = await colony.getTokenIssuanceRate();
+      assert.equal(amount.toNumber(), initialRateAmount);
+      assert.closeTo(timestamp.toNumber(), blockTimestamp, 10);
+      assert.closeTo(totalAmountIssuedUnderRate.toNumber(), blockTimestamp, 10);
+    });
+
+    it("should be able to decrease issuance rate by 10 percent", async () => {
+      const initialRateAmount = 20;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 4 weeks
+      await forwardTime(60 * 60 * 24 * 28, this);
+
+      const newRateAmount = 18;
+      await colony.setTokenIssuanceRate(newRateAmount);
+
+      const blockTimestamp = await currentBlockTime();
+
+      const { amount, timestamp, totalAmountIssuedUnderRate } = await colony.getTokenIssuanceRate();
+      assert.equal(amount.toNumber(), newRateAmount);
+      assert.closeTo(timestamp.toNumber(), blockTimestamp, 10);
+      assert.closeTo(totalAmountIssuedUnderRate.toNumber(), blockTimestamp, 10);
+    });
+
+    it("should be able to change extremly high rates", async () => {
+      const initialRateAmount = toBN(10)
+        .pow(toBN(37))
+        .toString();
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 4 weeks
+      await forwardTime(60 * 60 * 24 * 28, this);
+
+      const newRateAmount = toBN(10)
+        .pow(toBN(36))
+        .muln(9)
+        .toString();
+      await colony.setTokenIssuanceRate(newRateAmount);
+
+      const blockTimestamp = await currentBlockTime();
+
+      const { amount, timestamp, totalAmountIssuedUnderRate } = await colony.getTokenIssuanceRate();
+      assert.equal(toBN(amount).toString(), newRateAmount);
+      assert.closeTo(timestamp.toNumber(), blockTimestamp, 10);
+      assert.closeTo(totalAmountIssuedUnderRate.toNumber(), blockTimestamp, 10);
+    });
+  });
+
+  describe("when minting tokens", async () => {
+    beforeEach(async () => {
+      await makeTask({ colony });
+    });
+
+    it("should return correct amount available for issuance", async () => {
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // 30 days
+      const oneMonth = 60 * 60 * 24 * 30;
+      await forwardTime(oneMonth, this);
+
+      const { amount, secondsSinceLastIssuance } = await colony.getAvailableIssuanceAmountAndSeconds();
+      assert.equal(amount.toNumber(), 10);
+      assert.closeTo(secondsSinceLastIssuance.toNumber(), oneMonth, 10);
+    });
+
+    it("should return correct amount issued in seconds", async () => {
+      const blockTimestamp = await currentBlockTime();
+
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // 15 days
+      const halfMonth = 60 * 60 * 24 * 15;
+      await forwardTime(halfMonth, this);
+
+      await colony.mintTokens(5);
+
+      const { totalAmountIssuedUnderRate } = await colony.getTokenIssuanceRate();
+      assert.closeTo(totalAmountIssuedUnderRate.toNumber(), blockTimestamp + halfMonth, 10);
+    });
+
+    it("should be able to mint tokens by rate", async () => {
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // 3 days
+      await forwardTime(60 * 60 * 24 * 3, this);
+
+      await colony.mintTokens(1);
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+
+      await forwardTime(60 * 60 * 24 * 3, this);
+
+      await colony.mintTokens(1);
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+
+      await forwardTime(60 * 60 * 24 * 24, this);
+
+      await colony.mintTokens(8);
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+
+      const balance = await token.balanceOf(colony.address);
+      assert.equal(balance.toNumber(), 10);
+    });
+
+    it("should be able to mint tokens if rates increase", async () => {
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 30 days
+      await forwardTime(60 * 60 * 24 * 30, this);
+
+      await colony.mintTokens(10);
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+
+      const newRateAmount = 11;
+      await colony.setTokenIssuanceRate(newRateAmount);
+
+      await forwardTime(60 * 60 * 24 * 30, this);
+
+      await colony.mintTokens(newRateAmount);
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+
+      const balance = await token.balanceOf(colony.address);
+      assert.equal(balance.toNumber(), newRateAmount + initialRateAmount);
+    });
+
+    it("should be able to mint tokens if rates decrease", async () => {
+      const initialRateAmount = 10;
+      await colony.setTokenIssuanceRate(initialRateAmount);
+
+      // forward 30 days
+      await forwardTime(60 * 60 * 24 * 30, this);
+
+      await colony.mintTokens(10);
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+
+      const newRateAmount = 11;
+      await colony.setTokenIssuanceRate(newRateAmount);
+
+      await forwardTime(60 * 60 * 24 * 30, this);
+
+      await colony.mintTokens(newRateAmount);
+      await checkErrorRevert(colony.mintTokens(1), "token-issuance-rate-exceeded");
+
+      const balance = await token.balanceOf(colony.address);
+      assert.equal(balance.toNumber(), newRateAmount + initialRateAmount);
+    });
+
+    it("should be able to issue tokens with extremly high rates", async () => {
+      const initialRateAmount = toBN(2)
+        .pow(toBN(128))
+        .subn(1);
+      await colony.setTokenIssuanceRate(initialRateAmount.toString());
+
+      await forwardTime(60 * 60 * 24 * 30, this);
+
+      await colony.mintTokens(initialRateAmount.toString());
+      await checkErrorRevert(colony.mintTokens(initialRateAmount.toString()), "token-issuance-rate-exceeded");
+
+      await forwardTime(60 * 60 * 24 * 30, this);
+
+      await colony.mintTokens(initialRateAmount.toString());
+      const balance = await token.balanceOf(colony.address);
+      assert.equal(toBN(balance).toString(), initialRateAmount.muln(2).toString());
     });
   });
 

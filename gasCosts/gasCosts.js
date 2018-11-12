@@ -82,6 +82,21 @@ contract("All", accounts => {
     tokenAddress = await colony.getToken();
     await IColony.defaults({ gasPrice });
 
+    await colony.setTokenSupplyCeiling(200);
+
+    await metaColony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
+    await metaColony.setTokenIssuanceRate(
+      toBN(2)
+        .pow(toBN(128))
+        .subn(1)
+        .toString()
+    );
+
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
   });
@@ -317,6 +332,12 @@ contract("All", accounts => {
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
       await newToken.setOwner(colonyAddress);
+      await newColony.setTokenSupplyCeiling(
+        toBN(2)
+          .pow(toBN(256))
+          .subn(1)
+          .toString()
+      );
 
       await fundColonyWithTokens(newColony, otherToken, initialFunding.toString());
       await newColony.mintTokens(workerReputation.add(managerReputation).toString());
@@ -410,6 +431,36 @@ contract("All", accounts => {
 
       await forwardTime(5184001);
       await newColony.finalizeRewardPayout(payoutId2);
+    });
+
+    it("when issuing tokens", async () => {
+      const tokenArgs = getTokenArgs();
+      const newToken = await Token.new(...tokenArgs);
+      const { logs } = await colonyNetwork.createColony(newToken.address);
+      const { colonyAddress } = logs[0].args;
+      const newColony = await IColony.at(colonyAddress);
+      await newToken.setOwner(colonyAddress);
+
+      await newColony.setTokenSupplyCeiling(100);
+
+      await newColony.setTokenIssuanceRate(10);
+
+      const oneMonth = 60 * 60 * 24 * 30;
+      const fourWeeks = 60 * 60 * 24 * 28;
+      await forwardTime(oneMonth, this);
+      await newColony.mintTokens(10);
+
+      await forwardTime(fourWeeks, this);
+      await newColony.setTokenIssuanceRate(11);
+
+      await forwardTime(oneMonth, this);
+      await newColony.mintTokens(11);
+
+      await forwardTime(fourWeeks, this);
+      await newColony.setTokenIssuanceRate(12);
+
+      await forwardTime(oneMonth, this);
+      await newColony.mintTokens(12);
     });
   });
 });

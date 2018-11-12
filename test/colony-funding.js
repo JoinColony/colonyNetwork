@@ -64,6 +64,22 @@ contract("Colony Funding", accounts => {
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    const metaColony = await IColony.at(metaColonyAddress);
+    await metaColony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
+    await forwardTime(2419200);
+    await metaColony.setTokenIssuanceRate(
+      toBN(2)
+        .pow(toBN(128))
+        .subn(1)
+        .toString()
+    );
   });
 
   beforeEach(async () => {
@@ -74,6 +90,12 @@ contract("Colony Funding", accounts => {
     await token.setOwner(colonyAddress);
     colony = await IColony.at(colonyAddress);
     await colony.setRewardInverse(100);
+    await colony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
   });
@@ -834,6 +856,12 @@ contract("Colony Funding", accounts => {
 
       await newToken.setOwner(newColony.address);
       const funding = toBN(360 * 1e18);
+      await newColony.setTokenSupplyCeiling(
+        toBN(2)
+          .pow(toBN(256))
+          .subn(1)
+          .toString()
+      );
       await fundColonyWithTokens(newColony, newToken, funding.toString());
 
       await newColony.addDomain(1);
@@ -898,6 +926,12 @@ contract("Colony Funding", accounts => {
       const newColony = await IColony.at(colonyAddress);
       await newColony.setRewardInverse(100);
 
+      await newColony.setTokenSupplyCeiling(
+        toBN(2)
+          .pow(toBN(256))
+          .subn(1)
+          .toString()
+      );
       await newToken.setOwner(newColony.address);
       await newColony.mintTokens(userTokens.toString());
       await newColony.bootstrapColony([userAddress1], [userTokens.toString()]);
@@ -1294,6 +1328,13 @@ contract("Colony Funding", accounts => {
       const colony2 = await IColony.at(colonyAddress);
       await colony2.setRewardInverse(100);
 
+      const tokenSupplyCeiling = toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString();
+      await colony1.setTokenSupplyCeiling(tokenSupplyCeiling);
+      await colony2.setTokenSupplyCeiling(tokenSupplyCeiling);
+
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
       const newRoles = await DSRoles.new();
@@ -1428,6 +1469,13 @@ contract("Colony Funding", accounts => {
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
       await colony2.setRewardInverse(100);
+
+      const tokenSupplyCeiling = toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString();
+      await colony1.setTokenSupplyCeiling(tokenSupplyCeiling);
+      await colony2.setTokenSupplyCeiling(tokenSupplyCeiling);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -1582,6 +1630,12 @@ contract("Colony Funding", accounts => {
         await newToken.setOwner(colonyAddress);
         const newColony = await IColony.at(colonyAddress);
         await newColony.setRewardInverse(100);
+
+        const tokenSupplyCeiling = toBN(2)
+          .pow(toBN(256))
+          .subn(1)
+          .toString();
+        await newColony.setTokenSupplyCeiling(tokenSupplyCeiling);
 
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await Token.new(...payoutTokenArgs);

@@ -76,6 +76,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
 
+    // Setting this so there will be no tokens available for issuing when the colony is created
+    tokenIssuanceRate.totalAmountIssuedUnderRate = now;
+
     // Initialise the root domain
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
     uint256 rootLocalSkill = colonyNetwork.getSkillCount();
@@ -83,6 +86,36 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2**256 - 1;
+  }
+
+  function setTokenIssuanceRate(uint128 _amount) public auth stoppable {
+    // Minimum amount is 10 because of a rounding error
+    require(_amount >= 10, "token-issuance-rate-bad-inputs");
+    require(sub(now, tokenIssuanceRate.timestamp) >= 4 weeks, "token-issuance-rate-change-not-allowed");
+
+    // If we are setting the rate for the first time we will not go through these checks
+    if (tokenIssuanceRate.amount > 0) {
+      if (_amount > tokenIssuanceRate.amount) {
+        require(11 * tokenIssuanceRate.amount >= 10 * _amount, "token-issuance-rate-change-too-big");
+      } else {
+        require(9 * tokenIssuanceRate.amount <= 10 * _amount, "token-issuance-rate-change-too-big");
+      }
+    }
+
+    tokenIssuanceRate = TokenIssuanceRate(_amount, now, now);
+  }
+
+  function setTokenSupplyCeiling(uint256 _amount) public auth stoppable {
+    require(_amount > token.totalSupply(), "token-supply-ceiling-bad-input");
+    tokenSupplyCeiling = _amount;
+  }
+
+  function getTokenSupplyCeiling() public view returns (uint256) {
+    return tokenSupplyCeiling;
+  }
+
+  function getTokenIssuanceRate() public view returns (uint256, uint256, uint256) {
+    return (tokenIssuanceRate.amount, tokenIssuanceRate.timestamp, tokenIssuanceRate.totalAmountIssuedUnderRate);
   }
 
   function bootstrapColony(address[] _users, int[] _amounts) public
@@ -100,11 +133,35 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  function mintTokens(uint _wad) public
+  function mintTokens(uint _amount) public
   stoppable
   auth
   {
-    return token.mint(_wad);
+    require(add(_amount, token.totalSupply()) <= tokenSupplyCeiling, "token-issuance-amount-exceeds-supply-ceiling");
+
+    if (taskCount > 0) {
+      uint256 availableAmount;
+      uint256 availableSeconds;
+      (availableAmount, availableSeconds) = getAvailableIssuanceAmountAndSeconds();
+
+      require(_amount <= availableAmount, "token-issuance-rate-exceeded");
+
+      // Extract how many seconds corresponds to `_amount` of tokens
+      uint256 time = mul(_amount, availableSeconds) / availableAmount;
+      // Register that we issued amount corresponding to `time` amount of seconds
+      tokenIssuanceRate.totalAmountIssuedUnderRate = add(tokenIssuanceRate.totalAmountIssuedUnderRate, time);
+    }
+
+    return token.mint(_amount);
+  }
+
+  function getAvailableIssuanceAmountAndSeconds() public view returns (uint256, uint256) {
+    // Get how many seconds passed from last issuance
+    uint256 secondsSinceLastIssuance = sub(now, tokenIssuanceRate.totalAmountIssuedUnderRate);
+    // How much is available for issuance
+    uint256 availableAmount = mul(secondsSinceLastIssuance, tokenIssuanceRate.amount) / 30 days;
+
+    return (availableAmount, secondsSinceLastIssuance);
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {

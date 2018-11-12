@@ -52,6 +52,12 @@ contract ColonyAuthority is CommonAuthority {
     setOwnerRoleCapability(colony, "setRewardInverse(uint256)");
     // Add colony version to the network
     setOwnerRoleCapability(colony, "addNetworkColonyVersion(uint256,address)");
+    // Set token issuance rate
+    setOwnerRoleCapability(colony, "setTokenIssuanceRate(uint128)");
+    // Mint initial tokens
+    setOwnerRoleCapability(colony, "mintTokens(uint256)");
+    // Set token supply ceiling
+    setOwnerRoleCapability(colony, "setTokenSupplyCeiling(uint256)");
 
     // Allocate funds
     setAdminRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");

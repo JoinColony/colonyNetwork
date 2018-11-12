@@ -59,6 +59,12 @@ contract("Colony Reputation Updates", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     await colonyToken.setOwner(metaColonyAddress);
     metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setTokenSupplyCeiling(
+      toBN(2)
+        .pow(toBN(256))
+        .subn(1)
+        .toString()
+    );
     const amount = new BN(10)
       .pow(new BN(18))
       .mul(new BN(1000))
