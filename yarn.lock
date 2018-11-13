@@ -399,7 +399,7 @@ async-eventemitter@^0.2.2:
   dependencies:
     async "^2.4.0"
 
-"async-eventemitter@github:ahultgren/async-eventemitter#fa06e39e56786ba541c180061dbf2c0a5bbf951c":
+async-eventemitter@ahultgren/async-eventemitter#fa06e39e56786ba541c180061dbf2c0a5bbf951c:
   version "0.2.3"
   resolved "https://codeload.github.com/ahultgren/async-eventemitter/tar.gz/fa06e39e56786ba541c180061dbf2c0a5bbf951c"
   dependencies:
@@ -7224,9 +7224,9 @@ trim@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/trim/-/trim-0.0.1.tgz#5858547f6b290757ee95cccc666fb50084c460dd"
 
-truffle@5.0.0-beta.1:
-  version "5.0.0-beta.1"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0-beta.1.tgz#2ac40eb6128c1fa66b76c63567185e8fca17950b"
+truffle@5.0.0-next.15:
+  version "5.0.0-next.15"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0-next.15.tgz#70585225a71f08b89b3735a9f542aad25b6d2c78"
   dependencies:
     mocha "^4.1.0"
     original-require "1.0.1"
