@@ -344,9 +344,7 @@ contract("Colony Network Auction", accounts => {
 
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
-      const endPrice = new BN(10)
-        .pow(new BN(18))
-        .mul(new BN(receivedTotal.toString(10)))
+      const endPrice = WAD.mul(new BN(receivedTotal.toString(10)))
         .div(quantity)
         .addn(1);
       const finalPrice = await tokenAuction.finalPrice();
@@ -457,7 +455,7 @@ contract("Colony Network Auction", accounts => {
     it("sets correct final token price", async () => {
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
-      const endPrice = WAD.mul(receivedTotal).div(quantity).addn(1); // eslint-disable-line prettier/prettier
+      const endPrice = WAD.mul(receivedTotal).div(quantity).addn(1);
       const finalPrice = await tokenAuction.finalPrice();
       expect(endPrice).to.eq.BN(finalPrice);
     });
