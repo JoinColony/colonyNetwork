@@ -17,13 +17,15 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./IRecovery.sol";
+import "./ColonyDataTypes.sol";
 
 
 /// @title Colony interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColony is IRecovery {
+contract IColony is ColonyDataTypes ,IRecovery {
   // Events
   /// @notice Event logged when a new task is added
   /// @param id The newly added task id
@@ -415,7 +417,7 @@ contract IColony is IRecovery {
   /// @return user Address of the user for the given role
   /// @return rateFail Whether the user failed to rate their counterpart
   /// @return rating Rating the user received
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role);
 
   /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
   /// @param _rewardInverse The inverse of the reward

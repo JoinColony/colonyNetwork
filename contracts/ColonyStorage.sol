@@ -17,6 +17,8 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
+
 
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
@@ -24,15 +26,13 @@ import "./IColonyNetwork.sol";
 import "./ColonyAuthority.sol";
 import "./PatriciaTree/PatriciaTreeProofs.sol";
 import "./CommonStorage.sol";
+import "./ColonyDataTypes.sol";
 
 
-contract ColonyStorage is CommonStorage, DSMath {
+contract ColonyStorage is ColonyDataTypes, CommonStorage, DSMath {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
-
-  event DomainAdded(uint256 indexed id);
-  event PotAdded(uint256 indexed id);
 
   address colonyNetworkAddress;
   ERC20Extended token;
@@ -52,21 +52,6 @@ contract ColonyStorage is CommonStorage, DSMath {
   // to anything yet, but has had some siphoned off in to the reward pot.
   // Pot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
   mapping (uint256 => Pot) pots;
-
-  struct RewardPayoutCycle {
-    // Reputation root hash at the time of reward payout creation
-    bytes32 reputationState;
-    // Colony wide reputation
-    uint256 colonyWideReputation;
-    // Total tokens at the time of reward payout creation
-    uint256 totalTokens;
-    // Amount alocated for reward payout
-    uint256 amount;
-    // Token in which a reward is paid out with
-    address tokenAddress;
-    // Time of creation (in seconds)
-    uint256 blockTimestamp;
-  }
 
   // Keeps track of all reward payout cycles
   mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles;
@@ -102,49 +87,6 @@ contract ColonyStorage is CommonStorage, DSMath {
 
   // Mapping task id to current "active" nonce for executing task changes
   mapping (uint256 => uint256) taskChangeNonces;
-
-  struct Task {
-    bytes32 specificationHash;
-    bytes32 deliverableHash;
-    uint8 status;
-    uint256 dueDate;
-    uint256 payoutsWeCannotMake;
-    uint256 potId;
-    uint256 completionTimestamp;
-    uint256 domainId;
-    uint256[] skills;
-
-    mapping (uint8 => Role) roles;
-    // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
-    mapping (uint8 => mapping (address => uint256)) payouts;
-  }
-
-  enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
-
-  struct Role {
-    // Address of the user for the given role
-    address user;
-    // Whether the user failed to submit their rating
-    bool rateFail;
-    // Rating the user received
-    TaskRatings rating;
-  }
-
-  struct RatingSecrets {
-    uint256 count;
-    uint256 timestamp;
-    mapping (uint8 => bytes32) secret;
-  }
-
-  struct Pot {
-    mapping (address => uint256) balance;
-    uint256 taskId;
-  }
-
-  struct Domain {
-    uint256 skillId;
-    uint256 potId;
-  }
 
   modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
     Role storage role = tasks[_id].roles[_role];

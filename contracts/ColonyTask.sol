@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
 import "./SafeMath.sol";
@@ -448,9 +449,8 @@ contract ColonyTask is ColonyStorage {
     );
   }
 
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8) {
-    Role storage role = tasks[_id].roles[_role];
-    return (role.user, role.rateFail, uint8(role.rating));
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role) {
+    role = tasks[_id].roles[_role];
   }
 
   function markTaskCompleted(uint256 _id) internal {
