@@ -518,13 +518,17 @@ contract("Colony Network Auction", accounts => {
       await checkErrorRevert(tokenAuction.destruct(), "colony-auction-not-all-bids-claimed");
     });
 
-    it("should fail if there are CLNY tokens left owned by the auction", async () => {
+    it("should transfer any CLNY tokens left owned by the auction to the meta colony", async () => {
       await tokenAuction.finalize();
       await tokenAuction.claim({ from: BIDDER_1 });
       await metaColony.mintTokens(100);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 100);
       await clnyToken.transfer(tokenAuction.address, 100, { from: BIDDER_1 });
-      await checkErrorRevert(tokenAuction.destruct());
+
+      const metaColonyBalanceBefore = await clnyToken.balanceOf(metaColony.address);
+      await tokenAuction.destruct();
+      const metaColonyBalanceAfter = await clnyToken.balanceOf(metaColony.address);
+      assert.equal(metaColonyBalanceAfter.sub(metaColonyBalanceBefore).toNumber(), 100);
     });
   });
 });
