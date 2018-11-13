@@ -653,15 +653,41 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
-    const targetNode = ethers.utils
-      .bigNumberify(submission.lowerBound)
-      .add(submission.upperBound)
-      .div(2);
+
+    const searchInfo = await repCycle.getDisputeRounds2(round, index);
+    const targetNode = submission.lowerBound;
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
-    const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask, siblings, {
+    let [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
+
+    // Trim the proof if needed
+    let proofEndingHash = await this.justificationTree.getImpliedRoot(
+      targetNodeKey,
+      this.justificationHashes[targetNodeKey].jhLeafValue,
+      branchMask,
+      siblings
+    );
+
+    branchMask = new BN(branchMask.toString());
+
+    while (siblings.length > 0 && searchInfo[0] !== proofEndingHash) {
+      // Zero the leftmost set bit of branchMask
+      const largestBit = branchMask.bitLength();
+      branchMask = branchMask.maskn(largestBit - 1);
+      // Remove the first sibling
+      siblings = siblings.slice(1);
+      // Recalulate ending hash
+      // eslint-disable-next-line no-await-in-loop
+      proofEndingHash = await this.justificationTree.getImpliedRoot(
+        targetNodeKey,
+        this.justificationHashes[targetNodeKey].jhLeafValue,
+        branchMask,
+        siblings,
+        false
+      );
+    }
+    return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
       gasLimit: 1000000
     });
   }

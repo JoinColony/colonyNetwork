@@ -30,6 +30,12 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @return The elements of the Submission struct for the submission requested. See ReputationMiningCycleDataTypes for the full description
   function getDisputeRounds(uint256 _round, uint256 _index) public view returns (Submission submission);
 
+  function getDisputeRounds2(uint256 _round, uint256 _index) public view returns (
+    bytes32 targetHashDuringSearch,
+    bytes32 hash1,
+    bytes32 hash2
+    );
+
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.
   /// @param _user Address of the user
   /// @return submission the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description

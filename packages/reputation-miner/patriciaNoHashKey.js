@@ -179,6 +179,30 @@ exports.PatriciaTree = function PatriciaTree() {
     return [branchMask, siblings.map(s => bn2hex64(s))];
   };
 
+  this.getImpliedRoot = function getImpliedRoot(key, value, _branchMask, siblings, fullProof = true) {
+    let branchMask = new BN(_branchMask.toString());
+    let k = makeLabel(sha2bn(key), 256);
+    const valueHash = sha3(value);
+    const e = {};
+    e.nodeHash = valueHash;
+    const edgeHashes = [];
+
+    for (let i = 0; branchMask.toString() !== "0"; i += 1) {
+      const bitSet = branchMask.zeroBits();
+      branchMask = branchMask.and(new BN(1).shln(bitSet).notn(256));
+      [k, e.label] = splitAt(k, 255 - bitSet);
+      const [bit, newLabel] = chopFirstBit(e.label);
+      e.label = newLabel;
+      edgeHashes[bit] = edgeEncodingHash(e);
+      edgeHashes[1 - bit] = sha2bn(siblings[siblings.length - i - 1]);
+      e.nodeHash = sha2bn(web3Utils.soliditySha3(bn2hex64(edgeHashes[0]), bn2hex64(edgeHashes[1])));
+    }
+    if (fullProof) {
+      e.label = k;
+    }
+    return bn2hex64(edgeEncodingHash(e));
+  };
+
   // ////////////
   // Private functions
   // /////////////////////

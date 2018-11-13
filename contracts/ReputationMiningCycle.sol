@@ -158,7 +158,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         jrhNnodes: 0,
         intermediateReputationHash: 0x0,
         intermediateReputationNNodes: 0,
-        provedPreviousReputationUID: 0
+        provedPreviousReputationUID: 0,
+        targetHashDuringSearch: jrh,
+        hash1: 0x00,
+        hash2: 0x00
       }));
       // If we've got a pair of submissions to face off, may as well start now.
       if (nSubmittedHashes % 2 == 0) {
@@ -180,7 +183,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       jrhNnodes: 0,
       intermediateReputationHash: 0x0,
       intermediateReputationNNodes: 0,
-      provedPreviousReputationUID: 0
+      provedPreviousReputationUID: 0,
+      targetHashDuringSearch: 0x0,
+      hash1: 0x00,
+      hash2: 0x00
     });
     // And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes][jrh].push(msg.sender);
@@ -299,17 +305,22 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   {
     require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
 
-    uint256 targetNode = add(
-      disputeRounds[round][idx].lowerBound,
-      sub(disputeRounds[round][idx].upperBound, disputeRounds[round][idx].lowerBound) / 2
+    uint256 targetNode = disputeRounds[round][idx].lowerBound;
+    bytes32 targetHashDuringSearch = disputeRounds[round][idx].targetHashDuringSearch;
+    bytes32 impliedRoot;
+    bytes32[2] memory lastSiblings;
+    bool intermediateProof = disputeRounds[round][idx].challengeStepCompleted != 1;
+    (impliedRoot, lastSiblings) = getFinalPairAndImpliedRootNoHash(
+      bytes32(targetNode),
+      jhIntermediateValue,
+      branchMask,
+      siblings,
+      intermediateProof
     );
-    bytes32 jrh = disputeRounds[round][idx].jrh;
-
-    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(targetNode), jhIntermediateValue, branchMask, siblings);
-    require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-response");
+    require(impliedRoot==targetHashDuringSearch, "colony-reputation-mining-invalid-binary-search-response");
     // If require hasn't thrown, proof is correct.
     // Process the consequences
-    processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode);
+    processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode, lastSiblings);
   }
 
   function confirmBinarySearchResult(
@@ -328,7 +339,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
     uint256 targetNode = disputeRounds[round][idx].lowerBound;
     bytes32 jrh = disputeRounds[round][idx].jrh;
-    
+
     bytes32 impliedRoot = getImpliedRootNoHash(bytes32(targetNode), jhIntermediateValue, branchMask, siblings);
     require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-confirmation");
     bytes32 intermediateReputationHash;
@@ -424,6 +435,20 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return disputeRounds[_round][_index];
   }
 
+  function getDisputeRounds2(uint256 _round, uint256 _index) public view returns (
+    bytes32 targetHashDuringSearch,
+    bytes32 hash1,
+    bytes32 hash2
+    )
+    {
+    Submission memory submission = disputeRounds[_round][_index];
+    return (
+      submission.targetHashDuringSearch,
+      submission.hash1,
+      submission.hash2
+    );
+  }
+
   function rewardStakersWithReputation(
     address[] stakers,
     uint256[] weights,
@@ -462,7 +487,14 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
   }
 
-  function processBinaryChallengeSearchResponse(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 targetNode) internal {
+  function processBinaryChallengeSearchResponse(
+    uint256 round,
+    uint256 idx,
+    bytes jhIntermediateValue,
+    uint256 targetNode,
+    bytes32[2] lastSiblings
+  ) internal
+  {
     disputeRounds[round][idx].lastResponseTimestamp = now;
     disputeRounds[round][idx].challengeStepCompleted += 1;
     // Save our intermediate hash
@@ -475,6 +507,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][idx].intermediateReputationHash = intermediateReputationHash;
     disputeRounds[round][idx].intermediateReputationNNodes = intermediateReputationNNodes;
 
+    disputeRounds[round][idx].hash1 = lastSiblings[0];
+    disputeRounds[round][idx].hash2 = lastSiblings[1];
+
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
     if (disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted ) {
       // Our opponent answered this challenge already.
@@ -483,22 +518,40 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     }
   }
 
+  function nextPowerOfTwoInclusive(uint256 v) pure private returns (uint) { // solium-disable-line security/no-assign-params
+    // Returns the next power of two, or v if v is already a power of two.
+    // Doesn't work for zero.
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v |= v >> 32;
+    v |= v >> 64;
+    v |= v >> 128;
+    v++;
+    return v;
+  }
+
+
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx, uint256 targetNode) internal {
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
+    uint256 searchWidth = disputeRounds[round][idx].upperBound - disputeRounds[round][idx].lowerBound + 1;
+    uint256 searchWidthNextPowerOfTwo = nextPowerOfTwoInclusive(searchWidth);
     if (
-      disputeRounds[round][opponentIdx].intermediateReputationHash == disputeRounds[round][idx].intermediateReputationHash &&
-      disputeRounds[round][opponentIdx].intermediateReputationNNodes == disputeRounds[round][idx].intermediateReputationNNodes
+      disputeRounds[round][opponentIdx].hash1 == disputeRounds[round][idx].hash1
       )
     {
-      disputeRounds[round][idx].lowerBound = targetNode + 1;
-      disputeRounds[round][opponentIdx].lowerBound = targetNode + 1;
+      disputeRounds[round][idx].lowerBound += searchWidthNextPowerOfTwo/2;
+      disputeRounds[round][opponentIdx].lowerBound += searchWidthNextPowerOfTwo/2;
+      disputeRounds[round][idx].targetHashDuringSearch = disputeRounds[round][idx].hash2;
+      disputeRounds[round][opponentIdx].targetHashDuringSearch = disputeRounds[round][opponentIdx].hash2;
     } else {
-      // NB no '-1' to mirror the '+1' above in the other bound, because
-      // we're looking for the first index where these two submissions differ
-      // in their calculations - they disagreed for this index, so this might
-      // be the first index they disagree about
-      disputeRounds[round][idx].upperBound = targetNode;
-      disputeRounds[round][opponentIdx].upperBound = targetNode;
+      disputeRounds[round][idx].upperBound -= (searchWidth - searchWidthNextPowerOfTwo/2);
+      disputeRounds[round][opponentIdx].upperBound -= (searchWidth - searchWidthNextPowerOfTwo/2);
+      disputeRounds[round][idx].targetHashDuringSearch = disputeRounds[round][idx].hash1;
+      disputeRounds[round][opponentIdx].targetHashDuringSearch = disputeRounds[round][opponentIdx].hash1;
     }
     // We need to keep the intermediate hashes so that we can figure out what type of dispute we are resolving later
     // If the number of nodes in the reputation state are different, then we are disagreeing on whether this log entry
@@ -570,6 +623,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[roundNumber][index].lastResponseTimestamp = now;
     disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNnodes - 1;
     disputeRounds[roundNumber][index].lowerBound = 0;
+    disputeRounds[roundNumber][index].targetHashDuringSearch = disputeRounds[roundNumber][index].jrh;
     disputeRounds[roundNumber][index].provedPreviousReputationUID = 0;
     if (disputeRounds[roundNumber][index].jrh != 0x0) {
       // If this submission has a JRH, we give ourselves credit for it in the next round - it's possible
