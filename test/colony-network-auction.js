@@ -305,7 +305,7 @@ contract("Colony Network Auction", accounts => {
       await checkErrorRevert(tokenAuction.bid(0), "colony-auction-invalid-bid");
     });
 
-    it("auction closes when the receivedTotal goes over the total amount to end the auction", async () => {
+    it("auction closes when the receivedTotal goes over the total amount to end the auction for quantity > 1e18", async () => {
       // Considers totalToEndAuction < receivedTotal as per colonyNetwork#416
       // mul(quantity, price()) / TOKEN_MULTIPLIER < receivedTotal
       // quantity * price() < receivedTotal * TOKEN_MULTIPLIER
@@ -353,7 +353,40 @@ contract("Colony Network Auction", accounts => {
       assert.equal(endPrice.toString(), finalPrice.toString(10));
     });
 
-    it("functions correctly even when price is at minimum", async () => {
+    it("auction closes when the receivedTotal goes over the total amount to end the auction for quantity > 1e18", async () => {
+      const args = getTokenArgs();
+      const otherToken = await Token.new(...args);
+      await otherToken.mint(1e16);
+      await otherToken.transfer(colonyNetwork.address, 1e16);
+      const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+      const auctionAddress = logs[0].args.auction;
+      tokenAuction = await DutchAuction.at(auctionAddress);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
+      await clny.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
+
+      let endTime = await tokenAuction.endTime();
+      const amount = new BN(10).pow(new BN(20));
+
+      while (endTime.isZero()) {
+        await forwardTime(SECONDS_PER_DAY * 3, this);
+
+        await tokenAuction.bid(amount, { from: BIDDER_1 });
+        // const price = await tokenAuction.price();
+        // const totalToEndAuction = await tokenAuction.totalToEndAuction();
+        // const receivedTotal = await tokenAuction.receivedTotal();
+        endTime = await tokenAuction.endTime();
+        // console.log("price", price.toString());
+        // console.log("totalToEndAuction", totalToEndAuction.toString());
+        // console.log("receivedTotal", receivedTotal.toString());
+      }
+
+      await tokenAuction.finalize();
+      const finalPrice = await tokenAuction.finalPrice();
+      assert.equal(40000000000000000000001, finalPrice.toString(10));
+    });
+
+    it("functions correctly even when price has reached the minimum for quantity > 1e18", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
       await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
 
@@ -377,6 +410,40 @@ contract("Colony Network Auction", accounts => {
       // Check the final price is the minimum price
       const finalPrice = await tokenAuction.finalPrice();
       assert.equal(1, finalPrice.toString(10));
+    });
+
+    it("functions correctly even when price has reached the minimum for quantity < 1e18", async () => {
+      const args = getTokenArgs();
+      const otherToken = await Token.new(...args);
+      await otherToken.mint(1e16);
+      await otherToken.transfer(colonyNetwork.address, 1e16);
+      const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+      const auctionAddress = logs[0].args.auction;
+      tokenAuction = await DutchAuction.at(auctionAddress);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
+      await clny.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
+
+      await forwardTime(SECONDS_PER_DAY * 34, this);
+      let endTime = await tokenAuction.endTime();
+      const amount = new BN(10).pow(new BN(16));
+
+      while (endTime.isZero()) {
+        await forwardTime(SECONDS_PER_DAY, this);
+        await tokenAuction.bid(amount, { from: BIDDER_1 });
+        // const price = await tokenAuction.price();
+        // const totalToEndAuction = await tokenAuction.totalToEndAuction();
+        // const receivedTotal = await tokenAuction.receivedTotal();
+        endTime = await tokenAuction.endTime();
+        // console.log("price", price.toString());
+        // console.log("totalToEndAuction", totalToEndAuction.toString());
+        // console.log("receivedTotal", receivedTotal.toString());
+      }
+
+      await tokenAuction.finalize();
+      // Check the final price is the minimum price
+      const finalPrice = await tokenAuction.finalPrice();
+      assert.equal(100, finalPrice.toString(10));
     });
   });
 
