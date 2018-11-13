@@ -140,7 +140,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     uint256 i;
     address clnyToken = IColony(metaColony).getToken();
 
-    // I. Calculate (normalized) miner weights
+    // I. Calculate (normalized) miner weights and realReward
     uint256 timeStaked;
     uint256 minerWeightsTotal;
     uint256[] memory minerWeights = new uint256[](stakers.length);
@@ -151,24 +151,26 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
     }
 
+    uint256 realReward; // Used to prevent dust buildup due to small imprecisions in WAD arithmetic.
     for (i = 0; i < stakers.length; i++) {
       minerWeights[i] = wdiv(minerWeights[i], minerWeightsTotal);
+      realReward += wmul(reward, minerWeights[i]);
     }
 
     // II. Disburse reputation and tokens
-    IMetaColony(metaColony).mintTokensForColonyNetwork(reward);
+    IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
 
     // This gives them reputation in the next update cycle.
     IReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(
       stakers,
       minerWeights,
       metaColony,
-      reward,
+      realReward,
       rootGlobalSkillId + 2
     );
 
     for (i = 0; i < stakers.length; i++) {
-      ERC20Extended(clnyToken).transfer(stakers[i], wmul(reward, minerWeights[i]));
+      ERC20Extended(clnyToken).transfer(stakers[i], wmul(realReward, minerWeights[i]));
     }
   }
 }

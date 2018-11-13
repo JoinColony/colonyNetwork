@@ -791,8 +791,8 @@ contract("ColonyNetworkMining", accounts => {
       assert.isTrue(balance1Updated.sub(REWARD.divn(2)).gtn(0), "Account was not rewarded properly");
       // Less than half of the reward
       assert.isTrue(balance2Updated.sub(REWARD.divn(2)).ltn(0), "Account was not rewarded properly");
-      // Sum is total reward within 100 wei of precision error
-      assert.closeTo(balance1Updated.add(balance2Updated).sub(REWARD).toNumber(), 0, 100); // eslint-disable-line prettier/prettier
+      // Sum is total reward within `stakers.length` wei of precision error
+      assert.closeTo(balance1Updated.add(balance2Updated).sub(REWARD).toNumber(), 0, 2); // eslint-disable-line prettier/prettier
 
       addr = await colonyNetwork.getReputationMiningCycle(false);
       repCycle = await IReputationMiningCycle.at(addr);

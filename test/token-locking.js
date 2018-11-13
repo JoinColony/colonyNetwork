@@ -1,7 +1,7 @@
 /* globals artifacts */
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, currentBlockTime } from "../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
 import { MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
 
@@ -109,21 +109,24 @@ contract("TokenLocking", addresses => {
 
     it("should correctly set deposit timestamp", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
-      const deposit = usersTokens / 2;
+      const quarter = Math.floor(usersTokens / 4);
 
-      const time1 = await currentBlockTime();
-      await tokenLocking.deposit(token.address, deposit, { from: userAddress });
+      let tx;
+      tx = await tokenLocking.deposit(token.address, quarter * 3, { from: userAddress });
+      const time1 = await getBlockTime(tx.receipt.blockNumber);
       const info1 = await tokenLocking.getUserLock(token.address, userAddress);
+      assert.equal(info1[1].toNumber(), quarter * 3);
       assert.equal(info1[2].toNumber(), time1);
 
       await forwardTime(3600);
 
-      const time2 = await currentBlockTime();
-      await tokenLocking.deposit(token.address, deposit, { from: userAddress });
+      tx = await tokenLocking.deposit(token.address, quarter, { from: userAddress });
+      const time2 = await getBlockTime(tx.receipt.blockNumber);
       const info2 = await tokenLocking.getUserLock(token.address, userAddress);
 
-      const avgTime = (time1 + time2) / 2;
-      assert.closeTo(info2[2].toNumber(), avgTime, 1); // Tolerance of 1 second
+      const weightedAvgTime = Math.floor((time1 * 3 + time2) / 4);
+      assert.equal(info2[1].toNumber(), quarter * 4);
+      assert.equal(info2[2].toNumber(), weightedAvgTime);
     });
 
     it("should not be able to deposit tokens if they are not approved", async () => {
