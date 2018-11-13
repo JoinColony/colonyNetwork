@@ -264,6 +264,7 @@ contract ColonyTask is ColonyStorage {
   ratingSecretDoesNotExist(_id, _role)
   taskWorkRatingCommitOpen(_id)
   {
+    require(_ratingSecret != "", "colony-task-rating-secret-missing");
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     ratingSecrets.count += 1;
     ratingSecrets.timestamp = now;
