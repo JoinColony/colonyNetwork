@@ -41,6 +41,8 @@ import {
   makeTask
 } from "../helpers/test-data-generator";
 
+const ethers = require("ethers");
+
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
@@ -214,7 +216,9 @@ contract("ColonyTask", accounts => {
 
       const sigTypes = [0, 0];
       const signers = [MANAGER, WORKER];
-      const txData = await colony.contract.methods.setTaskWorkerRole(taskId, WORKER).encodeABI();
+      // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
+      const ethersBN = ethers.utils.bigNumberify(taskId.toString());
+      const txData = await colony.contract.methods.setTaskWorkerRole(ethersBN, WORKER).encodeABI();
       const sigsPromises = sigTypes.map((type, i) => createSignatures(colony, taskId, [signers[i]], 0, txData));
       const sigs = await Promise.all(sigsPromises);
       const sigV = sigs.map(sig => sig.sigV[0]);

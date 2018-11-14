@@ -17,6 +17,8 @@ import {
 } from "./constants";
 import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
+const ethers = require("ethers");
+
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
@@ -28,12 +30,27 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
 }
 
 async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
-  const txData = await colony.contract.methods[functionName](...args).encodeABI();
+  // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
+  const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
+  const convertedArgs = [];
+  args.forEach(arg => {
+    if (Number.isInteger(arg)) {
+      const convertedArg = ethers.utils.bigNumberify(arg);
+      convertedArgs.push(convertedArg);
+    } else if (web3.utils.isBN(arg) || web3.utils.isBigNumber(arg)) {
+      const convertedArg = ethers.utils.bigNumberify(arg.toString());
+      convertedArgs.push(convertedArg);
+    } else {
+      convertedArgs.push(arg);
+    }
+  });
+
+  const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     if (type === 0) {
-      return createSignatures(colony, taskId, [signers[i]], 0, txData);
+      return createSignatures(colony, ethersBNTaskId, [signers[i]], 0, txData);
     }
-    return createSignaturesTrezor(colony, taskId, [signers[i]], 0, txData);
+    return createSignaturesTrezor(colony, ethersBNTaskId, [signers[i]], 0, txData);
   });
   const sigs = await Promise.all(sigsPromises);
   const sigV = sigs.map(sig => sig.sigV[0]);
@@ -62,7 +79,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-    if (rootGlobalSkill.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
+    if (rootGlobalSkill.isZero()) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
 
     await executeSignedTaskChange({
       colony,
@@ -70,7 +87,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
       functionName: "setTaskSkill",
       signers: [manager],
       sigTypes: [0],
-      args: [taskId, rootGlobalSkill.toNumber()]
+      args: [taskId, rootGlobalSkill]
     });
   } else {
     await executeSignedTaskChange({
@@ -298,12 +315,20 @@ export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount
 }
 
 export async function fundColonyWithTokens(colony, token, tokenAmount) {
+  // We get input either a plan JS number or a BN.js instance. Ensure we always pass on BN.js
+  let tokenAmountBN;
+  if (web3.utils.isBN(tokenAmount)) {
+    tokenAmountBN = tokenAmount;
+  } else {
+    tokenAmountBN = new BN(tokenAmount);
+  }
+
   const colonyToken = await colony.getToken();
   if (colonyToken === token.address) {
-    await colony.mintTokens(tokenAmount);
+    await colony.mintTokens(tokenAmountBN);
   } else {
-    await token.mint(tokenAmount);
-    await token.transfer(colony.address, tokenAmount);
+    await token.mint(tokenAmountBN);
+    await token.transfer(colony.address, tokenAmountBN);
   }
   await colony.claimColonyFunds(token.address);
 }

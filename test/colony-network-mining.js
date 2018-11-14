@@ -2674,7 +2674,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.insert(userKey, new BN("2").pow(new BN("256")).subn(2), 0);
 
       const rootHash = await goodClient.getRootHash();
-      await fundColonyWithTokens(metaColony, clny, new BN("4").mul(new BN("10").pow(new BN("75"))).toString());
+      await fundColonyWithTokens(metaColony, clny, new BN("4").mul(new BN("10").pow(new BN("75"))));
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
@@ -2843,38 +2843,38 @@ contract("ColonyNetworkMining", accounts => {
       let value;
       // These should be:
       // 1. Colony-wide total reputation for metacolony's root skill
-      key = makeReputationKey(metaColony.address, META_ROOT_SKILL);
+      key = makeReputationKey(metaColony.address, new BN(META_ROOT_SKILL));
       value = makeReputationValue(DEFAULT_STAKE.muln(6).add(REWARD), 1);
       assert.equal(client.reputations[key], value);
 
       // 2. Colony-wide total reputation for mining skill
-      key = makeReputationKey(metaColony.address, MINING_SKILL);
+      key = makeReputationKey(metaColony.address, new BN(MINING_SKILL));
       value = makeReputationValue(REWARD, 2);
       assert.equal(client.reputations[key], value);
 
       // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
-      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, MAIN_ACCOUNT);
-      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(REWARD), 3);
+      key = makeReputationKey(metaColony.address, new BN(META_ROOT_SKILL), MAIN_ACCOUNT);
+      value = makeReputationValue(REWARD.muln(6).add(WAD), 3);
       assert.equal(client.reputations[key], value);
 
       // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputation hash
-      key = makeReputationKey(metaColony.address, MINING_SKILL, MAIN_ACCOUNT);
+      key = makeReputationKey(metaColony.address, new BN(MINING_SKILL), MAIN_ACCOUNT);
       value = makeReputationValue(REWARD, 4);
       assert.equal(client.reputations[key], value);
 
       // 5. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
-      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, accounts[2]);
+      key = makeReputationKey(metaColony.address, new BN(META_ROOT_SKILL), accounts[2]);
       value = makeReputationValue(0, 5);
       assert.equal(client.reputations[key], value);
 
       // 6. Colony-wide total reputation for global skill task was in
-      key = makeReputationKey(metaColony.address, GLOBAL_SKILL);
+      key = makeReputationKey(metaColony.address, new BN(GLOBAL_SKILL));
       value = makeReputationValue(0, 6);
       assert.equal(client.reputations[key], value);
 
       // 7. Worker reputation for global skill task was in
-      key = makeReputationKey(metaColony.address, GLOBAL_SKILL, accounts[2]);
+      key = makeReputationKey(metaColony.address, new BN(GLOBAL_SKILL), accounts[2]);
       value = makeReputationValue(0, 7);
       assert.equal(client.reputations[key], value);
     });

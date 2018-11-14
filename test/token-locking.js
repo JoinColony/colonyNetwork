@@ -76,7 +76,7 @@ contract("TokenLocking", addresses => {
 
     const result = await colony.getDomain(1);
     const rootDomainSkill = result.skillId;
-    const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill.toNumber());
+    const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
     const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
     colonyWideReputationProof = [key, value, branchMask, siblings];
   });
