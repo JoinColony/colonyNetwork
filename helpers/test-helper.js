@@ -153,7 +153,7 @@ export async function checkErrorRevert(promise, errorMessage) {
     assert.equal(reason, errorMessage);
   }
   // Check the receipt `status` to ensure transaction failed.
-  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected error ${errorMessage}`);
+  assert.isFalse(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`);
 }
 
 export async function checkErrorRevertEthers(promise, errorMessage) {
@@ -161,7 +161,7 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
   const txid = tx.hash;
 
   const receipt = await web3GetTransactionReceipt(txid);
-  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected to fail`);
+  assert.isFalse(receipt.status, `Transaction succeeded, but expected to fail`);
 
   const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
   const reason = extractReasonString(response);
