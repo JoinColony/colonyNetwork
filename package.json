@@ -20,14 +20,17 @@
     "test:contracts:gasCosts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test gasCosts/gasCosts.js --network development",
     "test:contracts:patricia": "npm run start:blockchain:client parity & truffle migrate --reset --compile-all && truffle test packages/reputation-miner/patricia-test.js --network development",
     "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94",
+    "test:contracts:watch": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle watch --network development",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:gasCosts": "sed -ie \"s/mocha-circleci-reporter/eth-gas-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
+    "pretest:contracts:watch": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "posttest:contracts": "npm run stop:blockchain:client",
     "posttest:contracts:upgrade": "npm run clean:test:contracts | npm run stop:blockchain:client",
     "posttest:contracts:gasCosts": "npm run stop:blockchain:client",
-    "posttest:contracts:patricia": "npm run stop:blockchain:client"
+    "posttest:contracts:patricia": "npm run stop:blockchain:client",
+    "posttest:contracts:watch": "npm run stop:blockchain:client"
   },
   "husky": {
     "hooks": {
