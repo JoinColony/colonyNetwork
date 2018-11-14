@@ -671,7 +671,7 @@ class ReputationMiner {
 
     branchMask = new BN(branchMask.toString());
 
-    while (siblings.length > 0 && searchInfo[0] !== proofEndingHash) {
+    while (siblings.length > 1 && searchInfo[0] !== proofEndingHash) {
       // Zero the leftmost set bit of branchMask
       const largestBit = branchMask.bitLength();
       branchMask = branchMask.maskn(largestBit - 1);

@@ -885,7 +885,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it.skip("in the event of a disagreement just over JRH, dispute should be resolved correctly", async () => {
+    it("in the event of a disagreement just over JRH, because a leaf in the JT is wrong, dispute should be resolved correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -905,38 +905,118 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(0);
       addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
-
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for three task completions (manager, worker, evaluator);
       // That's seven in total.
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
-      badClient = new MaliciousReputationMinerWrongJRH({
-        loader: contractLoader,
-        minerAddress: OTHER_ACCOUNT,
-        realProviderPort: REAL_PROVIDER_PORT,
-        useJsTree
-      });
+      badClient = new MaliciousReputationMinerWrongJRH(
+        {
+          loader: contractLoader,
+          minerAddress: OTHER_ACCOUNT,
+          realProviderPort: REAL_PROVIDER_PORT,
+          useJsTree
+        },
+        8
+      );
+
       await badClient.initialise(colonyNetwork.address);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      assert.equal(nSubmittedHashes, 2);
-      const submission = await repCycle.getDisputeRounds(0, 0);
-      assert.equal(submission[7].toString(), "0");
-      await forwardTime(10, this); // This is just to ensure that the timestamps checked below will be different if JRH was submitted.
-
-      await goodClient.confirmJustificationRootHash();
-
-      const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
-      const jrh = await goodClient.justificationTree.getRootHash();
-      assert.equal(submissionAfterJRHConfirmed[4], jrh);
-
-      // Check 'last response' was updated.
-      assert.notEqual(submission[2].toString(), submissionAfterJRHConfirmed[2].toString());
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
 
       // Cleanup
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("in the event of a disagreement just over JRH, because an extra leaf was added to the JT, dispute should be resolved correctly", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", 10);
+      await repCycle.confirmNewHash(0);
+
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10);
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for three task completions (manager, worker, evaluator);
+      // That's seven in total.
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      badClient = new MaliciousReputationMinerWrongJRH(
+        {
+          loader: contractLoader,
+          minerAddress: OTHER_ACCOUNT,
+          realProviderPort: REAL_PROVIDER_PORT,
+          useJsTree
+        },
+        500000
+      );
+
+      await badClient.initialise(colonyNetwork.address);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await goodClient.confirmJustificationRootHash();
+      await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-1-length");
+
+      // Cleanup
+      await forwardTime(MINING_CYCLE_DURATION / 6);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("in the event of a disagreement just over JRH, because an extra leaf was added to the JT, dispute should be resolved correctly", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", 10);
+      await repCycle.confirmNewHash(0);
+
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10);
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for three task completions (manager, worker, evaluator);
+      // That's seven in total.
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      badClient = new MaliciousReputationMinerWrongJRH(
+        {
+          loader: contractLoader,
+          minerAddress: OTHER_ACCOUNT,
+          realProviderPort: REAL_PROVIDER_PORT,
+          useJsTree
+        },
+        30
+      );
+
+      await badClient.initialise(colonyNetwork.address);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await goodClient.confirmJustificationRootHash();
+      await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-2-length");
+
+      // Cleanup
+      await forwardTime(MINING_CYCLE_DURATION / 6);
+      await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
 

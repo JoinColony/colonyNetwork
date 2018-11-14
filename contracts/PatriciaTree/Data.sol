@@ -65,8 +65,8 @@ library Data {
     return keccak256(abi.encodePacked(self.node, self.label.length, self.label.data));
   }
 
-  function insert(Tree storage self, bytes key, bytes value) internal {
-    Label memory k = Label(keccak256(key), 256);
+  function insert(Tree storage self, bytes32 key, bytes value) internal {
+    Label memory k = Label(key, 256);
     bytes32 valueHash = keccak256(value);
     Edge memory e;
     if (self.root == 0) {

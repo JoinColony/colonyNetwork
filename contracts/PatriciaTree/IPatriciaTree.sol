@@ -33,5 +33,5 @@ contract IPatriciaTree {
   function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public pure returns (bytes32 rootHash);
 
   /// @notice Insert the `key`/`value`in the appropriate place in the tree
-  function insert(bytes key, bytes value) public;
+  function insert(bytes32 key, bytes value) public;
 }

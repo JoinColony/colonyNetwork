@@ -65,7 +65,7 @@ contract PatriciaTree is IPatriciaTree, PatriciaTreeProofs {
     }
   }
 
-  function insert(bytes key, bytes value) public {
+  function insert(bytes32 key, bytes value) public {
     tree.insert(key, value);
   }
 }

@@ -216,7 +216,7 @@ exports.PatriciaTree = function PatriciaTree() {
     } else if (prefix.length >= edge.label.length) {
       // Partial match, just follow the path
       // NOTE: but how could a common prefix be longer than either label?
-      if (!(suffix.length > 1)) throw "AssertFail"; // eslint-disable-line no-throw-literal
+      if (!(suffix.length >= 1)) throw "AssertFail"; // eslint-disable-line no-throw-literal
       const node = this.tree.nodes[edge.nodeHash.toString(16)];
       const [head, tail] = chopFirstBit(suffix);
       node.children[head] = this.insertAtEdge(node.children[head], tail, valueHash);

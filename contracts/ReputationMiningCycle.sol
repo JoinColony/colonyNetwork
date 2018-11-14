@@ -310,6 +310,12 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32 impliedRoot;
     bytes32[2] memory lastSiblings;
     bool intermediateProof = disputeRounds[round][idx].challengeStepCompleted != 1;
+
+    // Check proof is the right length
+    uint256 expectedLength = expectedProofLength(disputeRounds[round][idx].jrhNnodes, disputeRounds[round][idx].lowerBound) -
+      (disputeRounds[round][idx].challengeStepCompleted - 1); // We expect shorter proofs the more chanllenge rounds we've done so far
+    require(expectedLength == siblings.length, "colony-reputation-mining-invalid-binary-search-proof-length");
+
     (impliedRoot, lastSiblings) = getFinalPairAndImpliedRootNoHash(
       bytes32(targetNode),
       jhIntermediateValue,
@@ -371,6 +377,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // Get reputation root hash NNodes, which we need in both of the following checkJRHProofs
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
 
+
     // Check the proofs for the JRH
     checkJRHProof1(disputeRounds[round][index].jrh, branchMask1, siblings1, reputationRootHashNNodes);
     checkJRHProof2(
@@ -381,6 +388,13 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       siblings2,
       reputationRootHashNNodes
     );
+
+    uint256 expectedLength = expectedProofLength(disputeRounds[round][index].jrhNnodes, 0);
+    require(expectedLength == siblings1.length, "colony-reputation-mining-invalid-jrh-proof-1-length");
+
+    expectedLength = expectedProofLength(disputeRounds[round][index].jrhNnodes, disputeRounds[round][index].jrhNnodes - 1);
+    require(expectedLength == siblings2.length, "colony-reputation-mining-invalid-jrh-proof-2-length");
+
 
     // Record that they've responded
     disputeRounds[round][index].lastResponseTimestamp = now;
@@ -534,6 +548,22 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return v;
   }
 
+  function expectedProofLength(uint256 nNodes, uint256 node) pure private returns (uint256) { // solium-disable-line security/no-assign-params
+    nNodes -= 1;
+    uint256 nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+    uint256 layers = 0;
+    while (nNodes != 0 && (node+1 > nextPowerOfTwo / 2)) {
+      nNodes -= nextPowerOfTwo/2;
+      node -= nextPowerOfTwo/2;
+      layers += 1;
+      nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+    }
+    while (nextPowerOfTwo > 1) {
+      layers += 1;
+      nextPowerOfTwo >>= 1;
+    }
+    return layers;
+  }
 
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx, uint256 targetNode) internal {
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
@@ -616,7 +646,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     }
     bytes32 impliedRoot = getImpliedRootNoHash(bytes32(nUpdates), jhLeafValue, branchMask2, siblings2);
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-2");
-
   }
 
   function startMemberOfPair(uint256 roundNumber, uint256 index) internal {
