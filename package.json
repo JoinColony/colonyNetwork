@@ -72,7 +72,7 @@
     "ethereumjs-util": "^6.0.0",
     "ethers": "^4.0.12",
     "ganache-cli": "https://github.com/area/ganache-cli.git#fakefix/eth_call_selfdestruct",
-    "husky": "^1.1.3",
+    "husky": "^1.1.4",
     "istanbul": "^0.4.5",
     "jsonfile": "^5.0.0",
     "mocha": "^5.2.0",
