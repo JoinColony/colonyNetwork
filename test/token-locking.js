@@ -3,7 +3,7 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
-import { MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
+import { MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
@@ -83,9 +83,9 @@ contract("TokenLocking", addresses => {
 
   describe("when locking tokens", async () => {
     it("should correctly set colony network address", async () => {
-      await tokenLocking.setColonyNetwork(0x0);
+      await tokenLocking.setColonyNetwork(ZERO_ADDRESS);
       let colonyNetworkAddress = await tokenLocking.getColonyNetwork();
-      assert.equal(colonyNetworkAddress, 0x0);
+      assert.equal(colonyNetworkAddress, ZERO_ADDRESS);
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
       colonyNetworkAddress = await tokenLocking.getColonyNetwork();
@@ -381,7 +381,7 @@ contract("TokenLocking", addresses => {
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
       await checkErrorRevert(
-        tokenLocking.punishStakers([addresses[0], addresses[1]], 0x0, MIN_STAKE),
+        tokenLocking.punishStakers([addresses[0], addresses[1]], ZERO_ADDRESS, MIN_STAKE),
         "colony-token-locking-sender-not-reputation-mining-cycle"
       );
     });

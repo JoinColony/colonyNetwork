@@ -1,4 +1,5 @@
 /* globals artifacts */
+import { BN } from "bn.js";
 import { toBN, sha3 } from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";
@@ -13,7 +14,9 @@ import {
   WORKER_PAYOUT,
   INITIAL_FUNDING,
   DEFAULT_STAKE,
-  MINING_CYCLE_DURATION
+  MINING_CYCLE_DURATION,
+  ZERO_ADDRESS,
+  WAD
 } from "../helpers/constants";
 
 import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlockTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
@@ -454,7 +457,7 @@ contract("Colony Funding", accounts => {
     });
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
-      await fundColonyWithTokens(colony, otherToken, 363 * 1e18);
+      await fundColonyWithTokens(colony, otherToken, new BN(363).mul(WAD));
       const taskId = await setupRatedTask({ colonyNetwork, colony, token: otherToken });
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
       await colony.finalizeTask(taskId);
@@ -496,15 +499,16 @@ contract("Colony Funding", accounts => {
   describe("when receiving ether", () => {
     it("should not put the ether straight in to the pot", async () => {
       await colony.send(100);
-      let colonyPotBalance = await colony.getPotBalance(1, 0x0);
+      let colonyPotBalance = await colony.getPotBalance(1, ZERO_ADDRESS);
       let colonyEtherBalance = await web3GetBalance(colony.address);
-      let colonyRewardBalance = await colony.getPotBalance(0, 0x0);
+      let colonyRewardBalance = await colony.getPotBalance(0, ZERO_ADDRESS);
       assert.equal(colonyEtherBalance, 100);
       expect(colonyPotBalance).to.be.zero;
-      await colony.claimColonyFunds(0x0);
-      colonyPotBalance = await colony.getPotBalance(1, 0x0);
+
+      await colony.claimColonyFunds(ZERO_ADDRESS);
+      colonyPotBalance = await colony.getPotBalance(1, ZERO_ADDRESS);
       colonyEtherBalance = await web3GetBalance(colony.address);
-      colonyRewardBalance = await colony.getPotBalance(0, 0x0);
+      colonyRewardBalance = await colony.getPotBalance(0, ZERO_ADDRESS);
       assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyRewardBalance.toNumber(), 1);
       assert.equal(colonyPotBalance.toNumber(), 99);
@@ -512,12 +516,12 @@ contract("Colony Funding", accounts => {
 
     it("should let ether be moved between pots", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(0x0);
+      await colony.claimColonyFunds(ZERO_ADDRESS);
       await makeTask({ colony });
-      await colony.moveFundsBetweenPots(1, 2, 51, 0x0);
-      const colonyPotBalance = await colony.getPotBalance(1, 0x0);
+      await colony.moveFundsBetweenPots(1, 2, 51, ZERO_ADDRESS);
+      const colonyPotBalance = await colony.getPotBalance(1, ZERO_ADDRESS);
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const pot2Balance = await colony.getPotBalance(2, 0x0);
+      const pot2Balance = await colony.getPotBalance(2, ZERO_ADDRESS);
       assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyPotBalance.toNumber(), 48);
       assert.equal(pot2Balance.toNumber(), 51);
@@ -525,16 +529,16 @@ contract("Colony Funding", accounts => {
 
     it("should not allow more ether to leave a pot than the pot has (even if the colony has that many)", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(0x0);
+      await colony.claimColonyFunds(ZERO_ADDRESS);
       await makeTask({ colony });
       await makeTask({ colony });
-      await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
+      await colony.moveFundsBetweenPots(1, 2, 40, ZERO_ADDRESS);
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, 0x0), "colony-funding-task-bad-state");
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, ZERO_ADDRESS), "colony-funding-task-bad-state");
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const colonyPotBalance = await colony.getPotBalance(1, 0x0);
-      const pot2Balance = await colony.getPotBalance(2, 0x0);
-      const pot3Balance = await colony.getPotBalance(3, 0x0);
+      const colonyPotBalance = await colony.getPotBalance(1, ZERO_ADDRESS);
+      const pot2Balance = await colony.getPotBalance(2, ZERO_ADDRESS);
+      const pot3Balance = await colony.getPotBalance(3, ZERO_ADDRESS);
       assert.equal(colonyEtherBalance, 100);
       assert.equal(colonyPotBalance.toNumber(), 59);
       assert.equal(pot2Balance.toNumber(), 40);
@@ -543,7 +547,7 @@ contract("Colony Funding", accounts => {
 
     it("should correctly track if we are able to make ether payouts", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(0x0);
+      await colony.claimColonyFunds(ZERO_ADDRESS);
       const taskId = await makeTask({ colony });
       await executeSignedRoleAssignment({
         colony,
@@ -561,18 +565,18 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 0x0, 40]
+        args: [taskId, ZERO_ADDRESS, 40]
       });
       let task = await colony.getTask(taskId);
       assert.equal(task[4].toNumber(), 1);
 
       // Fund the pot equal to manager payout 40 = 40
-      await colony.moveFundsBetweenPots(1, 2, 40, 0x0);
+      await colony.moveFundsBetweenPots(1, 2, 40, ZERO_ADDRESS);
       task = await colony.getTask(taskId);
       assert.equal(task[4].toNumber(), 0);
 
       // Cannot bring pot balance below current payout
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, 0x0), "colony-funding-task-bad-state");
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, ZERO_ADDRESS), "colony-funding-task-bad-state");
 
       // Set manager payout above pot value 50 > 40
       await executeSignedTaskChange({
@@ -581,34 +585,34 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 0x0, 50]
+        args: [taskId, ZERO_ADDRESS, 50]
       });
       task = await colony.getTask(taskId);
       assert.equal(task[4].toNumber(), 1);
 
       // Fund the pot equal to manager payout, plus 10, 50 < 60
-      await colony.moveFundsBetweenPots(1, 2, 20, 0x0);
+      await colony.moveFundsBetweenPots(1, 2, 20, ZERO_ADDRESS);
       task = await colony.getTask(taskId);
       assert.equal(task[4].toNumber(), 0);
 
       // Cannot bring pot balance below current payout
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, 0x0), "colony-funding-task-bad-state");
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, ZERO_ADDRESS), "colony-funding-task-bad-state");
 
       // Can remove surplus 50 = 50
-      await colony.moveFundsBetweenPots(2, 1, 10, 0x0);
+      await colony.moveFundsBetweenPots(2, 1, 10, ZERO_ADDRESS);
       task = await colony.getTask(taskId);
       assert.equal(task[4].toNumber(), 0);
     });
 
     it("should pay fees on revenue correctly", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(0x0);
+      await colony.claimColonyFunds(ZERO_ADDRESS);
       await colony.send(200);
-      await colony.claimColonyFunds(0x0);
-      const colonyPotBalance = await colony.getPotBalance(1, 0x0);
-      const colonyRewardPotBalance = await colony.getPotBalance(0, 0x0);
+      await colony.claimColonyFunds(ZERO_ADDRESS);
+      const colonyPotBalance = await colony.getPotBalance(1, ZERO_ADDRESS);
+      const colonyRewardPotBalance = await colony.getPotBalance(0, ZERO_ADDRESS);
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const nonRewardPotsTotal = await colony.getNonRewardPotsTotal(0x0);
+      const nonRewardPotsTotal = await colony.getNonRewardPotsTotal(ZERO_ADDRESS);
       assert.equal(colonyEtherBalance, 300);
       assert.equal(colonyPotBalance.toNumber(), 297);
       assert.equal(colonyRewardPotBalance.toNumber(), 3);
@@ -725,7 +729,7 @@ contract("Colony Funding", accounts => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000");
+      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await miningClient.insert(globalKey, toBN(10), 0);
 
       await forwardTime(MINING_CYCLE_DURATION, this);
@@ -972,7 +976,7 @@ contract("Colony Funding", accounts => {
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
 
-      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, "0x0000000000000000000000000000000000000000");
+      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await miningClient.insert(globalKey, toBN(0), 0);
 
       await forwardTime(MINING_CYCLE_DURATION, this);

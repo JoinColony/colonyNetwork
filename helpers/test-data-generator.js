@@ -13,7 +13,8 @@ import {
   MANAGER_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH,
-  DELIVERABLE_HASH
+  DELIVERABLE_HASH,
+  ZERO_ADDRESS
 } from "./constants";
 import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
@@ -168,7 +169,7 @@ export async function setupFundedTask({
   if (token === undefined) {
     tokenAddress = await colony.getToken();
   } else {
-    tokenAddress = token === 0x0 ? 0x0 : token.address;
+    tokenAddress = token === ZERO_ADDRESS ? ZERO_ADDRESS : token.address;
   }
   const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, domain, skill, evaluator, worker });
   const task = await colony.getTask(taskId);
@@ -286,7 +287,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
 
   let mainBalance = await clny.balanceOf(manager);
   await clny.transfer(
-    0x0,
+    ZERO_ADDRESS,
     mainBalance
       .sub(amount)
       .sub(mainStartingBalance)
@@ -295,7 +296,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await clny.transfer(address, amount.toString());
   mainBalance = await clny.balanceOf(manager);
   if (address !== manager) {
-    await clny.transfer(0x0, mainBalance.sub(mainStartingBalance).toString());
+    await clny.transfer(ZERO_ADDRESS, mainBalance.sub(mainStartingBalance).toString());
   }
   const userBalance = await clny.balanceOf(address);
   assert.equal(targetStartingBalance.add(amount).toString(), userBalance.toString());

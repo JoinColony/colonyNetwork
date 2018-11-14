@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
-
+import { ZERO_ADDRESS } from "../helpers/constants";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
@@ -107,7 +107,7 @@ contract("Colony Network", accounts => {
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colonyCount = await colonyNetwork.getColonyCount();
-      assert.notEqual(colonyAddress, 0x0);
+      assert.notEqual(colonyAddress, ZERO_ADDRESS);
       expect(colonyCount).to.eq.BN(2);
     });
 
@@ -191,12 +191,12 @@ contract("Colony Network", accounts => {
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       const colonyAddress = await colonyNetwork.getColony(3);
-      expect(colonyAddress).to.not.equal("0x0000000000000000000000000000000000000000");
+      expect(colonyAddress).to.not.equal(ZERO_ADDRESS);
     });
 
     it("should return an empty address if there is no colony for the index provided", async () => {
       const colonyAddress = await colonyNetwork.getColony(15);
-      expect(colonyAddress).to.equal("0x0000000000000000000000000000000000000000");
+      expect(colonyAddress).to.equal(ZERO_ADDRESS);
     });
 
     it("should be able to get the Colony version", async () => {

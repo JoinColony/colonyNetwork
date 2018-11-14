@@ -5,10 +5,9 @@ import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { MANAGER_RATING, WORKER_RATING, RATING_1_SALT, RATING_2_SALT, RATING_1_SECRET, RATING_2_SECRET } from "../helpers/constants";
+import { MANAGER_RATING, WORKER_RATING, RATING_1_SALT, RATING_2_SALT, RATING_1_SECRET, RATING_2_SECRET, ZERO_ADDRESS } from "../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
 import { makeTask } from "../helpers/test-data-generator";
-
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const { expect } = chai;
@@ -85,7 +84,7 @@ contract("Colony", accounts => {
 
     it("should not have owner", async () => {
       const owner = await colony.owner();
-      assert.equal(owner, "0x0000000000000000000000000000000000000000");
+      assert.equal(owner, ZERO_ADDRESS);
     });
 
     it("should return zero task count", async () => {
@@ -109,7 +108,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(colony.initialiseColony(0x0), "colony-initialise-bad-address");
+      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS), "colony-initialise-bad-address");
     });
 
     it("should correctly generate a rating secret", async () => {
