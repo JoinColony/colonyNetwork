@@ -485,7 +485,7 @@ contract("Colony Funding", accounts => {
       await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
 
       const taskInfo = await colony.getTask(taskId);
-      const taskPotId = taskInfo[5].toNumber();
+      const taskPotId = taskInfo[5];
       const remainingPotBalance = await colony.getPotBalance(taskPotId, token.address);
       assert.equal(remainingPotBalance.toString(), WORKER_PAYOUT.toString(), "should have remaining pot balance equal to worker payout");
 
@@ -761,7 +761,7 @@ contract("Colony Funding", accounts => {
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony,
-        skill: id.toNumber()
+        skill: id
       });
       await colony.finalizeTask(taskId);
 
@@ -842,7 +842,7 @@ contract("Colony Funding", accounts => {
 
       await newColony.addDomain(1);
       const domainCount = await newColony.getDomainCount();
-      let domain = await newColony.getDomain(domainCount.toNumber());
+      let domain = await newColony.getDomain(domainCount);
       const domainSkill = domain.skillId;
       domain = await newColony.getDomain(1);
       const rootDomainSkill = domain.skillId;
@@ -851,7 +851,7 @@ contract("Colony Funding", accounts => {
         colonyNetwork,
         colony: newColony,
         token: newToken,
-        domain: domainCount.toNumber()
+        domain: domainCount
       });
       await newColony.finalizeTask(taskId);
 

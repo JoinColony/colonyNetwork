@@ -940,7 +940,7 @@ contract("ColonyTask", accounts => {
     it("should fail to execute change of task brief, using an invalid task id", async () => {
       const taskId = await makeTask({ colony });
       const taskCount = await colony.getTaskCount();
-      const nonExistentTaskId = taskCount.addn(10).toNumber();
+      const nonExistentTaskId = taskCount.addn(10);
 
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -1083,7 +1083,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskSkill",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, skillCount.toNumber()]
+          args: [taskId, skillCount]
         }),
         "TaskSkillChanged"
       );
@@ -1166,7 +1166,7 @@ contract("ColonyTask", accounts => {
 
     it("should fail if I try to submit work for a task using an invalid id", async () => {
       const taskCount = await colony.getTaskCount();
-      const invalidTaskId = taskCount.addn(10).toNumber();
+      const invalidTaskId = taskCount.addn(10);
       await checkErrorRevert(colony.submitTaskDeliverable(invalidTaskId, DELIVERABLE_HASH), "colony-task-does-not-exist");
     });
 
@@ -1233,7 +1233,7 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await setupRatedTask({ colonyNetwork, colony, token });
       const taskCount = await colony.getTaskCount();
-      const nonExistentTaskId = taskCount.addn(10).toNumber();
+      const nonExistentTaskId = taskCount.addn(10);
       await checkErrorRevert(colony.finalizeTask(nonExistentTaskId), "colony-task-not-complete");
     });
 
@@ -1264,7 +1264,7 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFundedTask({ colonyNetwork, colony, token });
       const task = await colony.getTask(taskId);
-      const domainId = task[7].toNumber();
+      const domainId = task[7];
       const domain = await colony.getDomain(domainId);
       const taskPotId = task[5];
       const domainPotId = domain[1];
@@ -1549,7 +1549,7 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       const task = await colony.getTask(taskId);
-      const taskPotId = task[5].toNumber();
+      const taskPotId = task[5];
 
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       const managerBalanceBefore = await token.balanceOf(MANAGER);
@@ -1585,7 +1585,7 @@ contract("ColonyTask", accounts => {
       });
 
       const task = await colony.getTask(taskId);
-      const taskPotId = task[5].toNumber();
+      const taskPotId = task[5];
       const potBalanceBefore = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
 
       const workerBalanceBefore = await web3GetBalance(WORKER);

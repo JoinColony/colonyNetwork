@@ -173,7 +173,7 @@ export async function setupFundedTask({
   }
   const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, domain, skill, evaluator, worker });
   const task = await colony.getTask(taskId);
-  const potId = task[5].toNumber();
+  const potId = task[5];
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);

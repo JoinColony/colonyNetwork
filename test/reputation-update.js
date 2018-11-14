@@ -181,19 +181,18 @@ contract("Colony Reputation Updates", accounts => {
     });
 
     it("should populate nPreviousUpdates correctly", async () => {
-      let initialRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      initialRepLogLength = initialRepLogLength.toNumber();
+      const initialRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId1);
       let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength);
-      const nPrevious = repLogEntry[5].toNumber();
+      const nPrevious = repLogEntry[5];
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 1);
-      assert.equal(repLogEntry[5].toNumber(), 2 + nPrevious);
+      assert.equal(repLogEntry[5].toNumber(), nPrevious.addn(2).toNumber());
 
       const taskId2 = await setupRatedTask({ colonyNetwork, colony: metaColony });
       await metaColony.finalizeTask(taskId2);
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 2);
-      assert.equal(repLogEntry[5].toNumber(), 4 + nPrevious);
+      assert.equal(repLogEntry[5].toNumber(), nPrevious.addn(4).toNumber());
     });
 
     it("should calculate nUpdates correctly when making a log", async () => {

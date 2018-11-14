@@ -369,7 +369,7 @@ contract("Meta Colony", accounts => {
     it("should NOT be able to add a new root local skill", async () => {
       const skillCountBefore = await colonyNetwork.getSkillCount();
       const rootDomain = await colony.getDomain(1);
-      const rootLocalSkillId = rootDomain[0].toNumber();
+      const rootLocalSkillId = rootDomain[0];
       await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false), "colony-caller-must-be-colony");
       const skillCountAfter = await colonyNetwork.getSkillCount();
 
@@ -425,7 +425,7 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
       const taskId = await makeTask({ colony });
-      const nonexistentTaskId = taskId.addn(10).toNumber();
+      const nonexistentTaskId = taskId.addn(10);
 
       await checkErrorRevert(
         executeSignedTaskChange({
