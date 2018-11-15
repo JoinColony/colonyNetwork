@@ -28,11 +28,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256) { return 1; }
 
-  function setOwnerRole(address _user) public stoppable auth {
+  function setFounderRole(address _user) public stoppable auth {
     // To allow only one address to have owner role at a time, we have to remove current owner from their role
     ColonyAuthority colonyAuthority = ColonyAuthority(authority);
-    colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
-    colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
+    colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
+    colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
   }
 
   function setAdminRole(address _user) public stoppable auth {

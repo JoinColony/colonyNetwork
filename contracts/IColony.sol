@@ -131,20 +131,20 @@ contract IColony is IRecovery {
   /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
 
-  /// @notice Set new colony owner role.
-  /// @dev There can only be one address assigned to owner role at a time.
-  /// Whoever calls this function will lose their owner role
-  /// Can be called by owner role.
-  /// @param _user User we want to give an owner role to
-  function setOwnerRole(address _user) public;
+  /// @notice Set new colony founder role.
+  /// @dev There can only be one address assigned to founder role at a time.
+  /// Whoever calls this function will lose their founder role
+  /// Can be called by founder role.
+  /// @param _user User we want to give an founder role to
+  function setFounderRole(address _user) public;
 
   /// @notice Set new colony admin role.
-  /// Can be called by owner role or admin role.
+  /// Can be called by founder role or admin role.
   /// @param _user User we want to give an admin role to
   function setAdminRole(address _user) public;
 
   /// @notice Remove colony admin.
-  /// Can only be called by owner role.
+  /// Can only be called by founder role.
   /// @param _user User we want to remove admin role from
   function removeAdminRole(address _user) public;
 
