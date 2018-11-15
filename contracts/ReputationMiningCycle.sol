@@ -654,9 +654,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[roundNumber][index].lowerBound = 0;
     disputeRounds[roundNumber][index].targetHashDuringSearch = disputeRounds[roundNumber][index].jrh;
     disputeRounds[roundNumber][index].provedPreviousReputationUID = 0;
-    if (disputeRounds[roundNumber][index].jrh != 0x0) {
-      // If this submission has a JRH, we give ourselves credit for it in the next round - it's possible
-      // that a submission got a bye without submitting a JRH, which will not have this starting '1'.
+    if (disputeRounds[roundNumber][index].jrhNnodes != 0) {
+      // If this submission has confirmed their JRH, we give ourselves credit for it in the next round - it's possible
+      // that a submission got a bye without confirming a JRH, which will not have this starting '1'.
       disputeRounds[roundNumber][index].challengeStepCompleted = 1;
     } else {
       disputeRounds[roundNumber][index].challengeStepCompleted = 0;
