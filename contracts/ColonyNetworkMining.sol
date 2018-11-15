@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 import "./ColonyNetworkStorage.sol";
 import "./ERC20Extended.sol";
 import "./IReputationMiningCycle.sol";
+import "./ITokenLocking.sol";
 import "./EtherRouter.sol";
 
 
@@ -66,7 +67,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public
+  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers, uint256 reward) public
   stoppable
   onlyReputationMiningCycle
   {
@@ -75,7 +76,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     // Reward stakers
     activeReputationMiningCycle = 0x0;
     startNextCycle();
-    rewardStakers(stakers);
+    rewardStakers(stakers, reward);
   }
 
   function initialiseReputationMining() public stoppable {
@@ -113,29 +114,63 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     }
   }
 
-  function rewardStakers(address[] stakers) internal {
+  // Constants for miner weight calculations
+  uint256 constant T = 7776000 * WAD; // Seconds in 90 days * WAD
+  uint256 constant N = 24 * WAD; // 2x maximum number of miners * WAD
+  uint256 constant UINT32_MAX = 4294967295;
+
+  function calculateMinerWeight(uint256 timeStaked, uint256 submissonIndex) public pure returns (uint256) {
+    require((submissonIndex >= 0) && (submissonIndex < 12), "colony-reputation-mining-invalid-submission-index");
+    uint256 timeStakedMax = min(timeStaked, UINT32_MAX); // Maximum of ~136 years (uint32)
+
+    // (1 - exp{-t_n/T}) * (1 - (n-1)/N), 3rd degree Taylor expansion for exponential term
+    uint256 tnDivT = wdiv(timeStakedMax * WAD, T);
+    uint256 expTnDivT = add(add(add(WAD, tnDivT), wmul(tnDivT, tnDivT) / 2), wmul(wmul(tnDivT, tnDivT), tnDivT) / 6);
+    uint256 stakeTerm = sub(WAD, wdiv(WAD, expTnDivT));
+    uint256 submissionTerm = sub(WAD, wdiv(submissonIndex * WAD, N));
+    return wmul(stakeTerm, submissionTerm);
+  }
+
+  function rewardStakers(address[] stakers, uint256 reward) internal {
     // Internal unlike punish, because it's only ever called from setReputationRootHash
 
-    // TODO: Actually think about this function
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.confirmNewHash;
-    uint256 reward = 10**18; //TODO: Actually work out how much reputation they earn, based on activity elsewhere in the colony.
-    if (reward >= uint256(int256(-1))/2) {
-      reward = uint256(int256(-1))/2;
-    }
-    // TODO: We need to be able to prove that the assert on the next line will never happen, otherwise we're locked out of reputation mining.
-    // Something like the above cap is an adequate short-term solution, but at the very least need to double check the limits
-    // (which I've fingered-in-the-air, but could easily have an OBOE hiding inside).
-    assert(reward < uint256(int256(-1))); // We do a cast later, so make sure we don't overflow.
 
-    IMetaColony(metaColony).mintTokensForColonyNetwork(stakers.length * reward); // This should be the total amount of new tokens we're awarding.
+    uint256 i;
+    address clnyToken = IColony(metaColony).getToken();
+
+    // I. Calculate (normalized) miner weights and realReward
+    uint256 timeStaked;
+    uint256 minerWeightsTotal;
+    uint256[] memory minerWeights = new uint256[](stakers.length);
+
+    for (i = 0; i < stakers.length; i++) {
+      (,,timeStaked) = ITokenLocking(tokenLocking).getUserLock(clnyToken, stakers[i]);
+      minerWeights[i] = calculateMinerWeight(now - timeStaked, i);
+      minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
+    }
+
+    uint256 realReward; // Used to prevent dust buildup due to small imprecisions in WAD arithmetic.
+    for (i = 0; i < stakers.length; i++) {
+      minerWeights[i] = wdiv(minerWeights[i], minerWeightsTotal);
+      realReward += wmul(reward, minerWeights[i]);
+    }
+
+    // II. Disburse reputation and tokens
+    IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
 
     // This gives them reputation in the next update cycle.
-    IReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(stakers, metaColony, reward, rootGlobalSkillId + 2);
+    IReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(
+      stakers,
+      minerWeights,
+      metaColony,
+      realReward,
+      rootGlobalSkillId + 2
+    );
 
-    for (uint256 i = 0; i < stakers.length; i++) {
-      // Also give them some newly minted tokens.
-      ERC20Extended(IColony(metaColony).getToken()).transfer(stakers[i], reward);
+    for (i = 0; i < stakers.length; i++) {
+      ERC20Extended(clnyToken).transfer(stakers[i], wmul(realReward, minerWeights[i]));
     }
   }
 }

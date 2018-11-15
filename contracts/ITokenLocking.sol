@@ -55,5 +55,6 @@ contract ITokenLocking {
   /// @param _user Address of the user
   /// @return lockCount User's token lock count
   /// @return amount User's deposited amount
-  function getUserLock(address _token, address _user) public view returns (uint256 lockCount, uint256 amount);
+  /// @return timestamp Timestamp of deposit
+  function getUserLock(address _token, address _user) public view returns (uint256 lockCount, uint256 amount, uint256 timestamp);
 }

@@ -196,6 +196,12 @@ contract IColonyNetwork is IRecovery {
   /// @return repMiningCycleAddress address of active or inactive ReputationMiningCycle
   function getReputationMiningCycle(bool _active) public view returns (address repMiningCycleAddress);
 
+  /// @notice Calculate raw miner weight in WADs
+  /// @param _timeStaked Amount of time (in seconds) that the miner has staked their CLNY
+  /// @param _submissonIndex Index of reputation hash submission (between 0 and 11)
+  /// @return minerWeight The weight of miner reward
+  function calculateMinerWeight(uint256 _timeStaked, uint256 _submissonIndex) public pure returns (uint256 minerWeight);
+
   /// @notice Get the `Resolver` address for Colony contract version `_version`
   /// @param _version The Colony contract version
   /// @return resolverAddress Address of the `Resolver` contract
@@ -205,7 +211,8 @@ contract IColonyNetwork is IRecovery {
   /// @param newHash The reputation root hash
   /// @param newNNodes The updated nodes count value
   /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers) public;
+  /// @param reward Amount of CLNY to be distributed as reward to miners
+  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers, uint256 reward) public;
 
   /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`

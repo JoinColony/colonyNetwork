@@ -321,7 +321,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     uint256 userTokens;
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    (, userTokens) = tokenLocking.getUserLock(address(token), msg.sender);
+    (, userTokens,) = tokenLocking.getUserLock(address(token), msg.sender);
 
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
