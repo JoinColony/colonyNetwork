@@ -1,4 +1,4 @@
-import web3Utils from "web3-utils";
+import { toBN, soliditySha3 } from "web3-utils";
 import { getRandomString } from "./test-helper";
 
 const MANAGER_ROLE = 0;
@@ -11,31 +11,31 @@ const SPECIFICATION_HASH_UPDATED = "0x017dfd85d4f6cb4dcd715a88101f7b1f06cd1e009b
 // The base58 decoded, bytes32 converted hex value of a test task ipfsHash "qmv8ndh7ageh9b24zngaextmuhj7aiuw3scc8hkczvjkww"
 const DELIVERABLE_HASH = "0xfb027a4d64f29d83e27769cb05d945e67ef7396fa1bd73ef53f065311fd3313e";
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-const INITIAL_FUNDING = web3Utils.toBN(360 * 1e18);
-const MANAGER_PAYOUT = web3Utils.toBN(100 * 1e18);
-const EVALUATOR_PAYOUT = web3Utils.toBN(50 * 1e18);
-const WORKER_PAYOUT = web3Utils.toBN(200 * 1e18);
+const INITIAL_FUNDING = toBN(360 * 1e18);
+const MANAGER_PAYOUT = toBN(100 * 1e18);
+const EVALUATOR_PAYOUT = toBN(50 * 1e18);
+const WORKER_PAYOUT = toBN(200 * 1e18);
 const MANAGER_RATING = 2;
 const WORKER_RATING = 3;
 const RATING_MULTIPLIER = { 1: -1, 2: 1, 3: 1.5 };
 const SECONDS_PER_DAY = 86400;
-const RATING_1_SALT = web3Utils.soliditySha3(getRandomString(10));
-const RATING_2_SALT = web3Utils.soliditySha3(getRandomString(10));
-const RATING_1_SECRET = web3Utils.soliditySha3(RATING_1_SALT, MANAGER_RATING);
-const RATING_2_SECRET = web3Utils.soliditySha3(RATING_2_SALT, WORKER_RATING);
+const RATING_1_SALT = soliditySha3(getRandomString(10));
+const RATING_2_SALT = soliditySha3(getRandomString(10));
+const RATING_1_SECRET = soliditySha3(RATING_1_SALT, MANAGER_RATING);
+const RATING_2_SECRET = soliditySha3(RATING_2_SALT, WORKER_RATING);
 
 const ACTIVE_TASK_STATE = 0;
 const CANCELLED_TASK_STATE = 1;
 const FINALIZED_TASK_STATE = 2;
 
-const WAD = web3Utils.toBN(10).pow(web3Utils.toBN(18));
+const WAD = toBN(10).pow(toBN(18));
 const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(1000);
 
 const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
 const DECAY_RATE = {
-  NUMERATOR:    web3Utils.toBN("992327946262944"), // eslint-disable-line prettier/prettier
-  DENOMINATOR: web3Utils.toBN("1000000000000000")
+  NUMERATOR:    toBN("992327946262944"), // eslint-disable-line prettier/prettier
+  DENOMINATOR: toBN("1000000000000000")
 };
 
 module.exports = {

@@ -319,9 +319,9 @@ contract("All", accounts => {
       await newToken.setOwner(colonyAddress);
 
       await fundColonyWithTokens(newColony, otherToken, initialFunding);
-      await newColony.mintTokens(workerReputation.add(managerReputation).toString());
+      await newColony.mintTokens(workerReputation.add(managerReputation));
 
-      await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation.toString(), managerReputation.toString()]);
+      await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation, managerReputation]);
 
       let addr = await colonyNetwork.getReputationMiningCycle.call(true);
       await forwardTime(MINING_CYCLE_DURATION, this);
@@ -356,12 +356,8 @@ contract("All", accounts => {
       ({ key, value, branchMask, siblings } = await miningClient.getReputationProofObject(userReputationKey));
       const userReputationProof = [key, value, branchMask, siblings];
 
-      await newToken.approve(tokenLocking.address, workerReputation.toString(), {
-        from: WORKER
-      });
-      await tokenLocking.deposit(newToken.address, workerReputation.toString(), {
-        from: WORKER
-      });
+      await newToken.approve(tokenLocking.address, workerReputation, { from: WORKER });
+      await tokenLocking.deposit(newToken.address, workerReputation, { from: WORKER });
 
       const tx = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.id;
@@ -379,13 +375,13 @@ contract("All", accounts => {
       const amountSqrt = bnSqrt(balance);
 
       const squareRoots = [
-        workerReputationSqrt.toString(),
-        workerReputationSqrt.toString(),
-        totalReputationSqrt.toString(),
-        totalReputationSqrt.toString(),
-        numeratorSqrt.toString(),
-        denominatorSqrt.toString(),
-        amountSqrt.toString()
+        workerReputationSqrt,
+        workerReputationSqrt,
+        totalReputationSqrt,
+        totalReputationSqrt,
+        numeratorSqrt,
+        denominatorSqrt,
+        amountSqrt
       ];
 
       await newColony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof, {

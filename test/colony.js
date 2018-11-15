@@ -5,7 +5,16 @@ import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { MANAGER_RATING, WORKER_RATING, RATING_1_SALT, RATING_2_SALT, RATING_1_SECRET, RATING_2_SECRET, ZERO_ADDRESS } from "../helpers/constants";
+import {
+  MANAGER_RATING,
+  WORKER_RATING,
+  RATING_1_SALT,
+  RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET,
+  ZERO_ADDRESS,
+  WAD
+} from "../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
 import { makeTask } from "../helpers/test-data-generator";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
@@ -243,13 +252,13 @@ contract("Colony", accounts => {
   });
 
   describe("when bootstrapping the colony", () => {
-    const INITIAL_REPUTATIONS = [toBN(5 * 1e18).toString(), toBN(4 * 1e18).toString(), toBN(3 * 1e18).toString(), toBN(2 * 1e18).toString()];
+    const INITIAL_REPUTATIONS = [toBN(5 * 1e18), toBN(4 * 1e18), toBN(3 * 1e18), toBN(2 * 1e18)];
     const INITIAL_ADDRESSES = accounts.slice(0, 4);
 
     it("should assign reputation correctly when bootstrapping the colony", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
 
-      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.mintTokens(toBN(14 * 1e18));
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
@@ -262,7 +271,7 @@ contract("Colony", accounts => {
     });
 
     it("should assign tokens correctly when bootstrapping the colony", async () => {
-      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.mintTokens(toBN(14 * 1e18));
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
@@ -270,38 +279,27 @@ contract("Colony", accounts => {
     });
 
     it("should be able to bootstrap colony more than once", async () => {
-      const amount = toBN(10 * 1e18).toString();
-      await colony.mintTokens(amount);
+      await colony.mintTokens(WAD.muln(10));
       await colony.bootstrapColony([INITIAL_ADDRESSES[0]], [INITIAL_REPUTATIONS[0]]);
       await colony.bootstrapColony([INITIAL_ADDRESSES[0]], [INITIAL_REPUTATIONS[0]]);
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
-      assert.equal(balance.toString(), amount);
+      assert.equal(balance.toString(), WAD.muln(10).toString());
     });
 
     it("should throw if length of inputs is not equal", async () => {
-      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.mintTokens(toBN(14 * 1e18));
       await checkErrorRevert(colony.bootstrapColony([INITIAL_ADDRESSES[0]], INITIAL_REPUTATIONS), "colony-bootstrap-bad-inputs");
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, [INITIAL_REPUTATIONS[0]]), "colony-bootstrap-bad-inputs");
     });
 
     it("should not allow negative number", async () => {
-      await colony.mintTokens(toBN(14 * 1e18).toString());
-      await checkErrorRevert(
-        colony.bootstrapColony(
-          [INITIAL_ADDRESSES[0]],
-          [
-            toBN(5 * 1e18)
-              .neg()
-              .toString()
-          ]
-        ),
-        "colony-bootstrap-bad-amount-input"
-      );
+      await colony.mintTokens(toBN(14 * 1e18));
+      await checkErrorRevert(colony.bootstrapColony([INITIAL_ADDRESSES[0]], [toBN(5 * 1e18).neg()]), "colony-bootstrap-bad-amount-input");
     });
 
     it("should throw if there is not enough funds to send", async () => {
-      await colony.mintTokens(toBN(10 * 1e18).toString());
+      await colony.mintTokens(toBN(10 * 1e18));
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "ds-token-insufficient-balance");
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
@@ -309,7 +307,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow non-creator to bootstrap reputation", async () => {
-      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.mintTokens(toBN(14 * 1e18));
       await checkErrorRevert(
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
           from: accounts[1]
@@ -319,7 +317,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
-      await colony.mintTokens(toBN(14 * 1e18).toString());
+      await colony.mintTokens(toBN(14 * 1e18));
       await makeTask({ colony });
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });

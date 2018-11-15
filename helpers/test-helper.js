@@ -332,14 +332,14 @@ export async function createSignaturesTrezor(colony, taskId, signers, value, dat
 }
 
 export function bnSqrt(bn, isGreater) {
-  let a = bn.add(web3Utils.toBN(1)).div(web3Utils.toBN(2));
+  let a = bn.addn(1).divn(2);
   let b = bn;
   while (a.lt(b)) {
     b = a;
     a = bn
       .div(a)
       .add(a)
-      .div(web3Utils.toBN(2));
+      .divn(2);
   }
 
   if (isGreater && b.mul(b).lt(bn)) {
@@ -379,8 +379,9 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const userLockInformation = await tokenLocking.getUserLock(clnyAddress, account);
   const userBalance = userLockInformation.amount;
 
+  const WAD = new BN(10).pow(new BN(18));
   // What's the largest entry they can submit?
-  const nIter = userBalance.div(new BN(10).pow(new BN(18)).muln(2000));
+  const nIter = userBalance.div(WAD).muln(2000);
   // Work out the target
   const constant = new BN(2)
     .pow(new BN(256))

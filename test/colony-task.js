@@ -1345,7 +1345,7 @@ contract("ColonyTask", accounts => {
     it("should fail if manager tries to cancel a task with invalid id", async () => {
       const taskId = await makeTask({ colony });
       const taskCount = await colony.getTaskCount();
-      const invalidTaskId = taskCount.addn(10).toString();
+      const invalidTaskId = taskCount.addn(10);
 
       await checkErrorRevert(
         executeSignedTaskChange({

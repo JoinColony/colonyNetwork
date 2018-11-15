@@ -4,7 +4,7 @@ import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
+import { MANAGER_PAYOUT, WORKER_PAYOUT, WAD } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
 
@@ -59,10 +59,7 @@ contract("Colony Reputation Updates", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     await colonyToken.setOwner(metaColonyAddress);
     metaColony = await IMetaColony.at(metaColonyAddress);
-    const amount = new BN(10)
-      .pow(new BN(18))
-      .mul(new BN(1000))
-      .toString();
+    const amount = WAD.mul(new BN(1000));
     await fundColonyWithTokens(metaColony, colonyToken, amount);
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.

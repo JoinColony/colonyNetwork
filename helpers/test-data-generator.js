@@ -178,7 +178,7 @@ export async function setupFundedTask({
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
-  await colony.moveFundsBetweenPots(1, potId, totalPayouts.toString(), tokenAddress);
+  await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
 
   await executeSignedTaskChange({
     colony,
@@ -186,7 +186,7 @@ export async function setupFundedTask({
     functionName: "setTaskManagerPayout",
     signers: [manager],
     sigTypes: [0],
-    args: [taskId, tokenAddress, managerPayout.toString()]
+    args: [taskId, tokenAddress, managerPayout]
   });
 
   let signers = manager === evaluator ? [manager] : [manager, evaluator];
@@ -198,7 +198,7 @@ export async function setupFundedTask({
     functionName: "setTaskEvaluatorPayout",
     signers,
     sigTypes,
-    args: [taskId, tokenAddress, evaluatorPayout.toString()]
+    args: [taskId, tokenAddress, evaluatorPayout]
   });
 
   signers = manager === worker ? [manager] : [manager, worker];
@@ -210,7 +210,7 @@ export async function setupFundedTask({
     functionName: "setTaskWorkerPayout",
     signers,
     sigTypes,
-    args: [taskId, tokenAddress, workerPayout.toString()]
+    args: [taskId, tokenAddress, workerPayout]
   });
   return taskId;
 }
@@ -278,7 +278,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   const clny = await Token.at(clnyAddress);
   const mainStartingBalance = await clny.balanceOf(manager);
   const targetStartingBalance = await clny.balanceOf(address);
-  await metaColony.mintTokens(amount.muln(3).toString());
+  await metaColony.mintTokens(amount.muln(3));
 
   await metaColony.claimColonyFunds(clny.address);
   const taskId = await setupRatedTask({
@@ -292,17 +292,11 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await metaColony.claimPayout(taskId, MANAGER_ROLE, clny.address);
 
   let mainBalance = await clny.balanceOf(manager);
-  await clny.transfer(
-    ZERO_ADDRESS,
-    mainBalance
-      .sub(amount)
-      .sub(mainStartingBalance)
-      .toString()
-  );
-  await clny.transfer(address, amount.toString());
+  await clny.transfer(ZERO_ADDRESS, mainBalance.sub(amount).sub(mainStartingBalance));
+  await clny.transfer(address, amount);
   mainBalance = await clny.balanceOf(manager);
   if (address !== manager) {
-    await clny.transfer(ZERO_ADDRESS, mainBalance.sub(mainStartingBalance).toString());
+    await clny.transfer(ZERO_ADDRESS, mainBalance.sub(mainStartingBalance));
   }
   const userBalance = await clny.balanceOf(address);
   assert.equal(targetStartingBalance.add(amount).toString(), userBalance.toString());
