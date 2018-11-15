@@ -29,7 +29,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function version() public pure returns (uint256) { return 1; }
 
   function setFounderRole(address _user) public stoppable auth {
-    // To allow only one address to have owner role at a time, we have to remove current owner from their role
+    // To allow only one address to have founder role at a time, we have to remove current founder from their role
     ColonyAuthority colonyAuthority = ColonyAuthority(authority);
     colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
     colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
@@ -39,7 +39,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, true);
   }
 
-  // Can only be called by the owner role.
+  // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
     ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }

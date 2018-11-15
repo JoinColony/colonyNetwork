@@ -210,7 +210,7 @@ contract("Colony Network", accounts => {
   });
 
   describe("when upgrading a colony", () => {
-    it("should be able to upgrade a colony, if a sender has owner role", async () => {
+    it("should be able to upgrade a colony, if a sender has founder role", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
@@ -267,7 +267,7 @@ contract("Colony Network", accounts => {
       expect(version).to.eq.BN(currentColonyVersion);
     });
 
-    it("should NOT be able to upgrade a colony if sender don't have owner role", async () => {
+    it("should NOT be able to upgrade a colony if sender don't have founder role", async () => {
       const token = await Token.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
@@ -362,7 +362,7 @@ contract("Colony Network", accounts => {
       await checkErrorRevert(colonyNetwork.registerUserLabel(username2, orbitDBAddress, { from: accounts[1] }), "colony-user-label-already-owned");
     });
 
-    it("should be able to register one unique label per colony, if owner", async () => {
+    it("should be able to register one unique label per colony, if founder", async () => {
       const colonyName = "test";
       const colonyName2 = "test2";
       const hash = namehash.hash("test.colony.joincolony.eth");
@@ -373,13 +373,13 @@ contract("Colony Network", accounts => {
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);
 
-      // Non-owner can't register label for colony
+      // Non-founder can't register label for colony
       await checkErrorRevert(colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[1] }));
 
-      // Owner cannot register blank label
+      // Founder cannot register blank label
       await checkErrorRevert(colony.registerColonyLabel("", orbitDBAddress, { from: accounts[0] }), "colony-colony-label-invalid");
 
-      // Owner can register label for colony
+      // Founder can register label for colony
       await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
       const owner = await ensRegistry.owner(hash);
       assert.equal(owner, colonyNetwork.address);
@@ -413,7 +413,7 @@ contract("Colony Network", accounts => {
       const { colonyAddress } = logs[0].args;
       const colony = await Colony.at(colonyAddress);
       // Register colony
-      // Owner can register label for colony
+      // Founder can register label for colony
       await colony.registerColonyLabel("test", orbitDBAddress, { from: accounts[0] });
 
       // Check reverse lookup for colony

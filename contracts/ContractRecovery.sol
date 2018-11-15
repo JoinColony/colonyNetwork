@@ -72,7 +72,7 @@ contract ContractRecovery is CommonStorage {
 
   function exitRecoveryMode() public recovery auth {
     uint totalAuthorized = recoveryRolesCount;
-    // Don't double count the owner (if set);
+    // Don't double count the founder (if set);
     if (owner != 0x0 && !CommonAuthority(authority).hasUserRole(owner, RECOVERY_ROLE)) { 
       totalAuthorized += 1; 
     }
@@ -81,7 +81,7 @@ contract ContractRecovery is CommonStorage {
     recoveryMode = false;
   }
 
-  // Can only be called by the owner role.
+  // Can only be called by the founder role.
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
     if (!CommonAuthority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
@@ -90,7 +90,7 @@ contract ContractRecovery is CommonStorage {
     }
   }
 
-  // Can only be called by the owner role.
+  // Can only be called by the founder role.
   function removeRecoveryRole(address _user) public stoppable auth {
     if (CommonAuthority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
       CommonAuthority(authority).setUserRole(_user, RECOVERY_ROLE, false);

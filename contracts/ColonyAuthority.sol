@@ -34,7 +34,7 @@ contract ColonyAuthority is CommonAuthority {
     setFounderRoleCapability(colony, "mintTokens(uint256)");
     // Add global skill
     setFounderRoleCapability(colony, "addGlobalSkill(uint256)");
-    // Transfer ownership
+    // Transfer founder role
     setFounderRoleCapability(colony, "setFounderRole(address)");
     // Remove admin role
     setFounderRoleCapability(colony, "removeAdminRole(address)");
