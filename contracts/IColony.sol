@@ -106,19 +106,19 @@ contract IColony is IRecovery {
 
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony
-  /// @return authority The `ColonyAuthority` contract address
-  function authority() public view returns (address authority);
+  /// @return colonyAuthority The `ColonyAuthority` contract address
+  function authority() public view returns (address colonyAuthority);
 
   /// @notice Get the colony `owner` address. This should be 0x0 at all times
   /// @dev Used for testing.
-  /// @return owner Address of the colony owner
-  function owner() public view returns (address owner);
+  /// @return colonyOwner Address of the colony owner
+  function owner() public view returns (address colonyOwner);
 
   // Implemented in Colony.sol
   /// @notice Get the Colony contract version
   /// Starts from 1 and is incremented with every deployed contract change
-  /// @return version Version number
-  function version() public pure returns (uint256 version);
+  /// @return colonyVersion Version number
+  function version() public pure returns (uint256 colonyVersion);
 
   /// @notice Upgrades a colony to a new Colony contract version `_newVersion`
   /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version

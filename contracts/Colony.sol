@@ -26,7 +26,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256) { return 1; }
+  function version() public pure returns (uint256 colonyVersion) { return 1; }
 
   function setFounderRole(address _user) public stoppable auth {
     // To allow only one address to have founder role at a time, we have to remove current founder from their role

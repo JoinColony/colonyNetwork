@@ -101,8 +101,8 @@ contract IColonyNetwork is IRecovery {
 
   /// @notice Check if specific address is a colony created on colony network
   /// @param _colony Address of the colony
-  /// @return isColony true if specified address is a colony, otherwise false
-  function isColony(address _colony) public view returns (bool isColony);
+  /// @return addressIsColony true if specified address is a colony, otherwise false
+  function isColony(address _colony) public view returns (bool addressIsColony);
 
   /// @notice Adds a new skill to the global or local skills tree, under skill `_parentSkillId`
   /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
