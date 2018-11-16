@@ -37,7 +37,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /// @param idx The index in the round of the hash under consideration
   modifier challengeOpen(uint256 round, uint256 idx) {
     // Check the binary search has finished, but not necessarily confirmed
-    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-closed");
+    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
     // Check the binary search result has been confirmed
     require(
       2**(disputeRounds[round][idx].challengeStepCompleted-2)>disputeRounds[round][idx].jrhNnodes,

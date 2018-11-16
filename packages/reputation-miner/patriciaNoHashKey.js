@@ -179,7 +179,7 @@ exports.PatriciaTree = function PatriciaTree() {
     return [branchMask, siblings.map(s => bn2hex64(s))];
   };
 
-  this.getImpliedRoot = function getImpliedRoot(key, value, _branchMask, siblings, fullProof = true) {
+  this.getImpliedRoot = function getImpliedRoot(key, value, _branchMask, siblings) {
     let branchMask = new BN(_branchMask.toString());
     let k = makeLabel(sha2bn(key), 256);
     const valueHash = sha3(value);
@@ -187,7 +187,7 @@ exports.PatriciaTree = function PatriciaTree() {
     e.nodeHash = valueHash;
     const edgeHashes = [];
 
-    for (let i = 0; branchMask.toString() !== "0"; i += 1) {
+    for (let i = 0; i < siblings.length; i += 1) {
       const bitSet = branchMask.zeroBits();
       branchMask = branchMask.and(new BN(1).shln(bitSet).notn(256));
       [k, e.label] = splitAt(k, 255 - bitSet);
@@ -197,8 +197,13 @@ exports.PatriciaTree = function PatriciaTree() {
       edgeHashes[1 - bit] = sha2bn(siblings[siblings.length - i - 1]);
       e.nodeHash = sha2bn(web3Utils.soliditySha3(bn2hex64(edgeHashes[0]), bn2hex64(edgeHashes[1])));
     }
-    if (fullProof) {
+    if (branchMask.zeroBits().toString() === "0") {
       e.label = k;
+    } else {
+      const bitSet = branchMask.zeroBits();
+      [k, e.label] = splitAt(k, 255 - bitSet);
+      const [, newLabel] = chopFirstBit(e.label);
+      e.label = newLabel;
     }
     return bn2hex64(edgeEncodingHash(e));
   };

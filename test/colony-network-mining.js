@@ -871,7 +871,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.confirmJustificationRootHash();
 
       // Check that we can't re-submit a JRH
-      await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-mining-hash-already-confirmed");
+      await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-jrh-hash-already-verified");
 
       const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
@@ -1656,12 +1656,12 @@ contract("ColonyNetworkMining", accounts => {
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
 
       await checkErrorRevert(
-        repCycle.submitJustificationRootHash(round, index, jrh, "0", siblings1, branchMask2, siblings2),
+        repCycle.confirmJustificationRootHash(round, index, "123456", siblings1, branchMask2, siblings2),
         "colony-reputation-mining-invalid-jrh-proof-1"
       );
 
       await checkErrorRevert(
-        repCycle.submitJustificationRootHash(round, index, jrh, branchMask1, siblings1, "0x00", siblings2),
+        repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, "123456", siblings2),
         "colony-reputation-mining-invalid-jrh-proof-2"
       );
 
@@ -1741,7 +1741,7 @@ contract("ColonyNetworkMining", accounts => {
             goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes,
             disagreeStateBranchMask,
             // This is the wrong line
-            0,
+            123456,
             // This is the correct line, for future reference
             // this.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
             0,
@@ -2183,11 +2183,13 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
 
       // We need one more response to binary search from each side. Check we can't confirm early
       await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-incomplete");
       // Check we can't respond to challenge before we've completed the binary search
-      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-closed");
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-binary-search-incomplete");
       await goodClient.respondToBinarySearchForChallenge();
 
       // Check we can't confirm even if we're done, but our opponent isn't
@@ -2227,7 +2229,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.confirmJustificationRootHash();
 
       await checkErrorRevert(
-        repCycle.respondToBinarySearchForChallenge(0, 0, "0x00", 0x0, []),
+        repCycle.respondToBinarySearchForChallenge(0, 0, "0x00", 0x07, ["0x00", "0x00", "0x00"]),
         "colony-reputation-mining-invalid-binary-search-response"
       );
 
@@ -2319,10 +2321,13 @@ contract("ColonyNetworkMining", accounts => {
 
       await checkErrorRevert(
         repCycle.respondToChallenge([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "0x00", [], "0x00", [], "0x00", [], "0x00", "0x00", []),
-        "colony-reputation-mining-challenge-closed"
+        "colony-reputation-binary-search-incomplete"
       );
 
       // Cleanup
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
 
@@ -3275,7 +3280,7 @@ contract("ColonyNetworkMining", accounts => {
         loader: contractLoader,
         realProviderPort: REAL_PROVIDER_PORT,
         minerAddress: MAIN_ACCOUNT,
-        useJSTree: true,
+        useJsTree: true,
         auto: false
       });
       await client.initialise(colonyNetwork.address);

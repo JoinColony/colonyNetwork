@@ -17,7 +17,7 @@ contract PatriciaTreeProofs {
   pure returns (bytes32)
   {
     bytes32 hash;
-    (hash, ) = getImpliedRootFunctionality(keccak256(key), keccak256(value), branchMask, siblings, false);
+    (hash, ) = getImpliedRootFunctionality(keccak256(key), keccak256(value), branchMask, siblings);
     return hash;
   }
 
@@ -25,18 +25,18 @@ contract PatriciaTreeProofs {
   pure returns (bytes32)
   {
     bytes32 hash;
-    (hash, ) = getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings, false);
+    (hash, ) = getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
     return hash;
   }
 
-  function getFinalPairAndImpliedRootNoHash(bytes32 key, bytes value, uint branchMask, bytes32[] siblings, bool intermediateProof) public
+  function getFinalPairAndImpliedRootNoHash(bytes32 key, bytes value, uint branchMask, bytes32[] siblings) public
   pure returns (bytes32, bytes32[2])
   {
-    return getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings, intermediateProof);
+    return getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
   }
 
   // solium-disable-next-line security/no-assign-params
-  function getImpliedRootFunctionality(bytes32 keyHash, bytes32 valueHash, uint branchMask, bytes32[] siblings, bool intermediateProof) private
+  function getImpliedRootFunctionality(bytes32 keyHash, bytes32 valueHash, uint branchMask, bytes32[] siblings) private
   pure returns (bytes32, bytes32[2])
   {
     Data.Label memory k = Data.Label(keyHash, 256);
@@ -44,7 +44,7 @@ contract PatriciaTreeProofs {
     e.node = valueHash;
     bytes32[2] memory edgeHashes;
 
-    for (uint i = 0; branchMask != 0; i++) {
+    for (uint i = 0; i < siblings.length; i++) {
       uint bitSet = branchMask.lowestBitSet();
       branchMask &= ~(uint(1) << bitSet);
       (k, e.label) = k.splitAt(255 - bitSet);
@@ -54,8 +54,12 @@ contract PatriciaTreeProofs {
       edgeHashes[1 - bit] = siblings[siblings.length - i - 1];
       e.node = keccak256(abi.encodePacked(edgeHashes));
     }
-    if (!intermediateProof) {
+    if (branchMask == 0) {
       e.label = k;
+    } else {
+      uint bitSet = branchMask.lowestBitSet();
+      (k, e.label) = k.splitAt(255 - bitSet);
+      (, e.label) = e.label.chopFirstBit();
     }
     return (e.edgeHash(), edgeHashes);
   }

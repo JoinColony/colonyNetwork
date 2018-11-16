@@ -10,9 +10,9 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider, useJSTree, auto }) {
+  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider, useJsTree, auto }) {
     this._loader = loader;
-    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, dbPath: file, useJSTree });
+    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, dbPath: file, useJsTree });
     this._seed = seed;
     this._auto = auto || true;
 
@@ -52,7 +52,6 @@ class ReputationMinerClient {
    */
   async initialise(colonyNetworkAddress) {
     await this._miner.initialise(colonyNetworkAddress);
-
     this.repCycleContractDef = await this._loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
 
     // TODO: Get latest state from database, then sync to current state on-chain.

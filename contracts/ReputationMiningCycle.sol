@@ -309,7 +309,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32 targetHashDuringSearch = disputeRounds[round][idx].targetHashDuringSearch;
     bytes32 impliedRoot;
     bytes32[2] memory lastSiblings;
-    bool intermediateProof = disputeRounds[round][idx].challengeStepCompleted != 1;
 
     // Check proof is the right length
     uint256 expectedLength = expectedProofLength(disputeRounds[round][idx].jrhNnodes, disputeRounds[round][idx].lowerBound) -
@@ -320,8 +319,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       bytes32(targetNode),
       jhIntermediateValue,
       branchMask,
-      siblings,
-      intermediateProof
+      siblings
     );
     require(impliedRoot==targetHashDuringSearch, "colony-reputation-mining-invalid-binary-search-response");
     // If require hasn't thrown, proof is correct.
