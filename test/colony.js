@@ -103,11 +103,11 @@ contract("Colony", accounts => {
       const domain = await colony.getDomain(domainCount);
 
       // The first pot should have been created and assigned to the domain
-      assert.equal(domain[1], 1);
+      assert.equal(domain.potId, 1);
 
       // A root skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
-      assert.equal(domain[0].toNumber(), rootLocalSkillId.toNumber());
+      assert.equal(domain.skillId, rootLocalSkillId.toNumber());
     });
   });
 

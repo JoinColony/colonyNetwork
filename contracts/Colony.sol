@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
 import "./EtherRouter.sol";
@@ -183,9 +184,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     initialiseDomain(newLocalSkill);
   }
 
-  function getDomain(uint256 _id) public view returns (uint256, uint256) {
-    Domain storage d = domains[_id];
-    return (d.skillId, d.potId);
+  function getDomain(uint256 _id) public view returns (Domain domain) {
+    domain = domains[_id];
   }
 
   function getDomainCount() public view returns (uint256) {

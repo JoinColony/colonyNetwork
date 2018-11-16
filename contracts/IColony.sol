@@ -115,7 +115,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _id Id of the domain which details to get
   /// @return skillId The domain "local" skill id
   /// @return potId The domain's funding pot id
-  function getDomain(uint256 _id) public view returns (uint256 skillId, uint256 potId);
+  function getDomain(uint256 _id) public view returns (Domain domain);
 
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
