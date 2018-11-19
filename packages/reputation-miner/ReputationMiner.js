@@ -77,6 +77,10 @@ class ReputationMiner {
       this.reputationTree = new patriciaJs.PatriciaTree();
     } else {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
+      this.patriciaTreeNoHashContractDef = await this.loader.load(
+        { contractName: "PatriciaTreeNoHash" },
+        { abi: true, address: false, bytecode: true }
+      );
 
       const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
       const contract = await contractFactory.deploy();
@@ -96,9 +100,13 @@ class ReputationMiner {
     if (this.useJsTree) {
       this.justificationTree = new patriciaJsNoHashKey.PatriciaTree();
     } else {
-      const contractFactory = new ethers.ContractFactory(this.patriciaTreeContractDef.abi, this.patriciaTreeContractDef.bytecode, this.ganacheWallet);
+      const contractFactory = new ethers.ContractFactory(
+        this.patriciaTreeNoHashContractDef.abi,
+        this.patriciaTreeNoHashContractDef.bytecode,
+        this.ganacheWallet
+      );
       const contract = await contractFactory.deploy();
-      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
+      this.justificationTree = new ethers.Contract(contract.address, this.patriciaTreeNoHashContractDef.abi, this.ganacheWallet);
     }
 
     this.justificationHashes = {};
@@ -659,17 +667,41 @@ class ReputationMiner {
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
-    let [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
+    const proof = await this.justificationTree.getProof(targetNodeKey);
+    const [branchMask] = proof;
+    let [, siblings] = proof;
 
     // Trim the proof if needed
+    // How long should the proof be?
+
+    // function pow2ceil(v){
+    //     return Math.pow(2,Math.ceil(Math.log(v)/Math.log(2)))
+    // }
+    //
+    // function expectedProofLength(i, j){
+    //   let nextpower = pow2ceil(i);
+    //   let layers =0;
+    //   while (i!=0 && (j+1 > nextpower/2)){
+    //     i -= nextpower/2
+    //     j -= nextpower/2
+    //     layers +=1;
+    //     nextpower = pow2ceil(i);
+    //   }
+    //   return Math.log2(nextpower) + layers;
+    // }
+    // console.log('siblings length', siblings.length)
+    // console.log('jrhnnodes', submission[7])
+    // console.log('targetNode', targetNode);
+    // console.log('expectedProofLength', expectedProofLength(submission[7].toNumber(), targetNode.toNumber()))
+    // console.log('challengeRoundsCompleted', submission[3]);
+    // siblings = siblings.slice(siblings.length - expectedProofLength(submission[7].toNumber(), targetNode.toNumber()) + submission[3].toNumber() - 1);
+
     let proofEndingHash = await this.justificationTree.getImpliedRoot(
       targetNodeKey,
       this.justificationHashes[targetNodeKey].jhLeafValue,
       branchMask,
       siblings
     );
-
-    branchMask = new BN(branchMask.toString());
 
     while (siblings.length > 1 && searchInfo[0] !== proofEndingHash) {
       // Remove the first sibling

@@ -13,7 +13,7 @@ contract PatriciaTreeProofs {
   using Data for Data.Edge;
   using Data for Data.Label;
 
-  function getImpliedRoot(bytes key, bytes value, uint branchMask, bytes32[] siblings) public
+  function getImpliedRootHashKey(bytes key, bytes value, uint branchMask, bytes32[] siblings) internal
   pure returns (bytes32)
   {
     bytes32 hash;
@@ -21,7 +21,7 @@ contract PatriciaTreeProofs {
     return hash;
   }
 
-  function getImpliedRootNoHash(bytes32 key, bytes value, uint branchMask, bytes32[] siblings) public
+  function getImpliedRootNoHashKey(bytes32 key, bytes value, uint branchMask, bytes32[] siblings) internal
   pure returns (bytes32)
   {
     bytes32 hash;
@@ -29,7 +29,7 @@ contract PatriciaTreeProofs {
     return hash;
   }
 
-  function getFinalPairAndImpliedRootNoHash(bytes32 key, bytes value, uint branchMask, bytes32[] siblings) public
+  function getFinalPairAndImpliedRootNoHash(bytes32 key, bytes value, uint branchMask, bytes32[] siblings) internal
   pure returns (bytes32, bytes32[2])
   {
     return getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);

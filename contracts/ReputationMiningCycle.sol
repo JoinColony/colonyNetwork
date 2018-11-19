@@ -344,7 +344,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     uint256 targetNode = disputeRounds[round][idx].lowerBound;
     bytes32 jrh = disputeRounds[round][idx].jrh;
 
-    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(targetNode), jhIntermediateValue, branchMask, siblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(targetNode), jhIntermediateValue, branchMask, siblings);
     require(impliedRoot==jrh, "colony-reputation-mining-invalid-binary-search-confirmation");
     bytes32 intermediateReputationHash;
     uint256 intermediateReputationNNodes;
@@ -612,7 +612,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       mstore(add(jhLeafValue, 0x40), reputationRootHashNNodes)
     }
-    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(0), jhLeafValue, branchMask1, siblings1);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(0), jhLeafValue, branchMask1, siblings1);
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-1");
   }
 
@@ -642,7 +642,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       mstore(add(jhLeafValue, 0x20), submittedHash)
       mstore(add(jhLeafValue, 0x40), submittedHashNNodes)
     }
-    bytes32 impliedRoot = getImpliedRootNoHash(bytes32(nUpdates), jhLeafValue, branchMask2, siblings2);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(nUpdates), jhLeafValue, branchMask2, siblings2);
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-2");
   }
 

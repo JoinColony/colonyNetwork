@@ -266,6 +266,9 @@ contract("All", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
 
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
@@ -291,8 +294,11 @@ contract("All", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient2.respondToBinarySearchForChallenge();
 
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient2.respondToBinarySearchForChallenge();
+
       await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
+      await badClient2.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
       await oneMiningCycleDurationLater();
