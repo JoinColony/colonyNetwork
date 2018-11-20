@@ -200,7 +200,7 @@ contract("Colony Reputation Updates", accounts => {
       const taskId1 = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 5
+        skillId: 5
       });
       await metaColony.finalizeTask(taskId1);
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
@@ -213,7 +213,7 @@ contract("Colony Reputation Updates", accounts => {
       const taskId2 = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 6
+        skillId: 6
       });
       await metaColony.finalizeTask(taskId2);
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(7);

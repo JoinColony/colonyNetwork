@@ -70,37 +70,7 @@ export async function executeSignedRoleAssignment({ colony, taskId, functionName
   return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
-export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain = 1, skill = 0, evaluator, worker }) {
-  const accounts = await web3GetAccounts();
-  const manager = accounts[0];
-  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
-  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
-
-  const taskId = await makeTask({ colony, domainId: domain });
-  // If the skill is not specified, default to the root global skill
-  if (skill === 0) {
-    const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-    if (rootGlobalSkill.isZero()) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
-
-    await executeSignedTaskChange({
-      colony,
-      taskId,
-      functionName: "setTaskSkill",
-      signers: [manager],
-      sigTypes: [0],
-      args: [taskId, rootGlobalSkill]
-    });
-  } else {
-    await executeSignedTaskChange({
-      colony,
-      taskId,
-      functionName: "setTaskSkill",
-      signers: [manager],
-      sigTypes: [0],
-      args: [taskId, skill]
-    });
-  }
-
+export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
   if (manager !== evaluator) {
     await executeSignedTaskChange({
       colony,
@@ -132,18 +102,29 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
     sigTypes,
     args: [taskId, worker]
   });
+}
 
-  const dueDateTimestamp = dueDate;
-  if (dueDateTimestamp) {
-    await executeSignedTaskChange({
-      colony,
-      taskId,
-      functionName: "setTaskDueDate",
-      signers,
-      sigTypes,
-      args: [taskId, dueDateTimestamp]
-    });
+export async function setupTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId = 0 }) {
+  // If the skill is not specified, default to the root global skill
+  if (skillId === 0) {
+    skillId = await colonyNetwork.getRootGlobalSkillId(); // eslint-disable-line no-param-reassign
+    if (skillId.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
   }
+
+  const taskId = await makeTask({ colony, dueDate, domainId, skillId });
+
+  return taskId;
+}
+
+export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId = 0, evaluator, worker }) {
+  const accounts = await web3GetAccounts();
+  const manager = accounts[0];
+  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
+
+  const taskId = await setupTask({ colonyNetwork, colony, dueDate, domainId, skillId });
+  await assignRoles({ colony, taskId, manager, evaluator, worker });
+
   return taskId;
 }
 
@@ -152,8 +133,8 @@ export async function setupFundedTask({
   colony,
   token,
   dueDate,
-  domain,
-  skill,
+  domainId,
+  skillId,
   evaluator,
   worker,
   managerPayout = MANAGER_PAYOUT,
@@ -171,7 +152,7 @@ export async function setupFundedTask({
   } else {
     tokenAddress = token === ZERO_ADDRESS ? ZERO_ADDRESS : token.address;
   }
-  const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, domain, skill, evaluator, worker });
+  const taskId = await setupTask({ colonyNetwork, colony, dueDate, domainId, skillId });
   const task = await colony.getTask(taskId);
   const potId = task[5];
   const managerPayoutBN = new BN(managerPayout);
@@ -180,38 +161,9 @@ export async function setupFundedTask({
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
   await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
 
-  await executeSignedTaskChange({
-    colony,
-    taskId,
-    functionName: "setTaskManagerPayout",
-    signers: [manager],
-    sigTypes: [0],
-    args: [taskId, tokenAddress, managerPayout]
-  });
+  await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout);
+  await assignRoles({ colony, taskId, manager, evaluator, worker });
 
-  let signers = manager === evaluator ? [manager] : [manager, evaluator];
-  let sigTypes = Array.from({ length: signers.length }, () => 0);
-
-  await executeSignedTaskChange({
-    colony,
-    taskId,
-    functionName: "setTaskEvaluatorPayout",
-    signers,
-    sigTypes,
-    args: [taskId, tokenAddress, evaluatorPayout]
-  });
-
-  signers = manager === worker ? [manager] : [manager, worker];
-  sigTypes = Array.from({ length: signers.length }, () => 0);
-
-  await executeSignedTaskChange({
-    colony,
-    taskId,
-    functionName: "setTaskWorkerPayout",
-    signers,
-    sigTypes,
-    args: [taskId, tokenAddress, workerPayout]
-  });
   return taskId;
 }
 
@@ -220,8 +172,8 @@ export async function setupRatedTask({
   colony,
   token,
   dueDate,
-  domain,
-  skill,
+  domainId,
+  skillId,
   evaluator,
   worker,
   managerPayout = MANAGER_PAYOUT,
@@ -242,8 +194,8 @@ export async function setupRatedTask({
     colony,
     token,
     dueDate,
-    domain,
-    skill,
+    domainId,
+    skillId,
     evaluator,
     worker,
     managerPayout,

@@ -2886,7 +2886,7 @@ contract("ColonyNetworkMining", accounts => {
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 10,
+        skillId: 10,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
@@ -2970,7 +2970,7 @@ contract("ColonyNetworkMining", accounts => {
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        skill: 10,
+        skillId: 10,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
