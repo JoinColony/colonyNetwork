@@ -275,8 +275,8 @@ contract("ColonyNetworkAuction", accounts => {
       await tokenAuction.bid(amount, { from: BIDDER_1 });
       const receivedTotal = await tokenAuction.receivedTotal();
       const bid = await tokenAuction.bids(BIDDER_1);
-      assert(bid.lte(totalToEndAuction));
-      assert(receivedTotal.lte(totalToEndAuction));
+      assert.isTrue(bid.lte(totalToEndAuction));
+      assert.isTrue(receivedTotal.lte(totalToEndAuction));
       assert.equal(receivedTotal.toString(), bid.toString());
     });
 
