@@ -26,20 +26,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
-  function version() public pure returns (uint256) { return 1; }
+  function version() public pure returns (uint256 colonyVersion) { return 1; }
 
-  function setOwnerRole(address _user) public stoppable auth {
-    // To allow only one address to have owner role at a time, we have to remove current owner from their role
+  function setFounderRole(address _user) public stoppable auth {
+    // To allow only one address to have founder role at a time, we have to remove current founder from their role
     ColonyAuthority colonyAuthority = ColonyAuthority(authority);
-    colonyAuthority.setUserRole(msg.sender, OWNER_ROLE, false);
-    colonyAuthority.setUserRole(_user, OWNER_ROLE, true);
+    colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
+    colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
   }
 
   function setAdminRole(address _user) public stoppable auth {
     ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, true);
   }
 
-  // Can only be called by the owner role.
+  // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
     ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, false);
   }

@@ -136,18 +136,18 @@ contract("Colony", accounts => {
   });
 
   describe("when working with permissions", () => {
-    it("should allow current owner role to transfer role to another address", async () => {
-      const ownerRole = 0;
-      const currentOwner = accounts[0];
-      const futureOwner = accounts[2];
+    it("should allow current founder to transfer role to another address", async () => {
+      const founderRole = 0;
+      const currentFounder = accounts[0];
+      const newFounder = accounts[2];
 
-      let hasRole = await authority.hasUserRole(currentOwner, ownerRole);
-      assert(hasRole, `${currentOwner} does not have owner role`);
+      let hasRole = await authority.hasUserRole(currentFounder, founderRole);
+      assert(hasRole, `${currentFounder} does not have founder role`);
 
-      await colony.setOwnerRole(futureOwner);
+      await colony.setFounderRole(newFounder);
 
-      hasRole = await authority.hasUserRole(futureOwner, ownerRole);
-      assert(hasRole, `Ownership not transfered to ${futureOwner}`);
+      hasRole = await authority.hasUserRole(newFounder, founderRole);
+      assert(hasRole, `Founder role not transfered to ${newFounder}`);
     });
 
     it("should allow admin to assign colony admin role", async () => {
@@ -170,7 +170,7 @@ contract("Colony", accounts => {
       assert(hasRole, `Admin role not assigned to ${user5}`);
     });
 
-    it("should allow owner to remove colony admin role", async () => {
+    it("should allow founder to remove colony admin role", async () => {
       const adminRole = 1;
 
       const user1 = accounts[1];
@@ -336,13 +336,13 @@ contract("Colony", accounts => {
       expect(defaultRewardInverse).to.eq.BN(maxUIntNumber);
     });
 
-    it("should allow the colony owner to set it", async () => {
+    it("should allow the colony founder to set it", async () => {
       await colony.setRewardInverse(234);
       const defaultRewardInverse = await colony.getRewardInverse();
       expect(defaultRewardInverse).to.eq.BN(234);
     });
 
-    it("should not allow anyone else but the colony owner to set it", async () => {
+    it("should not allow anyone else but the colony founder to set it", async () => {
       await colony.setRewardInverse(100);
       await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }));
       const defaultRewardInverse = await colony.getRewardInverse();

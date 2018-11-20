@@ -95,7 +95,7 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChild.toNumber(), 4);
     });
 
-    it("should not allow a non-owner role in the metacolony to add a global skill", async () => {
+    it("should not allow a non-founder role in the metacolony to add a global skill", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill(1, { from: OTHER_ACCOUNT }));
     });
 
@@ -322,7 +322,7 @@ contract("Meta Colony", accounts => {
       token = await Token.at(tokenAddress);
     });
 
-    it("someone who does not have owner role should not be able to add domains", async () => {
+    it("someone who does not have founder role should not be able to add domains", async () => {
       await checkErrorRevert(colony.addDomain(1, { from: OTHER_ACCOUNT }));
     });
 
@@ -546,13 +546,13 @@ contract("Meta Colony", accounts => {
   });
 
   describe("when setting the network fee", () => {
-    it("should allow the meta colony owner to set the fee", async () => {
+    it("should allow the meta colony founder to set the fee", async () => {
       await metaColony.setNetworkFeeInverse(234);
       const fee = await colonyNetwork.getFeeInverse();
       assert.equal(fee, 234);
     });
 
-    it("should not allow anyone else but the meta colony owner to set the fee", async () => {
+    it("should not allow anyone else but the meta colony founder to set the fee", async () => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }));
       const fee = await colonyNetwork.getFeeInverse();
       assert.equal(fee, 0);

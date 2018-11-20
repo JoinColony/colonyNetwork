@@ -58,13 +58,13 @@ contract("Colony Recovery", accounts => {
 
   describe("when using recovery mode", () => {
     it("should be able to add and remove recovery roles when not in recovery", async () => {
-      const owner = accounts[0];
+      const founder = accounts[0];
       let numRecoveryRoles;
 
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 0);
 
-      await colony.setRecoveryRole(owner);
+      await colony.setRecoveryRole(founder);
       await colony.setRecoveryRole(accounts[1]);
       await colony.setRecoveryRole(accounts[2]);
       numRecoveryRoles = await colony.numRecoveryRoles();
@@ -80,29 +80,29 @@ contract("Colony Recovery", accounts => {
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 2);
 
-      // Can remove owner
-      await colony.removeRecoveryRole(owner);
+      // Can remove founder
+      await colony.removeRecoveryRole(founder);
       numRecoveryRoles = await colony.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 1);
     });
 
     it("should not be able to add and remove roles when in recovery", async () => {
-      const owner = accounts[0];
-      await colony.setRecoveryRole(owner);
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.setAdminRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.removeAdminRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.setRecoveryRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.removeRecoveryRole(accounts[1]), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.setOwnerRole(accounts[1]), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setFounderRole(accounts[1]), "colony-in-recovery-mode");
     });
 
     it("should not be able to call normal functions while in recovery", async () => {
-      const owner = accounts[0];
-      await colony.setRecoveryRole(owner);
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
 
-      await metaColony.setRecoveryRole(owner);
+      await metaColony.setRecoveryRole(founder);
       await metaColony.enterRecoveryMode();
 
       await checkErrorRevert(colony.initialiseColony("0x0"), "colony-in-recovery-mode");
@@ -112,8 +112,8 @@ contract("Colony Recovery", accounts => {
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {
-      const owner = accounts[0];
-      await colony.setRecoveryRole(owner);
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
       await colony.setRecoveryRole(accounts[1]);
       await colony.setRecoveryRole(accounts[2]);
 
@@ -133,8 +133,8 @@ contract("Colony Recovery", accounts => {
     });
 
     it("recovery users can work in recovery mode", async () => {
-      const owner = accounts[0];
-      await colony.setRecoveryRole(owner);
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
       await colony.setRecoveryRole(accounts[1]);
 
       await colony.enterRecoveryMode();
@@ -147,8 +147,8 @@ contract("Colony Recovery", accounts => {
     });
 
     it("users cannot approve twice", async () => {
-      const owner = accounts[0];
-      await colony.setRecoveryRole(owner);
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
       await colony.setStorageSlotRecovery(5, "0xdeadbeef");
 
@@ -157,15 +157,15 @@ contract("Colony Recovery", accounts => {
     });
 
     it("users cannot approve if unauthorized", async () => {
-      const owner = accounts[0];
-      await colony.setRecoveryRole(owner);
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.approveExitRecovery({ from: accounts[1] }));
     });
 
     it("should allow editing of general variables", async () => {
-      const owner = accounts[0];
-      await colony.setRecoveryRole(owner);
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
       await colony.setStorageSlotRecovery(5, "0xdeadbeef");
 
@@ -174,9 +174,9 @@ contract("Colony Recovery", accounts => {
     });
 
     it("should not allow editing of protected variables", async () => {
-      const owner = accounts[0];
+      const founder = accounts[0];
 
-      await colony.setRecoveryRole(owner);
+      await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.setStorageSlotRecovery(0, "0xdeadbeef"), "colony-common-protected-variable");
       // '6' is a protected location in Colony, but not ColonyNetwork. We get a different error.
@@ -184,11 +184,11 @@ contract("Colony Recovery", accounts => {
     });
 
     it("should allow upgrade to be called on a colony in and out of recovery mode", async () => {
-      const owner = accounts[0];
+      const founder = accounts[0];
       // Note that we can't upgrade, because we don't have a new version. But this test is still valid, because we're getting the
       // 'version must be newer' error, not a `colony-not-in-recovery-mode` or `colony-in-recovery-mode` error.
       await checkErrorRevert(colony.upgrade(1), "colony-version-must-be-newer");
-      await colony.setRecoveryRole(owner);
+      await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.upgrade(1), "colony-version-must-be-newer");
     });

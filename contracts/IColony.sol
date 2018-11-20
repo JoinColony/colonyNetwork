@@ -106,19 +106,19 @@ contract IColony is IRecovery {
 
   // Implemented in DSAuth.sol
   /// @notice Get the `ColonyAuthority` for the colony
-  /// @return authority The `ColonyAuthority` contract address
-  function authority() public view returns (address authority);
+  /// @return colonyAuthority The `ColonyAuthority` contract address
+  function authority() public view returns (address colonyAuthority);
 
   /// @notice Get the colony `owner` address. This should be 0x0 at all times
   /// @dev Used for testing.
-  /// @return owner Address of the colony owner
-  function owner() public view returns (address owner);
+  /// @return colonyOwner Address of the colony owner
+  function owner() public view returns (address colonyOwner);
 
   // Implemented in Colony.sol
   /// @notice Get the Colony contract version
   /// Starts from 1 and is incremented with every deployed contract change
-  /// @return version Version number
-  function version() public pure returns (uint256 version);
+  /// @return colonyVersion Version number
+  function version() public pure returns (uint256 colonyVersion);
 
   /// @notice Upgrades a colony to a new Colony contract version `_newVersion`
   /// @dev Downgrades are not allowed, i.e. `_newVersion` should be higher than the currect colony version
@@ -131,20 +131,20 @@ contract IColony is IRecovery {
   /// that control has to be transferred to the colony after this call
   function setToken(address _token) public;
 
-  /// @notice Set new colony owner role.
-  /// @dev There can only be one address assigned to owner role at a time.
-  /// Whoever calls this function will lose their owner role
-  /// Can be called by owner role.
-  /// @param _user User we want to give an owner role to
-  function setOwnerRole(address _user) public;
+  /// @notice Set new colony founder role.
+  /// @dev There can only be one address assigned to founder role at a time.
+  /// Whoever calls this function will lose their founder role
+  /// Can be called by founder role.
+  /// @param _user User we want to give an founder role to
+  function setFounderRole(address _user) public;
 
   /// @notice Set new colony admin role.
-  /// Can be called by owner role or admin role.
+  /// Can be called by founder role or admin role.
   /// @param _user User we want to give an admin role to
   function setAdminRole(address _user) public;
 
   /// @notice Remove colony admin.
-  /// Can only be called by owner role.
+  /// Can only be called by founder role.
   /// @param _user User we want to remove admin role from
   function removeAdminRole(address _user) public;
 

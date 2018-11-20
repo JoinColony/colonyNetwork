@@ -104,8 +104,8 @@ contract("Colony contract upgrade", accounts => {
     });
 
     it("should return correct permissions", async () => {
-      const owner = await authority.hasUserRole(ACCOUNT_ONE, 0);
-      assert.isTrue(owner);
+      const founder = await authority.hasUserRole(ACCOUNT_ONE, 0);
+      assert.isTrue(founder);
     });
 
     it("should return correct token address", async () => {

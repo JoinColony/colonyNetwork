@@ -87,7 +87,7 @@ contract ColonyStorage is CommonStorage, DSMath {
   uint256 domainCount;
 
   // Colony-wide roles
-  uint8 constant OWNER_ROLE = 0;
+  uint8 constant FOUNDER_ROLE = 0;
   uint8 constant ADMIN_ROLE = 1;
 
   // Task Roles

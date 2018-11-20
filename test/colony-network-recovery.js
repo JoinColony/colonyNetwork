@@ -85,12 +85,12 @@ contract("Colony Network Recovery", accounts => {
 
   describe("when using recovery mode", () => {
     it("should be able to add and remove recovery roles when not in recovery", async () => {
-      const owner = accounts[0];
+      const founder = accounts[0];
       let numRecoveryRoles;
 
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 0);
-      colonyNetwork.setRecoveryRole(owner);
+      colonyNetwork.setRecoveryRole(founder);
       await colonyNetwork.setRecoveryRole(accounts[1]);
       await colonyNetwork.setRecoveryRole(accounts[2]);
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
@@ -106,7 +106,7 @@ contract("Colony Network Recovery", accounts => {
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 2);
 
-      await colonyNetwork.removeRecoveryRole(owner);
+      await colonyNetwork.removeRecoveryRole(founder);
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
       assert.equal(numRecoveryRoles.toNumber(), 1);
     });
