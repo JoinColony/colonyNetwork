@@ -241,7 +241,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       require(disputeRounds[round][opponentIdx].provedPreviousReputationUID >= disputeRounds[round][idx].provedPreviousReputationUID, "colony-reputation-mining-less-reputation-uids-proven");
 
       // Require that it has failed a challenge (i.e. failed to respond in time)
-      require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600, "colony-reputation-mining-failed-to-respond-in-time"); //'In time' is ten minutes here.
+      require(now - disputeRounds[round][idx].lastResponseTimestamp >= 600, "colony-reputation-mining-not-timed-out"); // Timeout is ten minutes here.
 
       // Work out whether we are invalidating just the supplied idx or its opponent too.
       bool eliminateOpponent = false;

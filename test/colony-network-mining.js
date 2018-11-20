@@ -561,7 +561,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.submitRootHash();
       await badClient.submitRootHash();
 
-      await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-failed-to-respond-in-time");
+      await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-not-timed-out");
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await checkErrorRevert(repCycle.confirmNewHash(1), "colony-reputation-mining-final-round-not-completed");
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
