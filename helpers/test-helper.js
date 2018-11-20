@@ -7,6 +7,8 @@ import ethUtils from "ethereumjs-util";
 import BN from "bn.js";
 import fs from "fs";
 
+import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION } from "./constants";
+
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
@@ -379,14 +381,10 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const userLockInformation = await tokenLocking.getUserLock(clnyAddress, account);
   const userBalance = userLockInformation.amount;
 
-  const WAD = new BN(10).pow(new BN(18));
   // What's the largest entry they can submit?
-  const nIter = userBalance.div(WAD).muln(2000);
+  const nIter = userBalance.div(MIN_STAKE);
   // Work out the target
-  const constant = new BN(2)
-    .pow(new BN(256))
-    .subn(1)
-    .divn(60 * 60 * 24); // TODO: use MINING_CYCLE_DURATION from constants.js
+  const constant = UINT256_MAX.divn(MINING_CYCLE_DURATION);
   const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
 
   // Iterate from `startingEntryNumber ` up until the largest entry, until we find one we can submit now
@@ -403,10 +401,10 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 }
 
 export async function submitAndForwardTimeToDispute(clients, test) {
-  await forwardTime(60 * 60 * 12, test); // TODO: use MINING_CYCLE_DURATION from constants.js
+  await forwardTime(MINING_CYCLE_DURATION / 2, test);
   for (let i = 0; i < clients.length; i += 1) {
     await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
     await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
   }
-  await forwardTime(60 * 60 * 12, test);
+  await forwardTime(MINING_CYCLE_DURATION / 2, test);
 }

@@ -1,5 +1,5 @@
 import { toBN, soliditySha3 } from "web3-utils";
-import { getRandomString } from "./test-helper";
+import shortid from "shortid";
 
 const MANAGER_ROLE = 0;
 const EVALUATOR_ROLE = 1;
@@ -19,14 +19,16 @@ const MANAGER_RATING = 2;
 const WORKER_RATING = 3;
 const RATING_MULTIPLIER = { 1: -1, 2: 1, 3: 1.5 };
 const SECONDS_PER_DAY = 86400;
-const RATING_1_SALT = soliditySha3(getRandomString(10));
-const RATING_2_SALT = soliditySha3(getRandomString(10));
+const RATING_1_SALT = soliditySha3(shortid.generate());
+const RATING_2_SALT = soliditySha3(shortid.generate());
 const RATING_1_SECRET = soliditySha3(RATING_1_SALT, MANAGER_RATING);
 const RATING_2_SECRET = soliditySha3(RATING_2_SALT, WORKER_RATING);
 
 const ACTIVE_TASK_STATE = 0;
 const CANCELLED_TASK_STATE = 1;
 const FINALIZED_TASK_STATE = 2;
+
+const UINT256_MAX = toBN(0).notn(256);
 
 const WAD = toBN(10).pow(toBN(18));
 const MIN_STAKE = WAD.muln(2000);
@@ -60,6 +62,7 @@ module.exports = {
   ACTIVE_TASK_STATE,
   CANCELLED_TASK_STATE,
   FINALIZED_TASK_STATE,
+  UINT256_MAX,
   WAD,
   MIN_STAKE,
   DEFAULT_STAKE,

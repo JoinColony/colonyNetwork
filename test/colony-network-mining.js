@@ -17,7 +17,7 @@ import {
   submitAndForwardTimeToDispute
 } from "../helpers/test-helper";
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
-import { WAD, MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, ZERO_ADDRESS } from "../helpers/constants";
+import { UINT256_MAX, WAD, MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -367,8 +367,7 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should correctly calculate the miner weight", async () => {
-      const UINT256_MAX = new BN(0).notn(256);
-      const UINT32_MAX = new BN(0).notn(32);
+      const UINT32_MAX = UINT256_MAX.shrn(256 - 32);
       let weight;
 
       // Large weight (staked for UINT256_MAX, first submission)
