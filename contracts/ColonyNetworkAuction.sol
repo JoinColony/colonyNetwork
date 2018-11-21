@@ -107,9 +107,10 @@ contract DutchAuction is DSMath {
     _;
   }
 
-  event AuctionBid(address indexed _sender, uint _amount, uint _missingFunds);
-  event AuctionClaim(address indexed _recipient, uint _sentAmount);
-  event AuctionFinalized(uint _finalPrice);
+  event AuctionStarted(address _token, uint256 _quantity, uint256 _minPrice);
+  event AuctionBid(address indexed _sender, uint256 _amount, uint256 _missingFunds);
+  event AuctionClaim(address indexed _recipient, uint256 _sentAmount);
+  event AuctionFinalized(uint256 _finalPrice);
 
   constructor(address _clnyToken, address _token, address _metaColony) public {
     colonyNetwork = msg.sender;
@@ -129,20 +130,26 @@ contract DutchAuction is DSMath {
 
     startTime = now;
     started = true;
+
+    emit AuctionStarted(address(token), quantity, minPrice);
   }
 
   function totalToEndAuction() public view
   auctionStartedAndOpen
-  returns (uint)
+  returns (uint256)
   {
-    return mul(quantity, price()) / TOKEN_MULTIPLIER;
+    uint totalAmountToEndAuction = mul(quantity, price()) / TOKEN_MULTIPLIER;
+    // For low quantity auctions (q < 10^18) it is possible: q * p < 10^18, therefore limit this scenario so at least 1 token is required to end the auction
+    // If the minimum price is reached totalAmountToEndAuction is 1 in all cases of quantity value auctioned
+    totalAmountToEndAuction = (totalAmountToEndAuction == 0) ? 1 : totalAmountToEndAuction;
+    return totalAmountToEndAuction;
   }
 
   // Get the price in CLNY per 10**18 Tokens (min 1 max 1e36)
   // Starting price is 10**36, after 1 day price is 10**35, after 2 days price is 10**34 and so on
   function price() public view
   auctionStartedAndOpen
-  returns (uint)
+  returns (uint256)
   {
     uint duration = sub(now, startTime);
     uint daysOpen = duration / 86400;
@@ -150,8 +157,9 @@ contract DutchAuction is DSMath {
       return minPrice;
     }
     uint r = duration % 86400;
-    uint p = mul(10**sub(36, daysOpen), sub(864000, mul(9,r))) / 864000;
-    p = p < minPrice ? minPrice : p;
+
+    uint x = mul(10**sub(36, daysOpen), sub(864000, mul(9,r))) / 864000;
+    uint p = x < minPrice ? minPrice : x;
     return p;
   }
 
@@ -198,7 +206,7 @@ contract DutchAuction is DSMath {
   {
     // Burn all CLNY received
     clnyToken.burn(receivedTotal);
-    finalPrice = (mul(receivedTotal, TOKEN_MULTIPLIER) / quantity);
+    finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
     finalPrice = finalPrice <= minPrice ? minPrice : add(finalPrice, 1);
     finalized = true;
     emit AuctionFinalized(finalPrice);
@@ -211,7 +219,14 @@ contract DutchAuction is DSMath {
     uint amount = bids[msg.sender];
     require(amount > 0, "colony-auction-zero-bid-total");
 
-    uint tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+    uint tokens;
+
+    if (finalPrice != minPrice || quantity >= TOKEN_MULTIPLIER) {
+      tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+    } else {
+      tokens = mul(amount, quantity);
+    }
+
     claimCount += 1;
 
     // Set receiver bid to 0 before transferring the tokens
