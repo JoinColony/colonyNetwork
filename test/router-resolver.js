@@ -29,7 +29,10 @@ contract("EtherRouter / Resolver", accounts => {
 
   describe("EtherRouter", () => {
     it("should revert if non-owner tries to change the Resolver on EtherRouter", async () => {
-      await checkErrorRevert(etherRouter.setResolver("0xb3e2b6020926af4763d706b5657446b95795de57", { from: COINBASE_ACCOUNT }));
+      await checkErrorRevert(
+        etherRouter.setResolver("0xb3e2b6020926af4763d706b5657446b95795de57", { from: COINBASE_ACCOUNT }),
+        "ds-auth-unauthorized"
+      );
       const resolverUpdated = await etherRouter.resolver();
       assert.equal(resolverUpdated, resolver.address);
     });

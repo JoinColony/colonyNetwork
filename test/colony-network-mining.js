@@ -256,7 +256,7 @@ contract("ColonyNetworkMining", accounts => {
     it("should not allow miners to deposit more CLNY than they have", async () => {
       await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, 9000);
       await clny.approve(tokenLocking.address, 10000, { from: OTHER_ACCOUNT });
-      await checkErrorRevert(tokenLocking.deposit(clny.address, 10000, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(tokenLocking.deposit(clny.address, 10000, { from: OTHER_ACCOUNT }), "ds-token-insufficient-balance");
       const userBalance = await clny.balanceOf(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 9000);
       const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
@@ -267,7 +267,7 @@ contract("ColonyNetworkMining", accounts => {
     it("should not allow miners to withdraw more CLNY than they staked, even if enough has been staked total", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, 9000);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, 9000);
-      await checkErrorRevert(tokenLocking.withdraw(clny.address, 10000, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(tokenLocking.withdraw(clny.address, 10000, { from: OTHER_ACCOUNT }), "ds-math-sub-overflow");
       const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
       const stakedBalance = info[1];
       assert.equal(stakedBalance.toNumber(), 9000);

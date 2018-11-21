@@ -137,7 +137,7 @@ contract("Colony Funding", accounts => {
     it("should not let tokens be moved by non-admins", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 2, 51, otherToken.address, { from: WORKER }));
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 2, 51, otherToken.address, { from: WORKER }), "ds-auth-unauthorized");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       const pot2Balance = await colony.getPotBalance(2, otherToken.address);

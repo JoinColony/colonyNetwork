@@ -170,7 +170,7 @@ contract("Colony Network Recovery", accounts => {
 
     it("users cannot approve if unauthorized", async () => {
       await colonyNetwork.enterRecoveryMode();
-      await checkErrorRevert(colonyNetwork.approveExitRecovery({ from: accounts[1] }));
+      await checkErrorRevert(colonyNetwork.approveExitRecovery({ from: accounts[1] }), "ds-auth-unauthorized");
       await colonyNetwork.approveExitRecovery({ from: accounts[0] });
       await colonyNetwork.exitRecoveryMode();
     });

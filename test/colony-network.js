@@ -237,7 +237,7 @@ contract("Colony Network", accounts => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1).toNumber();
       await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
-      await checkErrorRevert(colony.setResolver(sampleResolver));
+      await checkErrorRevert(colony.setResolver(sampleResolver), "ds-auth-unauthorized");
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
@@ -280,7 +280,7 @@ contract("Colony Network", accounts => {
       const newVersion = currentColonyVersion.addn(1).toNumber();
       await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
 
-      await checkErrorRevert(colony.upgrade(newVersion, { from: OTHER_ACCOUNT }));
+      await checkErrorRevert(colony.upgrade(newVersion, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
       expect(colonyResolver).to.not.equal(sampleResolver);
     });
   });
@@ -374,7 +374,7 @@ contract("Colony Network", accounts => {
       const colony = await Colony.at(colonyAddress);
 
       // Non-founder can't register label for colony
-      await checkErrorRevert(colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[1] }));
+      await checkErrorRevert(colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[1] }), "ds-auth-unauthorized");
 
       // Founder cannot register blank label
       await checkErrorRevert(colony.registerColonyLabel("", orbitDBAddress, { from: accounts[0] }), "colony-colony-label-invalid");
