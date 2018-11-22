@@ -834,7 +834,10 @@ contract("ColonyNetworkMining", accounts => {
     it('should not allow "rewardStakersWithReputation" to be called by someone not the colonyNetwork', async () => {
       const addr = await colonyNetwork.getReputationMiningCycle(true);
       const repCycle = await IReputationMiningCycle.at(addr);
-      await checkErrorRevert(repCycle.rewardStakersWithReputation([MAIN_ACCOUNT], [1], 0x0, 10000, 3), "colony-reputation-mining-sender-not-network");
+      await checkErrorRevert(
+        repCycle.rewardStakersWithReputation([MAIN_ACCOUNT], [1], ZERO_ADDRESS, 10000, 3),
+        "colony-reputation-mining-sender-not-network"
+      );
     });
 
     it('should not allow "initialise" to be called on either the active or inactive ReputationMiningCycle', async () => {
@@ -2841,7 +2844,7 @@ contract("ColonyNetworkMining", accounts => {
 
       // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
       key = makeReputationKey(metaColony.address, new BN(META_ROOT_SKILL), MAIN_ACCOUNT);
-      value = makeReputationValue(REWARD.muln(6).add(WAD), 3);
+      value = makeReputationValue(DEFAULT_STAKE.muln(6).add(REWARD), 3);
       assert.equal(client.reputations[key], value);
 
       // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputation hash
