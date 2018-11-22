@@ -133,7 +133,8 @@ contract("TokenLocking", addresses => {
       await checkErrorRevert(
         tokenLocking.deposit(token.address, usersTokens, {
           from: userAddress
-        })
+        }),
+        "ds-token-insufficient-approval"
       );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       const userDepositedBalance = info[1];
@@ -157,7 +158,8 @@ contract("TokenLocking", addresses => {
       await checkErrorRevert(
         tokenLocking.withdraw(token.address, otherUserTokens, {
           from: userAddress
-        })
+        }),
+        "ds-math-sub-overflow"
       );
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       const userDepositedBalance = info[1];

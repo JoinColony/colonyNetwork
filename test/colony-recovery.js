@@ -160,7 +160,7 @@ contract("Colony Recovery", accounts => {
       const founder = accounts[0];
       await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
-      await checkErrorRevert(colony.approveExitRecovery({ from: accounts[1] }));
+      await checkErrorRevert(colony.approveExitRecovery({ from: accounts[1] }), "ds-auth-unauthorized");
     });
 
     it("should allow editing of general variables", async () => {

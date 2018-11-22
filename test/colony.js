@@ -105,7 +105,7 @@ contract("Colony", accounts => {
     });
 
     it("should fail if a non-admin tries to mint tokens", async () => {
-      await checkErrorRevert(colony.mintTokens(100, { from: OTHER }));
+      await checkErrorRevert(colony.mintTokens(100, { from: OTHER }), "ds-auth-unauthorized");
     });
 
     it("should not allow reinitialisation", async () => {
@@ -200,11 +200,7 @@ contract("Colony", accounts => {
       hasRole = await authority.hasUserRole(user2, adminRole);
       assert(hasRole, `Admin role not assigned to ${user2}`);
 
-      await checkErrorRevert(
-        colony.removeAdminRole(user1, {
-          from: user2
-        })
-      );
+      await checkErrorRevert(colony.removeAdminRole(user1, { from: user2 }), "ds-auth-unauthorized");
 
       hasRole = await authority.hasUserRole(user1, adminRole);
       assert(hasRole, `${user1} is removed from admin role from another admin`);
@@ -307,7 +303,7 @@ contract("Colony", accounts => {
 
     it("should throw if there is not enough funds to send", async () => {
       await colony.mintTokens(toBN(10 * 1e18).toString());
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS));
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "ds-token-insufficient-balance");
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
       assert.equal(balance.toString(), "0");
@@ -318,7 +314,8 @@ contract("Colony", accounts => {
       await checkErrorRevert(
         colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS, {
           from: accounts[1]
-        })
+        }),
+        "ds-auth-unauthorized"
       );
     });
 
@@ -344,7 +341,7 @@ contract("Colony", accounts => {
 
     it("should not allow anyone else but the colony founder to set it", async () => {
       await colony.setRewardInverse(100);
-      await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }));
+      await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
       const defaultRewardInverse = await colony.getRewardInverse();
       expect(defaultRewardInverse).to.eq.BN(100);
     });
