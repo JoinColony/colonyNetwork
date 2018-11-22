@@ -202,10 +202,10 @@ contract("Colony Network Auction", accounts => {
         const differencePrices = auctionProp.price.sub(currentPrice);
         expect(differencePrices).to.be.lte.BN(errorMarginPrice);
 
-        const totalToEndAuction = await tokenAuction.totalToEndAuction();
+        const remainingToEndAuction = await tokenAuction.remainingToEndAuction();
         const amount = currentPrice.mul(quantity).div(WAD);
         const errorMarginQuantity = amount.divn(100);
-        const differenceQuantity = new BN(totalToEndAuction).sub(amount);
+        const differenceQuantity = new BN(remainingToEndAuction).sub(amount);
         expect(differenceQuantity).to.be.lte.BN(errorMarginQuantity);
       });
     });
@@ -279,12 +279,12 @@ contract("Colony Network Auction", accounts => {
       const amount = clnyNeededForMaxPriceAuctionSellout.addn(20);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
       await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_1 });
-      const totalToEndAuction = await tokenAuction.totalToEndAuction();
+      const remainingToEndAuction = await tokenAuction.remainingToEndAuction();
       await tokenAuction.bid(amount, { from: BIDDER_1 });
       const receivedTotal = await tokenAuction.receivedTotal();
       const bid = await tokenAuction.bids(BIDDER_1);
       expect(bid).to.be.lte.BN(totalToEndAuction);
-      expect(receivedTotal).to.be.lte.BN(totalToEndAuction);
+      expect(receivedTotal).to.be.lte.BN(remainingToEndAuction);
       expect(receivedTotal).to.eq.BN(bid.toString());
     });
 
@@ -307,41 +307,18 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("auction closes when the receivedTotal goes over the total amount to end the auction for quantity > 1e18", async () => {
-      // Considers totalToEndAuction < receivedTotal as per colonyNetwork#416
-      // mul(quantity, price()) / TOKEN_MULTIPLIER < receivedTotal
-      // quantity * price() < receivedTotal * TOKEN_MULTIPLIER
-      // price() < (receivedTotal * TOKEN_MULTIPLIER) / quantity
-      // price() < (receivedTotal * 10^18) / quantity
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
+      await clny.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
 
-      // Aim: receivedTotal > _totalToEndAuction
-      const amount = clnyNeededForMaxPriceAuctionSellout.divn(3);
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, amount);
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_3, amount);
-      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_1 });
-      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_2 });
-      await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_3 });
+      let endTime = await tokenAuction.endTime();
+      const amount = new BN(10).pow(new BN(20));
 
-      let price = await tokenAuction.price();
-      let totalToEndAuction = await tokenAuction.totalToEndAuction();
-      let receivedTotal = await tokenAuction.receivedTotal();
-      console.log("price", price.toString()); // 999937500000000000000000000000000000
-      console.log("totalToEndAuction", totalToEndAuction.toString()); // 2999812500000000000000000000000000000000000000000000000
-      console.log("receivedTotal", receivedTotal.toString()); // 0
+      while (endTime.isZero()) {
+        await forwardTime(SECONDS_PER_DAY * 3, this);
 
-      await tokenAuction.bid(amount.divn(10), { from: BIDDER_1 });
-      await tokenAuction.bid(amount.divn(10), { from: BIDDER_2 });
-      await tokenAuction.bid(amount.divn(10), { from: BIDDER_3 });
-
-      await forwardTime(SECONDS_PER_DAY * 30, this);
-      price = await tokenAuction.price();
-      totalToEndAuction = await tokenAuction.totalToEndAuction();
-      receivedTotal = await tokenAuction.receivedTotal();
-      console.log("price", price.toString()); // 999937
-      console.log("totalToEndAuction", totalToEndAuction.toString()); // 2999811000000000000000000
-      console.log("receivedTotal", receivedTotal.toString()); // 300000000000000000000000000000000000000000000000000000
-
-      await tokenAuction.bid("3000000000000000000000000", { from: BIDDER_1 });
+        await tokenAuction.bid(amount, { from: BIDDER_1 });
+        endTime = await tokenAuction.endTime();
+      }
 
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
@@ -371,13 +348,7 @@ contract("Colony Network Auction", accounts => {
         await forwardTime(SECONDS_PER_DAY * 3, this);
 
         await tokenAuction.bid(amount, { from: BIDDER_1 });
-        // const price = await tokenAuction.price();
-        // const totalToEndAuction = await tokenAuction.totalToEndAuction();
-        // const receivedTotal = await tokenAuction.receivedTotal();
         endTime = await tokenAuction.endTime();
-        // console.log("price", price.toString());
-        // console.log("totalToEndAuction", totalToEndAuction.toString());
-        // console.log("receivedTotal", receivedTotal.toString());
       }
 
       await tokenAuction.finalize();
@@ -429,13 +400,7 @@ contract("Colony Network Auction", accounts => {
       while (endTime.isZero()) {
         await forwardTime(SECONDS_PER_DAY, this);
         await tokenAuction.bid(amount, { from: BIDDER_1 });
-        // const price = await tokenAuction.price();
-        // const totalToEndAuction = await tokenAuction.totalToEndAuction();
-        // const receivedTotal = await tokenAuction.receivedTotal();
         endTime = await tokenAuction.endTime();
-        // console.log("price", price.toString());
-        // console.log("totalToEndAuction", totalToEndAuction.toString());
-        // console.log("receivedTotal", receivedTotal.toString());
       }
 
       await tokenAuction.finalize();
@@ -457,56 +422,56 @@ contract("Colony Network Auction", accounts => {
       {
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        totalToEndAuction: 98,
+        remainingToEndAuction: 98,
         finalPrice: 99,
         claimAmount: new BN("989898989898989898")
       },
       {
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        totalToEndAuction: 98,
+        remainingToEndAuction: 98,
         finalPrice: 99,
         claimAmount: new BN("989898989898989898")
       },
       {
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        totalToEndAuction: 9,
+        remainingToEndAuction: 9,
         finalPrice: 90,
         claimAmount: new BN(10).pow(new BN(17))
       },
       {
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(17)),
-        totalToEndAuction: 9,
+        remainingToEndAuction: 9,
         finalPrice: 91,
         claimAmount: new BN("98901098901098901")
       },
       {
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(15)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 1000, // = minPrice
         claimAmount: new BN(10).pow(new BN(15))
       },
       {
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 999999942, // = minPrice
         claimAmount: new BN(10).pow(new BN(9)).addn(58)
       },
       {
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(3)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: new BN(10).pow(new BN(15)).toString(), // = minPrice
         claimAmount: new BN(10).pow(new BN(3))
       },
       {
         daysOpen: 34,
         quantity: new BN(777),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: new BN(1287001287001287).toString(), // = minPrice
         claimAmount: new BN(777)
       },
@@ -514,56 +479,56 @@ contract("Colony Network Auction", accounts => {
       {
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        totalToEndAuction: 8,
+        remainingToEndAuction: 8,
         finalPrice: 9,
         claimAmount: new BN("888888888888888888")
       },
       {
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        totalToEndAuction: 8,
+        remainingToEndAuction: 8,
         finalPrice: 9,
         claimAmount: new BN("888888888888888888")
       },
       {
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 9, // = minPrice
         claimAmount: new BN(10).pow(new BN(17)).addn(1)
       },
       {
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(17)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 10, // = minPrice
         claimAmount: new BN(10).pow(new BN(17))
       },
       {
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(15)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 1000, // = minPrice
         claimAmount: new BN(10).pow(new BN(15))
       },
       {
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 999999942, // = minPrice
         claimAmount: new BN(10).pow(new BN(9)).addn(58)
       },
       {
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(3)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: new BN(10).pow(new BN(15)).toString(), // = minPrice
         claimAmount: new BN(10).pow(new BN(3))
       },
       {
         daysOpen: 35,
         quantity: new BN(777),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: new BN(1287001287001287).toString(), // = minPrice
         claimAmount: new BN(777)
       },
@@ -571,56 +536,56 @@ contract("Colony Network Auction", accounts => {
       {
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 1, // = minPrice
         claimAmount: new BN(10).pow(new BN(18)).subn(1)
       },
       {
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 1, // = minPrice
         claimAmount: new BN(10).pow(new BN(18)).subn(10000)
       },
       {
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 9, // = minPrice
         claimAmount: new BN(10).pow(new BN(17)).addn(1)
       },
       {
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(17)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 10, // = minPrice
         claimAmount: new BN(10).pow(new BN(17))
       },
       {
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(15)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 1000, // = minPrice
         claimAmount: new BN(10).pow(new BN(15))
       },
       {
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: 999999942, // = minPrice
         claimAmount: new BN(10).pow(new BN(9)).addn(58)
       },
       {
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(3)),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: new BN(10).pow(new BN(15)).toString(), // = minPrice
         claimAmount: new BN(10).pow(new BN(3))
       },
       {
         daysOpen: 36,
         quantity: new BN(777),
-        totalToEndAuction: 1,
+        remainingToEndAuction: 1,
         finalPrice: new BN(1287001287001287).toString(), // = minPrice
         claimAmount: new BN(777)
       }
@@ -645,7 +610,7 @@ contract("Colony Network Auction", accounts => {
 
         const bid = await tokenAuction.bids(BIDDER_1);
         // Check only the amount required to end the auction was accepted
-        expect(bid).to.eq.BN(auctionProp.totalToEndAuction);
+        expect(bid).to.eq.BN(auctionProp.remainingToEndAuction);
 
         await tokenAuction.finalize();
         const finalPrice = await tokenAuction.finalPrice();

@@ -134,15 +134,22 @@ contract DutchAuction is DSMath {
     emit AuctionStarted(address(token), quantity, minPrice);
   }
 
-  function totalToEndAuction() public view
+  function remainingToEndAuction() public view
   auctionStartedAndOpen
   returns (uint256)
   {
-    uint totalAmountToEndAuction = mul(quantity, price()) / TOKEN_MULTIPLIER;
+    // Total amount to end the auction at the current price
+    uint totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
     // For low quantity auctions (q < 10^18) it is possible: q * p < 10^18, therefore limit this scenario so at least 1 token is required to end the auction
-    // If the minimum price is reached totalAmountToEndAuction is 1 in all cases of quantity value auctioned
-    totalAmountToEndAuction = (totalAmountToEndAuction == 0) ? 1 : totalAmountToEndAuction;
-    return totalAmountToEndAuction;
+    // If the minimum price is reached totalToEndAuctionAtCurrentPrice is 1 in all cases of quantity value auctioned
+    totalToEndAuctionAtCurrentPrice = (totalToEndAuctionAtCurrentPrice == 0) ? 1 : totalToEndAuctionAtCurrentPrice;
+    
+    uint _remainingToEndAuction = 0;
+    if (totalToEndAuctionAtCurrentPrice > receivedTotal) {
+      _remainingToEndAuction = sub(totalToEndAuctionAtCurrentPrice, receivedTotal);
+    }
+
+    return _remainingToEndAuction;
   }
 
   // Get the price in CLNY per 10**18 Tokens (min 1 max 1e36)
@@ -167,20 +174,16 @@ contract DutchAuction is DSMath {
   auctionStartedAndOpen
   {
     require(_amount > 0, "colony-auction-invalid-bid");
-    uint _totalToEndAuction = totalToEndAuction();
+    uint _remainingToEndAuction = remainingToEndAuction();
 
-    uint remainingToEndAuction = 0;
-    if (_totalToEndAuction > receivedTotal) {
-      remainingToEndAuction = sub(_totalToEndAuction, receivedTotal);
-    }
     // Adjust the amount for final bid in case that takes us over the offered quantity at current price
     // Also conditionally set the auction endTime
     uint amount;
-    if (remainingToEndAuction > _amount) {
+    if (_remainingToEndAuction > _amount) {
       amount = _amount;
-    } else if (remainingToEndAuction != 0) {
+    } else if (_remainingToEndAuction != 0) {
       // There is some amount left to auction but it is smaller than then required amount so adjust amount and close the auction
-      amount = remainingToEndAuction;
+      amount = _remainingToEndAuction;
       endTime = now;
     } else {
       // The remaining amount required to end the auction is zero so just close the auction and return
@@ -196,7 +199,7 @@ contract DutchAuction is DSMath {
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
 
-    emit AuctionBid(msg.sender, amount, sub(remainingToEndAuction, amount));
+    emit AuctionBid(msg.sender, amount, sub(_remainingToEndAuction, amount));
   }
 
   // Finalize the auction and set the final Token price
