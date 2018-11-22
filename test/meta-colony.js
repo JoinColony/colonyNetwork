@@ -263,8 +263,8 @@ contract("Meta Colony", accounts => {
       assert.equal(domainCount.toNumber(), 2);
 
       const newDomain = await metaColony.getDomain(1);
-      assert.equal(newDomain[0].toNumber(), 2);
-      assert.equal(newDomain[1].toNumber(), 1);
+      assert.equal(newDomain.skillId.toNumber(), 2);
+      assert.equal(newDomain.potId.toNumber(), 1);
 
       // Check root local skill.nChildren is now 2
       // One special mining skill, and the skill associated with the domain we just added
@@ -313,16 +313,16 @@ contract("Meta Colony", accounts => {
       assert.equal(domainCount.toNumber(), 4);
 
       const rootDomain = await colony.getDomain(1);
-      assert.equal(rootDomain[0].toNumber(), 4);
-      assert.equal(rootDomain[1].toNumber(), 1);
+      assert.equal(rootDomain.skillId.toNumber(), 4);
+      assert.equal(rootDomain.potId.toNumber(), 1);
 
       const newDomain2 = await colony.getDomain(2);
-      assert.equal(newDomain2[0].toNumber(), 5);
-      assert.equal(newDomain2[1].toNumber(), 2);
+      assert.equal(newDomain2.skillId.toNumber(), 5);
+      assert.equal(newDomain2.potId.toNumber(), 2);
 
       const newDomain3 = await colony.getDomain(3);
-      assert.equal(newDomain3[0].toNumber(), 6);
-      assert.equal(newDomain3[1].toNumber(), 3);
+      assert.equal(newDomain3.skillId.toNumber(), 6);
+      assert.equal(newDomain3.potId.toNumber(), 3);
       // Check root local skill.nChildren is now 3
       const rootLocalSkill = await colonyNetwork.getSkill(4);
       assert.equal(rootLocalSkill[1].toNumber(), 3);
@@ -345,7 +345,7 @@ contract("Meta Colony", accounts => {
     it("should NOT be able to add a new root local skill", async () => {
       const skillCountBefore = await colonyNetwork.getSkillCount();
       const rootDomain = await colony.getDomain(1);
-      const rootLocalSkillId = rootDomain[0];
+      const rootLocalSkillId = rootDomain.skillId;
       await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false), "colony-caller-must-be-colony");
       const skillCountAfter = await colonyNetwork.getSkillCount();
 

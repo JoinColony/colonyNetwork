@@ -695,11 +695,9 @@ contract("Colony Funding", accounts => {
     it("should not be able to create reward payout if passed reputation is not colony wide", async () => {
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-
       const fakeColonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress1);
       const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(fakeColonyWideReputationKey);
       const newFakeColonyWideReputationProof = [key, value, branchMask, siblings];
-
       await checkErrorRevert(
         colony.startNextRewardPayout(otherToken.address, ...newFakeColonyWideReputationProof),
         "colony-reputation-invalid-user-address"

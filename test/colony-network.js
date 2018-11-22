@@ -136,8 +136,8 @@ contract("Colony Network", accounts => {
       const { colonyAddress } = logs[0].args;
       const colony = await IColony.at(colonyAddress);
       const rootDomain = await colony.getDomain(1);
-      expect(rootDomain[0]).to.eq.BN(4);
-      expect(rootDomain[1]).to.eq.BN(1);
+      expect(rootDomain.skillId).to.eq.BN(4);
+      expect(rootDomain.potId).to.eq.BN(1);
 
       const domainCount = await colony.getDomainCount();
       expect(domainCount).to.eq.BN(1);

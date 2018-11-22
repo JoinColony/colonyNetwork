@@ -111,10 +111,9 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1
   function addDomain(uint256 _parentDomainId) public;
 
-  /// @notice Get the domain's local skill and funding pot id
+  /// @notice Get a domain by id
   /// @param _id Id of the domain which details to get
-  /// @return skillId The domain "local" skill id
-  /// @return potId The domain's funding pot id
+  /// @return domain The domain
   function getDomain(uint256 _id) public view returns (Domain domain);
 
   /// @notice Get the number of domains in the colony
@@ -344,10 +343,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Get the `Role` properties back for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
-  /// @return user Address of the user for the given role
-  /// @return rateFail Whether the user failed to rate their counterpart
-  /// @return rating Rating the user received
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
+  /// @return role The Role
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role);
 
   /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
   /// @param _rewardInverse The inverse of the reward

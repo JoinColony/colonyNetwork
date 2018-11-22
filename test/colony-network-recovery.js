@@ -251,7 +251,7 @@ contract("Colony Network Recovery", accounts => {
           await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
           const domain = await colony.getDomain(1);
-          const rootSkill = domain[0];
+          const rootSkill = domain.skillId;
           const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[5]);
           const originalValue = miningClient.reputations[reputationKey].slice(2, 66);
           assert.equal(parseInt(originalValue, 16), 1000000000000000);

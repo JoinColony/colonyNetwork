@@ -221,14 +221,14 @@ contract("Colony Task Work Rating", accounts => {
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(roleManager[2].toNumber(), MANAGER_RATING);
+      assert.equal(roleManager.rating.toNumber(), MANAGER_RATING);
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.isFalse(roleWorker[1]);
-      assert.equal(roleWorker[2].toNumber(), WORKER_RATING);
+      assert.isFalse(roleWorker.rateFail);
+      assert.equal(roleWorker.rating.toNumber(), WORKER_RATING);
 
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.isFalse(roleEvaluator[1]);
+      assert.isFalse(roleEvaluator.rateFail);
     });
 
     it("should allow revealing a rating from the evaluator after the 5 days wait for rating commits expires", async () => {
@@ -242,10 +242,10 @@ contract("Colony Task Work Rating", accounts => {
       await colony.revealTaskWorkRating(1, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(roleWorker[2].toNumber(), WORKER_RATING);
+      assert.equal(roleWorker.rating.toNumber(), WORKER_RATING);
 
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.isFalse(roleEvaluator[1]);
+      assert.isFalse(roleEvaluator.rateFail);
     });
 
     it("should fail if I try to reveal rating with an incorrect secret", async () => {
@@ -260,7 +260,7 @@ contract("Colony Task Work Rating", accounts => {
       );
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(roleManager[2].toNumber(), 0);
+      assert.equal(roleManager.rating.toNumber(), 0);
     });
 
     it("should fail if there are two rating secrets and I try to reveal the one from the evaluator late", async () => {
@@ -277,7 +277,7 @@ contract("Colony Task Work Rating", accounts => {
       );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(roleWorker[2].toNumber(), 0);
+      assert.equal(roleWorker.rating.toNumber(), 0);
     });
 
     it("should fail if there are two rating secrets and I try to reveal the one from the worker late", async () => {
@@ -294,7 +294,7 @@ contract("Colony Task Work Rating", accounts => {
       );
 
       const roleManager = await colony.getTaskRole(1, MANAGER_ROLE);
-      assert.equal(roleManager[2].toNumber(), 0);
+      assert.equal(roleManager.rating.toNumber(), 0);
     });
 
     it("should fail if evaluator tries to reveal rating before the 5 days wait for rating commits expires", async () => {
@@ -309,7 +309,7 @@ contract("Colony Task Work Rating", accounts => {
       );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(roleWorker[2].toNumber(), 0);
+      assert.equal(roleWorker.rating.toNumber(), 0);
     });
 
     it("should fail if evaluator tries to reveal rating after 5 days wait for rating reveal expires", async () => {
@@ -325,7 +325,7 @@ contract("Colony Task Work Rating", accounts => {
       );
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(roleWorker[2].toNumber(), 0);
+      assert.equal(roleWorker.rating.toNumber(), 0);
     });
 
     it("should log a TaskWorkRatingRevealed event", async () => {
@@ -356,14 +356,14 @@ contract("Colony Task Work Rating", accounts => {
       await colony.finalizeTask(taskId);
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.isTrue(roleWorker[1]);
-      assert.equal(roleWorker[2].toNumber(), WORKER_RATING);
+      assert.isTrue(roleWorker.rateFail);
+      assert.equal(roleWorker.rating.toNumber(), WORKER_RATING);
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(roleManager[2].toNumber(), 3);
+      assert.equal(roleManager.rating.toNumber(), 3);
 
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.isFalse(roleEvaluator[1]);
+      assert.isFalse(roleEvaluator.rateFail);
     });
 
     it("should assign rating 3 to worker and 1 to evaluator if evaluator hasn't submitted rating on time", async () => {
@@ -377,16 +377,16 @@ contract("Colony Task Work Rating", accounts => {
       await colony.finalizeTask(taskId);
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.isFalse(roleWorker[1]);
-      assert.equal(roleWorker[2].toNumber(), 3);
+      assert.isFalse(roleWorker.rateFail);
+      assert.equal(roleWorker.rating.toNumber(), 3);
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.isFalse(roleManager[1]);
-      assert.equal(roleManager[2].toNumber(), MANAGER_RATING);
+      assert.isFalse(roleManager.rateFail);
+      assert.equal(roleManager.rating.toNumber(), MANAGER_RATING);
 
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.isTrue(roleEvaluator[1]);
-      assert.equal(roleEvaluator[2].toNumber(), 1);
+      assert.isTrue(roleEvaluator.rateFail);
+      assert.equal(roleEvaluator.rating.toNumber(), 1);
     });
 
     it("should assign rating 3 to manager and 3 to worker, with penalties, when no one has submitted any ratings", async () => {
@@ -397,16 +397,16 @@ contract("Colony Task Work Rating", accounts => {
       await colony.finalizeTask(taskId);
 
       const roleWorker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.isTrue(roleWorker[1]);
-      assert.equal(roleWorker[2].toNumber(), 3);
+      assert.isTrue(roleWorker.rateFail);
+      assert.equal(roleWorker.rating.toNumber(), 3);
 
       const roleManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.isFalse(roleManager[1]);
-      assert.equal(roleManager[2].toNumber(), 3);
+      assert.isFalse(roleManager.rateFail);
+      assert.equal(roleManager.rating.toNumber(), 3);
 
       const roleEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.isTrue(roleEvaluator[1]);
-      assert.equal(roleEvaluator[2].toNumber(), 1);
+      assert.isTrue(roleEvaluator.rateFail);
+      assert.equal(roleEvaluator.rating.toNumber(), 1);
     });
 
     it("should revert if I try to assign ratings before the reveal period is over", async () => {
@@ -416,7 +416,7 @@ contract("Colony Task Work Rating", accounts => {
       await forwardTime(SECONDS_PER_DAY * 6, this);
       await checkErrorRevert(colony.finalizeTask(1), "colony-task-ratings-incomplete");
       const roleWorker = await colony.getTaskRole(1, WORKER_ROLE);
-      assert.isFalse(roleWorker[1]);
+      assert.isFalse(roleWorker.rateFail);
     });
   });
 });
