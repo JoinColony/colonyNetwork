@@ -34,6 +34,7 @@ import {
 
 import {
   fundColonyWithTokens,
+  setupFinalizedTask,
   setupRatedTask,
   setupAssignedTask,
   setupFundedTask,
@@ -1001,8 +1002,7 @@ contract("ColonyTask", accounts => {
 
     it("should fail to execute task change, if the task is already finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await colony.finalizeTask(taskId);
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
 
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -1150,8 +1150,7 @@ contract("ColonyTask", accounts => {
     it("should fail if I try to submit work for a task that is finalized", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const dueDate = await currentBlockTime();
-      const taskId = await setupRatedTask({ colonyNetwork, colony, dueDate, token });
-      await colony.finalizeTask(taskId);
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, dueDate, token });
       await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH), "colony-task-complete");
     });
 
@@ -1208,8 +1207,7 @@ contract("ColonyTask", accounts => {
   describe("when finalizing a task", () => {
     it('should set the task "status" property to "finalized"', async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await colony.finalizeTask(taskId);
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
       const task = await colony.getTask(taskId);
       assert.equal(task[2].toNumber(), FINALIZED_TASK_STATE);
     });
@@ -1224,14 +1222,12 @@ contract("ColonyTask", accounts => {
 
     it("should fail if I try to accept a task that was finalized before", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await colony.finalizeTask(taskId);
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
       await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-already-finalized");
     });
 
     it("should fail if I try to accept a task using an invalid id", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      await setupRatedTask({ colonyNetwork, colony, token });
       const taskCount = await colony.getTaskCount();
       const nonExistentTaskId = taskCount.addn(10);
       await checkErrorRevert(colony.finalizeTask(nonExistentTaskId), "colony-task-not-complete");
@@ -1547,7 +1543,7 @@ contract("ColonyTask", accounts => {
   describe("when claiming payout for a task", () => {
     it("should payout agreed tokens for a task", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
       const task = await colony.getTask(taskId);
       const taskPotId = task[5];
 
@@ -1555,7 +1551,6 @@ contract("ColonyTask", accounts => {
       const managerBalanceBefore = await token.balanceOf(MANAGER);
       const potBalanceBefore = await colony.getPotBalance(taskPotId, token.address);
 
-      await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
 
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
@@ -1574,7 +1569,7 @@ contract("ColonyTask", accounts => {
 
       let dueDate = await currentBlockTime();
       dueDate -= 1;
-      const taskId = await setupRatedTask({
+      const taskId = await setupFinalizedTask({
         colonyNetwork,
         colony,
         token: ZERO_ADDRESS,
@@ -1591,7 +1586,6 @@ contract("ColonyTask", accounts => {
       const workerBalanceBefore = await web3GetBalance(WORKER);
       const metaBalanceBefore = await web3GetBalance(metaColony.address);
 
-      await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, WORKER_ROLE, ZERO_ADDRESS, { from: WORKER, gasPrice: 0 });
 
       const workerBalanceAfter = await web3GetBalance(WORKER);
@@ -1611,7 +1605,7 @@ contract("ColonyTask", accounts => {
       const workerBalanceBefore = await token.balanceOf(WORKER);
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({
+      const taskId = await setupFinalizedTask({
         colonyNetwork,
         colony,
         token,
@@ -1619,7 +1613,6 @@ contract("ColonyTask", accounts => {
         managerRating: 1,
         workerRating: 1
       });
-      await colony.finalizeTask(taskId);
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
       await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
@@ -1681,15 +1674,14 @@ contract("ColonyTask", accounts => {
 
     it("should return error when called by account that doesn't match the role", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      await colony.finalizeTask(taskId);
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
 
       await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }), "colony-claim-payout-access-denied");
     });
 
     it("should payout correct rounded up network fees, for small task payouts", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({
+      const taskId = await setupFinalizedTask({
         colonyNetwork,
         colony,
         token,
@@ -1699,7 +1691,6 @@ contract("ColonyTask", accounts => {
         managerRating: 2,
         workerRating: 2
       });
-      await colony.finalizeTask(taskId);
 
       const networkBalance1 = await token.balanceOf(colonyNetwork.address);
       const managerBalanceBefore = await token.balanceOf(MANAGER);

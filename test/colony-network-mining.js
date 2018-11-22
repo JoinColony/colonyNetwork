@@ -16,7 +16,8 @@ import {
   getValidEntryNumber,
   submitAndForwardTimeToDispute
 } from "../helpers/test-helper";
-import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupRatedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
+
+import { giveUserCLNYTokens, giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../helpers/test-data-generator";
 import { UINT256_MAX, WAD, MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION, DECAY_RATE, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
@@ -1460,7 +1461,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         managerPayout: 1000000000000,
@@ -1470,7 +1471,6 @@ contract("ColonyNetworkMining", accounts => {
         workerRating: 3,
         worker: accounts[3]
       });
-      await metaColony.finalizeTask(taskId);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(MINING_CYCLE_DURATION, this);
@@ -1638,7 +1638,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         managerPayout: 1000000000000,
@@ -1648,7 +1648,6 @@ contract("ColonyNetworkMining", accounts => {
         workerRating: 3,
         worker: accounts[3]
       });
-      await metaColony.finalizeTask(taskId);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
@@ -1736,7 +1735,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         managerPayout: 1000000000000,
@@ -1746,7 +1745,6 @@ contract("ColonyNetworkMining", accounts => {
         workerRating: 3,
         worker: accounts[3]
       });
-      await metaColony.finalizeTask(taskId);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
@@ -1848,7 +1846,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         managerPayout: 1000000000000,
@@ -1857,7 +1855,6 @@ contract("ColonyNetworkMining", accounts => {
         managerRating: 3,
         workerRating: 3
       });
-      await metaColony.finalizeTask(taskId);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
@@ -2107,7 +2104,7 @@ contract("ColonyNetworkMining", accounts => {
 
       await badClient.initialise(colonyNetwork.address);
 
-      const taskId = await setupRatedTask( // eslint-disable-line
+      await setupFinalizedTask( // eslint-disable-line
         {
           colonyNetwork,
           colony: metaColony,
@@ -2118,7 +2115,6 @@ contract("ColonyNetworkMining", accounts => {
           workerPayout: 1
         }
       );
-      await metaColony.finalizeTask(taskId);
       await advanceTimeSubmitAndConfirmHash(this);
       await advanceTimeSubmitAndConfirmHash(this);
       let addr = await colonyNetwork.getReputationMiningCycle(false);
@@ -2126,7 +2122,7 @@ contract("ColonyNetworkMining", accounts => {
 
       let powerTwoEntries = false;
       while (!powerTwoEntries) {
-        const taskId = await setupRatedTask( // eslint-disable-line
+        await setupFinalizedTask( // eslint-disable-line
           {
             colonyNetwork,
             colony: metaColony,
@@ -2137,7 +2133,6 @@ contract("ColonyNetworkMining", accounts => {
             workerPayout: 1
           }
         );
-        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
         const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength(); // eslint-disable-line no-await-in-loop
         const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1); // eslint-disable-line no-await-in-loop
         const currentHashNNodes = await colonyNetwork.getReputationRootHashNNodes(); // eslint-disable-line no-await-in-loop
@@ -2501,7 +2496,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       // TODO It would be so much better if we could do these in parallel, but until colonyNetwork#192 is fixed, we can't.
       for (let i = 0; i < 30; i += 1) {
-        const taskId = await setupRatedTask( // eslint-disable-line
+        await setupFinalizedTask( // eslint-disable-line
           {
             colonyNetwork,
             colony: metaColony,
@@ -2512,7 +2507,6 @@ contract("ColonyNetworkMining", accounts => {
             workerPayout: 1
           }
         );
-        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
       }
       // Complete this reputation cycle
 
@@ -2573,7 +2567,7 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
 
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         managerPayout: 1000000000000,
@@ -2582,7 +2576,6 @@ contract("ColonyNetworkMining", accounts => {
         managerRating: 1,
         workerRating: 1
       });
-      await metaColony.finalizeTask(taskId);
 
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
@@ -2613,7 +2606,7 @@ contract("ColonyNetworkMining", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
 
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         worker: accounts[4],
@@ -2623,7 +2616,6 @@ contract("ColonyNetworkMining", accounts => {
         managerRating: 1,
         workerRating: 1
       });
-      await metaColony.finalizeTask(taskId);
 
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, 10);
@@ -2664,7 +2656,7 @@ contract("ColonyNetworkMining", accounts => {
 
       const rootHash = await goodClient.getRootHash();
       await fundColonyWithTokens(metaColony, clny, new BN("4").mul(new BN("10").pow(new BN("75"))));
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         worker: MAIN_ACCOUNT,
@@ -2674,7 +2666,6 @@ contract("ColonyNetworkMining", accounts => {
         managerRating: 3,
         workerRating: 3
       });
-      await metaColony.finalizeTask(taskId);
 
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash(rootHash, 2, 10);
@@ -2757,8 +2748,9 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x12345678", 10, 10);
       await fundColonyWithTokens(metaColony, clny, "350000000000000000000");
-      const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
-      await metaColony.finalizeTask(taskId1); // Creates an entry in the reputation log for the worker and manager
+
+      // Creates an entry in the reputation log for the worker and manager
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       addr = await colonyNetwork.getReputationMiningCycle(false);
       let inactiveReputationMiningCycle = await IReputationMiningCycle.at(addr);
 
@@ -2883,7 +2875,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
 
       // Do the task
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         skillId: 10,
@@ -2895,7 +2887,6 @@ contract("ColonyNetworkMining", accounts => {
         worker: OTHER_ACCOUNT,
         evaluator: accounts[2]
       });
-      await metaColony.finalizeTask(taskId);
 
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       let repCycle = await IReputationMiningCycle.at(addr);
@@ -2967,7 +2958,7 @@ contract("ColonyNetworkMining", accounts => {
       // Do some tasks
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
         skillId: 10,
@@ -2979,7 +2970,6 @@ contract("ColonyNetworkMining", accounts => {
         worker: OTHER_ACCOUNT,
         evaluator: accounts[2]
       });
-      await metaColony.finalizeTask(taskId);
 
       // Get current cycle & advance to next
       let addr = await colonyNetwork.getReputationMiningCycle(true);
@@ -3162,7 +3152,7 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient2.initialise(colonyNetwork.address);
       // Make multiple reputation cycles, with different numbers tasks and blocks in them.
       for (let i = 0; i < 5; i += 1) {
-        const taskId = await setupRatedTask( // eslint-disable-line
+        await setupFinalizedTask( // eslint-disable-line
           {
             colonyNetwork,
             colony: metaColony,
@@ -3173,7 +3163,6 @@ contract("ColonyNetworkMining", accounts => {
             workerRating: 3
           }
         );
-        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
       }
 
       await advanceTimeSubmitAndConfirmHash(this);
@@ -3185,7 +3174,7 @@ contract("ColonyNetworkMining", accounts => {
       await advanceTimeSubmitAndConfirmHash(this);
 
       for (let i = 0; i < 5; i += 1) {
-        const taskId = await setupRatedTask( // eslint-disable-line
+        await setupFinalizedTask( // eslint-disable-line
           {
             colonyNetwork,
             colony: metaColony,
@@ -3196,7 +3185,6 @@ contract("ColonyNetworkMining", accounts => {
             workerRating: 3
           }
         );
-        await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
       }
 
       await advanceTimeSubmitAndConfirmHash(this);
@@ -3228,7 +3216,7 @@ contract("ColonyNetworkMining", accounts => {
           await advanceTimeSubmitAndConfirmHash(this);
 
           for (let i = 0; i < 5; i += 1) {
-            const taskId = await setupRatedTask( // eslint-disable-line
+            await setupFinalizedTask( // eslint-disable-line
               {
                 colonyNetwork,
                 colony: metaColony,
@@ -3239,7 +3227,6 @@ contract("ColonyNetworkMining", accounts => {
                 workerRating: 3
               }
             );
-            await metaColony.finalizeTask(taskId); // eslint-disable-line no-await-in-loop
           }
 
           await advanceTimeSubmitAndConfirmHash(this);

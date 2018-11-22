@@ -23,7 +23,7 @@ import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlo
 
 import {
   fundColonyWithTokens,
-  setupRatedTask,
+  setupFinalizedTask,
   executeSignedTaskChange,
   executeSignedRoleAssignment,
   makeTask,
@@ -449,8 +449,7 @@ contract("Colony Funding", accounts => {
 
     it("should not allow funds to be removed from a task with payouts to go", async () => {
       await fundColonyWithTokens(colony, otherToken, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token: otherToken });
-      await colony.finalizeTask(taskId);
+      await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address), "colony-funding-task-bad-state");
       const colonyPotBalance = await colony.getPotBalance(2, otherToken.address);
       expect(colonyPotBalance).to.eq.BN(toBN(350 * 10 ** 18));
@@ -458,9 +457,8 @@ contract("Colony Funding", accounts => {
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
       await fundColonyWithTokens(colony, otherToken, new BN(363).mul(WAD));
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token: otherToken });
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
-      await colony.finalizeTask(taskId);
       await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
       await colony.claimPayout(taskId, WORKER_ROLE, otherToken.address, { from: WORKER });
       await colony.claimPayout(taskId, EVALUATOR_ROLE, otherToken.address, { from: EVALUATOR });
@@ -472,13 +470,12 @@ contract("Colony Funding", accounts => {
 
     it("should not allow user to claim payout if rating is 1", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({
+      const taskId = await setupFinalizedTask({
         colonyNetwork,
         colony,
         token,
         workerRating: 1
       });
-      await colony.finalizeTask(taskId);
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
       await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
@@ -747,12 +744,11 @@ contract("Colony Funding", accounts => {
 
       await metaColony.addGlobalSkill(1);
       const id = await colonyNetwork.getChildSkillId(1, 0);
-      const taskId = await setupRatedTask({
+      await setupFinalizedTask({
         colonyNetwork,
         colony,
         skillId: id
       });
-      await colony.finalizeTask(taskId);
 
       await miningClient.addLogContentsToReputationTree();
       await forwardTime(MINING_CYCLE_DURATION, this);
@@ -836,13 +832,12 @@ contract("Colony Funding", accounts => {
       domain = await newColony.getDomain(1);
       const rootDomainSkill = domain.skillId;
 
-      const taskId = await setupRatedTask({
+      const taskId = await setupFinalizedTask({
         colonyNetwork,
         colony: newColony,
         token: newToken,
         domainId: domainCount
       });
-      await newColony.finalizeTask(taskId);
 
       await newColony.claimPayout(taskId, MANAGER_ROLE, newToken.address, {
         from: userAddress1

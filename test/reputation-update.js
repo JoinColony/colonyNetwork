@@ -4,9 +4,9 @@ import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { MANAGER_PAYOUT, WORKER_PAYOUT, WAD } from "../helpers/constants";
+import { INT256_MAX, WAD, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
 import { getTokenArgs, checkErrorRevert } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, setupFinalizedTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
@@ -75,8 +75,7 @@ contract("Colony Reputation Updates", accounts => {
 
   describe("when added", () => {
     it("should be readable", async () => {
-      const taskId = await setupRatedTask({ colonyNetwork, colony: metaColony });
-      await metaColony.finalizeTask(taskId);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.equal(repLogEntryManager[0], MANAGER);
@@ -126,13 +125,12 @@ contract("Colony Reputation Updates", accounts => {
 
     ratings.forEach(async rating => {
       it(`should set the correct reputation change amount in log for rating ${rating.worker}`, async () => {
-        const taskId = await setupRatedTask({
+        await setupFinalizedTask({
           colonyNetwork,
           colony: metaColony,
           managerRating: rating.manager,
           workerRating: rating.worker
         });
-        await metaColony.finalizeTask(taskId);
 
         const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
         assert.equal(repLogEntryManager[0], MANAGER);
@@ -179,15 +177,13 @@ contract("Colony Reputation Updates", accounts => {
 
     it("should populate nPreviousUpdates correctly", async () => {
       const initialRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      const taskId1 = await setupRatedTask({ colonyNetwork, colony: metaColony });
-      await metaColony.finalizeTask(taskId1);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength);
       const nPrevious = repLogEntry[5];
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 1);
       assert.equal(repLogEntry[5].toNumber(), nPrevious.addn(2).toNumber());
 
-      const taskId2 = await setupRatedTask({ colonyNetwork, colony: metaColony });
-      await metaColony.finalizeTask(taskId2);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 2);
       assert.equal(repLogEntry[5].toNumber(), nPrevious.addn(4).toNumber());
     });
@@ -197,25 +193,13 @@ contract("Colony Reputation Updates", accounts => {
       await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);
       await metaColony.addGlobalSkill(6);
-      const taskId1 = await setupRatedTask({
-        colonyNetwork,
-        colony: metaColony,
-        skillId: 5
-      });
-      await metaColony.finalizeTask(taskId1);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 5 });
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      const result = toBN(WORKER_PAYOUT)
-        .muln(3)
-        .divn(2);
+      const result = toBN(WORKER_PAYOUT).muln(3).divn(2); // eslint-disable-line prettier/prettier
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 6);
 
-      const taskId2 = await setupRatedTask({
-        colonyNetwork,
-        colony: metaColony,
-        skillId: 6
-      });
-      await metaColony.finalizeTask(taskId2);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 6 });
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(7);
       assert.equal(repLogEntryWorker[1].toString(), result.toString());
       assert.equal(repLogEntryWorker[4].toNumber(), 8); // Negative reputation change means children change as well.
@@ -223,12 +207,12 @@ contract("Colony Reputation Updates", accounts => {
 
     it("should revert on reputation amount overflow", async () => {
       // Fund colony with maximum possible int number of tokens
-      const maxUIntNumber = new BN(2).pow(new BN(255)).sub(new BN(1));
-      await fundColonyWithTokens(metaColony, colonyToken, maxUIntNumber);
-      // Split the tokens as payouts between the manager and worker
+      await fundColonyWithTokens(metaColony, colonyToken, INT256_MAX);
+
+      // Split the tokens as payouts between the manager, evaluator, and worker
       const managerPayout = new BN("2");
       const evaluatorPayout = new BN("1");
-      const workerPayout = maxUIntNumber.sub(managerPayout).sub(evaluatorPayout);
+      const workerPayout = INT256_MAX.sub(managerPayout).sub(evaluatorPayout);
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
@@ -236,12 +220,12 @@ contract("Colony Reputation Updates", accounts => {
         managerPayout,
         evaluatorPayout,
         workerPayout,
-        workerRating: 1
+        workerRating: 2
       });
 
       // Check the task pot is correctly funded with the max amount
       const taskPotBalance = await metaColony.getPotBalance(2, colonyToken.address);
-      expect(taskPotBalance).to.eq.BN(maxUIntNumber);
+      expect(taskPotBalance).to.eq.BN(INT256_MAX);
 
       await checkErrorRevert(metaColony.finalizeTask(taskId), "colony-math-unsafe-int-mul");
     });

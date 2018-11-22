@@ -29,6 +29,7 @@ const CANCELLED_TASK_STATE = 1;
 const FINALIZED_TASK_STATE = 2;
 
 const UINT256_MAX = toBN(0).notn(256);
+const INT256_MAX = toBN(0).notn(255);
 
 const WAD = toBN(10).pow(toBN(18));
 const MIN_STAKE = WAD.muln(2000);
@@ -63,6 +64,7 @@ module.exports = {
   CANCELLED_TASK_STATE,
   FINALIZED_TASK_STATE,
   UINT256_MAX,
+  INT256_MAX,
   WAD,
   MIN_STAKE,
   DEFAULT_STAKE,

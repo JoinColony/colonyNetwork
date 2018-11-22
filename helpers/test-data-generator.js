@@ -211,6 +211,52 @@ export async function setupRatedTask({
   await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING_SECRET, { from: worker });
   await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, workerRatingSalt, { from: evaluator });
   await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, managerRatingSalt, { from: worker });
+
+  return taskId;
+}
+
+export async function setupFinalizedTask({
+  colonyNetwork,
+  colony,
+  token,
+  dueDate,
+  domainId,
+  skillId,
+  evaluator,
+  worker,
+  managerPayout = MANAGER_PAYOUT,
+  evaluatorPayout = EVALUATOR_PAYOUT,
+  workerPayout = WORKER_PAYOUT,
+  managerRating = MANAGER_RATING,
+  managerRatingSalt = RATING_1_SALT,
+  workerRating = WORKER_RATING,
+  workerRatingSalt = RATING_2_SALT
+}) {
+  const accounts = await web3GetAccounts();
+  const manager = accounts[0];
+  evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
+  worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
+
+  const taskId = await setupRatedTask({
+    colonyNetwork,
+    colony,
+    token,
+    dueDate,
+    domainId,
+    skillId,
+    evaluator,
+    worker,
+    managerPayout,
+    evaluatorPayout,
+    workerPayout,
+    managerRating,
+    managerRatingSalt,
+    workerRating,
+    workerRatingSalt
+  });
+
+  await colony.finalizeTask(taskId);
+
   return taskId;
 }
 
@@ -224,6 +270,7 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
 
   const accounts = await web3GetAccounts();
   const manager = accounts[0];
+
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
@@ -233,14 +280,13 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await metaColony.mintTokens(amount.muln(3));
 
   await metaColony.claimColonyFunds(clny.address);
-  const taskId = await setupRatedTask({
+  const taskId = await setupFinalizedTask({
     colonyNetwork,
     colony: metaColony, // NOTE: CLNY is native token
     managerPayout: amount.mul(new BN("2")),
     evaluatorPayout: new BN("0"),
     workerPayout: new BN("0")
   });
-  await metaColony.finalizeTask(taskId);
   await metaColony.claimPayout(taskId, MANAGER_ROLE, clny.address);
 
   let mainBalance = await clny.balanceOf(manager);
