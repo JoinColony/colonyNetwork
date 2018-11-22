@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
-
+import { ZERO_ADDRESS } from "../helpers/constants";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
@@ -75,14 +75,14 @@ contract("Colony Network", accounts => {
     });
 
     it("should have the Resolver for current Colony version set", async () => {
-      const currentResolver = await colonyNetwork.getColonyVersionResolver(version.toNumber());
+      const currentResolver = await colonyNetwork.getColonyVersionResolver(version);
       assert.equal(currentResolver, resolver.address);
     });
 
     it("should be able to register a higher Colony contract version", async () => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      const updatedVersion = currentColonyVersion.addn(1).toNumber();
+      const updatedVersion = currentColonyVersion.addn(1);
       await metaColony.addNetworkColonyVersion(updatedVersion, sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
@@ -94,7 +94,7 @@ contract("Colony Network", accounts => {
     it("when registering a lower version of the Colony contract, should NOT update the current (latest) colony version", async () => {
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      await metaColony.addNetworkColonyVersion(currentColonyVersion.subn(1).toNumber(), sampleResolver);
+      await metaColony.addNetworkColonyVersion(currentColonyVersion.subn(1), sampleResolver);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       assert.equal(updatedColonyVersion.toNumber(), currentColonyVersion.toNumber());
@@ -107,7 +107,7 @@ contract("Colony Network", accounts => {
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colonyCount = await colonyNetwork.getColonyCount();
-      assert.notEqual(colonyAddress, 0x0);
+      assert.notEqual(colonyAddress, ZERO_ADDRESS);
       expect(colonyCount).to.eq.BN(2);
     });
 
@@ -191,12 +191,12 @@ contract("Colony Network", accounts => {
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       const colonyAddress = await colonyNetwork.getColony(3);
-      expect(colonyAddress).to.not.equal("0x0000000000000000000000000000000000000000");
+      expect(colonyAddress).to.not.equal(ZERO_ADDRESS);
     });
 
     it("should return an empty address if there is no colony for the index provided", async () => {
       const colonyAddress = await colonyNetwork.getColony(15);
-      expect(colonyAddress).to.equal("0x0000000000000000000000000000000000000000");
+      expect(colonyAddress).to.equal(ZERO_ADDRESS);
     });
 
     it("should be able to get the Colony version", async () => {
@@ -219,7 +219,7 @@ contract("Colony Network", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      const newVersion = currentColonyVersion.addn(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1);
       await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
 
       await colony.upgrade(newVersion);
@@ -235,7 +235,7 @@ contract("Colony Network", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      const newVersion = currentColonyVersion.addn(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1);
       await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
       await checkErrorRevert(colony.setResolver(sampleResolver), "ds-auth-unauthorized");
     });
@@ -248,7 +248,7 @@ contract("Colony Network", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      const newVersion = currentColonyVersion.subn(1).toNumber();
+      const newVersion = currentColonyVersion.subn(1);
       await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
 
       await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-newer");
@@ -260,7 +260,7 @@ contract("Colony Network", accounts => {
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      const newVersion = currentColonyVersion.addn(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1);
       const colony = await Colony.at(colonyAddress);
 
       await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-registered");
@@ -277,7 +277,7 @@ contract("Colony Network", accounts => {
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      const newVersion = currentColonyVersion.addn(1).toNumber();
+      const newVersion = currentColonyVersion.addn(1);
       await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
 
       await checkErrorRevert(colony.upgrade(newVersion, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");

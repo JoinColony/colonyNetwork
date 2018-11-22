@@ -1,9 +1,7 @@
 /* globals artifacts */
 
-import { SPECIFICATION_HASH } from "../helpers/constants";
-
+import { SPECIFICATION_HASH, ZERO_ADDRESS } from "../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";
-
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const IColony = artifacts.require("IColony");
@@ -105,7 +103,7 @@ contract("Colony Recovery", accounts => {
       await metaColony.setRecoveryRole(founder);
       await metaColony.enterRecoveryMode();
 
-      await checkErrorRevert(colony.initialiseColony("0x0"), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-in-recovery-mode");
       await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, 0, 0), "colony-in-recovery-mode");

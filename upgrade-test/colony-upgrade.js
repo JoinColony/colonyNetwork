@@ -69,7 +69,7 @@ contract("Colony contract upgrade", accounts => {
     updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
 
     // Upgrade our existing colony
-    await colony.upgrade(updatedColonyVersion.toNumber());
+    await colony.upgrade(updatedColonyVersion);
     updatedColony = await IUpdatedColony.at(colonyAddress);
   });
 

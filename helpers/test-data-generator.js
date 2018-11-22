@@ -13,9 +13,12 @@ import {
   MANAGER_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH,
-  DELIVERABLE_HASH
+  DELIVERABLE_HASH,
+  ZERO_ADDRESS
 } from "./constants";
 import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
+
+const ethers = require("ethers");
 
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
@@ -28,12 +31,27 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
 }
 
 async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
-  const txData = await colony.contract.methods[functionName](...args).encodeABI();
+  // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
+  const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
+  const convertedArgs = [];
+  args.forEach(arg => {
+    if (Number.isInteger(arg)) {
+      const convertedArg = ethers.utils.bigNumberify(arg);
+      convertedArgs.push(convertedArg);
+    } else if (web3.utils.isBN(arg) || web3.utils.isBigNumber(arg)) {
+      const convertedArg = ethers.utils.bigNumberify(arg.toString());
+      convertedArgs.push(convertedArg);
+    } else {
+      convertedArgs.push(arg);
+    }
+  });
+
+  const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
   const sigsPromises = sigTypes.map((type, i) => {
     if (type === 0) {
-      return createSignatures(colony, taskId, [signers[i]], 0, txData);
+      return createSignatures(colony, ethersBNTaskId, [signers[i]], 0, txData);
     }
-    return createSignaturesTrezor(colony, taskId, [signers[i]], 0, txData);
+    return createSignaturesTrezor(colony, ethersBNTaskId, [signers[i]], 0, txData);
   });
   const sigs = await Promise.all(sigsPromises);
   const sigV = sigs.map(sig => sig.sigV[0]);
@@ -62,7 +80,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
   // If the skill is not specified, default to the root global skill
   if (skill === 0) {
     const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-    if (rootGlobalSkill.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
+    if (rootGlobalSkill.isZero()) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
 
     await executeSignedTaskChange({
       colony,
@@ -70,7 +88,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
       functionName: "setTaskSkill",
       signers: [manager],
       sigTypes: [0],
-      args: [taskId, rootGlobalSkill.toNumber()]
+      args: [taskId, rootGlobalSkill]
     });
   } else {
     await executeSignedTaskChange({
@@ -151,16 +169,16 @@ export async function setupFundedTask({
   if (token === undefined) {
     tokenAddress = await colony.getToken();
   } else {
-    tokenAddress = token === 0x0 ? 0x0 : token.address;
+    tokenAddress = token === ZERO_ADDRESS ? ZERO_ADDRESS : token.address;
   }
   const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, domain, skill, evaluator, worker });
   const task = await colony.getTask(taskId);
-  const potId = task[5].toNumber();
+  const potId = task[5];
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
-  await colony.moveFundsBetweenPots(1, potId, totalPayouts.toString(), tokenAddress);
+  await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
 
   await executeSignedTaskChange({
     colony,
@@ -168,7 +186,7 @@ export async function setupFundedTask({
     functionName: "setTaskManagerPayout",
     signers: [manager],
     sigTypes: [0],
-    args: [taskId, tokenAddress, managerPayout.toString()]
+    args: [taskId, tokenAddress, managerPayout]
   });
 
   let signers = manager === evaluator ? [manager] : [manager, evaluator];
@@ -180,7 +198,7 @@ export async function setupFundedTask({
     functionName: "setTaskEvaluatorPayout",
     signers,
     sigTypes,
-    args: [taskId, tokenAddress, evaluatorPayout.toString()]
+    args: [taskId, tokenAddress, evaluatorPayout]
   });
 
   signers = manager === worker ? [manager] : [manager, worker];
@@ -192,7 +210,7 @@ export async function setupFundedTask({
     functionName: "setTaskWorkerPayout",
     signers,
     sigTypes,
-    args: [taskId, tokenAddress, workerPayout.toString()]
+    args: [taskId, tokenAddress, workerPayout]
   });
   return taskId;
 }
@@ -245,16 +263,22 @@ export async function setupRatedTask({
 }
 
 export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
+  let amount;
+  if (web3.utils.isBN(_amount)) {
+    amount = _amount;
+  } else {
+    amount = new BN(_amount);
+  }
+
   const accounts = await web3GetAccounts();
   const manager = accounts[0];
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
   const clny = await Token.at(clnyAddress);
-  const amount = new BN(_amount);
   const mainStartingBalance = await clny.balanceOf(manager);
   const targetStartingBalance = await clny.balanceOf(address);
-  await metaColony.mintTokens(amount.muln(3).toString());
+  await metaColony.mintTokens(amount.muln(3));
 
   await metaColony.claimColonyFunds(clny.address);
   const taskId = await setupRatedTask({
@@ -268,42 +292,51 @@ export async function giveUserCLNYTokens(colonyNetwork, address, _amount) {
   await metaColony.claimPayout(taskId, MANAGER_ROLE, clny.address);
 
   let mainBalance = await clny.balanceOf(manager);
-  await clny.transfer(
-    0x0,
-    mainBalance
-      .sub(amount)
-      .sub(mainStartingBalance)
-      .toString()
-  );
-  await clny.transfer(address, amount.toString());
+  await clny.transfer(ZERO_ADDRESS, mainBalance.sub(amount).sub(mainStartingBalance));
+  await clny.transfer(address, amount);
   mainBalance = await clny.balanceOf(manager);
   if (address !== manager) {
-    await clny.transfer(0x0, mainBalance.sub(mainStartingBalance).toString());
+    await clny.transfer(ZERO_ADDRESS, mainBalance.sub(mainStartingBalance));
   }
   const userBalance = await clny.balanceOf(address);
   assert.equal(targetStartingBalance.add(amount).toString(), userBalance.toString());
 }
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, address, _amount) {
+  let amount;
+  if (web3.utils.isBN(_amount)) {
+    amount = _amount;
+  } else {
+    amount = new BN(_amount);
+  }
+
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
   const clny = await Token.at(clnyAddress);
 
-  await giveUserCLNYTokens(colonyNetwork, address, _amount);
+  await giveUserCLNYTokens(colonyNetwork, address, amount);
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-  await clny.approve(tokenLocking.address, _amount.toString(), { from: address });
-  await tokenLocking.deposit(clny.address, _amount.toString(), { from: address });
+  await clny.approve(tokenLocking.address, amount, { from: address });
+  await tokenLocking.deposit(clny.address, amount, { from: address });
 }
 
 export async function fundColonyWithTokens(colony, token, tokenAmount) {
+  // We get input either a plan JS number or a BN.js instance. Ensure we always pass on BN.js
+  let tokenAmountBN;
+  if (web3.utils.isBN(tokenAmount)) {
+    tokenAmountBN = tokenAmount;
+  } else {
+    tokenAmountBN = new BN(tokenAmount);
+  }
+
   const colonyToken = await colony.getToken();
   if (colonyToken === token.address) {
-    await colony.mintTokens(tokenAmount);
+    await colony.mintTokens(tokenAmountBN);
   } else {
-    await token.mint(tokenAmount);
-    await token.transfer(colony.address, tokenAmount);
+    await token.mint(tokenAmountBN);
+    await token.transfer(colony.address, tokenAmountBN);
   }
   await colony.claimColonyFunds(token.address);
 }

@@ -24,6 +24,7 @@ module.exports = (deployer, network) => {
   console.log(`## ${network} network ##`);
   deployer.deploy(SafeMath);
   deployer.link(SafeMath, ColonyTask);
+  deployer.deploy(ColonyTask);
   deployer.deploy(ColonyNetwork);
   deployer.deploy(ColonyNetworkMining);
   deployer.deploy(ColonyNetworkAuction);

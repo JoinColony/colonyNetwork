@@ -153,7 +153,7 @@ export async function checkErrorRevert(promise, errorMessage) {
     assert.equal(reason, errorMessage);
   }
   // Check the receipt `status` to ensure transaction failed.
-  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected error ${errorMessage}`);
+  assert.isFalse(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`);
 }
 
 export async function checkErrorRevertEthers(promise, errorMessage) {
@@ -161,7 +161,7 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
   const txid = tx.hash;
 
   const receipt = await web3GetTransactionReceipt(txid);
-  assert.equal(receipt.status, 0x00, `Transaction succeeded, but expected to fail`);
+  assert.isFalse(receipt.status, `Transaction succeeded, but expected to fail`);
 
   const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
   const reason = extractReasonString(response);
@@ -238,7 +238,7 @@ export async function forwardTime(seconds, test) {
     if (client.indexOf("TestRPC") === -1) {
       resolve(test.skip());
     } else {
-      console.log(`Forwarding time with ${seconds}s ...`);
+      // console.log(`Forwarding time with ${seconds}s ...`);
       web3.currentProvider.send(
         {
           jsonrpc: "2.0",
@@ -332,14 +332,14 @@ export async function createSignaturesTrezor(colony, taskId, signers, value, dat
 }
 
 export function bnSqrt(bn, isGreater) {
-  let a = bn.add(web3Utils.toBN(1)).div(web3Utils.toBN(2));
+  let a = bn.addn(1).divn(2);
   let b = bn;
   while (a.lt(b)) {
     b = a;
     a = bn
       .div(a)
       .add(a)
-      .div(web3Utils.toBN(2));
+      .divn(2);
   }
 
   if (isGreater && b.mul(b).lt(bn)) {
@@ -348,10 +348,10 @@ export function bnSqrt(bn, isGreater) {
   return b;
 }
 
-export function makeReputationKey(colonyAddress, skill, accountAddress = undefined) {
+export function makeReputationKey(colonyAddress, skillBN, accountAddress = undefined) {
   let key = `0x`;
   key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
-  key += `${new BN(skill).toString(16, 64)}`; // SkillId as uint256
+  key += `${skillBN.toString(16, 64)}`; // SkillId as uint256
   if (accountAddress === undefined) {
     key += `${new BN(0, 16).toString(16, 40)}`; // Colony address as 0 bytes
   } else {
@@ -379,8 +379,9 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const userLockInformation = await tokenLocking.getUserLock(clnyAddress, account);
   const userBalance = userLockInformation.amount;
 
+  const WAD = new BN(10).pow(new BN(18));
   // What's the largest entry they can submit?
-  const nIter = userBalance.div(new BN(10).pow(new BN(18)).muln(2000));
+  const nIter = userBalance.div(WAD).muln(2000);
   // Work out the target
   const constant = new BN(2)
     .pow(new BN(256))
