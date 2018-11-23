@@ -23,11 +23,6 @@ import "./ITokenLocking.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
-  event RewardPayoutCycleStarted(uint256 indexed id);
-  event RewardPayoutCycleEnded(uint256 indexed id);
-  event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
-  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
-
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, MANAGER, _token, _amount);
   }

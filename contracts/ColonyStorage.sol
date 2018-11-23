@@ -29,7 +29,7 @@ import "./CommonStorage.sol";
 import "./ColonyDataTypes.sol";
 
 
-contract ColonyStorage is ColonyDataTypes, CommonStorage, DSMath {
+contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol

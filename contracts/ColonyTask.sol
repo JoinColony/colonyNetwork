@@ -27,18 +27,6 @@ contract ColonyTask is ColonyStorage {
   uint256 constant RATING_COMMIT_TIMEOUT = 432000;
   uint256 constant RATING_REVEAL_TIMEOUT = 432000;
 
-  event TaskAdded(uint256 indexed id);
-  event TaskBriefChanged(uint256 indexed id, bytes32 specificationHash);
-  event TaskDueDateChanged(uint256 indexed id, uint256 dueDate);
-  event TaskDomainChanged(uint256 indexed id, uint256 domainId);
-  event TaskSkillChanged(uint256 indexed id, uint256 skillId);
-  event TaskRoleUserChanged(uint256 indexed id, uint8 role, address user);
-  event TaskDeliverableSubmitted(uint256 indexed id, bytes32 deliverableHash);
-  event TaskWorkRatingRevealed(uint256 indexed id, uint8 role, uint8 rating);
-  event TaskFinalized(uint256 indexed id);
-  event TaskCanceled(uint256 indexed id);
-  event TaskCompleted(uint256 indexed id);
-
   modifier userCanRateRole(uint256 _id, uint8 _role) {
     // Manager rated by worker
     // Worker rated by evaluator

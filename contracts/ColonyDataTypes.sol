@@ -22,7 +22,88 @@ pragma experimental "ABIEncoderV2";
 
 contract ColonyDataTypes {
 
+  // Events
+  /// @notice Event logged when a new task is added
+  /// @param id The newly added task id
+  event TaskAdded(uint256 indexed id);
+
+  /// @notice Event logged when a task's specification hash changes
+  /// @param id Id of the task
+  /// @param specificationHash New specification hash of the task
+  event TaskBriefChanged(uint256 indexed id, bytes32 specificationHash);
+
+  /// @notice Event logged when a task's due date changes
+  /// @param id Id of the task
+  /// @param dueDate New due date of the task
+  event TaskDueDateChanged(uint256 indexed id, uint256 dueDate);
+
+  /// @notice Event logged when a task's domain changes
+  /// @param id Id of the task
+  /// @param domainId New domain id of the task
+  event TaskDomainChanged(uint256 indexed id, uint256 domainId);
+
+  /// @notice Event logged when a task's skill changes
+  /// @param id Id of the task
+  /// @param skillId New skill id of the task
+  event TaskSkillChanged(uint256 indexed id, uint256 skillId);
+
+  /// @notice Event logged when a task's role user changes
+  /// @param id Id of the task
+  /// @param role Role of the user
+  /// @param user User that fulfills the designated role
+  event TaskRoleUserChanged(uint256 indexed id, uint8 role, address user);
+
+  /// @notice Event logged when a task's worker funding changes
+  /// @param id Id of the task
+  /// @param token Token of the payout funding
+  /// @param amount Amount of the payout funding
+  event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
+
+  /// @notice Event logged when a deliverable has been submitted for a task
+  /// @param id Id of the task
+  /// @param deliverableHash Hash of the work performed
+  event TaskDeliverableSubmitted(uint256 indexed id, bytes32 deliverableHash);
+
+  /// @notice Event logged when a task has been completed. This is either because the dueDate has passed
+  /// and the manager closed the task, or the worker has submitted the deliverable. In the
+  /// latter case, TaskDeliverableSubmitted will also be emitted.
+  event TaskCompleted(uint256 indexed id);
+
+  /// @notice Event logged when the rating of a role was revealed
+  /// @param id Id of the task
+  /// @param role Role that got rated
+  /// @param rating Rating the role received
+  event TaskWorkRatingRevealed(uint256 indexed id, uint8 role, uint8 rating);
+
+  /// @notice Event logged when a task has been finalized
+  /// @param id Id of the finalized task
+  event TaskFinalized(uint256 indexed id);
+
+  /// @notice Event logged when a task payout is claimed
+  /// @param id Id of the task
+  /// @param role Task role for which the payout is being claimed
+  /// @param token Token of the payout claim
+  /// @param amount Amount of the payout claim
+  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
+
+  /// @notice Event logged when a task has been canceled
+  /// @param id Id of the canceled task
+  event TaskCanceled(uint256 indexed id);
+
+  /// @notice Event logged when a new reward payout cycle has started
+  /// @param id Payout id
+  event RewardPayoutCycleStarted(uint256 indexed id);
+
+  /// @notice Event logged when the reward payout cycle has ended
+  /// @param id Payout id
+  event RewardPayoutCycleEnded(uint256 indexed id);
+
+  /// @notice Event logged when a new Domain is added
+  /// @param id Id of the newly-created Domain
   event DomainAdded(uint256 indexed id);
+
+  /// @notice Event logged when a new Pot is added
+  /// @param id Id of the newly-created Pot
   event PotAdded(uint256 indexed id);
 
   struct RewardPayoutCycle {
