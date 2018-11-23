@@ -20,12 +20,12 @@ pragma experimental "v0.5.0";
 
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
-import "./IColony.sol";
-import "./IMetaColony.sol";
 import "./CommonStorage.sol";
+import "./ColonyNetworkDataTypes.sol";
+import "./IMetaColony.sol";
 
 
-contract ColonyNetworkStorage is CommonStorage, DSMath {
+contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   // Number of colonies in the network
   uint256 colonyCount;
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
@@ -43,19 +43,6 @@ contract ColonyNetworkStorage is CommonStorage, DSMath {
   mapping (uint256 => address) colonyVersionResolver;
   // Contains the address of the resolver for ReputationMiningCycle
   address miningCycleResolver;
-
-  struct Skill {
-    // total number of parent skills
-    uint256 nParents;
-    // total number of child skills
-    uint256 nChildren;
-    // array of `skill_id`s of parent skills starting from the 1st to `n`th, where `n` is an integer power of two larger than or equal to 1
-    uint256[] parents;
-    // array of `skill_id`s of all child skills
-    uint256[] children;
-    // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
-    bool globalSkill;
-  }
   // Contains all global and local skills in the network, mapping skillId to Skill. Where skillId is 1-based unique identifier
   mapping (uint256 => Skill) skills;
   // Number of skills in the network, including both global and local skills
@@ -90,21 +77,7 @@ contract ColonyNetworkStorage is CommonStorage, DSMath {
   // Mapping from user address to claimed user label
   mapping (address => string) userLabels;
 
-  struct ENSRecord {
-    address addr;
-    string orbitdb;
-  }
-
   mapping (bytes32 => ENSRecord) records;
-
-  struct ReputationLogEntry {
-    address user;
-    int amount;
-    uint256 skillId;
-    address colony;
-    uint256 nUpdates;
-    uint256 nPreviousUpdates;
-  }
   mapping (address => mapping(uint256 => ReputationLogEntry)) replacementReputationUpdateLog;
   mapping (address => bool) replacementReputationUpdateLogsExist;
 

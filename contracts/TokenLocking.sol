@@ -20,7 +20,7 @@ pragma experimental "v0.5.0";
 
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
-import "./IColony.sol";
+import "./IMetaColony.sol";
 import "./IReputationMiningCycle.sol";
 import "./TokenLockingStorage.sol";
 import "../lib/dappsys/math.sol";
@@ -47,7 +47,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   }
 
   modifier hashNotSubmitted(address _token) {
-    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     if (_token == clnyToken) {
       bytes32 submittedHash;
       (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender);
@@ -120,7 +120,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   }
 
   function punishStakers(address[] _stakers, address _beneficiary, uint256 _amount) public onlyReputationMiningCycle {
-    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     uint256 lostStake;
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.invalidateHash;
