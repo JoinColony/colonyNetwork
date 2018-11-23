@@ -18,7 +18,6 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";

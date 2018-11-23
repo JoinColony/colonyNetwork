@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.22;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
 import "./ITokenLocking.sol";
