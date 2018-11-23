@@ -436,8 +436,9 @@ contract ColonyTask is ColonyStorage {
     );
   }
 
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role) {
-    role = tasks[_id].roles[_role];
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (address, bool, uint8) {
+    Role storage role = tasks[_id].roles[_role];
+    return (role.user, role.rateFail, uint8(role.rating));
   }
 
   function markTaskCompleted(uint256 _id) internal {

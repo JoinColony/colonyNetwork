@@ -336,7 +336,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return user Address of the user for the given role
   /// @return rateFail Whether the user failed to rate their counterpart
   /// @return rating Rating the user received
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role);
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
 
   /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
   /// @param _rewardInverse The inverse of the reward
