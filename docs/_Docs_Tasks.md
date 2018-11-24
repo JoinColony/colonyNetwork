@@ -34,14 +34,20 @@ Every task has three roles associated with it which determine permissions for ed
 
 Once created, some changes to a task require the signature of multiple roles. See the [colonyJS task lifecycle](/colonyjs/docs-task-lifecycle/) and [Multisignature transactions](/colonyjs/docs-multisignature-transactions/) for for further information about role permissions and multi-sig operations.
 
-Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/api-authorityclient/). 
+Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/api-authorityclient/).
 
 ## The Task Life-cycle
 
 ### Create
+![create_task](img/taskCreation_1.png)
 A newly created task must be assigned to a domain and must reference a specification for the task's completion, i.e. a description of the work to be done and how that work will be evaluated.
 
+Upon task creation, the account creating the task is automatically assigned the roles of Manager and Evaluator.
+
+A due date for the task and a skill tag may also be added at task creation if desired.
+
 ### Modify
+![modify_task](img/taskModification_1.png)
 Once created, the task may be modified to include additional data. This could be setting the task's due date, payouts for completion, or skill tag(s).
 
 Important changes to a task must be approved by multiple people. Task changes requiring two signatures are:
@@ -53,9 +59,10 @@ Important changes to a task must be approved by multiple people. Task changes re
 At any time before a task is finalized, the task can be canceled, which allows any funding to be returned to the colony and halts any further modification of the task.
 
 ### Rate
+![rate_task](img/taskRatings_1.png)
 After the work has been submitted (or the due date has passed), the work rating period begins.
 
-One large determiner of reputation within a colony is the rating that one has earned for completing tasks within the colony. In addition to serving as a quick reference for one's ability and commitment to the shared values of the organization, reputation (combined with token holdings) grant one a portion of the colony's revenue, paid out in rewards. 
+One large determiner of reputation within a colony is the rating that one has earned for completing tasks within the colony. In addition to serving as a quick reference for one's ability and commitment to the shared values of the organization, reputation (combined with token holdings) grant one a portion of the colony's revenue, paid out in rewards.
 
 Reputation changes are determined by work rating, which is rated on the basis of 3 possible outcomes:
 * `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the native token payout.
@@ -74,4 +81,5 @@ Because work ratings are on-chain, they follow a _*Commit* and *Reveal*_ pattern
 During the rating period, if either party fails to commit or reveal their rating, their counterpart is given the highest possible rating, and their own rating is penalized at -0.5 times the native token payout.
 
 ### Finalize
+![task_payout](img/taskPayout_1.png)
 After the rating period has finished, the task may be finalized, which prevents any further task modifications and allows each role to claim their payout.
