@@ -23,6 +23,13 @@ The full collection of Colony Network contracts can be inspected on [GitHub](htt
 
 * `IReputationMiningCycle.sol` contains the functions that pertain to the reputation mining system, such as submission of a reputation root hash, staking, and initiating the challenge process.
 
+## Layered Model of the Colony Network
+The Colony Network's [upgrade pattern](https://docs.colony.io/colonynetwork/docs-upgrades-to-the-colony-network/) allows for various functionality to be split up amongst several distinct contracts. All functions called by a user are routed through the interface contracts described above, but the actual contract logic and storage variabes may be split among one or more distinct contracts on the network.
+
+![Colony_Layers](img/storage_1.png)
+
+Business logic, such as the creation and funding of a task, is split into separate contracts that are organized by the functionality they describe. The logic contracts inherit from a separate set of storage contracts, in which all storage variables are written.
+
 ## First Version
 The first deployed version of the Colony Network will have a more modest functionality than what is described in these pages and in the whitepaper. This is intended to allow further development for finished contracts to be informed by real user experiences and testing while new features are being developed for future iterations of the network.
 
@@ -30,6 +37,6 @@ The major differences between the planned first release and the system described
 
 * Domains within a colony will be restricted to a single level.
 * Voting, Objections, and Dispute resolution will not be included.
-* Reputation will not mediate colony member's ability to interact with certain functions. Instead, the [authority roles](/colonyjs/api-authorityclient/) will be used to grant the OWNER and ADMIN roles the ability to call certain priviledged functions such as creating a new task. 
+* Reputation will not mediate colony member's ability to interact with certain functions. Instead, the [authority roles](/colonyjs/api-authorityclient/) will be used to grant the OWNER and ADMIN roles the ability to call certain priviledged functions such as creating a new task.
 
 Subsequent versions of the Colony Network will add functionality (working toward a complete implementation of the whitepaper), and all deprecated versions will remain fully supported by the network after an upgrade. See [upgrades](/colonynetwork/docs-upgrades-to-the-colony-network/) for more information.
