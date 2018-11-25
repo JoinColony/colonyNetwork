@@ -12,7 +12,9 @@ import {
   currentBlockTime,
   checkErrorRevert,
   submitAndForwardTimeToDispute,
-  web3GetStorageAt
+  web3GetStorageAt,
+  getActiveRepCycle,
+  advanceMiningCycleNoContest
 } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
@@ -46,11 +48,7 @@ contract("Colony Network Recovery", accounts => {
   });
 
   beforeEach(async () => {
-    let addr = await colonyNetwork.getReputationMiningCycle(true);
-    await forwardTime(MINING_CYCLE_DURATION, this);
-    let repCycle = await IReputationMiningCycle.at(addr);
-    await repCycle.submitRootHash("0x00", 0, 10);
-    await repCycle.confirmNewHash(0);
+    await advanceMiningCycleNoContest(colonyNetwork, this);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
 
@@ -66,11 +64,7 @@ contract("Colony Network Recovery", accounts => {
     });
     await miningClient.initialise(colonyNetwork.address);
 
-    addr = await colonyNetwork.getReputationMiningCycle(true);
-    repCycle = await IReputationMiningCycle.at(addr);
-    await forwardTime(MINING_CYCLE_DURATION, this);
-    await repCycle.submitRootHash("0x00", 0, 10);
-    await repCycle.confirmNewHash(0);
+    await advanceMiningCycleNoContest(colonyNetwork, this);
 
     const block = await currentBlock();
     // If we don't add the one here, when we sync from this block number we'll include the previous update log,
@@ -200,15 +194,11 @@ contract("Colony Network Recovery", accounts => {
     });
 
     it("should be able to fix reputation state", async () => {
-      const addr = await colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = await IReputationMiningCycle.at(addr);
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.submitRootHash("0x01", 0, 10);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this); // Default (0x00, 0)
 
       let rootHash = await colonyNetwork.getReputationRootHash();
       let nNodes = await colonyNetwork.getReputationRootHashNNodes();
-      assert.equal(rootHash, "0x0100000000000000000000000000000000000000000000000000000000000000");
+      assert.equal(rootHash, "0x0000000000000000000000000000000000000000000000000000000000000000");
       assert.equal(nNodes.toNumber(), 0);
 
       await colonyNetwork.enterRecoveryMode();
@@ -250,28 +240,15 @@ contract("Colony Network Recovery", accounts => {
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
-          let addr = await colonyNetwork.getReputationMiningCycle(false);
-          let repCycle = await IReputationMiningCycle.at(addr);
-
           await miningClient.addLogContentsToReputationTree();
-          await forwardTime(MINING_CYCLE_DURATION, this);
-          await miningClient.submitRootHash();
+          await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
-          addr = await colonyNetwork.getReputationMiningCycle(true);
-          repCycle = await IReputationMiningCycle.at(addr);
-          await repCycle.confirmNewHash(0);
-
-          await miningClient.addLogContentsToReputationTree();
-          await forwardTime(MINING_CYCLE_DURATION, this);
-          await miningClient.submitRootHash();
-
-          addr = await colonyNetwork.getReputationMiningCycle(true);
-          repCycle = await IReputationMiningCycle.at(addr);
-
+          const repCycle = await getActiveRepCycle(colonyNetwork);
           const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
           invalidEntry.amount = 0;
 
-          await repCycle.confirmNewHash(0);
+          await miningClient.addLogContentsToReputationTree();
+          await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
           const domain = await colony.getDomain(1);
           const rootSkill = domain[0];
@@ -282,7 +259,7 @@ contract("Colony Network Recovery", accounts => {
           await colonyNetwork.enterRecoveryMode();
 
           await colonyNetwork.setReplacementReputationUpdateLogEntry(
-            addr,
+            repCycle.address,
             5,
             invalidEntry.user,
             invalidEntry.amount,
@@ -377,8 +354,7 @@ contract("Colony Network Recovery", accounts => {
           const newActiveCycleAsRecovery = await ContractEditing.at(newActiveCycle.address);
           const newInactiveCycleAsRecovery = await ContractEditing.at(newInactiveCycle.address);
 
-          const oldActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
-          const oldActiveCycle = await ReputationMiningCycle.at(oldActiveCycleAddress);
+          const oldActiveCycle = await getActiveRepCycle(colonyNetwork);
 
           const oldInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
           const oldInactiveCycle = await ReputationMiningCycle.at(oldInactiveCycleAddress);

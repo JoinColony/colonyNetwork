@@ -368,8 +368,7 @@ export function makeReputationValue(value, repuationId) {
 }
 
 export async function getValidEntryNumber(colonyNetwork, account, hash, startingEntryNumber = 1) {
-  const reputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
-  const repCycle = await IReputationMiningCycle.at(reputationMiningCycleAddress);
+  const repCycle = await getActiveRepCycle(colonyNetwork);
 
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IColony.at(metaColonyAddress);
@@ -407,4 +406,21 @@ export async function submitAndForwardTimeToDispute(clients, test) {
     await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
   }
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
+}
+
+export async function getActiveRepCycle(colonyNetwork) {
+  const addr = await colonyNetwork.getReputationMiningCycle(true);
+  const repCycle = await IReputationMiningCycle.at(addr);
+  return repCycle;
+}
+
+export async function advanceMiningCycleNoContest(colonyNetwork, test, miningClient = undefined) {
+  await forwardTime(MINING_CYCLE_DURATION, test);
+  const repCycle = await getActiveRepCycle(colonyNetwork);
+  if (miningClient !== undefined) {
+    await miningClient.submitRootHash();
+  } else {
+    await repCycle.submitRootHash("0x00", 0, 10);
+  }
+  await repCycle.confirmNewHash(0);
 }

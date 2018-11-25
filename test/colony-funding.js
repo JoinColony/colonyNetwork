@@ -7,19 +7,18 @@ import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import {
-  MANAGER_ROLE,
-  EVALUATOR_ROLE,
-  WORKER_ROLE,
-  WORKER_PAYOUT,
-  INITIAL_FUNDING,
-  DEFAULT_STAKE,
-  MINING_CYCLE_DURATION,
-  ZERO_ADDRESS,
-  WAD
-} from "../helpers/constants";
+import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING, DEFAULT_STAKE, ZERO_ADDRESS, WAD } from "../helpers/constants";
 
-import { getTokenArgs, checkErrorRevert, web3GetBalance, forwardTime, currentBlockTime, bnSqrt, makeReputationKey } from "../helpers/test-helper";
+import {
+  getTokenArgs,
+  checkErrorRevert,
+  web3GetBalance,
+  forwardTime,
+  currentBlockTime,
+  bnSqrt,
+  makeReputationKey,
+  advanceMiningCycleNoContest
+} from "../helpers/test-helper";
 
 import {
   fundColonyWithTokens,
@@ -42,7 +41,6 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const DSRoles = artifacts.require("DSRoles");
-const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -661,11 +659,9 @@ contract("Colony Funding", accounts => {
         denominatorSqrt,
         totalAmountSqrt
       ];
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x00", 0, 10);
-      await repCycle.confirmNewHash(0);
+
+      await advanceMiningCycleNoContest(colonyNetwork, this);
+
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
       miningClient = new ReputationMiner({
         loader: contractLoader,
@@ -673,13 +669,11 @@ contract("Colony Funding", accounts => {
         realProviderPort: REAL_PROVIDER_PORT,
         useJsTree: true
       });
+
       await miningClient.initialise(colonyNetwork.address);
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
@@ -718,12 +712,7 @@ contract("Colony Funding", accounts => {
       const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await miningClient.insert(globalKey, toBN(10), 0);
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      const addr = await colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
@@ -751,20 +740,10 @@ contract("Colony Funding", accounts => {
       });
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const colonyWideReputationKey = makeReputationKey(colony.address, id);
       const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
@@ -777,20 +756,10 @@ contract("Colony Funding", accounts => {
       await colony.bootstrapColony([userAddress2], [userReputation]);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
@@ -844,20 +813,10 @@ contract("Colony Funding", accounts => {
       });
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill);
       let { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
@@ -894,20 +853,10 @@ contract("Colony Funding", accounts => {
       });
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
@@ -963,12 +912,7 @@ contract("Colony Funding", accounts => {
       const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await miningClient.insert(globalKey, toBN(0), 0);
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      const addr = await colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const colonyWideReputationKey = makeReputationKey(newColony.address, rootDomainSkill);
       const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
@@ -986,20 +930,10 @@ contract("Colony Funding", accounts => {
       await token.transfer(colony.address, userReputation3, { from: userAddress3 });
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
@@ -1044,20 +978,10 @@ contract("Colony Funding", accounts => {
       await miningClient.insert(userKey, toBN(0), 0);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
       let { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
@@ -1270,21 +1194,11 @@ contract("Colony Funding", accounts => {
 
       // Submit current hash in active reputation mining cycle
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       // Reputation added while bootstrapping the colony is now in active reputation mining cycle, so submit the hash
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const domain1 = await colony1.getDomain(1);
       const rootDomainSkill1 = domain1.skillId;
@@ -1394,21 +1308,11 @@ contract("Colony Funding", accounts => {
 
       // Submit current hash in active reputation mining cycle
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      let addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       // Reputation added while bootstrapping the colony is now in active reputation mining cycle, so submit the hash
       await miningClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      addr = await colonyNetwork.getReputationMiningCycle(true);
-      repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
       const domain1 = await colony1.getDomain(1);
       const rootDomainSkill1 = domain1.skillId;
@@ -1537,21 +1441,11 @@ contract("Colony Funding", accounts => {
 
         // Submit current hash in active reputation mining cycle
         await miningClient.addLogContentsToReputationTree();
-        await forwardTime(MINING_CYCLE_DURATION, this);
-        await miningClient.submitRootHash();
-
-        let addr = await colonyNetwork.getReputationMiningCycle(true);
-        let repCycle = await IReputationMiningCycle.at(addr);
-        await repCycle.confirmNewHash(0);
+        await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
         // Reputation added while bootstrapping the colony is now in active reputation mining cycle, so submit the hash
         await miningClient.addLogContentsToReputationTree();
-        await forwardTime(MINING_CYCLE_DURATION, this);
-        await miningClient.submitRootHash();
-
-        addr = await colonyNetwork.getReputationMiningCycle(true);
-        repCycle = await IReputationMiningCycle.at(addr);
-        await repCycle.confirmNewHash(0);
+        await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
         const result = await newColony.getDomain(1);
         const rootDomainSkill = result.skillId;
