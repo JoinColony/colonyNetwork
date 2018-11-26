@@ -424,7 +424,7 @@ contract("ColonyNetworkAuction", accounts => {
       await tokenAuction.claim({ from: BIDDER_1 });
       await tokenAuction.destruct();
       const code = await web3GetCode(tokenAuction.address);
-      assert.equal(code, 0);
+      assert.equal(code, "0x");
     });
 
     it("should fail if auction not finalized", async () => {
