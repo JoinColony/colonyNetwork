@@ -360,7 +360,7 @@ contract("All", accounts => {
       await tokenLocking.deposit(newToken.address, workerReputation, { from: WORKER });
 
       const tx = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      const payoutId = tx.logs[0].args.id;
+      const payoutId = tx.logs[0].args.rewardPayoutId;
 
       await tokenLocking.incrementLockCounterTo(newToken.address, payoutId, {
         from: MANAGER
@@ -394,7 +394,7 @@ contract("All", accounts => {
       await fundColonyWithTokens(newColony, otherToken, initialFunding);
 
       const tx2 = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      const payoutId2 = tx2.logs[0].args.id;
+      const payoutId2 = tx2.logs[0].args.rewardPayoutId;
 
       await tokenLocking.incrementLockCounterTo(newToken.address, payoutId2, {
         from: MANAGER

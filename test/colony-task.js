@@ -1037,7 +1037,7 @@ contract("ColonyTask", accounts => {
       );
     });
 
-    it("should log a TaskBriefChanged event, if the task brief gets changed", async () => {
+    it("should log a TaskBriefSet event, if the task brief gets changed", async () => {
       const taskId = await makeTask({ colony });
 
       await expectEvent(
@@ -1049,11 +1049,11 @@ contract("ColonyTask", accounts => {
           sigTypes: [0],
           args: [taskId, SPECIFICATION_HASH_UPDATED]
         }),
-        "TaskBriefChanged"
+        "TaskBriefSet"
       );
     });
 
-    it("should log a TaskDueDateChanged event, if the task due date gets changed", async () => {
+    it("should log a TaskDueDateSet event, if the task due date gets changed", async () => {
       const taskId = await makeTask({ colony });
 
       const dueDate = await currentBlockTime();
@@ -1066,11 +1066,11 @@ contract("ColonyTask", accounts => {
           sigTypes: [0],
           args: [taskId, dueDate]
         }),
-        "TaskDueDateChanged"
+        "TaskDueDateSet"
       );
     });
 
-    it("should log a TaskSkillChanged event, if the task skill gets changed", async () => {
+    it("should log a TaskSkillSet event, if the task skill gets changed", async () => {
       const taskId = await makeTask({ colony });
       await metaColony.addGlobalSkill(1);
 
@@ -1085,11 +1085,11 @@ contract("ColonyTask", accounts => {
           sigTypes: [0],
           args: [taskId, skillCount]
         }),
-        "TaskSkillChanged"
+        "TaskSkillSet"
       );
     });
 
-    it("should log a TaskDomainChanged event, if the task domain gets changed", async () => {
+    it("should log a TaskDomainSet event, if the task domain gets changed", async () => {
       const taskId = await makeTask({ colony });
       await colony.addDomain(1);
       await expectEvent(
@@ -1101,11 +1101,11 @@ contract("ColonyTask", accounts => {
           sigTypes: [0],
           args: [taskId, 2]
         }),
-        "TaskDomainChanged"
+        "TaskDomainSet"
       );
     });
 
-    it("should log a TaskRoleUserChanged event, if a task role's user gets changed", async () => {
+    it("should log a TaskRoleUserSet event, if a task role's user gets changed", async () => {
       const taskId = await makeTask({ colony });
 
       // Change the task role's user
@@ -1118,7 +1118,7 @@ contract("ColonyTask", accounts => {
           sigTypes: [0, 0],
           args: [taskId, WORKER]
         }),
-        "TaskRoleUserChanged"
+        "TaskRoleUserSet"
       );
     });
   });
@@ -1503,7 +1503,7 @@ contract("ColonyTask", accounts => {
       await checkErrorRevert(colony.setAllTaskPayouts(taskId, ZERO_ADDRESS, 5000, 1000, 98000), "colony-funding-worker-already-set");
     });
 
-    it("should log a TaskWorkerPayoutChanged event, if the task's worker's payout changed", async () => {
+    it("should log a TaskWorkerPayoutSet event, if the task's worker's payout changed", async () => {
       const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
@@ -1526,7 +1526,7 @@ contract("ColonyTask", accounts => {
           sigTypes: [0, 0],
           args: [taskId, ZERO_ADDRESS, 98000]
         }),
-        "TaskWorkerPayoutChanged"
+        "TaskPayoutSet"
       );
     });
 

@@ -33,15 +33,21 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority colonyAuthority = ColonyAuthority(authority);
     colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
     colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
+
+    emit ColonyFounderRoleSet(msg.sender, _user);
   }
 
   function setAdminRole(address _user) public stoppable auth {
     ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, true);
+
+    emit ColonyAdminRoleSet(_user);
   }
 
   // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
     ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, false);
+
+    emit ColonyAdminRoleRemoved(_user);
   }
 
   function setToken(address _token) public
@@ -49,15 +55,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   auth
   {
     token = ERC20Extended(_token);
+
+    emit ColonyTokenSet(_token);
   }
 
   function getToken() public view returns (address) {
     return token;
   }
 
-  function initialiseColony(address _address) public stoppable {
+  function initialiseColony(address _colonyNetworkAddress) public stoppable {
     require(colonyNetworkAddress == 0x0, "colony-initialise-bad-address");
-    colonyNetworkAddress = _address;
+    colonyNetworkAddress = _colonyNetworkAddress;
 
     // Initialise the task update reviewers
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
@@ -83,6 +91,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2**256 - 1;
+
+    emit ColonyInitialised(_colonyNetworkAddress);
   }
 
   function bootstrapColony(address[] _users, int[] _amounts) public
@@ -98,6 +108,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
       token.transfer(_users[i], uint(_amounts[i]));
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
+
+    emit ColonyBootstrapped(_users, _amounts);
   }
 
   function mintTokens(uint _wad) public
@@ -211,6 +223,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(newResolver != 0x0, "colony-version-must-be-registered");
     EtherRouter e = EtherRouter(address(this));
     e.setResolver(newResolver);
+
+    emit ColonyUpgraded(currentVersion, _newVersion);
   }
 
   function checkNotAdditionalProtectedVariable(uint256 _slot) public view recovery {
@@ -252,5 +266,4 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit DomainAdded(domainCount);
     emit PotAdded(potCount);
   }
-
 }

@@ -102,9 +102,6 @@ contract ColonyTask is ColonyStorage {
     tasks[taskCount].roles[EVALUATOR].user = msg.sender;
     pots[potCount].taskId = taskCount;
 
-    emit PotAdded(potCount);
-    emit TaskAdded(taskCount);
-
     if (_skillId > 0) {
       this.setTaskSkill(taskCount, _skillId);
     }
@@ -117,6 +114,8 @@ contract ColonyTask is ColonyStorage {
     }
     this.setTaskDueDate(taskCount, dueDate);
 
+    emit PotAdded(potCount);
+    emit TaskAdded(taskCount);
   }
 
   function getTaskCount() public view returns (uint256) {
@@ -323,7 +322,7 @@ contract ColonyTask is ColonyStorage {
   {
     tasks[_id].domainId = _domainId;
 
-    emit TaskDomainChanged(_id, _domainId);
+    emit TaskDomainSet(_id, _domainId);
   }
 
   function setTaskSkill(uint256 _id, uint256 _skillId) public
@@ -336,7 +335,7 @@ contract ColonyTask is ColonyStorage {
   {
     tasks[_id].skills[0] = _skillId;
 
-    emit TaskSkillChanged(_id, _skillId);
+    emit TaskSkillSet(_id, _skillId);
   }
 
   function setTaskBrief(uint256 _id, bytes32 _specificationHash) public
@@ -347,7 +346,7 @@ contract ColonyTask is ColonyStorage {
   {
     tasks[_id].specificationHash = _specificationHash;
 
-    emit TaskBriefChanged(_id, _specificationHash);
+    emit TaskBriefSet(_id, _specificationHash);
   }
 
   function setTaskDueDate(uint256 _id, uint256 _dueDate) public
@@ -359,7 +358,7 @@ contract ColonyTask is ColonyStorage {
     require (_dueDate > 0, "colony-task-due-date-cannot-be-zero");
     tasks[_id].dueDate = _dueDate;
 
-    emit TaskDueDateChanged(_id, _dueDate);
+    emit TaskDueDateSet(_id, _dueDate);
   }
 
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
@@ -568,6 +567,6 @@ contract ColonyTask is ColonyStorage {
       rating: TaskRatings.None
     });
 
-    emit TaskRoleUserChanged(_id, _role, _user);
+    emit TaskRoleUserSet(_id, _role, _user);
   }
 }

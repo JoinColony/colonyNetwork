@@ -20,90 +20,145 @@ pragma experimental "v0.5.0";
 
 
 contract ColonyDataTypes {
-
   // Events
+  /// @notice Event logged when the Colony token is set
+  /// @param token The newly set token address
+  event ColonyTokenSet(address token);
+
+  /// @notice Event logged when Colony is initialised
+  /// @param colonyNetwork The Colony Network address
+  event ColonyInitialised(address colonyNetwork);
+
+  /// @notice Event logged when Colony is initially bootstrapped
+  /// @param users Array of address bootstraped with reputation
+  /// @param amounts Amounts of reputation/tokens for every address
+  event ColonyBootstrapped(address[] users, int[] amounts);
+
+  /// @notice Event logged when colony is upgraded
+  /// @param oldVersion The previous colony version
+  /// @param newVersion The new colony version upgraded to
+  event ColonyUpgraded(uint256 oldVersion, uint256 newVersion);
+
+  /// @notice Event logged when the colony founder role is changed
+  /// @param oldFounder The current founder delegating the role away
+  /// @param newFounder User who is new new colony founder
+  event ColonyFounderRoleSet(address oldFounder, address newFounder);
+
+  /// @notice Event logged when a new user is assigned the colony admin role
+  /// @param user The newly added colony admin user address
+  event ColonyAdminRoleSet(address user);
+
+  /// @notice Event logged when an existing colony admin is removed the colony admin role
+  /// @param user The removed colony admin user address
+  event ColonyAdminRoleRemoved(address user);
+
+  /// @notice Event logged when colony funds, either tokens or ether, has been moved between funding pots
+  /// @param fromPot The source funding pot
+  /// @param toPot The targer funding pot
+  /// @param amount The amount that was transferred
+  /// @param token The token address being transferred
+  event ColonyFundsMovedBetweenFundingPots(uint256 fromPot, uint256 toPot, uint256 amount, address token);
+
+  /// @notice Event logged when colony funds are moved to the top-level domain pot
+  /// @param token The token address
+  /// @param fee The fee deducted for rewards
+  /// @param payoutRemainder The remaining funds moved to the top-level domain pot
+  event ColonyFundsClaimed(address token, uint256 fee, uint256 payoutRemainder);
+
+  /// @notice Event logged when a new reward payout cycle has started
+  /// @param rewardPayoutId The reward payout cycle id
+  event RewardPayoutCycleStarted(uint256 rewardPayoutId);
+
+  /// @notice Event logged when the reward payout cycle has ended
+  /// @param rewardPayoutId The reward payout cycle id
+  event RewardPayoutCycleEnded(uint256 rewardPayoutId);
+
+  /// @notice Event logged when reward payout is claimed
+  /// @param rewardPayoutId The reward payout cycle id
+  /// @param user The user address who received the reward payout
+  /// @param fee The fee deducted from payout
+  /// @param rewardRemainder The remaining reward amount paid out to user
+  event RewardPayoutClaimed(uint256 rewardPayoutId, address user, uint256 fee, uint256 rewardRemainder);
+
+  /// @notice Event logged when the colony reward inverse is set
+  /// @param rewardInverse The reward inverse value
+  event ColonyRewardInverseSet(uint256 rewardInverse);
+
   /// @notice Event logged when a new task is added
-  /// @param id The newly added task id
-  event TaskAdded(uint256 indexed id);
+  /// @param taskId The newly added task id
+  event TaskAdded(uint256 taskId);
 
   /// @notice Event logged when a task's specification hash changes
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param specificationHash New specification hash of the task
-  event TaskBriefChanged(uint256 indexed id, bytes32 specificationHash);
+  event TaskBriefSet(uint256 taskId, bytes32 specificationHash);
 
   /// @notice Event logged when a task's due date changes
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param dueDate New due date of the task
-  event TaskDueDateChanged(uint256 indexed id, uint256 dueDate);
+  event TaskDueDateSet(uint256 taskId, uint256 dueDate);
 
   /// @notice Event logged when a task's domain changes
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param domainId New domain id of the task
-  event TaskDomainChanged(uint256 indexed id, uint256 domainId);
+  event TaskDomainSet(uint256 taskId, uint256 domainId);
 
   /// @notice Event logged when a task's skill changes
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param skillId New skill id of the task
-  event TaskSkillChanged(uint256 indexed id, uint256 skillId);
+  event TaskSkillSet(uint256 taskId, uint256 skillId);
 
   /// @notice Event logged when a task's role user changes
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param role Role of the user
   /// @param user User that fulfills the designated role
-  event TaskRoleUserChanged(uint256 indexed id, uint8 role, address user);
+  event TaskRoleUserSet(uint256 taskId, uint8 role, address user);
 
-  /// @notice Event logged when a task's worker funding changes
-  /// @param id Id of the task
+  /// @notice Event logged when a task payout changes
+  /// @param taskId Id of the task
+  /// @param role Task role whose payout is being changed
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
-  event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
+  event TaskPayoutSet(uint256 taskId, uint8 role, address token, uint256 amount);
 
   /// @notice Event logged when a deliverable has been submitted for a task
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param deliverableHash Hash of the work performed
-  event TaskDeliverableSubmitted(uint256 indexed id, bytes32 deliverableHash);
+  event TaskDeliverableSubmitted(uint256 taskId, bytes32 deliverableHash);
 
   /// @notice Event logged when a task has been completed. This is either because the dueDate has passed
   /// and the manager closed the task, or the worker has submitted the deliverable. In the
   /// latter case, TaskDeliverableSubmitted will also be emitted.
-  event TaskCompleted(uint256 indexed id);
+  event TaskCompleted(uint256 taskId);
 
   /// @notice Event logged when the rating of a role was revealed
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param role Role that got rated
   /// @param rating Rating the role received
-  event TaskWorkRatingRevealed(uint256 indexed id, uint8 role, uint8 rating);
+  event TaskWorkRatingRevealed(uint256 taskId, uint8 role, uint8 rating);
 
   /// @notice Event logged when a task has been finalized
-  /// @param id Id of the finalized task
-  event TaskFinalized(uint256 indexed id);
+  /// @param taskId Id of the finalized task
+  event TaskFinalized(uint256 taskId);
 
   /// @notice Event logged when a task payout is claimed
-  /// @param id Id of the task
+  /// @param taskId Id of the task
   /// @param role Task role for which the payout is being claimed
   /// @param token Token of the payout claim
   /// @param amount Amount of the payout claim
-  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
+  event TaskPayoutClaimed(uint256 taskId, uint256 role, address token, uint256 amount);
 
   /// @notice Event logged when a task has been canceled
-  /// @param id Id of the canceled task
-  event TaskCanceled(uint256 indexed id);
-
-  /// @notice Event logged when a new reward payout cycle has started
-  /// @param id Payout id
-  event RewardPayoutCycleStarted(uint256 indexed id);
-
-  /// @notice Event logged when the reward payout cycle has ended
-  /// @param id Payout id
-  event RewardPayoutCycleEnded(uint256 indexed id);
+  /// @param taskId Id of the canceled task
+  event TaskCanceled(uint256 taskId);
 
   /// @notice Event logged when a new Domain is added
-  /// @param id Id of the newly-created Domain
-  event DomainAdded(uint256 indexed id);
+  /// @param domainId Id of the newly-created Domain
+  event DomainAdded(uint256 domainId);
 
   /// @notice Event logged when a new Pot is added
-  /// @param id Id of the newly-created Pot
-  event PotAdded(uint256 indexed id);
+  /// @param potId Id of the newly-created Pot
+  event PotAdded(uint256 potId);
 
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
