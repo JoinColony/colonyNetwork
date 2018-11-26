@@ -46,7 +46,7 @@ contract("Colony Network Recovery", accounts => {
   });
 
   beforeEach(async () => {
-    let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+    let addr = await colonyNetwork.getReputationMiningCycle(true);
     await forwardTime(MINING_CYCLE_DURATION, this);
     let repCycle = await IReputationMiningCycle.at(addr);
     await repCycle.submitRootHash("0x00", 0, 10);
@@ -66,7 +66,7 @@ contract("Colony Network Recovery", accounts => {
     });
     await miningClient.initialise(colonyNetwork.address);
 
-    addr = await colonyNetwork.getReputationMiningCycle.call(true);
+    addr = await colonyNetwork.getReputationMiningCycle(true);
     repCycle = await IReputationMiningCycle.at(addr);
     await forwardTime(MINING_CYCLE_DURATION, this);
     await repCycle.submitRootHash("0x00", 0, 10);
@@ -250,14 +250,14 @@ contract("Colony Network Recovery", accounts => {
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
-          let addr = await colonyNetwork.getReputationMiningCycle.call(false);
+          let addr = await colonyNetwork.getReputationMiningCycle(false);
           let repCycle = await IReputationMiningCycle.at(addr);
 
           await miningClient.addLogContentsToReputationTree();
           await forwardTime(MINING_CYCLE_DURATION, this);
           await miningClient.submitRootHash();
 
-          addr = await colonyNetwork.getReputationMiningCycle.call(true);
+          addr = await colonyNetwork.getReputationMiningCycle(true);
           repCycle = await IReputationMiningCycle.at(addr);
           await repCycle.confirmNewHash(0);
 
@@ -265,7 +265,7 @@ contract("Colony Network Recovery", accounts => {
           await forwardTime(MINING_CYCLE_DURATION, this);
           await miningClient.submitRootHash();
 
-          addr = await colonyNetwork.getReputationMiningCycle.call(true);
+          addr = await colonyNetwork.getReputationMiningCycle(true);
           repCycle = await IReputationMiningCycle.at(addr);
 
           const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);

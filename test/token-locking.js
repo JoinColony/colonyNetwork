@@ -51,7 +51,7 @@ contract("TokenLocking", addresses => {
     await colony.mintTokens(usersTokens + otherUserTokens);
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
-    let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+    let addr = await colonyNetwork.getReputationMiningCycle(true);
     await forwardTime(MINING_CYCLE_DURATION, this);
     let repCycle = await IReputationMiningCycle.at(addr);
     await repCycle.submitRootHash("0x00", 0, 10);
@@ -70,7 +70,7 @@ contract("TokenLocking", addresses => {
     await forwardTime(MINING_CYCLE_DURATION, this);
     await miningClient.submitRootHash();
 
-    addr = await colonyNetwork.getReputationMiningCycle.call(true);
+    addr = await colonyNetwork.getReputationMiningCycle(true);
     repCycle = await IReputationMiningCycle.at(addr);
     await repCycle.confirmNewHash(0);
 

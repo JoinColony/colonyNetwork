@@ -323,7 +323,7 @@ contract("All", accounts => {
 
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation, managerReputation]);
 
-      let addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.submitRootHash("0x00", 0, 10);
@@ -342,7 +342,7 @@ contract("All", accounts => {
       await forwardTime(MINING_CYCLE_DURATION, this);
       await miningClient.submitRootHash();
 
-      addr = await colonyNetwork.getReputationMiningCycle.call(true);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
       repCycle = await IReputationMiningCycle.at(addr);
       await repCycle.confirmNewHash(0);
 
