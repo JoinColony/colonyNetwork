@@ -31,6 +31,7 @@ import MaliciousReputationMinerUnsure from "../../packages/reputation-miner/test
 import MaliciousReputationMinerWrongJRH from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH";
 import MaliciousReputationMinerWrongNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes";
 import MaliciousReputationMinerWrongNNodes2 from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes2";
+import MaliciousReputationMinerAddNewReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -96,6 +97,27 @@ contract("Reputation Mining - types of disagreement", accounts => {
   });
 
   describe("when there is a dispute over reputation root hash", () => {
+    it.skip("should cope when a new reputation is correctly added and an extra reputation is added elsewhere at the same time", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await fundColonyWithTokens(metaColony, clnyToken);
+      const badClient = new MaliciousReputationMinerAddNewReputation({ loader, minerAddress: OTHER_ACCOUNT, realProviderPort, useJsTree }, 3);
+      await badClient.initialise(colonyNetwork.address);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      console.log("accommodate");
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should allow a user to confirm a submitted JRH with proofs for a submission", async () => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: OTHER_ACCOUNT }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
