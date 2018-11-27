@@ -1,7 +1,7 @@
 /* globals artifacts */
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupFundedTask, setupRatedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupFundedTask, setupFinalizedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
@@ -514,8 +514,7 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(5);
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony });
-      await colony.finalizeTask(taskId);
+      const taskId = await setupFinalizedTask({ colonyNetwork, colony });
       await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-complete");
 
       const task = await colony.getTask(taskId);

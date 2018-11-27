@@ -1,9 +1,9 @@
 /* globals artifacts */
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime } from "../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
-import { MIN_STAKE, DEFAULT_STAKE, MINING_CYCLE_DURATION, ZERO_ADDRESS } from "../helpers/constants";
+import { MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
@@ -12,7 +12,6 @@ const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -51,12 +50,7 @@ contract("TokenLocking", addresses => {
     await colony.mintTokens(usersTokens + otherUserTokens);
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
-    let addr = await colonyNetwork.getReputationMiningCycle(true);
-    await forwardTime(MINING_CYCLE_DURATION, this);
-    let repCycle = await IReputationMiningCycle.at(addr);
-    await repCycle.submitRootHash("0x00", 0, 10);
-    await repCycle.confirmNewHash(0);
-
+    await advanceMiningCycleNoContest(colonyNetwork, this);
     await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
 
     const miningClient = new ReputationMiner({
@@ -67,12 +61,7 @@ contract("TokenLocking", addresses => {
     });
     await miningClient.initialise(colonyNetwork.address);
     await miningClient.addLogContentsToReputationTree();
-    await forwardTime(MINING_CYCLE_DURATION, this);
-    await miningClient.submitRootHash();
-
-    addr = await colonyNetwork.getReputationMiningCycle(true);
-    repCycle = await IReputationMiningCycle.at(addr);
-    await repCycle.confirmNewHash(0);
+    await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
     const result = await colony.getDomain(1);
     const rootDomainSkill = result.skillId;
