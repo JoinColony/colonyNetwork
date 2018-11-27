@@ -24,11 +24,11 @@ The full collection of Colony Network contracts can be inspected on [GitHub](htt
 * `IReputationMiningCycle.sol` contains the functions that pertain to the reputation mining system, such as submission of a reputation root hash, staking, and initiating the challenge process.
 
 ## Layered Model of the Colony Network
-The Colony Network's [upgrade pattern](https://docs.colony.io/colonynetwork/docs-upgrades-to-the-colony-network/) allows for various functionality to be split up amongst several distinct contracts. All functions called by a user are routed through the interface contracts described above, but the actual contract logic and storage variabes may be split among one or more distinct contracts on the network.
+The Colony Network's [upgrade pattern](https://docs.colony.io/colonynetwork/docs-upgrades-to-the-colony-network/) allows for an interface with a static address on chain to be the single point of entry. All functions called by a user on the interface are redirected via a middle routing layer to the contract logic holding the function implementation.
 
 ![Colony_Layers](img/storage_1.png)
 
-Business logic, such as the creation and funding of a task, is split into separate contracts that are organized by the functionality they describe. The logic contracts inherit from a separate set of storage contracts, in which all storage variables are written.
+Business logic, such as the creation and funding of a task, is split into separate contracts within the middle layer based on context. The logic contracts inherit from a separate set of storage contracts, in which all storage variables are written.
 
 ## First Version
 The first deployed version of the Colony Network will have a more modest functionality than what is described in these pages and in the whitepaper. This is intended to allow further development for finished contracts to be informed by real user experiences and testing while new features are being developed for future iterations of the network.
