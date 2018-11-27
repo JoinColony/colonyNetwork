@@ -2824,47 +2824,47 @@ contract("ColonyNetworkMining", accounts => {
       // 6. Colony-wide total reputation for global skill task was in
       // 7. Worker reputation for global skill task was in
 
-      const GLOBAL_SKILL = 1;
-      const META_ROOT_SKILL = 2;
-      const MINING_SKILL = 3;
+      const GLOBAL_SKILL = new BN(1);
+      const META_ROOT_SKILL = new BN(2);
+      const MINING_SKILL = new BN(3);
 
       assert.equal(Object.keys(client.reputations).length, 7);
       let key;
       let value;
       // These should be:
       // 1. Colony-wide total reputation for metacolony's root skill
-      key = makeReputationKey(metaColony.address, new BN(META_ROOT_SKILL));
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL);
       value = makeReputationValue(DEFAULT_STAKE.muln(6).add(REWARD), 1);
       assert.equal(client.reputations[key], value);
 
       // 2. Colony-wide total reputation for mining skill
-      key = makeReputationKey(metaColony.address, new BN(MINING_SKILL));
+      key = makeReputationKey(metaColony.address, MINING_SKILL);
       value = makeReputationValue(REWARD, 2);
       assert.equal(client.reputations[key], value);
 
       // 3. Reputation reward for MAIN_ACCOUNT for being the manager for the tasks created by giveUserCLNYTokens
-      key = makeReputationKey(metaColony.address, new BN(META_ROOT_SKILL), MAIN_ACCOUNT);
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, MAIN_ACCOUNT);
       value = makeReputationValue(DEFAULT_STAKE.muln(6).add(REWARD), 3);
       assert.equal(client.reputations[key], value);
 
       // 4. Reputation reward for MAIN_ACCOUNT for submitting the previous reputation hash
-      key = makeReputationKey(metaColony.address, new BN(MINING_SKILL), MAIN_ACCOUNT);
+      key = makeReputationKey(metaColony.address, MINING_SKILL, MAIN_ACCOUNT);
       value = makeReputationValue(REWARD, 4);
       assert.equal(client.reputations[key], value);
 
       // 5. Reputation reward for accounts[2] for being the worker for the tasks created by giveUserCLNYTokens
       // NB at the moment, the reputation reward for the worker is 0.
-      key = makeReputationKey(metaColony.address, new BN(META_ROOT_SKILL), accounts[2]);
+      key = makeReputationKey(metaColony.address, META_ROOT_SKILL, accounts[2]);
       value = makeReputationValue(0, 5);
       assert.equal(client.reputations[key], value);
 
       // 6. Colony-wide total reputation for global skill task was in
-      key = makeReputationKey(metaColony.address, new BN(GLOBAL_SKILL));
+      key = makeReputationKey(metaColony.address, GLOBAL_SKILL);
       value = makeReputationValue(0, 6);
       assert.equal(client.reputations[key], value);
 
       // 7. Worker reputation for global skill task was in
-      key = makeReputationKey(metaColony.address, new BN(GLOBAL_SKILL), accounts[2]);
+      key = makeReputationKey(metaColony.address, GLOBAL_SKILL, accounts[2]);
       value = makeReputationValue(0, 7);
       assert.equal(client.reputations[key], value);
     });
@@ -2918,37 +2918,37 @@ contract("ColonyNetworkMining", accounts => {
       const MINING_SKILL = 3;
 
       const reputationProps = [
-        { id: 1, skill: META_ROOT_SKILL, account: undefined, value: DEFAULT_STAKE.muln(2).add(REWARD).add(new BN("3000000000000")) }, // eslint-disable-line prettier/prettier
-        { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD },
-        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: DEFAULT_STAKE.muln(2).add(REWARD).add(new BN("1000000000000")) }, // eslint-disable-line prettier/prettier
-        { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: REWARD },
-        { id: 5, skill: META_ROOT_SKILL, account: accounts[2], value: 1000000000000 },
-        { id: 6, skill: 1, account: undefined, value: 1000000000000 },
-        { id: 7, skill: 1, account: accounts[2], value: 0 },
-        { id: 8, skill: META_ROOT_SKILL, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 1, skillId: META_ROOT_SKILL, account: undefined, value: DEFAULT_STAKE.muln(2).add(REWARD).add(new BN("3000000000000")) }, // eslint-disable-line prettier/prettier
+        { id: 2, skillId: MINING_SKILL, account: undefined, value: REWARD },
+        { id: 3, skillId: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: DEFAULT_STAKE.muln(2).add(REWARD).add(new BN("1000000000000")) }, // eslint-disable-line prettier/prettier
+        { id: 4, skillId: MINING_SKILL, account: MAIN_ACCOUNT, value: REWARD },
+        { id: 5, skillId: META_ROOT_SKILL, account: accounts[2], value: 1000000000000 },
+        { id: 6, skillId: 1, account: undefined, value: 1000000000000 },
+        { id: 7, skillId: 1, account: accounts[2], value: 0 },
+        { id: 8, skillId: META_ROOT_SKILL, account: OTHER_ACCOUNT, value: 1000000000000 },
 
-        { id: 9, skill: 9, account: undefined, value: 1000000000000 },
-        { id: 10, skill: 8, account: undefined, value: 1000000000000 },
-        { id: 11, skill: 7, account: undefined, value: 1000000000000 },
-        { id: 12, skill: 6, account: undefined, value: 1000000000000 },
-        { id: 13, skill: 5, account: undefined, value: 1000000000000 },
-        { id: 14, skill: 4, account: undefined, value: 1000000000000 },
-        { id: 15, skill: 10, account: undefined, value: 1000000000000 },
+        { id: 9, skillId: 9, account: undefined, value: 1000000000000 },
+        { id: 10, skillId: 8, account: undefined, value: 1000000000000 },
+        { id: 11, skillId: 7, account: undefined, value: 1000000000000 },
+        { id: 12, skillId: 6, account: undefined, value: 1000000000000 },
+        { id: 13, skillId: 5, account: undefined, value: 1000000000000 },
+        { id: 14, skillId: 4, account: undefined, value: 1000000000000 },
+        { id: 15, skillId: 10, account: undefined, value: 1000000000000 },
 
-        { id: 16, skill: 9, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 17, skill: 8, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 18, skill: 7, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 19, skill: 6, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 20, skill: 5, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 21, skill: 4, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 22, skill: 1, account: OTHER_ACCOUNT, value: 1000000000000 },
-        { id: 23, skill: 10, account: OTHER_ACCOUNT, value: 1000000000000 }
+        { id: 16, skillId: 9, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 17, skillId: 8, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 18, skillId: 7, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 19, skillId: 6, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 20, skillId: 5, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 21, skillId: 4, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 22, skillId: 1, account: OTHER_ACCOUNT, value: 1000000000000 },
+        { id: 23, skillId: 10, account: OTHER_ACCOUNT, value: 1000000000000 }
       ];
 
       assert.equal(Object.keys(goodClient.reputations).length, reputationProps.length);
 
       reputationProps.forEach(reputationProp => {
-        const key = makeReputationKey(metaColony.address, new BN(reputationProp.skill), reputationProp.account);
+        const key = makeReputationKey(metaColony.address, new BN(reputationProp.skillId), reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         assert.equal(goodClient.reputations[key], value);
       });
