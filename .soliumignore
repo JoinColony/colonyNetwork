@@ -5,3 +5,4 @@ test
 contracts/Migrations.sol
 contracts/gnosis/MultiSigWallet.sol
 lib
+packages
