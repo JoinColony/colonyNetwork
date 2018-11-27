@@ -3237,9 +3237,9 @@ functional-red-black-tree@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/functional-red-black-tree/-/functional-red-black-tree-1.0.1.tgz#1b0ab3bd553b2a0d6399d29c0e3ea0b252078327"
 
-ganache-cli@6.1.8:
-  version "6.1.8"
-  resolved "https://registry.yarnpkg.com/ganache-cli/-/ganache-cli-6.1.8.tgz#49a8a331683a9652183f82ef1378d17e1814fcd3"
+"ganache-cli@https://github.com/area/ganache-cli.git#fakefix/eth_call_selfdestruct":
+  version "6.1.6"
+  resolved "https://github.com/area/ganache-cli.git#0c9cf313055bd65e0be158b2c2587ffb973dd1c5"
   dependencies:
     source-map-support "^0.5.3"
 
