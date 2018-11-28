@@ -36,9 +36,6 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     _;
   }
 
-  event UserLabelRegistered(address indexed user, bytes32 label);
-  event ColonyLabelRegistered(address indexed colony, bytes32 label);
-
   bytes4 constant INTERFACE_META_ID = 0x01ffc9a7;
   bytes4 constant ADDR_INTERFACE_ID = 0x3b3b57de;
 

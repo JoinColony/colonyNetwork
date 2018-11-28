@@ -18,21 +18,22 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
-import "../lib/dappsys/auth.sol";
-import "./TokenLockingDataTypes.sol";
 
+contract TokenLockingDataTypes {
 
-contract TokenLockingStorage is TokenLockingDataTypes, DSAuth {
-  address resolver;
+  event ColonyNetworkSet(address colonyNetwork);
+  event TokenLocked(address token, uint256 lockCount);
+  event UserTokenUnlocked(address token, address user, uint256 lockId);
+  event UserTokenDeposited(address token, address user, uint256 amount, uint256 timestamp);
+  event UserTokenWithdrawn(address token, address user, uint256 amount);
+  event ReputationMinerPenalised(address miner, address beneficiary, uint256 tokensLost);
 
-  // Address of ColonyNetwork contract
-  address colonyNetwork;
-
-  // Maps token to user to Lock struct
-  mapping (address => mapping (address => Lock)) userLocks;
-
-  // Maps token to total token lock count. If user token lock count is the same as global, that means that their tokens are unlocked.
-  // If user token lock count is less than global, that means that their tokens are locked.
-  // User's lock count should never be greater than total lock count.
-  mapping (address => uint256) totalLockCount;
+  struct Lock {
+    // Users lock count
+    uint256 lockCount;
+    // Deposited balance
+    uint256 balance;
+    // Timestamp of last deposit
+    uint256 timestamp;
+  }
 }

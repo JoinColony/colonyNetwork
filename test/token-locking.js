@@ -177,7 +177,7 @@ contract("TokenLocking", addresses => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      const payoutId = logs[0].args.id;
+      const payoutId = logs[0].args.rewardPayoutId;
 
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
@@ -201,7 +201,7 @@ contract("TokenLocking", addresses => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      const payoutId = logs[0].args.id;
+      const payoutId = logs[0].args.rewardPayoutId;
       await checkErrorRevert(tokenLocking.unlockTokenForUser(token.address, userAddress, payoutId), "colony-token-locking-sender-not-colony");
     });
 
@@ -232,7 +232,7 @@ contract("TokenLocking", addresses => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-      const payoutId = logs[0].args.id;
+      const payoutId = logs[0].args.rewardPayoutId;
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress });
       await tokenLocking.withdraw(token.address, usersTokens, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);

@@ -22,7 +22,6 @@ import "./ColonyNetworkStorage.sol";
 
 
 contract ColonyNetworkAuction is ColonyNetworkStorage {
-  event AuctionCreated(address auction, address token, uint256 quantity);
 
   function startTokenAuction(address _token) public stoppable {
     require(_token != 0x0, "colony-auction-invalid-token");
@@ -30,7 +29,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     uint lastAuctionTimestamp = recentAuctions[_token];
     require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
 
-    address clny = IColony(metaColony).getToken();
+    address clny = IMetaColony(metaColony).getToken();
     require(clny != 0x0, "colony-auction-invalid-clny-token");
 
     uint availableTokens = ERC20Extended(_token).balanceOf(this);

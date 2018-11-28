@@ -1,8 +1,26 @@
+/*
+  This file is part of The Colony Network.
+
+  The Colony Network is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  The Colony Network is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 pragma solidity ^0.4.23;
+pragma experimental "v0.5.0";
 
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
-import "./IColony.sol";
+import "./IMetaColony.sol";
 import "./IReputationMiningCycle.sol";
 import "./TokenLockingStorage.sol";
 import "../lib/dappsys/math.sol";
@@ -29,7 +47,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   }
 
   modifier hashNotSubmitted(address _token) {
-    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     if (_token == clnyToken) {
       bytes32 submittedHash;
       (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender);
@@ -40,6 +58,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
 
   function setColonyNetwork(address _colonyNetwork) public auth {
     colonyNetwork = _colonyNetwork;
+
+    emit ColonyNetworkSet(_colonyNetwork);
   }
 
   function getColonyNetwork() public view returns (address) {
@@ -48,6 +68,9 @@ contract TokenLocking is TokenLockingStorage, DSMath {
 
   function lockToken(address _token) public calledByColony returns (uint256) {
     totalLockCount[_token] += 1;
+
+    emit TokenLocked(_token, totalLockCount[_token]);
+
     return totalLockCount[_token];
   }
 
@@ -60,6 +83,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
     assert(_lockId <= totalLockCount[_token]);
     userLocks[_token][_user].lockCount = _lockId;
+
+    emit UserTokenUnlocked(_token, _user, _lockId);
   }
 
   function incrementLockCounterTo(address _token, uint256 _lockId) public {
@@ -86,8 +111,11 @@ contract TokenLocking is TokenLockingStorage, DSMath {
       currWeight /= 2;
     }
 
+    uint256 newAmount = add(lock.balance, _amount);
     uint256 newTimestamp = add(mul(prevWeight, lock.timestamp), mul(currWeight, now)) / add(prevWeight, currWeight);
-    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(lock.balance, _amount), newTimestamp);
+    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], newAmount, newTimestamp);
+
+    emit UserTokenDeposited(_token, msg.sender, newAmount, newTimestamp);
   }
 
   function withdraw(address _token, uint256 _amount) public
@@ -99,10 +127,12 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     userLocks[_token][msg.sender].balance = sub(userLocks[_token][msg.sender].balance, _amount);
 
     require(ERC20Extended(_token).transfer(msg.sender, _amount), "colony-token-locking-transfer-failed");
+
+    emit UserTokenWithdrawn(_token, msg.sender, _amount);
   }
 
   function punishStakers(address[] _stakers, address _beneficiary, uint256 _amount) public onlyReputationMiningCycle {
-    address clnyToken = IColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
+    address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     uint256 lostStake;
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
     // it in ReputationMiningCycle.invalidateHash;
@@ -111,6 +141,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
       userLocks[clnyToken][_stakers[i]].balance = sub(userLocks[clnyToken][_stakers[i]].balance, lostStake);
       userLocks[clnyToken][_beneficiary].balance = add(userLocks[clnyToken][_beneficiary].balance, lostStake);
       // TODO: Lose rep?
+
+      emit ReputationMinerPenalised(_stakers[i], _beneficiary, lostStake);
     }
   }
 

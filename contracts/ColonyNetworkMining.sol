@@ -77,22 +77,24 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     activeReputationMiningCycle = 0x0;
     startNextCycle();
     rewardStakers(stakers, reward);
+
+    emit ReputationRootHashSet(newHash, newNNodes, stakers, reward);
   }
 
   function initialiseReputationMining() public stoppable {
     require(inactiveReputationMiningCycle == 0x0, "colony-reputation-mining-already-initialised");
-    address clnyToken = IColony(metaColony).getToken();
+    address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
 
     inactiveReputationMiningCycle = new EtherRouter();
     EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
+
+    emit ReputationMiningInitialised(inactiveReputationMiningCycle);
   }
 
-  event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
-
   function startNextCycle() public stoppable {
-    address clnyToken = IColony(metaColony).getToken();
+    address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
     require(activeReputationMiningCycle == 0x0, "colony-reputation-mining-still-active");
     require(inactiveReputationMiningCycle != 0x0, "colony-reputation-mining-not-initialised");
@@ -138,7 +140,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     // it in ReputationMiningCycle.confirmNewHash;
 
     uint256 i;
-    address clnyToken = IColony(metaColony).getToken();
+    address clnyToken = IMetaColony(metaColony).getToken();
 
     // I. Calculate (normalized) miner weights and realReward
     uint256 timeStaked;

@@ -23,23 +23,19 @@ import "./ITokenLocking.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
-  event RewardPayoutCycleStarted(uint256 indexed id);
-  event RewardPayoutCycleEnded(uint256 indexed id);
-  event TaskWorkerPayoutChanged(uint256 indexed id, address token, uint256 amount);
-  event TaskPayoutClaimed(uint256 indexed id, uint256 role, address token, uint256 amount);
-
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, MANAGER, _token, _amount);
+    emit TaskPayoutSet(_id, MANAGER, _token, _amount);
   }
 
   function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, EVALUATOR, _token, _amount);
+    emit TaskPayoutSet(_id, EVALUATOR, _token, _amount);
   }
 
   function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, WORKER, _token, _amount);
-
-    emit TaskWorkerPayoutChanged(_id, _token, _amount);
+    emit TaskPayoutSet(_id, WORKER, _token, _amount);
   }
 
   function setAllTaskPayouts(
@@ -154,6 +150,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     pots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
     updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
     updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
+
+    emit ColonyFundsMovedBetweenFundingPots(_fromPot, _toPot, _amount, _token);
   }
 
   function claimColonyFunds(address _token) public stoppable {
@@ -174,6 +172,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     nonRewardPotsTotal[_token] = add(nonRewardPotsTotal[_token], remainder);
     pots[1].balance[_token] = add(pots[1].balance[_token], remainder);
     pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
+
+    emit ColonyFundsClaimed(_token, feeToPay, remainder);
   }
 
   function getNonRewardPotsTotal(address _token) public view returns (uint256) {
@@ -245,6 +245,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     ERC20Extended(tokenAddress).transfer(msg.sender, remainder);
     ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee);
+
+    emit RewardPayoutClaimed(_payoutId, msg.sender, fee, remainder);
   }
 
   function finalizeRewardPayout(uint256 _payoutId) public stoppable {
@@ -276,6 +278,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   {
     require(_rewardInverse > 0, "colony-reward-inverse-cannot-be-zero");
     rewardInverse = _rewardInverse;
+
+    emit ColonyRewardInverseSet(_rewardInverse);
   }
 
   function getRewardInverse() public view returns (uint256) {

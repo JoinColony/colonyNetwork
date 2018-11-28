@@ -19,35 +19,12 @@ pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
 import "./IRecovery.sol";
+import "./ColonyNetworkDataTypes.sol";
 
 
 /// @title Colony Network interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
-contract IColonyNetwork is IRecovery {
-
-  /// @notice Event logged when a new colony is added
-  /// @dev Emitted from `IColonyNetwork.createColony` function
-  /// @param colonyId The colony id in the network
-  /// @param colonyAddress The colony address in the network
-  event ColonyAdded(uint256 indexed colonyId, address indexed colonyAddress);
-
-  /// @notice Event logged when a new skill is added
-  /// @dev Emitted from `IColonyNetwork.addSkill` function
-  /// @param skillId The skill id
-  /// @param parentSkillId The id of the parent skill under which this new skill is added
-  event SkillAdded(uint256 skillId, uint256 parentSkillId);
-
-  /// @notice Event logged when a new auction is created and started
-  /// @dev Emitted from `IColonyNetwork.startTokenAuction` function
-  /// @param auction Address of the created auction contract
-  /// @param token Address of the token for auction
-  /// @param quantity Quantity of `token` to auction
-  event AuctionCreated(address auction, address token, uint256 quantity);
-
-  /// @notice Event logged when a reputation mining cycle completes
-  /// @param hash The root hash of the newly accepted reputation state
-  /// @param nNodes The number of nodes in the reputation state
-  event ReputationMiningCycleComplete(bytes32 hash, uint256 nNodes);
+contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Query if a contract implements an interface
   /// @param interfaceID The interface identifier, as specified in ERC-165
