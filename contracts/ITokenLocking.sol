@@ -18,8 +18,10 @@
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
 
+import "./TokenLockingDataTypes.sol";
 
-contract ITokenLocking {
+
+contract ITokenLocking is TokenLockingDataTypes {
 
   /// @notice Set the ColonyNetwork contract address
   /// @dev ColonyNetwork is used for checking if sender is a colony created on colony network

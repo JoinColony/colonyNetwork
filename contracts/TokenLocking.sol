@@ -58,6 +58,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
 
   function setColonyNetwork(address _colonyNetwork) public auth {
     colonyNetwork = _colonyNetwork;
+
+    emit ColonyNetworkSet(_colonyNetwork);
   }
 
   function getColonyNetwork() public view returns (address) {
@@ -66,6 +68,9 @@ contract TokenLocking is TokenLockingStorage, DSMath {
 
   function lockToken(address _token) public calledByColony returns (uint256) {
     totalLockCount[_token] += 1;
+
+    emit TokenLocked(_token, totalLockCount[_token]);
+
     return totalLockCount[_token];
   }
 
@@ -78,6 +83,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
     assert(_lockId <= totalLockCount[_token]);
     userLocks[_token][_user].lockCount = _lockId;
+
+    emit UserTokenUnlocked(_token, _user, _lockId);
   }
 
   function incrementLockCounterTo(address _token, uint256 _lockId) public {
@@ -104,8 +111,11 @@ contract TokenLocking is TokenLockingStorage, DSMath {
       currWeight /= 2;
     }
 
+    uint256 newAmount = add(lock.balance, _amount);
     uint256 newTimestamp = add(mul(prevWeight, lock.timestamp), mul(currWeight, now)) / add(prevWeight, currWeight);
-    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], add(lock.balance, _amount), newTimestamp);
+    userLocks[_token][msg.sender] = Lock(totalLockCount[_token], newAmount, newTimestamp);
+
+    emit UserTokenDeposited(_token, msg.sender, newAmount, newTimestamp);
   }
 
   function withdraw(address _token, uint256 _amount) public
@@ -117,6 +127,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     userLocks[_token][msg.sender].balance = sub(userLocks[_token][msg.sender].balance, _amount);
 
     require(ERC20Extended(_token).transfer(msg.sender, _amount), "colony-token-locking-transfer-failed");
+
+    emit UserTokenWithdrawn(_token, msg.sender, _amount);
   }
 
   function punishStakers(address[] _stakers, address _beneficiary, uint256 _amount) public onlyReputationMiningCycle {
@@ -129,6 +141,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
       userLocks[clnyToken][_stakers[i]].balance = sub(userLocks[clnyToken][_stakers[i]].balance, lostStake);
       userLocks[clnyToken][_beneficiary].balance = add(userLocks[clnyToken][_beneficiary].balance, lostStake);
       // TODO: Lose rep?
+
+      emit ReputationMinerPenalised(_stakers[i], _beneficiary, lostStake);
     }
   }
 
