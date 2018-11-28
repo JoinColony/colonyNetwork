@@ -321,7 +321,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       branchMask,
       siblings
     );
-    require(impliedRoot==targetHashDuringSearch, "colony-reputation-mining-invalid-binary-search-response");
+    require(impliedRoot == targetHashDuringSearch, "colony-reputation-mining-invalid-binary-search-response");
     // If require hasn't thrown, proof is correct.
     // Process the consequences
     processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode, lastSiblings);
@@ -566,7 +566,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx, uint256 targetNode) internal {
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
-    uint256 searchWidth = disputeRounds[round][idx].upperBound - disputeRounds[round][idx].lowerBound + 1;
+    uint256 searchWidth = (disputeRounds[round][idx].upperBound - disputeRounds[round][idx].lowerBound) + 1;
     uint256 searchWidthNextPowerOfTwo = nextPowerOfTwoInclusive(searchWidth);
     if (
       disputeRounds[round][opponentIdx].hash1 == disputeRounds[round][idx].hash1

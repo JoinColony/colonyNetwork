@@ -972,7 +972,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("in the event of a disagreement just over JRH, because an extra leaf was added to the JT, dispute should be resolved correctly", async () => {
+    it("in the event of a disagreement over JRH with an extra leaf causing proof 2 to be too long, dispute should resolve correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -1018,7 +1018,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("in the event of a disagreement just over JRH, because an extra leaf was added to the JT, dispute should be resolved correctly", async () => {
+    it("in the event of a disagreement over JRH with an extra leaf causing proof 1 to be too long, dispute should resolve correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 

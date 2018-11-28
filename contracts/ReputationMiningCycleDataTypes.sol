@@ -53,8 +53,13 @@ contract ReputationMiningCycleDataTypes {
                                           // new leaf, the submitters also submit proof of a reputation in a state that the two agree on. The
                                           // UID that reputation has is stored here, and whichever submission proves the higher existing UID is
                                           // deemed correct, assuming it also matches the UID for the new reputation being inserted.
-    bytes32 targetHashDuringSearch;
-    bytes32 hash1;
-    bytes32 hash2;  
+    bytes32 targetHashDuringSearch;       // The hash we are requesting proofs for as the next stage of the binary search, if it is running
+    bytes32 hash1;                        // The hash that is the immediate child on the left hand side of the last hash that was proved during
+                                          // the binary search
+    bytes32 hash2;                        // The hash that is the immediate child on the right hand side of the last hash that was proved during
+                                          // the binary search
+                                          // These two hashes are compared, and depending on whether the hashes on the LHS are the same or not, 
+                                          // determines which part of the tree the search continues down looking for the first discrepancy in the 
+                                          // Justification tree.
   }
 }

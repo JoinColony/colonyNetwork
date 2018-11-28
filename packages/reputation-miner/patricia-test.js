@@ -154,8 +154,8 @@ contract("Javascript Patricia Tree", accounts => {
       // This is the difference between what an ethers contract returns (above) and what a
       // truffle contract returns (below)
       const res = await realPatriciaTree.getProof(dog);
-      const realMask = res["0"];
-      const realSiblings = res["1"];
+      const realMask = res[0];
+      const realSiblings = res[1];
 
       const realRoot = await realPatriciaTree.getImpliedRoot(dog, fido, realMask, realSiblings);
       const jsRoot = await jsClient.reputationTree.getImpliedRoot(dog, fido, jsMask, jsSiblings);
