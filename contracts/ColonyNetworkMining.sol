@@ -77,6 +77,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     activeReputationMiningCycle = 0x0;
     startNextCycle();
     rewardStakers(stakers, reward);
+
+    emit ReputationRootHashSet(newHash, newNNodes, stakers, reward);
   }
 
   function initialiseReputationMining() public stoppable {
@@ -87,6 +89,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     inactiveReputationMiningCycle = new EtherRouter();
     EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
+
+    emit ReputationMiningInitialised(inactiveReputationMiningCycle);
   }
 
   function startNextCycle() public stoppable {

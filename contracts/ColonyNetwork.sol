@@ -90,6 +90,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     // Token locking address can't be changed
     require(tokenLocking == 0x0, "colony-invalid-token-locking-address");
     tokenLocking = _tokenLocking;
+
+    emit TokenLockingAddressSet(_tokenLocking);
   }
 
   function getTokenLocking() public view returns (address) {
@@ -101,6 +103,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
   auth
   {
     miningCycleResolver = _miningResolver;
+
+    emit MiningCycleResolverSet(_miningResolver);
   }
 
   function getMiningResolver() public view returns (address) {
@@ -123,6 +127,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     // Add the special mining skill
     this.addSkill(skillCount, false);
+
+    emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
 
   function createColony(address _tokenAddress) public
@@ -156,7 +162,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _isColony[colony] = true;
 
     colony.initialiseColony(this);
-    emit ColonyAdded(colonyCount, etherRouter);
+    emit ColonyAdded(colonyCount, etherRouter, _tokenAddress);
 
     return etherRouter;
   }
@@ -171,6 +177,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     if (_version > currentColonyVersion) {
       currentColonyVersion = _version;
     }
+
+    emit ColonyVersionAdded(_version, _resolver);
   }
 
   function initialise(address _resolver) public 
@@ -180,6 +188,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
     colonyVersionResolver[1] = _resolver;
     currentColonyVersion = 1;
+
+    emit ColonyNetworkInitialised(_resolver);
   }
 
   function getColony(uint256 _id) public view returns (address) {
@@ -277,6 +287,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
   {
     require(_feeInverse > 0, "colony-network-fee-inverse-cannot-be-zero");
     feeInverse = _feeInverse;
+
+    emit NetworkFeeInverseSet(_feeInverse);
   }
 
   function ascendSkillTree(uint _skillId, uint _parentSkillNumber) internal view returns (uint256) {
