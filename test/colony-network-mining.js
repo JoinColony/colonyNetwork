@@ -31,6 +31,7 @@ import MaliciousReputationMinerWrongNewestReputation from "../packages/reputatio
 import MaliciousReputationMinerClaimNew from "../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
 import MaliciousReputationMinerUnsure from "../packages/reputation-miner/test/MaliciousReputationMinerUnsure";
 import MaliciousReputationMinerWrongJRH from "../packages/reputation-miner/test/MaliciousReputationMinerWrongJRH";
+import MaliciousReputationMinerWrongNNodes from "../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes";
 
 import ReputationMinerClient from "../packages/reputation-miner/ReputationMinerClient";
 
@@ -885,6 +886,49 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("in the event of a disagreement just over nNodes, dispute should be resolved correctly", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", 10);
+      await repCycle.confirmNewHash(0);
+
+      await giveUserCLNYTokens(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokens(colonyNetwork, accounts[2], DEFAULT_STAKE);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10);
+      await repCycle.confirmNewHash(0);
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for three task completions (manager, worker, evaluator);
+      // That's seven in total.
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      badClient = new MaliciousReputationMinerWrongNNodes(
+        {
+          loader: contractLoader,
+          minerAddress: OTHER_ACCOUNT,
+          realProviderPort: REAL_PROVIDER_PORT,
+          useJsTree
+        },
+        8
+      );
+
+      await badClient.initialise(colonyNetwork.address);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+
+      // Cleanup
+      await repCycle.confirmNewHash(1);
+    });
+
     it("in the event of a disagreement just over JRH, because a leaf in the JT is wrong, dispute should be resolved correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
@@ -1640,6 +1684,67 @@ contract("ColonyNetworkMining", accounts => {
   });
 
   describe("Misbehaviour during dispute resolution", () => {
+    it("should prevent a user from jumping ahead during dispute resoultion", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      let addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10);
+      await repCycle.confirmNewHash(0);
+
+      addr = await colonyNetwork.getReputationMiningCycle(true);
+      repCycle = await IReputationMiningCycle.at(addr);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      // Check we can't start binary search before we've confirmed JRH
+      await checkErrorRevertEthers(goodClient.respondToBinarySearchForChallenge(), "colony-reputation-mining-challenge-not-active");
+
+      // Check we can't confirm binary search before we've confirmed JRH
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-jrh-hash-not-verified");
+
+      // Check we can't respond to challenge before we've confirmed JRH
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
+
+      await goodClient.confirmJustificationRootHash();
+      await badClient.confirmJustificationRootHash();
+
+      // Check we can't confirm binary search before we've started it
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-incomplete");
+
+      // Check we can't respond to challenge before we've started binary search
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-binary-search-incomplete");
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      // Check we can't confirm binary search before we've finished it
+      // Check we can't respond to challenge before we've finished it
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+
+      // Check we can't respond to challenge before we've confirmed the binary search result
+      await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
+
+      // Cleanup
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should prevent a user from confirming a JRH they can't prove is correct", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);

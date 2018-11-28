@@ -335,6 +335,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] siblings
   ) public
   {
+    require(disputeRounds[round][idx].jrhNnodes != 0, "colony-reputation-jrh-hash-not-verified");
     require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
     require(
       2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNnodes,

@@ -251,10 +251,11 @@ class ReputationMiner {
    * does not exist in the current state, returns valid 0-based values for each element (e.g. `0x0` for the branchMask);
    * @return {Promise}    The returned promise will resolve to `[key, value, branchMask, siblings]`
    */
-  async getReputationProofObject(key) {
+  async getReputationProofObject(_key) {
     let branchMask;
     let siblings;
     let value;
+    let key = _key;
     if (this.reputations[key]) {
       [branchMask, siblings] = await this.getProof(key); // eslint-disable-line no-await-in-loop
       value = this.reputations[key];
@@ -263,6 +264,7 @@ class ReputationMiner {
       branchMask = 0x0;
       siblings = [];
       value = this.getValueAsBytes(0, 0);
+      key = ReputationMiner.getHexString(0);
     }
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, nNodes: this.nReputations.toString() };
   }
