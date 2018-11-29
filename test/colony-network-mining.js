@@ -1623,7 +1623,18 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(confirmedHash, righthash);
     });
 
-    it("if a log entry is claimed to make a new update, but shouldn't, that disagreement should be handled correctly", async () => {
+    it.skip("if a too high previous reputation larger than nnodes is provided, that disagreement should be handled correctly", async () => {
+      // I think this test is impossible to write, now.
+      // This test requires (essentially) that intermediateReputationNNodes - previousNewReputationUID is > 1, and get to saveProvedReputation
+      // without tripping another require.
+      // intermediateReputationNNodes is the same as DisagreeStateNNodes (so we could get rid of one, but that's for another PR...), so we need
+      // disagreeStateNNodes - previousNewReputationUID > 1. We now enforce that DisagreeStateNNodes - AgreeStateNNodes is either 1 or 0, based on
+      // whether the submitter claims a new node was added or not. Making the most optimistic substitution, we require that
+      // 1 + AgreeStateNNodes - previousNewREputationUID > 1, or AgreeStateNNodes > previousNewReputationUID
+      // Unfortunately, agreeStateNNodes is either equal to or one less than previousNewReputationUID, depending on whether a new node
+      // is added or not.
+      // So skipping this test, and leaving in the require for now in case I am wrong. This seems like a _very_ good candidate for an experimentation
+      // with formal proofs, though....
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       await advanceMiningCycleNoContest(colonyNetwork, this);
