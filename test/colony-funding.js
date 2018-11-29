@@ -120,6 +120,13 @@ contract("Colony Funding", accounts => {
       assert.equal(pot2Balance.toNumber(), 51);
     });
 
+    it("should not let tokens be moved between the same pot", async () => {
+      await fundColonyWithTokens(colony, otherToken, 1);
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 1, 1, otherToken.address), "colony-funding-cannot-move-funds-between-the-same-pot");
+      const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
+      assert.equal(colonyPotBalance.toNumber(), 1, "should have a pot balance of 1");
+    });
+
     it("should not let tokens be moved from the pot for payouts to token holders", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
