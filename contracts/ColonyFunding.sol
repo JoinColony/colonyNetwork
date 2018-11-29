@@ -122,6 +122,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   stoppable
   auth
   {
+    // Prevent moving funds from between the same pot causing the pot balance to overflow
+    require(_fromPot != _toPot, "colony-funding-cannot-move-funds-between-the-same-pot");
+
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
 
