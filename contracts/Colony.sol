@@ -50,6 +50,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyAdminRoleRemoved(_user);
   }
 
+  function hasUserRole(address _user, uint8 _role) public view returns (bool) {
+    return ColonyAuthority(authority).hasUserRole(_user, _role);
+  }
+
   function setToken(address _token) public
   stoppable
   auth

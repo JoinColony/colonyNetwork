@@ -149,12 +149,12 @@ contract("Colony", accounts => {
       const currentFounder = accounts[0];
       const newFounder = accounts[2];
 
-      let hasRole = await authority.hasUserRole(currentFounder, founderRole);
+      let hasRole = await colony.hasUserRole(currentFounder, founderRole);
       assert.isTrue(hasRole, `${currentFounder} does not have founder role`);
 
       await colony.setFounderRole(newFounder);
 
-      hasRole = await authority.hasUserRole(newFounder, founderRole);
+      hasRole = await colony.hasUserRole(newFounder, founderRole);
       assert.isTrue(hasRole, `Founder role not transfered to ${newFounder}`);
     });
 
@@ -174,7 +174,7 @@ contract("Colony", accounts => {
         from: user1
       });
 
-      const hasRole = await authority.hasUserRole(user5, adminRole);
+      const hasRole = await colony.hasUserRole(user5, adminRole);
       assert.isTrue(hasRole, `Admin role not assigned to ${user5}`);
     });
 
@@ -185,12 +185,12 @@ contract("Colony", accounts => {
 
       await colony.setAdminRole(user1);
 
-      let hasRole = await authority.hasUserRole(user1, adminRole);
+      let hasRole = await colony.hasUserRole(user1, adminRole);
       assert.isTrue(hasRole, `Admin role not assigned to ${user1}`);
 
       await colony.removeAdminRole(user1);
 
-      hasRole = await authority.hasUserRole(user1, adminRole);
+      hasRole = await colony.hasUserRole(user1, adminRole);
       assert.isTrue(!hasRole, `Admin role not removed from ${user1}`);
     });
 
@@ -203,14 +203,14 @@ contract("Colony", accounts => {
       await colony.setAdminRole(user1);
       await colony.setAdminRole(user2);
 
-      let hasRole = await authority.hasUserRole(user1, adminRole);
+      let hasRole = await colony.hasUserRole(user1, adminRole);
       assert.isTrue(hasRole, `Admin role not assigned to ${user1}`);
-      hasRole = await authority.hasUserRole(user2, adminRole);
+      hasRole = await colony.hasUserRole(user2, adminRole);
       assert.isTrue(hasRole, `Admin role not assigned to ${user2}`);
 
       await checkErrorRevert(colony.removeAdminRole(user1, { from: user2 }), "ds-auth-unauthorized");
 
-      hasRole = await authority.hasUserRole(user1, adminRole);
+      hasRole = await colony.hasUserRole(user1, adminRole);
       assert.isTrue(hasRole, `${user1} is removed from admin role from another admin`);
     });
 
