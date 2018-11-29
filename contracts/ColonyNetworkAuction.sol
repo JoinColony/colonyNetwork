@@ -139,10 +139,7 @@ contract DutchAuction is DSMath {
   returns (uint256)
   {
     // Total amount to end the auction at the current price
-    uint totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
-    // For low quantity auctions (q < 10^18) it is possible: q * p < 10^18, therefore limit this scenario so at least 1 token is required to end the auction
-    // If the minimum price is reached totalToEndAuctionAtCurrentPrice is 1 in all cases of quantity value auctioned
-    totalToEndAuctionAtCurrentPrice = (totalToEndAuctionAtCurrentPrice == 0) ? 1 : totalToEndAuctionAtCurrentPrice;
+    uint totalToEndAuctionAtCurrentPrice = add(mul(quantity, price()) / TOKEN_MULTIPLIER, 1);
     
     uint _remainingToEndAuction = 0;
     if (totalToEndAuctionAtCurrentPrice > receivedTotal) {
@@ -173,10 +170,9 @@ contract DutchAuction is DSMath {
   function bid(uint256 _amount) public
   auctionStartedAndOpen
   {
+    // Adjust the amount for final bid in case that takes us over the offered quantity at current price
     require(_amount > 0, "colony-auction-invalid-bid");
     uint _remainingToEndAuction = remainingToEndAuction();
-
-    // Adjust the amount for final bid in case that takes us over the offered quantity at current price
     // Also conditionally set the auction endTime
     uint amount;
     if (_remainingToEndAuction > _amount) {
@@ -223,13 +219,13 @@ contract DutchAuction is DSMath {
     require(amount > 0, "colony-auction-zero-bid-total");
 
     uint tokens;
-
     if (finalPrice != minPrice || quantity >= TOKEN_MULTIPLIER) {
       tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+      tokens = tokens == 0 ? 1 : tokens;
+      tokens = tokens > quantity ? quantity : tokens;
     } else {
       tokens = mul(amount, quantity);
     }
-
     claimCount += 1;
 
     // Set receiver bid to 0 before transferring the tokens
