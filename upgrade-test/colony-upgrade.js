@@ -13,7 +13,6 @@ const ColonyTask = artifacts.require("ColonyTask");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
-const ColonyAuthority = artifacts.require("ColonyAuthority");
 const Token = artifacts.require("Token");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
@@ -24,7 +23,6 @@ contract("Colony contract upgrade", accounts => {
   let colony;
   let colonyTask;
   let colonyFunding;
-  let authority;
   let token;
   let colonyNetwork;
   let updatedColony;
@@ -49,8 +47,6 @@ contract("Colony contract upgrade", accounts => {
     colonyTask = await ColonyTask.new();
     colonyFunding = await ColonyFunding.new();
     contractRecovery = await ContractRecovery.new();
-    const authorityAddress = await colony.authority();
-    authority = await ColonyAuthority.at(authorityAddress);
     const tokenAddress = await colony.getToken();
     token = await Token.at(tokenAddress);
 
@@ -104,7 +100,7 @@ contract("Colony contract upgrade", accounts => {
     });
 
     it("should return correct permissions", async () => {
-      const founder = await authority.hasUserRole(ACCOUNT_ONE, 0);
+      const founder = await colony.hasUserRole(ACCOUNT_ONE, 0);
       assert.isTrue(founder);
     });
 

@@ -69,6 +69,12 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _user User we want to remove admin role from
   function removeAdminRole(address _user) public;
 
+  /// @notice Check whether a given user has a given role for the colony.
+  /// Calls the function of the same name on the colony's authority contract.
+  /// @param _user The user whose role we want to check
+  /// @param _role The role we want to check for
+  function hasUserRole(address _user, uint8 _role) public view returns (bool hasRole);
+
   /// @notice Get the colony token
   /// @return tokenAddress Address of the token contract
   function getToken() public view returns (address tokenAddress);
