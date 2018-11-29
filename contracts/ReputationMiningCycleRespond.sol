@@ -260,9 +260,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     if (reputationValue == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
+      // Check they have incremented nNodes by one 
+      require(u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1, "colony-reputation-mining-nnodes-changed-by-not-1");
       return;
     }
     require(impliedRoot == jrh, "colony-reputation-mining-invalid-before-reputation-proof");
+    // Check that they have not changed nNodes from the agree state 
+    require(u[U_DISAGREE_STATE_NNODES] == u[U_AGREE_STATE_NNODES], "colony-reputation-mining-nnodes-changed");
     // They've actually verified whatever they claimed. We increment their challengeStepCompleted by one to indicate this.
     // In the event that our opponent lied about this reputation not existing yet in the tree, they will both complete
     // a call to respondToChallenge, but we will have a higher challengeStepCompleted value, and so they will be the ones
