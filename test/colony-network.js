@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
 import { ZERO_ADDRESS } from "../helpers/constants";
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+import { setupColonyVersionResolver, setupMetaColonyWithLockedCLNYToken } from "../helpers/upgradable-contracts";
 
 const namehash = require("eth-ens-namehash");
 
@@ -15,7 +15,6 @@ const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Colony = artifacts.require("Colony");
 const IMetaColony = artifacts.require("IMetaColony");
-const Token = artifacts.require("Token");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const ColonyTask = artifacts.require("ColonyTask");
@@ -57,8 +56,9 @@ contract("Colony Network", accounts => {
     await setupColonyVersionResolver(colony, colonyFunding, colonyTask, contractRecovery, resolver);
     await colonyNetwork.initialise(resolver.address);
 
-    const { metaColonyAddress, } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+    const { metaColonyAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
     metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
   });
 
   describe("when initialised", () => {
@@ -209,16 +209,8 @@ contract("Colony Network", accounts => {
   });
 
   describe("when upgrading a colony", () => {
-<<<<<<< HEAD
     it("should be able to upgrade a colony, if a sender has founder role", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
-||||||| merged common ancestors
-    it("should be able to upgrade a colony, if a sender has owner role", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
-=======
-    it("should be able to upgrade a colony, if a sender has owner role", async () => {
       const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
->>>>>>> Rename Token to ERC20ExtendedToken
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colonyEtherRouter = await EtherRouter.at(colonyAddress);
@@ -274,16 +266,8 @@ contract("Colony Network", accounts => {
       expect(version).to.eq.BN(currentColonyVersion);
     });
 
-<<<<<<< HEAD
     it("should NOT be able to upgrade a colony if sender don't have founder role", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
-||||||| merged common ancestors
-    it("should NOT be able to upgrade a colony if sender don't have owner role", async () => {
-      const token = await Token.new(...TOKEN_ARGS);
-=======
-    it("should NOT be able to upgrade a colony if sender don't have owner role", async () => {
       const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
->>>>>>> Rename Token to ERC20ExtendedToken
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       const colonyEtherRouter = await EtherRouter.at(colonyAddress);

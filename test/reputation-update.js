@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 
 import { INT256_MAX, WAD, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
 import { checkErrorRevert } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRatedTask, setupFinalizedTask } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRatedTask, setupFinalizedTask, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
@@ -24,7 +24,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const ContractRecovery = artifacts.require("ContractRecovery");
 const Token = artifacts.require("Token");
 
-contract("Colony Reputation Updates", accounts => {
+contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
@@ -54,11 +54,12 @@ contract("Colony Reputation Updates", accounts => {
     await colonyNetwork.initialise(resolver.address);
 
     const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    metaColony = await IColony.at(metaColonyAddress);
+    metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
     clnyToken = await Token.at(clnyTokenAddress);
 
     const amount = WAD.mul(new BN(1000));
-    await fundColonyWithTokens(metaColony, clnyToken.address, amount);
+    await fundColonyWithTokens(metaColony, clnyToken, amount);
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
     const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
@@ -205,44 +206,26 @@ contract("Colony Reputation Updates", accounts => {
 
     it("should revert on reputation amount overflow", async () => {
       // Fund colony with maximum possible int number of tokens
-<<<<<<< HEAD
-      await fundColonyWithTokens(metaColony, colonyToken, INT256_MAX);
-
+      await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
       // Split the tokens as payouts between the manager, evaluator, and worker
-||||||| merged common ancestors
-      const maxUIntNumber = new BN(2).pow(new BN(255)).sub(new BN(1));
-      await fundColonyWithTokens(metaColony, colonyToken, maxUIntNumber);
-      // Split the tokens as payouts between the manager and worker
-=======
-      const maxUIntNumber = new BN(2).pow(new BN(255)).sub(new BN(1));
-      await fundColonyWithTokens(metaColony, clnyToken.address, maxUIntNumber);
-      // Split the tokens as payouts between the manager and worker
->>>>>>> Consolidate the setup of Meta colony and CLNY token
       const managerPayout = new BN("2");
       const evaluatorPayout = new BN("1");
       const workerPayout = INT256_MAX.sub(managerPayout).sub(evaluatorPayout);
+
       const taskId = await setupRatedTask({
         colonyNetwork,
         colony: metaColony,
-        token: clnyToken.address,
+        token: clnyToken,
         managerPayout,
         evaluatorPayout,
         workerPayout,
-        workerRating: 2
+        workerRating: 2,
+        managerRating: 2
       });
 
       // Check the task pot is correctly funded with the max amount
-<<<<<<< HEAD
-      const taskPotBalance = await metaColony.getPotBalance(2, colonyToken.address);
-      expect(taskPotBalance).to.eq.BN(INT256_MAX);
-||||||| merged common ancestors
-      const taskPotBalance = await metaColony.getPotBalance(2, colonyToken.address);
-      expect(taskPotBalance).to.eq.BN(maxUIntNumber);
-=======
       const taskPotBalance = await metaColony.getPotBalance(2, clnyToken.address);
-      expect(taskPotBalance).to.eq.BN(maxUIntNumber);
->>>>>>> Consolidate the setup of Meta colony and CLNY token
-
+      expect(taskPotBalance).to.eq.BN(INT256_MAX);
       await checkErrorRevert(metaColony.finalizeTask(taskId), "colony-math-unsafe-int-mul");
     });
   });

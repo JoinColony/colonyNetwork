@@ -153,6 +153,7 @@ export async function setupFundedTask({
   } else {
     tokenAddress = token === ZERO_ADDRESS ? ZERO_ADDRESS : token.address;
   }
+
   const taskId = await setupTask({ colonyNetwork, colony, dueDate, domainId, skillId });
   const task = await colony.getTask(taskId);
   const potId = task[5];
@@ -160,8 +161,8 @@ export async function setupFundedTask({
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
-  await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
 
+  await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout);
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 
@@ -343,7 +344,6 @@ export async function fundColonyWithTokens(colony, token, tokenAmount) {
 export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
-
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0

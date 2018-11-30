@@ -12,7 +12,7 @@ const TokenAuthority = artifacts.require("./TokenAuthority");
 
 const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
 
-module.exports = deployer => {
+module.exports = (deployer, network, accounts) => {
   // Create the meta colony
   let colonyNetwork;
   let tokenLockingAddress;
@@ -34,15 +34,15 @@ module.exports = deployer => {
     // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
     // but is useful when playing around with the network to get reputation mining going.
     .then(() => colonyNetwork.getMetaColony())
-    .then(_metaColonyAddress => {
+    .then(async _metaColonyAddress => {
       metaColonyAddress = _metaColonyAddress;
+      metaColony = await IMetaColony.at(metaColonyAddress);
       return colonyNetwork.getTokenLocking();
     })
     .then(address => {
       tokenLockingAddress = address;
       return TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, tokenLockingAddress);
     })
-    .then(() => ITokenLocking.at(tokenLocking))
     .then(tokenAuthority => clnyToken.setAuthority(tokenAuthority.address))
     .then(() => clnyToken.mint(DEFAULT_STAKE))
     .then(() => clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE))
@@ -53,10 +53,6 @@ module.exports = deployer => {
     .then(() => colonyNetwork.getSkillCount())
     .then(async skillCount => {
       assert.equal(skillCount.toNumber(), 3);
-      return colonyNetwork.getMetaColony();
-    })
-    .then(async metaColonyAddress => {
-      metaColony = await IMetaColony.at(metaColonyAddress);
       // Doing an async / await here because we need this promise to resolve (i.e. tx to mine) and we also want
       // to log the address. It's either do this, or do `return colonyNetwork.getMetaColony()` twice. I'm easy on
       // which we use.

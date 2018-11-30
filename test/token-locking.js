@@ -19,7 +19,7 @@ const contractLoader = new TruffleLoader({
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("TokenLocking", addresses => {
+contract("Token Locking", addresses => {
   const usersTokens = 10;
   const otherUserTokens = 100;
   const userAddress = addresses[1];

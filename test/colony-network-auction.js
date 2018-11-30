@@ -94,6 +94,7 @@ contract("Colony Network Auction", accounts => {
       const supplyBefore = await clnyToken.totalSupply();
       const balanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
       await colonyNetwork.startTokenAuction(clnyToken.address);
+
       const supplyAfter = await clnyToken.totalSupply();
       const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
       assert.equal(balanceAfter.toString(), "0");

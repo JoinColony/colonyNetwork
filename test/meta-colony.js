@@ -1,7 +1,14 @@
 /* globals artifacts */
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupFundedTask, setupFinalizedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
+import {
+  fundColonyWithTokens,
+  setupFundedTask,
+  setupFinalizedTask,
+  executeSignedTaskChange,
+  makeTask,
+  setupMetaColonyWithLockedCLNYToken
+} from "../helpers/test-data-generator";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -46,9 +53,8 @@ contract("Meta Colony", accounts => {
     await colonyNetwork.initialise(resolver.address);
 
     const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    metaColony = await IColony.at(metaColonyAddress);
-    const tokenAuthority = await TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, 0x0);
-    await clnyToken.setAuthority(tokenAuthority.address);
+    metaColony = await IMetaColony.at(metaColonyAddress);
+    await metaColony.setNetworkFeeInverse(100);
     clnyToken = await Token.at(clnyTokenAddress);
 
     // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
@@ -556,7 +562,7 @@ contract("Meta Colony", accounts => {
     it("should not allow anyone else but the meta colony founder to set the fee", async () => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
       const fee = await colonyNetwork.getFeeInverse();
-      assert.equal(fee, 0);
+      assert.equal(fee, 100);
     });
 
     it("should not allow another account, than the meta colony, to set the fee", async () => {

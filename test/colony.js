@@ -16,7 +16,7 @@ import {
   WAD
 } from "../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
-import { makeTask } from "../helpers/test-data-generator";
+import { makeTask, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
 
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 
@@ -103,7 +103,7 @@ contract("Colony", accounts => {
 
     it("should emit correct Transfer and Mint events when minting tokens", async () => {
       const tokenArgs = getTokenArgs();
-      const otherToken = await Token.new(...tokenArgs);
+      const otherToken = await ERC20ExtendedToken.new(...tokenArgs);
       await expectAllEvents(otherToken.mint(100), ["Mint", "Transfer"]);
     });
 
