@@ -47,20 +47,23 @@ Upon task creation, the account creating the task is automatically assigned the 
 A due date for the task and a skill tag may also be added at task creation if desired.
 
 ### Modify
-![modify_task](img/taskModification_1.png)
-Once created, the task may be modified to include additional data. This could be setting the task's due date, payouts for completion, or skill tag(s).
+![modify_task](img/taskModification_r2.png)
+Once created, the task may be modified to include additional data. This could be setting the task's due date, payouts for completion, or domain.
 
-Important changes to a task must be approved by multiple people. Task changes requiring two signatures are:
+Important changes to a task must be approved by multiple people after roles have been assigned. Task changes requiring two signatures are:
 * Changing the task Brief (Manager and Worker)
 * Changing or setting the task Due Date (Manager and Worker)
 * Changing or setting the Worker's payout (Manager and Worker)
+* Changing or setting the skill tag (Manager and Worker)
 * Changing or setting the Evaluator's payout (Manager and Evaluator)
 
 At any time before a task is finalized, the task can be canceled, which allows any funding to be returned to the colony and halts any further modification of the task.
 
 ### Rate
-![rate_task](img/taskRatings_1.png)
-After the work has been submitted (or the due date has passed), the work rating period begins.
+![rate_task](img/taskRatings_r2.png)
+When work is submitted, the work rating period begins.
+
+_* If no work is submitted by the task's due date, `completeTask()` must be called by the Manager to open the work rating period_
 
 One large determiner of reputation within a colony is the rating that one has earned for completing tasks within the colony. In addition to serving as a quick reference for one's ability and commitment to the shared values of the organization, reputation (combined with token holdings) grant one a portion of the colony's revenue, paid out in rewards.
 
