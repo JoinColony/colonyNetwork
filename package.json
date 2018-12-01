@@ -48,7 +48,7 @@
   },
   "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
   "devDependencies": {
-    "@colony/colony-js-contract-loader-fs": "1.6.2",
+    "@colony/colony-js-contract-loader-fs": "1.8.0",
     "@colony/eslint-config-colony": "7.0.0",
     "async-request": "^1.2.0",
     "babel-cli": "^6.26.0",
