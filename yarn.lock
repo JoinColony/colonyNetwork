@@ -80,16 +80,23 @@
     lodash "^4.17.10"
     to-fast-properties "^2.0.0"
 
-"@colony/colony-js-contract-loader-fs@1.6.2":
-  version "1.6.2"
-  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader-fs/-/colony-js-contract-loader-fs-1.6.2.tgz#b3a60396baa4ce89d28ba2ec24e4ba52314885f5"
+"@colony/colony-js-contract-loader-fs@1.8.0":
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader-fs/-/colony-js-contract-loader-fs-1.8.0.tgz#af98ba5ceca461a57b508cdfc167e3a65858664f"
   dependencies:
-    "@colony/colony-js-contract-loader" "^1.6.2"
+    "@colony/colony-js-contract-loader" "^1.8.0"
     jsonfile "^4.0.0"
 
-"@colony/colony-js-contract-loader@1.6.2", "@colony/colony-js-contract-loader@^1.6.2":
+"@colony/colony-js-contract-loader@1.6.2":
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader/-/colony-js-contract-loader-1.6.2.tgz#56de7572169c68d95ef561955ca7be55c1626137"
+  dependencies:
+    assert "^1.4.1"
+    babel-runtime "^6.26.0"
+
+"@colony/colony-js-contract-loader@^1.8.0":
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader/-/colony-js-contract-loader-1.8.0.tgz#c2a748ac1f3c4da3f169d36295c01ba9fdfc42a2"
   dependencies:
     assert "^1.4.1"
     babel-runtime "^6.26.0"
