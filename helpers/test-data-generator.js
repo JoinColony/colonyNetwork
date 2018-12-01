@@ -1,6 +1,7 @@
 /* globals artifacts */
 import web3Utils from "web3-utils";
 import { BN } from "bn.js";
+import ethers from "ethers";
 
 import {
   MANAGER_PAYOUT,
@@ -18,12 +19,19 @@ import {
 } from "./constants";
 import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
-const ethers = require("ethers");
+const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
 
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const TokenAuthority = artifacts.require("./TokenAuthority");
+const EtherRouter = artifacts.require("EtherRouter");
+const Resolver = artifacts.require("Resolver");
+const Colony = artifacts.require("Colony");
+const ColonyFunding = artifacts.require("ColonyFunding");
+const ColonyTask = artifacts.require("ColonyTask");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
+const ContractRecovery = artifacts.require("ContractRecovery");
 
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 0, dueDate = 0 }) {
   const { logs } = await colony.makeTask(hash, domainId, skillId, dueDate);
@@ -375,4 +383,25 @@ export async function setupMetaColonyWithUNLockedCLNYToken(colonyNetwork) {
   assert.isFalse(locked);
 
   return { metaColonyAddress, clnyTokenAddress };
+}
+
+export async function setupColonyNetwork() {
+  const resolverColonyNetworkDeployed = await Resolver.deployed();
+  const colonyTemplate = await Colony.new();
+  const colonyFunding = await ColonyFunding.new();
+  const colonyTask = await ColonyTask.new();
+  const resolver = await Resolver.new();
+  const contractRecovery = await ContractRecovery.new();
+  const etherRouter = await EtherRouter.new();
+  await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+
+  const colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+  await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
+  await colonyNetwork.initialise(resolver.address);
+  // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
+  const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
+  const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
+  await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+
+  return colonyNetwork;
 }
