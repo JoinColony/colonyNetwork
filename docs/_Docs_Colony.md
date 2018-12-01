@@ -58,7 +58,7 @@ Skills are a similar structure that categorize the _type_ of work done, independ
 ## Pots
 All funding within a colony resides in pots. Pots can be thought of as 'earmarked' funds for a specific purpose, and depending on context, might be called a bounty, a budget, working capital, or rewards.  A colony will have many pots, but at a minimum will have one pot for rewards ( `pots[0]` ) and one for working capital ( `pots[1]` ).
 
-When domains (and tasks within those domains) are created, they each are assigned a newly created pot, which can then be funded with the `moveFundsBetweenPots` function. This action will eventually be mediated by a user's reputation score, but for now is merely permissioned based on the roles defined in `Authority.sol` (meaning only colony owners and admins may create new pots and move funds between pots).
+When domains (and tasks within those domains) are created, they each are assigned a newly created pot, which can then be funded with the `moveFundsBetweenPots` function. This action will eventually be mediated by a user's reputation score, but for now is merely permissioned based on the roles defined in `Authority.sol` (meaning only colony founders and admins may create new pots and move funds between pots).
 
 Every colony has a special pot, `pots[0]`, which accrues funds by taking a small percentage of colony revenue. Members of the colony may claim rewards from this pot based on the number of colony tokens they have.
 
