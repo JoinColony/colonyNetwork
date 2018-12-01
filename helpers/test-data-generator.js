@@ -358,7 +358,7 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
-  const tokenAuthority = await TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, tokenLockingAddress);
+  const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0);
   await clnyToken.setAuthority(tokenAuthority.address);
   // Set the CLNY token owner to a dedicated account representing the Colony Multisig
   const accounts = await web3GetAccounts();

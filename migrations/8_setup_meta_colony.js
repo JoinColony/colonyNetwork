@@ -13,12 +13,9 @@ const TokenAuthority = artifacts.require("./TokenAuthority");
 const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
 
 module.exports = (deployer, network, accounts) => {
-  // Create the meta colony
   let colonyNetwork;
-  let tokenLockingAddress;
-  let clnyToken;
   let metaColony;
-  let metaColonyAddress;
+  let clnyToken;
 
   deployer
     .then(() => EtherRouter.deployed())
@@ -27,38 +24,38 @@ module.exports = (deployer, network, accounts) => {
       colonyNetwork = instance;
       return Token.new("Colony Network Token", "CLNY", 18);
     })
-    .then(tokenInstance => {
+    .then(async tokenInstance => {
       clnyToken = tokenInstance;
-      return colonyNetwork.createMetaColony(clnyToken.address);
-    })
-    // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
-    // but is useful when playing around with the network to get reputation mining going.
-    .then(() => colonyNetwork.getMetaColony())
-    .then(async _metaColonyAddress => {
-      metaColonyAddress = _metaColonyAddress;
+      const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+
+      await colonyNetwork.createMetaColony(clnyToken.address);
+      const metaColonyAddress = await colonyNetwork.getMetaColony();
       metaColony = await IMetaColony.at(metaColonyAddress);
-      return colonyNetwork.getTokenLocking();
+      await metaColony.setNetworkFeeInverse(100);
+
+      // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
+      const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0);
+      await clnyToken.setAuthority(tokenAuthority.address);
+
+      // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
+      // but is useful when playing around with the network to get reputation mining going.
+      // TODO: Perhaps it's a good idea to switch the owner to be the accounts[11] which is used in all other setup instances as the CLNY owner
+      // This is not to accidentally confuse the coinbase account with token owner account
+      // await clnyToken.setOwner(accounts[0]);
+      await clnyToken.mint(DEFAULT_STAKE, { from: accounts[0] });
+      await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: accounts[0] });
+
+      const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+      await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: accounts[0] });
+
+      await colonyNetwork.initialiseReputationMining();
+      await colonyNetwork.startNextCycle();
+
+      return colonyNetwork.getSkillCount();
     })
-    .then(address => {
-      tokenLockingAddress = address;
-      return TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, tokenLockingAddress);
-    })
-    .then(tokenAuthority => clnyToken.setAuthority(tokenAuthority.address))
-    .then(() => clnyToken.mint(DEFAULT_STAKE))
-    .then(() => clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE))
-    .then(() => ITokenLocking.at(tokenLockingAddress))
-    .then(iTokenLocking => iTokenLocking.deposit(clnyToken.address, DEFAULT_STAKE))
-    .then(() => colonyNetwork.initialiseReputationMining())
-    .then(() => colonyNetwork.startNextCycle())
-    .then(() => colonyNetwork.getSkillCount())
     .then(async skillCount => {
       assert.equal(skillCount.toNumber(), 3);
-      // Doing an async / await here because we need this promise to resolve (i.e. tx to mine) and we also want
-      // to log the address. It's either do this, or do `return colonyNetwork.getMetaColony()` twice. I'm easy on
-      // which we use.
-      await clnyToken.setOwner(accounts[11]);
     })
-    .then(() => metaColony.setNetworkFeeInverse(100))
     .then(() => console.log("### Meta Colony created at", metaColony.address))
     .catch(err => {
       console.log("### Error occurred ", err);
