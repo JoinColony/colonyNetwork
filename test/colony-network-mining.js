@@ -214,11 +214,14 @@ contract("ColonyNetworkMining", accounts => {
       accounts.map(async user => {
         const info = await tokenLocking.getUserLock(clny.address, user);
         const stakedBalance = info[1];
+
         if (stakedBalance.gt(new BN(0))) {
           await tokenLocking.withdraw(clny.address, stakedBalance, { from: user });
         }
         const userBalance = await clny.balanceOf(user);
-        return clny.transfer(ZERO_ADDRESS, userBalance, { from: user });
+        if (userBalance.gt(new BN(0))) {
+          await clny.transfer(ZERO_ADDRESS, userBalance, { from: user });
+        }
       })
     );
   });

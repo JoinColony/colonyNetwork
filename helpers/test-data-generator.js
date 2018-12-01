@@ -350,6 +350,7 @@ export async function fundColonyWithTokens(colony, token, tokenAmount) {
 }
 
 export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
+  const accounts = await web3GetAccounts();
   const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -358,10 +359,12 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
-  const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0);
+  const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0, [
+    accounts[1],
+    accounts[2]
+  ]);
   await clnyToken.setAuthority(tokenAuthority.address);
   // Set the CLNY token owner to a dedicated account representing the Colony Multisig
-  const accounts = await web3GetAccounts();
   await clnyToken.setOwner(accounts[11]);
 
   const locked = await clnyToken.locked();

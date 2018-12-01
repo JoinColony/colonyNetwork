@@ -34,7 +34,10 @@ module.exports = (deployer, network, accounts) => {
       await metaColony.setNetworkFeeInverse(100);
 
       // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
-      const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0);
+      const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0, [
+        accounts[1],
+        accounts[2]
+      ]);
       await clnyToken.setAuthority(tokenAuthority.address);
 
       // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
