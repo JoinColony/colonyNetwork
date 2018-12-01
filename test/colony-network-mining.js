@@ -257,7 +257,7 @@ contract("ColonyNetworkMining", accounts => {
     it("should not allow miners to withdraw more CLNY than they staked, even if enough has been staked total", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, 9000);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, 9000);
-      await checkErrorRevert(tokenLocking.withdraw(clny.address, 10000, { from: OTHER_ACCOUNT }), "ds-math-sub-overflow");
+      await checkErrorRevert(tokenLocking.withdraw(clny.address, 10000, { from: OTHER_ACCOUNT }), "ds-math-sub-underflow");
       const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
       const stakedBalance = info[1];
       assert.equal(stakedBalance.toNumber(), 9000);

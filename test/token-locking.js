@@ -131,7 +131,7 @@ contract("Token Locking", addresses => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
 
-      await checkErrorRevert(tokenLocking.withdraw(token.address, otherUserTokens, { from: userAddress }), "ds-math-sub-overflow");
+      await checkErrorRevert(tokenLocking.withdraw(token.address, otherUserTokens, { from: userAddress }), "ds-math-sub-underflow");
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
