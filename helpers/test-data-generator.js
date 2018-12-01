@@ -1,7 +1,7 @@
 /* globals artifacts */
 import web3Utils from "web3-utils";
 import { BN } from "bn.js";
-import ethers from "ethers";
+import { ethers } from "ethers";
 
 import {
   MANAGER_PAYOUT,
@@ -353,6 +353,9 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
+  const metaColony = await IMetaColony.at(metaColonyAddress);
+  await metaColony.setNetworkFeeInverse(100);
+
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
   const tokenAuthority = await TokenAuthority.new(clnyToken.address, 0x0, metaColonyAddress, tokenLockingAddress);
@@ -360,29 +363,28 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   // Set the CLNY token owner to a dedicated account representing the Colony Multisig
   const accounts = await web3GetAccounts();
   await clnyToken.setOwner(accounts[11]);
-  const clnyTokenAddress = clnyToken.address;
 
   const locked = await clnyToken.locked();
   assert.isTrue(locked);
 
-  return { metaColonyAddress, clnyTokenAddress };
+  return { metaColony, clnyToken };
 }
 
 export async function setupMetaColonyWithUNLockedCLNYToken(colonyNetwork) {
-  const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+  const { metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
   // Unlock CLNY
-  const clnyToken = await Token.at(clnyTokenAddress);
   const accounts = await web3GetAccounts();
   await clnyToken.unlock({ from: accounts[11] });
 
-  // Transfer ownership to MetaColony and clear the Authority
+  // Transfer ownership to MetaColony
+  await clnyToken.setOwner(metaColony.address, { from: accounts[11] });
+  // TODO: Shoult we clear the Authority as well?
   // await clnyToken.setAuthority(0x0, { from: accounts[11] });
-  await clnyToken.setOwner(metaColonyAddress, { from: accounts[11] });
 
   const locked = await clnyToken.locked();
   assert.isFalse(locked);
 
-  return { metaColonyAddress, clnyTokenAddress };
+  return { metaColony, clnyToken };
 }
 
 export async function setupColonyNetwork() {

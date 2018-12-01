@@ -5,7 +5,6 @@ import { web3GetStorageAt, checkErrorRevert, getTokenArgs } from "../helpers/tes
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
 
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Colony Recovery", accounts => {
@@ -15,10 +14,7 @@ contract("Colony Recovery", accounts => {
 
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
-
-    const { metaColonyAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
+    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();

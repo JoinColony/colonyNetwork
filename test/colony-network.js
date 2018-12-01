@@ -14,7 +14,6 @@ chai.use(bnChai(web3.utils.BN));
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Colony Network", accounts => {
@@ -33,10 +32,7 @@ contract("Colony Network", accounts => {
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
     version = await colonyNetwork.getCurrentColonyVersion();
-
-    const { metaColonyAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
+    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
   });
 
   describe("when initialised", () => {

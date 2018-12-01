@@ -10,10 +10,8 @@ import { giveUserCLNYTokens, setupColonyNetwork, setupMetaColonyWithUNLockedCLNY
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const IMetaColony = artifacts.require("IMetaColony");
 const DutchAuction = artifacts.require("DutchAuction");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
-const Token = artifacts.require("Token");
 
 contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -36,11 +34,7 @@ contract("Colony Network Auction", accounts => {
 
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
-
-    const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithUNLockedCLNYToken(colonyNetwork);
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
-    clnyToken = await Token.at(clnyTokenAddress);
+    ({ metaColony, clnyToken } = await setupMetaColonyWithUNLockedCLNYToken(colonyNetwork));
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();

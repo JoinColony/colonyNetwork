@@ -12,9 +12,7 @@ import {
 } from "../helpers/test-data-generator";
 
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
-const Token = artifacts.require("Token");
 
 contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
@@ -30,11 +28,7 @@ contract("Meta Colony", accounts => {
 
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
-
-    const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
-    clnyToken = await Token.at(clnyTokenAddress);
+    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();

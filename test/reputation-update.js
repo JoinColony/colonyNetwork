@@ -17,9 +17,7 @@ import {
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const IMetaColony = artifacts.require("IMetaColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const Token = artifacts.require("Token");
 
 contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -34,11 +32,7 @@ contract("Reputation Updates", accounts => {
 
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
-
-    const { metaColonyAddress, clnyTokenAddress } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
-    clnyToken = await Token.at(clnyTokenAddress);
+    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     const amount = WAD.mul(new BN(1000));
     await fundColonyWithTokens(metaColony, clnyToken, amount);
