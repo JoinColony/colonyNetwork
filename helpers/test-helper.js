@@ -411,6 +411,25 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 }
 
+export async function runBinarySearch(client1, client2) {
+  // Loop while doing the binary search, checking we were successful at each point
+  // Binary search will error when it is complete.
+  let noError = true;
+  while (noError) {
+    let transactionObject;
+    transactionObject = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+    let tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
+    if (!tx.status) {
+      noError = false;
+    }
+    transactionObject = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+    tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
+    if (!tx.status) {
+      noError = false;
+    }
+  }
+}
+
 export async function getActiveRepCycle(colonyNetwork) {
   const addr = await colonyNetwork.getReputationMiningCycle(true);
   const repCycle = await IReputationMiningCycle.at(addr);

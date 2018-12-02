@@ -125,7 +125,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   auth
   {
-    return token.mint(_wad);
+    token.mint(_wad);
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {

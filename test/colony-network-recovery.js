@@ -16,7 +16,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest
 } from "../helpers/test-helper";
-import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
+import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/test-data-generator";
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import { setupEtherRouter } from "../helpers/upgradable-contracts";
 import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
@@ -41,7 +41,9 @@ contract("Colony Network Recovery", accounts => {
   let colonyNetwork;
   let miningClient;
   let startingBlockNumber;
-  let clnyAddress;
+  let metaColony;
+  let clny;
+
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
@@ -53,8 +55,9 @@ contract("Colony Network Recovery", accounts => {
     await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    const metaColony = await IColony.at(metaColonyAddress);
-    clnyAddress = await metaColony.getToken();
+    metaColony = await IColony.at(metaColonyAddress);
+    const clnyAddress = await metaColony.getToken();
+    clny = await Token.at(clnyAddress);
 
     miningClient = new ReputationMiner({
       loader: contractLoader,
@@ -118,7 +121,7 @@ contract("Colony Network Recovery", accounts => {
 
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
-      await checkErrorRevert(colonyNetwork.createColony(clnyAddress), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address), "colony-in-recovery-mode");
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
     });
@@ -219,6 +222,10 @@ contract("Colony Network Recovery", accounts => {
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
+
+          await fundColonyWithTokens(metaColony, clny);
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+
           await miningClient.saveCurrentState();
           const startingHash = await miningClient.getRootHash();
 
@@ -366,21 +373,21 @@ contract("Colony Network Recovery", accounts => {
           const colonyNetworkAddress = colonyNetwork.address;
           const tokenLockingAddress = await colonyNetwork.getTokenLocking();
           const metaColonyAddress = await colonyNetwork.getMetaColony();
-          const metaColony = await IColony.at(metaColonyAddress);
-          clnyAddress = await metaColony.getToken();
+          const myMetaColony = await IColony.at(metaColonyAddress);
+          const myClnyAddress = await myMetaColony.getToken();
 
           // slot 4: colonyNetworkAddress
           // slot 5: tokenLockingAddress
           // slot 6: clnyTokenAddress
           newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
           newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newActiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${clnyAddress.slice(2)}`);
+          newActiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
           let timeNow = await currentBlockTime();
           timeNow = new BN(timeNow).toString(16, 64);
           newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
           newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
           newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${clnyAddress.slice(2)}`);
+          newInactiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
 
           // Port over log entries.
           let nLogEntries = await oldActiveCycle.getReputationUpdateLogLength();
