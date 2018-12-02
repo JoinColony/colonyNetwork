@@ -26,7 +26,7 @@ const EVALUATOR_PAYOUT = WAD.muln(50);
 const WORKER_PAYOUT = WAD.muln(200);
 
 const MANAGER_RATING = 2;
-const WORKER_RATING = 3;
+const WORKER_RATING = 2;
 const RATING_MULTIPLIER = { 1: -1, 2: 1, 3: 1.5 };
 
 const RATING_1_SALT = soliditySha3(shortid.generate());

@@ -106,6 +106,7 @@ contract("ColonyNetworkMining", accounts => {
     await goodClient.initialise(colonyNetwork.address);
     await badClient.initialise(colonyNetwork.address);
     await badClient2.initialise(colonyNetwork.address);
+
     // Kick off reputation mining.
     // TODO: Tests for the first reputation cycle (when log empty) should be done in another file
     await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
@@ -2823,7 +2824,7 @@ contract("ColonyNetworkMining", accounts => {
       // These should be:
       // 1. Colony-wide total reputation for metacolony's root skill
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL);
-      value = makeReputationValue(REWARD.add(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT).muln(3)).add(WAD.muln(300)), 1); // eslint-disable-line prettier/prettier
+      value = makeReputationValue(REWARD.add(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT).muln(3)), 1); // eslint-disable-line prettier/prettier
       assert.equal(client.reputations[key], value);
 
       // 2. Colony-wide total reputation for mining skill
@@ -2843,17 +2844,17 @@ contract("ColonyNetworkMining", accounts => {
 
       // 5. Reputation reward for OTHER_ACCOUNT2 for being the worker for the tasks created by giveUserCLNYTokens
       key = makeReputationKey(metaColony.address, META_ROOT_SKILL, OTHER_ACCOUNT2);
-      value = makeReputationValue(WORKER_PAYOUT.muln(3).add(WAD.muln(300)), 5);
+      value = makeReputationValue(WORKER_PAYOUT.muln(3), 5);
       assert.equal(client.reputations[key], value);
 
       // 6. Colony-wide total reputation for global skill task was in
       key = makeReputationKey(metaColony.address, GLOBAL_SKILL);
-      value = makeReputationValue(WORKER_PAYOUT.muln(3).add(WAD.muln(300)), 6);
+      value = makeReputationValue(WORKER_PAYOUT.muln(3), 6);
       assert.equal(client.reputations[key], value);
 
       // 7. Worker reputation for global skill task was in
       key = makeReputationKey(metaColony.address, GLOBAL_SKILL, OTHER_ACCOUNT2);
-      value = makeReputationValue(WORKER_PAYOUT.muln(3).add(WAD.muln(300)), 7);
+      value = makeReputationValue(WORKER_PAYOUT.muln(3), 7);
       assert.equal(client.reputations[key], value);
     });
 

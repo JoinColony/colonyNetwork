@@ -1,11 +1,8 @@
 /* globals artifacts */
-import { toBN } from "web3-utils";
 import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { INT256_MAX, WAD, MANAGER_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
-import { checkErrorRevert } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupRatedTask,
@@ -13,6 +10,9 @@ import {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken
 } from "../helpers/test-data-generator";
+
+import { INT256_MAX, WAD, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
+import { checkErrorRevert } from "../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -49,7 +49,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
       assert.strictEqual(repLogEntryManager.user, MANAGER);
-      expect(new BN(repLogEntryManager.amount)).to.eq.BN(toBN(100 * 1e18));
+      expect(new BN(repLogEntryManager.amount)).to.eq.BN(MANAGER_PAYOUT);
       assert.strictEqual(repLogEntryManager.skillId, "2");
       assert.strictEqual(repLogEntryManager.colony, metaColony.address);
       assert.strictEqual(repLogEntryManager.nUpdates, "2");
@@ -57,7 +57,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       assert.strictEqual(repLogEntryEvaluator.user, EVALUATOR);
-      expect(new BN(repLogEntryEvaluator.amount)).to.eq.BN(toBN(50 * 1e18));
+      expect(new BN(repLogEntryEvaluator.amount)).to.eq.BN(EVALUATOR_PAYOUT);
       assert.strictEqual(repLogEntryEvaluator.skillId, "2");
       assert.strictEqual(repLogEntryEvaluator.colony, metaColony.address);
       assert.strictEqual(repLogEntryEvaluator.nUpdates, "2");
@@ -65,7 +65,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       assert.strictEqual(repLogEntryWorker.user, WORKER);
-      expect(new BN(repLogEntryWorker.amount)).to.eq.BN(toBN(300 * 1e18));
+      expect(new BN(repLogEntryWorker.amount)).to.eq.BN(WORKER_PAYOUT);
       assert.strictEqual(repLogEntryWorker.skillId, "2");
       assert.strictEqual(repLogEntryWorker.colony, metaColony.address);
       assert.strictEqual(repLogEntryWorker.nUpdates, "2");
@@ -163,15 +163,15 @@ contract("Reputation Updates", accounts => {
       await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);
       await metaColony.addGlobalSkill(6);
+
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 5 });
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      const result = toBN(WORKER_PAYOUT).muln(3).divn(2); // eslint-disable-line prettier/prettier
-      assert.strictEqual(repLogEntryWorker.amount, result.toString());
+      assert.strictEqual(repLogEntryWorker.amount, WORKER_PAYOUT.toString());
       assert.strictEqual(repLogEntryWorker.nUpdates, "6");
 
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 6 });
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(7);
-      assert.strictEqual(repLogEntryWorker.amount, result.toString());
+      assert.strictEqual(repLogEntryWorker.amount, WORKER_PAYOUT.toString());
       assert.strictEqual(repLogEntryWorker.nUpdates, "8"); // Negative reputation change means children change as well.
     });
 
@@ -189,9 +189,7 @@ contract("Reputation Updates", accounts => {
         token: clnyToken,
         managerPayout,
         evaluatorPayout,
-        workerPayout,
-        workerRating: 2,
-        managerRating: 2
+        workerPayout
       });
 
       // Check the task pot is correctly funded with the max amount

@@ -1685,9 +1685,7 @@ contract("ColonyTask", accounts => {
         token,
         managerPayout: 99,
         workerPayout: 1,
-        evaluatorPayout: 2,
-        managerRating: 2,
-        workerRating: 2
+        evaluatorPayout: 2
       });
 
       const networkBalance1 = await token.balanceOf(colonyNetwork.address);
