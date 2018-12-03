@@ -15,8 +15,8 @@ const contractLoader = new TruffleLoader({
 });
 
 contract("Javascript Patricia Tree", accounts => {
-  const MAIN_ACCOUNT = accounts[0];
-  const OTHER_ACCOUNT = accounts[1];
+  const MAIN_ACCOUNT = accounts[5];
+  const OTHER_ACCOUNT = accounts[6];
   const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
   let colonyNetwork;

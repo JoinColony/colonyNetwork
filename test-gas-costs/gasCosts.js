@@ -201,9 +201,9 @@ contract("All", accounts => {
     });
 
     it("when working with staking", async () => {
-      const STAKER1 = accounts[0];
-      const STAKER2 = accounts[1];
-      const STAKER3 = accounts[2];
+      const STAKER1 = accounts[5];
+      const STAKER2 = accounts[6];
+      const STAKER3 = accounts[7];
 
       // Setup the stakers balance
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER1, DEFAULT_STAKE);
@@ -329,11 +329,11 @@ contract("All", accounts => {
       await repCycle.submitRootHash("0x00", 0, 10);
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[8], DEFAULT_STAKE);
 
       const miningClient = new ReputationMiner({
         loader: contractLoader,
-        minerAddress: accounts[4],
+        minerAddress: accounts[8],
         realProviderPort: REAL_PROVIDER_PORT,
         useJsTree: true
       });

@@ -32,7 +32,7 @@ module.exports = (deployer, network, accounts) => {
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       metaColony = await IMetaColony.at(metaColonyAddress);
       await metaColony.setNetworkFeeInverse(100);
-      const reputationMinerTestAccounts = accounts.slice(0, 8);
+      const reputationMinerTestAccounts = accounts.slice(3, 11);
 
       // Penultimate parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
       const tokenAuthority = await TokenAuthority.new(
@@ -44,17 +44,17 @@ module.exports = (deployer, network, accounts) => {
         reputationMinerTestAccounts
       );
       await clnyToken.setAuthority(tokenAuthority.address);
+      await clnyToken.setOwner(accounts[11]);
 
-      // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
+      // These commands add the account[5] as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
       // but is useful when playing around with the network to get reputation mining going.
-      // TODO: Perhaps it's a good idea to switch the owner to be the accounts[11] which is used in all other setup instances as the CLNY owner
-      // This is not to accidentally confuse the coinbase account with token owner account
-      // await clnyToken.setOwner(accounts[0]);
-      await clnyToken.mint(DEFAULT_STAKE, { from: accounts[0] });
-      await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: accounts[0] });
-
+      await clnyToken.mint(DEFAULT_STAKE, { from: accounts[11] });
+      await clnyToken.transfer(accounts[5], DEFAULT_STAKE, { from: accounts[11] });
+      await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: accounts[5] });
+      const account5Balance = await clnyToken.balanceOf(accounts[5]);
+      assert.equal(account5Balance.toString(), DEFAULT_STAKE.toString());
       const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-      await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: accounts[0] });
+      await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: accounts[5] });
 
       await colonyNetwork.initialiseReputationMining();
       await colonyNetwork.startNextCycle();
