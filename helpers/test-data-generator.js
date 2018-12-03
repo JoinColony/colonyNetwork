@@ -314,13 +314,13 @@ export async function giveUserCLNYTokens(colonyNetwork, user, _amount) {
   });
   await metaColony.claimPayout(taskId, MANAGER_ROLE, clny.address, { from: manager });
   let mainBalance = await clny.balanceOf(manager);
-  await clny.transfer(ZERO_ADDRESS, mainBalance.sub(amount).sub(mainStartingBalance), { from: manager });
+  await clny.burn(mainBalance.sub(amount).sub(mainStartingBalance), { from: manager });
   await clny.transfer(user, amount, { from: manager });
   mainBalance = await clny.balanceOf(manager);
 
   if (user !== manager) {
     if (mainBalance.sub(mainStartingBalance).gt(new BN(0))) {
-      await clny.transfer(ZERO_ADDRESS, mainBalance.sub(mainStartingBalance), { from: manager });
+      await clny.burn(mainBalance.sub(mainStartingBalance), { from: manager });
     }
   }
   const userBalance = await clny.balanceOf(user);

@@ -109,7 +109,7 @@ contract("ColonyNetworkMining", accounts => {
     const stakedBalance = info[1];
     await tokenLocking.withdraw(clny.address, stakedBalance, { from: MAIN_ACCOUNT });
     const userBalance = await clny.balanceOf(MAIN_ACCOUNT);
-    await clny.transfer(ZERO_ADDRESS, userBalance, { from: MAIN_ACCOUNT });
+    await clny.burn(userBalance, { from: MAIN_ACCOUNT });
   });
 
   async function accommodateChallengeAndInvalidateHash(test, client1, client2) {
@@ -2495,7 +2495,7 @@ contract("ColonyNetworkMining", accounts => {
       });
 
       await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.submitRootHash(rootHash, 2, 10);
+      await repCycle.submitRootHash(rootHash, 2, 10, { from: MAIN_ACCOUNT });
       await repCycle.confirmNewHash(0);
 
       repCycle = await getActiveRepCycle(colonyNetwork);
