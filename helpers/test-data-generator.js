@@ -36,6 +36,7 @@ const ContractRecovery = artifacts.require("ContractRecovery");
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 0, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
+  // Only Colony admins are allowed to make Tasks, make the account an admin
   await colony.setAdminRole(manager);
   const { logs } = await colony.makeTask(hash, domainId, skillId, dueDate, { from: manager });
 
@@ -285,7 +286,7 @@ export async function giveUserCLNYTokens(colonyNetwork, user, _amount) {
   }
 
   const accounts = await web3GetAccounts();
-  const manager = accounts[4];
+  const manager = accounts[5];
 
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
@@ -307,7 +308,8 @@ export async function giveUserCLNYTokens(colonyNetwork, user, _amount) {
   const taskId = await setupFinalizedTask({
     colonyNetwork,
     colony: metaColony,
-    manager: accounts[4],
+    manager: accounts[5],
+    worker: accounts[7],
     managerPayout: amount.muln(2),
     evaluatorPayout: new BN("0"),
     workerPayout: new BN("0")
@@ -375,11 +377,17 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   await metaColony.setNetworkFeeInverse(100);
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+  const reputationMinerTestAccounts = accounts.slice(3, 11);
   // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
-  const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0, [
-    accounts[1],
-    accounts[2]
-  ]);
+  const tokenAuthority = await TokenAuthority.new(
+    clnyToken.address,
+    colonyNetwork.address,
+    metaColonyAddress,
+    tokenLockingAddress,
+    0x0,
+    reputationMinerTestAccounts
+  );
+
   await clnyToken.setAuthority(tokenAuthority.address);
   // Set the CLNY token owner to a dedicated account representing the Colony Multisig
   await clnyToken.setOwner(accounts[11]);
