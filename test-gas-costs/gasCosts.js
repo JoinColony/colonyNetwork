@@ -214,7 +214,7 @@ contract("All", accounts => {
 
       await oneMiningCycleDurationLater();
       let repCycle = await IReputationMiningCycle.at(repCycleAddr);
-      await repCycle.submitRootHash("0x00", 0, 1);
+      await repCycle.submitRootHash("0x00", 0, 1, { from: STAKER1 });
       await repCycle.confirmNewHash(0);
 
       repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
@@ -326,7 +326,7 @@ contract("All", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x00", 0, 10);
+      await repCycle.submitRootHash("0x00", 0, 10, { from: accounts[5] });
       await repCycle.confirmNewHash(0);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[8], DEFAULT_STAKE);
