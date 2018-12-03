@@ -32,12 +32,17 @@ module.exports = (deployer, network, accounts) => {
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       metaColony = await IMetaColony.at(metaColonyAddress);
       await metaColony.setNetworkFeeInverse(100);
+      const reputationMinerTestAccounts = accounts.slice(0, 8);
 
-      // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
-      const tokenAuthority = await TokenAuthority.new(clnyToken.address, colonyNetwork.address, metaColonyAddress, tokenLockingAddress, 0x0, [
-        accounts[1],
-        accounts[2]
-      ]);
+      // Penultimate parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
+      const tokenAuthority = await TokenAuthority.new(
+        clnyToken.address,
+        colonyNetwork.address,
+        metaColonyAddress,
+        tokenLockingAddress,
+        0x0,
+        reputationMinerTestAccounts
+      );
       await clnyToken.setAuthority(tokenAuthority.address);
 
       // These commands add the first address as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
