@@ -294,8 +294,14 @@ export async function giveUserCLNYTokens(colonyNetwork, user, _amount) {
   const mainStartingBalance = await clny.balanceOf(manager);
   const targetStartingBalance = await clny.balanceOf(user);
 
-  await clny.mint(amount.muln(3), { from: accounts[11] });
-  await clny.transfer(metaColony.address, amount.muln(3), { from: accounts[11] });
+  const clnyLocked = await clny.locked();
+  if (clnyLocked) {
+    await clny.mint(amount.muln(3), { from: accounts[11] });
+    await clny.transfer(metaColony.address, amount.muln(3), { from: accounts[11] });
+  } else {
+    await metaColony.mintTokens(amount.muln(3));
+  }
+
   await metaColony.claimColonyFunds(clny.address);
 
   const taskId = await setupFinalizedTask({
@@ -307,7 +313,6 @@ export async function giveUserCLNYTokens(colonyNetwork, user, _amount) {
     workerPayout: new BN("0")
   });
   await metaColony.claimPayout(taskId, MANAGER_ROLE, clny.address, { from: manager });
-
   let mainBalance = await clny.balanceOf(manager);
   await clny.transfer(ZERO_ADDRESS, mainBalance.sub(amount).sub(mainStartingBalance), { from: manager });
   await clny.transfer(user, amount, { from: manager });
@@ -387,11 +392,9 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
 
 export async function setupMetaColonyWithUNLockedCLNYToken(colonyNetwork) {
   const { metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
-  // Unlock CLNY
+  // Unlock CLNY and Transfer ownership to MetaColony
   const accounts = await web3GetAccounts();
   await clnyToken.unlock({ from: accounts[11] });
-
-  // Transfer ownership to MetaColony
   await clnyToken.setOwner(metaColony.address, { from: accounts[11] });
   // TODO: Shoult we clear the Authority as well?
   // await clnyToken.setAuthority(0x0, { from: accounts[11] });
