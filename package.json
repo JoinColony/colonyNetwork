@@ -48,6 +48,7 @@
   },
   "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
   "devDependencies": {
+    "@area/truffle": "5.0.0-next.18-no-reuse",
     "@colony/colony-js-contract-loader-fs": "1.8.0",
     "@colony/eslint-config-colony": "7.0.0",
     "async-request": "^1.2.0",
@@ -84,7 +85,6 @@
     "solidity-coverage": "0.5.11",
     "solidity-parser-antlr": "^0.3.2",
     "solium": "^1.1.8",
-    "truffle": "5.0.0-beta.1",
     "web3-utils": "1.0.0-beta.35"
   },
   "private": true,
