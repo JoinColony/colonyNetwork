@@ -1954,7 +1954,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it.skip("should not allow stages to be skipped even if the number of updates is a power of 2", async () => {
+    it("should not allow stages to be skipped even if the number of updates is a power of 2", async () => {
       // Note that our jrhNNodes can never be a power of two, because we always have an even number of updates (because every reputation change
       // has a user-specific an a colony-specific effect, and we always have one extra state in the Justification Tree because we include the last
       // accepted hash as the first node. jrhNNodes is always odd, therefore, and can never be a power of two.
@@ -1975,6 +1975,7 @@ contract("ColonyNetworkMining", accounts => {
           colony: metaColony,
           colonyToken: clny,
           manager: MAIN_ACCOUNT,
+          worker: OTHER_ACCOUNT,
           workerRating: 1,
           managerPayout: 1,
           evaluatorPayout: 1,
@@ -1993,6 +1994,8 @@ contract("ColonyNetworkMining", accounts => {
             colonyNetwork,
             colony: metaColony,
             colonyToken: clny,
+            manager: MAIN_ACCOUNT,
+            worker: OTHER_ACCOUNT,
             workerRating: 1,
             managerPayout: 1,
             evaluatorPayout: 1,
@@ -2022,6 +2025,8 @@ contract("ColonyNetworkMining", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
@@ -2804,7 +2809,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it.skip("Should allow a user to prove their reputation", async () => {
+    it("Should allow a user to prove their reputation", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await advanceMiningCycleNoContest(colonyNetwork, this);
 
@@ -2818,20 +2823,19 @@ contract("ColonyNetworkMining", accounts => {
 
       await forwardTime(MINING_CYCLE_DURATION, this);
       const repCycle = await getActiveRepCycle(colonyNetwork);
+
       await repCycle.submitRootHash(newRootHash, 10, 10, { from: MAIN_ACCOUNT });
       await repCycle.confirmNewHash(0);
 
       let key = `0x${new BN(metaColony.address.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
       key += `${new BN("2").toString(16, 64)}`; // SkillId as uint256
       key += `${new BN(MAIN_ACCOUNT.slice(2), 16).toString(16, 40)}`; // User address as bytes
-      console.log("key", key);
 
       const value = client.reputations[key];
-      console.log("value", value);
       const proof = await client.getProof(key);
       const [branchMask, siblings] = proof;
-      const validProof = await metaColony.verifyReputationProof(`${key}`, `${value}`, branchMask, siblings);
 
+      const validProof = await metaColony.verifyReputationProof(`${key}`, `${value}`, branchMask, siblings, { from: MAIN_ACCOUNT });
       assert.equal(validProof, true);
     });
 
