@@ -351,6 +351,9 @@ export function bnSqrt(bn, isGreater) {
 }
 
 export function makeReputationKey(colonyAddress, skillBN, accountAddress = undefined) {
+  if (!BN.isBN(skillBN)) {
+    skillBN = new BN(skillBN.toString()); // eslint-disable-line no-param-reassign
+  }
   let key = `0x`;
   key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
   key += `${skillBN.toString(16, 64)}`; // SkillId as uint256

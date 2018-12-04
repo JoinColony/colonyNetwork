@@ -622,7 +622,7 @@ contract("Colony Funding", accounts => {
     });
   });
 
-  describe.only("when creating reward payouts", async () => {
+  describe("when creating reward payouts", async () => {
     let miningClient;
     let colonyWideReputationProof;
     let userReputationProof1;
@@ -692,8 +692,7 @@ contract("Colony Funding", accounts => {
       userReputationProof1 = [key, value, branchMask, siblings];
     });
 
-    it.only("should not be able to create reward payout if passed reputation is not colony wide", async () => {
-      console.log("userAddress1", userAddress1);
+    it("should not be able to create reward payout if passed reputation is not colony wide", async () => {
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
       const fakeColonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress1);
