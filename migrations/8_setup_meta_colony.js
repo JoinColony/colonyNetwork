@@ -11,6 +11,7 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 
 const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 module.exports = (deployer, network, accounts) => {
   let colonyNetwork;
@@ -34,13 +35,13 @@ module.exports = (deployer, network, accounts) => {
       await metaColony.setNetworkFeeInverse(100);
       const reputationMinerTestAccounts = accounts.slice(3, 11);
 
-      // Penultimate parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
+      // Penultimate parameter is the vesting contract which is not the subject of this integration testing so passing in ZERO_ADDRESS
       const tokenAuthority = await TokenAuthority.new(
         clnyToken.address,
         colonyNetwork.address,
         metaColonyAddress,
         tokenLockingAddress,
-        0x0,
+        ZERO_ADDRESS,
         reputationMinerTestAccounts
       );
       await clnyToken.setAuthority(tokenAuthority.address);

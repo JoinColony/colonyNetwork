@@ -384,7 +384,7 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
     colonyNetwork.address,
     metaColonyAddress,
     tokenLockingAddress,
-    0x0,
+    ZERO_ADDRESS,
     reputationMinerTestAccounts
   );
 
