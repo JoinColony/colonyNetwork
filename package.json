@@ -49,7 +49,7 @@
   "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
   "devDependencies": {
     "@area/truffle": "5.0.0-next.18-no-reuse",
-    "@colony/colony-js-contract-loader-fs": "1.8.0",
+    "@colony/colony-js-contract-loader-fs": "1.8.1",
     "@colony/eslint-config-colony": "7.0.0",
     "async-request": "^1.2.0",
     "babel-cli": "^6.26.0",
