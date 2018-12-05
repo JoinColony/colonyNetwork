@@ -217,9 +217,7 @@ contract("ColonyNetworkMining", accounts => {
         }
         const userBalance = await clny.balanceOf(user);
         if (userBalance.gt(new BN(0))) {
-          // CLNY transfers are locked, so approve the token owner to throw away the test accounts' tokens
-          await clny.approve(accounts[11], userBalance, { from: user });
-          await clny.transferFrom(user, ZERO_ADDRESS, userBalance, { from: accounts[11] });
+          await clny.burn(userBalance, { from: user });
         }
       })
     );
