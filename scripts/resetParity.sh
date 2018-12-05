@@ -20,8 +20,16 @@ if hash gsed 2>/dev/null; then
 else
   SED='sed'
 fi
-$SED -i "s/0000000000000000000000000000000deadbeef1/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-$SED -i "s/0000000000000000000000000000000deadbeef2/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-$SED -i "s/0000000000000000000000000000000deadbeef3/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-$SED -i "s/0000000000000000000000000000000deadbeef4/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-$SED -i "s/0000000000000000000000000000000deadbeef5/$(parity --chain ./parity-genesis.json --keys-path ./keys account list | head -n1)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef01/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef02/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef03/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef04/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef05/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef06/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef07/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef08/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef09/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef10/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef11/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef12/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+$SED -i "s/000000000000000000000000000000deadbeef13/$(parity --chain ./parity-genesis.json --keys-path ./keys account list | head -n1)/g" ./parity-genesis.json

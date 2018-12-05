@@ -46,6 +46,11 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _newVersion The target version for the upgrade
   function upgrade(uint _newVersion) public;
 
+  /// @notice Returns the colony network address set on the Colony
+  /// @dev The colonyNetworkAddress we read here is set once, during `initialiseColony`
+  /// @return colonyNetworkAddress The address of Colony Network instance
+  function getColonyNetworkAddress() public view returns (address);
+
   /// @notice Set the colony token. Secured function to authorised members
   /// @param _token Address of the token contract to use.
   /// Note that if the `mint` functionality is to be controlled through the colony,

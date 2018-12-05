@@ -18,7 +18,8 @@ step_setup_global_packages: &step_setup_global_packages
     name: "Set up global packages"
     command: |
       yarn --pure-lockfile --network-concurrency 1
-      git submodule update --init
+      git submodule update --remote --init
+      yarn run provision:token:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc 0.4.23 docker image"
@@ -39,10 +40,18 @@ jobs:
             sudo dpkg -i parity_1.11.8_debian_amd64.deb
             echo "password" > parityPassword
             cp ./parity-genesis.template.json ./parity-genesis.json
-            sed -i "s/wwwww/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/xxxxx/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/yyyyy/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
-            sed -i "s/zzzzz/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef01/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef02/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef03/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef04/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef05/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef06/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef07/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef08/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef09/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef10/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef11/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
+            sed -i "s/000000000000000000000000000000deadbeef12/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
       - run:
           name: "Install lsof"
           command: |

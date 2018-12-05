@@ -11,7 +11,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -19,7 +19,7 @@ const contractLoader = new TruffleLoader({
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-contract("TokenLocking", addresses => {
+contract("Token Locking", addresses => {
   const usersTokens = 10;
   const otherUserTokens = 100;
   const userAddress = addresses[1];
@@ -39,9 +39,9 @@ contract("TokenLocking", addresses => {
 
   beforeEach(async () => {
     let tokenArgs = getTokenArgs();
-    token = await Token.new(...tokenArgs);
+    token = await ERC20ExtendedToken.new(...tokenArgs);
     tokenArgs = getTokenArgs();
-    otherToken = await Token.new(...tokenArgs);
+    otherToken = await ERC20ExtendedToken.new(...tokenArgs);
 
     const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
@@ -131,7 +131,7 @@ contract("TokenLocking", addresses => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
 
-      await checkErrorRevert(tokenLocking.withdraw(token.address, otherUserTokens, { from: userAddress }), "ds-math-sub-overflow");
+      await checkErrorRevert(tokenLocking.withdraw(token.address, otherUserTokens, { from: userAddress }), "ds-math-sub-underflow");
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       const userDepositedBalance = info[1];
       assert.equal(userDepositedBalance.toNumber(), usersTokens);
@@ -246,7 +246,7 @@ contract("TokenLocking", addresses => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
 
       const tokenArgs = getTokenArgs();
-      const newToken = await Token.new(...tokenArgs);
+      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
       await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
 
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);

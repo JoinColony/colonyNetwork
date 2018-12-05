@@ -1,6 +1,6 @@
 /* globals artifacts */
 
-import { padLeft, soliditySha3 } from "web3-utils";
+import { padLeft, soliditySha3, numberToHex } from "web3-utils";
 import BN from "bn.js";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
@@ -25,7 +25,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const IColony = artifacts.require("IColony");
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
 const Resolver = artifacts.require("Resolver");
@@ -50,7 +50,7 @@ contract("Colony Network Recovery", accounts => {
   beforeEach(async () => {
     await advanceMiningCycleNoContest(colonyNetwork, this);
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
+    await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     const metaColony = await IColony.at(metaColonyAddress);
@@ -58,7 +58,7 @@ contract("Colony Network Recovery", accounts => {
 
     miningClient = new ReputationMiner({
       loader: contractLoader,
-      minerAddress: accounts[4],
+      minerAddress: accounts[5],
       realProviderPort: REAL_PROVIDER_PORT,
       useJsTree: true
     });
@@ -230,7 +230,7 @@ contract("Colony Network Recovery", accounts => {
           await newMiningClient.initialise(colonyNetwork.address);
 
           const tokenArgs = getTokenArgs();
-          const token = await Token.new(...tokenArgs);
+          const token = await ERC20ExtendedToken.new(...tokenArgs);
           const { logs } = await colonyNetwork.createColony(token.address);
           const { colonyAddress } = logs[0].args;
 
@@ -238,7 +238,7 @@ contract("Colony Network Recovery", accounts => {
           const colony = await IColony.at(colonyAddress);
 
           await colony.mintTokens(1000000000000000);
-          await colony.bootstrapColony([accounts[0]], [1000000000000000]);
+          await colony.bootstrapColony([accounts[5]], [1000000000000000]);
 
           await miningClient.addLogContentsToReputationTree();
           await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
@@ -252,7 +252,7 @@ contract("Colony Network Recovery", accounts => {
 
           const domain = await colony.getDomain(1);
           const rootSkill = domain[0];
-          const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[0]);
+          const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[5]);
           const originalValue = miningClient.reputations[reputationKey].slice(2, 66);
           assert.equal(parseInt(originalValue, 16), 1000000000000000);
 
@@ -273,20 +273,22 @@ contract("Colony Network Recovery", accounts => {
           // on-chain which .sync() does a sanity check against hasn't been updated.
           await miningClient.sync(startingBlockNumber, true);
           console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
+
           const rootHash = await miningClient.getRootHash();
           const nNodes = await miningClient.nReputations;
-          // slots 19 and 20 are hash and nodes respectively
+
+          // slots 20 and 21 are hash and nodes respectively
           await colonyNetwork.setStorageSlotRecovery(20, rootHash);
-          await colonyNetwork.setStorageSlotRecovery(21, `0x${padLeft(nNodes.toString(16), 64)}`);
+          const nNodesHex = numberToHex(nNodes);
+          await colonyNetwork.setStorageSlotRecovery(21, `${padLeft(nNodesHex, 64)}`);
 
           await colonyNetwork.approveExitRecovery();
           await colonyNetwork.exitRecoveryMode();
 
           const newHash = await colonyNetwork.getReputationRootHash();
           const newHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-
           assert.equal(newHash, rootHash);
-          assert.equal(newHashNNodes.toNumber(), nNodes);
+          assert.equal(newHashNNodes.toNumber(), nNodes.toNumber());
 
           await newMiningClient.sync(startingBlockNumber);
           const newValue = newMiningClient.reputations[reputationKey].slice(2, 66);
@@ -308,7 +310,7 @@ contract("Colony Network Recovery", accounts => {
           await ignorantMiningClient.initialise(colonyNetwork.address);
 
           const tokenArgs = getTokenArgs();
-          const token = await Token.new(...tokenArgs);
+          const token = await ERC20ExtendedToken.new(...tokenArgs);
           const { logs } = await colonyNetwork.createColony(token.address);
           const { colonyAddress } = logs[0].args;
 

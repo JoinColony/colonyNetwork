@@ -33,7 +33,7 @@ import {
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -70,7 +70,7 @@ contract("All", accounts => {
     metaColony = await IMetaColony.at(metaColonyAddress);
 
     const tokenArgs = getTokenArgs();
-    token = await Token.new(...tokenArgs);
+    token = await ERC20ExtendedToken.new(...tokenArgs);
 
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
@@ -83,14 +83,14 @@ contract("All", accounts => {
     await IColony.defaults({ gasPrice });
 
     const otherTokenArgs = getTokenArgs();
-    otherToken = await Token.new(...otherTokenArgs);
+    otherToken = await ERC20ExtendedToken.new(...otherTokenArgs);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe("Gas costs", () => {
     it("when working with the Colony Network", async () => {
       const tokenArgs = getTokenArgs();
-      const colonyToken = await Token.new(...tokenArgs);
+      const colonyToken = await ERC20ExtendedToken.new(...tokenArgs);
       await colonyNetwork.createColony(colonyToken.address);
     });
 
@@ -201,9 +201,9 @@ contract("All", accounts => {
     });
 
     it("when working with staking", async () => {
-      const STAKER1 = accounts[0];
-      const STAKER2 = accounts[1];
-      const STAKER3 = accounts[2];
+      const STAKER1 = accounts[5];
+      const STAKER2 = accounts[6];
+      const STAKER3 = accounts[7];
 
       // Setup the stakers balance
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER1, DEFAULT_STAKE);
@@ -214,7 +214,7 @@ contract("All", accounts => {
 
       await oneMiningCycleDurationLater();
       let repCycle = await IReputationMiningCycle.at(repCycleAddr);
-      await repCycle.submitRootHash("0x00", 0, 1);
+      await repCycle.submitRootHash("0x00", 0, 1, { from: STAKER1 });
       await repCycle.confirmNewHash(0);
 
       repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
@@ -312,7 +312,7 @@ contract("All", accounts => {
       const initialFunding = toBN(360 * 1e18);
 
       const tokenArgs = getTokenArgs();
-      const newToken = await Token.new(...tokenArgs);
+      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -326,14 +326,14 @@ contract("All", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x00", 0, 10);
+      await repCycle.submitRootHash("0x00", 0, 10, { from: accounts[5] });
       await repCycle.confirmNewHash(0);
 
-      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, accounts[8], DEFAULT_STAKE);
 
       const miningClient = new ReputationMiner({
         loader: contractLoader,
-        minerAddress: accounts[4],
+        minerAddress: accounts[8],
         realProviderPort: REAL_PROVIDER_PORT,
         useJsTree: true
       });

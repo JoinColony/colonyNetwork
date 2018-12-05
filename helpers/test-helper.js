@@ -414,13 +414,16 @@ export async function getActiveRepCycle(colonyNetwork) {
   return repCycle;
 }
 
-export async function advanceMiningCycleNoContest(colonyNetwork, test, miningClient = undefined) {
+export async function advanceMiningCycleNoContest(colonyNetwork, test, miningClient = undefined, minerAddress) {
   await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
+
   if (miningClient !== undefined) {
     await miningClient.submitRootHash();
   } else {
-    await repCycle.submitRootHash("0x00", 0, 10);
+    const accounts = await web3GetAccounts();
+    minerAddress = minerAddress || accounts[5]; // eslint-disable-line no-param-reassign
+    await repCycle.submitRootHash("0x00", 0, 10, { from: minerAddress });
   }
   await repCycle.confirmNewHash(0);
 }

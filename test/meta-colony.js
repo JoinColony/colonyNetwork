@@ -1,20 +1,18 @@
 /* globals artifacts */
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupFundedTask, setupFinalizedTask, executeSignedTaskChange, makeTask } from "../helpers/test-data-generator";
+import {
+  fundColonyWithTokens,
+  setupFundedTask,
+  setupFinalizedTask,
+  executeSignedTaskChange,
+  makeTask,
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken
+} from "../helpers/test-data-generator";
 
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
-
-const EtherRouter = artifacts.require("EtherRouter");
-const Resolver = artifacts.require("Resolver");
-const Colony = artifacts.require("Colony");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
-const ColonyFunding = artifacts.require("ColonyFunding");
-const ColonyTask = artifacts.require("ColonyTask");
-const Token = artifacts.require("Token");
-const ContractRecovery = artifacts.require("ContractRecovery");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Meta Colony", accounts => {
   let TOKEN_ARGS;
@@ -23,36 +21,14 @@ contract("Meta Colony", accounts => {
   const WORKER = accounts[2];
 
   let metaColony;
-  let metaColonyToken;
+  let clnyToken;
   let colony;
   let token;
   let colonyNetwork;
-  let resolverColonyNetworkDeployed;
-
-  before(async () => {
-    resolverColonyNetworkDeployed = await Resolver.deployed();
-  });
 
   beforeEach(async () => {
-    const colonyTemplate = await Colony.new();
-    const colonyFunding = await ColonyFunding.new();
-    const colonyTask = await ColonyTask.new();
-    const resolver = await Resolver.new();
-    const contractRecovery = await ContractRecovery.new();
-    const etherRouter = await EtherRouter.new();
-    await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
-    await colonyNetwork.initialise(resolver.address);
-    metaColonyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createMetaColony(metaColonyToken.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
-
-    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
-    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
-    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+    colonyNetwork = await setupColonyNetwork();
+    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
@@ -60,17 +36,17 @@ contract("Meta Colony", accounts => {
 
   describe("when working with ERC20 properties of Meta Colony token", () => {
     it("token `symbol` property is correct", async () => {
-      const tokenSymbol = await metaColonyToken.symbol();
+      const tokenSymbol = await clnyToken.symbol();
       assert.equal(tokenSymbol, "CLNY");
     });
 
     it("token `decimals` property is correct", async () => {
-      const tokenDecimals = await metaColonyToken.decimals();
+      const tokenDecimals = await clnyToken.decimals();
       assert.equal(tokenDecimals.toString(), "18");
     });
 
     it("token `name` property is correct", async () => {
-      const tokenName = await metaColonyToken.name();
+      const tokenName = await clnyToken.name();
       assert.equal(tokenName, "Colony Network Token");
     });
   });
@@ -314,12 +290,12 @@ contract("Meta Colony", accounts => {
   describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
       TOKEN_ARGS = getTokenArgs();
-      const newToken = await Token.new(...TOKEN_ARGS);
+      const newToken = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       colony = await IColony.at(colonyAddress);
       const tokenAddress = await colony.getToken();
-      token = await Token.at(tokenAddress);
+      token = await ERC20ExtendedToken.at(tokenAddress);
     });
 
     it("someone who does not have founder role should not be able to add domains", async () => {
@@ -380,7 +356,7 @@ contract("Meta Colony", accounts => {
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
       TOKEN_ARGS = getTokenArgs();
-      token = await Token.new(...TOKEN_ARGS);
+      token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const { colonyAddress } = logs[0].args;
       await token.setOwner(colonyAddress);
@@ -554,7 +530,7 @@ contract("Meta Colony", accounts => {
     it("should not allow anyone else but the meta colony founder to set the fee", async () => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
       const fee = await colonyNetwork.getFeeInverse();
-      assert.equal(fee, 0);
+      assert.equal(fee, 100);
     });
 
     it("should not allow another account, than the meta colony, to set the fee", async () => {

@@ -72,7 +72,6 @@ contract("ColonyTask", accounts => {
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
 
     const tokenArgs = getTokenArgs();
     token = await Token.new(...tokenArgs);

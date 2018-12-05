@@ -1,55 +1,29 @@
 /* globals artifacts */
 
 import { SPECIFICATION_HASH, ZERO_ADDRESS } from "../helpers/constants";
-import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";
-import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
+import { web3GetStorageAt, checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
 
 const IColony = artifacts.require("IColony");
-const IMetaColony = artifacts.require("IMetaColony");
-const Colony = artifacts.require("Colony");
-const Resolver = artifacts.require("Resolver");
-const EtherRouter = artifacts.require("EtherRouter");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
-const Token = artifacts.require("Token");
-const ColonyFunding = artifacts.require("ColonyFunding");
-const ColonyTask = artifacts.require("ColonyTask");
-const ContractRecovery = artifacts.require("ContractRecovery");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Colony Recovery", accounts => {
   let colony;
   let colonyNetwork;
-  let clnyToken;
   let metaColony;
 
   before(async () => {
-    const resolverColonyNetworkDeployed = await Resolver.deployed();
-    const colonyTemplate = await Colony.new();
-    const colonyFunding = await ColonyFunding.new();
-    const colonyTask = await ColonyTask.new();
-    const resolver = await Resolver.new();
-    const etherRouter = await EtherRouter.new();
-    const contractRecovery = await ContractRecovery.new();
-    await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
-    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    colonyNetwork = await setupColonyNetwork();
+    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-    await setupColonyVersionResolver(colonyTemplate, colonyTask, colonyFunding, contractRecovery, resolver);
-    await colonyNetwork.initialise(resolver.address);
-
-    clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
-    await colonyNetwork.createMetaColony(clnyToken.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    await metaColony.setNetworkFeeInverse(100);
-    // Jumping through these hoops to avoid the need to rewire ReputationMiningCycleResolver.
-    const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
-    const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
-    await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
   });
 
   beforeEach(async () => {
-    const { logs } = await colonyNetwork.createColony(clnyToken.address);
+    const tokenArgs = getTokenArgs();
+    const token = await ERC20ExtendedToken.new(...tokenArgs);
+    const { logs } = await colonyNetwork.createColony(token.address);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
   });

@@ -1,7 +1,7 @@
 /* globals artifacts */
 import { getTokenArgs } from "../helpers/test-helper";
 
-const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -19,12 +19,12 @@ contract("ColonyNetwork contract upgrade", () => {
 
     // Setup 2 test colonies
     const tokenArgs1 = getTokenArgs();
-    const newToken = await Token.new(...tokenArgs1);
+    const newToken = await ERC20ExtendedToken.new(...tokenArgs1);
     let { logs } = await colonyNetwork.createColony(newToken.address);
     colonyAddress1 = logs[0].args.colonyAddress;
 
     const tokenArgs2 = getTokenArgs();
-    const newToken2 = await Token.new(...tokenArgs2);
+    const newToken2 = await ERC20ExtendedToken.new(...tokenArgs2);
     ({ logs } = await colonyNetwork.createColony(newToken2.address));
     colonyAddress2 = logs[0].args.colonyAddress;
 
