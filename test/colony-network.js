@@ -101,17 +101,17 @@ contract("Colony Network", accounts => {
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
       const rootGlobalSkill = await colonyNetwork.getSkill(1);
-      expect(rootGlobalSkill[0]).to.be.zero;
-      expect(rootGlobalSkill[1]).to.be.zero;
+      expect(parseInt(rootGlobalSkill.nParents, 10)).to.be.zero;
+      expect(parseInt(rootGlobalSkill.nChildren, 10)).to.be.zero;
 
       const globalSkill1 = await colonyNetwork.getSkill(1);
-      expect(globalSkill1[2]).to.be.true;
+      expect(globalSkill1.globalSkill).to.be.true;
 
       const globalSkill2 = await colonyNetwork.getSkill(2);
-      expect(globalSkill2[2]).to.be.false;
+      expect(globalSkill2.globalSkill).to.be.false;
 
       const localSkill1 = await colonyNetwork.getSkill(3);
-      expect(localSkill1[2]).to.be.false;
+      expect(localSkill1.globalSkill).to.be.false;
 
       const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId();
       expect(rootGlobalSkillId).to.eq.BN(1);
@@ -126,12 +126,12 @@ contract("Colony Network", accounts => {
       const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
       const { logs } = await colonyNetwork.createColony(token.address);
       const rootLocalSkill = await colonyNetwork.getSkill(1);
-      expect(rootLocalSkill[0]).to.be.zero;
-      expect(rootLocalSkill[1]).to.be.zero;
+      expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
+      expect(parseInt(rootLocalSkill.nChildren, 10)).to.be.zero;
 
       const skillCount = await colonyNetwork.getSkillCount();
       const skill = await colonyNetwork.getSkill(skillCount.addn(1));
-      expect(skill[2]).to.be.false;
+      expect(skill.globalSkill).to.be.false;
 
       const { colonyAddress } = logs[0].args;
       const colony = await IColony.at(colonyAddress);

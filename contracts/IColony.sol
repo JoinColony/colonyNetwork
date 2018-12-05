@@ -329,7 +329,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns (
+  function getTask(uint256 _id) public view returns ( 
     bytes32 specificationHash,
     bytes32 deliverableHash,
     uint8 status,
@@ -438,22 +438,17 @@ contract IColony is ColonyDataTypes, IRecovery {
     bytes32[] siblings
     ) public;
 
+
   /// @notice Get useful information about specific reward payout
   /// @param _payoutId Id of the reward payout
-  /// @return reputationState Reputation root hash at the time of creation
-  /// @return colonyWideReputation Colony wide reputation in `reputationState`
-  /// @return totalTokens Total colony tokens at the time of creation
-  /// @return amount Total amount of tokens taken aside for reward payout
-  /// @return tokenAddress Token address
-  /// @return blockTimestamp Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (
-    bytes32 reputationState,
-    uint256 colonyWideReputation,
-    uint256 totalTokens,
-    uint256 amount,
-    address tokenAddress,
-    uint256 blockTimestamp
-    );
+  /// @return RewardPayoutCycle, containing propertes:
+  ///  reputationState Reputation root hash at the time of creation
+  ///  colonyWideReputation Colony wide reputation in `reputationState`
+  ///  totalTokens Total colony tokens at the time of creation
+  ///  amount Total amount of tokens taken aside for reward payout
+  ///  tokenAddress Token address
+  ///  blockTimestamp Block number at the time of creation
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns ( RewardPayoutCycle rewardPayoutCycle );
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation

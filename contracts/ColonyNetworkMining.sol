@@ -58,10 +58,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
-    (address, int256, uint256, address, uint256, uint256)
+    (ReputationLogEntry reputationLogEntry)
     {
-    ReputationLogEntry storage x = replacementReputationUpdateLog[_reputationMiningCycle][_id];
-    return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+    reputationLogEntry = replacementReputationUpdateLog[_reputationMiningCycle][_id];
   }
 
   function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool) {

@@ -190,7 +190,7 @@ class ReputationMiner {
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
       if (checkForReplacement) {
         const potentialReplacementLogEntry = await this.colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, logEntryNumber);
-        if (potentialReplacementLogEntry[3] !== "0x0000000000000000000000000000000000000000") {
+        if (potentialReplacementLogEntry.colonyAddress !== "0x0000000000000000000000000000000000000000") {
           logEntry = potentialReplacementLogEntry;
         }
       }

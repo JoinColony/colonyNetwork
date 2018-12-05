@@ -265,16 +265,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     emit RewardPayoutCycleEnded(_payoutId);
   }
 
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, uint256, address, uint256) {
-    RewardPayoutCycle memory rewardPayoutInfo = rewardPayoutCycles[_payoutId];
-    return (
-      rewardPayoutInfo.reputationState,
-      rewardPayoutInfo.colonyWideReputation,
-      rewardPayoutInfo.totalTokens,
-      rewardPayoutInfo.amount,
-      rewardPayoutInfo.tokenAddress,
-      rewardPayoutInfo.blockTimestamp
-    );
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle rewardPayoutCycle) {
+    rewardPayoutCycle = rewardPayoutCycles[_payoutId];
   }
 
   function setRewardInverse(uint256 _rewardInverse) public

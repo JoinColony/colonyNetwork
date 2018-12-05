@@ -62,7 +62,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return (address, int256, uint256, address, uint256, uint256) An object with the details of the log entry (if it exists)
   /// @dev colonyAddress will always be set if the replacement exists
   function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
-    (address userAddress, int256 amount, uint256 skillId, address colonyAddress, uint256 nUpdates, uint256);
+    (ReputationLogEntry reputationLogEntry);
 
   /// @notice Get whether any replacement log entries have been set for the supplied reputation mining cycle.
   /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
@@ -96,7 +96,16 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return nParents uint256 `skill.nParents` i.e. the number of parent skills of skill with id `_skillId`
   /// @return nChildren uint256 `skill.nChildren` i.e. the number of child skills of skill with id `_skillId`
   /// @return isGlobalSkill true if specified skill is a global skill, otherwise false
-  function getSkill(uint256 _skillId) public view returns (uint256 nParents, uint256 nChildren, bool isGlobalSkill);
+  function getSkill(uint256 _skillId) public view returns (Skill skill);
+
+  /// @notice Get whether the skill with id _skillId is public or not.
+  /// @return isGlobalSkill bool 
+  /// @dev Returns false if skill does not exist
+  function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
+
+  /// @notice Get the number of parents the specified skill has 
+  /// @return nParents uint256
+  function getSkillNParents(uint256 _skillId) public view returns (uint256 nParents);
 
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or

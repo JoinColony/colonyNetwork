@@ -109,8 +109,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
 
   modifier globalSkill(uint256 _skillId) {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    bool isGlobalSkill;
-    (, , isGlobalSkill) = colonyNetworkContract.getSkill(_skillId);
+    bool isGlobalSkill = colonyNetworkContract.isGlobalSkill(_skillId);
     require(isGlobalSkill, "colony-not-global-skill");
     _;
   }
