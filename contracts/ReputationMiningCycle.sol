@@ -52,6 +52,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// same number of nodes.
   /// @param newHash The hash being submitted
   /// @param nNodes The number of nodes in the reputation tree that `newHash` is the root hash of
+  /// @param jrh The justification root hash for the application of the log being processed.
   /// @param entryIndex The number of the entry the submitter hash asked us to consider.
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) {
     uint256 balance;
@@ -121,10 +122,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return nInvalidatedHashes;
   }
 
-  /// @notice Get the address that made a particular submission
-  /// @param hash The hash that was submitted
-  /// @param nNodes The number of nodes that was submitted
-  /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
   function getSubmittedHashes(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address) {
     return submittedHashes[hash][nNodes][jrh][index];
   }
@@ -174,7 +171,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
     reputationHashSubmissions[msg.sender] = Submission({
       proposedNewRootHash: newHash,
-      jrh: 0x0,
+      jrh: jrh,
       nNodes: nNodes,
       lastResponseTimestamp: 0,
       challengeStepCompleted: 0,
@@ -382,7 +379,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     checkJRHProof2(
       round,
       index,
-      disputeRounds[round][index].jrh,
       branchMask2,
       siblings2,
       reputationRootHashNNodes
@@ -620,7 +616,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   function checkJRHProof2(
     uint256 round,
     uint256 index,
-    bytes32 jrh,
     uint256 branchMask2,
     bytes32[] siblings2,
     uint256 reputationRootHashNNodes
@@ -633,6 +628,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
     // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
 
+    bytes32 jrh = disputeRounds[round][index].jrh;
     uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
       reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
     disputeRounds[round][index].jrhNnodes = nUpdates + 1;

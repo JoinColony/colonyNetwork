@@ -13,7 +13,7 @@ contract PatriciaTreeProofs {
   using Data for Data.Edge;
   using Data for Data.Label;
 
-  function getImpliedRootHashKey(bytes key, bytes value, uint branchMask, bytes32[] siblings) internal
+  function getImpliedRootHashKey(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) internal
   pure returns (bytes32)
   {
     bytes32 hash;
@@ -21,7 +21,7 @@ contract PatriciaTreeProofs {
     return hash;
   }
 
-  function getImpliedRootNoHashKey(bytes32 key, bytes value, uint branchMask, bytes32[] siblings) internal
+  function getImpliedRootNoHashKey(bytes32 key, bytes value, uint256 branchMask, bytes32[] siblings) internal
   pure returns (bytes32)
   {
     bytes32 hash;
@@ -29,14 +29,14 @@ contract PatriciaTreeProofs {
     return hash;
   }
 
-  function getFinalPairAndImpliedRootNoHash(bytes32 key, bytes value, uint branchMask, bytes32[] siblings) internal
+  function getFinalPairAndImpliedRootNoHash(bytes32 key, bytes value, uint256 branchMask, bytes32[] siblings) internal
   pure returns (bytes32, bytes32[2])
   {
     return getImpliedRootFunctionality(key, keccak256(value), branchMask, siblings);
   }
 
   // solium-disable-next-line security/no-assign-params
-  function getImpliedRootFunctionality(bytes32 keyHash, bytes32 valueHash, uint branchMask, bytes32[] siblings) private
+  function getImpliedRootFunctionality(bytes32 keyHash, bytes32 valueHash, uint256 branchMask, bytes32[] siblings) private
   pure returns (bytes32, bytes32[2])
   {
     Data.Label memory k = Data.Label(keyHash, 256);
