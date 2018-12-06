@@ -36,7 +36,7 @@ jobs:
       - run:
           name: "Setup parity"
           command: |
-            wget https://releases.parity.io/v1.11.8/x86_64-unknown-debian-gnu/parity_1.11.8_debian_amd64.deb
+            wget https://releases.parity.io/ethereum/v1.11.8/x86_64-unknown-debian-gnu/parity_1.11.8_debian_amd64.deb
             sudo dpkg -i parity_1.11.8_debian_amd64.deb
             echo "password" > parityPassword
             cp ./parity-genesis.template.json ./parity-genesis.json
