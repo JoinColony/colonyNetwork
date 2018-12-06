@@ -50,23 +50,23 @@ contract("Token Locking", addresses => {
     await colony.mintTokens(usersTokens + otherUserTokens);
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
-    await advanceMiningCycleNoContest(colonyNetwork, this);
-    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
+    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-    const miningClient = new ReputationMiner({
+    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
+    const client = new ReputationMiner({
       loader: contractLoader,
       minerAddress: addresses[4],
       realProviderPort: REAL_PROVIDER_PORT,
       useJsTree: true
     });
-    await miningClient.initialise(colonyNetwork.address);
-    await miningClient.addLogContentsToReputationTree();
-    await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
+    await client.initialise(colonyNetwork.address);
+
+    await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
 
     const result = await colony.getDomain(1);
     const rootDomainSkill = result.skillId;
     const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
-    const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
+    const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
     colonyWideReputationProof = [key, value, branchMask, siblings];
   });
 

@@ -163,7 +163,7 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
   const txid = tx.hash;
 
   const receipt = await web3GetTransactionReceipt(txid);
-  assert.isFalse(receipt.status, `Transaction succeeded, but expected to fail`);
+  assert.isFalse(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`);
 
   const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
   const reason = extractReasonString(response);
@@ -436,11 +436,12 @@ export async function getActiveRepCycle(colonyNetwork) {
   return repCycle;
 }
 
-export async function advanceMiningCycleNoContest(colonyNetwork, test, miningClient = undefined, minerAddress) {
+export async function advanceMiningCycleNoContest({ colonyNetwork, test, miningClient, minerAddress }) {
   await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
 
   if (miningClient !== undefined) {
+    await miningClient.addLogContentsToReputationTree();
     await miningClient.submitRootHash();
   } else {
     const accounts = await web3GetAccounts();
