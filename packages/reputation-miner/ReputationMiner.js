@@ -87,7 +87,7 @@ class ReputationMiner {
       this.reputationTree = new ethers.Contract(contract.address, this.patriciaTreeContractDef.abi, this.ganacheWallet);
     }
 
-    this.nReputations = ethers.utils.bigNumberify(0);
+    this.nReputations = ethers.constants.Zero;
     this.reputations = {};
   }
 
@@ -202,7 +202,7 @@ class ReputationMiner {
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
       if (checkForReplacement) {
         const potentialReplacementLogEntry = await this.colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, logEntryNumber);
-        if (potentialReplacementLogEntry.colonyAddress !== "0x0000000000000000000000000000000000000000") {
+        if (potentialReplacementLogEntry.colonyAddress !== ethers.constants.AddressZero) {
           logEntry = potentialReplacementLogEntry;
         }
       }
@@ -384,7 +384,7 @@ class ReputationMiner {
     // If we are in the first half of 'j's, then we are dealing with global update, so
     // the skilladdress will be 0x0, rather than the user address
     if (updateNumber.lt(logEntry[4].div(2))) {
-      skillAddress = "0x0000000000000000000000000000000000000000";
+      skillAddress = ethers.constants.AddressZero;
     } else {
       skillAddress = logEntry[0]; // eslint-disable-line prefer-destructuring
       // Following the destructuring rule, this line would be [skillAddress] = logEntry, which I think is very misleading
@@ -403,7 +403,7 @@ class ReputationMiner {
     // calculated on-chain, nChildUpdates was zero if score == 0.
     // Restored gte for clarity, but leaving this note for completeness.
     if (score.gte(0)) {
-      nChildUpdates = ethers.utils.bigNumberify(0);
+      nChildUpdates = ethers.constants.Zero;
     } else {
       nChildUpdates = nUpdates
         .div(2)
@@ -639,8 +639,8 @@ class ReputationMiner {
     const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
 
-    let index = ethers.utils.bigNumberify(-1);
-    let round = ethers.utils.bigNumberify(0);
+    let index = ethers.constants.NegativeOne;
+    let round = ethers.constants.Zero;
     let submission = [];
     while (submission[0] !== submittedHash || submission[1].toString() !== submittedNNodes.toString() || submission[4] !== jrh) {
       try {
@@ -648,7 +648,7 @@ class ReputationMiner {
         submission = await repCycle.getDisputeRounds(round, index); // eslint-disable-line no-await-in-loop
       } catch (err) {
         round = round.add(1);
-        index = ethers.utils.bigNumberify(-1);
+        index = ethers.constants.NegativeOne;
       }
     }
     return [round, index];
@@ -731,14 +731,16 @@ class ReputationMiner {
     let lastAgreeIdx = firstDisagreeIdx.sub(1);
     // If this is called before the binary search has finished, these would be -1 and 0, respectively, which will throw errors
     // when we try and pass -ve hex values. Instead, set them to values that will allow us to send a tx that will fail.
-    lastAgreeIdx = lastAgreeIdx.lt(0) ? ethers.utils.bigNumberify(0) : lastAgreeIdx;
-    firstDisagreeIdx = firstDisagreeIdx.lt(1) ? ethers.utils.bigNumberify(1) : firstDisagreeIdx;
+
+    lastAgreeIdx = lastAgreeIdx.lt(0) ? ethers.constants.Zero : lastAgreeIdx;
+    firstDisagreeIdx = firstDisagreeIdx.lt(1) ? ethers.constants.One : firstDisagreeIdx;
+
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
     const lastAgreeKey = ReputationMiner.getHexString(lastAgreeIdx, 64);
     const firstDisagreeKey = ReputationMiner.getHexString(firstDisagreeIdx, 64);
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
-    let logEntryNumber = ethers.utils.bigNumberify(0);
+    let logEntryNumber = ethers.constants.Zero;
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
@@ -815,7 +817,7 @@ class ReputationMiner {
       const existingValue = ethers.utils.bigNumberify(`0x${value.slice(2, 66)}`);
       newValue = existingValue.add(_reputationScore);
       if (newValue.lt(0)) {
-        newValue = ethers.utils.bigNumberify(0);
+        newValue = ethers.constants.Zero;
       }
       const upperLimit = ethers.utils
         .bigNumberify(2)
@@ -829,7 +831,7 @@ class ReputationMiner {
     } else {
       newValue = _reputationScore;
       if (newValue.lt(0)) {
-        newValue = ethers.utils.bigNumberify(0);
+        newValue = ethers.constants.Zero;
       }
       // A new value can never overflow, so we don't need a 'capping' check here
       value = this.getValueAsBytes(newValue, this.nReputations.add(1), index);
@@ -944,7 +946,7 @@ class ReputationMiner {
 
   async loadState(reputationRootHash) {
     const db = await sqlite.open(this.dbPath, { Promise });
-    this.nReputations = ethers.utils.bigNumberify(0);
+    this.nReputations = ethers.constants.Zero;
     this.reputations = {};
 
     if (this.useJsTree) {
