@@ -22,14 +22,4 @@ contract IPatriciaTreeBase {
   /// @param hash The `keccak256` hash of the actual key
   /// @return n `Data.Node` for key `hash`
   function getNode(bytes32 hash) public view returns (Data.Node n);
-
-  /// @notice Returns the Merkle-proof for the given `key`
-  /// @return branchMask Bitmask with high bits at the positions in the `key` where we have branch nodes (bit in key denotes direction)
-  /// @return _siblings Hashes of sibling edges
-  function getProof(bytes key) public view returns (uint branchMask, bytes32[] _siblings);
-
-  /// @notice Calculates and returns a root hash for the `key`, `value`, `branchMask` and `siblings`
-  /// @return rootHash The calculated hash
-  function getImpliedRoot(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public pure returns (bytes32 rootHash);
-
 }
