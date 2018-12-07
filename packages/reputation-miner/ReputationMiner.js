@@ -1,10 +1,11 @@
+import PatriciaTree from "./patricia";
+import PatriciaTreeNoHash from "./patriciaNoHashKey";
+
 const BN = require("bn.js");
 const web3Utils = require("web3-utils");
 const ganache = require("ganache-core");
 const ethers = require("ethers");
 const sqlite = require("sqlite");
-const patriciaJs = require("./patricia");
-const patriciaJsNoHashKey = require("./patriciaNoHashKey");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
 // do in the future.
@@ -74,7 +75,7 @@ class ReputationMiner {
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
     if (this.useJsTree) {
-      this.reputationTree = new patriciaJs.PatriciaTree();
+      this.reputationTree = new PatriciaTree();
     } else {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
       this.patriciaTreeNoHashContractDef = await this.loader.load(
@@ -98,7 +99,7 @@ class ReputationMiner {
    */
   async addLogContentsToReputationTree(blockNumber = "latest") {
     if (this.useJsTree) {
-      this.justificationTree = new patriciaJsNoHashKey.PatriciaTree();
+      this.justificationTree = new PatriciaTreeNoHash();
     } else {
       const contractFactory = new ethers.ContractFactory(
         this.patriciaTreeNoHashContractDef.abi,
@@ -560,7 +561,7 @@ class ReputationMiner {
    * @return {Promise}          A promise that resolves to [branchmask, siblings, value] for the supplied key in the supplied root hash
    */
   async getHistoricalProofAndValue(rootHash, key) {
-    const tree = new patriciaJs.PatriciaTree();
+    const tree = new PatriciaTree();
     // Load all reputations from that state.
 
     const db = await sqlite.open(this.dbPath, { Promise });
@@ -673,7 +674,7 @@ class ReputationMiner {
     const [branchMask] = proof;
     let [, siblings] = proof;
 
-    let proofEndingHash = await this.justificationTree.getImpliedRoot(
+    let proofEndingHash = await PatriciaTreeNoHash.getImpliedRoot(
       targetNodeKey,
       this.justificationHashes[targetNodeKey].jhLeafValue,
       branchMask,
@@ -685,7 +686,7 @@ class ReputationMiner {
       siblings = siblings.slice(1);
       // Recalulate ending hash
       // eslint-disable-next-line no-await-in-loop
-      proofEndingHash = await this.justificationTree.getImpliedRoot(
+      proofEndingHash = await PatriciaTreeNoHash.getImpliedRoot(
         targetNodeKey,
         this.justificationHashes[targetNodeKey].jhLeafValue,
         branchMask,
@@ -950,7 +951,7 @@ class ReputationMiner {
     this.reputations = {};
 
     if (this.useJsTree) {
-      this.reputationTree = new patriciaJs.PatriciaTree();
+      this.reputationTree = new PatriciaTree();
     } else {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
 
