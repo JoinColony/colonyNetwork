@@ -148,7 +148,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     uint256[] memory minerWeights = new uint256[](stakers.length);
 
     for (i = 0; i < stakers.length; i++) {
-      (,,timeStaked) = ITokenLocking(tokenLocking).getUserLock(clnyToken, stakers[i]);
+      timeStaked = ITokenLocking(tokenLocking).getUserLock(clnyToken, stakers[i]).timestamp;
       minerWeights[i] = calculateMinerWeight(now - timeStaked, i);
       minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
     }

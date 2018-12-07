@@ -151,8 +151,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return totalLockCount[_token];
   }
 
-  function getUserLock(address _token, address _user) public view returns (uint256, uint256, uint256) {
-    Lock storage lock = userLocks[_token][_user];
-    return (lock.lockCount, lock.balance, lock.timestamp);
+  function getUserLock(address _token, address _user) public view returns (Lock lock) {
+    lock = userLocks[_token][_user];
   }
 }

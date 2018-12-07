@@ -106,7 +106,7 @@ contract("ColonyNetworkMining", accounts => {
     // Finally, we discard the staked tokens we used to get to this point so that `MAIN_ACCOUNT` has no
     // tokens staked, just like all other accounts, at the start of each test.
     const info = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
-    const stakedBalance = info[1];
+    const stakedBalance = new BN(info.balance);
     await tokenLocking.withdraw(clny.address, stakedBalance, { from: MAIN_ACCOUNT });
     const userBalance = await clny.balanceOf(MAIN_ACCOUNT);
     await clny.burn(userBalance, { from: MAIN_ACCOUNT });
@@ -210,7 +210,7 @@ contract("ColonyNetworkMining", accounts => {
     await Promise.all(
       accounts.map(async user => {
         const info = await tokenLocking.getUserLock(clny.address, user);
-        const stakedBalance = info[1];
+        const stakedBalance = new BN(info.balance);
 
         if (stakedBalance.gt(new BN(0))) {
           await tokenLocking.withdraw(clny.address, stakedBalance, { from: user });
@@ -231,7 +231,7 @@ contract("ColonyNetworkMining", accounts => {
       const userBalance = await clny.balanceOf(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 4000);
       const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      const stakedBalance = info[1];
+      const stakedBalance = new BN(info.balance);
       assert.equal(stakedBalance.toNumber(), 5000);
     });
 
@@ -239,7 +239,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, 5000);
       await tokenLocking.withdraw(clny.address, 5000, { from: OTHER_ACCOUNT });
       const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      const stakedBalance = info[1];
+      const stakedBalance = new BN(info.balance);
       assert.equal(stakedBalance.toNumber(), 0);
     });
 
@@ -250,7 +250,7 @@ contract("ColonyNetworkMining", accounts => {
       const userBalance = await clny.balanceOf(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 9000);
       const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      const stakedBalance = info[1];
+      const stakedBalance = new BN(info.balance);
       assert.equal(stakedBalance.toNumber(), 0);
     });
 
@@ -259,7 +259,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, 9000);
       await checkErrorRevert(tokenLocking.withdraw(clny.address, 10000, { from: OTHER_ACCOUNT }), "ds-math-sub-underflow");
       const info = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      const stakedBalance = info[1];
+      const stakedBalance = new BN(info.balance);
       assert.equal(stakedBalance.toNumber(), 9000);
       const userBalance = await clny.balanceOf(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 0);
@@ -304,9 +304,9 @@ contract("ColonyNetworkMining", accounts => {
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, 10, { from: MAIN_ACCOUNT });
       let userLock = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
-      await checkErrorRevert(tokenLocking.withdraw(clny.address, userLock[1], { from: MAIN_ACCOUNT }), "colony-token-locking-hash-submitted");
+      await checkErrorRevert(tokenLocking.withdraw(clny.address, userLock.balance, { from: MAIN_ACCOUNT }), "colony-token-locking-hash-submitted");
       userLock = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
-      assert.isTrue(userLock[1].eq(DEFAULT_STAKE));
+      assert.isTrue(new BN(userLock.balance).eq(DEFAULT_STAKE));
     });
 
     it("should allow a new reputation hash to be set if only one was submitted", async () => {
@@ -705,13 +705,13 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT2, DEFAULT_STAKE);
 
       let userLock0 = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
-      assert.isTrue(userLock0[1].eq(DEFAULT_STAKE));
+      assert.equal(userLock0.balance, DEFAULT_STAKE.toString());
 
       let userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      assert.isTrue(userLock1[1].eq(DEFAULT_STAKE));
+      assert.equal(userLock1.balance, DEFAULT_STAKE.toString());
 
       let userLock2 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT2);
-      assert.isTrue(userLock2[1].eq(DEFAULT_STAKE));
+      assert.equal(userLock2.balance, DEFAULT_STAKE.toString());
 
       // We want badclient2 to submit the same hash as badclient for this test.
       badClient2 = new MaliciousReputationMinerExtraRep(
@@ -725,13 +725,13 @@ contract("ColonyNetworkMining", accounts => {
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
 
       userLock0 = await tokenLocking.getUserLock(clny.address, MAIN_ACCOUNT);
-      assert.equal(userLock0[1].toString(), DEFAULT_STAKE.add(MIN_STAKE.muln(2)).toString(), "Account was not rewarded properly");
+      assert.equal(userLock0.balance, DEFAULT_STAKE.add(MIN_STAKE.muln(2)).toString(), "Account was not rewarded properly");
 
       userLock1 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT);
-      assert.equal(userLock1[1].toString(), DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
+      assert.equal(userLock1.balance, DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
 
       userLock2 = await tokenLocking.getUserLock(clny.address, OTHER_ACCOUNT2);
-      assert.equal(userLock2[1].toString(), DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
+      assert.equal(userLock2.balance, DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {

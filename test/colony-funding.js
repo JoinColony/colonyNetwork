@@ -1481,7 +1481,7 @@ contract("Colony Funding", accounts => {
 
         // Get users locked token amount from token locking contract
         const info = await tokenLocking.getUserLock(newToken.address, userAddress1);
-        const userLockedTokens = info[1];
+        const userLockedTokens = new BN(info.balance);
 
         // Calculating the reward payout for one user locally to check against on-chain result
         const numerator = bnSqrt(userLockedTokens.mul(reputationPerUser));
