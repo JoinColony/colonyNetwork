@@ -381,7 +381,7 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   const userLockInformation = await tokenLocking.getUserLock(clnyAddress, account);
-  const userBalance = userLockInformation.amount;
+  const userBalance = new BN(userLockInformation.balance);
 
   // What's the largest entry they can submit?
   const nIter = userBalance.div(MIN_STAKE);
