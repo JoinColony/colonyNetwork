@@ -1,6 +1,5 @@
 /* globals artifacts */
 import path from "path";
-import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
@@ -86,8 +85,7 @@ contract("Token Locking", addresses => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userDepositedBalance = new BN(info.balance);
-      assert.equal(userDepositedBalance.toNumber(), usersTokens);
+      assert.equal(info.balance, usersTokens);
 
       const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
       assert.equal(tokenLockingContractBalance.toNumber(), usersTokens);
@@ -101,8 +99,8 @@ contract("Token Locking", addresses => {
       tx = await tokenLocking.deposit(token.address, quarter * 3, { from: userAddress });
       const time1 = await getBlockTime(tx.receipt.blockNumber);
       const info1 = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(new BN(info1.balance).toNumber(), quarter * 3);
-      assert.equal(new BN(info1.timestamp).toNumber(), time1);
+      assert.equal(info1.balance, quarter * 3);
+      assert.equal(info1.timestamp, time1);
 
       await forwardTime(3600);
 
@@ -111,15 +109,14 @@ contract("Token Locking", addresses => {
       const info2 = await tokenLocking.getUserLock(token.address, userAddress);
 
       const weightedAvgTime = Math.floor((time1 * 3 + time2) / 4);
-      assert.equal(new BN(info2.balance).toNumber(), quarter * 4);
-      assert.equal(new BN(info2.timestamp).toNumber(), weightedAvgTime);
+      assert.equal(info2.balance, quarter * 4);
+      assert.equal(info2.timestamp, weightedAvgTime);
     });
 
     it("should not be able to deposit tokens if they are not approved", async () => {
       await checkErrorRevert(tokenLocking.deposit(token.address, usersTokens, { from: userAddress }), "ds-token-insufficient-approval");
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userDepositedBalance = new BN(info.balance);
-      assert.equal(userDepositedBalance.toNumber(), 0);
+      assert.equal(info.balance, 0);
       const userBalance = await token.balanceOf(userAddress);
       assert.equal(userBalance.toNumber(), usersTokens);
     });
@@ -134,8 +131,7 @@ contract("Token Locking", addresses => {
 
       await checkErrorRevert(tokenLocking.withdraw(token.address, otherUserTokens, { from: userAddress }), "ds-math-sub-underflow");
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userDepositedBalance = new BN(info.balance);
-      assert.equal(userDepositedBalance.toNumber(), usersTokens);
+      assert.equal(info.balance, usersTokens);
       const userBalance = await token.balanceOf(userAddress);
       assert.equal(userBalance.toNumber(), 0);
     });
@@ -145,8 +141,7 @@ contract("Token Locking", addresses => {
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       await tokenLocking.withdraw(token.address, usersTokens, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userDepositedBalance = new BN(info.balance);
-      assert.equal(userDepositedBalance.toNumber(), 0);
+      assert.equal(info.balance, 0);
       const userBalance = await token.balanceOf(userAddress);
       assert.equal(userBalance.toNumber(), usersTokens);
     });
@@ -162,8 +157,7 @@ contract("Token Locking", addresses => {
       await checkErrorRevert(tokenLocking.withdraw(token.address, 0, { from: userAddress }), "colony-token-locking-invalid-amount");
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userDepositedBalance = new BN(info.balance);
-      assert.equal(userDepositedBalance.toNumber(), usersTokens);
+      assert.equal(info.balance, usersTokens);
     });
 
     it("should correctly increment total lock count", async () => {
@@ -182,8 +176,7 @@ contract("Token Locking", addresses => {
 
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const lockCount = new BN(info.lockCount);
-      assert.equal(lockCount.toNumber(), 1);
+      assert.equal(info.lockCount, 1);
     });
 
     it("should not be able to waive to id that does not exist", async () => {
@@ -211,8 +204,7 @@ contract("Token Locking", addresses => {
       await tokenLocking.deposit(token.address, usersTokens / 2, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens / 2, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userDepositedBalance = new BN(info.balance);
-      assert.equal(userDepositedBalance.toNumber(), usersTokens);
+      assert.equal(info.balance, usersTokens);
     });
 
     it("should not be able to deposit tokens while they are locked", async () => {
@@ -237,8 +229,7 @@ contract("Token Locking", addresses => {
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress });
       await tokenLocking.withdraw(token.address, usersTokens, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userDepositedBalance = new BN(info.balance);
-      assert.equal(userDepositedBalance, 0);
+      assert.equal(info.balance, 0);
     });
 
     it("should be able to lock tokens twice", async () => {
@@ -261,10 +252,9 @@ contract("Token Locking", addresses => {
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      const userLockCount = new BN(info.lockCount);
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
 
-      assert.equal(userLockCount.toString(), totalLockCount.toString());
+      assert.equal(info.lockCount, totalLockCount.toString());
     });
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
