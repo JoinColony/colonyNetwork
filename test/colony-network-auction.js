@@ -5,7 +5,7 @@ import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../helpers/test-helper";
 import { ZERO_ADDRESS, WAD } from "../helpers/constants";
-import { giveUserCLNYTokens, setupColonyNetwork, setupMetaColonyWithUNLockedCLNYToken } from "../helpers/test-data-generator";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken } from "../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -17,6 +17,7 @@ contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
   const BIDDER_2 = accounts[2];
   const BIDDER_3 = accounts[3];
+  const PATRON = accounts[4];
 
   let metaColony;
   let colonyNetwork;
@@ -34,7 +35,12 @@ contract("Colony Network Auction", accounts => {
 
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
-    ({ metaColony, clnyToken } = await setupMetaColonyWithUNLockedCLNYToken(colonyNetwork));
+    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    await clnyToken.mint(clnyNeededForMaxPriceAuctionSellout.muln(2), { from: accounts[11] });
+    await clnyToken.transfer(PATRON, clnyNeededForMaxPriceAuctionSellout.muln(2), { from: accounts[11] });
+
+    await unlockCLNYToken(metaColony);
 
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
@@ -48,6 +54,10 @@ contract("Colony Network Auction", accounts => {
     const auctionAddress = logs[0].args.auction;
     tokenAuction = await DutchAuction.at(auctionAddress);
   });
+
+  async function giveUserCLNYTokens(_, user, amount) {
+    await clnyToken.transfer(user, amount, { from: PATRON });
+  }
 
   describe("when initialising an auction", async () => {
     it("should initialise auction with correct given parameters", async () => {

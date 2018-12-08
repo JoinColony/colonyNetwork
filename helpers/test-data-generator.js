@@ -359,19 +359,17 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   return { metaColony, clnyToken };
 }
 
-export async function setupMetaColonyWithUNLockedCLNYToken(colonyNetwork) {
-  const { metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+export async function unlockCLNYToken(metaColony) {
+  const clnyAddress = await metaColony.getToken();
+  const clny = await Token.at(clnyAddress);
+
   // Unlock CLNY and Transfer ownership to MetaColony
   const accounts = await web3GetAccounts();
-  await clnyToken.unlock({ from: accounts[11] });
-  await clnyToken.setOwner(metaColony.address, { from: accounts[11] });
+  await clny.unlock({ from: accounts[11] });
+  await clny.setOwner(metaColony.address, { from: accounts[11] });
+
   // TODO: Shoult we clear the Authority as well?
-  // await clnyToken.setAuthority(0x0, { from: accounts[11] });
-
-  const locked = await clnyToken.locked();
-  assert.isFalse(locked);
-
-  return { metaColony, clnyToken };
+  // await clny.setAuthority(0x0, { from: accounts[11] });
 }
 
 export async function setupColonyNetwork() {
