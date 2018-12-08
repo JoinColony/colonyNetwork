@@ -233,9 +233,9 @@ contract("Colony", accounts => {
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.equal(updateLog[0], INITIAL_ADDRESSES[0]);
-      assert.equal(updateLog[1].toString(), INITIAL_REPUTATIONS[0]);
-      assert.equal(updateLog[2].toString(), skillCount.toNumber());
+      assert.equal(updateLog.user, INITIAL_ADDRESSES[0]);
+      assert.equal(updateLog.amount, INITIAL_REPUTATIONS[0]);
+      assert.equal(updateLog.skillId, skillCount.toNumber());
     });
 
     it("should assign tokens correctly when bootstrapping the colony", async () => {

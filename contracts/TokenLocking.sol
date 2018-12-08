@@ -50,9 +50,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   modifier hashNotSubmitted(address _token) {
     address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     if (_token == clnyToken) {
-      bytes32 submittedHash;
-      (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender);
-      require(submittedHash == 0x0, "colony-token-locking-hash-submitted");
+      bytes32 submissionHash = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender).proposedNewRootHash;
+      require(submissionHash == 0x0, "colony-token-locking-hash-submitted");
     }
     _;
   }
