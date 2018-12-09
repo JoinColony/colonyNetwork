@@ -7,7 +7,20 @@ import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { MANAGER_ROLE, EVALUATOR_ROLE, WORKER_ROLE, WORKER_PAYOUT, INITIAL_FUNDING, DEFAULT_STAKE, ZERO_ADDRESS, WAD } from "../helpers/constants";
+import {
+  UINT256_MAX,
+  WAD,
+  MANAGER_ROLE,
+  EVALUATOR_ROLE,
+  WORKER_ROLE,
+  MANAGER_PAYOUT,
+  EVALUATOR_PAYOUT,
+  WORKER_PAYOUT,
+  INITIAL_FUNDING,
+  DEFAULT_STAKE,
+  ZERO_ADDRESS,
+  SECONDS_PER_DAY
+} from "../helpers/constants";
 
 import {
   getTokenArgs,
@@ -454,7 +467,7 @@ contract("Colony Funding", accounts => {
       await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 40, otherToken.address), "colony-funding-task-bad-state");
       const colonyPotBalance = await colony.getPotBalance(2, otherToken.address);
-      expect(colonyPotBalance).to.eq.BN(toBN(350 * 10 ** 18));
+      expect(colonyPotBalance).to.eq.BN(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT));
     });
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
@@ -725,8 +738,7 @@ contract("Colony Funding", accounts => {
     });
 
     it("should not be able to create reward payout if skill id is not from root domain", async () => {
-      const funding = toBN(360 * 1e18);
-      await fundColonyWithTokens(colony, token, funding);
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IMetaColony.at(metaColonyAddress);
@@ -785,8 +797,7 @@ contract("Colony Funding", accounts => {
       const newColony = await IColony.at(colonyAddress);
 
       await newToken.setOwner(newColony.address);
-      const funding = toBN(360 * 1e18);
-      await fundColonyWithTokens(newColony, newToken, funding);
+      await fundColonyWithTokens(newColony, newToken, INITIAL_FUNDING);
 
       await newColony.addDomain(1);
       const domainCount = await newColony.getDomainCount();
@@ -802,9 +813,7 @@ contract("Colony Funding", accounts => {
         domainId: domainCount
       });
 
-      await newColony.claimPayout(taskId, MANAGER_ROLE, newToken.address, {
-        from: userAddress1
-      });
+      await newColony.claimPayout(taskId, MANAGER_ROLE, newToken.address, { from: userAddress1 });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -821,9 +830,7 @@ contract("Colony Funding", accounts => {
       const userReputationProof = [key, value, branchMask, siblings];
 
       await checkErrorRevert(
-        newColony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof, {
-          from: userAddress1
-        }),
+        newColony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof, { from: userAddress1 }),
         "colony-reputation-invalid-skill-id"
       );
     });
@@ -839,9 +846,7 @@ contract("Colony Funding", accounts => {
       await newToken.setOwner(newColony.address);
       await newColony.mintTokens(userTokens);
       await newColony.bootstrapColony([userAddress1], [userTokens]);
-      await newToken.transfer(newColony.address, userTokens, {
-        from: userAddress1
-      });
+      await newToken.transfer(newColony.address, userTokens, { from: userAddress1 });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -875,13 +880,8 @@ contract("Colony Funding", accounts => {
       const tx2 = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId2 = tx2.logs[0].args.rewardPayoutId;
 
-      await colony.claimRewardPayout(payoutId1, initialSquareRoots, ...userReputationProof1, {
-        from: userAddress1
-      });
-
-      await colony.claimRewardPayout(payoutId2, initialSquareRoots, ...userReputationProof1, {
-        from: userAddress1
-      });
+      await colony.claimRewardPayout(payoutId1, initialSquareRoots, ...userReputationProof1, { from: userAddress1 });
+      await colony.claimRewardPayout(payoutId2, initialSquareRoots, ...userReputationProof1, { from: userAddress1 });
     });
 
     it("should not be able to claim payout if colony-wide reputation is 0", async () => {
@@ -944,9 +944,7 @@ contract("Colony Funding", accounts => {
       const userReputationProof3 = [key, value, branchMask, siblings];
 
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof3, {
-          from: userAddress3
-        }),
+        colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof3, { from: userAddress3 }),
         "colony-reward-payout-invalid-user-tokens"
       );
     });
@@ -990,9 +988,7 @@ contract("Colony Funding", accounts => {
       const userReputationProof3 = [key, value, branchMask, siblings];
 
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof3, {
-          from: userAddress3
-        }),
+        colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof3, { from: userAddress3 }),
         "colony-reward-payout-invalid-user-reputation"
       );
     });
@@ -1012,11 +1008,9 @@ contract("Colony Funding", accounts => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
-      await forwardTime(5184001, this);
+      await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, {
-          from: userAddress1
-        }),
+        colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
         "colony-reward-payout-not-active"
       );
     });
@@ -1025,14 +1019,10 @@ contract("Colony Funding", accounts => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
-      await tokenLocking.incrementLockCounterTo(token.address, payoutId, {
-        from: userAddress1
-      });
+      await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress1 });
 
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, {
-          from: userAddress1
-        }),
+        colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
         "colony-token-already-unlocked"
       );
     });
@@ -1048,9 +1038,7 @@ contract("Colony Funding", accounts => {
       const payoutId2 = logs[0].args.rewardPayoutId;
 
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId2, initialSquareRoots, ...userReputationProof1, {
-          from: userAddress1
-        }),
+        colony.claimRewardPayout(payoutId2, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
         "colony-token-locking-has-previous-active-locks"
       );
     });
@@ -1075,12 +1063,7 @@ contract("Colony Funding", accounts => {
         const functionName = [2, 3, 5].includes(i) ? "div" : "mul";
         squareRoots[i] = new BN(squareRoots[i])[functionName](new BN(2));
 
-        return checkErrorRevert(
-          colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof1, {
-            from: userAddress1
-          }),
-          errorMessages[i]
-        );
+        return checkErrorRevert(colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof1, { from: userAddress1 }), errorMessages[i]);
       });
 
       await Promise.all(promises);
@@ -1090,7 +1073,7 @@ contract("Colony Funding", accounts => {
       const tx = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.rewardPayoutId;
 
-      await forwardTime(5184001, this);
+      await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await colony.finalizeRewardPayout(payoutId);
 
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
@@ -1100,15 +1083,10 @@ contract("Colony Funding", accounts => {
       const tx = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.rewardPayoutId;
 
-      await forwardTime(5184001, this);
+      await forwardTime(SECONDS_PER_DAY * 60 + 1, this);
       await colony.finalizeRewardPayout(payoutId);
 
-      await checkErrorRevert(
-        colony.finalizeRewardPayout(payoutId, {
-          from: userAddress1
-        }),
-        "colony-reward-payout-token-not-active"
-      );
+      await checkErrorRevert(colony.finalizeRewardPayout(payoutId, { from: userAddress1 }), "colony-reward-payout-token-not-active");
     });
 
     it("should not be able to finalize payout if payout is still active", async () => {
@@ -1128,14 +1106,10 @@ contract("Colony Funding", accounts => {
       const tx = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.rewardPayoutId;
 
-      await colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, {
-        from: userAddress1
-      });
+      await colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 });
 
       await checkErrorRevert(
-        colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, {
-          from: userAddress1
-        }),
+        colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
         "colony-token-already-unlocked"
       );
     });
@@ -1337,9 +1311,7 @@ contract("Colony Funding", accounts => {
       const userReputationProofForColony2 = [key, value, branchMask, siblings];
 
       await checkErrorRevert(
-        colony2.claimRewardPayout(payoutId1, squareRoots, ...userReputationProofForColony2, {
-          from: userAddress1
-        }),
+        colony2.claimRewardPayout(payoutId1, squareRoots, ...userReputationProofForColony2, { from: userAddress1 }),
         "colony-reputation-invalid-root-hash"
       );
     });
