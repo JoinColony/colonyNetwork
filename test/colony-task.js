@@ -152,11 +152,9 @@ contract("ColonyTask", accounts => {
     it("should return the correct number of tasks", async () => {
       const taskCountBefore = await colony.getTaskCount();
 
-      await makeTask({ colony });
-      await makeTask({ colony });
-      await makeTask({ colony });
-      await makeTask({ colony });
-      await makeTask({ colony });
+      for (let i = 0; i < 5; i += 1) {
+        await makeTask({ colony }); // eslint-disable-line no-await-in-loop
+      }
 
       const taskCountAfter = await colony.getTaskCount();
       expect(taskCountAfter).to.be.eq.BN(taskCountBefore.addn(5));
@@ -1194,12 +1192,7 @@ contract("ColonyTask", accounts => {
       dueDate += SECONDS_PER_DAY * 4;
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
-      await expectEvent(
-        colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, {
-          from: WORKER
-        }),
-        "TaskDeliverableSubmitted"
-      );
+      await expectEvent(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "TaskDeliverableSubmitted");
     });
   });
 
