@@ -4,7 +4,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../helpers/test-helper";
-import { ZERO_ADDRESS, WAD } from "../helpers/constants";
+import { ZERO_ADDRESS, WAD, SECONDS_PER_DAY } from "../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken } from "../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -37,6 +37,7 @@ contract("Colony Network Auction", accounts => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
+    // HACK: give some large amount (enough for the test) to this account before unlocking.
     await clnyToken.mint(clnyNeededForMaxPriceAuctionSellout.muln(2), { from: accounts[11] });
     await clnyToken.transfer(PATRON, clnyNeededForMaxPriceAuctionSellout.muln(2), { from: accounts[11] });
 
@@ -55,6 +56,7 @@ contract("Colony Network Auction", accounts => {
     tokenAuction = await DutchAuction.at(auctionAddress);
   });
 
+  // HACK: transparently give out PATRON tokens instead of actually minting.
   async function giveUserCLNYTokens(_, user, amount) {
     await clnyToken.transfer(user, amount, { from: PATRON });
   }
@@ -102,8 +104,8 @@ contract("Colony Network Auction", accounts => {
     it("should set the minimum price correctly for quantity < 1e18", async () => {
       const args = getTokenArgs();
       const otherToken = await ERC20ExtendedToken.new(...args);
-      await otherToken.mint(new BN(10).pow(new BN(17)));
-      await otherToken.transfer(colonyNetwork.address, new BN(10).pow(new BN(17)));
+      await otherToken.mint(WAD.divn(10));
+      await otherToken.transfer(colonyNetwork.address, WAD.divn(10));
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
@@ -209,8 +211,7 @@ contract("Colony Network Auction", accounts => {
 
     it("should succeed if the last auction for the same token was started at least 30 days ago", async () => {
       const previousAuctionStartTime = await tokenAuction.startTime();
-      // 30 days (in seconds)
-      await forwardTime(30 * 24 * 60 * 60, this);
+      await forwardTime(SECONDS_PER_DAY * 30, this);
 
       await token.mint(quantity);
       await token.transfer(colonyNetwork.address, quantity);
@@ -369,7 +370,7 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, bidAmount3, { from: BIDDER_3 });
 
       await tokenAuction.bid(bidAmount1, { from: BIDDER_1 }); // Bids at near max price of 1e36 CLNY per 1e18 Tokens
-      await forwardTime(1382400, this); // Gets us near price of 1e20 CLNY per 1e18 Tokens
+      await forwardTime(SECONDS_PER_DAY * 16, this); // Gets us near price of 1e20 CLNY per 1e18 Tokens
       await tokenAuction.bid(bidAmount2, { from: BIDDER_2 });
       await tokenAuction.bid(bidAmount3, { from: BIDDER_3 });
 
