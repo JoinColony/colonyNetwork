@@ -396,11 +396,15 @@ contract("Colony Network Recovery", accounts => {
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(4), `0x${new BN(logEntry.nUpdates).toString(16, 64)}`);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
+
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
-            /* eslint-enable no-await-in-loop  */
-            for (let j = 0; j < portedLogEntry.length; j += 1) {
-              assert.equal(portedLogEntry[i], logEntry[i]);
-            }
+
+            assert.equal(portedLogEntry.user, logEntry.user);
+            assert.equal(portedLogEntry.amount, logEntry.amount);
+            assert.equal(portedLogEntry.skillId, logEntry.skillId);
+            assert.equal(portedLogEntry.colony, logEntry.colony);
+            assert.equal(portedLogEntry.nUpdates, logEntry.nUpdates);
+            assert.equal(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
 
           // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
@@ -423,10 +427,13 @@ contract("Colony Network Recovery", accounts => {
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
 
             const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
-            /* eslint-enable no-await-in-loop  */
-            for (let j = 0; j < portedLogEntry.length; j += 1) {
-              assert.equal(portedLogEntry[i], logEntry[i]);
-            }
+
+            assert.equal(portedLogEntry.user, logEntry.user);
+            assert.equal(portedLogEntry.amount, logEntry.amount);
+            assert.equal(portedLogEntry.skillId, logEntry.skillId);
+            assert.equal(portedLogEntry.colony, logEntry.colony);
+            assert.equal(portedLogEntry.nUpdates, logEntry.nUpdates);
+            assert.equal(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
 
           // Set the new cycles
