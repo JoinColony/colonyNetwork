@@ -399,12 +399,12 @@ contract("Colony Network Recovery", accounts => {
 
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
 
-            assert.equal(portedLogEntry.user, logEntry.user);
-            assert.equal(portedLogEntry.amount, logEntry.amount);
-            assert.equal(portedLogEntry.skillId, logEntry.skillId);
-            assert.equal(portedLogEntry.colony, logEntry.colony);
-            assert.equal(portedLogEntry.nUpdates, logEntry.nUpdates);
-            assert.equal(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
+            assert.strictEqual(portedLogEntry.user, logEntry.user);
+            assert.strictEqual(portedLogEntry.amount, logEntry.amount);
+            assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
+            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
+            assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
+            assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
 
           // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
@@ -428,21 +428,21 @@ contract("Colony Network Recovery", accounts => {
 
             const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
 
-            assert.equal(portedLogEntry.user, logEntry.user);
-            assert.equal(portedLogEntry.amount, logEntry.amount);
-            assert.equal(portedLogEntry.skillId, logEntry.skillId);
-            assert.equal(portedLogEntry.colony, logEntry.colony);
-            assert.equal(portedLogEntry.nUpdates, logEntry.nUpdates);
-            assert.equal(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
+            assert.strictEqual(portedLogEntry.user, logEntry.user);
+            assert.strictEqual(portedLogEntry.amount, logEntry.amount);
+            assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
+            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
+            assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
+            assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
 
           // Set the new cycles
           await colonyNetwork.setStorageSlotRecovery(18, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
           await colonyNetwork.setStorageSlotRecovery(19, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
           const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
-          assert.equal(retrievedActiveCycleAddress, newActiveCycle.address);
+          assert.strictEqual(retrievedActiveCycleAddress, newActiveCycle.address);
           const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-          assert.equal(retrievedInactiveCycleAddress, newInactiveCycle.address);
+          assert.strictEqual(retrievedInactiveCycleAddress, newInactiveCycle.address);
 
           // Exit recovery mode
           await colonyNetwork.approveExitRecovery();

@@ -48,28 +48,28 @@ contract("Reputation Updates", accounts => {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.equal(repLogEntryManager.user, MANAGER);
+      assert.strictEqual(repLogEntryManager.user, MANAGER);
       expect(new BN(repLogEntryManager.amount)).to.eq.BN(toBN(100 * 1e18));
-      assert.equal(repLogEntryManager.skillId, 2);
-      assert.equal(repLogEntryManager.colony, metaColony.address);
-      assert.equal(repLogEntryManager.nUpdates, 2);
-      assert.equal(repLogEntryManager.nPreviousUpdates, 0);
+      assert.strictEqual(repLogEntryManager.skillId, "2");
+      assert.strictEqual(repLogEntryManager.colony, metaColony.address);
+      assert.strictEqual(repLogEntryManager.nUpdates, "2");
+      assert.strictEqual(repLogEntryManager.nPreviousUpdates, "0");
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
-      assert.equal(repLogEntryEvaluator.user, EVALUATOR);
+      assert.strictEqual(repLogEntryEvaluator.user, EVALUATOR);
       expect(new BN(repLogEntryEvaluator.amount)).to.eq.BN(toBN(50 * 1e18));
-      assert.equal(repLogEntryEvaluator.skillId, 2);
-      assert.equal(repLogEntryEvaluator.colony, metaColony.address);
-      assert.equal(repLogEntryEvaluator.nUpdates, 2);
-      assert.equal(repLogEntryEvaluator.nPreviousUpdates, 2);
+      assert.strictEqual(repLogEntryEvaluator.skillId, "2");
+      assert.strictEqual(repLogEntryEvaluator.colony, metaColony.address);
+      assert.strictEqual(repLogEntryEvaluator.nUpdates, "2");
+      assert.strictEqual(repLogEntryEvaluator.nPreviousUpdates, "2");
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
-      assert.equal(repLogEntryWorker.user, WORKER);
+      assert.strictEqual(repLogEntryWorker.user, WORKER);
       expect(new BN(repLogEntryWorker.amount)).to.eq.BN(toBN(300 * 1e18));
-      assert.equal(repLogEntryWorker.skillId, 2);
-      assert.equal(repLogEntryWorker.colony, metaColony.address);
-      assert.equal(repLogEntryWorker.nUpdates, 2);
-      assert.equal(repLogEntryWorker.nPreviousUpdates, 4);
+      assert.strictEqual(repLogEntryWorker.skillId, "2");
+      assert.strictEqual(repLogEntryWorker.colony, metaColony.address);
+      assert.strictEqual(repLogEntryWorker.nUpdates, "2");
+      assert.strictEqual(repLogEntryWorker.nPreviousUpdates, "4");
     });
 
     const ratings = [
@@ -103,37 +103,37 @@ contract("Reputation Updates", accounts => {
         });
 
         const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-        assert.equal(repLogEntryManager.user, MANAGER);
-        assert.equal(repLogEntryManager.amount, rating.reputationChangeManager.toString());
-        assert.equal(repLogEntryManager.skillId, 2);
-        assert.equal(repLogEntryManager.colony, metaColony.address);
+        assert.strictEqual(repLogEntryManager.user, MANAGER);
+        assert.strictEqual(repLogEntryManager.amount, rating.reputationChangeManager.toString());
+        assert.strictEqual(repLogEntryManager.skillId, "2");
+        assert.strictEqual(repLogEntryManager.colony, metaColony.address);
         // If the rating is less than 2, then we also subtract reputation from all child skills. In the case
         // of the metaColony here, the task was created in the root domain of the metaColony, and a child of the
         // root skill is the mining skill. So the number we expect here differs depending on whether it's a reputation
         // gain or loss that we're logging.
         if (rating.manager >= 2) {
-          assert.equal(repLogEntryManager.nUpdates, 2);
+          assert.strictEqual(repLogEntryManager.nUpdates, "2");
         } else {
-          assert.equal(repLogEntryManager.nUpdates, 4);
+          assert.strictEqual(repLogEntryManager.nUpdates, "4");
         }
-        assert.equal(repLogEntryManager.nPreviousUpdates, 0);
+        assert.strictEqual(repLogEntryManager.nPreviousUpdates, "0");
 
         const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
-        assert.equal(repLogEntryWorker.user, WORKER);
-        assert.equal(repLogEntryWorker.amount, rating.reputationChangeWorker.toString());
-        assert.equal(repLogEntryWorker.skillId, 2);
-        assert.equal(repLogEntryWorker.colony, metaColony.address);
+        assert.strictEqual(repLogEntryWorker.user, WORKER);
+        assert.strictEqual(repLogEntryWorker.amount, rating.reputationChangeWorker.toString());
+        assert.strictEqual(repLogEntryWorker.skillId, "2");
+        assert.strictEqual(repLogEntryWorker.colony, metaColony.address);
         if (rating.worker >= 2) {
-          assert.equal(repLogEntryWorker.nUpdates, 2);
+          assert.strictEqual(repLogEntryWorker.nUpdates, "2");
         } else {
-          assert.equal(repLogEntryWorker.nUpdates, 4);
+          assert.strictEqual(repLogEntryWorker.nUpdates, "4");
         }
         // This last entry in the log entry is nPreviousUpdates, which depends on whether the manager was given a reputation
         // gain or loss.
         if (rating.manager >= 2) {
-          assert.equal(repLogEntryWorker.nPreviousUpdates, 4);
+          assert.strictEqual(repLogEntryWorker.nPreviousUpdates, "4");
         } else {
-          assert.equal(repLogEntryWorker.nPreviousUpdates, 6);
+          assert.strictEqual(repLogEntryWorker.nPreviousUpdates, "6");
         }
       });
     });
@@ -166,13 +166,13 @@ contract("Reputation Updates", accounts => {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 5 });
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       const result = toBN(WORKER_PAYOUT).muln(3).divn(2); // eslint-disable-line prettier/prettier
-      assert.equal(repLogEntryWorker.amount, result.toString());
-      assert.equal(repLogEntryWorker.nUpdates, 6);
+      assert.strictEqual(repLogEntryWorker.amount, result.toString());
+      assert.strictEqual(repLogEntryWorker.nUpdates, "6");
 
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 6 });
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(7);
-      assert.equal(repLogEntryWorker.amount, result.toString());
-      assert.equal(repLogEntryWorker.nUpdates, 8); // Negative reputation change means children change as well.
+      assert.strictEqual(repLogEntryWorker.amount, result.toString());
+      assert.strictEqual(repLogEntryWorker.nUpdates, "8"); // Negative reputation change means children change as well.
     });
 
     it("should revert on reputation amount overflow", async () => {

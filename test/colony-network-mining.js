@@ -637,20 +637,20 @@ contract("ColonyNetworkMining", accounts => {
 
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(0);
-      assert.equal(repLogEntryMiner.user, MAIN_ACCOUNT);
+      assert.strictEqual(repLogEntryMiner.user, MAIN_ACCOUNT);
       assert.isTrue(new BN(repLogEntryMiner.amount).sub(REWARD.divn(2)).gtn(0));
-      assert.equal(repLogEntryMiner.skillId, 3);
-      assert.equal(repLogEntryMiner.colony, metaColony.address);
-      assert.equal(repLogEntryMiner.nUpdates, 4);
-      assert.equal(repLogEntryMiner.nPreviousUpdates, 0);
+      assert.strictEqual(repLogEntryMiner.skillId, "3");
+      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
+      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
+      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "0");
 
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(1);
-      assert.equal(repLogEntryMiner.user, MAIN_ACCOUNT);
+      assert.strictEqual(repLogEntryMiner.user, MAIN_ACCOUNT);
       assert.isTrue(new BN(repLogEntryMiner.amount).sub(REWARD.divn(2)).ltn(0));
-      assert.equal(repLogEntryMiner.skillId, 3);
-      assert.equal(repLogEntryMiner.colony, metaColony.address);
-      assert.equal(repLogEntryMiner.nUpdates, 4);
-      assert.equal(repLogEntryMiner.nPreviousUpdates, 4);
+      assert.strictEqual(repLogEntryMiner.skillId, "3");
+      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
+      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
+      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "4");
 
       const reputationUpdateLogLength = await repCycle.getReputationUpdateLogLength();
       assert.equal(reputationUpdateLogLength.toString(), 2);
@@ -763,20 +763,20 @@ contract("ColonyNetworkMining", accounts => {
 
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(0);
-      assert.equal(repLogEntryMiner.user, MAIN_ACCOUNT);
-      assert.equal(repLogEntryMiner.amount, balance1Updated.toString());
-      assert.equal(repLogEntryMiner.skillId, 3);
-      assert.equal(repLogEntryMiner.colony, metaColony.address);
-      assert.equal(repLogEntryMiner.nUpdates, 4);
-      assert.equal(repLogEntryMiner.nPreviousUpdates, 0);
+      assert.strictEqual(repLogEntryMiner.user, MAIN_ACCOUNT);
+      assert.strictEqual(repLogEntryMiner.amount, balance1Updated.toString());
+      assert.strictEqual(repLogEntryMiner.skillId, "3");
+      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
+      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
+      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "0");
 
       repLogEntryMiner = await repCycle.getReputationUpdateLogEntry(1);
-      assert.equal(repLogEntryMiner.user, OTHER_ACCOUNT);
-      assert.equal(repLogEntryMiner.amount, balance2Updated.toString());
-      assert.equal(repLogEntryMiner.skillId, 3);
-      assert.equal(repLogEntryMiner.colony, metaColony.address);
-      assert.equal(repLogEntryMiner.nUpdates, 4);
-      assert.equal(repLogEntryMiner.nPreviousUpdates, 4);
+      assert.strictEqual(repLogEntryMiner.user, OTHER_ACCOUNT);
+      assert.strictEqual(repLogEntryMiner.amount, balance2Updated.toString());
+      assert.strictEqual(repLogEntryMiner.skillId, "3");
+      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
+      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
+      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "4");
 
       const reputationUpdateLogLength = await repCycle.getReputationUpdateLogLength();
       assert.equal(reputationUpdateLogLength.toString(), 2);
