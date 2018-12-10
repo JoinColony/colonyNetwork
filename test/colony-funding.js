@@ -26,7 +26,8 @@ import {
   executeSignedTaskChange,
   executeSignedRoleAssignment,
   makeTask,
-  giveUserCLNYTokensAndStake
+  giveUserCLNYTokensAndStake,
+  setupRandomColony
 } from "../helpers/test-data-generator";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
@@ -68,13 +69,12 @@ contract("Colony Funding", accounts => {
   });
 
   beforeEach(async () => {
-    const tokenArgs = getTokenArgs();
-    token = await ERC20ExtendedToken.new(...tokenArgs);
-    const { logs } = await colonyNetwork.createColony(token.address);
-    const { colonyAddress } = logs[0].args;
-    await token.setOwner(colonyAddress);
-    colony = await IColony.at(colonyAddress);
+    colony = await setupRandomColony(colonyNetwork);
     await colony.setRewardInverse(100);
+
+    const tokenAddress = await colony.getToken();
+    token = await ERC20ExtendedToken.at(tokenAddress);
+
     const otherTokenArgs = getTokenArgs();
     otherToken = await ERC20ExtendedToken.new(...otherTokenArgs);
   });

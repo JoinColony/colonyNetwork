@@ -4,7 +4,7 @@ import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
 import { ZERO_ADDRESS } from "../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
 const namehash = require("eth-ens-namehash");
 
@@ -13,7 +13,6 @@ chai.use(bnChai(web3.utils.BN));
 
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
-const IColony = artifacts.require("IColony");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Colony Network", accounts => {
@@ -76,11 +75,9 @@ contract("Colony Network", accounts => {
 
   describe("when creating new colonies", () => {
     it("should allow users to create new colonies", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
+      const colony = await setupRandomColony(colonyNetwork);
       const colonyCount = await colonyNetwork.getColonyCount();
-      assert.notEqual(colonyAddress, ZERO_ADDRESS);
+      assert.notEqual(colony.address, ZERO_ADDRESS);
       expect(colonyCount).to.eq.BN(2);
     });
 
@@ -123,8 +120,8 @@ contract("Colony Network", accounts => {
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
+      const colony = await setupRandomColony(colonyNetwork);
+
       const rootLocalSkill = await colonyNetwork.getSkill(1);
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
       expect(parseInt(rootLocalSkill.nChildren, 10)).to.be.zero;
@@ -133,8 +130,6 @@ contract("Colony Network", accounts => {
       const skill = await colonyNetwork.getSkill(skillCount.addn(1));
       expect(skill.globalSkill).to.be.false;
 
-      const { colonyAddress } = logs[0].args;
-      const colony = await IColony.at(colonyAddress);
       const rootDomain = await colony.getDomain(1);
       expect(rootDomain.skillId).to.eq.BN(4);
       expect(rootDomain.potId).to.eq.BN(1);
@@ -173,10 +168,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should be able to get the Colony version", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      const colony = await IColony.at(colonyAddress);
+      const colony = await setupRandomColony(colonyNetwork);
       const actualColonyVersion = await colony.version();
       expect(version).to.eq.BN(actualColonyVersion);
     });
@@ -184,11 +176,8 @@ contract("Colony Network", accounts => {
 
   describe("when upgrading a colony", () => {
     it("should be able to upgrade a colony, if a sender has founder role", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      const colonyEtherRouter = await EtherRouter.at(colonyAddress);
-      const colony = await IColony.at(colonyAddress);
+      const colony = await setupRandomColony(colonyNetwork);
+      const colonyEtherRouter = await EtherRouter.at(colony.address);
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
@@ -201,10 +190,8 @@ contract("Colony Network", accounts => {
     });
 
     it("should not be able to set colony resolver by directly calling `setResolver`", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      const colony = await EtherRouter.at(colonyAddress);
+      const colony = await setupRandomColony(colonyNetwork);
+      const colonyEtherRouter = await EtherRouter.at(colony.address);
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
@@ -214,12 +201,8 @@ contract("Colony Network", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      const colony = await IColony.at(colonyAddress);
-
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
+      const colony = await setupRandomColony(colonyNetwork);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.subn(1);
       await metaColony.addNetworkColonyVersion(newVersion, sampleResolver);
@@ -229,24 +212,18 @@ contract("Colony Network", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a nonexistent version", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
+      const colony = await setupRandomColony(colonyNetwork);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
-      const colony = await IColony.at(colonyAddress);
 
       await checkErrorRevert(colony.upgrade(newVersion), "colony-version-must-be-registered");
       expect(version).to.eq.BN(currentColonyVersion);
     });
 
     it("should NOT be able to upgrade a colony if sender don't have founder role", async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      const colonyEtherRouter = await EtherRouter.at(colonyAddress);
+      const colony = await setupRandomColony(colonyNetwork);
+      const colonyEtherRouter = await EtherRouter.at(colony.address);
       const colonyResolver = await colonyEtherRouter.resolver();
-      const colony = await IColony.at(colonyAddress);
 
       const sampleResolver = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
@@ -259,13 +236,6 @@ contract("Colony Network", accounts => {
   });
 
   describe("when adding a skill", () => {
-    beforeEach(async () => {
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      await token.setOwner(colonyAddress);
-    });
-
     it("should not be able to add a global skill, by an address that is not the meta colony ", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(1, true), "colony-must-be-meta-colony");
     });
@@ -340,11 +310,7 @@ contract("Colony Network", accounts => {
       const colonyName2 = "test2";
       const hash = namehash.hash("test.colony.joincolony.eth");
 
-      // Cargo-cult colony generation
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      const colony = await IColony.at(colonyAddress);
+      const colony = await setupRandomColony(colonyNetwork);
 
       // Non-founder can't register label for colony
       await checkErrorRevert(colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[1] }), "ds-auth-unauthorized");
@@ -363,10 +329,10 @@ contract("Colony Network", accounts => {
       assert.equal(resolverAddress, colonyNetwork.address);
       // Then query the resolver
       const resolvedAddress = await colonyNetwork.addr(hash);
-      assert.equal(resolvedAddress, colonyAddress);
+      assert.equal(resolvedAddress, colony.address);
 
       // Check reverse lookup
-      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
+      const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
       assert.equal(lookedUpENSDomain, "test.colony.joincolony.eth");
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
@@ -381,16 +347,14 @@ contract("Colony Network", accounts => {
       await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
 
       // Set up colony
-      const token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      const colony = await IColony.at(colonyAddress);
+      const colony = await setupRandomColony(colonyNetwork);
+
       // Register colony
       // Founder can register label for colony
       await colony.registerColonyLabel("test", orbitDBAddress, { from: accounts[0] });
 
       // Check reverse lookup for colony
-      const lookedUpENSDomainColony = await colonyNetwork.lookupRegisteredENSDomain(colonyAddress);
+      const lookedUpENSDomainColony = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
       assert.equal(lookedUpENSDomainColony, "test.colony.joincolony.eth");
 
       // Check reverse lookup

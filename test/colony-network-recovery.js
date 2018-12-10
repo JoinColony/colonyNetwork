@@ -6,7 +6,6 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import {
   forwardTime,
-  getTokenArgs,
   makeReputationKey,
   currentBlock,
   currentBlockTime,
@@ -16,7 +15,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest
 } from "../helpers/test-helper";
-import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens } from "../helpers/test-data-generator";
+import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import { setupEtherRouter } from "../helpers/upgradable-contracts";
 import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
@@ -238,14 +237,7 @@ contract("Colony Network Recovery", accounts => {
           });
           await newClient.initialise(colonyNetwork.address);
 
-          const tokenArgs = getTokenArgs();
-          const token = await ERC20ExtendedToken.new(...tokenArgs);
-          const { logs } = await colonyNetwork.createColony(token.address);
-          const { colonyAddress } = logs[0].args;
-
-          await token.setOwner(colonyAddress);
-          const colony = await IColony.at(colonyAddress);
-
+          const colony = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[5]], [1000000000000000]);
 
@@ -316,14 +308,7 @@ contract("Colony Network Recovery", accounts => {
           });
           await ignorantclient.initialise(colonyNetwork.address);
 
-          const tokenArgs = getTokenArgs();
-          const token = await ERC20ExtendedToken.new(...tokenArgs);
-          const { logs } = await colonyNetwork.createColony(token.address);
-          const { colonyAddress } = logs[0].args;
-
-          await token.setOwner(colonyAddress);
-          const colony = await IColony.at(colonyAddress);
-
+          const colony = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 

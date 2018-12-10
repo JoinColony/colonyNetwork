@@ -2,14 +2,13 @@
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
-import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
+import { giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
 import { MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
@@ -38,17 +37,15 @@ contract("Token Locking", addresses => {
   });
 
   beforeEach(async () => {
-    let tokenArgs = getTokenArgs();
-    token = await ERC20ExtendedToken.new(...tokenArgs);
-    tokenArgs = getTokenArgs();
-    otherToken = await ERC20ExtendedToken.new(...tokenArgs);
-
-    const { logs } = await colonyNetwork.createColony(token.address);
-    const { colonyAddress } = logs[0].args;
-    colony = await IColony.at(colonyAddress);
-    await token.setOwner(colony.address);
+    colony = await setupRandomColony(colonyNetwork);
     await colony.mintTokens(usersTokens + otherUserTokens);
     await colony.bootstrapColony([userAddress], [usersTokens]);
+
+    const tokenAddress = await colony.getToken();
+    token = await ERC20ExtendedToken.at(tokenAddress);
+
+    const tokenArgs = getTokenArgs();
+    otherToken = await ERC20ExtendedToken.new(...tokenArgs);
 
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 

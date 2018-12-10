@@ -40,7 +40,8 @@ import {
   setupFundedTask,
   executeSignedTaskChange,
   executeSignedRoleAssignment,
-  makeTask
+  makeTask,
+  setupRandomColony
 } from "../helpers/test-data-generator";
 
 const ethers = require("ethers");
@@ -50,7 +51,6 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
-const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const Token = artifacts.require("Token");
 
@@ -73,17 +73,15 @@ contract("ColonyTask", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
-    const tokenArgs = getTokenArgs();
-    token = await Token.new(...tokenArgs);
-    const { logs } = await colonyNetwork.createColony(token.address);
-    const { colonyAddress } = logs[0].args;
-    await token.setOwner(colonyAddress);
-    colony = await IColony.at(colonyAddress);
+    colony = await setupRandomColony(colonyNetwork);
     await colony.setRewardInverse(100);
+    await colony.setAdminRole(COLONY_ADMIN);
+
+    const tokenAddress = await colony.getToken();
+    token = await Token.at(tokenAddress);
+
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);
-
-    await colony.setAdminRole(COLONY_ADMIN);
   });
 
   describe("when creating tasks", () => {

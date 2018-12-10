@@ -15,12 +15,11 @@ import {
   WAD
 } from "../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
-import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
+import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const IColony = artifacts.require("IColony");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ColonyAuthority = artifacts.require("ColonyAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
@@ -41,12 +40,11 @@ contract("Colony", accounts => {
   });
 
   beforeEach(async () => {
-    const tokenArgs = getTokenArgs();
-    token = await ERC20ExtendedToken.new(...tokenArgs);
-    const { logs } = await colonyNetwork.createColony(token.address);
-    const { colonyAddress } = logs[0].args;
-    await token.setOwner(colonyAddress);
-    colony = await IColony.at(colonyAddress);
+    colony = await setupRandomColony(colonyNetwork);
+
+    const tokenAddress = await colony.getToken();
+    token = await ERC20ExtendedToken.at(tokenAddress);
+
     const authorityAddress = await colony.authority();
     authority = await ColonyAuthority.at(authorityAddress);
   });

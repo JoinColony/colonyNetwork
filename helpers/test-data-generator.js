@@ -18,7 +18,7 @@ import {
   DELIVERABLE_HASH,
   ZERO_ADDRESS
 } from "./constants";
-import { createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
+import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
 
@@ -26,6 +26,7 @@ const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
+const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -391,4 +392,15 @@ export async function setupColonyNetwork() {
   await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
 
   return colonyNetwork;
+}
+
+export async function setupRandomColony(colonyNetwork) {
+  const tokenArgs = getTokenArgs();
+  const token = await ERC20ExtendedToken.new(...tokenArgs);
+  const { logs } = await colonyNetwork.createColony(token.address);
+  const { colonyAddress } = logs[0].args;
+  const colony = await IColony.at(colonyAddress);
+  await token.setOwner(colonyAddress);
+
+  return colony;
 }

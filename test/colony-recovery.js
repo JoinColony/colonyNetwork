@@ -1,11 +1,6 @@
-/* globals artifacts */
-
 import { SPECIFICATION_HASH, ZERO_ADDRESS } from "../helpers/constants";
-import { web3GetStorageAt, checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken } from "../helpers/test-data-generator";
-
-const IColony = artifacts.require("IColony");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
 contract("Colony Recovery", accounts => {
   let colony;
@@ -21,11 +16,7 @@ contract("Colony Recovery", accounts => {
   });
 
   beforeEach(async () => {
-    const tokenArgs = getTokenArgs();
-    const token = await ERC20ExtendedToken.new(...tokenArgs);
-    const { logs } = await colonyNetwork.createColony(token.address);
-    const { colonyAddress } = logs[0].args;
-    colony = await IColony.at(colonyAddress);
+    colony = await setupRandomColony(colonyNetwork);
   });
 
   describe("when using recovery mode", () => {
