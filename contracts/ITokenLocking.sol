@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./TokenLockingDataTypes.sol";
 
@@ -73,8 +74,9 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @notice Get user token lock info (lock count and deposited amount)
   /// @param _token Address of the token
   /// @param _user Address of the user
-  /// @return lockCount User's token lock count
-  /// @return amount User's deposited amount
-  /// @return timestamp Timestamp of deposit
-  function getUserLock(address _token, address _user) public view returns (uint256 lockCount, uint256 amount, uint256 timestamp);
+  /// @return Lock object containing
+  ///   lockCount User's token lock count
+  ///   amount User's deposited amount
+  ///   timestamp Timestamp of deposit
+  function getUserLock(address _token, address _user) public view returns (Lock lock);
 }

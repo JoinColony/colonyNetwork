@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./ERC20Extended.sol";
 import "./IColonyNetwork.sol";
@@ -49,9 +50,8 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   modifier hashNotSubmitted(address _token) {
     address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     if (_token == clnyToken) {
-      bytes32 submittedHash;
-      (submittedHash,,,,,,,,,,) = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender);
-      require(submittedHash == 0x0, "colony-token-locking-hash-submitted");
+      bytes32 submissionHash = IReputationMiningCycle(IColonyNetwork(colonyNetwork).getReputationMiningCycle(true)).getReputationHashSubmissions(msg.sender).proposedNewRootHash;
+      require(submissionHash == 0x0, "colony-token-locking-hash-submitted");
     }
     _;
   }
@@ -150,8 +150,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return totalLockCount[_token];
   }
 
-  function getUserLock(address _token, address _user) public view returns (uint256, uint256, uint256) {
-    Lock storage lock = userLocks[_token][_user];
-    return (lock.lockCount, lock.balance, lock.timestamp);
+  function getUserLock(address _token, address _user) public view returns (Lock lock) {
+    lock = userLocks[_token][_user];
   }
 }

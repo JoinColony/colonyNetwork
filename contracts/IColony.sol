@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental ABIEncoderV2;
 
 import "./IRecovery.sol";
 import "./ColonyDataTypes.sol";
@@ -111,11 +112,10 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1
   function addDomain(uint256 _parentDomainId) public;
 
-  /// @notice Get the domain's local skill and funding pot id
+  /// @notice Get a domain by id
   /// @param _id Id of the domain which details to get
-  /// @return skillId The domain "local" skill id
-  /// @return potId The domain's funding pot id
-  function getDomain(uint256 _id) public view returns (uint256 skillId, uint256 potId);
+  /// @return domain The domain
+  function getDomain(uint256 _id) public view returns (Domain domain);
 
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
@@ -329,7 +329,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns (
+  function getTask(uint256 _id) public view returns ( 
     bytes32 specificationHash,
     bytes32 deliverableHash,
     uint8 status,
@@ -344,10 +344,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Get the `Role` properties back for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
-  /// @return user Address of the user for the given role
-  /// @return rateFail Whether the user failed to rate their counterpart
-  /// @return rating Rating the user received
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (address user, bool rateFail, uint8 rating);
+  /// @return role The Role
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role);
 
   /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
   /// @param _rewardInverse The inverse of the reward
@@ -440,22 +438,17 @@ contract IColony is ColonyDataTypes, IRecovery {
     bytes32[] siblings
     ) public;
 
+
   /// @notice Get useful information about specific reward payout
   /// @param _payoutId Id of the reward payout
-  /// @return reputationState Reputation root hash at the time of creation
-  /// @return colonyWideReputation Colony wide reputation in `reputationState`
-  /// @return totalTokens Total colony tokens at the time of creation
-  /// @return amount Total amount of tokens taken aside for reward payout
-  /// @return tokenAddress Token address
-  /// @return blockTimestamp Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (
-    bytes32 reputationState,
-    uint256 colonyWideReputation,
-    uint256 totalTokens,
-    uint256 amount,
-    address tokenAddress,
-    uint256 blockTimestamp
-    );
+  /// @return RewardPayoutCycle, containing propertes:
+  ///  reputationState Reputation root hash at the time of creation
+  ///  colonyWideReputation Colony wide reputation in `reputationState`
+  ///  totalTokens Total colony tokens at the time of creation
+  ///  amount Total amount of tokens taken aside for reward payout
+  ///  tokenAddress Token address
+  ///  blockTimestamp Block number at the time of creation
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns ( RewardPayoutCycle rewardPayoutCycle );
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation

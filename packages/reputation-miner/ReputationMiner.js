@@ -115,7 +115,10 @@ class ReputationMiner {
     const nLogEntriesString = nLogEntries.sub(1).toString();
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntriesString, { blockTag: blockNumber });
 
-    const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
+    const totalnUpdates = ethers.utils
+      .bigNumberify(lastLogEntry.nUpdates)
+      .add(lastLogEntry.nPreviousUpdates)
+      .add(this.nReputationsBeforeLatestLog);
     const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);
     const replacementLogEntriesExist = nReplacementLogEntries > 0;
     for (let i = ethers.utils.bigNumberify("0"); i.lt(totalnUpdates); i = i.add(1)) {
@@ -190,11 +193,11 @@ class ReputationMiner {
       logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
       if (checkForReplacement) {
         const potentialReplacementLogEntry = await this.colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, logEntryNumber);
-        if (potentialReplacementLogEntry[3] !== "0x0000000000000000000000000000000000000000") {
+        if (potentialReplacementLogEntry.colonyAddress !== "0x0000000000000000000000000000000000000000") {
           logEntry = potentialReplacementLogEntry;
         }
       }
-      const reputationChange = logEntry[1];
+      const reputationChange = ethers.utils.bigNumberify(logEntry.amount);
       score = this.getScore(updateNumber, reputationChange);
     }
     // TODO This 'if' statement is only in for now to make tests easier to write, should be removed in the future.
@@ -320,9 +323,10 @@ class ReputationMiner {
     while (!upper.eq(lower)) {
       const testIdx = lower.add(upper.sub(lower).div(2));
       const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockTag: blockNumber }); // eslint-disable-line no-await-in-loop
-      if (testLogEntry[5].gt(updateNumber)) {
+      const nPreviousUpdates = ethers.utils.bigNumberify(testLogEntry.nPreviousUpdates);
+      if (nPreviousUpdates.gt(updateNumber)) {
         upper = testIdx.sub(1);
-      } else if (testLogEntry[5].lte(updateNumber) && testLogEntry[5].add(testLogEntry[4]).gt(updateNumber)) {
+      } else if (nPreviousUpdates.lte(updateNumber) && nPreviousUpdates.add(testLogEntry.nUpdates).gt(updateNumber)) {
         upper = testIdx;
         lower = testIdx;
       } else {
@@ -346,7 +350,7 @@ class ReputationMiner {
 
     const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber, { blockTag: blockNumber });
 
-    const key = await this.getKeyForUpdateInLogEntry(updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog), logEntry);
+    const key = await this.getKeyForUpdateInLogEntry(updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog), logEntry);
     return key;
   }
 
@@ -604,7 +608,10 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle();
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntries.sub(1));
-    const totalnUpdates = lastLogEntry[4].add(lastLogEntry[5]).add(this.nReputationsBeforeLatestLog);
+    const totalnUpdates = ethers.utils
+      .bigNumberify(lastLogEntry.nUpdates)
+      .add(lastLogEntry.nPreviousUpdates)
+      .add(this.nReputationsBeforeLatestLog);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     return repCycle.submitJustificationRootHash(round, index, jrh, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
@@ -642,7 +649,10 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
-    const targetNode = submission[8].add(submission[9]).div(2);
+    const targetNode = ethers.utils
+      .bigNumberify(submission.lowerBound)
+      .add(submission.upperBound)
+      .div(2);
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
@@ -661,7 +671,7 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
-    const targetNode = submission[8];
+    const targetNode = ethers.utils.bigNumberify(submission.lowerBound);
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
@@ -680,14 +690,9 @@ class ReputationMiner {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
-    // console.log(submission);
-    const firstDisagreeIdx = submission[8];
+    const firstDisagreeIdx = ethers.utils.bigNumberify(submission.lowerBound);
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
-    // console.log('getReputationUPdateLogEntry', lastAgreeIdx);
-    // const logEntry = await repCycle.getReputationUpdateLogEntry(lastAgreeIdx.toString());
-    // console.log('getReputationUPdateLogEntry done');
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
-    // console.log('get justification tree');
     const lastAgreeKey = ReputationMiner.getHexString(lastAgreeIdx, 64);
     const firstDisagreeKey = ReputationMiner.getHexString(firstDisagreeIdx, 64);
 

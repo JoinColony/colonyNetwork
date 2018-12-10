@@ -251,7 +251,7 @@ contract("Colony Network Recovery", accounts => {
           await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
 
           const domain = await colony.getDomain(1);
-          const rootSkill = domain[0];
+          const rootSkill = domain.skillId;
           const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[5]);
           const originalValue = miningClient.reputations[reputationKey].slice(2, 66);
           assert.equal(parseInt(originalValue, 16), 1000000000000000);
@@ -390,17 +390,21 @@ contract("Colony Network Recovery", accounts => {
             /* eslint-disable no-await-in-loop */
             const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 6));
             const logEntry = await oldActiveCycle.getReputationUpdateLogEntry(i);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry[0].slice(2)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(logEntry[1].toTwos(256), 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${logEntry[2].toString(16, 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry[3].slice(2)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(4), `0x${logEntry[4].toString(16, 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${logEntry[5].toString(16, 64)}`);
+            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
+            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
+            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
+            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
+            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(4), `0x${new BN(logEntry.nUpdates).toString(16, 64)}`);
+            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
+
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
-            /* eslint-enable no-await-in-loop  */
-            for (let j = 0; j < portedLogEntry.length; j += 1) {
-              assert.equal(portedLogEntry[i], logEntry[i]);
-            }
+
+            assert.strictEqual(portedLogEntry.user, logEntry.user);
+            assert.strictEqual(portedLogEntry.amount, logEntry.amount);
+            assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
+            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
+            assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
+            assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
 
           // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
@@ -415,27 +419,30 @@ contract("Colony Network Recovery", accounts => {
             /* eslint-disable no-await-in-loop */
             const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 6));
             const logEntry = await oldInactiveCycle.getReputationUpdateLogEntry(i);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry[0].slice(2)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(logEntry[1].toTwos(256), 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${logEntry[2].toString(16, 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry[3].slice(2)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(4), `0x${logEntry[4].toString(16, 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${logEntry[5].toString(16, 64)}`);
+            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
+            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
+            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
+            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
+            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(4), `0x${new BN(logEntry.nUpdates).toString(16, 64)}`);
+            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
 
             const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
-            /* eslint-enable no-await-in-loop  */
-            for (let j = 0; j < portedLogEntry.length; j += 1) {
-              assert.equal(portedLogEntry[i], logEntry[i]);
-            }
+
+            assert.strictEqual(portedLogEntry.user, logEntry.user);
+            assert.strictEqual(portedLogEntry.amount, logEntry.amount);
+            assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
+            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
+            assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
+            assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
 
           // Set the new cycles
           await colonyNetwork.setStorageSlotRecovery(18, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
           await colonyNetwork.setStorageSlotRecovery(19, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
           const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
-          assert.equal(retrievedActiveCycleAddress, newActiveCycle.address);
+          assert.strictEqual(retrievedActiveCycleAddress, newActiveCycle.address);
           const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-          assert.equal(retrievedInactiveCycleAddress, newInactiveCycle.address);
+          assert.strictEqual(retrievedInactiveCycleAddress, newInactiveCycle.address);
 
           // Exit recovery mode
           await colonyNetwork.approveExitRecovery();

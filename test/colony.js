@@ -103,11 +103,11 @@ contract("Colony", accounts => {
       const domain = await colony.getDomain(domainCount);
 
       // The first pot should have been created and assigned to the domain
-      assert.equal(domain[1], 1);
+      assert.equal(domain.potId, 1);
 
       // A root skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
-      assert.equal(domain[0].toNumber(), rootLocalSkillId.toNumber());
+      assert.equal(domain.skillId, rootLocalSkillId.toNumber());
     });
   });
 
@@ -231,11 +231,11 @@ contract("Colony", accounts => {
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      assert.equal(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
+      assert.strictEqual(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.equal(updateLog[0], INITIAL_ADDRESSES[0]);
-      assert.equal(updateLog[1].toString(), INITIAL_REPUTATIONS[0]);
-      assert.equal(updateLog[2].toString(), skillCount.toNumber());
+      assert.strictEqual(updateLog.user, INITIAL_ADDRESSES[0]);
+      assert.strictEqual(updateLog.amount, INITIAL_REPUTATIONS[0].toString());
+      assert.strictEqual(updateLog.skillId, skillCount.toString());
     });
 
     it("should assign tokens correctly when bootstrapping the colony", async () => {

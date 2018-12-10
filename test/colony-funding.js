@@ -695,11 +695,9 @@ contract("Colony Funding", accounts => {
     it("should not be able to create reward payout if passed reputation is not colony wide", async () => {
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-
       const fakeColonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress1);
       const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(fakeColonyWideReputationKey);
       const newFakeColonyWideReputationProof = [key, value, branchMask, siblings];
-
       await checkErrorRevert(
         colony.startNextRewardPayout(otherToken.address, ...newFakeColonyWideReputationProof),
         "colony-reputation-invalid-user-address"
@@ -1259,9 +1257,9 @@ contract("Colony Funding", accounts => {
       await colony2.claimRewardPayout(payoutId2, squareRoots, ...userReputationProofForColony2, { from: userAddress1 });
 
       let rewardPayoutInfo = await colony1.getRewardPayoutInfo(payoutId1);
-      const amountAvailableForPayout1 = rewardPayoutInfo[3];
+      const amountAvailableForPayout1 = new BN(rewardPayoutInfo.amount);
       rewardPayoutInfo = await colony2.getRewardPayoutInfo(payoutId2);
-      const amountAvailableForPayout2 = rewardPayoutInfo[3];
+      const amountAvailableForPayout2 = new BN(rewardPayoutInfo.amount);
 
       const rewardPotBalanceAfterClaimInPayout1 = await colony1.getPotBalance(0, otherToken.address);
       const rewardPotBalanceAfterClaimInPayout2 = await colony2.getPotBalance(0, otherToken.address);
@@ -1382,12 +1380,12 @@ contract("Colony Funding", accounts => {
       const reputationRootHash = await colonyNetwork.getReputationRootHash();
 
       const info = await colony.getRewardPayoutInfo(payoutId);
-      assert.equal(info[0], reputationRootHash);
-      assert.equal(info[1].toString(), totalReputation.toString());
-      assert.equal(info[2].toString(), totalTokens.toString());
-      assert.equal(info[3].toString(), balance.toString());
-      assert.equal(info[4].toString(), otherToken.address);
-      assert.equal(info[5].toString(), blockTimestamp.toString());
+      assert.equal(info.reputationState, reputationRootHash);
+      assert.equal(info.colonyWideReputation, totalReputation.toString());
+      assert.equal(info.totalTokens, totalTokens.toString());
+      assert.equal(info.amount, balance.toString());
+      assert.equal(info.tokenAddress, otherToken.address);
+      assert.equal(info.blockTimestamp, blockTimestamp.toString());
     });
 
     const reputations = [
@@ -1483,7 +1481,7 @@ contract("Colony Funding", accounts => {
 
         // Get users locked token amount from token locking contract
         const info = await tokenLocking.getUserLock(newToken.address, userAddress1);
-        const userLockedTokens = info[1];
+        const userLockedTokens = new BN(info.balance);
 
         // Calculating the reward payout for one user locally to check against on-chain result
         const numerator = bnSqrt(userLockedTokens.mul(reputationPerUser));

@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
 import "./ITokenLocking.sol";
@@ -264,16 +265,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     emit RewardPayoutCycleEnded(_payoutId);
   }
 
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (bytes32, uint256, uint256, uint256, address, uint256) {
-    RewardPayoutCycle memory rewardPayoutInfo = rewardPayoutCycles[_payoutId];
-    return (
-      rewardPayoutInfo.reputationState,
-      rewardPayoutInfo.colonyWideReputation,
-      rewardPayoutInfo.totalTokens,
-      rewardPayoutInfo.amount,
-      rewardPayoutInfo.tokenAddress,
-      rewardPayoutInfo.blockTimestamp
-    );
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle rewardPayoutCycle) {
+    rewardPayoutCycle = rewardPayoutCycles[_payoutId];
   }
 
   function setRewardInverse(uint256 _rewardInverse) public
@@ -329,7 +322,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     uint256 userTokens;
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    (, userTokens,) = tokenLocking.getUserLock(address(token), msg.sender);
+    userTokens = tokenLocking.getUserLock(address(token), msg.sender).balance;
 
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");

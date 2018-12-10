@@ -17,44 +17,23 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
+
+import "./ReputationMiningCycleDataTypes.sol";
 
 
-contract IReputationMiningCycle {
+contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
 
   /// @notice The getter for the disputeRounds mapping of array of dispute rounds.
   /// @param _round The dispute round to query
   /// @param _index The index in the dispute round to query
-  /// @return The elements of the Submission struct for the submission requested. See ReputationMiningCycle.sol for the full description
-  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (
-    bytes32 proposedNewRootHash,
-    uint256 nNodes,
-    uint256 lastResponseTimestamp,
-    uint256 challengeStepCompleted,
-    bytes32 jrh,
-    bytes32 intermediateReputationHash,
-    uint256 intermediateReputationNNodes,
-    uint256 jrhNnodes,
-    uint256 lowerBound,
-    uint256 upperBound,
-    uint256 providedPreviousReputationUID
-    );
+  /// @return The elements of the Submission struct for the submission requested. See ReputationMiningCycleDataTypes for the full description
+  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (Submission submission);
 
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.
   /// @param _user Address of the user
-  /// @return The elements of the Submission struct for the submission requested. See ReputationMiningCycle.sol for the full description
-  function getReputationHashSubmissions(address _user) public view returns (
-    bytes32 proposedNewRootHash,
-    uint256 nNodes,
-    uint256 lastResponseTimestamp,
-    uint256 challengeStepCompleted,
-    bytes32 jrh,
-    bytes32 intermediateReputationHash,
-    uint256 intermediateReputationNNodes,
-    uint256 jrhNnodes,
-    uint256 lowerBound,
-    uint256 upperBound,
-    uint256 providedPreviousReputationUID
-    );
+  /// @return submission the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
+  function getReputationHashSubmissions(address _user) public view returns (Submission submission);
 
   /// @notice Get the hash for the corresponding entry.
   /// @param submitter The address that submitted the hash
@@ -182,20 +161,8 @@ contract IReputationMiningCycle {
 
   /// @notice Get the `ReputationLogEntry` at index `_id`
   /// @param _id The reputation log members array index of the entry to get
-  /// @return user The address of the user having their reputation changed by this log entry
-  /// @return amount The amount by which the user's reputation is going to change
-  /// @return skillId The skillId of the reputation being affected
-  /// @return colony The address of the colony the reputation is being affected in
-  /// @return nUpdates The number of updates this log entry implies (including updates to parents, children and colony-wide totals thereof)
-  /// @return nPreviousUpdates The number of updates all previous entries in the log imply (including reputation decays, updates to parents, children, and colony-wide totals thereof)
-  function getReputationUpdateLogEntry(uint256 _id) public view returns (
-    address user,
-    int256 amount,
-    uint256 skillId,
-    address colony,
-    uint256 nUpdates,
-    uint256 nPreviousUpdates
-    );
+  /// @return reputationUpdateLogEntry The Reputation Update Log Entry
+  function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry reputationUpdateLogEntry);
 
   /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
   /// @param stakers The array of stakers addresses to receive the reward.

@@ -59,12 +59,12 @@ contract("Meta Colony", accounts => {
       assert.equal(skillCount.toNumber(), 4);
 
       const newSkill = await colonyNetwork.getSkill(skillCount);
-      assert.equal(newSkill[0].toNumber(), 1);
-      assert.equal(newSkill[1].toNumber(), 0);
+      assert.equal(parseInt(newSkill.nParents, 10), 1);
+      assert.equal(parseInt(newSkill.nChildren, 10), 0);
 
       // Check rootSkill.nChildren is now 1
       const rootSkill = await colonyNetwork.getSkill(1);
-      assert.equal(rootSkill[1].toNumber(), 1);
+      assert.equal(parseInt(rootSkill.nChildren, 10), 1);
 
       // Check rootSkill.children first element is the id of the new skill
       const rootSkillChild = await colonyNetwork.getChildSkillId(1, 0);
@@ -84,20 +84,20 @@ contract("Meta Colony", accounts => {
       assert.equal(skillCount.toNumber(), 6);
 
       const newSkill1 = await colonyNetwork.getSkill(4);
-      assert.equal(newSkill1[0].toNumber(), 1);
-      assert.equal(newSkill1[1].toNumber(), 0);
+      assert.equal(parseInt(newSkill1.nParents, 10), 1);
+      assert.equal(parseInt(newSkill1.nChildren, 10), 0);
 
       const newSkill2 = await colonyNetwork.getSkill(5);
-      assert.equal(newSkill2[0].toNumber(), 1);
-      assert.equal(newSkill2[1].toNumber(), 0);
+      assert.equal(parseInt(newSkill2.nParents, 10), 1);
+      assert.equal(parseInt(newSkill2.nChildren, 10), 0);
 
       const newSkill3 = await colonyNetwork.getSkill(6);
-      assert.equal(newSkill3[0].toNumber(), 1);
-      assert.equal(newSkill3[1].toNumber(), 0);
+      assert.equal(parseInt(newSkill3.nParents, 10), 1);
+      assert.equal(parseInt(newSkill3.nChildren, 10), 0);
 
       // Check rootSkill.nChildren is now 3
       const rootSkill = await colonyNetwork.getSkill(1);
-      assert.equal(rootSkill[1].toNumber(), 3);
+      assert.equal(parseInt(rootSkill.nChildren, 10), 3);
 
       // Check rootSkill.children contains the ids of the new skills
       const rootSkillChild1 = await colonyNetwork.getChildSkillId(1, 0);
@@ -133,8 +133,8 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(5);
 
       const rootSkill = await colonyNetwork.getSkill(1);
-      assert.equal(rootSkill[0].toNumber(), 0);
-      assert.equal(rootSkill[1].toNumber(), 6);
+      assert.equal(parseInt(rootSkill.nParents, 10), 0);
+      assert.equal(parseInt(rootSkill.nChildren, 10), 6);
       const rootSkillChildSkillId1 = await colonyNetwork.getChildSkillId(1, 0);
       assert.equal(rootSkillChildSkillId1.toNumber(), 4);
       const rootSkillChildSkillId2 = await colonyNetwork.getChildSkillId(1, 1);
@@ -149,16 +149,16 @@ contract("Meta Colony", accounts => {
       assert.equal(rootSkillChildSkillId6.toNumber(), 9);
 
       const skill1 = await colonyNetwork.getSkill(4);
-      assert.equal(skill1[0].toNumber(), 1);
-      assert.equal(skill1[1].toNumber(), 1);
+      assert.equal(parseInt(skill1.nParents, 10), 1);
+      assert.equal(parseInt(skill1.nChildren, 10), 1);
       const skill1ParentSkillId1 = await colonyNetwork.getParentSkillId(4, 0);
       assert.equal(skill1ParentSkillId1.toNumber(), 1);
       const skill1ChildSkillId1 = await colonyNetwork.getChildSkillId(4, 0);
       assert.equal(skill1ChildSkillId1.toNumber(), 8);
 
       const skill2 = await colonyNetwork.getSkill(5);
-      assert.equal(skill2[0].toNumber(), 1);
-      assert.equal(skill2[1].toNumber(), 2);
+      assert.equal(parseInt(skill2.nParents, 10), 1);
+      assert.equal(parseInt(skill2.nChildren, 10), 2);
       const skill2ParentSkillId1 = await colonyNetwork.getParentSkillId(5, 0);
       assert.equal(skill2ParentSkillId1.toNumber(), 1);
       const skill2ChildSkillId1 = await colonyNetwork.getChildSkillId(5, 0);
@@ -167,30 +167,30 @@ contract("Meta Colony", accounts => {
       assert.equal(skill2ChildSkillId2.toNumber(), 9);
 
       const skill3 = await colonyNetwork.getSkill(6);
-      assert.equal(skill3[0].toNumber(), 2);
-      assert.equal(skill3[1].toNumber(), 0);
+      assert.equal(parseInt(skill3.nParents, 10), 2);
+      assert.equal(parseInt(skill3.nChildren, 10), 0);
       const skill3ParentSkillId1 = await colonyNetwork.getParentSkillId(6, 0);
       assert.equal(skill3ParentSkillId1.toNumber(), 5);
       const skill3ParentSkillId2 = await colonyNetwork.getParentSkillId(6, 1);
       assert.equal(skill3ParentSkillId2.toNumber(), 1);
 
       const skill4 = await colonyNetwork.getSkill(7);
-      assert.equal(skill4[0].toNumber(), 1);
-      assert.equal(skill4[1].toNumber(), 0);
+      assert.equal(parseInt(skill4.nParents, 10), 1);
+      assert.equal(parseInt(skill4.nChildren, 10), 0);
       const skill4ParentSkillId1 = await colonyNetwork.getParentSkillId(7, 0);
       assert.equal(skill4ParentSkillId1.toNumber(), 1);
 
       const skill5 = await colonyNetwork.getSkill(8);
-      assert.equal(skill5[0].toNumber(), 2);
-      assert.equal(skill5[1].toNumber(), 0);
+      assert.equal(parseInt(skill5.nParents, 10), 2);
+      assert.equal(parseInt(skill5.nChildren, 10), 0);
       const skill5ParentSkillId1 = await colonyNetwork.getParentSkillId(8, 0);
       assert.equal(skill5ParentSkillId1.toNumber(), 4);
       const skill5ParentSkillId2 = await colonyNetwork.getParentSkillId(8, 1);
       assert.equal(skill5ParentSkillId2.toNumber(), 1);
 
       const skill6 = await colonyNetwork.getSkill(9);
-      assert.equal(skill6[0].toNumber(), 2);
-      assert.equal(skill6[1].toNumber(), 0);
+      assert.equal(parseInt(skill6.nParents, 10), 2);
+      assert.equal(parseInt(skill6.nChildren, 10), 0);
       const skill6ParentSkillId1 = await colonyNetwork.getParentSkillId(9, 0);
       assert.equal(skill6ParentSkillId1.toNumber(), 5);
       const skill6ParentSkillId2 = await colonyNetwork.getParentSkillId(9, 1);
@@ -211,10 +211,10 @@ contract("Meta Colony", accounts => {
       // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
       const skill = await colonyNetwork.getSkill(12);
-      const numParents = skill[0];
-      const numChildren = skill[1];
-      assert.equal(numParents.toNumber(), 9);
-      assert.equal(numChildren.toNumber(), 0);
+      const numParents = skill.nParents;
+      const numChildren = skill.nChildren;
+      assert.equal(parseInt(numParents, 10), 9);
+      assert.equal(parseInt(numChildren, 10), 0);
 
       let parentId;
       parentId = await colonyNetwork.getParentSkillId(12, 0);
@@ -263,13 +263,13 @@ contract("Meta Colony", accounts => {
       assert.equal(domainCount.toNumber(), 2);
 
       const newDomain = await metaColony.getDomain(1);
-      assert.equal(newDomain[0].toNumber(), 2);
-      assert.equal(newDomain[1].toNumber(), 1);
+      assert.equal(parseInt(newDomain.skillId, 10), 2);
+      assert.equal(parseInt(newDomain.potId, 10), 1);
 
       // Check root local skill.nChildren is now 2
       // One special mining skill, and the skill associated with the domain we just added
       const rootLocalSkill = await colonyNetwork.getSkill(2);
-      assert.equal(rootLocalSkill[1].toNumber(), 2);
+      assert.equal(parseInt(rootLocalSkill.nChildren, 10), 2);
 
       // Check root local skill.children second element is the id of the new skill
       const rootSkillChild = await colonyNetwork.getChildSkillId(2, 1);
@@ -313,19 +313,19 @@ contract("Meta Colony", accounts => {
       assert.equal(domainCount.toNumber(), 4);
 
       const rootDomain = await colony.getDomain(1);
-      assert.equal(rootDomain[0].toNumber(), 4);
-      assert.equal(rootDomain[1].toNumber(), 1);
+      assert.equal(parseInt(rootDomain.skillId, 10), 4);
+      assert.equal(parseInt(rootDomain.potId, 10), 1);
 
       const newDomain2 = await colony.getDomain(2);
-      assert.equal(newDomain2[0].toNumber(), 5);
-      assert.equal(newDomain2[1].toNumber(), 2);
+      assert.equal(parseInt(newDomain2.skillId, 10), 5);
+      assert.equal(parseInt(newDomain2.potId, 10), 2);
 
       const newDomain3 = await colony.getDomain(3);
-      assert.equal(newDomain3[0].toNumber(), 6);
-      assert.equal(newDomain3[1].toNumber(), 3);
+      assert.equal(parseInt(newDomain3.skillId, 10), 6);
+      assert.equal(parseInt(newDomain3.potId, 10), 3);
       // Check root local skill.nChildren is now 3
       const rootLocalSkill = await colonyNetwork.getSkill(4);
-      assert.equal(rootLocalSkill[1].toNumber(), 3);
+      assert.equal(parseInt(rootLocalSkill.nChildren, 10), 3);
       // Check root local skill.children are the ids of the new skills
       const rootSkillChild1 = await colonyNetwork.getChildSkillId(4, 0);
       assert.equal(rootSkillChild1.toNumber(), 5);
@@ -345,7 +345,7 @@ contract("Meta Colony", accounts => {
     it("should NOT be able to add a new root local skill", async () => {
       const skillCountBefore = await colonyNetwork.getSkillCount();
       const rootDomain = await colony.getDomain(1);
-      const rootLocalSkillId = rootDomain[0];
+      const rootLocalSkillId = rootDomain.skillId;
       await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false), "colony-caller-must-be-colony");
       const skillCountAfter = await colonyNetwork.getSkillCount();
 
@@ -511,12 +511,12 @@ contract("Meta Colony", accounts => {
   describe("when getting a skill", () => {
     it("should return a true flag if the skill is global", async () => {
       const globalSkill = await colonyNetwork.getSkill(1);
-      assert.isTrue(globalSkill[2]);
+      assert.isTrue(globalSkill.globalSkill);
     });
 
     it("should return a false flag if the skill is local", async () => {
       const localSkill = await colonyNetwork.getSkill(2);
-      assert.isFalse(localSkill[2]);
+      assert.isFalse(localSkill.globalSkill);
     });
   });
 

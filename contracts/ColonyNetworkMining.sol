@@ -17,6 +17,7 @@
 
 pragma solidity ^0.4.23;
 pragma experimental "v0.5.0";
+pragma experimental "ABIEncoderV2";
 
 import "./ColonyNetworkStorage.sol";
 import "./ERC20Extended.sol";
@@ -57,10 +58,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
-    (address, int256, uint256, address, uint256, uint256)
+    (ReputationLogEntry reputationLogEntry)
     {
-    ReputationLogEntry storage x = replacementReputationUpdateLog[_reputationMiningCycle][_id];
-    return (x.user, x.amount, x.skillId, x.colony, x.nUpdates, x.nPreviousUpdates);
+    reputationLogEntry = replacementReputationUpdateLog[_reputationMiningCycle][_id];
   }
 
   function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool) {
@@ -148,7 +148,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     uint256[] memory minerWeights = new uint256[](stakers.length);
 
     for (i = 0; i < stakers.length; i++) {
-      (,,timeStaked) = ITokenLocking(tokenLocking).getUserLock(clnyToken, stakers[i]);
+      timeStaked = ITokenLocking(tokenLocking).getUserLock(clnyToken, stakers[i]).timestamp;
       minerWeights[i] = calculateMinerWeight(now - timeStaked, i);
       minerWeightsTotal = add(minerWeightsTotal, minerWeights[i]);
     }

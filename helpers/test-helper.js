@@ -351,6 +351,9 @@ export function bnSqrt(bn, isGreater) {
 }
 
 export function makeReputationKey(colonyAddress, skillBN, accountAddress = undefined) {
+  if (!BN.isBN(skillBN)) {
+    skillBN = new BN(skillBN.toString()); // eslint-disable-line no-param-reassign
+  }
   let key = `0x`;
   key += `${new BN(colonyAddress.slice(2), 16).toString(16, 40)}`; // Colony address as bytes
   key += `${skillBN.toString(16, 64)}`; // SkillId as uint256
@@ -378,7 +381,7 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   const userLockInformation = await tokenLocking.getUserLock(clnyAddress, account);
-  const userBalance = userLockInformation.amount;
+  const userBalance = new BN(userLockInformation.balance);
 
   // What's the largest entry they can submit?
   const nIter = userBalance.div(MIN_STAKE);
