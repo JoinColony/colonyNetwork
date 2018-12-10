@@ -3234,8 +3234,6 @@ contract("ColonyNetworkMining", accounts => {
     before(async () => {
       // We're not resetting the global skills tree as the Network is not reset
       // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
       await metaColony.addGlobalSkill(5);
       await metaColony.addGlobalSkill(6);
       await metaColony.addGlobalSkill(7);
