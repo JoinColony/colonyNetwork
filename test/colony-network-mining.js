@@ -1647,10 +1647,7 @@ contract("ColonyNetworkMining", accounts => {
         worker: accounts[4]
       });
 
-      let repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.submitRootHash("0x12345678", 10, 10);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest(colonyNetwork, this);
 
       const workerPayout = MAX_INT128.sub(toBN(1000000000000)).toString();
       await setupFinalizedTask({
@@ -1667,18 +1664,13 @@ contract("ColonyNetworkMining", accounts => {
 
       await goodClient.resetDB();
       await goodClient.addLogContentsToReputationTree();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await goodClient.submitRootHash();
+      await advanceMiningCycleNoContest(colonyNetwork, this, goodClient);
       await goodClient.saveCurrentState();
-
-      repCycle = await getActiveRepCycle(colonyNetwork);
-      await repCycle.confirmNewHash(0);
-
-      repCycle = await getActiveRepCycle(colonyNetwork);
 
       // The update log should contain the person being rewarded for the previous
       // update cycle, and reputation updates for one task completion (manager, worker (skill and domain), evaluator);
       // That's five in total.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nLogEntries.toNumber(), 5);
 
@@ -2942,7 +2934,7 @@ contract("ColonyNetworkMining", accounts => {
             colonyNetwork,
             colony: metaColony,
             token: clny,
-            manager: MAIN_ACCOUNT,
+            evaluator: MAIN_ACCOUNT,
             worker: OTHER_ACCOUNT,
             workerRating: 1,
             managerPayout: 1,
@@ -2953,6 +2945,7 @@ contract("ColonyNetworkMining", accounts => {
 
         const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength(); // eslint-disable-line no-await-in-loop
         const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1); // eslint-disable-line no-await-in-loop
+        // console.log("lastLogEntry", lastLogEntry.toString());
         const currentHashNNodes = await colonyNetwork.getReputationRootHashNNodes(); // eslint-disable-line no-await-in-loop
         const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNNodes);
 
@@ -2968,6 +2961,13 @@ contract("ColonyNetworkMining", accounts => {
       await goodClient.saveCurrentState();
       const savedHash = await goodClient.reputationTree.getRootHash();
 
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        5,
+        0xfffffffff
+      );
+
+      await badClient.initialise(colonyNetwork.address);
       await badClient.loadState(savedHash);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
@@ -2977,8 +2977,6 @@ contract("ColonyNetworkMining", accounts => {
       // Incomplete binary search
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
@@ -3322,7 +3320,7 @@ contract("ColonyNetworkMining", accounts => {
           {
             colonyNetwork,
             colony: metaColony,
-            colonyToken: clny,
+            token: clny,
             workerRating: 2,
             managerPayout: 1,
             evaluatorPayout: 1,
@@ -3649,7 +3647,7 @@ contract("ColonyNetworkMining", accounts => {
       // 23. Worker total reputation for global skillId 10
       // 24. Worker reputation for global skillId 1
       // 25. Worker reputation for global skillId 4
-      assert.equal(Object.keys(client.reputations).length, 25);
+      assert.equal(Object.keys(client.reputations).length, 27);
 
       const GLOBAL_SKILL = new BN(1);
       const META_ROOT_SKILL = new BN(2);
@@ -3666,39 +3664,39 @@ contract("ColonyNetworkMining", accounts => {
             .add(REWARD)
             .sub(new BN(5999000000000))
         },
-        { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD.sub(new BN(99990000)) },
+        { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD },
         {
           id: 3,
           skill: META_ROOT_SKILL,
           account: MAIN_ACCOUNT,
-          value: DEFAULT_STAKE.muln(6)
-            .add(REWARD)
-            .sub(new BN(1000000000000))
+          value: DEFAULT_STAKE.muln(6).add(REWARD)
         },
-        { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: REWARD.sub(new BN(99990000)) },
+        { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: REWARD },
         // giveUserCLNYTokens * 3
-        { id: 5, skill: META_ROOT_SKILL, account: accounts[2], value: "0" },
+        { id: 5, skill: META_ROOT_SKILL, account: OTHER_ACCOUNT2, value: "0" },
         { id: 6, skill: GLOBAL_SKILL, account: undefined, value: "0" },
-        { id: 7, skill: GLOBAL_SKILL, account: accounts[2], value: "0" },
+        { id: 7, skill: GLOBAL_SKILL, account: OTHER_ACCOUNT2, value: "0" },
         // Completing a task in skill 4
-        { id: 8, skill: META_ROOT_SKILL, account: accounts[1], value: "1000000000" },
-        { id: 9, skill: new BN(3), account: accounts[3], value: "0" },
-        { id: 10, skill: META_ROOT_SKILL, account: accounts[3], value: "0" },
-        { id: 11, skill: new BN(5), account: undefined, value: "0" },
-        { id: 12, skill: new BN(6), account: undefined, value: "0" },
-        { id: 13, skill: new BN(7), account: undefined, value: "0" },
-        { id: 14, skill: new BN(8), account: undefined, value: "0" },
-        { id: 15, skill: new BN(9), account: undefined, value: "0" },
-        { id: 16, skill: new BN(10), account: undefined, value: "0" },
-        { id: 17, skill: new BN(4), account: undefined, value: "0" },
-        { id: 18, skill: new BN(5), account: accounts[3], value: "0" },
-        { id: 19, skill: new BN(6), account: accounts[3], value: "0" },
-        { id: 20, skill: new BN(7), account: accounts[3], value: "0" },
-        { id: 21, skill: new BN(8), account: accounts[3], value: "0" },
-        { id: 22, skill: new BN(9), account: accounts[3], value: "0" },
-        { id: 23, skill: new BN(10), account: accounts[3], value: "0" },
-        { id: 24, skill: GLOBAL_SKILL, account: accounts[3], value: "0" },
-        { id: 25, skill: new BN(4), account: accounts[3], value: "0" }
+        { id: 8, skill: MINING_SKILL, account: accounts[0], value: "0" },
+        { id: 9, skill: META_ROOT_SKILL, account: accounts[0], value: "0" },
+        { id: 10, skill: META_ROOT_SKILL, account: accounts[1], value: "1000000000" },
+        { id: 11, skill: MINING_SKILL, account: accounts[3], value: "0" },
+        { id: 12, skill: META_ROOT_SKILL, account: accounts[3], value: "0" },
+        { id: 13, skill: new BN(5), account: undefined, value: "0" },
+        { id: 14, skill: new BN(6), account: undefined, value: "0" },
+        { id: 15, skill: new BN(7), account: undefined, value: "0" },
+        { id: 16, skill: new BN(8), account: undefined, value: "0" },
+        { id: 17, skill: new BN(9), account: undefined, value: "0" },
+        { id: 18, skill: new BN(10), account: undefined, value: "0" },
+        { id: 19, skill: new BN(4), account: undefined, value: "0" },
+        { id: 20, skill: new BN(5), account: accounts[3], value: "0" },
+        { id: 21, skill: new BN(6), account: accounts[3], value: "0" },
+        { id: 22, skill: new BN(7), account: accounts[3], value: "0" },
+        { id: 23, skill: new BN(8), account: accounts[3], value: "0" },
+        { id: 24, skill: new BN(9), account: accounts[3], value: "0" },
+        { id: 25, skill: new BN(10), account: accounts[3], value: "0" },
+        { id: 26, skill: GLOBAL_SKILL, account: accounts[3], value: "0" },
+        { id: 27, skill: new BN(4), account: accounts[3], value: "0" }
       ];
 
       // 8. Worker reputation for global skill task was in
@@ -3753,8 +3751,7 @@ contract("ColonyNetworkMining", accounts => {
       const client = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree });
       await client.initialise(colonyNetwork.address);
       await client.addLogContentsToReputationTree();
-      assert.equal(Object.keys(client.reputations).length, 23);
-
+      assert.equal(Object.keys(client.reputations).length, 26);
       const GLOBAL_SKILL = new BN(1);
       const META_ROOT_SKILL = new BN(2);
       const MINING_SKILL = new BN(3);
@@ -3762,27 +3759,30 @@ contract("ColonyNetworkMining", accounts => {
       const reputationProps = [
         { id: 1, skill: META_ROOT_SKILL, account: undefined, value: "4001200000005802000000000" },
         { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD },
-        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: "4001200000002500000000000" },
+        { id: 3, skill: META_ROOT_SKILL, account: MAIN_ACCOUNT, value: "4001200000000000000000000" },
         { id: 4, skill: MINING_SKILL, account: MAIN_ACCOUNT, value: REWARD },
-        { id: 5, skill: META_ROOT_SKILL, account: accounts[2], value: 3300000000000 },
+        { id: 5, skill: META_ROOT_SKILL, account: OTHER_ACCOUNT2, value: 0 },
         { id: 6, skill: GLOBAL_SKILL, account: undefined, value: 3300000000000 },
-        { id: 7, skill: GLOBAL_SKILL, account: accounts[2], value: 3300000000000 },
-        { id: 8, skill: META_ROOT_SKILL, account: accounts[1], value: 2000000000 },
-        { id: 9, skill: new BN(9), account: undefined, value: 3300000000000 },
-        { id: 10, skill: new BN(8), account: undefined, value: 3300000000000 },
-        { id: 11, skill: new BN(7), account: undefined, value: 3300000000000 },
-        { id: 12, skill: new BN(6), account: undefined, value: 3300000000000 },
-        { id: 13, skill: new BN(5), account: undefined, value: 3300000000000 },
-        { id: 14, skill: new BN(4), account: undefined, value: 3300000000000 },
-        { id: 15, skill: new BN(10), account: undefined, value: 3300000000000 },
-        { id: 16, skill: new BN(9), account: accounts[2], value: 3300000000000 },
-        { id: 17, skill: new BN(8), account: accounts[2], value: 3300000000000 }, // 44% decrease
-        { id: 18, skill: new BN(7), account: accounts[2], value: 3300000000000 },
-        { id: 19, skill: new BN(6), account: accounts[2], value: 3300000000000 },
-        { id: 20, skill: new BN(5), account: accounts[2], value: 3300000000000 },
-        { id: 21, skill: new BN(4), account: accounts[2], value: 3300000000000 },
-        { id: 22, skill: new BN(10), account: accounts[2], value: 3300000000000 },
-        { id: 23, skill: MINING_SKILL, account: accounts[2], value: 0 }
+        { id: 7, skill: GLOBAL_SKILL, account: OTHER_ACCOUNT2, value: 0 },
+        { id: 8, skill: META_ROOT_SKILL, account: accounts[0], value: 2500000000000 },
+        { id: 9, skill: META_ROOT_SKILL, account: accounts[1], value: 2000000000 },
+        { id: 10, skill: META_ROOT_SKILL, account: accounts[2], value: 3300000000000 },
+        { id: 11, skill: new BN(9), account: undefined, value: 3300000000000 },
+        { id: 12, skill: new BN(8), account: undefined, value: 3300000000000 },
+        { id: 13, skill: new BN(7), account: undefined, value: 3300000000000 },
+        { id: 14, skill: new BN(6), account: undefined, value: 3300000000000 },
+        { id: 15, skill: new BN(5), account: undefined, value: 3300000000000 },
+        { id: 16, skill: new BN(4), account: undefined, value: 3300000000000 },
+        { id: 17, skill: new BN(10), account: undefined, value: 3300000000000 },
+        { id: 18, skill: new BN(9), account: accounts[2], value: 3300000000000 },
+        { id: 19, skill: new BN(8), account: accounts[2], value: 3300000000000 }, // 44% decrease
+        { id: 20, skill: new BN(7), account: accounts[2], value: 3300000000000 },
+        { id: 21, skill: new BN(6), account: accounts[2], value: 3300000000000 },
+        { id: 22, skill: new BN(5), account: accounts[2], value: 3300000000000 },
+        { id: 23, skill: new BN(4), account: accounts[2], value: 3300000000000 },
+        { id: 24, skill: new BN(1), account: accounts[2], value: 3300000000000 },
+        { id: 25, skill: new BN(10), account: accounts[2], value: 3300000000000 },
+        { id: 26, skill: MINING_SKILL, account: accounts[2], value: 0 }
       ];
 
       reputationProps.forEach(reputationProp => {
