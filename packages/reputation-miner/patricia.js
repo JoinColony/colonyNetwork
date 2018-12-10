@@ -10,7 +10,7 @@ export default class PatriciaTree extends PatriciaTreeBase {
     return super.getProof(PatriciaTreeBase.sha3(key), _);
   }
 
-  static getImpliedRoot(key, value, _branchMask, siblings) {
+  getImpliedRoot(key, value, _branchMask, siblings) {
     return super.getImpliedRoot(PatriciaTreeBase.sha3(key), value, _branchMask, siblings);
   }
 }

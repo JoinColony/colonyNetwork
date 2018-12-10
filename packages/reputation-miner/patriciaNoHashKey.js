@@ -9,7 +9,7 @@ export default class PatriciaTreeNoHash extends PatriciaTreeBase {
     return super.getProof(PatriciaTreeBase.sha2bn(key), _);
   }
 
-  static getImpliedRoot(key, value, _branchMask, siblings) {
+  getImpliedRoot(key, value, _branchMask, siblings) {
     return super.getImpliedRoot(PatriciaTreeBase.sha2bn(key), value, _branchMask, siblings);
   }
 }

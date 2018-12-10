@@ -674,7 +674,7 @@ class ReputationMiner {
     const [branchMask] = proof;
     let [, siblings] = proof;
 
-    let proofEndingHash = await PatriciaTreeNoHash.getImpliedRoot(
+    let proofEndingHash = await this.justificationTree.getImpliedRoot(
       targetNodeKey,
       this.justificationHashes[targetNodeKey].jhLeafValue,
       branchMask,
@@ -686,7 +686,7 @@ class ReputationMiner {
       siblings = siblings.slice(1);
       // Recalulate ending hash
       // eslint-disable-next-line no-await-in-loop
-      proofEndingHash = await PatriciaTreeNoHash.getImpliedRoot(
+      proofEndingHash = await this.justificationTree.getImpliedRoot(
         targetNodeKey,
         this.justificationHashes[targetNodeKey].jhLeafValue,
         branchMask,

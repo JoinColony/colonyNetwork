@@ -82,7 +82,10 @@ export default class PatriciaTreeBase {
     return [branchMask, siblings.map(s => PatriciaTreeBase.bn2hex64(s))];
   }
 
-  static getImpliedRoot(key, value, _branchMask, siblings) {
+  // This function could be static, but I am deliberately making it not so that the ganache-based patricia trees in
+  // the mining client can continue to be a drop-in replacement for the javascript ones.
+  // eslint-disable-next-line class-methods-use-this
+  getImpliedRoot(key, value, _branchMask, siblings) {
     let branchMask = new BN(_branchMask.toString());
     let k = PatriciaTreeBase.makeLabel(key, 256);
     const valueHash = PatriciaTreeBase.sha3(value);
