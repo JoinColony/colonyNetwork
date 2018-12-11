@@ -1,9 +1,10 @@
 /* global artifacts */
-import { toBN } from "web3-utils";
+import { BN } from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 
 import {
+  WAD,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
   WORKER_ROLE,
@@ -1543,13 +1544,13 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
 
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
-      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(toBN(1 * 1e18).addn(1));
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(WAD.addn(1));
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
-      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(toBN(99 * 1e18).subn(1));
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(WAD.muln(99).subn(1));
 
       const potBalanceAfter = await colony.getPotBalance(taskPotId, token.address);
-      expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(toBN(100 * 1e18));
+      expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(WAD.muln(100));
     });
 
     it("should payout agreed ether for a task", async () => {
@@ -1578,13 +1579,13 @@ contract("ColonyTask", accounts => {
       await colony.claimPayout(taskId, WORKER_ROLE, ZERO_ADDRESS, { from: WORKER, gasPrice: 0 });
 
       const workerBalanceAfter = await web3GetBalance(WORKER);
-      expect(toBN(workerBalanceAfter).sub(toBN(workerBalanceBefore))).to.eq.BN(toBN(197));
+      expect(new BN(workerBalanceAfter).sub(new BN(workerBalanceBefore))).to.eq.BN(new BN(197));
 
       const metaBalanceAfter = await web3GetBalance(metaColony.address);
-      expect(toBN(metaBalanceAfter).sub(toBN(metaBalanceBefore))).to.eq.BN(3);
+      expect(new BN(metaBalanceAfter).sub(new BN(metaBalanceBefore))).to.eq.BN(3);
 
       const potBalanceAfter = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
-      expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(toBN(200));
+      expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(new BN(200));
     });
 
     it("should disburse nothing for unsatisfactory work, for manager and worker", async () => {

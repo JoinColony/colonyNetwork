@@ -1,6 +1,6 @@
 /* globals artifacts */
 import { BN } from "bn.js";
-import { toBN, sha3 } from "web3-utils";
+import { sha3 } from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";
 
@@ -461,7 +461,7 @@ contract("Colony Funding", accounts => {
     });
 
     it("should allow funds to be removed from a task if there are no more payouts of that token to be claimed", async () => {
-      await fundColonyWithTokens(colony, otherToken, new BN(363).mul(WAD));
+      await fundColonyWithTokens(colony, otherToken, WAD.muln(363));
       const taskId = await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
@@ -626,8 +626,8 @@ contract("Colony Funding", accounts => {
     let client;
     let colonyWideReputationProof;
     let userReputationProof1;
-    const initialFunding = new BN(100).mul(WAD);
-    const userReputation = new BN(50).mul(WAD);
+    const initialFunding = WAD.muln(100);
+    const userReputation = WAD.muln(50);
     const userTokens = userReputation;
     const totalReputation = userReputation;
     const totalTokens = userReputation;
@@ -713,7 +713,7 @@ contract("Colony Funding", accounts => {
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
       const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
-      await client.insert(globalKey, toBN(10), 0);
+      await client.insert(globalKey, new BN(10), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
 
@@ -901,7 +901,7 @@ contract("Colony Funding", accounts => {
       const rootDomainSkill = result.skillId;
 
       const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
-      await client.insert(globalKey, toBN(0), 0);
+      await client.insert(globalKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
 
@@ -916,7 +916,7 @@ contract("Colony Funding", accounts => {
     });
 
     it("should not be able to claim tokens if user does not have any tokens", async () => {
-      const userReputation3 = toBN(10 * 1e18);
+      const userReputation3 = WAD.muln(10);
       await colony.bootstrapColony([userAddress3], [userReputation3]);
       await token.transfer(colony.address, userReputation3, { from: userAddress3 });
 
@@ -955,7 +955,7 @@ contract("Colony Funding", accounts => {
     });
 
     it("should not be able to claim tokens if user does not have any reputation", async () => {
-      const userTokens3 = toBN(1e3);
+      const userTokens3 = new BN(1000);
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
@@ -963,7 +963,7 @@ contract("Colony Funding", accounts => {
       await colony.bootstrapColony([userAddress1], [userTokens3]);
 
       const userKey = await ReputationMiner.getKey(colony.address, rootDomainSkill, userAddress3);
-      await client.insert(userKey, toBN(0), 0);
+      await client.insert(userKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
@@ -1076,7 +1076,7 @@ contract("Colony Funding", accounts => {
         const squareRoots = [...initialSquareRoots];
         // If we are passing total reputation, total tokens or denominator, we will divide by 2, else multiply
         const functionName = [2, 3, 5].includes(i) ? "div" : "mul";
-        squareRoots[i] = toBN(squareRoots[i])[functionName](toBN(2));
+        squareRoots[i] = new BN(squareRoots[i])[functionName](new BN(2));
 
         return checkErrorRevert(
           colony.claimRewardPayout(payoutId, squareRoots, ...userReputationProof1, {
@@ -1208,7 +1208,7 @@ contract("Colony Funding", accounts => {
       const userTokensSqrt = bnSqrt(userTokens);
       const totalReputationSqrt = bnSqrt(userReputation, true);
       // Both colony1 and colony2 are giving the user `userReputation` amount of tokens
-      const totalTokensSqrt = bnSqrt(userReputation.mul(toBN(2)), true);
+      const totalTokensSqrt = bnSqrt(userReputation.muln(2), true);
       const numeratorSqrt = bnSqrt(userReputationSqrt.mul(userTokensSqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
       const balance = await colony.getPotBalance(0, otherToken.address);
@@ -1319,7 +1319,7 @@ contract("Colony Funding", accounts => {
       const userTokensSqrt = bnSqrt(userTokens);
       const totalReputationSqrt = bnSqrt(userReputation, true);
       // Both colony1 and colony2 are giving the user `userReputation` amount of tokens
-      const totalTokensSqrt = bnSqrt(userReputation.mul(toBN(2)), true);
+      const totalTokensSqrt = bnSqrt(userReputation.muln(2), true);
       const numeratorSqrt = bnSqrt(userReputationSqrt.mul(userTokensSqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
       const balance = await colony.getPotBalance(0, otherToken.address);
@@ -1366,37 +1366,31 @@ contract("Colony Funding", accounts => {
 
     const reputations = [
       {
-        totalReputation: toBN(3),
-        totalAmountOfPayoutTokens: toBN(90000000)
+        totalReputation: new BN(3),
+        totalAmountOfPayoutTokens: new BN(90000000)
       },
       {
-        totalReputation: toBN(30),
-        totalAmountOfPayoutTokens: toBN(90000000)
+        totalReputation: new BN(30),
+        totalAmountOfPayoutTokens: new BN(90000000)
       },
       {
-        totalReputation: toBN(30000000000),
-        totalAmountOfPayoutTokens: toBN(90000000000)
+        totalReputation: new BN(30000000000),
+        totalAmountOfPayoutTokens: new BN(90000000000)
       },
       {
-        totalReputation: toBN(3).mul(toBN(10).pow(toBN(76))),
-        totalAmountOfPayoutTokens: toBN(9).mul(toBN(10).pow(toBN(76)))
+        totalReputation: new BN(10).pow(new BN(76)).muln(3),
+        totalAmountOfPayoutTokens: new BN(10).pow(new BN(76)).muln(9)
       },
       {
         // This is highest possible value for colony-wide reputation that can be used for reward payouts
-        totalReputation: bnSqrt(
-          toBN(2)
-            .pow(toBN(256))
-            .sub(toBN(1))
-        ).pow(toBN(2)),
-        totalAmountOfPayoutTokens: toBN(2)
-          .pow(toBN(256))
-          .sub(toBN(1))
+        totalReputation: bnSqrt(UINT256_MAX).pow(new BN(2)),
+        totalAmountOfPayoutTokens: UINT256_MAX
       }
     ];
 
     reputations.forEach(data =>
       it(`should calculate fairly precise reward payout for:
-        user reputation/tokens: ${data.totalReputation.div(toBN(3)).toString()}
+        user reputation/tokens: ${data.totalReputation.divn(3).toString()}
         total reputation/tokens: ${data.totalReputation.toString()}`, async () => {
         // Setting up a new token and colony
         const tokenArgs = getTokenArgs();
@@ -1414,8 +1408,8 @@ contract("Colony Funding", accounts => {
         await newColony.mintTokens(data.totalReputation);
 
         // Every user has equal amount of reputation and tokens (totalReputationAndTokens / 3)
-        const reputationPerUser = data.totalReputation.div(toBN(3));
-        const tokensPerUser = toBN(reputationPerUser);
+        const reputationPerUser = data.totalReputation.divn(3);
+        const tokensPerUser = new BN(reputationPerUser);
         // Giving colony's native tokens to 3 users.
         // Reputation log is appended to inactive reputation mining cycle
         await newColony.bootstrapColony([userAddress1, userAddress2, userAddress3], [reputationPerUser, reputationPerUser, reputationPerUser]);
@@ -1451,7 +1445,7 @@ contract("Colony Funding", accounts => {
         const totalSupply = await newToken.totalSupply();
         const colonyTokens = await newToken.balanceOf(newColony.address);
         // Transforming it to BN instance
-        const totalTokensHeldByUsers = toBN(totalSupply.sub(colonyTokens));
+        const totalTokensHeldByUsers = new BN(totalSupply.sub(colonyTokens));
 
         // Get users locked token amount from token locking contract
         const info = await tokenLocking.getUserLock(newToken.address, userAddress1);
@@ -1460,7 +1454,7 @@ contract("Colony Funding", accounts => {
         // Calculating the reward payout for one user locally to check against on-chain result
         const numerator = bnSqrt(userLockedTokens.mul(reputationPerUser));
         const denominator = bnSqrt(totalTokensHeldByUsers.mul(data.totalReputation));
-        const factor = toBN(10).pow(toBN(100));
+        const factor = new BN(10).pow(new BN(100));
         const percent = numerator.mul(factor).div(denominator);
         let reward = amountAvailableForPayout.mul(percent).div(factor);
         const feeInverse = await colonyNetwork.getFeeInverse();

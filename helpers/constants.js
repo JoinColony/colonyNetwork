@@ -1,8 +1,9 @@
-import { toBN, soliditySha3 } from "web3-utils";
+import { soliditySha3 } from "web3-utils";
+import { BN } from "bn.js";
 import shortid from "shortid";
 
-const UINT256_MAX = toBN(0).notn(256);
-const INT256_MAX = toBN(0).notn(255);
+const UINT256_MAX = new BN(0).notn(256);
+const INT256_MAX = new BN(0).notn(255);
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const MANAGER_ROLE = 0;
@@ -16,7 +17,7 @@ const SPECIFICATION_HASH_UPDATED = "0x017dfd85d4f6cb4dcd715a88101f7b1f06cd1e009b
 // The base58 decoded, bytes32 converted hex value of a test task ipfsHash "qmv8ndh7ageh9b24zngaextmuhj7aiuw3scc8hkczvjkww"
 const DELIVERABLE_HASH = "0xfb027a4d64f29d83e27769cb05d945e67ef7396fa1bd73ef53f065311fd3313e";
 
-const WAD = toBN(10).pow(toBN(18));
+const WAD = new BN(10).pow(new BN(18));
 const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(1000);
 
@@ -41,8 +42,8 @@ const FINALIZED_TASK_STATE = 2;
 const SECONDS_PER_DAY = 86400;
 const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
 const DECAY_RATE = {
-  NUMERATOR:    toBN("992327946262944"), // eslint-disable-line prettier/prettier
-  DENOMINATOR: toBN("1000000000000000")
+  NUMERATOR:    new BN("992327946262944"), // eslint-disable-line prettier/prettier
+  DENOMINATOR: new BN("1000000000000000")
 };
 
 module.exports = {
