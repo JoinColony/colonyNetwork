@@ -217,7 +217,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     // Get roothash from colonynetwork
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
-    bytes32 impliedHash = getImpliedRoot(key, value, branchMask, siblings);
+    bytes32 impliedHash = getImpliedRootHashKey(key, value, branchMask, siblings);
     require(rootHash==impliedHash, "colony-invalid-reputation-proof");
     return true;
   }

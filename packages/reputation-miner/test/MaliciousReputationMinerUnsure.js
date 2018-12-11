@@ -11,18 +11,31 @@ class MaliciousReputationMinerClaimNew extends ReputationMiner {
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber) {
+    let key;
+    let newestProof;
     if (updateNumber.toString() === this.entryToFalsify) {
-      let key;
       if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
         key = await Object.keys(this.reputations)[updateNumber];
       } else {
         key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
       }
       delete this.reputations[key];
-      this.nReputations = this.nReputations.sub(1);
+      newestProof = await this.getReputationProofObject(Object.keys(this.reputations)[this.nReputations - 3]);
+
+      // this.nReputations = this.nReputations.sub(1);
     }
+
     // Note that this won't remove it from the PatriciaTree - which is what we want
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber);
+    if (updateNumber.toString() === this.entryToFalsify) {
+      this.justificationHashes[ReputationMiner.getHexString(parseInt(this.entryToFalsify, 10) - 1, 64)].nextUpdateProof.value = this.getValueAsBytes(
+        0,
+        0
+      );
+      // Need to fix the newest hash that we claim
+      // const key = Object.keys(this.reputations)[this.nReputations - 1];
+      this.justificationHashes[ReputationMiner.getHexString(parseInt(this.entryToFalsify, 10), 64)].newestReputationProof = newestProof;
+    }
   }
 }
 

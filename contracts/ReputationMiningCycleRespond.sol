@@ -37,15 +37,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /// @param idx The index in the round of the hash under consideration
   modifier challengeOpen(uint256 round, uint256 idx) {
     // Check the binary search has finished, but not necessarily confirmed
-    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-closed");
+    require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
     // Check the binary search result has been confirmed
     require(
-      2**(disputeRounds[round][idx].challengeStepCompleted-2)>disputeRounds[round][idx].jrhNnodes,
+      2**(disputeRounds[round][idx].challengeStepCompleted-2)>disputeRounds[round][idx].jrhNNodes,
       "colony-reputation-mining-binary-search-result-not-confirmed"
     );
     // Check that we have not already responded to the challenge
     require(
-      2**(disputeRounds[round][idx].challengeStepCompleted-3)<=disputeRounds[round][idx].jrhNnodes,
+      2**(disputeRounds[round][idx].challengeStepCompleted-3)<=disputeRounds[round][idx].jrhNNodes,
       "colony-reputation-mining-challenge-already-responded"
     );
     _;
@@ -241,24 +241,32 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         reputationValue := mload(add(agreeStateReputationValue, 32))
     }
 
-    bytes32 reputationRootHash = getImpliedRoot(_reputationKey, agreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
+    bytes32 reputationRootHash = getImpliedRootHashKey(
+      _reputationKey,
+      agreeStateReputationValue,
+      u[U_REPUTATION_BRANCH_MASK],
+      reputationSiblings
+    );
+
     bytes memory jhLeafValue = new bytes(64);
-    bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline solidity
       mstore(add(jhLeafValue, 0x40), x)
-      mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
     // agree on.
-    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
 
     if (reputationValue == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
+      // Check they have incremented nNodes by one 
+      require(u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1, "colony-reputation-mining-nnodes-changed-by-not-1");
       return;
     }
     require(impliedRoot == jrh, "colony-reputation-mining-invalid-before-reputation-proof");
+    // Check that they have not changed nNodes from the agree state 
+    require(u[U_DISAGREE_STATE_NNODES] == u[U_AGREE_STATE_NNODES], "colony-reputation-mining-nnodes-changed");
     // They've actually verified whatever they claimed. We increment their challengeStepCompleted by one to indicate this.
     // In the event that our opponent lied about this reputation not existing yet in the tree, they will both complete
     // a call to respondToChallenge, but we will have a higher challengeStepCompleted value, and so they will be the ones
@@ -279,20 +287,28 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     uint256 firstDisagreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound;
-    bytes32 reputationRootHash = getImpliedRoot(_reputationKey, disagreeStateReputationValue, u[U_REPUTATION_BRANCH_MASK], reputationSiblings);
+    bytes32 reputationRootHash = getImpliedRootHashKey(
+      _reputationKey,
+      disagreeStateReputationValue,
+      u[U_REPUTATION_BRANCH_MASK],
+      reputationSiblings
+    );
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions
     // agree on.
     bytes memory jhLeafValue = new bytes(64);
-    bytes memory firstDisagreeIdxBytes = new bytes(32);
 
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       let x := mload(add(u, mul(32,5))) // 5 = U_DISAGREE_STATE_NNODES. Constants not supported by inline solidity.
       mstore(add(jhLeafValue, 0x40), x)
-      mstore(add(firstDisagreeIdxBytes, 0x20), firstDisagreeIdx)
     }
 
-    bytes32 impliedRoot = getImpliedRoot(firstDisagreeIdxBytes, jhLeafValue, u[U_DISAGREE_STATE_BRANCH_MASK], disagreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(
+      bytes32(firstDisagreeIdx),
+      jhLeafValue,
+      u[U_DISAGREE_STATE_BRANCH_MASK],
+      disagreeStateSiblings
+    );
     require(jrh==impliedRoot, "colony-reputation-mining-invalid-after-reputation-proof");
   }
 
@@ -362,22 +378,20 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes32 reputationRootHash = getImpliedRoot(
+    bytes32 reputationRootHash = getImpliedRootHashKey(
       previousNewReputationKey,
       previousNewReputationValue,
       u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK],
       previousNewReputationSiblings
     );
     bytes memory jhLeafValue = new bytes(64);
-    bytes memory lastAgreeIdxBytes = new bytes(32);
     assembly {
       mstore(add(jhLeafValue, 0x20), reputationRootHash)
       let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline assembly
       mstore(add(jhLeafValue, 0x40), x)
-      mstore(add(lastAgreeIdxBytes, 0x20), lastAgreeIdx)
     }
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 

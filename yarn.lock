@@ -96,14 +96,7 @@
     "@colony/colony-js-contract-loader" "^1.8.1"
     jsonfile "^4.0.0"
 
-"@colony/colony-js-contract-loader@1.8.1":
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader/-/colony-js-contract-loader-1.8.1.tgz#af938d7e3588032f14eb71e7b5f8eefecdf7527a"
-  dependencies:
-    assert "^1.4.1"
-    babel-runtime "^6.26.0"
-
-"@colony/colony-js-contract-loader@^1.8.1":
+"@colony/colony-js-contract-loader@1.8.1", "@colony/colony-js-contract-loader@^1.8.1":
   version "1.8.1"
   resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader/-/colony-js-contract-loader-1.8.1.tgz#af938d7e3588032f14eb71e7b5f8eefecdf7527a"
   dependencies:
@@ -2895,6 +2888,21 @@ ethers@4.0.0-beta.1:
 ethers@^4.0.13:
   version "4.0.15"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.15.tgz#784df851271ec4f7cea46ce3b44e2274f122ff6c"
+  dependencies:
+    "@types/node" "^10.3.2"
+    aes-js "3.0.0"
+    bn.js "^4.4.0"
+    elliptic "6.3.3"
+    hash.js "1.1.3"
+    js-sha3 "0.5.7"
+    scrypt-js "2.0.4"
+    setimmediate "1.0.4"
+    uuid "2.0.1"
+    xmlhttprequest "1.8.0"
+
+ethers@^4.0.17:
+  version "4.0.17"
+  resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.17.tgz#1010c0867e674e9cc0d2631ecde69cbae9fddb32"
   dependencies:
     "@types/node" "^10.3.2"
     aes-js "3.0.0"

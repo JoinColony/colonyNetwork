@@ -214,7 +214,7 @@ contract("All", accounts => {
 
       await oneMiningCycleDurationLater();
       let repCycle = await IReputationMiningCycle.at(repCycleAddr);
-      await repCycle.submitRootHash("0x00", 0, 1, { from: STAKER1 });
+      await repCycle.submitRootHash("0x00", 0, "0x00", 1, { from: STAKER1 });
       await repCycle.confirmNewHash(0);
 
       repCycleAddr = await colonyNetwork.getReputationMiningCycle(true);
@@ -245,11 +245,14 @@ contract("All", accounts => {
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       // Session of respond / invalidate between our 3 submissions
-      await goodClient.submitJustificationRootHash();
-      await badClient.submitJustificationRootHash();
-      await badClient2.submitJustificationRootHash();
+      await goodClient.confirmJustificationRootHash();
+      await badClient.confirmJustificationRootHash();
+      await badClient2.confirmJustificationRootHash();
 
       await repCycle.invalidateHash(0, 3); // Bye for R1
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
@@ -291,8 +294,11 @@ contract("All", accounts => {
       await goodClient.respondToBinarySearchForChallenge();
       await badClient2.respondToBinarySearchForChallenge();
 
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient2.respondToBinarySearchForChallenge();
+
       await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
+      await badClient2.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
       await oneMiningCycleDurationLater();
@@ -326,7 +332,7 @@ contract("All", accounts => {
       let addr = await colonyNetwork.getReputationMiningCycle(true);
       await forwardTime(MINING_CYCLE_DURATION, this);
       let repCycle = await IReputationMiningCycle.at(addr);
-      await repCycle.submitRootHash("0x00", 0, 10, { from: accounts[5] });
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: accounts[5] });
       await repCycle.confirmNewHash(0);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[8], DEFAULT_STAKE);
