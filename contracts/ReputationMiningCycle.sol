@@ -444,20 +444,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return disputeRounds[_round][_index];
   }
 
-  function getDisputeRounds2(uint256 _round, uint256 _index) public view returns (
-    bytes32 targetHashDuringSearch,
-    bytes32 hash1,
-    bytes32 hash2
-    )
-    {
-    Submission memory submission = disputeRounds[_round][_index];
-    return (
-      submission.targetHashDuringSearch,
-      submission.hash1,
-      submission.hash2
-    );
-  }
-
   function rewardStakersWithReputation(
     address[] stakers,
     uint256[] weights,

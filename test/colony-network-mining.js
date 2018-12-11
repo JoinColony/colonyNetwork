@@ -1304,7 +1304,7 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(goodSubmission.lowerBound, 8);
       assert.equal(goodSubmission.upperBound, 15);
       assert.equal(badSubmission.lowerBound, 8);
-      assert.equal(badSubmission.upperBound, 14);
+      assert.equal(badSubmission.upperBound, 15);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();

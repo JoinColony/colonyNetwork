@@ -665,7 +665,6 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle();
     const submission = await repCycle.getDisputeRounds(round, index);
 
-    const searchInfo = await repCycle.getDisputeRounds2(round, index);
     const targetNode = submission.lowerBound;
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
@@ -681,7 +680,7 @@ class ReputationMiner {
       siblings
     );
 
-    while (siblings.length > 1 && searchInfo[0] !== proofEndingHash) {
+    while (siblings.length > 1 && submission.targetHashDuringSearch !== proofEndingHash) {
       // Remove the first sibling
       siblings = siblings.slice(1);
       // Recalulate ending hash
