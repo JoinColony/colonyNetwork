@@ -186,14 +186,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       } else {
         require(userAddressOriginRep == userAddressChildRep, "colony-reputation-mining-origin-user-incorrect");
       }
-
-      bytes memory originReputationValueBytes = concatenateToBytes(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
       
       checkOriginReputationInState(
         u,
         agreeStateSiblings,
         originReputationKey,
-        originReputationValueBytes,
         originReputationSiblings);
     }
   }
@@ -296,13 +293,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       agreeStateReputationValue,
       u[U_REPUTATION_BRANCH_MASK],
       reputationSiblings);
-    bytes memory jhLeafValue = concatenateToBytes64(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
 
-    assembly {
-      mstore(add(jhLeafValue, 0x20), reputationRootHash)
-      let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline solidity
-      mstore(add(jhLeafValue, 0x40), x)
-    }
+    bytes memory jhLeafValue = concatenateToBytes(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
+
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
 
@@ -334,6 +327,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     uint256 firstDisagreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound;
+
+    bytes memory disagreeStateReputationValue = concatenateToBytes(u[U_DISAGREE_STATE_REPUTATION_VALUE], u[U_DISAGREE_STATE_REPUTATION_UID]);
+
     bytes32 reputationRootHash = getImpliedRootHashKey(
       _reputationKey,
       disagreeStateReputationValue,
@@ -341,13 +337,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       reputationSiblings
     );
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
-    bytes memory jhLeafValue = new bytes(64);
-
-    assembly {
-      mstore(add(jhLeafValue, 0x20), reputationRootHash)
-      let x := mload(add(u, mul(32,5))) // 5 = U_DISAGREE_STATE_NNODES. Constants not supported by inline solidity.
-      mstore(add(jhLeafValue, 0x40), x)
-    }
+    bytes memory jhLeafValue = concatenateToBytes(uint256(reputationRootHash), u[U_DISAGREE_STATE_NNODES]);
 
     bytes32 impliedRoot = getImpliedRootNoHashKey(
       bytes32(firstDisagreeIdx),
@@ -469,8 +459,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function getChildAndParentNUpdatesForLogEntry(uint256[19] u) internal view returns (uint256, uint256) {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
-    uint nParents;
-    (nParents, , ) = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId);
+    uint256 nParents = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId).nParents;
 
     uint nChildUpdates;
     if (logEntry.amount < 0) {
@@ -492,18 +481,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
+    bytes memory previousNewReputationValue = concatenateToBytes(u[U_PREVIOUS_NEW_REPUTATION_VALUE], u[U_PREVIOUS_NEW_REPUTATION_UID]);
+
     bytes32 reputationRootHash = getImpliedRootHashKey(
       previousNewReputationKey,
       previousNewReputationValue,
       u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK],
       previousNewReputationSiblings
     );
-    bytes memory jhLeafValue = new bytes(64);
-    assembly {
-      mstore(add(jhLeafValue, 0x20), reputationRootHash)
-      let x := mload(add(u, mul(32,3))) // 3 = U_AGREE_STATE_NNODES. Constants not supported by inline assembly
-      mstore(add(jhLeafValue, 0x40), x)
-    }
+    bytes memory jhLeafValue = concatenateToBytes(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
@@ -513,24 +499,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256[19] u,
     bytes32[] agreeStateSiblings,
     bytes originReputationKey,
-    bytes originReputationValueBytes,
     bytes32[] originReputationStateSiblings
     ) internal
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes32 reputationRootHash = getImpliedRoot(
+    bytes memory originReputationValueBytes = concatenateToBytes(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
+
+    bytes32 reputationRootHash = getImpliedRootHashKey(
       originReputationKey,
       originReputationValueBytes,
       u[U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       originReputationStateSiblings
     );
+    
     bytes memory jhLeafValue = concatenateToBytes(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
-    bytes memory lastAgreeIdxBytes = concatenateToBytes(lastAgreeIdx);
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
-    bytes32 impliedRoot = getImpliedRoot(lastAgreeIdxBytes, jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
+    bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     if (u[U_ORIGIN_REPUTATION_VALUE] == 0 && impliedRoot != jrh) {
@@ -559,14 +546,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       // Seems as if you access an external variable by name, you get the value, straight up...?
       mstore(add(retValue, 0x20), a)
       mstore(add(retValue, 0x40), b)
-    }
-    return retValue;
-  }
-
-  function concatenateToBytes(uint256 a) internal pure returns (bytes) {
-    bytes memory retValue = new bytes(32);
-    assembly {
-      mstore(add(retValue, 0x20), a)
     }
     return retValue;
   }

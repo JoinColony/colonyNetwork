@@ -211,10 +211,10 @@ class ReputationMiner {
       // We update colonywide sums first (children, parents, skill)
       // Then the user-specifc sums in the order children, parents, skill.
       if (amount.lt(0)) {
-        const nUpdates = logEntry[4];
-        const [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
+        const nUpdates = ethers.utils.bigNumberify(logEntry.nUpdates);
+        const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId);
         const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
-        const relativeUpdateNumber = updateNumber.sub(logEntry[5]).sub(this.nReputationsBeforeLatestLog);
+        const relativeUpdateNumber = updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog);
 
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
         // and user-specific updates located in the first nChildUpdates of the second half of the nUpdates set.
@@ -289,7 +289,7 @@ class ReputationMiner {
 
     const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
-
+    
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
@@ -326,7 +326,9 @@ class ReputationMiner {
       branchMask = 0x0;
       siblings = [];
       value = this.getValueAsBytes(0, 0);
-      key = ReputationMiner.getHexString(0);
+      if (!key) {
+        key = ReputationMiner.getHexString(0);
+      }
     }
     const reputation = `0x${value.slice(2,66)}`;
     const uid = `0x${value.slice(-64)}`;
@@ -438,7 +440,7 @@ class ReputationMiner {
 
   /**
    * Gets the key appropriate for the nth reputation update that logEntry implies.
-   * @param  {BigNumber} updateNumber The number of the update the log entry implies we want the information for. Must be less than logEntry[4].
+   * @param  {BigNumber} updateNumber The number of the update the log entry implies we want the information for. Must be less than logEntry.nUpdates.
    * @param  {LogEntry}  logEntry An array six long, containing the log entry in question [userAddress, amount, skillId, colony, nUpdates, nPreviousUpdates ]
    * @return {Promise}              Promise that resolves to key
    */
@@ -447,16 +449,16 @@ class ReputationMiner {
     // We need to work out the skillId and user address to use.
     // If we are in the first half of 'updateNumber's, then we are dealing with global update, so
     // the skilladdress will be 0x0, rather than the user address
-    if (updateNumber.lt(logEntry[4].div(2))) {
+    if (updateNumber.lt(ethers.utils.bigNumberify(logEntry.nUpdates).div(2))) {
       skillAddress = ethers.constants.AddressZero;
     } else {
-      skillAddress = logEntry[0]; // eslint-disable-line prefer-destructuring
+      skillAddress = logEntry.user; // eslint-disable-line prefer-destructuring
       // Following the destructuring rule, this line would be [skillAddress] = logEntry, which I think is very misleading
     }
-    const nUpdates = logEntry[4];
-    const amount = this.getAmount(updateNumber.add(this.nReputationsBeforeLatestLog), logEntry[1]);
+    const nUpdates = ethers.utils.bigNumberify(logEntry.nUpdates);
+    const amount = this.getAmount(updateNumber.add(this.nReputationsBeforeLatestLog), ethers.utils.bigNumberify(logEntry.amount));
 
-    const [nParents] = await this.colonyNetwork.getSkill(logEntry[2]);
+    const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId);
     let skillId;
     // NB This is not necessarily the same as nChildren. However, this is the number of child updates
     // that this entry in the log was expecting at the time it was created.
@@ -482,15 +484,15 @@ class ReputationMiner {
 
     if (skillIndex.lt(nChildUpdates)) {
       // Then the skill being updated is the skillIndex-th child skill
-      skillId = await this.colonyNetwork.getChildSkillId(logEntry[2], skillIndex);
+      skillId = await this.colonyNetwork.getChildSkillId(logEntry.skillId, skillIndex);
     } else if (skillIndex.lt(nChildUpdates.add(nParents))) {
       // Then the skill being updated is the skillIndex-nChildUpdates-th parent skill
-      skillId = await this.colonyNetwork.getParentSkillId(logEntry[2], skillIndex.sub(nChildUpdates));
+      skillId = await this.colonyNetwork.getParentSkillId(logEntry.skillId, skillIndex.sub(nChildUpdates));
     } else {
       // Then the skill being update is the skill itself - not a parent or child
-      skillId = logEntry[2]; // eslint-disable-line prefer-destructuring
+      skillId = logEntry.skillId; // eslint-disable-line prefer-destructuring
     }
-    const key = await ReputationMiner.getKey(logEntry[3], skillId, skillAddress);
+    const key = await ReputationMiner.getKey(logEntry.colony, skillId, skillAddress);
     return key;
   }
 
@@ -835,7 +837,6 @@ class ReputationMiner {
     //   disagreeStateSiblings,
     //   this.justificationHashes[lastAgreeKey].newestReputationProof.key,
     //   this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
-
     //   this.justificationHashes[lastAgreeKey].originReputationProof.key,
     //   this.justificationHashes[lastAgreeKey].originReputationProof.siblings);
 
