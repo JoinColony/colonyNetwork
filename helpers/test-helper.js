@@ -436,13 +436,13 @@ export async function getActiveRepCycle(colonyNetwork) {
   return repCycle;
 }
 
-export async function advanceMiningCycleNoContest({ colonyNetwork, test, miningClient, minerAddress }) {
+export async function advanceMiningCycleNoContest({ colonyNetwork, client, minerAddress, test }) {
   await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
 
-  if (miningClient !== undefined) {
-    await miningClient.addLogContentsToReputationTree();
-    await miningClient.submitRootHash();
+  if (client !== undefined) {
+    await client.addLogContentsToReputationTree();
+    await client.submitRootHash();
   } else {
     const accounts = await web3GetAccounts();
     minerAddress = minerAddress || accounts[5]; // eslint-disable-line no-param-reassign

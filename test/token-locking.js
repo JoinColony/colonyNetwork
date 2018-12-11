@@ -58,7 +58,7 @@ contract("Token Locking", addresses => {
     });
     await client.initialise(colonyNetwork.address);
 
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
+    await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
     const result = await colony.getDomain(1);
     const rootDomainSkill = result.skillId;

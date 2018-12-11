@@ -241,13 +241,13 @@ contract("Colony Network Recovery", accounts => {
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[5]], [1000000000000000]);
 
-          await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
+          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
           const repCycle = await getActiveRepCycle(colonyNetwork);
           const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
           invalidEntry.amount = 0;
 
-          await advanceMiningCycleNoContest({ colonyNetwork, test: this, miningClient: client });
+          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
           const domain = await colony.getDomain(1);
           const rootSkill = domain.skillId;
