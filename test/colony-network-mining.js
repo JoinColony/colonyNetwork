@@ -125,7 +125,6 @@ contract("ColonyNetworkMining", accounts => {
     if (client2 !== undefined) {
       // Submit JRH for submission 1 if needed
       // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
-
       if (submission1before.jrhNNodes === "0") {
         await client1.confirmJustificationRootHash();
       }
@@ -883,10 +882,10 @@ contract("ColonyNetworkMining", accounts => {
 
       const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
-      assert.equal(submissionAfterJRHSubmitted.jrh, jrh);
+      assert.equal(submissionAfterJRHConfirmed.jrh, jrh);
 
       // Check 'last response' was updated.
-      assert.notEqual(submission.lastResponseTimestamp, submissionAfterJRHSubmitted.lastResponseTimestamp);
+      assert.notEqual(submission.lastResponseTimestamp, submissionAfterJRHConfirmed.lastResponseTimestamp);
 
       // Cleanup
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
@@ -1261,7 +1260,7 @@ contract("ColonyNetworkMining", accounts => {
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       assert.equal(nSubmittedHashes, 2);
-      const submission = await repCycle.getDisputeRounds(0, 0);
+
       await goodClient.confirmJustificationRootHash();
       const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();

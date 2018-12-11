@@ -152,7 +152,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         challengeStepCompleted: 0,
         lowerBound: 0,
         upperBound: 0,
-        jrhNnodes: 0,
+        jrhNNodes: 0,
         intermediateReputationHash: 0x0,
         intermediateReputationNNodes: 0,
         provedPreviousReputationUID: 0,
@@ -164,8 +164,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       if (nSubmittedHashes % 2 == 0) {
         disputeRounds[0][nSubmittedHashes-1].lastResponseTimestamp = now;
         disputeRounds[0][nSubmittedHashes-2].lastResponseTimestamp = now;
-        /* disputeRounds[0][nSubmittedHashes-1].upperBound = disputeRounds[0][nSubmittedHashes-1].jrhNnodes; */
-        /* disputeRounds[0][nSubmittedHashes-2].upperBound = disputeRounds[0][nSubmittedHashes-2].jrhNnodes; */
+        /* disputeRounds[0][nSubmittedHashes-1].upperBound = disputeRounds[0][nSubmittedHashes-1].jrhNNodes; */
+        /* disputeRounds[0][nSubmittedHashes-2].upperBound = disputeRounds[0][nSubmittedHashes-2].jrhNNodes; */
       }
     }
 
@@ -177,7 +177,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       challengeStepCompleted: 0,
       lowerBound: 0,
       upperBound: 0,
-      jrhNnodes: 0,
+      jrhNNodes: 0,
       intermediateReputationHash: 0x0,
       intermediateReputationNNodes: 0,
       provedPreviousReputationUID: 0,
@@ -308,7 +308,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[2] memory lastSiblings;
 
     // Check proof is the right length
-    uint256 expectedLength = expectedProofLength(disputeRounds[round][idx].jrhNnodes, disputeRounds[round][idx].lowerBound) -
+    uint256 expectedLength = expectedProofLength(disputeRounds[round][idx].jrhNNodes, disputeRounds[round][idx].lowerBound) -
       (disputeRounds[round][idx].challengeStepCompleted - 1); // We expect shorter proofs the more chanllenge rounds we've done so far
     require(expectedLength == siblings.length, "colony-reputation-mining-invalid-binary-search-proof-length");
 
@@ -332,10 +332,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] siblings
   ) public
   {
-    require(disputeRounds[round][idx].jrhNnodes != 0, "colony-reputation-jrh-hash-not-verified");
+    require(disputeRounds[round][idx].jrhNNodes != 0, "colony-reputation-jrh-hash-not-verified");
     require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
     require(
-      2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNnodes,
+      2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNNodes,
       "colony-reputation-binary-search-result-already-confirmed"
     );
 
@@ -352,7 +352,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     }
     disputeRounds[round][idx].intermediateReputationHash = intermediateReputationHash;
     disputeRounds[round][idx].intermediateReputationNNodes = intermediateReputationNNodes;
-    while (2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNnodes) {
+    while (2**(disputeRounds[round][idx].challengeStepCompleted - 2) <= disputeRounds[round][idx].jrhNNodes) {
       disputeRounds[round][idx].challengeStepCompleted += 1;
     }
 
@@ -368,7 +368,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   ) public
   {
     // Require we've not submitted already.
-    require(disputeRounds[round][index].jrhNnodes == 0, "colony-reputation-jrh-hash-already-verified");
+    require(disputeRounds[round][index].jrhNNodes == 0, "colony-reputation-jrh-hash-already-verified");
 
     // Get reputation root hash NNodes, which we need in both of the following checkJRHProofs
     uint256 reputationRootHashNNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
@@ -384,10 +384,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       reputationRootHashNNodes
     );
 
-    uint256 expectedLength = expectedProofLength(disputeRounds[round][index].jrhNnodes, 0);
+    uint256 expectedLength = expectedProofLength(disputeRounds[round][index].jrhNNodes, 0);
     require(expectedLength == siblings1.length, "colony-reputation-mining-invalid-jrh-proof-1-length");
 
-    expectedLength = expectedProofLength(disputeRounds[round][index].jrhNnodes, disputeRounds[round][index].jrhNnodes - 1);
+    expectedLength = expectedProofLength(disputeRounds[round][index].jrhNNodes, disputeRounds[round][index].jrhNNodes - 1);
     require(expectedLength == siblings2.length, "colony-reputation-mining-invalid-jrh-proof-2-length");
 
 
@@ -396,7 +396,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][index].challengeStepCompleted += 1;
 
     // Set bounds for first binary search if it's going to be needed
-    disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNnodes - 1;
+    disputeRounds[round][index].upperBound = disputeRounds[round][index].jrhNNodes - 1;
   }
 
   function appendReputationUpdateLog(
@@ -589,7 +589,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // challengeStepCompleted to the maximum it could be for the number of nodes we had to search through, plus one to indicate
     // they've submitted their jrh
     if (disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound) {
-      if (2**(disputeRounds[round][idx].challengeStepCompleted-1) < disputeRounds[round][idx].jrhNnodes) {
+      if (2**(disputeRounds[round][idx].challengeStepCompleted-1) < disputeRounds[round][idx].jrhNNodes) {
         disputeRounds[round][idx].challengeStepCompleted += 1;
         disputeRounds[round][opponentIdx].challengeStepCompleted += 1;
       }
@@ -631,7 +631,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32 jrh = disputeRounds[round][index].jrh;
     uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
       reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
-    disputeRounds[round][index].jrhNnodes = nUpdates + 1;
+    disputeRounds[round][index].jrhNNodes = nUpdates + 1;
     bytes32 submittedHash = disputeRounds[round][index].proposedNewRootHash;
     uint256 submittedHashNNodes = disputeRounds[round][index].nNodes;
     bytes memory jhLeafValue = new bytes(64);
@@ -645,11 +645,11 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
   function startMemberOfPair(uint256 roundNumber, uint256 index) internal {
     disputeRounds[roundNumber][index].lastResponseTimestamp = now;
-    disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNnodes - 1;
+    disputeRounds[roundNumber][index].upperBound = disputeRounds[roundNumber][index].jrhNNodes - 1;
     disputeRounds[roundNumber][index].lowerBound = 0;
     disputeRounds[roundNumber][index].targetHashDuringSearch = disputeRounds[roundNumber][index].jrh;
     disputeRounds[roundNumber][index].provedPreviousReputationUID = 0;
-    if (disputeRounds[roundNumber][index].jrhNnodes != 0) {
+    if (disputeRounds[roundNumber][index].jrhNNodes != 0) {
       // If this submission has confirmed their JRH, we give ourselves credit for it in the next round - it's possible
       // that a submission got a bye without confirming a JRH, which will not have this starting '1'.
       disputeRounds[roundNumber][index].challengeStepCompleted = 1;

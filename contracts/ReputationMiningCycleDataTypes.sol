@@ -43,7 +43,7 @@ contract ReputationMiningCycleDataTypes {
                                           // this submission and its opponent differ for the first time.
     uint256 intermediateReputationNNodes; // The number of nodes in the reputation tree in the reputation state where this submission and
                                           // its opponent first differ.
-    uint256 jrhNnodes;                    // The number of nodes in the tree the JRH is the root of.
+    uint256 jrhNNodes;                    // The number of nodes in the tree the JRH is the root of.
     uint256 lowerBound;                   // During the binary search, the lowest index in the justification tree that might still be the
                                           // first place where the two submissions differ.
     uint256 upperBound;                   // During the binary search, the highest index in the justification tree that might still be the
