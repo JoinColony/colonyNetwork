@@ -926,17 +926,15 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
+      // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the task.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      assert.equal(nInactiveLogEntries.toNumber(), 5);
 
       badClient = new MaliciousReputationMinerWrongNNodes(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -996,17 +994,15 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
+      // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the task.
       let repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      assert.equal(nInactiveLogEntries.toNumber(), 5);
 
       badClient = new MaliciousReputationMinerWrongNNodes2(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -1043,17 +1039,15 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
+      // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      assert.equal(nInactiveLogEntries.toNumber(), 5);
 
       badClient = new MaliciousReputationMinerWrongJRH(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -1074,17 +1068,15 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(3));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
+      // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      assert.equal(nInactiveLogEntries.toNumber(), 5);
 
       badClient = new MaliciousReputationMinerWrongJRH(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -1116,10 +1108,10 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const repCycle = await getActiveRepCycle(colonyNetwork);
       // The update log should contain the person being rewarded for the previous
-      // update cycle, and reputation updates for three task completions (manager, worker, evaluator);
-      // That's seven in total.
+      // update cycle, and reputation updates for 3 task completions (manager, worker, evaluator);
+      // That's 13 in total.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
@@ -1218,9 +1210,8 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
+      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the task.
       const repCycle = await getActiveRepCycle(colonyNetwork);
-
-      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
