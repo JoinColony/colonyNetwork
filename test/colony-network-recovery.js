@@ -6,7 +6,6 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import {
   forwardTime,
-  getTokenArgs,
   makeReputationKey,
   currentBlock,
   currentBlockTime,
@@ -16,7 +15,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest
 } from "../helpers/test-helper";
-import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
+import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import { setupEtherRouter } from "../helpers/upgradable-contracts";
 import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
@@ -39,33 +38,37 @@ const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 contract("Colony Network Recovery", accounts => {
   let colonyNetwork;
-  let miningClient;
+  let client;
   let startingBlockNumber;
-  let clnyAddress;
+  let metaColony;
+  let clny;
+
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
   });
 
   beforeEach(async () => {
-    await advanceMiningCycleNoContest(colonyNetwork, this);
+    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
     await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
 
     const metaColonyAddress = await colonyNetwork.getMetaColony();
-    const metaColony = await IColony.at(metaColonyAddress);
-    clnyAddress = await metaColony.getToken();
+    metaColony = await IColony.at(metaColonyAddress);
+    const clnyAddress = await metaColony.getToken();
+    clny = await ERC20ExtendedToken.at(clnyAddress);
 
-    miningClient = new ReputationMiner({
+    client = new ReputationMiner({
       loader: contractLoader,
       minerAddress: accounts[5],
       realProviderPort: REAL_PROVIDER_PORT,
       useJsTree: true
     });
-    await miningClient.resetDB();
-    await miningClient.initialise(colonyNetwork.address);
 
-    await advanceMiningCycleNoContest(colonyNetwork, this);
+    await client.resetDB();
+    await client.initialise(colonyNetwork.address);
+
+    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
     const block = await currentBlock();
     // If we don't add the one here, when we sync from this block number we'll include the previous update log,
@@ -118,7 +121,7 @@ contract("Colony Network Recovery", accounts => {
 
     it("should not be able to call normal functions while in recovery", async () => {
       await colonyNetwork.enterRecoveryMode();
-      await checkErrorRevert(colonyNetwork.createColony(clnyAddress), "colony-in-recovery-mode");
+      await checkErrorRevert(colonyNetwork.createColony(clny.address), "colony-in-recovery-mode");
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
     });
@@ -195,7 +198,7 @@ contract("Colony Network Recovery", accounts => {
     });
 
     it("should be able to fix reputation state", async () => {
-      await advanceMiningCycleNoContest(colonyNetwork, this); // Default (0x00, 0)
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this }); // Default (0x00, 0)
 
       let rootHash = await colonyNetwork.getReputationRootHash();
       let nNodes = await colonyNetwork.getReputationRootHashNNodes();
@@ -219,42 +222,37 @@ contract("Colony Network Recovery", accounts => {
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
-          await miningClient.saveCurrentState();
-          const startingHash = await miningClient.getRootHash();
 
-          const newMiningClient = new ReputationMiner({
+          await fundColonyWithTokens(metaColony, clny);
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+
+          await client.saveCurrentState();
+          const startingHash = await client.getRootHash();
+
+          const newClient = new ReputationMiner({
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
             useJsTree: true
           });
-          await newMiningClient.initialise(colonyNetwork.address);
+          await newClient.initialise(colonyNetwork.address);
 
-          const tokenArgs = getTokenArgs();
-          const token = await ERC20ExtendedToken.new(...tokenArgs);
-          const { logs } = await colonyNetwork.createColony(token.address);
-          const { colonyAddress } = logs[0].args;
-
-          await token.setOwner(colonyAddress);
-          const colony = await IColony.at(colonyAddress);
-
+          const { colony } = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[5]], [1000000000000000]);
 
-          await miningClient.addLogContentsToReputationTree();
-          await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
+          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
           const repCycle = await getActiveRepCycle(colonyNetwork);
           const invalidEntry = await repCycle.getReputationUpdateLogEntry(5);
           invalidEntry.amount = 0;
 
-          await miningClient.addLogContentsToReputationTree();
-          await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
+          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
           const domain = await colony.getDomain(1);
           const rootSkill = domain.skillId;
           const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[5]);
-          const originalValue = miningClient.reputations[reputationKey].slice(2, 66);
+          const originalValue = client.reputations[reputationKey].slice(2, 66);
           assert.equal(parseInt(originalValue, 16), 1000000000000000);
 
           await colonyNetwork.enterRecoveryMode();
@@ -269,14 +267,14 @@ contract("Colony Network Recovery", accounts => {
             invalidEntry.nUpdates,
             invalidEntry.nPreviousUpdates
           );
-          await miningClient.loadState(startingHash);
+          await client.loadState(startingHash);
           // This sync call will log an error - this is because we've changed a log entry, but the root hash
           // on-chain which .sync() does a sanity check against hasn't been updated.
-          await miningClient.sync(startingBlockNumber, true);
+          await client.sync(startingBlockNumber, true);
           console.log("The WARNING and ERROR immediately preceeding can be ignored (they are expected as part of the test)");
 
-          const rootHash = await miningClient.getRootHash();
-          const nNodes = await miningClient.nReputations;
+          const rootHash = await client.getRootHash();
+          const nNodes = await client.nReputations;
 
           // slots 20 and 21 are hash and nodes respectively
           await colonyNetwork.setStorageSlotRecovery(20, rootHash);
@@ -291,40 +289,33 @@ contract("Colony Network Recovery", accounts => {
           assert.equal(newHash, rootHash);
           assert.equal(newHashNNodes.toNumber(), nNodes.toNumber());
 
-          await newMiningClient.sync(startingBlockNumber);
-          const newValue = newMiningClient.reputations[reputationKey].slice(2, 66);
+          await newClient.sync(startingBlockNumber);
+          const newValue = newClient.reputations[reputationKey].slice(2, 66);
           assert.equal(new BN(newValue, 16).toNumber(), 0);
         });
 
     process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("the ReputationMiningCycle being replaced mid-cycle should be able to be managed okay by miners (new and old)", async () => {
-          await miningClient.saveCurrentState();
-          const startingHash = await miningClient.getRootHash();
+          await client.saveCurrentState();
+          const startingHash = await client.getRootHash();
 
-          const ignorantMiningClient = new ReputationMiner({
+          const ignorantclient = new ReputationMiner({
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
             useJsTree: true
           });
-          await ignorantMiningClient.initialise(colonyNetwork.address);
+          await ignorantclient.initialise(colonyNetwork.address);
 
-          const tokenArgs = getTokenArgs();
-          const token = await ERC20ExtendedToken.new(...tokenArgs);
-          const { logs } = await colonyNetwork.createColony(token.address);
-          const { colonyAddress } = logs[0].args;
-
-          await token.setOwner(colonyAddress);
-          const colony = await IColony.at(colonyAddress);
-
+          const { colony } = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
           // A well intentioned miner makes a submission
           await forwardTime(MINING_CYCLE_DURATION, this);
-          await ignorantMiningClient.addLogContentsToReputationTree();
-          await ignorantMiningClient.submitRootHash();
+          await ignorantclient.addLogContentsToReputationTree();
+          await ignorantclient.submitRootHash();
 
           // Enter recovery mode
           await colonyNetwork.enterRecoveryMode();
@@ -366,21 +357,21 @@ contract("Colony Network Recovery", accounts => {
           const colonyNetworkAddress = colonyNetwork.address;
           const tokenLockingAddress = await colonyNetwork.getTokenLocking();
           const metaColonyAddress = await colonyNetwork.getMetaColony();
-          const metaColony = await IColony.at(metaColonyAddress);
-          clnyAddress = await metaColony.getToken();
+          const myMetaColony = await IColony.at(metaColonyAddress);
+          const myClnyAddress = await myMetaColony.getToken();
 
           // slot 4: colonyNetworkAddress
           // slot 5: tokenLockingAddress
           // slot 6: clnyTokenAddress
           newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
           newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newActiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${clnyAddress.slice(2)}`);
+          newActiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
           let timeNow = await currentBlockTime();
           timeNow = new BN(timeNow).toString(16, 64);
           newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
           newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
           newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${clnyAddress.slice(2)}`);
+          newInactiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
 
           // Port over log entries.
           let nLogEntries = await oldActiveCycle.getReputationUpdateLogLength();
@@ -450,35 +441,35 @@ contract("Colony Network Recovery", accounts => {
           await colonyNetwork.exitRecoveryMode();
 
           // Consume these reputation mining cycles.
-          await submitAndForwardTimeToDispute([miningClient], this);
+          await submitAndForwardTimeToDispute([client], this);
           await newActiveCycle.confirmNewHash(0);
 
           newActiveCycle = newInactiveCycle;
-          await submitAndForwardTimeToDispute([miningClient], this);
+          await submitAndForwardTimeToDispute([client], this);
           await newActiveCycle.confirmNewHash(0);
 
-          const newMiningClient = new ReputationMiner({
+          const newClient = new ReputationMiner({
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
             useJsTree: true
           });
-          await newMiningClient.initialise(colonyNetwork.address);
-          await newMiningClient.sync(startingBlockNumber);
+          await newClient.initialise(colonyNetwork.address);
+          await newClient.sync(startingBlockNumber);
 
-          const newClientHash = await newMiningClient.getRootHash();
-          const oldClientHash = await miningClient.getRootHash();
+          const newClientHash = await newClient.getRootHash();
+          const oldClientHash = await client.getRootHash();
 
           assert.equal(newClientHash, oldClientHash);
 
-          let ignorantClientHash = await ignorantMiningClient.getRootHash();
+          let ignorantClientHash = await ignorantclient.getRootHash();
           // We changed one log entry, so these hashes should be different
           assert.notEqual(newClientHash, ignorantClientHash);
 
           // Now check the ignorant client can recover. Load a state from before we entered recovery mode
-          await ignorantMiningClient.loadState(startingHash);
-          await ignorantMiningClient.sync(startingBlockNumber);
-          ignorantClientHash = await ignorantMiningClient.getRootHash();
+          await ignorantclient.loadState(startingHash);
+          await ignorantclient.sync(startingBlockNumber);
+          ignorantClientHash = await ignorantclient.getRootHash();
 
           assert.equal(ignorantClientHash, newClientHash);
         });

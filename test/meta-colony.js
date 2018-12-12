@@ -1,6 +1,5 @@
-/* globals artifacts */
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
-import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
+import { checkErrorRevert } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupFundedTask,
@@ -8,14 +7,11 @@ import {
   executeSignedTaskChange,
   makeTask,
   setupColonyNetwork,
-  setupMetaColonyWithLockedCLNYToken
+  setupMetaColonyWithLockedCLNYToken,
+  setupRandomColony
 } from "../helpers/test-data-generator";
 
-const IColony = artifacts.require("IColony");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
-
 contract("Meta Colony", accounts => {
-  let TOKEN_ARGS;
   const MANAGER = accounts[0];
   const OTHER_ACCOUNT = accounts[1];
   const WORKER = accounts[2];
@@ -289,13 +285,7 @@ contract("Meta Colony", accounts => {
 
   describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
-      TOKEN_ARGS = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(newToken.address);
-      const { colonyAddress } = logs[0].args;
-      colony = await IColony.at(colonyAddress);
-      const tokenAddress = await colony.getToken();
-      token = await ERC20ExtendedToken.at(tokenAddress);
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
     });
 
     it("someone who does not have founder role should not be able to add domains", async () => {
@@ -355,12 +345,7 @@ contract("Meta Colony", accounts => {
 
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
-      TOKEN_ARGS = getTokenArgs();
-      token = await ERC20ExtendedToken.new(...TOKEN_ARGS);
-      const { logs } = await colonyNetwork.createColony(token.address);
-      const { colonyAddress } = logs[0].args;
-      await token.setOwner(colonyAddress);
-      colony = await IColony.at(colonyAddress);
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
     });
 
     it("should be able to set domain on task", async () => {

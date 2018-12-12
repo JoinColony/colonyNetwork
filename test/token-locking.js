@@ -2,14 +2,13 @@
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
-import { giveUserCLNYTokensAndStake } from "../helpers/test-data-generator";
+import { giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
 import { MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const IColony = artifacts.require("IColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
@@ -38,35 +37,30 @@ contract("Token Locking", addresses => {
   });
 
   beforeEach(async () => {
-    let tokenArgs = getTokenArgs();
-    token = await ERC20ExtendedToken.new(...tokenArgs);
-    tokenArgs = getTokenArgs();
-    otherToken = await ERC20ExtendedToken.new(...tokenArgs);
-
-    const { logs } = await colonyNetwork.createColony(token.address);
-    const { colonyAddress } = logs[0].args;
-    colony = await IColony.at(colonyAddress);
-    await token.setOwner(colony.address);
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.mintTokens(usersTokens + otherUserTokens);
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
-    await advanceMiningCycleNoContest(colonyNetwork, this);
-    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
+    const tokenArgs = getTokenArgs();
+    otherToken = await ERC20ExtendedToken.new(...tokenArgs);
 
-    const miningClient = new ReputationMiner({
+    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+    await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
+    const client = new ReputationMiner({
       loader: contractLoader,
       minerAddress: addresses[4],
       realProviderPort: REAL_PROVIDER_PORT,
       useJsTree: true
     });
-    await miningClient.initialise(colonyNetwork.address);
-    await miningClient.addLogContentsToReputationTree();
-    await advanceMiningCycleNoContest(colonyNetwork, this, miningClient);
+    await client.initialise(colonyNetwork.address);
+
+    await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
     const result = await colony.getDomain(1);
     const rootDomainSkill = result.skillId;
     const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
-    const { key, value, branchMask, siblings } = await miningClient.getReputationProofObject(colonyWideReputationKey);
+    const { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
     colonyWideReputationProof = [key, value, branchMask, siblings];
   });
 
