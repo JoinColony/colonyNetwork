@@ -69,11 +69,8 @@ contract("Colony Funding", accounts => {
   });
 
   beforeEach(async () => {
-    colony = await setupRandomColony(colonyNetwork);
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
-
-    const tokenAddress = await colony.getToken();
-    token = await ERC20ExtendedToken.at(tokenAddress);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await ERC20ExtendedToken.new(...otherTokenArgs);

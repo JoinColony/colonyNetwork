@@ -402,5 +402,5 @@ export async function setupRandomColony(colonyNetwork) {
   const colony = await IColony.at(colonyAddress);
   await token.setOwner(colonyAddress);
 
-  return colony;
+  return { colony, token };
 }

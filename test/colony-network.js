@@ -74,7 +74,7 @@ contract("Colony Network", accounts => {
 
   describe("when creating new colonies", () => {
     it("should allow users to create new colonies", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
       const colonyCount = await colonyNetwork.getColonyCount();
       assert.notEqual(colony.address, ZERO_ADDRESS);
       expect(colonyCount).to.eq.BN(2);
@@ -119,7 +119,7 @@ contract("Colony Network", accounts => {
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
 
       const rootLocalSkill = await colonyNetwork.getSkill(1);
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
@@ -167,7 +167,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should be able to get the Colony version", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
       const actualColonyVersion = await colony.version();
       expect(version).to.eq.BN(actualColonyVersion);
     });
@@ -175,7 +175,7 @@ contract("Colony Network", accounts => {
 
   describe("when upgrading a colony", () => {
     it("should be able to upgrade a colony, if a sender has founder role", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
       const colonyEtherRouter = await EtherRouter.at(colony.address);
 
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
@@ -188,7 +188,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not be able to set colony resolver by directly calling `setResolver`", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
       await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
@@ -197,7 +197,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.subn(1);
       await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
@@ -207,7 +207,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should NOT be able to upgrade a colony to a nonexistent version", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
 
@@ -216,7 +216,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should NOT be able to upgrade a colony if sender don't have founder role", async () => {
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
       const colonyEtherRouter = await EtherRouter.at(colony.address);
       const colonyResolver = await colonyEtherRouter.resolver();
 
@@ -303,7 +303,7 @@ contract("Colony Network", accounts => {
       const colonyName2 = "test2";
       const hash = namehash.hash("test.colony.joincolony.eth");
 
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
 
       // Non-founder can't register label for colony
       await checkErrorRevert(colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[1] }), "ds-auth-unauthorized");
@@ -340,7 +340,7 @@ contract("Colony Network", accounts => {
       await colonyNetwork.registerUserLabel("test", orbitDBAddress, { from: accounts[1] });
 
       // Set up colony
-      const colony = await setupRandomColony(colonyNetwork);
+      const { colony } = await setupRandomColony(colonyNetwork);
 
       // Register colony
       // Founder can register label for colony

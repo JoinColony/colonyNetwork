@@ -237,7 +237,7 @@ contract("Colony Network Recovery", accounts => {
           });
           await newClient.initialise(colonyNetwork.address);
 
-          const colony = await setupRandomColony(colonyNetwork);
+          const { colony } = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[5]], [1000000000000000]);
 
@@ -308,7 +308,7 @@ contract("Colony Network Recovery", accounts => {
           });
           await ignorantclient.initialise(colonyNetwork.address);
 
-          const colony = await setupRandomColony(colonyNetwork);
+          const { colony } = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 

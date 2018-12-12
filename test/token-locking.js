@@ -37,12 +37,9 @@ contract("Token Locking", addresses => {
   });
 
   beforeEach(async () => {
-    colony = await setupRandomColony(colonyNetwork);
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.mintTokens(usersTokens + otherUserTokens);
     await colony.bootstrapColony([userAddress], [usersTokens]);
-
-    const tokenAddress = await colony.getToken();
-    token = await ERC20ExtendedToken.at(tokenAddress);
 
     const tokenArgs = getTokenArgs();
     otherToken = await ERC20ExtendedToken.new(...tokenArgs);

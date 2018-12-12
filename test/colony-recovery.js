@@ -16,7 +16,7 @@ contract("Colony Recovery", accounts => {
   });
 
   beforeEach(async () => {
-    colony = await setupRandomColony(colonyNetwork);
+    ({ colony } = await setupRandomColony(colonyNetwork));
   });
 
   describe("when using recovery mode", () => {

@@ -74,12 +74,9 @@ contract("ColonyTask", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
 
-    colony = await setupRandomColony(colonyNetwork);
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
     await colony.setAdminRole(COLONY_ADMIN);
-
-    const tokenAddress = await colony.getToken();
-    token = await Token.at(tokenAddress);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await Token.new(...otherTokenArgs);

@@ -40,10 +40,7 @@ contract("Colony", accounts => {
   });
 
   beforeEach(async () => {
-    colony = await setupRandomColony(colonyNetwork);
-
-    const tokenAddress = await colony.getToken();
-    token = await ERC20ExtendedToken.at(tokenAddress);
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
 
     const authorityAddress = await colony.authority();
     authority = await ColonyAuthority.at(authorityAddress);

@@ -1,4 +1,3 @@
-/* globals artifacts */
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert } from "../helpers/test-helper";
 import {
@@ -11,8 +10,6 @@ import {
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony
 } from "../helpers/test-data-generator";
-
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Meta Colony", accounts => {
   const MANAGER = accounts[0];
@@ -288,10 +285,7 @@ contract("Meta Colony", accounts => {
 
   describe("when adding domains in a regular colony", () => {
     beforeEach(async () => {
-      colony = await setupRandomColony(colonyNetwork);
-
-      const tokenAddress = await colony.getToken();
-      token = await ERC20ExtendedToken.at(tokenAddress);
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
     });
 
     it("someone who does not have founder role should not be able to add domains", async () => {
@@ -351,10 +345,7 @@ contract("Meta Colony", accounts => {
 
   describe("when setting domain and skill on task", () => {
     beforeEach(async () => {
-      colony = await setupRandomColony(colonyNetwork);
-
-      const tokenAddress = await colony.getToken();
-      token = await ERC20ExtendedToken.at(tokenAddress);
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
     });
 
     it("should be able to set domain on task", async () => {
