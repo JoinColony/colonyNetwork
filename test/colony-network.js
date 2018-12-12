@@ -192,8 +192,8 @@ contract("Colony Network", accounts => {
       const currentColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       const newVersion = currentColonyVersion.addn(1);
       await metaColony.addNetworkColonyVersion(newVersion, SAMPLE_RESOLVER);
-
-      await checkErrorRevert(colony.setResolver(SAMPLE_RESOLVER), "ds-auth-unauthorized");
+      const etherRouter = await EtherRouter.at(colony.address);
+      await checkErrorRevert(etherRouter.setResolver(SAMPLE_RESOLVER), "ds-auth-unauthorized");
     });
 
     it("should NOT be able to upgrade a colony to a lower version", async () => {

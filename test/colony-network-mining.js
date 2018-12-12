@@ -2753,14 +2753,10 @@ contract("ColonyNetworkMining", accounts => {
       let inactiveReputationMiningCycle = await IReputationMiningCycle.at(addr);
       const initialRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
 
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      let repCycle = await getActiveRepCycle(colonyNetwork);
-      await repCycle.submitRootHash("0x12345678", 10, 10, { from: MAIN_ACCOUNT });
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      // This confirmation should freeze the reputation log that we added the above task entries to
-      // and move it to the inactive rep log
-      repCycle = await getActiveRepCycle(colonyNetwork);
+      // This confirmation should freeze the reputation log that we added the above task entries to and move it to the inactive rep log
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       assert.equal(inactiveReputationMiningCycle.address, repCycle.address);
 
       const finalRepLogLength = await repCycle.getReputationUpdateLogLength();
