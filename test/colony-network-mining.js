@@ -135,7 +135,8 @@ contract("ColonyNetworkMining", accounts => {
     await clny.burn(userBalance, { from: MAIN_ACCOUNT });
   });
 
-  async function accommodateChallengeAndInvalidateHash(test, client1, client2, message) {
+  async function accommodateChallengeAndInvalidateHash(test, client1, client2, errors) {
+    let noFailure = true;
     let round2;
     let idx2;
     let toInvalidateIdx;
@@ -146,7 +147,7 @@ contract("ColonyNetworkMining", accounts => {
       // Submit JRH for submission 1 if needed
       // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
       if (submission1before.jrhNNodes === "0") {
-        await checkErrorIfRevertEthers(client1.confirmJustificationRootHash(), message);
+        noFailure = await checkErrorIfRevertEthers(client1.confirmJustificationRootHash(), errors.client1, noFailure);
       }
 
       [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
@@ -157,19 +158,22 @@ contract("ColonyNetworkMining", accounts => {
         "Clients are not facing each other in this round"
       );
       if (submission2before.jrhNNodes === "0") {
-        await checkErrorIfRevertEthers(client2.confirmJustificationRootHash(), message);
+        noFailure = await checkErrorIfRevertEthers(client2.confirmJustificationRootHash(), errors.client2, noFailure);
       }
 
       await runBinarySearch(client1, client2);
 
-      await checkErrorIfRevertEthers(client1.confirmBinarySearchResult(), message);
-      await checkErrorIfRevertEthers(client2.confirmBinarySearchResult(), message);
+      noFailure = await checkErrorIfRevertEthers(client1.confirmBinarySearchResult(), errors.client1, noFailure);
+      noFailure = await checkErrorIfRevertEthers(client2.confirmBinarySearchResult(), errors.client2, noFailure);
 
       // Respond to the challenge - usually, only one of these should work.
       // If both work, then the starting reputation is 0 and one client is lying
       // about whether the key already exists.
-      await checkErrorIfRevertEthers(client1.respondToChallenge(), message);
-      await checkErrorIfRevertEthers(client2.respondToChallenge(), message);
+      noFailure = await checkErrorIfRevertEthers(client1.respondToChallenge(), errors.client1, noFailure);
+      noFailure = await checkErrorIfRevertEthers(client2.respondToChallenge(), errors.client2, noFailure);
+
+      // If we have two clients, we expect an error during this process
+      assert(!noFailure, "Expected an error, but didn't encounter one");
 
       // Work out which submission is to be invalidated.
       const submission1 = await repCycle.getDisputeRounds(round1, idx1);
@@ -188,6 +192,7 @@ contract("ColonyNetworkMining", accounts => {
       // idx1.modn returns a javascript number, which is surprising!
       toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
     }
+
     return repCycle.invalidateHash(round1, toInvalidateIdx, { from: MAIN_ACCOUNT });
   }
 
@@ -399,7 +404,9 @@ contract("ColonyNetworkMining", accounts => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, "colony-reputation-mining-invalid-newest-reputation-proof");
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: "colony-reputation-mining-invalid-newest-reputation-proof"
+      });
       await repCycle.confirmNewHash(1);
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
@@ -415,16 +422,20 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(rootHashNNodes.toString(), goodClient.nReputations.toString());
     });
 
-    it("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
+    it.only("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT2, DEFAULT_STAKE);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: "colony-reputation-mining-invalid-newest-reputation-proof"
+      });
       await accommodateChallengeAndInvalidateHash(this, badClient2); // Invalidate the 'null' that partners the third hash submitted.
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2, {
+        client2: "colony-reputation-mining-invalid-newest-reputation-proof"
+      });
       await repCycle.confirmNewHash(2);
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
@@ -920,7 +931,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it(`in the event of a disagreement just over nNodes, where the submitted nNodes is lied about,
+    it.only(`in the event of a disagreement just over nNodes, where the submitted nNodes is lied about,
       dispute should be resolved correctly`, async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
@@ -944,7 +955,7 @@ contract("ColonyNetworkMining", accounts => {
 
       await badClient.initialise(colonyNetwork.address);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, { client2: "colony-reputation-mining-invalid-jrh-proof-2" });
 
       // Cleanup
       await repCycle.confirmNewHash(1);

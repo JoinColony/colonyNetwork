@@ -170,16 +170,20 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
   assert.equal(reason, errorMessage);
 }
 
-export async function checkErrorIfRevertEthers(promise, errorMessage) {
+export async function checkErrorIfRevertEthers(promise, errorMessage, check) {
   const tx = await promise;
   const txid = tx.hash;
 
   const receipt = await web3GetTransactionReceipt(txid);
-  if (!receipt.status) {
+  if (!receipt.status && check) {
     const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
     const reason = extractReasonString(response);
-    assert.equal(reason, errorMessage);
+    if (!errorMessage) {
+      throw new Error(`Transaction failed unexpectedly with error ${reason}`);
+    }
+    assert.equal(reason, errorMessage, "Transaction failed, but with wrong error message");
   }
+  return receipt.status;
 }
 
 export function getRandomString(_length) {
