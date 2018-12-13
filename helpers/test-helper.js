@@ -170,6 +170,18 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
   assert.equal(reason, errorMessage);
 }
 
+export async function checkErrorIfRevertEthers(promise, errorMessage) {
+  const tx = await promise;
+  const txid = tx.hash;
+
+  const receipt = await web3GetTransactionReceipt(txid);
+  if (!receipt.status) {
+    const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
+    const reason = extractReasonString(response);
+    assert.equal(reason, errorMessage);
+  }
+}
+
 export function getRandomString(_length) {
   const length = _length || 7;
   let randString = "";

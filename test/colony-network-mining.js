@@ -9,6 +9,7 @@ import {
   forwardTime,
   checkErrorRevert,
   checkErrorRevertEthers,
+  checkErrorIfRevertEthers,
   makeReputationKey,
   makeReputationValue,
   currentBlock,
@@ -134,7 +135,7 @@ contract("ColonyNetworkMining", accounts => {
     await clny.burn(userBalance, { from: MAIN_ACCOUNT });
   });
 
-  async function accommodateChallengeAndInvalidateHash(test, client1, client2) {
+  async function accommodateChallengeAndInvalidateHash(test, client1, client2, message) {
     let round2;
     let idx2;
     let toInvalidateIdx;
@@ -145,7 +146,7 @@ contract("ColonyNetworkMining", accounts => {
       // Submit JRH for submission 1 if needed
       // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
       if (submission1before.jrhNNodes === "0") {
-        await client1.confirmJustificationRootHash();
+        await checkErrorIfRevertEthers(client1.confirmJustificationRootHash(), message);
       }
 
       [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
@@ -156,19 +157,19 @@ contract("ColonyNetworkMining", accounts => {
         "Clients are not facing each other in this round"
       );
       if (submission2before.jrhNNodes === "0") {
-        await client2.confirmJustificationRootHash();
+        await checkErrorIfRevertEthers(client2.confirmJustificationRootHash(), message);
       }
 
       await runBinarySearch(client1, client2);
 
-      await client1.confirmBinarySearchResult();
-      await client2.confirmBinarySearchResult();
+      await checkErrorIfRevertEthers(client1.confirmBinarySearchResult(), message);
+      await checkErrorIfRevertEthers(client2.confirmBinarySearchResult(), message);
 
       // Respond to the challenge - usually, only one of these should work.
       // If both work, then the starting reputation is 0 and one client is lying
       // about whether the key already exists.
-      await client1.respondToChallenge();
-      await client2.respondToChallenge();
+      await checkErrorIfRevertEthers(client1.respondToChallenge(), message);
+      await checkErrorIfRevertEthers(client2.respondToChallenge(), message);
 
       // Work out which submission is to be invalidated.
       const submission1 = await repCycle.getDisputeRounds(round1, idx1);
@@ -392,13 +393,13 @@ contract("ColonyNetworkMining", accounts => {
   });
 
   describe("Elimination of submissions", () => {
-    it("should allow a new reputation hash to be set if all but one submitted have been eliminated", async () => {
+    it.only("should allow a new reputation hash to be set if all but one submitted have been eliminated", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, "colony-reputation-mining-invalid-newest-reputation-proof");
       await repCycle.confirmNewHash(1);
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
