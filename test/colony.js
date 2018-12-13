@@ -25,8 +25,6 @@ const ColonyAuthority = artifacts.require("ColonyAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 contract("Colony", accounts => {
-  const OTHER = accounts[3];
-
   let colony;
   let token;
   let authority;
@@ -75,7 +73,7 @@ contract("Colony", accounts => {
     });
 
     it("should fail if a non-admin tries to mint tokens", async () => {
-      await checkErrorRevert(colony.mintTokens(100, { from: OTHER }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.mintTokens(100, { from: accounts[3] }), "ds-auth-unauthorized");
     });
 
     it("should not allow reinitialisation", async () => {
@@ -175,33 +173,38 @@ contract("Colony", accounts => {
     });
 
     it("should allow admin to call predetermined functions", async () => {
+      const founder = accounts[0];
       const user3 = accounts[3];
 
       await colony.setAdminRole(user3);
 
       let functionSig = getFunctionSignature("moveFundsBetweenPots(uint256,uint256,uint256,address)");
       let canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.equal(canCall, true);
+      assert.isTrue(canCall);
 
       functionSig = getFunctionSignature("addDomain(uint256)");
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.equal(canCall, true);
+      assert.isTrue(canCall);
 
       functionSig = getFunctionSignature("makeTask(bytes32,uint256,uint256,uint256)");
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.equal(canCall, true);
+      assert.isTrue(canCall);
 
       functionSig = getFunctionSignature("startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.equal(canCall, true);
+      assert.isTrue(canCall);
 
-      functionSig = getFunctionSignature("bootstrapColony(address[],uint256[])");
+      functionSig = getFunctionSignature("bootstrapColony(address[],int256[])");
+      canCall = await authority.canCall(founder, colony.address, functionSig);
+      assert.isTrue(canCall);
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.equal(canCall, false);
+      assert.isFalse(canCall);
 
       functionSig = getFunctionSignature("mintTokens(uint256)");
+      canCall = await authority.canCall(founder, colony.address, functionSig);
+      assert.isTrue(canCall);
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.equal(canCall, false);
+      assert.isFalse(canCall);
     });
   });
 
