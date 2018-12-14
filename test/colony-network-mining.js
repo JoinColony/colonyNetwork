@@ -483,7 +483,7 @@ contract("ColonyNetworkMining", accounts => {
   });
 
   describe("Elimination of submissions", () => {
-    it.only("should allow a new reputation hash to be set if all but one submitted have been eliminated", async () => {
+    it("should allow a new reputation hash to be set if all but one submitted have been eliminated", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -507,7 +507,7 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(rootHashNNodes.toString(), goodClient.nReputations.toString());
     });
 
-    it.only("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
+    it("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT2, DEFAULT_STAKE);
@@ -551,7 +551,9 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(newRepCycle.address, repCycle.address);
 
       // Eliminate one so that the afterAll works.
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
     });
 
     it("should not allow the last reputation hash to be eliminated", async () => {
@@ -559,8 +561,11 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
 
+      // TODO: this should just call invalidateHash, right?
       await checkErrorRevert(accommodateChallengeAndInvalidateHash(this, goodClient), "colony-reputation-mining-cannot-invalidate-final-hash");
     });
 
@@ -571,13 +576,17 @@ contract("ColonyNetworkMining", accounts => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
       await accommodateChallengeAndInvalidateHash(this, badClient2);
 
       await checkErrorRevert(repCycle.invalidateHash(1, 2), "colony-reputation-mining-dispute-id-not-in-range");
 
       // Cleanup after test
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
       await repCycle.confirmNewHash(2);
     });
 
@@ -604,7 +613,9 @@ contract("ColonyNetworkMining", accounts => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
 
       await checkErrorRevert(repCycle.invalidateHash(0, 1), "colony-reputation-mining-proposed-hash-empty");
     });
@@ -615,7 +626,9 @@ contract("ColonyNetworkMining", accounts => {
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
 
       await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-hash-already-progressed");
     });
@@ -651,7 +664,9 @@ contract("ColonyNetworkMining", accounts => {
 
       await checkErrorRevert(repCycle.confirmNewHash(1), "colony-reputation-mining-final-round-not-completed");
 
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
       await repCycle.confirmNewHash(1);
     });
   });
