@@ -173,10 +173,12 @@ contract("ColonyNetworkMining", accounts => {
 
     let submission1 = await repCycle.getDisputeRounds(round1, idx1);
     let binarySearchStep = -1;
-    while (submission1.lowerBound !== submission1.upperBound) {
+    let binarySearchError = false;
+    while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
       binarySearchStep += 1;
       if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
         await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+        binarySearchError = true;
       } else {
         // eslint-disable-next-line no-await-in-loop
         await checkSuccessEthers(
@@ -186,6 +188,7 @@ contract("ColonyNetworkMining", accounts => {
       }
       if (errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
         await checkErrorRevertEthers(client2.respondToBinarySearchForChallenge(), errors.client2.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+        binarySearchError = true;
       } else {
         // eslint-disable-next-line no-await-in-loop
         await checkSuccessEthers(
