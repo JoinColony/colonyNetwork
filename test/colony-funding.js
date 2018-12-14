@@ -8,7 +8,6 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
-  UINT256_MAX,
   INT128_MAX,
   WAD,
   MANAGER_ROLE,
