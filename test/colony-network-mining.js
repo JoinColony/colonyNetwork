@@ -9,7 +9,7 @@ import {
   forwardTime,
   checkErrorRevert,
   checkErrorRevertEthers,
-  checkErrorIfRevertEthers,
+  checkSuccessEthers,
   makeReputationKey,
   makeReputationValue,
   currentBlock,
@@ -135,45 +135,127 @@ contract("ColonyNetworkMining", accounts => {
     await clny.burn(userBalance, { from: MAIN_ACCOUNT });
   });
 
-  async function accommodateChallengeAndInvalidateHash(test, client1, client2, errors) {
-    let noFailure = true;
-    let round2;
-    let idx2;
-    let toInvalidateIdx;
+  async function navigateChallenge(test, client1, client2, errors) {
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
     const submission1before = await repCycle.getDisputeRounds(round1, idx1);
+
+    // Submit JRH for submission 1 if needed
+    // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
+    if (submission1before.jrhNNodes === "0") {
+      if (errors.client1.confirmJustificationRootHash) {
+        await checkErrorRevertEthers(client1.confirmJustificationRootHash(), errors.client1.confirmJustificationRootHash);
+      } else {
+        await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 failed unexpectedly on confirmJustificationRootHash");
+      }
+    }
+
+    const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
+    assert.isTrue(round1.eq(round2), "Clients do not have submissions in the same round");
+    const submission2before = await repCycle.getDisputeRounds(round2, idx2);
+    assert.isTrue(
+      idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
+      "Clients are not facing each other in this round"
+    );
+    if (submission2before.jrhNNodes === "0") {
+      if (errors.client2.confirmJustificationRootHash) {
+        await checkErrorRevertEthers(client2.confirmJustificationRootHash(), errors.client2.confirmJustificationRootHash);
+      } else {
+        await checkSuccessEthers(client2.confirmJustificationRootHash(), "Client 2 failed unexpectedly on confirmJustificationRootHash");
+      }
+    }
+
+    // i.e. if we had errors here, we must have seen then when we expected. Everything beyond here will just fail, so short-circuit to
+    // the invalidation step
+    if (errors.client1.confirmJustificationRootHash || errors.client2.confirmJustificationRootHash) {
+      return;
+    }
+
+    let submission1 = await repCycle.getDisputeRounds(round1, idx1);
+    let binarySearchStep = -1;
+    while (submission1.lowerBound !== submission1.upperBound) {
+      binarySearchStep += 1;
+      if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
+        await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+      } else {
+        // eslint-disable-next-line no-await-in-loop
+        await checkSuccessEthers(
+          client1.respondToBinarySearchForChallenge(),
+          `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+        );
+      }
+      if (errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
+        await checkErrorRevertEthers(client2.respondToBinarySearchForChallenge(), errors.client2.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+      } else {
+        // eslint-disable-next-line no-await-in-loop
+        await checkSuccessEthers(
+          client2.respondToBinarySearchForChallenge(),
+          `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+        );
+      }
+      submission1 = await repCycle.getDisputeRounds(round1, idx1); // eslint-disable-line no-await-in-loop
+    }
+
+    if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep] || errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
+      return;
+    }
+
+    if (errors.client1.confirmBinarySearchResult) {
+      await checkErrorRevertEthers(client1.confirmBinarySearchResult(), errors.client1.confirmBinarySearchResult);
+    } else {
+      await checkSuccessEthers(client1.confirmBinarySearchResult(), "Client 1 failed unexpectedly on confirmBinarySearchResult");
+    }
+    if (errors.client2.confirmBinarySearchResult) {
+      await checkErrorRevertEthers(client2.confirmBinarySearchResult(), errors.client2.confirmBinarySearchResult);
+    } else {
+      await checkSuccessEthers(client2.confirmBinarySearchResult(), "Client 2 failed unexpectedly on confirmBinarySearchResult");
+    }
+
+    if (errors.client1.confirmBinarySearchResult || errors.client2.confirmBinarySearchResult) {
+      return;
+    }
+
+    // Respond to the challenge - usually, only one of these should work.
+    // If both work, then the starting reputation is 0 and one client is lying
+    // about whether the key already exists.
+    if (errors.client1.respondToChallenge) {
+      await checkErrorRevertEthers(client1.respondToChallenge(), errors.client1.respondToChallenge);
+    } else {
+      await checkSuccessEthers(client1.respondToChallenge(), "Client 1 failed unexpectedly on respondToChallenge");
+    }
+    if (errors.client2.respondToChallenge) {
+      await checkErrorRevertEthers(client2.respondToChallenge(), errors.client2.respondToChallenge);
+    } else {
+      await checkSuccessEthers(client2.respondToChallenge(), "Client 2 failed unexpectedly on respondToChallenge");
+    }
+  }
+
+  async function accommodateChallengeAndInvalidateHash(test, client1, client2, _errors) {
+    let toInvalidateIdx;
+    const repCycle = await getActiveRepCycle(colonyNetwork);
+    const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
+    let errors = _errors;
+    // Make sure our errors object has the minimum properties to not throw an 'cannot access property x of undefined' error
+    if (!errors) {
+      errors = {};
+    }
+    if (!errors.client1) {
+      errors.client1 = {};
+    }
+    if (!errors.client2) {
+      errors.client2 = {};
+    }
+    if (!errors.client1.respondToBinarySearchForChallenge) {
+      errors.client1.respondToBinarySearchForChallenge = [];
+    }
+    if (!errors.client2.respondToBinarySearchForChallenge) {
+      errors.client2.respondToBinarySearchForChallenge = [];
+    }
+
     if (client2 !== undefined) {
-      // Submit JRH for submission 1 if needed
-      // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
-      if (submission1before.jrhNNodes === "0") {
-        noFailure = await checkErrorIfRevertEthers(client1.confirmJustificationRootHash(), errors.client1, noFailure);
-      }
+      const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
 
-      [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
-      assert.isTrue(round1.eq(round2), "Clients do not have submissions in the same round");
-      const submission2before = await repCycle.getDisputeRounds(round2, idx2);
-      assert.isTrue(
-        idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
-        "Clients are not facing each other in this round"
-      );
-      if (submission2before.jrhNNodes === "0") {
-        noFailure = await checkErrorIfRevertEthers(client2.confirmJustificationRootHash(), errors.client2, noFailure);
-      }
-
-      await runBinarySearch(client1, client2);
-
-      noFailure = await checkErrorIfRevertEthers(client1.confirmBinarySearchResult(), errors.client1, noFailure);
-      noFailure = await checkErrorIfRevertEthers(client2.confirmBinarySearchResult(), errors.client2, noFailure);
-
-      // Respond to the challenge - usually, only one of these should work.
-      // If both work, then the starting reputation is 0 and one client is lying
-      // about whether the key already exists.
-      noFailure = await checkErrorIfRevertEthers(client1.respondToChallenge(), errors.client1, noFailure);
-      noFailure = await checkErrorIfRevertEthers(client2.respondToChallenge(), errors.client2, noFailure);
-
-      // If we have two clients, we expect an error during this process
-      assert(!noFailure, "Expected an error, but didn't encounter one");
+      await navigateChallenge(test, client1, client2, errors);
 
       // Work out which submission is to be invalidated.
       const submission1 = await repCycle.getDisputeRounds(round1, idx1);
@@ -405,7 +487,7 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
-        client2: "colony-reputation-mining-invalid-newest-reputation-proof"
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
       });
       await repCycle.confirmNewHash(1);
 
@@ -430,11 +512,11 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
-        client2: "colony-reputation-mining-invalid-newest-reputation-proof"
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
       });
       await accommodateChallengeAndInvalidateHash(this, badClient2); // Invalidate the 'null' that partners the third hash submitted.
       await accommodateChallengeAndInvalidateHash(this, goodClient, badClient2, {
-        client2: "colony-reputation-mining-invalid-newest-reputation-proof"
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
       });
       await repCycle.confirmNewHash(2);
 
@@ -955,7 +1037,9 @@ contract("ColonyNetworkMining", accounts => {
 
       await badClient.initialise(colonyNetwork.address);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, { client2: "colony-reputation-mining-invalid-jrh-proof-2" });
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { confirmJustificationRootHash: "colony-reputation-mining-invalid-jrh-proof-2" }
+      });
 
       // Cleanup
       await repCycle.confirmNewHash(1);
