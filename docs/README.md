@@ -30,8 +30,8 @@ See the [Bug Bounty program overview](./_bug_rules.md) for more information abou
 git clone https://github.com/JoinColony/colonyNetwork.git
 cd colonyNetwork
 yarn
-yarn run provision:token:contracts
 git submodule update --init
+yarn run provision:token:contracts
 ```
 
 ## Contracts
