@@ -31,7 +31,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   modifier unowned(bytes32 node, string memory domainName) {
     address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(domainName)))));
-    require(currentOwner == 0, "colony-label-already-owned");
+    require(address(currentOwner) == address(0x0), "colony-label-already-owned");
     _;
   }
 
@@ -48,8 +48,8 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     rootNode = _rootNode;
     userNode = keccak256(abi.encodePacked(rootNode, USER_HASH));
     colonyNode = keccak256(abi.encodePacked(rootNode, COLONY_HASH));
-    ENS(ens).setSubnodeOwner(rootNode, USER_HASH, this);
-    ENS(ens).setSubnodeOwner(rootNode, COLONY_HASH, this);
+    ENS(ens).setSubnodeOwner(rootNode, USER_HASH, address(this));
+    ENS(ens).setSubnodeOwner(rootNode, COLONY_HASH, address(this));
   }
 
   function registerUserLabel(string memory username, string memory orbitdb)
@@ -62,9 +62,9 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     require(bytes(username).length > 0, "colony-user-label-invalid");
     require(bytes(userLabels[msg.sender]).length == 0, "colony-user-label-already-owned");
     bytes32 subnode = keccak256(abi.encodePacked(username));
-    ENS(ens).setSubnodeOwner(userNode, subnode, this);
+    ENS(ens).setSubnodeOwner(userNode, subnode, address(this));
     bytes32 node = keccak256(abi.encodePacked(userNode, subnode));
-    ENS(ens).setResolver(node, this);
+    ENS(ens).setResolver(node, address(this));
     records[node].addr = msg.sender;
     records[node].orbitdb = orbitdb;
     userLabels[msg.sender] = username;
@@ -81,9 +81,9 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     require(bytes(colonyLabels[msg.sender]).length == 0, "colony-already-labeled");
     bytes32 subnode = keccak256(abi.encodePacked(colonyName));
 
-    ENS(ens).setSubnodeOwner(colonyNode, subnode, this);
+    ENS(ens).setSubnodeOwner(colonyNode, subnode, address(this));
     bytes32 node = keccak256(abi.encodePacked(colonyNode, subnode));
-    ENS(ens).setResolver(node, this);
+    ENS(ens).setResolver(node, address(this));
     records[node].addr = msg.sender;
     records[node].orbitdb = orbitdb;
     colonyLabels[msg.sender] = colonyName;

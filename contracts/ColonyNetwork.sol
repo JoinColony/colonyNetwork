@@ -122,7 +122,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   stoppable
   auth
   {
-    require(metaColony == 0, "colony-meta-colony-exists-already");
+    require(metaColony == address(0x0), "colony-meta-colony-exists-already");
     // Add the root global skill
     skillCount += 1;
     Skill memory rootGlobalSkill;
@@ -147,16 +147,16 @@ contract ColonyNetwork is ColonyNetworkStorage {
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
 
-    IColony colony = IColony(etherRouter);
+    IColony colony = IColony(address(etherRouter));
     colony.setToken(_tokenAddress);
 
     // Creating new instance of colony's authority
-    ColonyAuthority authority = new ColonyAuthority(colony);
+    ColonyAuthority authority = new ColonyAuthority(address(colony));
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
 
-    authority.setOwner(etherRouter);
+    authority.setOwner(address(etherRouter));
     colony.setFounderRole(msg.sender);
 
     // Colony will not have owner
@@ -165,13 +165,13 @@ contract ColonyNetwork is ColonyNetworkStorage {
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
     colonyCount += 1;
-    colonies[colonyCount] = colony;
-    _isColony[colony] = true;
+    colonies[colonyCount] = address(colony);
+    _isColony[address(colony)] = true;
 
-    colony.initialiseColony(this);
-    emit ColonyAdded(colonyCount, etherRouter, _tokenAddress);
+    colony.initialiseColony(address(this));
+    emit ColonyAdded(colonyCount, address(etherRouter), _tokenAddress);
 
-    return etherRouter;
+    return address(etherRouter);
   }
 
   function addColonyVersion(uint _version, address _resolver) public

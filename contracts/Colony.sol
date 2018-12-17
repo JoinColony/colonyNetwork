@@ -30,7 +30,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function setFounderRole(address _user) public stoppable auth {
     // To allow only one address to have founder role at a time, we have to remove current founder from their role
-    ColonyAuthority colonyAuthority = ColonyAuthority(authority);
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
     colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
 
@@ -38,20 +38,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function setAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, true);
+    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, true);
 
     emit ColonyAdminRoleSet(_user);
   }
 
   // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, false);
+    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, false);
 
     emit ColonyAdminRoleRemoved(_user);
   }
 
   function hasUserRole(address _user, uint8 _role) public view returns (bool) {
-    return ColonyAuthority(authority).hasUserRole(_user, _role);
+    return ColonyAuthority(address(authority)).hasUserRole(_user, _role);
   }
 
   function getColonyNetworkAddress() public view returns (address) {
@@ -68,7 +68,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function getToken() public view returns (address) {
-    return token;
+    return address(token);
   }
 
   function initialiseColony(address _colonyNetworkAddress) public stoppable {
@@ -131,7 +131,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Only the colony Network can call this function
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
-    require(this == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
+    require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
     token.mint(_wad);
     token.transfer(colonyNetworkAddress, _wad);
   }
