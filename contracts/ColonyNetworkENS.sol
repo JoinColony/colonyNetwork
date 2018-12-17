@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 
 import "./ens/ENS.sol";
 import "./ColonyNetworkStorage.sol";
@@ -30,7 +29,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
   bytes32 constant USER_HASH = keccak256("user");
   bytes32 constant COLONY_HASH = keccak256("colony");
 
-  modifier unowned(bytes32 node, string domainName) {
+  modifier unowned(bytes32 node, string memory domainName) {
     address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(domainName)))));
     require(currentOwner == 0, "colony-label-already-owned");
     _;
@@ -53,7 +52,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     ENS(ens).setSubnodeOwner(rootNode, COLONY_HASH, this);
   }
 
-  function registerUserLabel(string username, string orbitdb)
+  function registerUserLabel(string memory username, string memory orbitdb)
   public
   stoppable
   // NB there is no way to call this as a colony yet - this is just future proofing us once there is
@@ -72,7 +71,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     emit UserLabelRegistered(msg.sender, subnode);
   }
 
-  function registerColonyLabel(string colonyName, string orbitdb)
+  function registerColonyLabel(string memory colonyName, string memory orbitdb)
   public
   calledByColony
   unowned(colonyNode, colonyName)
@@ -91,11 +90,11 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     emit ColonyLabelRegistered(msg.sender, subnode);
   }
 
-  function getProfileDBAddress(bytes32 node) public view returns (string) {
+  function getProfileDBAddress(bytes32 node) public view returns (string memory orbitDB) {
     return records[node].orbitdb;
   }
 
-  function lookupRegisteredENSDomain(address addr) public view returns(string) {
+  function lookupRegisteredENSDomain(address addr) public view returns(string memory domain) {
     if (bytes(userLabels[addr]).length != 0) {
       return string(abi.encodePacked(userLabels[addr], ".user.joincolony.eth"));
     } else if (bytes(colonyLabels[addr]).length != 0) {

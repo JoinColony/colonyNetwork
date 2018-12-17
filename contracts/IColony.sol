@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./IRecovery.sol";
@@ -95,7 +94,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev Only allowed to be called when `taskCount` is 0 by authorized addresses
   /// @param _users Array of address to bootstrap with reputation
   /// @param _amount Amount of reputation/tokens for every address
-  function bootstrapColony(address[] _users, int[] _amount) public;
+  function bootstrapColony(address[] memory _users, int[] memory _amount) public;
 
   /// @notice Mint `_wad` amount of colony tokens. Secured function to authorised members
   /// @param _wad Amount to mint
@@ -104,7 +103,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Register colony's ENS label
   /// @param colonyName The label to register.
   /// @param orbitdb The path of the orbitDB database associated with the colony name
-  function registerColonyLabel(string colonyName, string orbitdb) public;
+  function registerColonyLabel(string memory colonyName, string memory orbitdb) public;
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
@@ -115,7 +114,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Get a domain by id
   /// @param _id Id of the domain which details to get
   /// @return domain The domain
-  function getDomain(uint256 _id) public view returns (Domain domain);
+  function getDomain(uint256 _id) public view returns (Domain memory domain);
 
   /// @notice Get the non-mapping properties of a pot by id
   /// @param _id Id of the pot which details to get
@@ -139,7 +138,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own
   /// reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function
   /// is not currently exposed on the Colony's EtherRouter.
-  function verifyReputationProof(bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public view returns (bool isValid);
+  function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
+    public view returns (bool isValid);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
@@ -170,12 +170,12 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// Currently we only accept 0 value transactions but this is kept as a future option
   /// @param _data The transaction data
   function executeTaskChange(
-    uint8[] _sigV,
-    bytes32[] _sigR,
-    bytes32[] _sigS,
-    uint8[] _mode,
+    uint8[] memory _sigV,
+    bytes32[] memory _sigR,
+    bytes32[] memory _sigS,
+    uint8[] memory _mode,
     uint256 _value,
-    bytes _data
+    bytes memory _data
     ) public;
 
   /// @notice Executes a task role update transaction `_data` which is approved and signed by two of addresses
@@ -189,12 +189,12 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// Currently we only accept 0 value transactions but this is kept as a future option
   /// @param _data The transaction data
   function executeTaskRoleAssignment(
-    uint8[] _sigV,
-    bytes32[] _sigR,
-    bytes32[] _sigS,
-    uint8[] _mode,
+    uint8[] memory _sigV,
+    bytes32[] memory _sigR,
+    bytes32[] memory _sigS,
+    uint8[] memory _mode,
     uint256 _value,
-    bytes _data
+    bytes memory _data
     ) public;
 
   /// @notice Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`
@@ -346,14 +346,14 @@ contract IColony is ColonyDataTypes, IRecovery {
     uint256 potId,
     uint256 completionTimestamp,
     uint256 domainId,
-    uint256[] skillIds
+    uint256[] memory skillIds
     );
 
   /// @notice Get the `Role` properties back for role `_role` in task `_id`
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
   /// @return role The Role
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role);
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role memory role);
 
   /// @notice Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01), set 100
   /// @param _rewardInverse The inverse of the reward
@@ -418,7 +418,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param value Reputation value
   /// @param branchMask The branchmask of the proof
   /// @param siblings The siblings of the proof
-  function startNextRewardPayout(address _token, bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public;
+  function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings) public;
 
   /// @notice Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation
   /// which will be proven via Merkle proof inside this function.
@@ -439,13 +439,12 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param siblings The siblings of the proof
   function claimRewardPayout(
     uint256 _payoutId,
-    uint256[7] _squareRoots,
-    bytes key,
-    bytes value,
+    uint256[7] memory _squareRoots,
+    bytes memory key,
+    bytes memory value,
     uint256 branchMask,
-    bytes32[] siblings
+    bytes32[] memory siblings
     ) public;
-
 
   /// @notice Get useful information about specific reward payout
   /// @param _payoutId Id of the reward payout
@@ -456,7 +455,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   ///  amount Total amount of tokens taken aside for reward payout
   ///  tokenAddress Token address
   ///  blockTimestamp Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns ( RewardPayoutCycle rewardPayoutCycle );
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle );
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation

@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 
 import "./CommonAuthority.sol";
 
@@ -70,12 +69,12 @@ contract ColonyAuthority is CommonAuthority {
     setFounderRoleCapability(colony, "setAdminRole(address)");
   }
 
-  function setFounderRoleCapability(address colony, bytes sig) private {
+  function setFounderRoleCapability(address colony, bytes memory sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(founderRole, colony, functionSig, true);
   }
 
-  function setAdminRoleCapability(address colony, bytes sig) private {
+  function setAdminRoleCapability(address colony, bytes memory sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(adminRole, colony, functionSig, true);
   }

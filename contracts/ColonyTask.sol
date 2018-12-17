@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -128,12 +127,12 @@ contract ColonyTask is ColonyStorage {
   }
 
   function executeTaskChange(
-    uint8[] _sigV,
-    bytes32[] _sigR,
-    bytes32[] _sigS,
-    uint8[] _mode,
+    uint8[] memory _sigV,
+    bytes32[] memory _sigR,
+    bytes32[] memory _sigS,
+    uint8[] memory _mode,
     uint256 _value,
-    bytes _data) public stoppable
+    bytes memory _data) public stoppable
   {
     require(_value == 0, "colony-task-change-non-zero-value");
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length, "colony-task-change-signatures-count-do-not-match");
@@ -187,12 +186,12 @@ contract ColonyTask is ColonyStorage {
   }
 
   function executeTaskRoleAssignment(
-    uint8[] _sigV,
-    bytes32[] _sigR,
-    bytes32[] _sigS,
-    uint8[] _mode,
+    uint8[] memory _sigV,
+    bytes32[] memory _sigR,
+    bytes32[] memory _sigS,
+    uint8[] memory _mode,
     uint256 _value,
-    bytes _data) public stoppable
+    bytes memory _data) public stoppable
   {
     require(_value == 0, "colony-task-role-assignment-non-zero-value");
     require(_sigR.length == _sigS.length && _sigR.length == _sigV.length, "colony-task-role-assignment-signatures-count-do-not-match");
@@ -421,7 +420,7 @@ contract ColonyTask is ColonyStorage {
     emit TaskCanceled(_id);
   }
 
-  function getTask(uint256 _id) public view returns (bytes32, bytes32, uint8, uint256, uint256, uint256, uint256, uint256, uint256[]) {
+  function getTask(uint256 _id) public view returns (bytes32, bytes32, uint8, uint256, uint256, uint256, uint256, uint256, uint256[] memory) {
     Task storage t = tasks[_id];
     return (
       t.specificationHash,
@@ -436,7 +435,7 @@ contract ColonyTask is ColonyStorage {
     );
   }
 
-  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role role) {
+  function getTaskRole(uint256 _id, uint8 _role) public view returns (Role memory role) {
     role = tasks[_id].roles[_role];
   }
 
@@ -477,12 +476,12 @@ contract ColonyTask is ColonyStorage {
   }
 
   function getReviewerAddresses(
-    uint8[] _sigV,
-    bytes32[] _sigR,
-    bytes32[] _sigS,
-    uint8[] _mode,
+    uint8[] memory _sigV,
+    bytes32[] memory _sigR,
+    bytes32[] memory _sigS,
+    uint8[] memory _mode,
     bytes32 msgHash
-  ) internal pure returns (address[])
+  ) internal pure returns (address[] memory)
   {
     address[] memory reviewerAddresses = new address[](_sigR.length);
     for (uint i = 0; i < _sigR.length; i++) {
@@ -503,7 +502,7 @@ contract ColonyTask is ColonyStorage {
 
   // The address.call() syntax is no longer recommended, see:
   // https://github.com/ethereum/solidity/issues/2884
-  function executeCall(address to, uint256 value, bytes data) internal returns (bool success) {
+  function executeCall(address to, uint256 value, bytes memory data) internal returns (bool success) {
     assembly {
       success := call(gas, to, value, add(data, 0x20), mload(data), 0, 0)
       }
@@ -511,14 +510,14 @@ contract ColonyTask is ColonyStorage {
 
   // Get the function signature and task id from the transaction bytes data
   // Note: Relies on the encoded function's first parameter to be the uint256 taskId
-  function deconstructCall(bytes _data) internal pure returns (bytes4 sig, uint256 taskId) {
+  function deconstructCall(bytes memory _data) internal pure returns (bytes4 sig, uint256 taskId) {
     assembly {
       sig := mload(add(_data, 0x20))
       taskId := mload(add(_data, 0x24)) // same as calldataload(72)
     }
   }
 
-  function deconstructRoleChangeCall(bytes _data) internal pure returns (bytes4 sig, uint256 taskId, address userAddress) {
+  function deconstructRoleChangeCall(bytes memory _data) internal pure returns (bytes4 sig, uint256 taskId, address userAddress) {
     assembly {
       sig := mload(add(_data, 0x20))
       taskId := mload(add(_data, 0x24)) // same as calldataload(72)

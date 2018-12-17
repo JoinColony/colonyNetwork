@@ -1,5 +1,4 @@
-pragma solidity ^0.4.16;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
@@ -16,10 +15,10 @@ contract IPatriciaTreeBase {
 
   /// @notice Get the root edge
   /// @return e The root `Data.Edge`
-  function getRootEdge() public view returns (Data.Edge e);
+  function getRootEdge() public view returns (Data.Edge memory e);
 
   /// @notice Get the node with the given key
   /// @param hash The `keccak256` hash of the actual key
   /// @return n `Data.Node` for key `hash`
-  function getNode(bytes32 hash) public view returns (Data.Node n);
+  function getNode(bytes32 hash) public view returns (Data.Node memory n);
 }

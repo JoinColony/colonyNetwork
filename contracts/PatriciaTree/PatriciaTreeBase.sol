@@ -1,5 +1,4 @@
-pragma solidity ^0.4.16;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
@@ -22,15 +21,15 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
     return tree.root;
   }
 
-  function getRootEdge() public view returns (Data.Edge e) {
+  function getRootEdge() public view returns (Data.Edge memory e) {
     e = tree.rootEdge;
   }
 
-  function getNode(bytes32 hash) public view returns (Data.Node n) {
+  function getNode(bytes32 hash) public view returns (Data.Node memory n) {
     n = tree.nodes[hash];
   }
 
-  function getProofFunctionality(bytes32 key) internal view returns (uint branchMask, bytes32[] _siblings) {
+  function getProofFunctionality(bytes32 key) internal view returns (uint branchMask, bytes32[] memory _siblings) {
     require(tree.root != 0, "colony-patricia-tree-zero-tree-root");
     Data.Label memory k = Data.Label(key, 256);
     Data.Edge memory e = tree.rootEdge;

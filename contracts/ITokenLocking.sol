@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./TokenLockingDataTypes.sol";
@@ -64,7 +63,7 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @param _stakers Array of the addresses of stakers to punish
   /// @param _beneficiary Address of beneficiary to receive forfeited stake
   /// @param _amount Amount of stake to slash
-  function punishStakers(address[] _stakers, address _beneficiary, uint256 _amount) public;
+  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public;
 
   /// @notice Get global lock count for a specific token
   /// @param _token Address of the token
@@ -78,5 +77,5 @@ contract ITokenLocking is TokenLockingDataTypes {
   ///   lockCount User's token lock count
   ///   amount User's deposited amount
   ///   timestamp Timestamp of deposit
-  function getUserLock(address _token, address _user) public view returns (Lock lock);
+  function getUserLock(address _token, address _user) public view returns (Lock memory lock);
 }

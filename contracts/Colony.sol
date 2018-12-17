@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
@@ -104,7 +103,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyInitialised(_colonyNetworkAddress);
   }
 
-  function bootstrapColony(address[] _users, int[] _amounts) public
+  function bootstrapColony(address[] memory _users, int[] memory _amounts) public
   stoppable
   auth
   isInBootstrapPhase
@@ -137,7 +136,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token.transfer(colonyNetworkAddress, _wad);
   }
 
-  function registerColonyLabel(string colonyName, string orbitdb) public stoppable auth {
+  function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
   }
 
@@ -184,7 +183,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     initialiseDomain(newLocalSkill);
   }
 
-  function getDomain(uint256 _id) public view returns (Domain domain) {
+  function getDomain(uint256 _id) public view returns (Domain memory domain) {
     domain = domains[_id];
   }
 
@@ -192,7 +191,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return domainCount;
   }
 
-  modifier verifyKey(bytes key) {
+  modifier verifyKey(bytes memory key) {
     uint256 colonyAddress;
     uint256 skillid;
     uint256 userAddress;
@@ -209,7 +208,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     _;
   }
 
-  function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
+  function verifyReputationProof(bytes memory key, bytes memory value, uint branchMask, bytes32[] memory siblings)
   public view
   stoppable
   verifyKey(key)

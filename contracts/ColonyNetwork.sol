@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyAuthority.sol";
@@ -71,7 +70,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return colonyVersionResolver[_version];
   }
 
-  function getSkill(uint256 _skillId) public view returns (Skill skill) {
+  function getSkill(uint256 _skillId) public view returns (Skill memory skill) {
     skill = skills[_skillId];
   }
 

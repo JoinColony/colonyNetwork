@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./IRecovery.sol";
@@ -62,7 +61,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return (address, int256, uint256, address, uint256, uint256) An object with the details of the log entry (if it exists)
   /// @dev colonyAddress will always be set if the replacement exists
   function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
-    (ReputationLogEntry reputationLogEntry);
+    (ReputationLogEntry memory reputationLogEntry);
 
   /// @notice Get whether any replacement log entries have been set for the supplied reputation mining cycle.
   /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
@@ -96,7 +95,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return nParents uint256 `skill.nParents` i.e. the number of parent skills of skill with id `_skillId`
   /// @return nChildren uint256 `skill.nChildren` i.e. the number of child skills of skill with id `_skillId`
   /// @return isGlobalSkill true if specified skill is a global skill, otherwise false
-  function getSkill(uint256 _skillId) public view returns (Skill skill);
+  function getSkill(uint256 _skillId) public view returns (Skill memory skill);
 
   /// @notice Get whether the skill with id _skillId is public or not.
   /// @return isGlobalSkill bool 
@@ -199,7 +198,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param newNNodes The updated nodes count value
   /// @param stakers Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
   /// @param reward Amount of CLNY to be distributed as reward to miners
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers, uint256 reward) public;
+  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] memory stakers, uint256 reward) public;
 
   /// @notice Starts a new Reputation Mining cycle. Explicitly called only the first time,
   /// subsequently called from within `setReputationRootHash`
@@ -229,22 +228,22 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Register a "user.joincolony.eth" label.
   /// @param username The label to register
   /// @param orbitdb The path of the orbitDB database associated with the user profile
-  function registerUserLabel(string username, string orbitdb) public;
+  function registerUserLabel(string memory username, string memory orbitdb) public;
 
   /// @notice Register a "colony.joincolony.eth" label. Can only be called by a Colony.
   /// @param colonyName The label to register.
   /// @param orbitdb The path of the orbitDB database associated with the colony name
-  function registerColonyLabel(string colonyName, string orbitdb) public;
+  function registerColonyLabel(string memory colonyName, string memory orbitdb) public;
 
   /// @notice Retrieve the orbitdb address corresponding to a registered account
   /// @param node The Namehash of the account being queried.
   /// @return orbitDB A string containing the address of the orbit database
-  function getProfileDBAddress(bytes32 node) public view returns (string orbitDB);
+  function getProfileDBAddress(bytes32 node) public view returns (string memory orbitDB);
 
   /// @notice Reverse lookup a username from an address.
   /// @param addr The address we wish to find the corresponding ENS domain for (if any)
   /// @return domain A string containing the colony-based ENS name corresponding to addr
-  function lookupRegisteredENSDomain(address addr) public view returns(string domain);
+  function lookupRegisteredENSDomain(address addr) public view returns(string memory domain);
 
   /// @notice Returns the address the supplied node resolves do, if we are the resolver
   /// @param node The namehash of the ENS address being requested

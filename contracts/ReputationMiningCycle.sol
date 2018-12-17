@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/math.sol";
@@ -297,9 +296,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   function respondToBinarySearchForChallenge(
     uint256 round,
     uint256 idx,
-    bytes jhIntermediateValue,
+    bytes memory jhIntermediateValue,
     uint256 branchMask,
-    bytes32[] siblings
+    bytes32[] memory siblings
   ) public
   {
     require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
@@ -329,9 +328,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   function confirmBinarySearchResult(
     uint256 round,
     uint256 idx,
-    bytes jhIntermediateValue,
+    bytes memory jhIntermediateValue,
     uint256 branchMask,
-    bytes32[] siblings
+    bytes32[] memory siblings
   ) public
   {
     require(disputeRounds[round][idx].jrhNNodes != 0, "colony-reputation-jrh-hash-not-verified");
@@ -364,9 +363,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     uint256 round,
     uint256 index,
     uint256 branchMask1,
-    bytes32[] siblings1,
+    bytes32[] memory siblings1,
     uint256 branchMask2,
-    bytes32[] siblings2
+    bytes32[] memory siblings2
   ) public
   {
     // Require we've not submitted already.
@@ -434,21 +433,21 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return reputationUpdateLog.length;
   }
 
-  function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry) {
+  function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry memory) {
     return reputationUpdateLog[_id];
   }
 
-  function getReputationHashSubmissions(address _user) public view returns (Submission) {
+  function getReputationHashSubmissions(address _user) public view returns (Submission memory) {
     return reputationHashSubmissions[_user];
   }
 
-  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (Submission) {
+  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (Submission memory) {
     return disputeRounds[_round][_index];
   }
 
   function rewardStakersWithReputation(
-    address[] stakers,
-    uint256[] weights,
+    address[] memory stakers,
+    uint256[] memory weights,
     address metaColonyAddress,
     uint256 reward,
     uint256 miningSkillId
@@ -480,16 +479,16 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   // Internal functions
   /////////////////////////
 
-  function submissionWindowClosed() internal view returns(bool) {
+  function submissionWindowClosed() internal view returns (bool) {
     return now - reputationMiningWindowOpenTimestamp >= MINING_WINDOW_SIZE;
   }
 
   function processBinaryChallengeSearchResponse(
     uint256 round,
     uint256 idx,
-    bytes jhIntermediateValue,
+    bytes memory jhIntermediateValue,
     uint256 targetNode,
-    bytes32[2] lastSiblings
+    bytes32[2] memory lastSiblings
   ) internal
   {
     disputeRounds[round][idx].lastResponseTimestamp = now;
@@ -513,39 +512,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       // Compare our intermediateReputationHash to theirs to establish how to move the bounds.
       processBinaryChallengeSearchStep(round, idx, targetNode);
     }
-  }
-
-  function nextPowerOfTwoInclusive(uint256 v) pure private returns (uint) { // solium-disable-line security/no-assign-params
-    // Returns the next power of two, or v if v is already a power of two.
-    // Doesn't work for zero.
-    v--;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
-    v |= v >> 32;
-    v |= v >> 64;
-    v |= v >> 128;
-    v++;
-    return v;
-  }
-
-  function expectedProofLength(uint256 nNodes, uint256 node) pure private returns (uint256) { // solium-disable-line security/no-assign-params
-    nNodes -= 1;
-    uint256 nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
-    uint256 layers = 0;
-    while (nNodes != 0 && (node+1 > nextPowerOfTwo / 2)) {
-      nNodes -= nextPowerOfTwo/2;
-      node -= nextPowerOfTwo/2;
-      layers += 1;
-      nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
-    }
-    while (nextPowerOfTwo > 1) {
-      layers += 1;
-      nextPowerOfTwo >>= 1;
-    }
-    return layers;
   }
 
   function processBinaryChallengeSearchStep(uint256 round, uint256 idx, uint256 targetNode) internal {
@@ -589,7 +555,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     disputeRounds[round][opponentIdx].lastResponseTimestamp = now;
   }
 
-  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] siblings1, uint256 reputationRootHashNNodes) internal view {
+  function checkJRHProof1(bytes32 jrh, uint256 branchMask1, bytes32[] memory siblings1, uint256 reputationRootHashNNodes) internal view {
     // Proof 1 needs to prove that they started with the current reputation root hash
     bytes32 reputationRootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     bytes memory jhLeafValue = new bytes(64);
@@ -605,7 +571,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     uint256 round,
     uint256 index,
     uint256 branchMask2,
-    bytes32[] siblings2,
+    bytes32[] memory siblings2,
     uint256 reputationRootHashNNodes
   ) internal
   {
@@ -652,4 +618,36 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     startMemberOfPair(roundNumber, nInRound-2);
   }
 
+  function nextPowerOfTwoInclusive(uint256 v) private pure returns (uint) { // solium-disable-line security/no-assign-params
+    // Returns the next power of two, or v if v is already a power of two.
+    // Doesn't work for zero.
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v |= v >> 32;
+    v |= v >> 64;
+    v |= v >> 128;
+    v++;
+    return v;
+  }
+
+  function expectedProofLength(uint256 nNodes, uint256 node) private pure returns (uint256) { // solium-disable-line security/no-assign-params
+    nNodes -= 1;
+    uint256 nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+    uint256 layers = 0;
+    while (nNodes != 0 && (node+1 > nextPowerOfTwo / 2)) {
+      nNodes -= nextPowerOfTwo/2;
+      node -= nextPowerOfTwo/2;
+      layers += 1;
+      nextPowerOfTwo = nextPowerOfTwoInclusive(nNodes + 1);
+    }
+    while (nextPowerOfTwo > 1) {
+      layers += 1;
+      nextPowerOfTwo >>= 1;
+    }
+    return layers;
+  }
 }

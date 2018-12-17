@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyNetworkStorage.sol";
@@ -58,7 +57,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
-    (ReputationLogEntry reputationLogEntry)
+    (ReputationLogEntry memory reputationLogEntry)
     {
     reputationLogEntry = replacementReputationUpdateLog[_reputationMiningCycle][_id];
   }
@@ -67,7 +66,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers, uint256 reward) public
+  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] memory stakers, uint256 reward) public
   stoppable
   onlyReputationMiningCycle
   {
@@ -134,7 +133,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return wmul(stakeTerm, submissionTerm);
   }
 
-  function rewardStakers(address[] stakers, uint256 reward) internal {
+  function rewardStakers(address[] memory stakers, uint256 reward) internal {
     // Internal unlike punish, because it's only ever called from setReputationRootHash
 
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over

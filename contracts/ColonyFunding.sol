@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -191,7 +190,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return nonRewardPotsTotal[_token];
   }
 
-  function startNextRewardPayout(address _token, bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public auth stoppable {
+  function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
+  public auth stoppable 
+  {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(address(token));
 
@@ -228,11 +229,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   function claimRewardPayout(
     uint256 _payoutId,
-    uint256[7] _squareRoots,
-    bytes key,
-    bytes value,
+    uint256[7] memory _squareRoots,
+    bytes memory key,
+    bytes memory value,
     uint256 branchMask,
-    bytes32[] siblings
+    bytes32[] memory siblings
   ) public stoppable
   {
     uint256 userReputation = checkReputation(
@@ -271,7 +272,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     emit RewardPayoutCycleEnded(_payoutId);
   }
 
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle rewardPayoutCycle) {
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle) {
     rewardPayoutCycle = rewardPayoutCycles[_payoutId];
   }
 
@@ -293,10 +294,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     bytes32 rootHash,
     uint256 skillId,
     address userAddress,
-    bytes key,
-    bytes value,
+    bytes memory key,
+    bytes memory value,
     uint256 branchMask,
-    bytes32[] siblings
+    bytes32[] memory siblings
   ) internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRootHashKey(key, value, branchMask, siblings);
@@ -321,7 +322,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return reputationValue;
   }
 
-  function calculateRewardForUser(uint256 payoutId, uint256[7] squareRoots, uint256 userReputation) internal returns (address, uint256) {
+  function calculateRewardForUser(uint256 payoutId, uint256[7] memory squareRoots, uint256 userReputation) internal returns (address, uint256) {
     RewardPayoutCycle memory payout = rewardPayoutCycles[payoutId];
     // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
