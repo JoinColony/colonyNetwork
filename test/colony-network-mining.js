@@ -92,6 +92,8 @@ contract("ColonyNetworkMining", accounts => {
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
+    goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree });
+    await goodClient.resetDB();
   });
 
   beforeEach(async () => {
@@ -2365,7 +2367,6 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
 
-      await goodClient.resetDB();
       await goodClient.saveCurrentState();
       const savedHash = await goodClient.reputationTree.getRootHash();
 
@@ -3340,7 +3341,6 @@ contract("ColonyNetworkMining", accounts => {
       ? it.skip
       : it("The client should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
           // Save to the database
-          await goodClient.resetDB();
           await goodClient.saveCurrentState();
           const savedHash = await goodClient.reputationTree.getRootHash();
 
@@ -3364,7 +3364,6 @@ contract("ColonyNetworkMining", accounts => {
         });
 
     it("should be able to successfully save the current state to the database and then load it", async () => {
-      await goodClient.resetDB();
       await goodClient.saveCurrentState();
 
       const client1Hash = await goodClient.reputationTree.getRootHash();
@@ -3375,7 +3374,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should be able to correctly get the proof for a reputation in a historical state without affecting the current miner state", async () => {
-      await goodClient.resetDB();
       await goodClient.saveCurrentState();
 
       const clientHash1 = await goodClient.reputationTree.getRootHash();
