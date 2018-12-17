@@ -2119,8 +2119,6 @@ contract("ColonyNetworkMining", accounts => {
       });
 
       await goodClient.resetDB();
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.saveCurrentState();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -2133,12 +2131,13 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        27,
+        26,
         "0xfffffffffff"
       );
       // Moving the state to the bad client
       await badClient.initialise(colonyNetwork.address);
       const currentGoodClientState = await goodClient.getRootHash();
+      await goodClient.saveCurrentState();
       await badClient.loadState(currentGoodClientState);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
