@@ -227,7 +227,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(_newVersion > currentVersion, "colony-version-must-be-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
-    require(newResolver != 0x0, "colony-version-must-be-registered");
+    require(newResolver != address(0x0), "colony-version-must-be-registered");
     EtherRouter e = EtherRouter(address(this));
     e.setResolver(newResolver);
 

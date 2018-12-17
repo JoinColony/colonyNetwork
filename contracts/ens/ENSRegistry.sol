@@ -23,7 +23,7 @@ contract ENSRegistry is ENS {
 
   /// @dev Constructs a new ENS registrar.
   constructor() public {
-    records[0x0].owner = msg.sender;
+    records[address(0x0)].owner = msg.sender;
   }
 
   /// @dev Transfers ownership of a node to a new address.

@@ -51,8 +51,15 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   {
     Task storage task = tasks[_id];
 
-    require(task.roles[EVALUATOR].user == task.roles[MANAGER].user || task.roles[EVALUATOR].user == 0x0, "colony-funding-evaluator-already-set");
-    require(task.roles[WORKER].user == task.roles[MANAGER].user || task.roles[WORKER].user == 0x0, "colony-funding-worker-already-set");
+    require(
+      task.roles[EVALUATOR].user == task.roles[MANAGER].user ||
+      task.roles[EVALUATOR].user == address(0x0),
+      "colony-funding-evaluator-already-set");
+
+    require(
+      task.roles[WORKER].user == task.roles[MANAGER].user ||
+      task.roles[WORKER].user == address(0x0),
+      "colony-funding-worker-already-set");
 
     this.setTaskManagerPayout(_id, _token, _managerAmount);
     this.setTaskEvaluatorPayout(_id, _token, _evaluatorAmount);
@@ -94,7 +101,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint fee = calculateNetworkFeeForPayout(payout);
     uint remainder = sub(payout, fee);
 
-    if (_token == 0x0) {
+    if (_token == address(0x0)) {
       // Payout ether
       address user = task.roles[_role].user;
       user.transfer(remainder);
@@ -168,7 +175,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint toClaim;
     uint feeToPay;
     uint remainder;
-    if (_token == 0x0) {
+    if (_token == address(0x0)) {
       // It's ether
       toClaim = sub(sub(address(this).balance, nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     } else {
@@ -205,7 +212,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint256 colonyWideReputation = checkReputation(
       rootHash,
       domains[1].skillId,
-      0x0,
+      address(0x0),
       key,
       value,
       branchMask,

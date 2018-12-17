@@ -95,7 +95,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   auth
   {
     // Token locking address can't be changed
-    require(tokenLocking == 0x0, "colony-invalid-token-locking-address");
+    require(tokenLocking == address(0x0), "colony-invalid-token-locking-address");
     tokenLocking = _tokenLocking;
 
     emit TokenLockingAddressSet(_tokenLocking);
@@ -160,7 +160,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     colony.setFounderRole(msg.sender);
 
     // Colony will not have owner
-    dsauth.setOwner(0x0);
+    dsauth.setOwner(address(0x0));
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;

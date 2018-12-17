@@ -72,7 +72,7 @@ contract ContractRecovery is CommonStorage {
   function exitRecoveryMode() public recovery auth {
     uint totalAuthorized = recoveryRolesCount;
     // Don't double count the owner (if set);
-    if (owner != 0x0 && !CommonAuthority(authority).hasUserRole(owner, RECOVERY_ROLE)) { 
+    if (owner != address(0x0) && !CommonAuthority(authority).hasUserRole(owner, RECOVERY_ROLE)) { 
       totalAuthorized += 1; 
     }
     uint numRequired = totalAuthorized / 2 + 1;

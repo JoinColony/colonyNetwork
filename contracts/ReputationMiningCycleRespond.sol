@@ -195,8 +195,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     // Work out the expected userAddress and skillId for this updateNumber in this logEntry.
     if ((updateNumber - logEntry.nPreviousUpdates + 1) <= logEntry.nUpdates / 2 ) {
-      // Then we're updating a colony-wide total, so we expect an address of 0x0
-      expectedAddress = 0x0;
+      // Then we're updating a colony-wide total, so we expect an address of address(0x0)
+      expectedAddress = address(0x0);
     } else {
       // We're updating a user-specific total
       expectedAddress = logEntry.user;

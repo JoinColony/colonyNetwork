@@ -295,22 +295,22 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
-    require(tasks[_id].roles[EVALUATOR].user == 0x0, "colony-task-evaluator-role-already-assigned");
+    require(tasks[_id].roles[EVALUATOR].user == address(0x0), "colony-task-evaluator-role-already-assigned");
     setTaskRoleUser(_id, EVALUATOR, _user);
   }
 
   function setTaskWorkerRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
-    require(tasks[_id].roles[WORKER].user == 0x0, "colony-task-worker-role-already-assigned");
+    require(tasks[_id].roles[WORKER].user == address(0x0), "colony-task-worker-role-already-assigned");
     setTaskRoleUser(_id, WORKER, _user);
   }
 
   function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, EVALUATOR, 0x0);
+    setTaskRoleUser(_id, EVALUATOR, address(0x0));
   }
 
   function removeTaskWorkerRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, WORKER, 0x0);
+    setTaskRoleUser(_id, WORKER, address(0x0));
   }
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public

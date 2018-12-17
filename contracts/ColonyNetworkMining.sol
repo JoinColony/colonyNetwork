@@ -73,7 +73,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
     // Reward stakers
-    activeReputationMiningCycle = 0x0;
+    activeReputationMiningCycle = address(0x0);
     startNextCycle();
     rewardStakers(stakers, reward);
 
@@ -81,9 +81,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function initialiseReputationMining() public stoppable {
-    require(inactiveReputationMiningCycle == 0x0, "colony-reputation-mining-already-initialised");
+    require(inactiveReputationMiningCycle == address(0x0), "colony-reputation-mining-already-initialised");
     address clnyToken = IMetaColony(metaColony).getToken();
-    require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
+    require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
 
     inactiveReputationMiningCycle = new EtherRouter();
     EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
@@ -94,9 +94,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function startNextCycle() public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
-    require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
-    require(activeReputationMiningCycle == 0x0, "colony-reputation-mining-still-active");
-    require(inactiveReputationMiningCycle != 0x0, "colony-reputation-mining-not-initialised");
+    require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
+    require(activeReputationMiningCycle == address(0x0), "colony-reputation-mining-still-active");
+    require(inactiveReputationMiningCycle != address(0x0), "colony-reputation-mining-not-initialised");
     // Inactive now becomes active
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     IReputationMiningCycle(activeReputationMiningCycle).resetWindow();

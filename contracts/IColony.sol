@@ -30,7 +30,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return colonyAuthority The `ColonyAuthority` contract address
   function authority() public view returns (address colonyAuthority);
 
-  /// @notice Get the colony `owner` address. This should be 0x0 at all times
+  /// @notice Get the colony `owner` address. This should be address(0x0) at all times
   /// @dev Used for testing.
   /// @return colonyOwner Address of the colony owner
   function owner() public view returns (address colonyOwner);

@@ -25,7 +25,7 @@ contract EtherRouter is DSAuth {
   Resolver public resolver;
 
   function() external payable {
-    if (msg.sig == 0x0) {
+    if (msg.sig == address(0x0)) {
       return;
     }
     // Contracts that want to receive Ether with a plain "send" have to implement
