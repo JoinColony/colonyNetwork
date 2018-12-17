@@ -18,7 +18,7 @@
     "bn.js": "^4.11.8",
     "ethers": "^4.0.17",
     "express": "^4.16.3",
-    "ganache-core": "2.1.6",
+    "ganache-core": "2.3.2",
     "sqlite": "^3.0.0",
     "web3-utils": "^1.0.0-beta.34",
     "yargs": "^12.0.1"
