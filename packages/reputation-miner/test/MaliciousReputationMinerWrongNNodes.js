@@ -10,11 +10,6 @@ class MaliciousReputationMinerWrongNNodes extends ReputationMiner {
     this.entryToFalsify = entryToFalsify.toString();
   }
 
-  // eslint-disable-next-line class-methods-use-this
-  async respondToChallenge() {
-    // This client sometimes won't be able to respond to challenge - we mess up its JRH with a hash it doesn't know about
-  }
-
   async submitRootHash(startIndex = 1) {
     const hash = await this.getRootHash();
     const repCycle = await this.getActiveRepCycle();
