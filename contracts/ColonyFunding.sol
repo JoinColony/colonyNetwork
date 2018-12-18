@@ -107,7 +107,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
-      address(metaColonyAddress).transfer(fee);
+      metaColonyAddress.transfer(fee);
     } else {
       // Payout token
       // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
