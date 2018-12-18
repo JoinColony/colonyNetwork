@@ -137,7 +137,7 @@ contract("ColonyNetworkMining", accounts => {
     await clny.burn(userBalance, { from: MAIN_ACCOUNT });
   });
 
-  async function navigateChallenge(test, client1, client2, errors) {
+  async function navigateChallenge(client1, client2, errors) {
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
     const submission1before = await repCycle.getDisputeRounds(round1, idx1);
@@ -260,7 +260,7 @@ contract("ColonyNetworkMining", accounts => {
     if (client2 !== undefined) {
       const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
 
-      await navigateChallenge(test, client1, client2, errors);
+      await navigateChallenge(client1, client2, errors);
 
       // Work out which submission is to be invalidated.
       const submission1 = await repCycle.getDisputeRounds(round1, idx1);
@@ -1184,7 +1184,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("in the event of a disagreement over JRH with an extra leaf causing proof 2 to be too long, dispute should resolve correctly", async () => {
+    it("in the event of a disagreement over JRH with an extra leaf causing proof 1 to be too long, dispute should resolve correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -1217,7 +1217,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("in the event of a disagreement over JRH with an extra leaf causing proof 1 to be too long, dispute should resolve correctly", async () => {
+    it("in the event of a disagreement over JRH with an extra leaf causing proof 2 to be too long, dispute should resolve correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -1244,13 +1244,9 @@ contract("ColonyNetworkMining", accounts => {
 
       await badClient.initialise(colonyNetwork.address);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      await goodClient.confirmJustificationRootHash();
-      await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-2-length");
-
-      // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION / 6);
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.confirmNewHash(1);
+      await accommodateChallengeAndInvalidateHash(this, goodClient, badClient, {
+        client2: { confirmJustificationRootHash: "colony-reputation-mining-invalid-jrh-proof-2-length" }
+      });
     });
 
     it("should cope if the wrong reputation transition is the first transition", async () => {
