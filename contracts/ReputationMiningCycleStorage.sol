@@ -27,7 +27,7 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
 
   ReputationLogEntry[] reputationUpdateLog;
 
-  address colonyNetworkAddress;
+  address payable colonyNetworkAddress;
   address tokenLockingAddress;
   address clnyTokenAddress;
 

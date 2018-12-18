@@ -103,12 +103,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     if (_token == address(0x0)) {
       // Payout ether
-      address user = task.roles[_role].user;
-      user.transfer(remainder);
+      msg.sender.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      address metaColonyAddress = colonyNetworkContract.getMetaColony();
-      metaColonyAddress.transfer(fee);
+      address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
+      address(metaColonyAddress).transfer(fee);
     } else {
       // Payout token
       // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
@@ -181,7 +180,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
-      toClaim = sub(sub(targetToken.balanceOf(this), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
+      toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     }
 
     feeToPay = toClaim / getRewardInverse();

@@ -32,7 +32,7 @@ contract ContractRecovery is CommonStorage {
     require(_slot != RESOLVER_SLOT, "colony-common-protected-variable");
 
     // NB. This isn't necessarily a colony - could be ColonyNetwork. But they both have this function, so it's okay.
-    IRecovery(this).checkNotAdditionalProtectedVariable(_slot);
+    IRecovery(address(this)).checkNotAdditionalProtectedVariable(_slot);
 
     // Protect key variables
     uint64 _recoveryRolesCount = recoveryRolesCount;
@@ -72,7 +72,7 @@ contract ContractRecovery is CommonStorage {
   function exitRecoveryMode() public recovery auth {
     uint totalAuthorized = recoveryRolesCount;
     // Don't double count the owner (if set);
-    if (owner != address(0x0) && !CommonAuthority(authority).hasUserRole(owner, RECOVERY_ROLE)) { 
+    if (owner != address(0x0) && !CommonAuthority(address(authority)).hasUserRole(owner, RECOVERY_ROLE)) { 
       totalAuthorized += 1; 
     }
     uint numRequired = totalAuthorized / 2 + 1;
@@ -83,16 +83,16 @@ contract ContractRecovery is CommonStorage {
   // Can only be called by the founder role.
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
-    if (!CommonAuthority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
-      CommonAuthority(authority).setUserRole(_user, RECOVERY_ROLE, true);
+    if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
+      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, true);
       recoveryRolesCount++;
     }
   }
 
   // Can only be called by the founder role.
   function removeRecoveryRole(address _user) public stoppable auth {
-    if (CommonAuthority(authority).hasUserRole(_user, RECOVERY_ROLE)) {
-      CommonAuthority(authority).setUserRole(_user, RECOVERY_ROLE, false);
+    if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
+      CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false);
       recoveryRolesCount--;
     }
   }

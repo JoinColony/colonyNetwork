@@ -18,6 +18,7 @@
 pragma solidity >0.5.0;
 pragma experimental ABIEncoderV2;
 
+import "./IColony.sol";
 import "./ColonyStorage.sol";
 import "./EtherRouter.sol";
 
@@ -228,8 +229,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
     require(newResolver != address(0x0), "colony-version-must-be-registered");
-    EtherRouter e = EtherRouter(address(this));
-    e.setResolver(newResolver);
+    EtherRouter currentColony = EtherRouter(address(this));
+    currentColony.setResolver(newResolver);
 
     emit ColonyUpgraded(currentVersion, _newVersion);
   }
@@ -275,4 +276,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit DomainAdded(domainCount);
     emit PotAdded(potCount);
   }
+
+  function() external payable {}
 }

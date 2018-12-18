@@ -25,7 +25,7 @@ contract EtherRouter is DSAuth {
   Resolver public resolver;
 
   function() external payable {
-    if (msg.sig == address(0x0)) {
+    if (msg.sig == 0) {
       return;
     }
     // Contracts that want to receive Ether with a plain "send" have to implement
@@ -45,6 +45,9 @@ contract EtherRouter is DSAuth {
 
     // Get routing information for the called function
     address destination = resolver.lookup(msg.sig);
+    if (destination == address(0x0)) {
+      return;
+    }
 
     // Make the call
     assembly {

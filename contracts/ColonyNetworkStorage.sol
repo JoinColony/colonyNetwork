@@ -30,7 +30,7 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   // uint256 version number of the latest deployed Colony contract, used in creating new colonies
   uint256 currentColonyVersion;
   // Address of the Meta Colony
-  address metaColony;
+  address payable metaColony;
   // Address of token locking contract
   address tokenLocking;
   // Network fee inverse value, e.g 5% => 100/5=20, 1% => 100/1=100 etc.

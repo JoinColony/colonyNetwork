@@ -50,7 +50,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return currentColonyVersion;
   }
 
-  function getMetaColony() public view returns (address) {
+  function getMetaColony() public view returns (address payable) {
     return metaColony;
   }
 
@@ -140,14 +140,13 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function createColony(address _tokenAddress) public
   stoppable
-  returns (address)
+  returns (address payable)
   {
     require(currentColonyVersion > 0, "colony-network-not-initialised-cannot-create-colony");
     EtherRouter etherRouter = new EtherRouter();
+    IColony colony = IColony(address(etherRouter));
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
-
-    IColony colony = IColony(address(etherRouter));
     colony.setToken(_tokenAddress);
 
     // Creating new instance of colony's authority

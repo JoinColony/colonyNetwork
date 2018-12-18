@@ -85,8 +85,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     address clnyToken = IMetaColony(metaColony).getToken();
     require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
 
-    inactiveReputationMiningCycle = new EtherRouter();
-    EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
+    EtherRouter e = new EtherRouter();
+    e.setResolver(miningCycleResolver);
+    inactiveReputationMiningCycle = address(e);
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
 
     emit ReputationMiningInitialised(inactiveReputationMiningCycle);
@@ -101,8 +102,9 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     IReputationMiningCycle(activeReputationMiningCycle).resetWindow();
 
-    inactiveReputationMiningCycle = new EtherRouter();
-    EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
+    EtherRouter e = new EtherRouter();
+    e.setResolver(miningCycleResolver);
+    inactiveReputationMiningCycle = address(e);
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
     emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNNodes);
   }
