@@ -120,9 +120,10 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   uint256 constant T = 7776000 * WAD; // Seconds in 90 days * WAD
   uint256 constant N = 24 * WAD; // 2x maximum number of miners * WAD
   uint256 constant UINT32_MAX = 4294967295;
+  uint256 constant MAX_MINERS = 12;
 
   function calculateMinerWeight(uint256 timeStaked, uint256 submissonIndex) public pure returns (uint256) {
-    require((submissonIndex >= 0) && (submissonIndex < 12), "colony-reputation-mining-invalid-submission-index");
+    require((submissonIndex >= 0) && (submissonIndex < MAX_MINERS), "colony-reputation-mining-invalid-submission-index");
     uint256 timeStakedMax = min(timeStaked, UINT32_MAX); // Maximum of ~136 years (uint32)
 
     // (1 - exp{-t_n/T}) * (1 - (n-1)/N), 3rd degree Taylor expansion for exponential term
@@ -162,17 +163,17 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     // II. Disburse reputation and tokens
     IMetaColony(metaColony).mintTokensForColonyNetwork(realReward);
 
+    for (i = 0; i < stakers.length; i++) {
+      ERC20Extended(clnyToken).transfer(stakers[i], wmul(reward, minerWeights[i]));
+    }
+
     // This gives them reputation in the next update cycle.
     IReputationMiningCycle(inactiveReputationMiningCycle).rewardStakersWithReputation(
       stakers,
       minerWeights,
       metaColony,
       realReward,
-      rootGlobalSkillId + 2
+      rootGlobalSkillId + 2 // Mining skill
     );
-
-    for (i = 0; i < stakers.length; i++) {
-      ERC20Extended(clnyToken).transfer(stakers[i], wmul(realReward, minerWeights[i]));
-    }
   }
 }

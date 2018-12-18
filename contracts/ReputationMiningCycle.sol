@@ -55,10 +55,12 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @param jrh The justification root hash for the application of the log being processed.
   /// @param entryIndex The number of the entry the submitter hash asked us to consider.
   modifier entryQualifies(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) {
-    uint256 balance;
-    balance = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender).balance;
-    require(entryIndex <= balance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
+    uint256 lockBalance = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender).balance;
+    require(entryIndex <= lockBalance / MIN_STAKE, "colony-reputation-mining-stake-minimum-not-met-for-index");
     require(entryIndex > 0, "colony-reputation-mining-zero-entry-index-passed");
+
+    uint256 lockTimestamp = ITokenLocking(tokenLockingAddress).getUserLock(clnyTokenAddress, msg.sender).timestamp;
+    require(reputationMiningWindowOpenTimestamp >= lockTimestamp, "colony-reputation-mining-stake-too-recent");
 
     // If this user has submitted before during this round...
     if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {

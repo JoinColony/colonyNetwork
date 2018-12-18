@@ -14,6 +14,8 @@ const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 module.exports = (deployer, network, accounts) => {
+  const MAIN_ACCOUNT = accounts[5];
+
   let colonyNetwork;
   let metaColony;
   let clnyToken;
@@ -47,15 +49,15 @@ module.exports = (deployer, network, accounts) => {
       await clnyToken.setAuthority(tokenAuthority.address);
       await clnyToken.setOwner(accounts[11]);
 
-      // These commands add the account[5] as a reputation miner. This isn't necessary (or wanted!) for a real-world deployment,
-      // but is useful when playing around with the network to get reputation mining going.
+      // These commands add MAIN_ACCOUNT as a reputation miner.
+      // This is necessary because the first miner must have staked before the mining cycle begins.
       await clnyToken.mint(DEFAULT_STAKE, { from: accounts[11] });
-      await clnyToken.transfer(accounts[5], DEFAULT_STAKE, { from: accounts[11] });
-      await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: accounts[5] });
-      const account5Balance = await clnyToken.balanceOf(accounts[5]);
-      assert.equal(account5Balance.toString(), DEFAULT_STAKE.toString());
+      await clnyToken.transfer(MAIN_ACCOUNT, DEFAULT_STAKE, { from: accounts[11] });
+      await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
+      const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
+      assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
       const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-      await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: accounts[5] });
+      await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
 
       await colonyNetwork.initialiseReputationMining();
       await colonyNetwork.startNextCycle();

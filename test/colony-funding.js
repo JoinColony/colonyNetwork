@@ -677,8 +677,6 @@ contract("Colony Funding", accounts => {
         totalAmountSqrt
       ];
 
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
       client = new ReputationMiner({
         loader: contractLoader,
@@ -688,6 +686,10 @@ contract("Colony Funding", accounts => {
       });
       await client.initialise(colonyNetwork.address);
 
+      // Enable the clien to start mining.
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      // Load the reputation state and run another cycle.
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
       const result = await colony.getDomain(1);
