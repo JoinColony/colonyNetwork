@@ -463,3 +463,150 @@ export async function advanceMiningCycleNoContest({ colonyNetwork, client, miner
   }
   await repCycle.confirmNewHash(0);
 }
+
+export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test, client1, client2, _errors) {
+  let toInvalidateIdx;
+  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
+  let errors = _errors;
+  // Make sure our errors object has the minimum properties to not throw an 'cannot access property x of undefined' error
+  if (!errors) {
+    errors = {};
+  }
+  if (!errors.client1) {
+    errors.client1 = {};
+  }
+  if (!errors.client2) {
+    errors.client2 = {};
+  }
+  if (!errors.client1.respondToBinarySearchForChallenge) {
+    errors.client1.respondToBinarySearchForChallenge = [];
+  }
+  if (!errors.client2.respondToBinarySearchForChallenge) {
+    errors.client2.respondToBinarySearchForChallenge = [];
+  }
+
+  if (client2 !== undefined) {
+    const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
+
+    await navigateChallenge(colonyNetwork, client1, client2, errors);
+
+    // Work out which submission is to be invalidated.
+    const submission1 = await repCycle.getDisputeRounds(round1, idx1);
+    const submission2 = await repCycle.getDisputeRounds(round2, idx2);
+
+    if (new BN(submission1.challengeStepCompleted).gt(new BN(submission2.challengeStepCompleted))) {
+      toInvalidateIdx = idx2;
+    } else {
+      // Note that if they're equal, they're both going to be invalidated, so we can call
+      // either
+      toInvalidateIdx = idx1;
+    }
+    // Forward time, so that whichever has failed to respond by now has timed out.
+    await forwardTime(600, test);
+  } else {
+    // idx1.modn returns a javascript number, which is surprising!
+    toInvalidateIdx = idx1.mod(2) === 1 ? idx1.sub(1) : idx1.add(1);
+  }
+
+  const accounts = await web3GetAccounts();
+  return repCycle.invalidateHash(round1, toInvalidateIdx, { from: accounts[5] });
+}
+
+async function navigateChallenge(colonyNetwork, client1, client2, errors) {
+  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
+  const submission1before = await repCycle.getDisputeRounds(round1, idx1);
+
+  // Submit JRH for submission 1 if needed
+  // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
+  if (submission1before.jrhNNodes === "0") {
+    if (errors.client1.confirmJustificationRootHash) {
+      await checkErrorRevertEthers(client1.confirmJustificationRootHash(), errors.client1.confirmJustificationRootHash);
+    } else {
+      await checkSuccessEthers(client1.confirmJustificationRootHash(), "Client 1 failed unexpectedly on confirmJustificationRootHash");
+    }
+  }
+
+  const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
+  assert.isTrue(round1.eq(round2), "Clients do not have submissions in the same round");
+  const submission2before = await repCycle.getDisputeRounds(round2, idx2);
+  assert.isTrue(
+    idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
+    "Clients are not facing each other in this round"
+  );
+  if (submission2before.jrhNNodes === "0") {
+    if (errors.client2.confirmJustificationRootHash) {
+      await checkErrorRevertEthers(client2.confirmJustificationRootHash(), errors.client2.confirmJustificationRootHash);
+    } else {
+      await checkSuccessEthers(client2.confirmJustificationRootHash(), "Client 2 failed unexpectedly on confirmJustificationRootHash");
+    }
+  }
+
+  // i.e. if we had errors here, we must have seen then when we expected. Everything beyond here will just fail, so short-circuit to
+  // the invalidation step
+  if (errors.client1.confirmJustificationRootHash || errors.client2.confirmJustificationRootHash) {
+    return;
+  }
+
+  let submission1 = await repCycle.getDisputeRounds(round1, idx1);
+  let binarySearchStep = -1;
+  let binarySearchError = false;
+  while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
+    binarySearchStep += 1;
+    if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
+      await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+      binarySearchError = true;
+    } else {
+      // eslint-disable-next-line no-await-in-loop
+      await checkSuccessEthers(
+        client1.respondToBinarySearchForChallenge(),
+        `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+      );
+    }
+    if (errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
+      await checkErrorRevertEthers(client2.respondToBinarySearchForChallenge(), errors.client2.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+      binarySearchError = true;
+    } else {
+      // eslint-disable-next-line no-await-in-loop
+      await checkSuccessEthers(
+        client2.respondToBinarySearchForChallenge(),
+        `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
+      );
+    }
+    submission1 = await repCycle.getDisputeRounds(round1, idx1); // eslint-disable-line no-await-in-loop
+  }
+
+  if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep] || errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
+    return;
+  }
+
+  if (errors.client1.confirmBinarySearchResult) {
+    await checkErrorRevertEthers(client1.confirmBinarySearchResult(), errors.client1.confirmBinarySearchResult);
+  } else {
+    await checkSuccessEthers(client1.confirmBinarySearchResult(), "Client 1 failed unexpectedly on confirmBinarySearchResult");
+  }
+  if (errors.client2.confirmBinarySearchResult) {
+    await checkErrorRevertEthers(client2.confirmBinarySearchResult(), errors.client2.confirmBinarySearchResult);
+  } else {
+    await checkSuccessEthers(client2.confirmBinarySearchResult(), "Client 2 failed unexpectedly on confirmBinarySearchResult");
+  }
+
+  if (errors.client1.confirmBinarySearchResult || errors.client2.confirmBinarySearchResult) {
+    return;
+  }
+
+  // Respond to the challenge - usually, only one of these should work.
+  // If both work, then the starting reputation is 0 and one client is lying
+  // about whether the key already exists.
+  if (errors.client1.respondToChallenge) {
+    await checkErrorRevertEthers(client1.respondToChallenge(), errors.client1.respondToChallenge);
+  } else {
+    await checkSuccessEthers(client1.respondToChallenge(), "Client 1 failed unexpectedly on respondToChallenge");
+  }
+  if (errors.client2.respondToChallenge) {
+    await checkErrorRevertEthers(client2.respondToChallenge(), errors.client2.respondToChallenge);
+  } else {
+    await checkSuccessEthers(client2.respondToChallenge(), "Client 2 failed unexpectedly on respondToChallenge");
+  }
+}
