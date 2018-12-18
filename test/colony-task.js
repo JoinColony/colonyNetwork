@@ -1525,6 +1525,32 @@ contract("ColonyTask", accounts => {
       const totalTokenPayoutExpected = MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT);
       assert.equal(totalTokenPayout.toString(), totalTokenPayoutExpected.toString());
     });
+
+    it("should not be able to set a payout above the limit", async () => {
+      const maxPayout = new BN(0).notn(254);
+      const taskId = await makeTask({ colony });
+
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskManagerPayout",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, ZERO_ADDRESS, maxPayout]
+      });
+
+      await checkErrorRevert(
+        executeSignedTaskChange({
+          colony,
+          taskId,
+          functionName: "setTaskManagerPayout",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [taskId, ZERO_ADDRESS, maxPayout.addn(1)]
+        }),
+        "colony-task-change-execution-failed" // Should be "colony-funding-payout-too-large"
+      );
+    });
   });
 
   describe("when claiming payout for a task", () => {

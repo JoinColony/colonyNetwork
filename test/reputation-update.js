@@ -5,14 +5,14 @@ import bnChai from "bn-chai";
 
 import {
   fundColonyWithTokens,
-  setupRatedTask,
+  setupFundedTask,
   setupFinalizedTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken
 } from "../helpers/test-data-generator";
 
-import { INT256_MAX, WAD, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
-import { checkErrorRevert } from "../helpers/test-helper";
+import { INT256_MAX, WAD, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, MAX_PAYOUT, SECONDS_PER_DAY } from "../helpers/constants";
+import { checkErrorRevert, forwardTime } from "../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -175,27 +175,18 @@ contract("Reputation Updates", accounts => {
       assert.strictEqual(repLogEntryWorker.nUpdates, "8"); // Negative reputation change means children change as well.
     });
 
-    it("should revert on reputation amount overflow", async () => {
-      // Fund colony with maximum possible int number of tokens
+    it("should correctly make large positive reputation updates", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
-      // Split the tokens as payouts between the manager, evaluator, and worker
-      const managerPayout = new BN("2");
-      const evaluatorPayout = new BN("1");
-      const workerPayout = INT256_MAX.sub(managerPayout).sub(evaluatorPayout);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT, workerRating: 3 });
+    });
 
-      const taskId = await setupRatedTask({
-        colonyNetwork,
-        colony: metaColony,
-        token: clnyToken,
-        managerPayout,
-        evaluatorPayout,
-        workerPayout
-      });
+    it("should correctly make large negative reputation updates", async () => {
+      await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
+      const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT, workerRating: 1 });
+      await metaColony.submitTaskDeliverable(taskId, "0x00", { from: WORKER });
 
-      // Check the task pot is correctly funded with the max amount
-      const taskPotBalance = await metaColony.getPotBalance(2, clnyToken.address);
-      expect(taskPotBalance).to.eq.BN(INT256_MAX);
-      await checkErrorRevert(metaColony.finalizeTask(taskId), "colony-math-unsafe-int-mul");
+      await forwardTime(SECONDS_PER_DAY * 10 + 1, this); // Run out the submissions window to get the no-rate penalty.
+      await metaColony.finalizeTask(taskId);
     });
   });
 });
