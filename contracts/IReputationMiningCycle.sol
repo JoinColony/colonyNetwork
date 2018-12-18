@@ -91,7 +91,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes32[] memory siblings) public;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
-  /// @param u A `uint256[10]` array. The elements of this array, in order are:
+  /// @param u A `uint256[23]` array. The elements of this array, in order are:
   /// * 1. The current round of the hash being responded on behalf of
   /// * 2. The current index in the round of the hash being responded on behalf of
   /// * 3. The branchMask of the proof that the reputation is in the reputation state tree for the reputation with the disputed change
@@ -113,6 +113,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 17. The UID that the most recently added entry in the tree has in the state being disputed
   /// * 18. The amount of reputation that the origin reputation entry in the tree has in the state being disputed
   /// * 19. The UID that the origin reputation entry in the tree has in the state being disputed
+  /// * 20. The branchMask of the proof that the child reputation for the user being updated is in the agree state 
+  /// * 21. The amount of rpeutation that the child reputation for the user being updated is in the agree state
+  /// * 22. THe UID of the child reputation for the user being updated in the agree state 
+  /// * 23. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+
   /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
@@ -124,7 +129,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[19] memory u, //An array of 19 UINT Params, ordered as given above.
+    uint256[23] memory u, //An array of 23 UINT Params, ordered as given above.
     bytes memory _reputationKey,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
@@ -132,7 +137,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes memory previousNewReputationKey,
     bytes32[] memory previousNewReputationSiblings,
     bytes memory originReputationKey,
-    bytes32[] memory originReputationSiblings) public;
+    bytes32[] memory originReputationSiblings,
+    bytes memory childReputationKey,
+    bytes32[] memory childReputationSiblings) public;
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
   /// @param round The round that the hash is currently in.
