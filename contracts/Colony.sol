@@ -24,6 +24,8 @@ import "./EtherRouter.sol";
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
 
+  function() external payable {}
+
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256 colonyVersion) { return 1; }
@@ -275,6 +277,4 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit DomainAdded(domainCount);
     emit PotAdded(potCount);
   }
-
-  function() external payable {}
 }
