@@ -383,10 +383,14 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     }
   }
 
+  uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
+
   function setTaskPayout(uint256 _id, uint8 _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotComplete(_id)
   {
+    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
+
     uint currentTotalAmount = getTotalTaskPayout(_id, _token);
     tasks[_id].payouts[_role][_token] = _amount;
 

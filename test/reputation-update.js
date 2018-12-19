@@ -5,14 +5,29 @@ import bnChai from "bn-chai";
 
 import {
   fundColonyWithTokens,
-  setupRatedTask,
+  setupFundedTask,
   setupFinalizedTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken
 } from "../helpers/test-data-generator";
 
-import { INT256_MAX, WAD, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT } from "../helpers/constants";
-import { checkErrorRevert } from "../helpers/test-helper";
+import {
+  INT256_MAX,
+  WAD,
+  DELIVERABLE_HASH,
+  MANAGER_PAYOUT,
+  EVALUATOR_PAYOUT,
+  WORKER_PAYOUT,
+  MAX_PAYOUT,
+  SECONDS_PER_DAY,
+  MANAGER_ROLE,
+  WORKER_ROLE,
+  RATING_1_SALT,
+  RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET
+} from "../helpers/constants";
+import { checkErrorRevert, forwardTime } from "../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -138,6 +153,113 @@ contract("Reputation Updates", accounts => {
       });
     });
 
+    it("should set the correct reputation change amount in log when all users have failed to rate", async () => {
+      const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
+      await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
+      await forwardTime(SECONDS_PER_DAY * 11, this);
+      await metaColony.finalizeTask(taskId);
+
+      const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
+      assert.strictEqual(repLogEntryManager.user, MANAGER);
+      assert.strictEqual(
+        repLogEntryManager.amount,
+        MANAGER_PAYOUT.muln(3)
+          .divn(2)
+          .toString()
+      );
+
+      const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
+      assert.strictEqual(repLogEntryEvaluator.user, accounts[1]);
+      assert.strictEqual(
+        repLogEntryEvaluator.amount,
+        EVALUATOR_PAYOUT.muln(3)
+          .divn(2)
+          .mul(new BN(-1))
+          .toString()
+      );
+
+      const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
+      assert.strictEqual(repLogEntryWorker1.user, WORKER);
+      assert.strictEqual(repLogEntryWorker1.amount, WORKER_PAYOUT.toString());
+
+      const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
+      assert.strictEqual(repLogEntryWorker2.user, WORKER);
+      assert.strictEqual(repLogEntryWorker2.amount, WORKER_PAYOUT.toString());
+    });
+
+    it("should set the correct reputation change amount in log when evaluator has failed to rate", async () => {
+      const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
+      await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
+      await metaColony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_2_SECRET, { from: WORKER });
+      await forwardTime(SECONDS_PER_DAY * 6, this);
+      await metaColony.revealTaskWorkRating(taskId, MANAGER_ROLE, 2, RATING_2_SALT, { from: WORKER });
+      await forwardTime(SECONDS_PER_DAY * 6, this);
+      await metaColony.finalizeTask(taskId);
+
+      const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
+      assert.strictEqual(repLogEntryManager.user, MANAGER);
+      assert.strictEqual(repLogEntryManager.amount, MANAGER_PAYOUT.toString());
+
+      const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
+      assert.strictEqual(repLogEntryEvaluator.user, accounts[1]);
+      assert.strictEqual(
+        repLogEntryEvaluator.amount,
+        EVALUATOR_PAYOUT.muln(3)
+          .divn(2)
+          .mul(new BN(-1))
+          .toString()
+      );
+
+      const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
+      assert.strictEqual(repLogEntryWorker1.user, WORKER);
+      assert.strictEqual(
+        repLogEntryWorker1.amount,
+        WORKER_PAYOUT.muln(3)
+          .divn(2)
+          .toString()
+      );
+
+      const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
+      assert.strictEqual(repLogEntryWorker2.user, WORKER);
+      assert.strictEqual(
+        repLogEntryWorker2.amount,
+        WORKER_PAYOUT.muln(3)
+          .divn(2)
+          .toString()
+      );
+    });
+
+    it("should set the correct reputation change amount in log when worker has failed to rate", async () => {
+      const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
+      await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
+      await metaColony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_1_SECRET, { from: accounts[1] });
+      await forwardTime(SECONDS_PER_DAY * 6, this);
+      await metaColony.revealTaskWorkRating(taskId, WORKER_ROLE, 2, RATING_1_SALT, { from: accounts[1] });
+      await forwardTime(SECONDS_PER_DAY * 6, this);
+      await metaColony.finalizeTask(taskId);
+
+      const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
+      assert.strictEqual(repLogEntryManager.user, MANAGER);
+      assert.strictEqual(
+        repLogEntryManager.amount,
+        MANAGER_PAYOUT.muln(3)
+          .divn(2)
+          .toString()
+      );
+
+      const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
+      assert.strictEqual(repLogEntryEvaluator.user, accounts[1]);
+      assert.strictEqual(repLogEntryEvaluator.amount, EVALUATOR_PAYOUT.toString());
+
+      const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
+      assert.strictEqual(repLogEntryWorker1.user, WORKER);
+      assert.strictEqual(repLogEntryWorker1.amount, WORKER_PAYOUT.divn(2).toString());
+
+      const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
+      assert.strictEqual(repLogEntryWorker2.user, WORKER);
+      assert.strictEqual(repLogEntryWorker2.amount, WORKER_PAYOUT.divn(2).toString());
+    });
+
     it("should not be able to be appended by an account that is not a colony", async () => {
       const lengthBefore = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2), "colony-caller-must-be-colony");
@@ -175,27 +297,18 @@ contract("Reputation Updates", accounts => {
       assert.strictEqual(repLogEntryWorker.nUpdates, "8"); // Negative reputation change means children change as well.
     });
 
-    it("should revert on reputation amount overflow", async () => {
-      // Fund colony with maximum possible int number of tokens
+    it("should correctly make large positive reputation updates", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
-      // Split the tokens as payouts between the manager, evaluator, and worker
-      const managerPayout = new BN("2");
-      const evaluatorPayout = new BN("1");
-      const workerPayout = INT256_MAX.sub(managerPayout).sub(evaluatorPayout);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT, workerRating: 3 });
+    });
 
-      const taskId = await setupRatedTask({
-        colonyNetwork,
-        colony: metaColony,
-        token: clnyToken,
-        managerPayout,
-        evaluatorPayout,
-        workerPayout
-      });
+    it("should correctly make large negative reputation updates", async () => {
+      await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
+      const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT, workerRating: 1 });
+      await metaColony.submitTaskDeliverable(taskId, "0x00", { from: WORKER });
 
-      // Check the task pot is correctly funded with the max amount
-      const taskPotBalance = await metaColony.getPotBalance(2, clnyToken.address);
-      expect(taskPotBalance).to.eq.BN(INT256_MAX);
-      await checkErrorRevert(metaColony.finalizeTask(taskId), "colony-math-unsafe-int-mul");
+      await forwardTime(SECONDS_PER_DAY * 10 + 1, this); // Run out the submissions window to get the no-rate penalty.
+      await metaColony.finalizeTask(taskId);
     });
   });
 });

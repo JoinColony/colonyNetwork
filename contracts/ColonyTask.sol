@@ -24,8 +24,8 @@ import "./SafeMath.sol";
 
 
 contract ColonyTask is ColonyStorage {
-  uint256 constant RATING_COMMIT_TIMEOUT = 432000;
-  uint256 constant RATING_REVEAL_TIMEOUT = 432000;
+  uint256 constant RATING_COMMIT_TIMEOUT = 5 days;
+  uint256 constant RATING_REVEAL_TIMEOUT = 5 days;
 
   modifier userCanRateRole(uint256 _id, uint8 _role) {
     // Manager rated by worker
@@ -453,8 +453,8 @@ contract ColonyTask is ColonyStorage {
       role.rating = role.rateFail ? TaskRatings.Unsatisfactory : TaskRatings.Satisfactory;
     }
 
-    uint payout = task.payouts[roleId][token];
-    int reputation = getReputation(int(payout), uint8(role.rating), role.rateFail);
+    uint256 payout = task.payouts[roleId][token];
+    int256 reputation = getReputation(payout, role.rating, role.rateFail);
 
     colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
     if (roleId == WORKER) {
@@ -462,16 +462,18 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  function getReputation(int payout, uint8 rating, bool rateFail) internal pure returns(int reputation) {
-    require(rating > 0 && rating <= 3, "colony-task-rating-invalid");
+  function getReputation(uint256 payout, TaskRatings rating, bool rateFail) internal pure returns (int256) {
+    require(rating != TaskRatings.None, "colony-task-rating-invalid");
 
-    // -1, 1, 1.5 multipliers, -0.5 penalty
-    int8[3] memory ratingMultipliers = [-2, 2, 3];
-    int8 ratingDivisor = 2;
+    bool negative = (rating == TaskRatings.Unsatisfactory);
+    uint256 reputation = mul(payout, (rating == TaskRatings.Excellent) ? 3 : 2);
 
-    reputation = SafeMath.mulInt(payout, ratingMultipliers[rating - 1]);
-    reputation = SafeMath.subInt(reputation, rateFail ? payout : 0); // Deduct penalty for not rating
-    reputation /= ratingDivisor; // We may lose one atom of reputation here :sad:
+    if (rateFail) {
+      reputation = negative ? add(reputation, payout) : sub(reputation, payout);
+    }
+
+    // We may lose one atom of reputation here :sad:
+    return int256(reputation / 2) * (negative ? int256(-1) : int256(1));
   }
 
   function getReviewerAddresses(

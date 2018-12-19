@@ -222,14 +222,12 @@ export async function setupRatedTask({
     workerPayout
   });
 
-  await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: worker });
-
   const WORKER_RATING_SECRET = web3Utils.soliditySha3(workerRatingSalt, workerRating);
   const MANAGER_RATING_SECRET = web3Utils.soliditySha3(managerRatingSalt, managerRating);
+  await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, MANAGER_RATING_SECRET, { from: worker });
   await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });
-  await colony.submitTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING_SECRET, { from: worker });
-  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, workerRatingSalt, { from: evaluator });
   await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, managerRatingSalt, { from: worker });
+  await colony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, workerRatingSalt, { from: evaluator });
 
   return taskId;
 }
