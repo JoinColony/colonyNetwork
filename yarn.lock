@@ -272,6 +272,10 @@ anymatch@^2.0.0:
     micromatch "^3.1.4"
     normalize-path "^2.1.1"
 
+app-module-path@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/app-module-path/-/app-module-path-2.2.0.tgz#641aa55dfb7d6a6f0a8141c4b9c0aa50b6c24dd5"
+
 append-transform@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/append-transform/-/append-transform-0.4.0.tgz#d76ebf8ca94d276e247a36bad44a4b74ab611991"
@@ -6538,17 +6542,7 @@ sol-explore@^1.6.2:
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/sol-explore/-/sol-explore-1.6.2.tgz#43ae8c419fd3ac056a05f8a9d1fb1022cd41ecc2"
 
-solc@^0.4.2:
-  version "0.4.25"
-  resolved "https://registry.yarnpkg.com/solc/-/solc-0.4.25.tgz#06b8321f7112d95b4b903639b1138a4d292f5faa"
-  dependencies:
-    fs-extra "^0.30.0"
-    memorystream "^0.3.1"
-    require-from-string "^1.1.0"
-    semver "^5.3.0"
-    yargs "^4.7.1"
-
-solc@^0.5.0:
+solc@0.5.0:
   version "0.5.0"
   resolved "https://registry.yarnpkg.com/solc/-/solc-0.5.0.tgz#2deb2ae992acac3afb909f85c38d00f01dcb335e"
   dependencies:
@@ -6558,6 +6552,16 @@ solc@^0.5.0:
     require-from-string "^2.0.0"
     semver "^5.5.0"
     yargs "^11.0.0"
+
+solc@^0.4.2:
+  version "0.4.25"
+  resolved "https://registry.yarnpkg.com/solc/-/solc-0.4.25.tgz#06b8321f7112d95b4b903639b1138a4d292f5faa"
+  dependencies:
+    fs-extra "^0.30.0"
+    memorystream "^0.3.1"
+    require-from-string "^1.1.0"
+    semver "^5.3.0"
+    yargs "^4.7.1"
 
 solidity-coverage@0.5.11:
   version "0.5.11"
@@ -7135,13 +7139,14 @@ trim@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/trim/-/trim-0.0.1.tgz#5858547f6b290757ee95cccc666fb50084c460dd"
 
-truffle@5.0.0-next.20:
-  version "5.0.0-next.20"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0-next.20.tgz#d7c27d72d131ff90357410799d5d66694628a8cd"
+truffle@5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0.tgz#2e4e2eedc5583ae38c7227585e5177d6360fbc6d"
   dependencies:
+    app-module-path "^2.2.0"
     mocha "^4.1.0"
     original-require "1.0.1"
-    solc "^0.5.0"
+    solc "0.5.0"
 
 tslib@^1.9.0:
   version "1.9.3"
