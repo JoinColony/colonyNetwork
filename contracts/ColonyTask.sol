@@ -462,7 +462,7 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  function getReputation(uint256 payout, TaskRatings rating, bool rateFail) internal pure returns(int256) {
+  function getReputation(uint256 payout, TaskRatings rating, bool rateFail) internal pure returns (int256) {
     require(rating != TaskRatings.None, "colony-task-rating-invalid");
 
     bool negative = (rating == TaskRatings.Unsatisfactory);
