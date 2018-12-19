@@ -46,6 +46,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     _;
   }
 
+  // Prevent reputation miners from withdrawing stake during the mining process.
   modifier hashNotSubmitted(address _token) {
     address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     if (_token == clnyToken) {
@@ -76,12 +77,15 @@ contract TokenLocking is TokenLockingStorage, DSMath {
   function unlockTokenForUser(address _token, address _user, uint256 _lockId) public
   calledByColony
   {
+    // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
+    require(_lockId <= totalLockCount[_token], "colony-token-invalid-lockid");
+
+    // These checks should happen in this order, as the second is stricter than the first
     uint256 lockCountDelta = sub(_lockId, userLocks[_token][_user].lockCount);
     require(lockCountDelta != 0, "colony-token-already-unlocked");
     require(lockCountDelta == 1, "colony-token-locking-has-previous-active-locks");
-    // If we want to unlock tokens at id greater than total lock count, we are doing something wrong
-    assert(_lockId <= totalLockCount[_token]);
-    userLocks[_token][_user].lockCount = _lockId;
+
+    userLocks[_token][_user].lockCount = _lockId; // Basically just a ++
 
     emit UserTokenUnlocked(_token, _user, _lockId);
   }

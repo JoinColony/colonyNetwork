@@ -652,8 +652,8 @@ contract("Colony Funding", accounts => {
       await colony.mintTokens(initialFunding);
       await colony.bootstrapColony([userAddress1], [userReputation]);
 
-      await token.approve(tokenLocking.address, userReputation, { from: userAddress1 });
-      await tokenLocking.deposit(token.address, userReputation, { from: userAddress1 });
+      await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
+      await tokenLocking.deposit(token.address, userTokens, { from: userAddress1 });
 
       const userReputationSqrt = bnSqrt(userReputation);
       const userTokensSqrt = bnSqrt(userTokens);
@@ -667,6 +667,7 @@ contract("Colony Funding", accounts => {
       // Total amount that will be paid out
       const balance = await colony.getPotBalance(0, otherToken.address);
       const totalAmountSqrt = bnSqrt(balance);
+
       initialSquareRoots = [
         userReputationSqrt,
         userTokensSqrt,
@@ -686,7 +687,7 @@ contract("Colony Funding", accounts => {
       });
       await client.initialise(colonyNetwork.address);
 
-      // Enable the clien to start mining.
+      // Enable the client to start mining.
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // Load the reputation state and run another cycle.
@@ -694,9 +695,13 @@ contract("Colony Funding", accounts => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
+
+      // Get the proof for the colony-wide reputation in the root domain. Used to start reward payouts.
       const colonyWideReputationKey = makeReputationKey(colony.address, rootDomainSkill);
       let { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
+
+      // Get the proof for user1's reputation in the root domain. Used to claim reward payouts.
       const userReputationKey = makeReputationKey(colony.address, rootDomainSkill, userAddress1);
       ({ key, value, branchMask, siblings } = await client.getReputationProofObject(userReputationKey));
       userReputationProof1 = [key, value, branchMask, siblings];
@@ -1113,6 +1118,23 @@ contract("Colony Funding", accounts => {
       await checkErrorRevert(
         colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
         "colony-token-already-unlocked"
+      );
+    });
+
+    it("should not be able to claim a payout for a new deposit made after the payout cycle starts", async () => {
+      await tokenLocking.withdraw(token.address, userTokens, { from: userAddress1 });
+
+      const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
+      const payoutId = logs[0].args.rewardPayoutId;
+
+      // Make a deposit, strictly after the payout process starts.
+      await forwardTime(1, this);
+      await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
+      await tokenLocking.deposit(token.address, userTokens, { from: userAddress1 });
+
+      await checkErrorRevert(
+        colony.claimRewardPayout(payoutId, initialSquareRoots, ...userReputationProof1, { from: userAddress1 }),
+        "colony-reward-payout-deposit-too-recent"
       );
     });
 

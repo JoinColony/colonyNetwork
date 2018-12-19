@@ -197,7 +197,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public auth stoppable 
+  public auth stoppable
   {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(address(token));
@@ -330,13 +330,15 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   function calculateRewardForUser(uint256 payoutId, uint256[7] memory squareRoots, uint256 userReputation) internal returns (address, uint256) {
     RewardPayoutCycle memory payout = rewardPayoutCycles[payoutId];
+
     // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
 
-    uint256 userTokens;
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    userTokens = tokenLocking.getUserLock(address(token), msg.sender).balance;
+    uint256 userDepositTimestamp = tokenLocking.getUserLock(address(token), msg.sender).timestamp;
+    uint256 userTokens = tokenLocking.getUserLock(address(token), msg.sender).balance;
 
+    require(userDepositTimestamp <= payout.blockTimestamp, "colony-reward-payout-deposit-too-recent");
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
 
