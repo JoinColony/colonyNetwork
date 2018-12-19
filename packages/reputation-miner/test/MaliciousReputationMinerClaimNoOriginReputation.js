@@ -20,10 +20,33 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
       console.log(reputationKey)
       console.log(this.reputations[reputationKey])
       const reputationValue = new BN(this.reputations[reputationKey].slice(2, 66), 16);
-      this.replacementAmount = reputationValue.muln(-1);
+      this.replacementAmount = reputationValue.mul(new BN(-1));
       console.log(this.replacementAmount)
     }
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
+
+    // Set the origin skill key
+    const logEntryNumber = this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog));
+    const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
+    const originSkillUpdateNumber = logEntry.nUpdates.add(logEntry.nPreviousUpdates).add(this.nReputationsBeforeLatestLog).sub(1);
+    this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].originReputationProof.key = 
+      await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+
+    // Set the child skill key
+    const relativeUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog).sub(logEntry.nPreviousUpdates);
+    const {nUpdates} = logEntry;
+    const [nParents] = await this.colonyNetwork.getSkill(logEntry.skillId);
+    const nChildUpdates = nUpdates.div(2).sub(1).sub(nParents);
+    let childKey;
+    if (relativeUpdateNumber.lt(nChildUpdates)) {
+      const childSkillUpdateNumber = updateNumber.add(nUpdates.div(2));
+      childKey = await this.getKeyForUpdateNumber(childSkillUpdateNumber);
+    } else {
+      childKey = await this.getKeyForUpdateNumber(updateNumber);
+    }
+    this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].childReputationProof = 
+      await this.getReputationProofObject(childKey);
+
     this.alterThisEntry = false;
   }
 
@@ -31,7 +54,7 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
   getAmount(i, _score) {
     let score = _score;
     if (i.toString() === this.entryToFalsify.toString()) {
-      score = score.sub(score).sub(this.replacementAmount.toString());
+      score = score.sub(score);
     }
     return score;
   }
@@ -53,6 +76,7 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
+
 
     // console.log([
     //   round,
@@ -83,7 +107,6 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
     //   this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
     //   this.justificationHashes[lastAgreeKey].originReputationProof.key,
     //   this.justificationHashes[lastAgreeKey].originReputationProof.siblings,);
-
     const tx = await repCycle.respondToChallenge(
       [
         round,
@@ -104,6 +127,10 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
         this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
         this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
         "0",
+        "0",
+        this.justificationHashes[lastAgreeKey].childReputationProof.branchMask,
+        this.justificationHashes[lastAgreeKey].childReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].childReputationProof.uid,
         "0"
       ],
       reputationKey,
@@ -114,6 +141,8 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].originReputationProof.key,
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
+      this.justificationHashes[lastAgreeKey].childReputationProof.key,
+      this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
     return tx;
