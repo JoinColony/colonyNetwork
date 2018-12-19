@@ -8,33 +8,19 @@ const IColonyNetwork = artifacts.require("./IColonyNetwork");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
-module.exports = deployer => {
-  let resolver;
-  let etherRouter;
-  let colonyNetworkEtherRouter;
-  deployer
-    .then(() => Resolver.new())
-    .then(instance => {
-      resolver = instance;
-      return EtherRouter.new();
-    })
-    .then(instance => {
-      etherRouter = instance;
-      return TokenLocking.new();
-    })
-    .then(instance => setupUpgradableTokenLocking(etherRouter, resolver, instance))
-    .then(() => EtherRouter.deployed())
-    .then(_colonyNetworkEtherRouter => {
-      colonyNetworkEtherRouter = _colonyNetworkEtherRouter;
-      return IColonyNetwork.at(_colonyNetworkEtherRouter.address);
-    })
-    .then(iColonyNetwork => iColonyNetwork.setTokenLocking(etherRouter.address))
-    .then(() => TokenLocking.at(etherRouter.address))
-    .then(tokenLocking => tokenLocking.setColonyNetwork(colonyNetworkEtherRouter.address))
-    .then(() => {
-      console.log("### TokenLocking setup at ", etherRouter.address, "with Resolver", resolver.address);
-    })
-    .catch(err => {
-      console.log("### Error occurred ", err);
-    });
+// eslint-disable-next-line no-unused-vars
+module.exports = async function(deployer) {
+  const resolver = await Resolver.new();
+  const etherRouter = await EtherRouter.new();
+  const tokenLockingContract = await TokenLocking.new();
+  await setupUpgradableTokenLocking(etherRouter, resolver, tokenLockingContract);
+
+  const etherRouterDeployed = await EtherRouter.deployed();
+  const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
+  await colonyNetwork.setTokenLocking(etherRouter.address);
+
+  const tokenLocking = await TokenLocking.at(etherRouter.address);
+  await tokenLocking.setColonyNetwork(colonyNetwork.address);
+
+  console.log("### TokenLocking setup at ", tokenLocking.address, "with Resolver", resolver.address);
 };

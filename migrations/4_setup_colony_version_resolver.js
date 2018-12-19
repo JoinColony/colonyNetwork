@@ -3,60 +3,30 @@
 
 const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
 
-const ContractRecovery = artifacts.require("./ContractRecovery");
 const Colony = artifacts.require("./Colony");
 const ColonyFunding = artifacts.require("./ColonyFunding");
 const ColonyTask = artifacts.require("./ColonyTask");
-const ColonyNetwork = artifacts.require("./ColonyNetwork");
+const ContractRecovery = artifacts.require("./ContractRecovery");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
+const IColonyNetwork = artifacts.require("./IColonyNetwork");
 
-module.exports = deployer => {
+// eslint-disable-next-line no-unused-vars
+module.exports = async function(deployer) {
   // Create a new Colony (version) and setup a new Resolver for it
-  let colony;
-  let colonyFunding;
-  let version;
-  let resolver;
-  let colonyNetwork;
-  let colonyTask;
-  let contractRecovery;
-  deployer
-    .then(() => Colony.new())
-    .then(instance => {
-      colony = instance;
-      return ColonyFunding.new();
-    })
-    .then(instance => {
-      colonyFunding = instance;
-      return ColonyTask.new();
-    })
-    .then(instance => {
-      colonyTask = instance;
-      return ContractRecovery.deployed();
-    })
-    .then(instance => {
-      contractRecovery = instance;
-      return colony.version();
-    })
-    .then(_version => {
-      version = _version.toNumber();
-      return Resolver.new();
-    })
-    .then(_resolver => {
-      resolver = _resolver;
-      return EtherRouter.deployed();
-    })
-    .then(_etherRouter => ColonyNetwork.at(_etherRouter.address))
-    .then(instance => {
-      colonyNetwork = instance;
-      // Register the new Colony contract version with the newly setup Resolver
-      return setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver);
-    })
-    .then(() => colonyNetwork.initialise(resolver.address))
-    .then(() => {
-      console.log("### Colony version", version, "set to Resolver", resolver.address);
-    })
-    .catch(err => {
-      console.log("### Error occurred ", err);
-    });
+  const colony = await Colony.new();
+  const colonyFunding = await ColonyFunding.new();
+  const colonyTask = await ColonyTask.new();
+  const contractRecovery = await ContractRecovery.deployed();
+  const version = await colony.version();
+  const resolver = await Resolver.new();
+
+  const etherRouterDeployed = await EtherRouter.deployed();
+  const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
+
+  // Register the new Colony contract version with the newly setup Resolver
+  await setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver);
+  await colonyNetwork.initialise(resolver.address);
+
+  console.log("### Colony version", version.toString(), "set to Resolver", resolver.address);
 };

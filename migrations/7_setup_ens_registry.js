@@ -7,27 +7,15 @@ const ENSRegistry = artifacts.require("./ENSRegistry");
 const EtherRouter = artifacts.require("./EtherRouter");
 const IColonyNetwork = artifacts.require("./IColonyNetwork");
 
-module.exports = deployer => {
-  let ensRegistry;
-  let colonyNetwork;
-  const rootNode = namehash.hash("joincolony.eth");
+// eslint-disable-next-line no-unused-vars
+module.exports = async function(deployer) {
+  const etherRouterDeployed = await EtherRouter.deployed();
+  const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
-  deployer
-    .then(() => EtherRouter.deployed())
-    .then(instance => IColonyNetwork.at(instance.address))
-    .then(network => {
-      colonyNetwork = network;
-      return ENSRegistry.deployed();
-    })
-    .then(instance => {
-      ensRegistry = instance;
-    })
-    .then(() => ensRegistry.setOwner(rootNode, colonyNetwork.address))
-    .then(() => colonyNetwork.setupRegistrar(ensRegistry.address, rootNode))
-    .then(() => {
-      console.log("### ENSRegistry set up at", ensRegistry.address, "and linked to ColonyNetwork");
-    })
-    .catch(err => {
-      console.log("### Error occurred ", err);
-    });
+  const ensRegistry = await ENSRegistry.deployed();
+  const rootNode = namehash.hash("joincolony.eth");
+  await ensRegistry.setOwner(rootNode, colonyNetwork.address);
+  await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
+
+  console.log("### ENSRegistry set up at", ensRegistry.address, "and linked to ColonyNetwork");
 };
