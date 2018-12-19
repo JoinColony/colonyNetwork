@@ -265,7 +265,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       await forwardTime(MINING_CYCLE_DURATION, this);
 
-      const repCycle = await getActiveRepCycle(colonyNetwork);
+      let repCycle = await getActiveRepCycle(colonyNetwork);
       await checkErrorRevert(
         repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: OTHER_ACCOUNT }),
         "colony-reputation-mining-stake-too-recent"
@@ -273,7 +273,7 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await forwardTime(MINING_CYCLE_DURATION, this);
-
+      repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: OTHER_ACCOUNT });
     });
 
