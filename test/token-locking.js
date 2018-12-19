@@ -44,8 +44,6 @@ contract("Token Locking", addresses => {
     const tokenArgs = getTokenArgs();
     otherToken = await ERC20ExtendedToken.new(...tokenArgs);
 
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
     await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
     const client = new ReputationMiner({
       loader: contractLoader,
@@ -55,6 +53,10 @@ contract("Token Locking", addresses => {
     });
     await client.initialise(colonyNetwork.address);
 
+    // Enable the client to start mining.
+    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+    // Load the reputation state and run another cycle.
     await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
     const result = await colony.getDomain(1);
@@ -175,7 +177,6 @@ contract("Token Locking", addresses => {
 
     it("should not be able to waive to id that does not exist", async () => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
-
       await checkErrorRevert(tokenLocking.incrementLockCounterTo(token.address, 10, { from: userAddress }), "colony-token-locking-invalid-lock-id");
     });
 
