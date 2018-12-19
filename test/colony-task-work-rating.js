@@ -14,13 +14,11 @@ import {
   INITIAL_FUNDING,
   SECONDS_PER_DAY
 } from "../helpers/constants";
-import { getTokenArgs, currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupAssignedTask, setupRatedTask } from "../helpers/test-data-generator";
+import { currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../helpers/test-helper";
+import { fundColonyWithTokens, setupAssignedTask, setupRatedTask, setupRandomColony } from "../helpers/test-data-generator";
 
-const IColony = artifacts.require("IColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 
 contract("Colony Task Work Rating", accounts => {
   const MANAGER = accounts[0];
@@ -38,13 +36,7 @@ contract("Colony Task Work Rating", accounts => {
   });
 
   beforeEach(async () => {
-    const tokenArgs = getTokenArgs();
-    const colonyToken = await ERC20ExtendedToken.new(...tokenArgs);
-    const { logs } = await colonyNetwork.createColony(colonyToken.address);
-    const { colonyAddress } = logs[0].args;
-    colony = await IColony.at(colonyAddress);
-    const otherTokenArgs = getTokenArgs();
-    token = await ERC20ExtendedToken.new(...otherTokenArgs);
+    ({ colony, token } = await setupRandomColony(colonyNetwork));
   });
 
   describe("when rating task work", () => {
