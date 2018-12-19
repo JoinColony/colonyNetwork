@@ -229,7 +229,7 @@ contract("ColonyNetworkMining", accounts => {
 
     it("should allow a new reputation hash to be submitted", async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION);
+      await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MAIN_ACCOUNT });
 
       const submitterAddress = await repCycle.getSubmittedHashes("0x12345678", 10, "0x00", 0);
@@ -238,7 +238,7 @@ contract("ColonyNetworkMining", accounts => {
 
     it("should only allow the first submission after the window closes to be accepted", async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION + 400); // Well after the window has closed
+      await forwardTime(MINING_CYCLE_DURATION + 400, this); // Well after the window has closed
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MAIN_ACCOUNT });
 
       await checkErrorRevert(
@@ -252,7 +252,7 @@ contract("ColonyNetworkMining", accounts => {
 
     it("should not allow someone to submit a new reputation hash if they are not staking", async () => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION);
+      await forwardTime(MINING_CYCLE_DURATION, this);
 
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, "0x00", 0), "colony-reputation-mining-zero-entry-index-passed");
 
@@ -261,9 +261,9 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should not allow someone to submit a new reputation hash if they stake after the cycle begins", async () => {
-      await forwardTime(1); // The condition is `windowOpen >= stakeTimestamp` so we make sure they aren't equal.
+      await forwardTime(1, this); // The condition is `windowOpen >= stakeTimestamp` so we make sure they aren't equal.
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-      await forwardTime(MINING_CYCLE_DURATION);
+      await forwardTime(MINING_CYCLE_DURATION, this);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await checkErrorRevert(
@@ -272,7 +272,7 @@ contract("ColonyNetworkMining", accounts => {
       );
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      await forwardTime(MINING_CYCLE_DURATION);
+      await forwardTime(MINING_CYCLE_DURATION, this);
 
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: OTHER_ACCOUNT });
     });
@@ -1044,7 +1044,7 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevertEthers(badClient.confirmJustificationRootHash(), "colony-reputation-mining-invalid-jrh-proof-1-length");
 
       // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION / 6);
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
