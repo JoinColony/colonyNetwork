@@ -11,70 +11,36 @@ const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
-module.exports = deployer => {
-  let etherRouter;
-  let resolver;
-  let colonyNetwork;
-  let colonyNetworkMining;
-  let colonyNetworkAuction;
-  let colonyNetworkENS;
-  let contractRecovery;
-  let authorityNetwork;
-  deployer
-    .then(() => ColonyNetwork.deployed())
-    .then(instance => {
-      colonyNetwork = instance;
-      return ColonyNetworkMining.deployed();
-    })
-    .then(instance => {
-      colonyNetworkMining = instance;
-      return ColonyNetworkAuction.deployed();
-    })
-    .then(instance => {
-      colonyNetworkAuction = instance;
-      return ColonyNetworkENS.deployed();
-    })
-    .then(instance => {
-      colonyNetworkENS = instance;
-      return EtherRouter.deployed();
-    })
-    .then(instance => {
-      etherRouter = instance;
-      return Resolver.deployed();
-    })
-    .then(instance => {
-      resolver = instance;
-      return ContractRecovery.deployed();
-    })
-    .then(instance => {
-      contractRecovery = instance;
-      return setupUpgradableColonyNetwork(
-        etherRouter,
-        resolver,
-        colonyNetwork,
-        colonyNetworkMining,
-        colonyNetworkAuction,
-        colonyNetworkENS,
-        contractRecovery
-      );
-    })
-    .then(() => ColonyNetworkAuthority.new(etherRouter.address))
-    .then(instance => {
-      authorityNetwork = instance;
-      return authorityNetwork.setOwner(etherRouter.address);
-    })
-    .then(() => etherRouter.setAuthority(authorityNetwork.address))
-    .then(() => {
-      console.log(
-        "### Colony Network setup with Resolver",
-        resolver.address,
-        ", EtherRouter",
-        etherRouter.address,
-        " and Authority ",
-        authorityNetwork.address
-      );
-    })
-    .catch(err => {
-      console.log("### Error occurred ", err);
-    });
+// eslint-disable-next-line no-unused-vars
+module.exports = async function(deployer) {
+  const colonyNetwork = await ColonyNetwork.deployed();
+  const colonyNetworkMining = await ColonyNetworkMining.deployed();
+  const colonyNetworkAuction = await ColonyNetworkAuction.deployed();
+  const colonyNetworkENS = await ColonyNetworkENS.deployed();
+  const etherRouter = await EtherRouter.deployed();
+  const resolver = await Resolver.deployed();
+  const contractRecovery = await ContractRecovery.deployed();
+
+  await setupUpgradableColonyNetwork(
+    etherRouter,
+    resolver,
+    colonyNetwork,
+    colonyNetworkMining,
+    colonyNetworkAuction,
+    colonyNetworkENS,
+    contractRecovery
+  );
+
+  const authorityNetwork = await ColonyNetworkAuthority.new(etherRouter.address);
+  await authorityNetwork.setOwner(etherRouter.address);
+  await etherRouter.setAuthority(authorityNetwork.address);
+
+  console.log(
+    "### Colony Network setup with Resolver",
+    resolver.address,
+    ", EtherRouter",
+    etherRouter.address,
+    " and Authority ",
+    authorityNetwork.address
+  );
 };
