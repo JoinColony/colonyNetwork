@@ -2,7 +2,6 @@ module.exports = {
     skipFiles: [
       'Migrations.sol',
       'EtherRouter.sol',
-      'gnosis',
       'ERC20ExtendedToken.sol',
       'PatriciaTree'
     ],
