@@ -56,8 +56,8 @@ contract PatriciaTreeProofs {
     if (branchMask == 0) {
       e.label = k;
     } else {
-      uint bitSet = branchMask.lowestBitSet();
-      (k, e.label) = k.splitAt(255 - bitSet);
+      uint lowestBitSet = branchMask.lowestBitSet();
+      (k, e.label) = k.splitAt(255 - lowestBitSet);
       (, e.label) = e.label.chopFirstBit();
     }
     return (e.edgeHash(), edgeHashes);
