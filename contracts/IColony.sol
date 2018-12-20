@@ -117,6 +117,11 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return domain The domain
   function getDomain(uint256 _id) public view returns (Domain domain);
 
+  /// @notice Get a pot by id
+  /// @param _id Id of the pot which details to get
+  /// @return pot The pot
+  function getPot(uint256 _id) public view returns (Pot pot);
+
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
   function getDomainCount() public view returns (uint256 count);
