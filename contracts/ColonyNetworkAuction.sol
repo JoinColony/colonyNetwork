@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.4.23 <0.5.0;
 
 import "./ColonyNetworkStorage.sol";
 
@@ -50,7 +50,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
 
 
 contract DutchAuction is DSMath {
-  address payable public colonyNetwork;
+  address public colonyNetwork;
   address public metaColony;
   ERC20Extended public clnyToken;
   ERC20Extended public token;

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.4.23 <0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
@@ -23,8 +23,6 @@ import "./EtherRouter.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
-
-  function() external payable {}
 
   // This function, exactly as defined, is used in build scripts. Take care when updating.
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.

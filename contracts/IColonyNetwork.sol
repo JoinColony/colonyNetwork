@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.4.23 <0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./IRecovery.sol";
@@ -70,7 +70,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0
-  function getMetaColony() public view returns (address payable);
+  function getMetaColony() public view returns (address);
 
   /// @notice Get the number of colonies in the network
   /// @return count The colony count
@@ -141,7 +141,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
   /// Support for `mint` in mandatory only for the Meta Colony Token
   /// @return colonyAddress Address of the newly created colony
-  function createColony(address _tokenAddress) public returns (address payable);
+  function createColony(address _tokenAddress) public returns (address);
 
   /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
   /// Allowed to be called by the Meta Colony only

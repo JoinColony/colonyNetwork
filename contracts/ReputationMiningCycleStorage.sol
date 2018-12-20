@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.4.23 <0.5.0;
 
 import "../lib/dappsys/auth.sol";
 import "./ReputationMiningCycleDataTypes.sol";
@@ -27,7 +27,7 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
 
   ReputationLogEntry[] reputationUpdateLog;
 
-  address payable colonyNetworkAddress;
+  address colonyNetworkAddress;
   address tokenLockingAddress;
   address clnyTokenAddress;
 

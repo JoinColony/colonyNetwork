@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.4.23 <0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyAuthority.sol";
@@ -50,7 +50,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return currentColonyVersion;
   }
 
-  function getMetaColony() public view returns (address payable) {
+  function getMetaColony() public view returns (address) {
     return metaColony;
   }
 
@@ -140,7 +140,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
   function createColony(address _tokenAddress) public
   stoppable
-  returns (address payable)
+  returns (address)
   {
     require(currentColonyVersion > 0, "colony-network-not-initialised-cannot-create-colony");
     EtherRouter etherRouter = new EtherRouter();

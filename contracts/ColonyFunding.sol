@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.4.23 <0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -106,7 +106,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       msg.sender.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
+      address metaColonyAddress = colonyNetworkContract.getMetaColony();
       metaColonyAddress.transfer(fee);
     } else {
       // Payout token
