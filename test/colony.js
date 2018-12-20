@@ -101,6 +101,20 @@ contract("Colony", accounts => {
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
       assert.equal(domain.skillId, rootLocalSkillId.toNumber());
     });
+
+    it("should let pot information be read", async () => {
+      const taskId = await makeTask({ colony });
+      const taskInfo = await colony.getTask(taskId);
+      let potInfo = await colony.getPotInformation(taskInfo.potId);
+      assert.equal(potInfo.taskId.toString(), taskId.toString(), "Unexpected pot task ID");
+      assert.equal(potInfo.domainId.toString(), "0", "Unexpected pot task ID");
+
+      // Read pot info about a pot in a domain
+      const domainInfo = await colony.getDomain(1);
+      potInfo = await colony.getPotInformation(domainInfo.potId);
+      assert.equal(potInfo.taskId.toString(), "0", "Unexpected pot task ID");
+      assert.equal(potInfo.domainId.toString(), "1", "Unexpected pot task ID");
+    });
   });
 
   describe("when working with permissions", () => {
