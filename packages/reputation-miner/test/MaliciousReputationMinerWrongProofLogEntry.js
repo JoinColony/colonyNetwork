@@ -49,6 +49,10 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
         this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
         this.justificationHashes[lastAgreeKey].originReputationProof.reputation,
         this.justificationHashes[lastAgreeKey].originReputationProof.uid,
+        this.justificationHashes[lastAgreeKey].childReputationProof.branchMask,
+        this.justificationHashes[lastAgreeKey].childReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].childReputationProof.uid,
+        "0"
       ],
       reputationKey,
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
@@ -58,6 +62,8 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].originReputationProof.key,
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
+      this.justificationHashes[lastAgreeKey].childReputationProof.key,
+      this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
     return tx;

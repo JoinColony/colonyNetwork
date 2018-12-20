@@ -478,8 +478,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
             // Calculate the proportional change expected
             childReputationChange = logEntry.amount * userChildReputationValue / originReputationValue;
           }
-
-          require(_agreeStateReputationValue + childReputationChange == _disagreeStateReputationValue, "colony-reputation-mining-child-reputation-value-incorrect");
+          // Don't allow reputation to become negative
+          if (_agreeStateReputationValue + logEntry.amount < 0) {
+            require(_disagreeStateReputationValue == 0, "colony-reputation-mining-child-reputation-value-non-zero");
+          } else {
+            require(_agreeStateReputationValue + childReputationChange == _disagreeStateReputationValue, "colony-reputation-mining-child-reputation-value-incorrect");
+          }
 
         } else {
           // Don't allow reputation to become negative
