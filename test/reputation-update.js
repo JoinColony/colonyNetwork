@@ -1,5 +1,6 @@
 /* globals artifacts */
 import { BN } from "bn.js";
+import web3Utils from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";
 
@@ -27,6 +28,7 @@ import {
   RATING_1_SECRET,
   RATING_2_SECRET
 } from "../helpers/constants";
+
 import { checkErrorRevert, forwardTime } from "../helpers/test-helper";
 
 const { expect } = chai;
@@ -300,15 +302,35 @@ contract("Reputation Updates", accounts => {
     it("should correctly make large positive reputation updates", async () => {
       await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT, workerRating: 3 });
+
+      const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
+      assert.strictEqual(repLogEntryWorker.user, WORKER);
+      assert.strictEqual(repLogEntryWorker.amount, MAX_PAYOUT.muln(3).divn(2).toString()); // eslint-disable-line prettier/prettier
     });
 
     it("should correctly make large negative reputation updates", async () => {
-      await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
-      const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT, workerRating: 1 });
-      await metaColony.submitTaskDeliverable(taskId, "0x00", { from: WORKER });
+      const workerRating = 1;
+      const workerRatingSecret = web3Utils.soliditySha3(RATING_2_SALT, workerRating);
 
-      await forwardTime(SECONDS_PER_DAY * 10 + 1, this); // Run out the submissions window to get the no-rate penalty.
+      await fundColonyWithTokens(metaColony, clnyToken, INT256_MAX);
+      const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT });
+      await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
+      await metaColony.submitTaskWorkRating(taskId, WORKER_ROLE, workerRatingSecret, { from: EVALUATOR });
+
+      await forwardTime(SECONDS_PER_DAY * 5 + 1, this);
+      await metaColony.revealTaskWorkRating(taskId, WORKER_ROLE, workerRating, RATING_2_SALT, { from: EVALUATOR });
+
+      // Run out the submissions window to get the no-rate penalty for the worker.
+      await forwardTime(SECONDS_PER_DAY * 5, this);
       await metaColony.finalizeTask(taskId);
+
+      const roleWorker = await metaColony.getTaskRole(taskId, WORKER_ROLE);
+      assert.isTrue(roleWorker.rateFail);
+      assert.equal(roleWorker.rating, workerRating);
+
+      const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
+      assert.strictEqual(repLogEntryWorker.user, WORKER);
+      assert.strictEqual(repLogEntryWorker.amount, MAX_PAYOUT.muln(3).divn(2).neg().toString()); // eslint-disable-line prettier/prettier
     });
   });
 });
