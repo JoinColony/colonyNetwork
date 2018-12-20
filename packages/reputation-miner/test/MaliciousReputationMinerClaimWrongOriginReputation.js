@@ -68,8 +68,12 @@ class MaliciousReputationMiningWrongOriginReputation extends ReputationMiningCli
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.uid,
         this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
         this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
-        "0x0",
-        "0x0"
+        this.justificationHashes[lastAgreeKey].originReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].originReputationProof.uid,
+        this.justificationHashes[lastAgreeKey].childReputationProof.branchMask,
+        this.justificationHashes[lastAgreeKey].childReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].childReputationProof.uid,
+        "0"
       ],
       reputationKey,
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
@@ -79,6 +83,8 @@ class MaliciousReputationMiningWrongOriginReputation extends ReputationMiningCli
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].originReputationProof.key,
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
+      this.justificationHashes[lastAgreeKey].childReputationProof.key,
+      this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
     return tx;

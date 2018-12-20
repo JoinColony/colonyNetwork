@@ -69,7 +69,7 @@ const useJsTree = true;
 
 const REWARD = WAD.muln(0); // No reward currently
 
-contract.only("ColonyNetworkMining", accounts => {
+contract("ColonyNetworkMining", accounts => {
   const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
@@ -1849,7 +1849,7 @@ contract.only("ColonyNetworkMining", accounts => {
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-origin-skill-incorrect" }
       });
 
       await repCycle.confirmNewHash(1);
