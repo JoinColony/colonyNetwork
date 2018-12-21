@@ -31,7 +31,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
 
   modifier unowned(bytes32 node, string memory domainName) {
     address currentOwner = ENS(ens).owner(keccak256(abi.encodePacked(node, keccak256(abi.encodePacked(domainName)))));
-    require(address(currentOwner) == address(0x0), "colony-label-already-owned");
+    require(currentOwner == address(0x0), "colony-label-already-owned");
     _;
   }
 

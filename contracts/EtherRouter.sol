@@ -45,9 +45,6 @@ contract EtherRouter is DSAuth {
 
     // Get routing information for the called function
     address destination = resolver.lookup(msg.sig);
-    if (destination == address(0x0)) {
-      return;
-    }
 
     // Make the call
     assembly {

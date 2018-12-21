@@ -223,6 +223,6 @@ contract DutchAuction is DSMath {
     // Check this contract balances in the working tokens is 0 before we kill it
     assert(clnyToken.balanceOf(address(this)) == 0);
     assert(token.balanceOf(address(this)) == 0);
-    selfdestruct(address(colonyNetwork));
+    selfdestruct(colonyNetwork);
   }
 }
