@@ -211,6 +211,7 @@ contract ColonyDataTypes {
   struct Pot {
     mapping (address => uint256) balance;
     uint256 taskId;
+    uint256 domainId;
   }
 
   struct Domain {

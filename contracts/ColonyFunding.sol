@@ -119,6 +119,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return pots[_potId].balance[_token];
   }
 
+  function getPotInformation(uint256 _potId) public view returns (uint256 taskId, uint256 domainId) {
+    Pot storage pot = pots[_potId];
+    taskId = pot.taskId;
+    domainId = pot.domainId;
+  }
+
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
   stoppable
   auth

@@ -117,6 +117,14 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return domain The domain
   function getDomain(uint256 _id) public view returns (Domain domain);
 
+  /// @notice Get the non-mapping properties of a pot by id
+  /// @param _id Id of the pot which details to get
+  /// @return uint256 The taskId the pot is associated with
+  /// @return uint256 The domainId the pot is associated with
+  /// @dev Exactly one of taskId and domainId should return nonzero, unless _id is 0 (the reward pot, which is 
+  ///      the only pot not associated with a task or a domain), in which case both are.
+  function getPotInformation(uint256 _id) public view returns (uint256 taskId, uint256 domainId);
+
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
   function getDomainCount() public view returns (uint256 count);
