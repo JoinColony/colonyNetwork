@@ -22,7 +22,7 @@ step_setup_global_packages: &step_setup_global_packages
       yarn run provision:token:contracts
 step_pull_solc_docker: &step_pull_solc_docker
     run:
-      name: "Pull solc 0.4.23 docker image"
+      name: "Pull solc docker image"
       command: docker pull ethereum/solc:0.4.23
 jobs:
   lint-and-unit-test:

@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23 <0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
@@ -31,7 +30,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function setFounderRole(address _user) public stoppable auth {
     // To allow only one address to have founder role at a time, we have to remove current founder from their role
-    ColonyAuthority colonyAuthority = ColonyAuthority(authority);
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
     colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
     colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
 
@@ -39,20 +38,20 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function setAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, true);
+    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, true);
 
     emit ColonyAdminRoleSet(_user);
   }
 
   // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(authority).setUserRole(_user, ADMIN_ROLE, false);
+    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, false);
 
     emit ColonyAdminRoleRemoved(_user);
   }
 
   function hasUserRole(address _user, uint8 _role) public view returns (bool) {
-    return ColonyAuthority(authority).hasUserRole(_user, _role);
+    return ColonyAuthority(address(authority)).hasUserRole(_user, _role);
   }
 
   function getColonyNetworkAddress() public view returns (address) {
@@ -69,7 +68,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function getToken() public view returns (address) {
-    return token;
+    return address(token);
   }
 
   function initialiseColony(address _colonyNetworkAddress) public stoppable {
@@ -104,7 +103,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyInitialised(_colonyNetworkAddress);
   }
 
-  function bootstrapColony(address[] _users, int[] _amounts) public
+  function bootstrapColony(address[] memory _users, int[] memory _amounts) public
   stoppable
   auth
   isInBootstrapPhase
@@ -132,12 +131,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Only the colony Network can call this function
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
-    require(this == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
+    require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
     token.mint(_wad);
     token.transfer(colonyNetworkAddress, _wad);
   }
 
-  function registerColonyLabel(string colonyName, string orbitdb) public stoppable auth {
+  function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
   }
 
@@ -184,7 +183,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     initialiseDomain(newLocalSkill);
   }
 
-  function getDomain(uint256 _id) public view returns (Domain domain) {
+  function getDomain(uint256 _id) public view returns (Domain memory domain) {
     domain = domains[_id];
   }
 
@@ -192,7 +191,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return domainCount;
   }
 
-  modifier verifyKey(bytes key) {
+  modifier verifyKey(bytes memory key) {
     uint256 colonyAddress;
     uint256 skillid;
     uint256 userAddress;
@@ -209,7 +208,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     _;
   }
 
-  function verifyReputationProof(bytes key, bytes value, uint branchMask, bytes32[] siblings)  // solium-disable-line security/no-assign-params
+  function verifyReputationProof(bytes memory key, bytes memory value, uint branchMask, bytes32[] memory siblings)
   public view
   stoppable
   verifyKey(key)
@@ -228,9 +227,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(_newVersion > currentVersion, "colony-version-must-be-newer");
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
-    require(newResolver != 0x0, "colony-version-must-be-registered");
-    EtherRouter e = EtherRouter(address(this));
-    e.setResolver(newResolver);
+    require(newResolver != address(0x0), "colony-version-must-be-registered");
+    EtherRouter currentColony = EtherRouter(address(this));
+    currentColony.setResolver(newResolver);
 
     emit ColonyUpgraded(currentVersion, _newVersion);
   }

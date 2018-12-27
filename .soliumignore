@@ -2,9 +2,6 @@ node_modules
 helpers
 migrations
 test
-contracts/Migrations.sol
-contracts/Token.sol
-contracts/TokenAuthority.sol
-contracts/gnosis/MultiSigWallet.sol
 lib
 packages
+contracts/Migrations.sol

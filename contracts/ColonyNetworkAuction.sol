@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23 <0.5.0;
 
 import "./ColonyNetworkStorage.sol";
 
@@ -24,15 +23,15 @@ import "./ColonyNetworkStorage.sol";
 contract ColonyNetworkAuction is ColonyNetworkStorage {
 
   function startTokenAuction(address _token) public stoppable {
-    require(_token != 0x0, "colony-auction-invalid-token");
+    require(_token != address(0x0), "colony-auction-invalid-token");
 
     uint lastAuctionTimestamp = recentAuctions[_token];
     require(lastAuctionTimestamp == 0 || now - lastAuctionTimestamp >= 30 days, "colony-auction-start-too-soon");
 
     address clny = IMetaColony(metaColony).getToken();
-    require(clny != 0x0, "colony-auction-invalid-clny-token");
+    require(clny != address(0x0), "colony-auction-invalid-clny-token");
 
-    uint availableTokens = ERC20Extended(_token).balanceOf(this);
+    uint availableTokens = ERC20Extended(_token).balanceOf(address(this));
 
     if (_token==clny) {
       // We don't auction CLNY. We just burn it instead.
@@ -42,7 +41,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
     }
 
     DutchAuction auction = new DutchAuction(clny, _token, metaColony);
-    ERC20Extended(_token).transfer(auction, availableTokens);
+    ERC20Extended(_token).transfer(address(auction), availableTokens);
     auction.start();
     recentAuctions[_token] = now;
     emit AuctionCreated(address(auction), _token, availableTokens);
@@ -122,7 +121,7 @@ contract DutchAuction is DSMath {
   function start() public
   auctionNotStarted
   {
-    quantity = token.balanceOf(this);
+    quantity = token.balanceOf(address(this));
     assert(quantity > 0);
 
     // Set the minimum price as such that it doesn't cause the finalPrice to be 0
@@ -174,7 +173,7 @@ contract DutchAuction is DSMath {
       bidCount += 1;
     }
 
-    clnyToken.transferFrom(msg.sender, this, amount);
+    clnyToken.transferFrom(msg.sender, address(this), amount);
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
 
@@ -219,11 +218,11 @@ contract DutchAuction is DSMath {
   allBidsClaimed
   {
     // Transfer token remainder to the network
-    uint auctionTokenBalance = token.balanceOf(this);
+    uint auctionTokenBalance = token.balanceOf(address(this));
     token.transfer(colonyNetwork, auctionTokenBalance);
     // Check this contract balances in the working tokens is 0 before we kill it
-    assert(clnyToken.balanceOf(this) == 0);
-    assert(token.balanceOf(this) == 0);
+    assert(clnyToken.balanceOf(address(this)) == 0);
+    assert(token.balanceOf(address(this)) == 0);
     selfdestruct(colonyNetwork);
   }
 }

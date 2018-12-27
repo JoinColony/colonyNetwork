@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23 <0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyAuthority.sol";
@@ -71,7 +70,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return colonyVersionResolver[_version];
   }
 
-  function getSkill(uint256 _skillId) public view returns (Skill skill) {
+  function getSkill(uint256 _skillId) public view returns (Skill memory skill) {
     skill = skills[_skillId];
   }
 
@@ -96,7 +95,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   auth
   {
     // Token locking address can't be changed
-    require(tokenLocking == 0x0, "colony-invalid-token-locking-address");
+    require(tokenLocking == address(0x0), "colony-invalid-token-locking-address");
     tokenLocking = _tokenLocking;
 
     emit TokenLockingAddressSet(_tokenLocking);
@@ -123,7 +122,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   stoppable
   auth
   {
-    require(metaColony == 0, "colony-meta-colony-exists-already");
+    require(metaColony == address(0x0), "colony-meta-colony-exists-already");
     // Add the root global skill
     skillCount += 1;
     Skill memory rootGlobalSkill;
@@ -145,34 +144,33 @@ contract ColonyNetwork is ColonyNetworkStorage {
   {
     require(currentColonyVersion > 0, "colony-network-not-initialised-cannot-create-colony");
     EtherRouter etherRouter = new EtherRouter();
+    IColony colony = IColony(address(etherRouter));
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
-
-    IColony colony = IColony(etherRouter);
     colony.setToken(_tokenAddress);
 
     // Creating new instance of colony's authority
-    ColonyAuthority authority = new ColonyAuthority(colony);
+    ColonyAuthority authority = new ColonyAuthority(address(colony));
 
     DSAuth dsauth = DSAuth(etherRouter);
     dsauth.setAuthority(authority);
 
-    authority.setOwner(etherRouter);
+    authority.setOwner(address(etherRouter));
     colony.setFounderRole(msg.sender);
 
     // Colony will not have owner
-    dsauth.setOwner(0x0);
+    dsauth.setOwner(address(0x0));
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
     colonyCount += 1;
-    colonies[colonyCount] = colony;
-    _isColony[colony] = true;
+    colonies[colonyCount] = address(colony);
+    _isColony[address(colony)] = true;
 
-    colony.initialiseColony(this);
-    emit ColonyAdded(colonyCount, etherRouter, _tokenAddress);
+    colony.initialiseColony(address(this));
+    emit ColonyAdded(colonyCount, address(etherRouter), _tokenAddress);
 
-    return etherRouter;
+    return address(etherRouter);
   }
 
   function addColonyVersion(uint _version, address _resolver) public

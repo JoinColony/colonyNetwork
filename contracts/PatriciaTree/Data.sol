@@ -1,5 +1,4 @@
-pragma solidity ^0.4.16;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 pragma experimental "ABIEncoderV2";
 
 import {Bits} from "./Bits.sol";
@@ -65,7 +64,7 @@ library Data {
     return keccak256(abi.encodePacked(self.node, self.label.length, self.label.data));
   }
 
-  function insert(Tree storage self, bytes32 key, bytes value) internal {
+  function insert(Tree storage self, bytes32 key, bytes memory value) internal {
     Label memory k = Label(key, 256);
     bytes32 valueHash = keccak256(value);
     Edge memory e;
@@ -81,7 +80,7 @@ library Data {
   }
 
   // Private functions
-  function insertAtEdge(Tree storage self, Edge e, Label key, bytes32 value) private returns (Edge) {
+  function insertAtEdge(Tree storage self, Edge memory e, Label memory key, bytes32 value) private returns (Edge memory) {
     assert(key.length >= e.label.length);
     Label memory prefix;
     Label memory suffix;

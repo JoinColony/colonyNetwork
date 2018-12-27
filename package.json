@@ -14,6 +14,7 @@
     "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
     "clean:contracts": "rimraf ./build/contracts/*",
     "provision:token:contracts": "bash ./scripts/provision-token-contracts.sh",
+    "provision:token:contracts:compile": "truffle compile && bash ./scripts/provision-token-contracts.sh",
     "start:blockchain:client": "bash ./scripts/start-blockchain-client.sh",
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
     "test:contracts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test --network development",

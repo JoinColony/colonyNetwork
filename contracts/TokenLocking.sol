@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 pragma experimental "ABIEncoderV2";
 
 import "./ERC20Extended.sol";
@@ -131,7 +130,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     emit UserTokenWithdrawn(_token, msg.sender, _amount);
   }
 
-  function punishStakers(address[] _stakers, address _beneficiary, uint256 _amount) public onlyReputationMiningCycle {
+  function punishStakers(address[] memory _stakers, address _beneficiary, uint256 _amount) public onlyReputationMiningCycle {
     address clnyToken = IMetaColony(IColonyNetwork(colonyNetwork).getMetaColony()).getToken();
     uint256 lostStake;
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
@@ -150,7 +149,7 @@ contract TokenLocking is TokenLockingStorage, DSMath {
     return totalLockCount[_token];
   }
 
-  function getUserLock(address _token, address _user) public view returns (Lock lock) {
+  function getUserLock(address _token, address _user) public view returns (Lock memory lock) {
     lock = userLocks[_token][_user];
   }
 }

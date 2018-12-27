@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 
 
 import "../lib/dappsys/auth.sol";
@@ -29,7 +28,7 @@ contract ERC20ExtendedToken is DSTokenBase(0), DSAuth, ERC20Extended {
   string public symbol;
   string public name;
 
-  constructor(string _name, string _symbol, uint8 _decimals) public {
+  constructor(string memory _name, string memory _symbol, uint8 _decimals) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -42,7 +41,7 @@ contract ERC20ExtendedToken is DSTokenBase(0), DSAuth, ERC20Extended {
     _supply = add(_supply, wad);
 
     emit Mint(msg.sender, wad);
-    emit Transfer(0x0, msg.sender, wad);
+    emit Transfer(address(0x0), msg.sender, wad);
   }
 
   function burn(uint wad) public {

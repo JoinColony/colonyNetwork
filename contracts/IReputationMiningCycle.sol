@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 pragma experimental "ABIEncoderV2";
 
 import "./ReputationMiningCycleDataTypes.sol";
@@ -28,12 +27,12 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param _round The dispute round to query
   /// @param _index The index in the dispute round to query
   /// @return The elements of the Submission struct for the submission requested. See ReputationMiningCycleDataTypes for the full description
-  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (Submission submission);
+  function getDisputeRounds(uint256 _round, uint256 _index) public view returns (Submission memory submission);
 
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.
   /// @param _user Address of the user
   /// @return submission the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
-  function getReputationHashSubmissions(address _user) public view returns (Submission submission);
+  function getReputationHashSubmissions(address _user) public view returns (Submission memory submission);
 
   /// @notice Get the hash for the corresponding entry.
   /// @param submitter The address that submitted the hash
@@ -70,8 +69,12 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
   /// @param branchMask The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
-  function respondToBinarySearchForChallenge(uint256 round, uint256 idx, bytes jhIntermediateValue, uint branchMask, bytes32[] siblings) public;
-
+  function respondToBinarySearchForChallenge(
+    uint256 round,
+    uint256 idx,
+    bytes memory jhIntermediateValue,
+    uint branchMask,
+    bytes32[] memory siblings) public;
 
   /// @notice Confirm the result of a binary search - depending on how exactly the binary search finished, the saved binary search intermediate state might be incorrect.
   /// @notice This function ensures that the intermediate hashes saved are correct.
@@ -80,7 +83,12 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param jhIntermediateValue The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
   /// @param branchMask The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
   /// @param siblings The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
-  function confirmBinarySearchResult(uint256 round, uint256 idx, bytes jhIntermediateValue, uint256 branchMask, bytes32[] siblings) public;
+  function confirmBinarySearchResult(
+    uint256 round,
+    uint256 idx,
+    bytes memory jhIntermediateValue,
+    uint256 branchMask,
+    bytes32[] memory siblings) public;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
   /// @param u A `uint256[10]` array. The elements of this array, in order are:
@@ -108,16 +116,16 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[11] u, //An array of 10 UINT Params, ordered as given above.
-    bytes _reputationKey,
-    bytes32[] reputationSiblings,
-    bytes agreeStateReputationValue,
-    bytes32[] agreeStateSiblings,
-    bytes disagreeStateReputationValue,
-    bytes32[] disagreeStateSiblings,
-    bytes previousNewReputationKey,
-    bytes previousNewReputationValue,
-    bytes32[] previousNewReputationSiblings) public;
+    uint256[11] memory u, //An array of 10 UINT Params, ordered as given above.
+    bytes memory _reputationKey,
+    bytes32[] memory reputationSiblings,
+    bytes memory agreeStateReputationValue,
+    bytes32[] memory agreeStateSiblings,
+    bytes memory disagreeStateReputationValue,
+    bytes32[] memory disagreeStateSiblings,
+    bytes memory previousNewReputationKey,
+    bytes memory previousNewReputationValue,
+    bytes32[] memory previousNewReputationSiblings) public;
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
   /// @param round The round that the hash is currently in.
@@ -134,9 +142,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint256 round,
     uint256 index,
     uint branchMask1,
-    bytes32[] siblings1,
+    bytes32[] memory siblings1,
     uint branchMask2,
-    bytes32[] siblings2) public;
+    bytes32[] memory siblings2) public;
 
   /// @notice Add a new entry to the reputation update log
   /// @param _user The address of the user having their reputation changed by this log entry
@@ -161,7 +169,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Get the `ReputationLogEntry` at index `_id`
   /// @param _id The reputation log members array index of the entry to get
   /// @return reputationUpdateLogEntry The Reputation Update Log Entry
-  function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry reputationUpdateLogEntry);
+  function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry memory reputationUpdateLogEntry);
 
   /// @notice Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
   /// @param stakers The array of stakers addresses to receive the reward.
@@ -172,8 +180,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(
-    address[] stakers,
-    uint256[] weights,
+    address[] memory stakers,
+    uint256[] memory weights,
     address metaColonyAddress,
     uint256 reward,
     uint256 miningSkillId

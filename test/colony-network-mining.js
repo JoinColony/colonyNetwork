@@ -204,7 +204,7 @@ contract("ColonyNetworkMining", accounts => {
       await giveUserCLNYTokens(colonyNetwork, OTHER_ACCOUNT, 9000);
       await clny.approve(tokenLocking.address, 10000, { from: OTHER_ACCOUNT });
 
-      await checkErrorRevert(tokenLocking.deposit(clny.address, 10000, { from: OTHER_ACCOUNT }), "ds-token-insufficient-balance");
+      await checkErrorRevert(tokenLocking.deposit(clny.address, 10000, { from: OTHER_ACCOUNT }));
 
       const userBalance = await clny.balanceOf(OTHER_ACCOUNT);
       assert.equal(userBalance.toNumber(), 9000);

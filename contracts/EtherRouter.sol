@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 
 import "./Resolver.sol";
 import "../lib/dappsys/auth.sol";
@@ -26,7 +25,7 @@ contract EtherRouter is DSAuth {
   Resolver public resolver;
 
   function() external payable {
-    if (msg.sig == 0x0) {
+    if (msg.sig == 0) {
       return;
     }
     // Contracts that want to receive Ether with a plain "send" have to implement

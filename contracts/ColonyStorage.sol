@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 
 import "../lib/dappsys/math.sol";
 import "./ERC20Extended.sol";
@@ -141,7 +140,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier isAdmin(address _user) {
-    require(ColonyAuthority(authority).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
+    require(ColonyAuthority(address(authority)).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
     _;
   }
 

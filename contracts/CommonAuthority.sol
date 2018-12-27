@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 
 import "../lib/dappsys/roles.sol";
 
@@ -31,7 +30,7 @@ contract CommonAuthority is DSRoles {
     setRecoveryRoleCapability(contractAddress, "exitRecoveryMode()");
   }
 
-  function setRecoveryRoleCapability(address contractAddress, bytes sig) private {
+  function setRecoveryRoleCapability(address contractAddress, bytes memory sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(recoveryRole, contractAddress, functionSig, true);
   }

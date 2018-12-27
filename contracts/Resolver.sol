@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 
 import "../lib/dappsys/auth.sol";
 
@@ -24,7 +23,7 @@ import "../lib/dappsys/auth.sol";
 contract Resolver is DSAuth {
   mapping (bytes4 => address) public pointers;
 
-  function register(string signature, address destination) public
+  function register(string memory signature, address destination) public
   auth
   {
     pointers[stringToSig(signature)] = destination;
@@ -34,7 +33,7 @@ contract Resolver is DSAuth {
     return pointers[sig];
   }
 
-  function stringToSig(string signature) public pure returns(bytes4) {
+  function stringToSig(string memory signature) public pure returns(bytes4) {
     return bytes4(keccak256(abi.encodePacked(signature)));
   }
 }

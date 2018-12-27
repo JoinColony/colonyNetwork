@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23 <0.5.0;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -52,8 +51,15 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   {
     Task storage task = tasks[_id];
 
-    require(task.roles[EVALUATOR].user == task.roles[MANAGER].user || task.roles[EVALUATOR].user == 0x0, "colony-funding-evaluator-already-set");
-    require(task.roles[WORKER].user == task.roles[MANAGER].user || task.roles[WORKER].user == 0x0, "colony-funding-worker-already-set");
+    require(
+      task.roles[EVALUATOR].user == task.roles[MANAGER].user ||
+      task.roles[EVALUATOR].user == address(0x0),
+      "colony-funding-evaluator-already-set");
+
+    require(
+      task.roles[WORKER].user == task.roles[MANAGER].user ||
+      task.roles[WORKER].user == address(0x0),
+      "colony-funding-worker-already-set");
 
     this.setTaskManagerPayout(_id, _token, _managerAmount);
     this.setTaskEvaluatorPayout(_id, _token, _evaluatorAmount);
@@ -95,10 +101,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint fee = calculateNetworkFeeForPayout(payout);
     uint remainder = sub(payout, fee);
 
-    if (_token == 0x0) {
+    if (_token == address(0x0)) {
       // Payout ether
-      address user = task.roles[_role].user;
-      user.transfer(remainder);
+      msg.sender.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address metaColonyAddress = colonyNetworkContract.getMetaColony();
@@ -169,13 +174,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint toClaim;
     uint feeToPay;
     uint remainder;
-    if (_token == 0x0) {
+    if (_token == address(0x0)) {
       // It's ether
       toClaim = sub(sub(address(this).balance, nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
-      toClaim = sub(sub(targetToken.balanceOf(this), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
+      toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
     }
 
     feeToPay = toClaim / getRewardInverse();
@@ -191,7 +196,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return nonRewardPotsTotal[_token];
   }
 
-  function startNextRewardPayout(address _token, bytes key, bytes value, uint256 branchMask, bytes32[] siblings) public auth stoppable {
+  function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
+  public auth stoppable 
+  {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(address(token));
 
@@ -204,7 +211,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint256 colonyWideReputation = checkReputation(
       rootHash,
       domains[1].skillId,
-      0x0,
+      address(0x0),
       key,
       value,
       branchMask,
@@ -228,11 +235,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   function claimRewardPayout(
     uint256 _payoutId,
-    uint256[7] _squareRoots,
-    bytes key,
-    bytes value,
+    uint256[7] memory _squareRoots,
+    bytes memory key,
+    bytes memory value,
     uint256 branchMask,
-    bytes32[] siblings
+    bytes32[] memory siblings
   ) public stoppable
   {
     uint256 userReputation = checkReputation(
@@ -271,7 +278,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     emit RewardPayoutCycleEnded(_payoutId);
   }
 
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle rewardPayoutCycle) {
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle) {
     rewardPayoutCycle = rewardPayoutCycles[_payoutId];
   }
 
@@ -293,10 +300,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     bytes32 rootHash,
     uint256 skillId,
     address userAddress,
-    bytes key,
-    bytes value,
+    bytes memory key,
+    bytes memory value,
     uint256 branchMask,
-    bytes32[] siblings
+    bytes32[] memory siblings
   ) internal view returns (uint256)
   {
     bytes32 impliedRoot = getImpliedRootHashKey(key, value, branchMask, siblings);
@@ -321,7 +328,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return reputationValue;
   }
 
-  function calculateRewardForUser(uint256 payoutId, uint256[7] squareRoots, uint256 userReputation) internal returns (address, uint256) {
+  function calculateRewardForUser(uint256 payoutId, uint256[7] memory squareRoots, uint256 userReputation) internal returns (address, uint256) {
     RewardPayoutCycle memory payout = rewardPayoutCycles[payoutId];
     // Checking if payout is active
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");

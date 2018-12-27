@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity >=0.4.23;
 
 import "./ENS.sol";
 
@@ -17,7 +17,7 @@ contract ENSRegistry is ENS {
   // Permits modifications only by the owner of the specified node, or if unowned.
   modifier onlyOwner(bytes32 node) {
     address currentOwner = records[node].owner;
-    require(currentOwner == 0 || currentOwner == msg.sender, "colony-ens-non-owner-access");
+    require(currentOwner == address(0x0) || currentOwner == msg.sender, "colony-ens-non-owner-access");
     _;
   }
 
@@ -39,7 +39,7 @@ contract ENSRegistry is ENS {
   /// @param label The hash of the label specifying the subnode.
   /// @param owner The address of the new owner.
   function setSubnodeOwner(bytes32 node, bytes32 label, address owner) public onlyOwner(node) {
-    require(records[node].owner != 0, "unowned-node");
+    require(records[node].owner != address(0x0), "unowned-node");
     bytes32 subnode = keccak256(abi.encodePacked(node, label));
     emit NewOwner(node, label, owner);
     records[subnode].owner = owner;

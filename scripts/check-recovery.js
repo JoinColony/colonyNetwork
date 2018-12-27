@@ -77,7 +77,7 @@ walkSync("./contracts/").forEach(contractName => {
 
   // Check for that all public, non-{view,pure} functions have either stoppable or recovery modifiers.
   contract.subNodes
-    .filter(child => child.type === "FunctionDefinition")
+    .filter(child => child.type === "FunctionDefinition" && child.name !== "")
     .forEach(functionDef => {
       if (!correctRecoveryModifier(functionDef)) {
         console.log("The contract", contractName, "contains a missing stoppable/recovery modifier in function", functionDef.name, ".");

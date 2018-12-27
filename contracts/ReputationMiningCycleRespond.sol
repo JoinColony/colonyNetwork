@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/math.sol";
@@ -67,16 +66,16 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function respondToChallenge(
-    uint256[11] u, //An array of 11 UINT Params, ordered as given above.
-    bytes _reputationKey,
-    bytes32[] reputationSiblings,
-    bytes agreeStateReputationValue,
-    bytes32[] agreeStateSiblings,
-    bytes disagreeStateReputationValue,
-    bytes32[] disagreeStateSiblings,
-    bytes previousNewReputationKey,
-    bytes previousNewReputationValue,
-    bytes32[] previousNewReputationSiblings
+    uint256[11] memory u, //An array of 11 UINT Params, ordered as given above.
+    bytes memory _reputationKey,
+    bytes32[] memory reputationSiblings,
+    bytes memory agreeStateReputationValue,
+    bytes32[] memory agreeStateSiblings,
+    bytes memory disagreeStateReputationValue,
+    bytes32[] memory disagreeStateSiblings,
+    bytes memory previousNewReputationKey,
+    bytes memory previousNewReputationValue,
+    bytes32[] memory previousNewReputationSiblings
   ) public
     challengeOpen(u[U_ROUND], u[U_IDX])
   {
@@ -132,7 +131,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   // Internal functions
   /////////////////////////
 
-  function checkKey(uint256[11] u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
+  function checkKey(uint256[11] memory u, bytes memory _reputationKey, bytes memory _reputationValue) internal {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -196,8 +195,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     // Work out the expected userAddress and skillId for this updateNumber in this logEntry.
     if ((updateNumber - logEntry.nPreviousUpdates + 1) <= logEntry.nUpdates / 2 ) {
-      // Then we're updating a colony-wide total, so we expect an address of 0x0
-      expectedAddress = 0x0;
+      // Then we're updating a colony-wide total, so we expect an address of address(0x0)
+      expectedAddress = address(0x0);
     } else {
       // We're updating a user-specific total
       expectedAddress = logEntry.user;
@@ -226,11 +225,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveBeforeReputationValue(
-    uint256[11] u,
-    bytes _reputationKey,
-    bytes32[] reputationSiblings,
-    bytes agreeStateReputationValue,
-    bytes32[] agreeStateSiblings
+    uint256[11] memory u,
+    bytes memory _reputationKey,
+    bytes32[] memory reputationSiblings,
+    bytes memory agreeStateReputationValue,
+    bytes32[] memory agreeStateSiblings
   ) internal
   {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
@@ -278,11 +277,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveAfterReputationValue(
-    uint256[11] u,
-    bytes _reputationKey,
-    bytes32[] reputationSiblings,
-    bytes disagreeStateReputationValue,
-    bytes32[] disagreeStateSiblings
+    uint256[11] memory u,
+    bytes memory _reputationKey,
+    bytes32[] memory reputationSiblings,
+    bytes memory disagreeStateReputationValue,
+    bytes32[] memory disagreeStateSiblings
   ) internal view
   {
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
@@ -313,10 +312,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function performReputationCalculation(
-    uint256[11] u,
-    bytes agreeStateReputationValueBytes,
-    bytes disagreeStateReputationValueBytes,
-    bytes previousNewReputationValueBytes
+    uint256[11] memory u,
+    bytes memory agreeStateReputationValueBytes,
+    bytes memory disagreeStateReputationValueBytes,
+    bytes memory previousNewReputationValueBytes
   ) internal view
   {
     // TODO: Possibility of reputation loss - child reputations do not lose the whole of logEntry.amount, but the same fraction logEntry amount is of the user's reputation in skill given by logEntry.skillId
@@ -368,11 +367,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkPreviousReputationInState(
-    uint256[11] u,
-    bytes32[] agreeStateSiblings,
-    bytes previousNewReputationKey,
-    bytes previousNewReputationValue,
-    bytes32[] previousNewReputationSiblings
+    uint256[11] memory u,
+    bytes32[] memory agreeStateSiblings,
+    bytes memory previousNewReputationKey,
+    bytes memory previousNewReputationValue,
+    bytes32[] memory previousNewReputationSiblings
     ) internal view
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
@@ -395,7 +394,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
-  function saveProvedReputation(uint256[11] u, bytes previousNewReputationValue) internal {
+  function saveProvedReputation(uint256[11] memory u, bytes memory previousNewReputationValue) internal {
     uint256 previousReputationUID;
     assembly {
       previousReputationUID := mload(add(previousNewReputationValue,0x40))
@@ -409,6 +408,4 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Save the index for tiebreak scenarios later.
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = previousReputationUID;
   }
-
-
 }

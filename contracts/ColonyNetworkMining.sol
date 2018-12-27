@@ -15,8 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity ^0.4.23;
-pragma experimental "v0.5.0";
+pragma solidity >=0.4.23;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyNetworkStorage.sol";
@@ -58,7 +57,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
-    (ReputationLogEntry reputationLogEntry)
+    (ReputationLogEntry memory reputationLogEntry)
     {
     reputationLogEntry = replacementReputationUpdateLog[_reputationMiningCycle][_id];
   }
@@ -67,14 +66,14 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return replacementReputationUpdateLogsExist[_reputationMiningCycle];
   }
 
-  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] stakers, uint256 reward) public
+  function setReputationRootHash(bytes32 newHash, uint256 newNNodes, address[] memory stakers, uint256 reward) public
   stoppable
   onlyReputationMiningCycle
   {
     reputationRootHash = newHash;
     reputationRootHashNNodes = newNNodes;
     // Reward stakers
-    activeReputationMiningCycle = 0x0;
+    activeReputationMiningCycle = address(0x0);
     startNextCycle();
     rewardStakers(stakers, reward);
 
@@ -82,12 +81,13 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   }
 
   function initialiseReputationMining() public stoppable {
-    require(inactiveReputationMiningCycle == 0x0, "colony-reputation-mining-already-initialised");
+    require(inactiveReputationMiningCycle == address(0x0), "colony-reputation-mining-already-initialised");
     address clnyToken = IMetaColony(metaColony).getToken();
-    require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
+    require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
 
-    inactiveReputationMiningCycle = new EtherRouter();
-    EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
+    EtherRouter e = new EtherRouter();
+    e.setResolver(miningCycleResolver);
+    inactiveReputationMiningCycle = address(e);
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
 
     emit ReputationMiningInitialised(inactiveReputationMiningCycle);
@@ -95,15 +95,16 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
 
   function startNextCycle() public stoppable {
     address clnyToken = IMetaColony(metaColony).getToken();
-    require(clnyToken != 0x0, "colony-reputation-mining-clny-token-invalid-address");
-    require(activeReputationMiningCycle == 0x0, "colony-reputation-mining-still-active");
-    require(inactiveReputationMiningCycle != 0x0, "colony-reputation-mining-not-initialised");
+    require(clnyToken != address(0x0), "colony-reputation-mining-clny-token-invalid-address");
+    require(activeReputationMiningCycle == address(0x0), "colony-reputation-mining-still-active");
+    require(inactiveReputationMiningCycle != address(0x0), "colony-reputation-mining-not-initialised");
     // Inactive now becomes active
     activeReputationMiningCycle = inactiveReputationMiningCycle;
     IReputationMiningCycle(activeReputationMiningCycle).resetWindow();
 
-    inactiveReputationMiningCycle = new EtherRouter();
-    EtherRouter(inactiveReputationMiningCycle).setResolver(miningCycleResolver);
+    EtherRouter e = new EtherRouter();
+    e.setResolver(miningCycleResolver);
+    inactiveReputationMiningCycle = address(e);
     IReputationMiningCycle(inactiveReputationMiningCycle).initialise(tokenLocking, clnyToken);
     emit ReputationMiningCycleComplete(reputationRootHash, reputationRootHashNNodes);
   }
@@ -134,7 +135,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     return wmul(stakeTerm, submissionTerm);
   }
 
-  function rewardStakers(address[] stakers, uint256 reward) internal {
+  function rewardStakers(address[] memory stakers, uint256 reward) internal {
     // Internal unlike punish, because it's only ever called from setReputationRootHash
 
     // Passing an array so that we don't incur the EtherRouter overhead for each staker if we looped over
