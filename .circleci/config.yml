@@ -138,12 +138,29 @@ jobs:
           name: "Running end-to-end tests"
           command: yarn run test:contracts:e2e
 
+  run-smt-checker:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - <<: *step_setup_global_packages
+      - git clone --depth 1 --recursive -b release https://github.com/ethereum/solidity/commit/59dbf8f1085b8b92e8b7eb0ce380cbeb642e97eb
+      - run:
+          name: "Running unit tests with SMT checker"
+          command: yarn run test:contracts
+      # Save check results
+      - store_test_results:
+          path: test-results-smt-checker.xml
+      - store_artifacts:
+          path: test-results-smt-checker.xml
 workflows:
   version: 2
   commit:
-    jobs:
-      - lint-and-unit-test
-      - test-coverage
+    jobs:      
+    # TODO reenable these jobs after smt checker config is done  
+    #  - lint-and-unit-test
+    #  - test-coverage
+      - run-smt-checker
   nightly:
     triggers:
       - schedule:
