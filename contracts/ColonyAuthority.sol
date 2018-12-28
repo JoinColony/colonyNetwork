@@ -25,8 +25,6 @@ contract ColonyAuthority is CommonAuthority {
   uint8 adminRole = 1;
 
   constructor(address colony) public CommonAuthority(colony) {
-    // Set token
-    setFounderRoleCapability(colony, "setToken(address)");
     // Bootstrap colony
     setFounderRoleCapability(colony, "bootstrapColony(address[],int256[])");
     // Mint tokens

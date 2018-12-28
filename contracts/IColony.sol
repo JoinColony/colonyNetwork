@@ -51,12 +51,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return colonyNetworkAddress The address of Colony Network instance
   function getColonyNetworkAddress() public view returns (address);
 
-  /// @notice Set the colony token. Secured function to authorised members
-  /// @param _token Address of the token contract to use.
-  /// Note that if the `mint` functionality is to be controlled through the colony,
-  /// that control has to be transferred to the colony after this call
-  function setToken(address _token) public;
-
   /// @notice Set new colony founder role.
   /// @dev There can only be one address assigned to founder role at a time.
   /// Whoever calls this function will lose their founder role
@@ -86,8 +80,9 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
   /// @dev Sets the reward inverse to the uint max 2**256 - 1
-  /// @param _address Address of the colony network
-  function initialiseColony(address _address) public;
+  /// @param _colonyNetworkAddress Address of the colony network
+  /// @param _token Address of the colony ERC20 Token
+  function initialiseColony(address _colonyNetworkAddress, address _token) public;
 
   /// @notice Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users`
   /// This reputation is assigned in the colony-wide domain. Secured function to authorised members

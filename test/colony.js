@@ -77,7 +77,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS), "colony-initialise-bad-address");
+      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS, ZERO_ADDRESS), "colony-already-initialised-network");
     });
 
     it("should correctly generate a rating secret", async () => {

@@ -68,7 +68,7 @@ contract("Colony Recovery", accounts => {
       await metaColony.setRecoveryRole(founder);
       await metaColony.enterRecoveryMode();
 
-      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS, ZERO_ADDRESS), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-in-recovery-mode");
       await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, 0, 0), "colony-in-recovery-mode");
