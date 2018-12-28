@@ -20,13 +20,11 @@ pragma solidity >=0.4.23;
 
 contract ColonyDataTypes {
   // Events
-  /// @notice Event logged when the Colony token is set
-  /// @param token The newly set token address
-  event ColonyTokenSet(address token);
 
   /// @notice Event logged when Colony is initialised
   /// @param colonyNetwork The Colony Network address
-  event ColonyInitialised(address colonyNetwork);
+  /// @param token The Colony Token address
+  event ColonyInitialised(address colonyNetwork, address token);
 
   /// @notice Event logged when Colony is initially bootstrapped
   /// @param users Array of address bootstraped with reputation

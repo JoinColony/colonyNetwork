@@ -54,26 +54,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return ColonyAuthority(address(authority)).hasUserRole(_user, _role);
   }
 
-  function getColonyNetworkAddress() public view returns (address) {
+  function getColonyNetwork() public view returns (address) {
     return colonyNetworkAddress;
-  }
-
-  function setToken(address _token) public
-  stoppable
-  auth
-  {
-    token = ERC20Extended(_token);
-
-    emit ColonyTokenSet(_token);
   }
 
   function getToken() public view returns (address) {
     return address(token);
   }
 
-  function initialiseColony(address _colonyNetworkAddress) public stoppable {
-    require(colonyNetworkAddress == address(0x0), "colony-initialise-bad-address");
+  function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
+    require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
+    require(address(token) == address(0x0), "colony-already-initialised-token");
     colonyNetworkAddress = _colonyNetworkAddress;
+    token = ERC20Extended(_token);
 
     // Initialise the task update reviewers
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
@@ -100,7 +93,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Set initial colony reward inverse amount to the max indicating a zero rewards to start with
     rewardInverse = 2**256 - 1;
 
-    emit ColonyInitialised(_colonyNetworkAddress);
+    emit ColonyInitialised(_colonyNetworkAddress, _token);
   }
 
   function bootstrapColony(address[] memory _users, int[] memory _amounts) public

@@ -45,6 +45,14 @@ contract("Colony", accounts => {
   });
 
   describe("when initialised", () => {
+    it("should have the network and token set", async () => {
+      const network = await colony.getColonyNetwork();
+      assert.equal(network, colonyNetwork.address);
+
+      const colonyToken = await colony.getToken();
+      assert.equal(colonyToken, token.address);
+    });
+
     it("should accept ether", async () => {
       await colony.send(1);
       const colonyBalance = await web3GetBalance(colony.address);
@@ -77,7 +85,7 @@ contract("Colony", accounts => {
     });
 
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS), "colony-initialise-bad-address");
+      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS, ZERO_ADDRESS), "colony-already-initialised-network");
     });
 
     it("should correctly generate a rating secret", async () => {

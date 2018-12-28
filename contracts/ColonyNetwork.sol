@@ -147,7 +147,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     IColony colony = IColony(address(etherRouter));
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
     etherRouter.setResolver(resolverForLatestColonyVersion);
-    colony.setToken(_tokenAddress);
 
     // Creating new instance of colony's authority
     ColonyAuthority authority = new ColonyAuthority(address(colony));
@@ -167,7 +166,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     colonies[colonyCount] = address(colony);
     _isColony[address(colony)] = true;
 
-    colony.initialiseColony(address(this));
+    colony.initialiseColony(address(this), _tokenAddress);
     emit ColonyAdded(colonyCount, address(etherRouter), _tokenAddress);
 
     return address(etherRouter);
