@@ -48,8 +48,12 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Returns the colony network address set on the Colony
   /// @dev The colonyNetworkAddress we read here is set once, during `initialiseColony`
-  /// @return colonyNetworkAddress The address of Colony Network instance
-  function getColonyNetworkAddress() public view returns (address);
+  /// @return colonyNetwork The address of Colony Network instance
+  function getColonyNetwork() public view returns (address colonyNetwork);
+
+  /// @notice Get the colony token
+  /// @return tokenAddress Address of the token contract
+  function getToken() public view returns (address tokenAddress);
 
   /// @notice Set new colony founder role.
   /// @dev There can only be one address assigned to founder role at a time.
@@ -73,10 +77,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _user The user whose role we want to check
   /// @param _role The role we want to check for
   function hasUserRole(address _user, uint8 _role) public view returns (bool hasRole);
-
-  /// @notice Get the colony token
-  /// @return tokenAddress Address of the token contract
-  function getToken() public view returns (address tokenAddress);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
   /// @dev Sets the reward inverse to the uint max 2**256 - 1
