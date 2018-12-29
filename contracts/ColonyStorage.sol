@@ -31,9 +31,27 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
 
+  // Colony-wide roles
+  uint8 constant FOUNDER_ROLE = 0;
+  uint8 constant ADMIN_ROLE = 1;
+
+  // Task Roles
+  uint8 constant MANAGER = 0;
+  uint8 constant EVALUATOR = 1;
+  uint8 constant WORKER = 2;
+
+  // Task States
+  uint8 constant ACTIVE = 0;
+  uint8 constant CANCELLED = 1;
+  uint8 constant FINALIZED = 2;
+
   address colonyNetworkAddress;
   ERC20Extended token;
   uint256 rewardInverse;
+
+  uint256 taskCount;
+  uint256 potCount;
+  uint256 domainCount;
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
   mapping (bytes4 => uint8[2]) reviewers;
@@ -63,24 +81,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   mapping (uint256 => RatingSecrets) public taskWorkRatings;
 
   mapping (uint256 => Domain) public domains;
-
-  uint256 taskCount;
-  uint256 potCount;
-  uint256 domainCount;
-
-  // Colony-wide roles
-  uint8 constant FOUNDER_ROLE = 0;
-  uint8 constant ADMIN_ROLE = 1;
-
-  // Task Roles
-  uint8 constant MANAGER = 0;
-  uint8 constant EVALUATOR = 1;
-  uint8 constant WORKER = 2;
-
-  // Task States
-  uint8 constant ACTIVE = 0;
-  uint8 constant CANCELLED = 1;
-  uint8 constant FINALIZED = 2;
 
   // Mapping task id to current "active" nonce for executing task changes
   mapping (uint256 => uint256) taskChangeNonces;
