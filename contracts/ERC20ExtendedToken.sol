@@ -49,7 +49,7 @@ contract ERC20ExtendedToken is DSTokenBase(0), DSAuth, ERC20Extended {
     emit Transfer(address(0x0), guy, wad);
   }
 
-  function burn(address guy, uint wad) public auth {
+  function burn(address guy, uint wad) public {
     if (guy != msg.sender && _approvals[guy][msg.sender] != uint(-1)) {
       require(_approvals[guy][msg.sender] >= wad, "ds-token-insufficient-approval");
       _approvals[guy][msg.sender] = sub(_approvals[guy][msg.sender], wad);
