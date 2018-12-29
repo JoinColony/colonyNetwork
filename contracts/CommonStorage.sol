@@ -28,14 +28,14 @@ contract CommonStorage is DSAuth {
   uint8 constant RECOVERY_ROLE = 2;
 
   // Address of the Resolver contract used by EtherRouter for lookups and routing
-  address resolver;
+  address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
   // Recovery variables
-  bool recoveryMode;
+  bool recoveryMode; // Storage slot 3
   uint64 recoveryRolesCount;
   uint64 recoveryApprovalCount;
-  uint256 recoveryEditedTimestamp;
-  mapping (address => uint256) recoveryApprovalTimestamps;
+  uint256 recoveryEditedTimestamp; // Storage slot 4
+  mapping (address => uint256) recoveryApprovalTimestamps; // Size in storage slot 5
 
   modifier recovery() {
     require(recoveryMode, "colony-not-in-recovery-mode");
