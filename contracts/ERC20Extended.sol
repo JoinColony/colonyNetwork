@@ -25,6 +25,10 @@ contract ERC20Extended is ERC20 {
   event Burn(address indexed guy, uint wad);
 
   function mint(uint wad) public;
-  
+
+  function mint(address guy, uint wad) public;
+
   function burn(uint wad) public;
+
+  function burn(address guy, uint wad) public;
 }

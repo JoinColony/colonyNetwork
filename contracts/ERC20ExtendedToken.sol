@@ -34,21 +34,30 @@ contract ERC20ExtendedToken is DSTokenBase(0), DSAuth, ERC20Extended {
     decimals = _decimals;
   }
 
-  function mint(uint wad) public
-  auth
-  {
-    _balances[msg.sender] = add(_balances[msg.sender], wad);
-    _supply = add(_supply, wad);
-
-    emit Mint(msg.sender, wad);
-    emit Transfer(address(0x0), msg.sender, wad);
+  function mint(uint wad) public {
+    mint(msg.sender, wad);
   }
 
   function burn(uint wad) public {
-    _balances[msg.sender] = sub(_balances[msg.sender], wad);
-    _supply = sub(_supply, wad);
+    burn(msg.sender, wad);
+  }
 
-    emit Burn(msg.sender, wad);
+  function mint(address guy, uint wad) public auth {
+    _balances[guy] = add(_balances[guy], wad);
+    _supply = add(_supply, wad);
+    emit Mint(guy, wad);
+    emit Transfer(address(0x0), guy, wad);
+  }
+
+  function burn(address guy, uint wad) public auth {
+    if (guy != msg.sender && _approvals[guy][msg.sender] != uint(-1)) {
+      require(_approvals[guy][msg.sender] >= wad, "ds-token-insufficient-approval");
+      _approvals[guy][msg.sender] = sub(_approvals[guy][msg.sender], wad);
+    }
+
+    require(_balances[guy] >= wad, "ds-token-insufficient-balance");
+    _balances[guy] = sub(_balances[guy], wad);
+    _supply = sub(_supply, wad);
+    emit Burn(guy, wad);
   }
 }
-
