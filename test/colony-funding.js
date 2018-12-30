@@ -1157,7 +1157,7 @@ contract("Colony Funding", accounts => {
       const newRoles = await DSRoles.new();
       await newRoles.setUserRole(colony1.address, adminRole, true);
       await newRoles.setUserRole(colony2.address, adminRole, true);
-      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(uint256)").slice(0, 10), true);
+      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(address,uint256)").slice(0, 10), true);
       await newToken.setAuthority(newRoles.address);
 
       await fundColonyWithTokens(colony1, otherToken, initialFunding);
@@ -1270,7 +1270,7 @@ contract("Colony Funding", accounts => {
       const newRoles = await DSRoles.new();
       await newRoles.setUserRole(colony1.address, adminRole, true);
       await newRoles.setUserRole(colony2.address, adminRole, true);
-      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(uint256)").slice(0, 10), true);
+      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(address,uint256)").slice(0, 10), true);
       await newToken.setAuthority(newRoles.address);
 
       await fundColonyWithTokens(colony1, otherToken, initialFunding);
