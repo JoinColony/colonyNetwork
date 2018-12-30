@@ -117,7 +117,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   auth
   {
-    token.mint(address(this), _wad);
+    if (address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony()) {
+      token.mint(_wad);
+    } else {
+      token.mint(address(this), _wad);
+    }
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
