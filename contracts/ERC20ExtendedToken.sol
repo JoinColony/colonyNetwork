@@ -34,7 +34,7 @@ contract ERC20ExtendedToken is DSTokenBase(0), DSAuth, ERC20Extended {
     decimals = _decimals;
   }
 
-  function mint(uint wad) public {
+  function mint(uint wad) public auth {
     mint(msg.sender, wad);
   }
 
