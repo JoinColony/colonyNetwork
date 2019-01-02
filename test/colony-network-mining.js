@@ -1984,7 +1984,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("if origin skill reputation calculation is wrong, it should be handled correctly", async () => {
+    it("if child skill reputation calculation is wrong, it should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -2028,7 +2028,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        31,
+        29,
         "0xf"
       );
 
@@ -2163,7 +2163,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("if main skill (in a negative update) reputation calculation is wrong, it should be handled correctly", async () => {
+    it("if user child skill (in a negative update) reputation calculation is wrong, it should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
@@ -3806,7 +3806,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("should insert reputation updates from the log", async () => {
-
       await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
