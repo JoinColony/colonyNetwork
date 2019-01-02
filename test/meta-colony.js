@@ -461,9 +461,10 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(5);
 
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 5, { from: OTHER_ACCOUNT }), "colony-not-self");
-      const task = await colony.getTask(1);
+      const taskId = await makeTask({ colony, skillId: 0 });
+      await checkErrorRevert(colony.setTaskSkill(taskId, 5, { from: OTHER_ACCOUNT }), "colony-not-self");
+
+      const task = await colony.getTask(taskId);
       assert.equal(task[8][0].toNumber(), 0);
     });
 

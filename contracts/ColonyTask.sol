@@ -302,6 +302,7 @@ contract ColonyTask is ColonyStorage {
   function setTaskWorkerRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
     require(tasks[_id].roles[WORKER].user == address(0x0), "colony-task-worker-role-already-assigned");
+    require(tasks[_id].skills[0] > 0, "colony-task-skill-not-set");
     setTaskRoleUser(_id, WORKER, _user);
   }
 
