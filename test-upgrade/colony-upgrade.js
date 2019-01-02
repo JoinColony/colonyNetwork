@@ -85,7 +85,7 @@ contract("Colony contract upgrade", accounts => {
       assert.equal(2, updatedTaskCount.toNumber());
     });
 
-    it("should return correct tasks", async () => {
+    it("should return correct tasks after Task struct is extended", async () => {
       const task1 = await updatedColony.getTask(1);
       assert.equal(task1[0], SPECIFICATION_HASH);
       assert.equal(task1[2].toNumber(), 0);
