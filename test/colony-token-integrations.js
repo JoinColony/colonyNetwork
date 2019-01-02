@@ -55,7 +55,7 @@ contract("Colony Token Integration", () => {
     beforeEach(async () => {
       await erc20Mintable.addMinter(colony.address);
       await erc20Mintable.renounceMinter();
-      // At the point the only permitted
+      // At the point the only permitted address to mint tokens is the colony
     });
 
     it("should be able to correctly claim tokens in the colony funding pots", async () => {
