@@ -207,8 +207,8 @@ contract("Colony Network Recovery", accounts => {
 
       await colonyNetwork.enterRecoveryMode();
 
-      await colonyNetwork.setStorageSlotRecovery(20, "0x02");
-      await colonyNetwork.setStorageSlotRecovery(21, `0x${new BN(7).toString(16, 64)}`);
+      await colonyNetwork.setStorageSlotRecovery(13, "0x02");
+      await colonyNetwork.setStorageSlotRecovery(14, `0x${new BN(7).toString(16, 64)}`);
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
@@ -276,10 +276,10 @@ contract("Colony Network Recovery", accounts => {
           const rootHash = await client.getRootHash();
           const nNodes = await client.nReputations;
 
-          // slots 20 and 21 are hash and nodes respectively
-          await colonyNetwork.setStorageSlotRecovery(20, rootHash);
+          // slots 13 and 14 are hash and nodes respectively
+          await colonyNetwork.setStorageSlotRecovery(13, rootHash);
           const nNodesHex = numberToHex(nNodes);
-          await colonyNetwork.setStorageSlotRecovery(21, `${padLeft(nNodesHex, 64)}`);
+          await colonyNetwork.setStorageSlotRecovery(14, `${padLeft(nNodesHex, 64)}`);
 
           await colonyNetwork.approveExitRecovery();
           await colonyNetwork.exitRecoveryMode();
@@ -360,24 +360,24 @@ contract("Colony Network Recovery", accounts => {
           const myMetaColony = await IColony.at(metaColonyAddress);
           const myClnyAddress = await myMetaColony.getToken();
 
-          // slot 4: colonyNetworkAddress
-          // slot 5: tokenLockingAddress
-          // slot 6: clnyTokenAddress
-          newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newActiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+          // slot 3: colonyNetworkAddress
+          // slot 4: tokenLockingAddress
+          // slot 5: clnyTokenAddress
+          newActiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+          newActiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+          newActiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
           let timeNow = await currentBlockTime();
           timeNow = new BN(timeNow).toString(16, 64);
           newActiveCycleAsRecovery.setStorageSlot(9, `0x${timeNow.toString(16, 64)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
-          newInactiveCycleAsRecovery.setStorageSlot(6, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
+          newInactiveCycleAsRecovery.setStorageSlot(3, `0x000000000000000000000000${colonyNetworkAddress.slice(2)}`);
+          newInactiveCycleAsRecovery.setStorageSlot(4, `0x000000000000000000000000${tokenLockingAddress.slice(2)}`);
+          newInactiveCycleAsRecovery.setStorageSlot(5, `0x000000000000000000000000${myClnyAddress.slice(2)}`);
 
           // Port over log entries.
           let nLogEntries = await oldActiveCycle.getReputationUpdateLogLength();
           nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
-          await newActiveCycleAsRecovery.setStorageSlot(3, nLogEntries);
-          const arrayStartingSlot = soliditySha3(3);
+          await newActiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
+          const arrayStartingSlot = soliditySha3(6);
           for (let i = 0; i < nLogEntries; i += 1) {
             /* eslint-disable no-await-in-loop */
             const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 6));
@@ -390,11 +390,10 @@ contract("Colony Network Recovery", accounts => {
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
 
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
-
-            assert.strictEqual(portedLogEntry.user, logEntry.user);
+            assert.equal(portedLogEntry.user, logEntry.user);
             assert.strictEqual(portedLogEntry.amount, logEntry.amount);
             assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
-            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
+            assert.equal(portedLogEntry.colony, logEntry.colony);
             assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
             assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
@@ -405,7 +404,7 @@ contract("Colony Network Recovery", accounts => {
           // Do the same for the inactive log entry
           nLogEntries = await oldInactiveCycle.getReputationUpdateLogLength();
           nLogEntries = `0x${padLeft(nLogEntries.toString(16), 64)}`;
-          await newInactiveCycleAsRecovery.setStorageSlot(3, nLogEntries);
+          await newInactiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
 
           for (let i = 0; i < nLogEntries; i += 1) {
             /* eslint-disable no-await-in-loop */
@@ -429,8 +428,8 @@ contract("Colony Network Recovery", accounts => {
           }
 
           // Set the new cycles
-          await colonyNetwork.setStorageSlotRecovery(18, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
-          await colonyNetwork.setStorageSlotRecovery(19, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
+          await colonyNetwork.setStorageSlotRecovery(16, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
+          await colonyNetwork.setStorageSlotRecovery(17, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
           const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
           assert.strictEqual(retrievedActiveCycleAddress, newActiveCycle.address);
           const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
