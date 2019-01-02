@@ -2444,15 +2444,29 @@ contract("ColonyNetworkMining", accounts => {
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
         // right taskId, so if they're all created at once it messes up.
       }
+      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(30));
 
-      // We need to complete the current reputation cycle so that all the required log entries are present
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      for (let i = 0; i < 10; i += 1) {
+        await setupFinalizedTask( // eslint-disable-line
+          {
+            colonyNetwork,
+            colony: metaColony,
+            token: clny,
+            workerRating: 2,
+            managerPayout: 10000000,
+            evaluatorPayout: 10000000,
+            workerPayout: 10000000
+          }
+        );
+      }
 
       const clients = await Promise.all(
         accounts.slice(3, 11).map(async (addr, index) => {
           const client = new MaliciousReputationMinerExtraRep(
             { loader: contractLoader, minerAddress: addr, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-            accounts.length - index,
+            accounts.length - index - 5,
             index
           );
           // Each client will get a different reputation update entry wrong by a different amount, apart from the first one which
@@ -2462,8 +2476,18 @@ contract("ColonyNetworkMining", accounts => {
         })
       );
 
-      const repCycle = await getActiveRepCycle(colonyNetwork);
+      // We need to complete the current reputation cycle so that all the required log entries are present
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: clients[0] });
 
+      await clients[0].saveCurrentState();
+      const savedHash = await clients[0].reputationTree.getRootHash();
+      await Promise.all(
+        clients.map(async client => {
+          client.loadState(savedHash);
+        })
+      );
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute(clients, this);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
@@ -2484,7 +2508,7 @@ contract("ColonyNetworkMining", accounts => {
             client2round = new BN(client2round.toString());
           }
           let error;
-          if (client2idx < 4) {
+          if (client2idx >= clients.length - 4) {
             error = "colony-reputation-mining-decay-incorrect";
           } else {
             error = "colony-reputation-mining-invalid-newest-reputation-proof";
@@ -2492,7 +2516,7 @@ contract("ColonyNetworkMining", accounts => {
           // eslint-disable-next-line no-await-in-loop
           await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[i], clients[client2idx], {
             client2: { respondToChallenge: error }
-          }); // eslint-disable-line no-await-in-loop
+          });
           // These could all be done simultaneously, but the one-liner with Promise.all is very hard to read.
           // It involved spread syntax and everything. If someone can come up with an easy-to-read version, I'll
           // be all for it
