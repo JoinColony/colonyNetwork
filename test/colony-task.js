@@ -263,6 +263,40 @@ contract("ColonyTask", accounts => {
       assert.equal(evaluator.user, newEvaluator);
     });
 
+    it("should not allow a worker to be assigned if the task has no skill", async () => {
+      const taskId = await makeTask({ colony, skillId: 0 });
+
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId,
+          functionName: "setTaskWorkerRole",
+          signers: [MANAGER, WORKER],
+          sigTypes: [0, 0],
+          args: [taskId, WORKER]
+        }),
+        "colony-task-role-assignment-execution-failed"
+      );
+
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskSkill",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 1] // skillId 1
+      });
+
+      executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, WORKER]
+      });
+    });
+
     it("should not allow the worker or evaluator roles to be assigned only by manager", async () => {
       const newEvaluator = accounts[1];
       assert.notEqual(MANAGER, newEvaluator);

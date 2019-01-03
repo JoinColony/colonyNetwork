@@ -36,7 +36,7 @@ const ColonyTask = artifacts.require("ColonyTask");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
-export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 0, dueDate = 0, manager }) {
+export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 1, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   // Only Colony admins are allowed to make Tasks, make the account an admin
