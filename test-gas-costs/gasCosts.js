@@ -1,5 +1,5 @@
 /* globals artifacts */
-/* eslint-disable no-console */
+/* eslint-disable no-console, prefer-arrow-callback */
 
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
@@ -57,7 +57,7 @@ const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
 });
 
-contract("All", accounts => {
+contract("All", function(accounts) {
   const gasPrice = 20e9;
 
   const MANAGER = accounts[0];
@@ -72,7 +72,7 @@ contract("All", accounts => {
   let colonyNetwork;
   let tokenLocking;
 
-  before(async () => {
+  before(async function() {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -90,27 +90,27 @@ contract("All", accounts => {
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
-  describe("Gas costs", () => {
-    it("when working with the Colony Network", async () => {
+  describe("Gas costs", function() {
+    it("when working with the Colony Network", async function() {
       const tokenArgs = getTokenArgs();
       const colonyToken = await ERC20ExtendedToken.new(...tokenArgs);
       await colonyNetwork.createColony(colonyToken.address);
     });
 
-    it("when working with the Meta Colony", async () => {
+    it("when working with the Meta Colony", async function() {
       await metaColony.addGlobalSkill(1);
       await metaColony.addGlobalSkill(6);
       await metaColony.addGlobalSkill(7);
       await metaColony.addGlobalSkill(8);
     });
 
-    it("when working with a Colony", async () => {
+    it("when working with a Colony", async function() {
       await colony.mintTokens(200);
       await colony.claimColonyFunds(token.address);
       await colony.setAdminRole(EVALUATOR);
     });
 
-    it("when working with a Task", async () => {
+    it("when working with a Task", async function() {
       const taskId = await makeTask({ colony });
 
       // setTaskSkill
@@ -203,7 +203,7 @@ contract("All", accounts => {
       await colony.finalizeTask(taskId);
     });
 
-    it("when working with staking", async () => {
+    it("when working with staking", async function() {
       const STAKER1 = accounts[6];
       const STAKER2 = accounts[7];
       const STAKER3 = accounts[8];
@@ -281,7 +281,7 @@ contract("All", accounts => {
       await tokenLocking.withdraw(clnyToken, DEFAULT_STAKE.divn(4), { from: STAKER1 });
     });
 
-    it("when working with reward payouts", async () => {
+    it("when working with reward payouts", async function() {
       const totalReputation = WAD.muln(300);
       const workerReputation = WAD.muln(200);
       const managerReputation = WAD.muln(100);
