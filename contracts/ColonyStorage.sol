@@ -78,12 +78,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // This is decremented whenever a payout occurs and the colony loses control of the funds.
   mapping (address => uint256) nonRewardPotsTotal; // Storage slot 18
 
-  mapping (uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 18
+  mapping (uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 19
 
-  mapping (uint256 => Domain) public domains; // Storage slot 19
+  mapping (uint256 => Domain) public domains; // Storage slot 20
 
   // Mapping task id to current "active" nonce for executing task changes
-  mapping (uint256 => uint256) taskChangeNonces; // Storage slot 20
+  mapping (uint256 => uint256) taskChangeNonces; // Storage slot 21
 
   modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
     Role storage role = tasks[_id].roles[_role];

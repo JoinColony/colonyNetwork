@@ -35,7 +35,7 @@ contract CommonStorage is DSAuth {
   uint64 recoveryRolesCount;
   uint64 recoveryApprovalCount;
   uint256 recoveryEditedTimestamp; // Storage slot 4
-  mapping (address => uint256) recoveryApprovalTimestamps; // Size in storage slot 5
+  mapping (address => uint256) recoveryApprovalTimestamps; // Storage slot 5
 
   modifier recovery() {
     require(recoveryMode, "colony-not-in-recovery-mode");
