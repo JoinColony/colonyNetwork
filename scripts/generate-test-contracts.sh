@@ -13,6 +13,8 @@ cp ./contracts/ColonyDataTypes.sol ./contracts/UpdatedColonyDataTypes.sol
 cp ./contracts/ColonyStorage.sol ./contracts/UpdatedColonyStorage.sol
 cp ./contracts/IColony.sol ./contracts/IUpdatedColony.sol
 cp ./contracts/ColonyNetwork.sol ./contracts/UpdatedColonyNetwork.sol
+cp ./contracts/ReputationMiningCycle.sol ./contracts/UpdatedReputationMiningCycle.sol
+cp ./contracts/IReputationMiningCycle.sol ./contracts/IUpdatedReputationMiningCycle.sol
 # Modify UpdatedColonyNetwork contract
 sed -i.bak "s/contract ColonyNetwork/contract UpdatedColonyNetwork/g" ./contracts/UpdatedColonyNetwork.sol
 sed -i.bak "s/address resolver;/address resolver;function isUpdated() public pure returns(bool) {return true;}/g" ./contracts/UpdatedColonyNetwork.sol
@@ -31,3 +33,10 @@ sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/UpdatedColon
 sed -i.bak "s/contract IColony/contract IUpdatedColony/g" ./contracts/IUpdatedColony.sol
 sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/IUpdatedColony.sol
 sed -i.bak "s/contract IUpdatedColony is UpdatedColonyDataTypes, IRecovery {/contract IUpdatedColony is UpdatedColonyDataTypes, IRecovery {function isUpdated() public pure returns(bool);/g" ./contracts/IUpdatedColony.sol
+# Modify UpdatedReputationMiningCycle contract
+sed -i.bak "s/contract ReputationMiningCycle/contract UpdatedReputationMiningCycle/g" ./contracts/UpdatedReputationMiningCycle.sol
+sed -i.bak "s/WAD;/WAD;function isUpdated() public pure returns(uint256) {return 100;}/g" ./contracts/UpdatedReputationMiningCycle.sol
+# Modify IReputationMiningCycle contract
+sed -i.bak "s/contract IReputationMiningCycle/contract IUpdatedReputationMiningCycle/g" ./contracts/IUpdatedReputationMiningCycle.sol
+sed -i.bak "s/function resetWindow() public;/function resetWindow() public; function isUpdated() public pure returns(bool);/g" ./contracts/IUpdatedReputationMiningCycle.sol
+
