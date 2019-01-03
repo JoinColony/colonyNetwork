@@ -26,21 +26,21 @@ contract ColonyTask is ColonyStorage {
   uint256 constant RATING_COMMIT_TIMEOUT = 5 days;
   uint256 constant RATING_REVEAL_TIMEOUT = 5 days;
 
-  modifier userCanRateRole(uint256 _id, uint8 _role) {
+  modifier userCanRateRole(uint256 _id, TaskRole _role) {
     // Manager rated by worker
     // Worker rated by evaluator
-    if (_role == MANAGER) {
-      require(tasks[_id].roles[WORKER].user == msg.sender, "colony-user-cannot-rate-task-manager");
-    } else if (_role == WORKER) {
-      require(tasks[_id].roles[EVALUATOR].user == msg.sender, "colony-user-cannot-rate-task-worker");
+    if (_role == TaskRole.Manager) {
+      require(tasks[_id].roles[uint8(TaskRole.Worker)].user == msg.sender, "colony-user-cannot-rate-task-manager");
+    } else if (_role == TaskRole.Worker) {
+      require(tasks[_id].roles[uint8(TaskRole.Evaluator)].user == msg.sender, "colony-user-cannot-rate-task-worker");
     } else {
       revert("colony-unsupported-role-to-rate");
     }
     _;
   }
 
-  modifier ratingSecretDoesNotExist(uint256 _id, uint8 _role) {
-    require(taskWorkRatings[_id].secret[_role] == "", "colony-task-rating-secret-already-exists");
+  modifier ratingSecretDoesNotExist(uint256 _id, TaskRole _role) {
+    require(taskWorkRatings[_id].secret[uint8(_role)] == "", "colony-task-rating-secret-already-exists");
     _;
   }
 
@@ -98,8 +98,8 @@ contract ColonyTask is ColonyStorage {
     task.domainId = _domainId;
     task.skills = new uint256[](1);
     tasks[taskCount] = task;
-    tasks[taskCount].roles[MANAGER].user = msg.sender;
-    tasks[taskCount].roles[EVALUATOR].user = msg.sender;
+    tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
+    tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msg.sender;
     pots[potCount].taskId = taskCount;
 
     if (_skillId > 0) {
@@ -145,10 +145,12 @@ contract ColonyTask is ColonyStorage {
     require(!roleAssignmentSigs[sig], "colony-task-change-is-role-assignement");
 
     uint8 nSignaturesRequired;
-    if (tasks[taskId].roles[reviewers[sig][0]].user == address(0) || tasks[taskId].roles[reviewers[sig][1]].user == address(0)) {
+    uint8 taskRole1 = uint8(reviewers[sig][0]);
+    uint8 taskRole2 = uint8(reviewers[sig][1]);
+    if (tasks[taskId].roles[taskRole1].user == address(0) || tasks[taskId].roles[taskRole2].user == address(0)) {
       // When one of the roles is not set, allow the other one to execute a change with just their signature
       nSignaturesRequired = 1;
-    } else if (tasks[taskId].roles[reviewers[sig][0]].user == tasks[taskId].roles[reviewers[sig][1]].user) {
+    } else if (tasks[taskId].roles[taskRole1].user == tasks[taskId].roles[taskRole2].user) {
       // We support roles being assumed by the same user, in this case, allow them to execute a change with just their signature
       nSignaturesRequired = 1;
     } else {
@@ -167,16 +169,16 @@ contract ColonyTask is ColonyStorage {
     );
 
     require(
-      reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][0]].user ||
-      reviewerAddresses[0] == tasks[taskId].roles[reviewers[sig][1]].user,
+      reviewerAddresses[0] == tasks[taskId].roles[taskRole1].user ||
+      reviewerAddresses[0] == tasks[taskId].roles[taskRole2].user,
       "colony-task-signatures-do-not-match-reviewer-1"
     );
 
     if (nSignaturesRequired == 2) {
       require(reviewerAddresses[0] != reviewerAddresses[1], "colony-task-duplicate-reviewers");
       require(
-        reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][0]].user ||
-        reviewerAddresses[1] == tasks[taskId].roles[reviewers[sig][1]].user,
+        reviewerAddresses[1] == tasks[taskId].roles[taskRole1].user ||
+        reviewerAddresses[1] == tasks[taskId].roles[taskRole2].user,
         "colony-task-signatures-do-not-match-reviewer-2"
       );
     }
@@ -204,8 +206,9 @@ contract ColonyTask is ColonyStorage {
     require(roleAssignmentSigs[sig], "colony-task-change-is-not-role-assignement");
 
     uint8 nSignaturesRequired;
+    address manager = tasks[taskId].roles[uint8(TaskRole.Manager)].user;
     // If manager wants to set himself to a role
-    if (userAddress == tasks[taskId].roles[MANAGER].user) {
+    if (userAddress == manager) {
       nSignaturesRequired = 1;
     } else {
       nSignaturesRequired = 2;
@@ -223,12 +226,12 @@ contract ColonyTask is ColonyStorage {
 
     if (nSignaturesRequired == 1) {
       // Since we want to set a manager as an evaluator, require just manager's signature
-      require(reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user, "colony-task-role-assignment-not-signed-by-manager");
+      require(reviewerAddresses[0] == manager, "colony-task-role-assignment-not-signed-by-manager");
     } else {
       // One of signers must be a manager
       require(
-        reviewerAddresses[0] == tasks[taskId].roles[MANAGER].user ||
-        reviewerAddresses[1] == tasks[taskId].roles[MANAGER].user,
+        reviewerAddresses[0] == manager ||
+        reviewerAddresses[1] == manager,
         "colony-task-role-assignment-not-signed-by-manager"
       );
       // One of the signers must be an address we want to set here
@@ -244,7 +247,7 @@ contract ColonyTask is ColonyStorage {
     require(executeCall(address(this), _value, _data), "colony-task-role-assignment-execution-failed");
   }
 
-  function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public
+  function submitTaskWorkRating(uint256 _id, TaskRole _role, bytes32 _ratingSecret) public
   stoppable
   taskComplete(_id)
   userCanRateRole(_id, _role)
@@ -255,20 +258,20 @@ contract ColonyTask is ColonyStorage {
     RatingSecrets storage ratingSecrets = taskWorkRatings[_id];
     ratingSecrets.count += 1;
     ratingSecrets.timestamp = now;
-    ratingSecrets.secret[_role] = _ratingSecret;
+    ratingSecrets.secret[uint8(_role)] = _ratingSecret;
   }
 
-  function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public
+  function revealTaskWorkRating(uint256 _id, TaskRole _role, uint8 _rating, bytes32 _salt) public
   stoppable
   taskWorkRatingRevealOpen(_id)
   {
     // MAYBE: we should hash these the other way around, i.e. generateSecret(_rating, _salt)
     bytes32 ratingSecret = generateSecret(_salt, _rating);
-    require(ratingSecret == taskWorkRatings[_id].secret[_role], "colony-task-rating-secret-mismatch");
+    require(ratingSecret == taskWorkRatings[_id].secret[uint8(_role)], "colony-task-rating-secret-mismatch");
 
     TaskRatings rating = TaskRatings(_rating);
     require(rating != TaskRatings.None, "colony-task-rating-missing");
-    tasks[_id].roles[_role].rating = rating;
+    tasks[_id].roles[uint8(_role)].rating = rating;
 
     emit TaskWorkRatingRevealed(_id, _role, _rating);
   }
@@ -290,28 +293,30 @@ contract ColonyTask is ColonyStorage {
   self()
   isAdmin(_user)
   {
-    setTaskRoleUser(_id, MANAGER, _user);
+    setTaskRoleUser(_id, TaskRole.Manager, _user);
   }
 
   function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
-    require(tasks[_id].roles[EVALUATOR].user == address(0x0), "colony-task-evaluator-role-already-assigned");
-    setTaskRoleUser(_id, EVALUATOR, _user);
+    Role storage evaluatorRole = tasks[_id].roles[uint8(TaskRole.Evaluator)];
+    require(evaluatorRole.user == address(0x0), "colony-task-evaluator-role-already-assigned");
+    setTaskRoleUser(_id, TaskRole.Evaluator, _user);
   }
 
   function setTaskWorkerRole(uint256 _id, address _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
-    require(tasks[_id].roles[WORKER].user == address(0x0), "colony-task-worker-role-already-assigned");
+    Role storage workerRole = tasks[_id].roles[uint8(TaskRole.Worker)];
+    require(workerRole.user == address(0x0), "colony-task-worker-role-already-assigned");
     require(tasks[_id].skills[0] > 0, "colony-task-skill-not-set");
-    setTaskRoleUser(_id, WORKER, _user);
+    setTaskRoleUser(_id, TaskRole.Worker, _user);
   }
 
   function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, EVALUATOR, address(0x0));
+    setTaskRoleUser(_id, TaskRole.Evaluator, address(0x0));
   }
 
   function removeTaskWorkerRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, WORKER, address(0x0));
+    setTaskRoleUser(_id, TaskRole.Worker, address(0x0));
   }
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
@@ -366,7 +371,7 @@ contract ColonyTask is ColonyStorage {
   stoppable
   taskExists(_id)
   taskNotComplete(_id)
-  confirmTaskRoleIdentity(_id, WORKER)
+  confirmTaskRoleIdentity(_id, TaskRole.Worker)
   {
     tasks[_id].deliverableHash = _deliverableHash;
     markTaskCompleted(_id);
@@ -377,7 +382,7 @@ contract ColonyTask is ColonyStorage {
   stoppable
   {
     submitTaskDeliverable(_id, _deliverableHash);
-    submitTaskWorkRating(_id, MANAGER, _ratingSecret);
+    submitTaskWorkRating(_id, TaskRole.Manager, _ratingSecret);
   }
 
   function completeTask(uint256 _id) public
@@ -385,7 +390,7 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   taskNotComplete(_id)
   afterDueDate(_id)
-  confirmTaskRoleIdentity(_id, MANAGER)
+  confirmTaskRoleIdentity(_id, TaskRole.Manager)
   {
     markTaskCompleted(_id);
   }
@@ -404,7 +409,7 @@ contract ColonyTask is ColonyStorage {
     task.status = FINALIZED;
 
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
-      updateReputation(roleId, task);
+      updateReputation(TaskRole(roleId), task);
     }
 
     emit TaskFinalized(_id);
@@ -445,11 +450,12 @@ contract ColonyTask is ColonyStorage {
     emit TaskCompleted(_id);
   }
 
-  function updateReputation(uint8 roleId, Task storage task) internal {
+  function updateReputation(TaskRole taskRole, Task storage task) internal {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    uint8 roleId = uint8(taskRole);
     Role storage role = task.roles[roleId];
 
-    if (roleId == EVALUATOR) { // They had one job!
+    if (taskRole == TaskRole.Evaluator) { // They had one job!
       role.rating = role.rateFail ? TaskRatings.Unsatisfactory : TaskRatings.Satisfactory;
     }
 
@@ -457,7 +463,7 @@ contract ColonyTask is ColonyStorage {
     int256 reputation = getReputation(payout, role.rating, role.rateFail);
 
     colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
-    if (roleId == WORKER) {
+    if (taskRole == TaskRole.Worker) {
       colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
     }
   }
@@ -527,7 +533,9 @@ contract ColonyTask is ColonyStorage {
   }
 
   function taskWorkRatingsAssigned(uint256 _id) internal view returns (bool) {
-    return (tasks[_id].roles[WORKER].rating != TaskRatings.None) && (tasks[_id].roles[MANAGER].rating != TaskRatings.None);
+    Role storage workerRole = tasks[_id].roles[uint8(TaskRole.Worker)];
+    Role storage managerRole = tasks[_id].roles[uint8(TaskRole.Manager)];
+    return (workerRole.rating != TaskRatings.None) && (managerRole.rating != TaskRatings.None);
   }
 
   function taskWorkRatingsClosed(uint256 _id) internal view returns (bool) {
@@ -544,9 +552,9 @@ contract ColonyTask is ColonyStorage {
   function assignWorkRating(uint256 _id) internal {
     require(taskWorkRatingsClosed(_id), "colony-task-ratings-not-closed");
 
-    Role storage managerRole = tasks[_id].roles[MANAGER];
-    Role storage workerRole = tasks[_id].roles[WORKER];
-    Role storage evaluatorRole = tasks[_id].roles[EVALUATOR];
+    Role storage managerRole = tasks[_id].roles[uint8(TaskRole.Manager)];
+    Role storage workerRole = tasks[_id].roles[uint8(TaskRole.Worker)];
+    Role storage evaluatorRole = tasks[_id].roles[uint8(TaskRole.Evaluator)];
 
     if (workerRole.rating == TaskRatings.None) {
       evaluatorRole.rateFail = true;
@@ -559,11 +567,11 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  function setTaskRoleUser(uint256 _id, uint8 _role, address _user) private
+  function setTaskRoleUser(uint256 _id, TaskRole _role, address _user) private
   taskExists(_id)
   taskNotComplete(_id)
   {
-    tasks[_id].roles[_role] = Role({
+    tasks[_id].roles[uint8(_role)] = Role({
       user: _user,
       rateFail: false,
       rating: TaskRatings.None

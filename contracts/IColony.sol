@@ -197,7 +197,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// Allowed only for evaluator to rate worker and for worker to rate manager performance
   /// Once submitted ratings can not be changed or overwritten
   /// @param _id Id of the task
-  /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
+  /// @param _role Id of the role, as defined in TaskRole enum
   /// @param _ratingSecret `keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50)
   /// Can be generated via `IColony.generateSecret` helper function
   function submitTaskWorkRating(uint256 _id, uint8 _role, bytes32 _ratingSecret) public;
@@ -208,7 +208,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev Compares the `keccak256(_salt, _rating)` output with the previously submitted rating secret and if they match,
   /// sets the task role properties `rated` to `true` and `rating` to `_rating`
   /// @param _id Id of the task
-  /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
+  /// @param _role Id of the role, as defined in TaskRole enum
   /// @param _rating 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50)
   /// @param _salt Salt value used to generate the rating secret
   function revealTaskWorkRating(uint256 _id, uint8 _role, uint8 _rating, bytes32 _salt) public;
@@ -227,7 +227,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the rating secret submitted for role `_role` in task `_id`
   /// @param _id Id of the task
-  /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
+  /// @param _role Id of the role, as defined in TaskRole enum
   /// @return secret Rating secret `bytes32` value
   function getTaskWorkRatingSecret(uint256 _id, uint8 _role) public view returns (bytes32 secret);
 
@@ -346,7 +346,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the `Role` properties back for role `_role` in task `_id`
   /// @param _id Id of the task
-  /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
+  /// @param _role Id of the role, as defined in TaskRole enum
   /// @return role The Role
   function getTaskRole(uint256 _id, uint8 _role) public view returns (Role memory role);
 
@@ -360,7 +360,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get payout amount in `_token` denomination for role `_role` in task `_id`
   /// @param _id Id of the task
-  /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
+  /// @param _role Id of the role, as defined in TaskRole enum
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Payout amount
   function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256 amount);
@@ -402,7 +402,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
   /// Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
   /// @param _id Id of the task
-  /// @param _role Id of the role, as defined in `ColonyStorage` `MANAGER`, `EVALUATOR` and `WORKER` constants
+  /// @param _role Id of the role, as defined in TaskRole enum
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimPayout(uint256 _id, uint8 _role, address _token) public;
 
@@ -450,7 +450,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   ///  amount Total amount of tokens taken aside for reward payout
   ///  tokenAddress Token address
   ///  blockTimestamp Block number at the time of creation
-  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle );
+  function getRewardPayoutInfo(uint256 _payoutId) public view returns (RewardPayoutCycle memory rewardPayoutCycle);
 
   /// @notice Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
   /// Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation

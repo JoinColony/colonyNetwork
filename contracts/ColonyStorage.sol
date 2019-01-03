@@ -31,11 +31,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
 
-  // Task Roles
-  uint8 constant MANAGER = 0;
-  uint8 constant EVALUATOR = 1;
-  uint8 constant WORKER = 2;
-
   // Task States
   uint8 constant ACTIVE = 0;
   uint8 constant CANCELLED = 1;
@@ -50,7 +45,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   uint256 domainCount; // Storage slot 11
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping (bytes4 => uint8[2]) reviewers; // Storage slot 12
+  mapping (bytes4 => TaskRole[2]) reviewers; // Storage slot 12
 
   // Role assignment functions require special type of sign-off.
   // This keeps track of which functions are related to role assignment
@@ -81,8 +76,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // Mapping task id to current "active" nonce for executing task changes
   mapping (uint256 => uint256) taskChangeNonces; // Storage slot 21
 
-  modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
-    Role storage role = tasks[_id].roles[_role];
+  modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
+    Role storage role = tasks[_id].roles[uint8(_role)];
     require(msg.sender == role.user, "colony-task-role-identity-mismatch");
     _;
   }

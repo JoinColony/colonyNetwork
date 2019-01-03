@@ -109,14 +109,14 @@ contract ColonyDataTypes {
   /// @param taskId Id of the task
   /// @param role Role of the user
   /// @param user User that fulfills the designated role
-  event TaskRoleUserSet(uint256 taskId, uint8 role, address user);
+  event TaskRoleUserSet(uint256 taskId, TaskRole role, address user);
 
   /// @notice Event logged when a task payout changes
   /// @param taskId Id of the task
   /// @param role Task role whose payout is being changed
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
-  event TaskPayoutSet(uint256 taskId, uint8 role, address token, uint256 amount);
+  event TaskPayoutSet(uint256 taskId, TaskRole role, address token, uint256 amount);
 
   /// @notice Event logged when a deliverable has been submitted for a task
   /// @param taskId Id of the task
@@ -132,7 +132,7 @@ contract ColonyDataTypes {
   /// @param taskId Id of the task
   /// @param role Role that got rated
   /// @param rating Rating the role received
-  event TaskWorkRatingRevealed(uint256 taskId, uint8 role, uint8 rating);
+  event TaskWorkRatingRevealed(uint256 taskId, TaskRole role, uint8 rating);
 
   /// @notice Event logged when a task has been finalized
   /// @param taskId Id of the finalized task
@@ -189,6 +189,8 @@ contract ColonyDataTypes {
   }
 
   enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
+
+  enum TaskRole { Manager, Evaluator, Worker }
 
   enum ColonyRole { Founder, Admin }
 
