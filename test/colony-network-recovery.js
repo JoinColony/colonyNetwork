@@ -390,10 +390,10 @@ contract("Colony Network Recovery", accounts => {
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
 
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
-            assert.equal(portedLogEntry.user, logEntry.user);
+            assert.strictEqual(portedLogEntry.user, logEntry.user);
             assert.strictEqual(portedLogEntry.amount, logEntry.amount);
             assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
-            assert.equal(portedLogEntry.colony, logEntry.colony);
+            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
             assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
             assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
           }
