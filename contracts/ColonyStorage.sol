@@ -31,10 +31,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
 
-  // Colony-wide roles
-  uint8 constant FOUNDER_ROLE = 0;
-  uint8 constant ADMIN_ROLE = 1;
-
   // Task Roles
   uint8 constant MANAGER = 0;
   uint8 constant EVALUATOR = 1;
@@ -140,7 +136,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier isAdmin(address _user) {
-    require(ColonyAuthority(address(authority)).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
+    require(ColonyAuthority(address(authority)).hasUserRole(_user, uint8(ColonyRole.Admin)), "colony-not-admin");
     _;
   }
 

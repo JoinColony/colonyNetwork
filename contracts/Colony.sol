@@ -31,27 +31,27 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function setFounderRole(address _user) public stoppable auth {
     // To allow only one address to have founder role at a time, we have to remove current founder from their role
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
-    colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
+    colonyAuthority.setUserRole(msg.sender, uint8(ColonyRole.Founder), false);
+    colonyAuthority.setUserRole(_user, uint8(ColonyRole.Founder), true);
 
     emit ColonyFounderRoleSet(msg.sender, _user);
   }
 
   function setAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, true);
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), true);
 
     emit ColonyAdminRoleSet(_user);
   }
 
   // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, false);
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), false);
 
     emit ColonyAdminRoleRemoved(_user);
   }
 
-  function hasUserRole(address _user, uint8 _role) public view returns (bool) {
-    return ColonyAuthority(address(authority)).hasUserRole(_user, _role);
+  function hasUserRole(address _user, ColonyRole _role) public view returns (bool) {
+    return ColonyAuthority(address(authority)).hasUserRole(_user, uint8(_role));
   }
 
   function getColonyNetwork() public view returns (address) {

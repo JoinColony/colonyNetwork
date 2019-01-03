@@ -18,11 +18,12 @@
 pragma solidity >=0.4.23;
 
 import "./CommonAuthority.sol";
+import "./ColonyDataTypes.sol";
 
 
 contract ColonyAuthority is CommonAuthority {
-  uint8 founderRole = 0;
-  uint8 adminRole = 1;
+  uint8 founderRole = uint8(ColonyDataTypes.ColonyRole.Founder);
+  uint8 adminRole = uint8(ColonyDataTypes.ColonyRole.Admin);
 
   constructor(address colony) public CommonAuthority(colony) {
     // Bootstrap colony

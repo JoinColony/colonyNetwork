@@ -190,6 +190,8 @@ contract ColonyDataTypes {
 
   enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
 
+  enum ColonyRole { Founder, Admin }
+
   struct Role {
     // Address of the user for the given role
     address user;

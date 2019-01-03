@@ -76,7 +76,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// Calls the function of the same name on the colony's authority contract.
   /// @param _user The user whose role we want to check
   /// @param _role The role we want to check for
-  function hasUserRole(address _user, uint8 _role) public view returns (bool hasRole);
+  function hasUserRole(address _user, ColonyRole _role) public view returns (bool hasRole);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
   /// @dev Sets the reward inverse to the uint max 2**256 - 1
