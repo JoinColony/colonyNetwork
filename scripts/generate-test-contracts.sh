@@ -35,8 +35,7 @@ sed -i.bak "s/ColonyDataTypes/UpdatedColonyDataTypes/g" ./contracts/IUpdatedColo
 sed -i.bak "s/contract IUpdatedColony is UpdatedColonyDataTypes, IRecovery {/contract IUpdatedColony is UpdatedColonyDataTypes, IRecovery {function isUpdated() public pure returns(bool);/g" ./contracts/IUpdatedColony.sol
 # Modify UpdatedReputationMiningCycle contract
 sed -i.bak "s/contract ReputationMiningCycle/contract UpdatedReputationMiningCycle/g" ./contracts/UpdatedReputationMiningCycle.sol
-sed -i.bak "s/WAD;/WAD;function isUpdated() public pure returns(uint256) {return 100;}/g" ./contracts/UpdatedReputationMiningCycle.sol
+sed -i.bak "s/WAD;/WAD;function isUpdated() public pure returns(bool) {return true;}/g" ./contracts/UpdatedReputationMiningCycle.sol
 # Modify IReputationMiningCycle contract
 sed -i.bak "s/contract IReputationMiningCycle/contract IUpdatedReputationMiningCycle/g" ./contracts/IUpdatedReputationMiningCycle.sol
 sed -i.bak "s/function resetWindow() public;/function resetWindow() public; function isUpdated() public pure returns(bool);/g" ./contracts/IUpdatedReputationMiningCycle.sol
-

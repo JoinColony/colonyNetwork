@@ -34,7 +34,7 @@ contract("ReputationMiningCycle contract upgrade", function() {
     });
 
     it("should pick up the new ReputationMiningCycle contract", async function() {
-      // Cycle through the mining process twice to get the newly created inactive cycles on the updated mining contract
+      // Cycle through the mining process once to get the newly created inactive cycles on the updated mining contract
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       const reputationMiningCycleInactiveAddress = await colonyNetwork.getReputationMiningCycle(false);
       const reputationMiningCycleInactive = await UpdatedReputationMiningCycle.at(reputationMiningCycleInactiveAddress);
