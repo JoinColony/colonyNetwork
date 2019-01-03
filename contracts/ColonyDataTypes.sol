@@ -175,7 +175,7 @@ contract ColonyDataTypes {
   struct Task {
     bytes32 specificationHash;
     bytes32 deliverableHash;
-    uint8 status;
+    TaskStatus status;
     uint256 dueDate;
     uint256 payoutsWeCannotMake;
     uint256 potId;
@@ -191,6 +191,8 @@ contract ColonyDataTypes {
   enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }
 
   enum TaskRole { Manager, Evaluator, Worker }
+
+  enum TaskStatus { Active, Cancelled, Finalized }
 
   enum ColonyRole { Founder, Admin }
 

@@ -31,11 +31,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
 
-  // Task States
-  uint8 constant ACTIVE = 0;
-  uint8 constant CANCELLED = 1;
-  uint8 constant FINALIZED = 2;
-
   address colonyNetworkAddress; // Storage slot 6
   ERC20Extended token; // Storage slot 7
   uint256 rewardInverse; // Storage slot 8
@@ -88,12 +83,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier taskNotFinalized(uint256 _id) {
-    require(tasks[_id].status != FINALIZED, "colony-task-already-finalized");
+    require(tasks[_id].status != TaskStatus.Finalized, "colony-task-already-finalized");
     _;
   }
 
   modifier taskFinalized(uint256 _id) {
-    require(tasks[_id].status == FINALIZED, "colony-task-not-finalized");
+    require(tasks[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
     _;
   }
 

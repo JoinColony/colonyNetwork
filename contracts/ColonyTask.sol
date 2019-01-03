@@ -141,7 +141,7 @@ contract ColonyTask is ColonyStorage {
     uint256 taskId;
     (sig, taskId) = deconstructCall(_data);
     require(taskId > 0 && taskId <= taskCount, "colony-task-does-not-exist");
-    require(tasks[taskId].status != FINALIZED, "colony-task-finalized");
+    require(tasks[taskId].status != TaskStatus.Finalized, "colony-task-finalized");
     require(!roleAssignmentSigs[sig], "colony-task-change-is-role-assignement");
 
     uint8 nSignaturesRequired;
@@ -406,7 +406,7 @@ contract ColonyTask is ColonyStorage {
     }
 
     Task storage task = tasks[_id];
-    task.status = FINALIZED;
+    task.status = TaskStatus.Finalized;
 
     for (uint8 roleId = 0; roleId <= 2; roleId++) {
       updateReputation(TaskRole(roleId), task);
@@ -421,12 +421,22 @@ contract ColonyTask is ColonyStorage {
   taskNotComplete(_id)
   self()
   {
-    tasks[_id].status = CANCELLED;
+    tasks[_id].status = TaskStatus.Cancelled;
 
     emit TaskCanceled(_id);
   }
 
-  function getTask(uint256 _id) public view returns (bytes32, bytes32, uint8, uint256, uint256, uint256, uint256, uint256, uint256[] memory) {
+  function getTask(uint256 _id) public view returns (
+    bytes32,
+    bytes32,
+    TaskStatus,
+    uint256,
+    uint256,
+    uint256,
+    uint256,
+    uint256,
+    uint256[] memory) 
+  {
     Task storage t = tasks[_id];
     return (
       t.specificationHash,

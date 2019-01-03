@@ -162,7 +162,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       Task storage task = tasks[fromTaskId];
       uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
       uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
-      require(task.status == CANCELLED || surplus >= _amount, "colony-funding-task-bad-state");
+      require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
     }
 
     pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);

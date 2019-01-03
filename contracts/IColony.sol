@@ -325,7 +325,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _id Id of the task
   /// @return specificationHash Task brief hash
   /// @return deliverableHash Task deliverable hash
-  /// @return status Status property. 0 - Active. 1 - Cancelled. 2 - Finalized
+  /// @return status TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
   /// @return dueDate Due date
   /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current task funding
   /// @return potId Id of funding pot for task
@@ -335,7 +335,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   function getTask(uint256 _id) public view returns ( 
     bytes32 specificationHash,
     bytes32 deliverableHash,
-    uint8 status,
+    TaskStatus status,
     uint256 dueDate,
     uint256 payoutsWeCannotMake,
     uint256 potId,
