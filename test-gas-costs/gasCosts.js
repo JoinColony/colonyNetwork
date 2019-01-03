@@ -332,6 +332,7 @@ contract("All", accounts => {
 
       await newToken.approve(tokenLocking.address, workerReputation, { from: WORKER });
       await tokenLocking.deposit(newToken.address, workerReputation, { from: WORKER });
+      await forwardTime(1, this);
 
       const tx = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = tx.logs[0].args.rewardPayoutId;

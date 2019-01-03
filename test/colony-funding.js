@@ -977,6 +977,7 @@ contract("Colony Funding", accounts => {
       await token.transfer(userAddress3, userTokens3, { from: userAddress1 });
       await token.approve(tokenLocking.address, userTokens3, { from: userAddress3 });
       await tokenLocking.deposit(token.address, userTokens3, { from: userAddress3 });
+      await forwardTime(1, this);
 
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
@@ -1127,8 +1128,6 @@ contract("Colony Funding", accounts => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
-      // Make a deposit, strictly after the payout process starts.
-      await forwardTime(1, this);
       await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
       await tokenLocking.deposit(token.address, userTokens, { from: userAddress1 });
 
@@ -1193,6 +1192,7 @@ contract("Colony Funding", accounts => {
       // This will allow token locking contract to sent tokens on users behalf
       await newToken.approve(tokenLocking.address, userReputation, { from: userAddress1 });
       await tokenLocking.deposit(newToken.address, userReputation, { from: userAddress1 });
+      await forwardTime(1, this);
 
       ({ logs } = await colony1.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof1));
       const payoutId1 = logs[0].args.rewardPayoutId;
@@ -1428,6 +1428,7 @@ contract("Colony Funding", accounts => {
         await tokenLocking.deposit(newToken.address, tokensPerUser, { from: userAddress1 });
         await tokenLocking.deposit(newToken.address, tokensPerUser, { from: userAddress2 });
         await tokenLocking.deposit(newToken.address, tokensPerUser, { from: userAddress3 });
+        await forwardTime(1, this);
 
         ({ logs } = await newColony.startNextRewardPayout(payoutToken.address, ...colonyWideReputationProof));
         const payoutId = logs[0].args.rewardPayoutId;

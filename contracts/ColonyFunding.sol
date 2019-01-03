@@ -338,7 +338,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint256 userDepositTimestamp = tokenLocking.getUserLock(address(token), msg.sender).timestamp;
     uint256 userTokens = tokenLocking.getUserLock(address(token), msg.sender).balance;
 
-    require(userDepositTimestamp <= payout.blockTimestamp, "colony-reward-payout-deposit-too-recent");
+    require(userDepositTimestamp < payout.blockTimestamp, "colony-reward-payout-deposit-too-recent");
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
     require(userReputation > 0, "colony-reward-payout-invalid-user-reputation");
 
