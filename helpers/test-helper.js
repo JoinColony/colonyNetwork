@@ -419,7 +419,8 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
   for (let i = 0; i < clients.length; i += 1) {
     await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
-    await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
+    const tx = await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
+    await tx.wait(); // eslint-disable-line no-await-in-loop
   }
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 }
