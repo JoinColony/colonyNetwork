@@ -20,7 +20,7 @@ import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setup
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+const DSToken = artifacts.require("DSToken");
 const ColonyAuthority = artifacts.require("ColonyAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
@@ -76,7 +76,7 @@ contract("Colony", accounts => {
 
     it("should emit correct Transfer and Mint events when minting tokens", async () => {
       const tokenArgs = getTokenArgs();
-      const otherToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const otherToken = await DSToken.new(tokenArgs[1]);
       await expectAllEvents(otherToken.mint(100), ["Mint", "Transfer"]);
     });
 

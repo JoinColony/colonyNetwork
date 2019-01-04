@@ -10,7 +10,7 @@ import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+const DSToken = artifacts.require("DSToken");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -42,7 +42,7 @@ contract("Token Locking", addresses => {
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
     const tokenArgs = getTokenArgs();
-    otherToken = await ERC20ExtendedToken.new(...tokenArgs);
+    otherToken = await DSToken.new(tokenArgs[1]);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
     const client = new ReputationMiner({
@@ -233,7 +233,7 @@ contract("Token Locking", addresses => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
 
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
 
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);

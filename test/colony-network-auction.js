@@ -11,7 +11,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const DutchAuction = artifacts.require("DutchAuction");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+const DSToken = artifacts.require("DSToken");
 
 contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
@@ -47,7 +47,7 @@ contract("Colony Network Auction", accounts => {
     await colonyNetwork.startNextCycle();
 
     const args = getTokenArgs();
-    token = await ERC20ExtendedToken.new(...args);
+    token = await DSToken.new(args[1]);
     await token.mint(quantity);
     await token.transfer(colonyNetwork.address, quantity);
     const { logs, receipt } = await colonyNetwork.startTokenAuction(token.address);
@@ -87,7 +87,7 @@ contract("Colony Network Auction", accounts => {
 
     it("should fail with zero quantity", async () => {
       const args = getTokenArgs();
-      const otherToken = await ERC20ExtendedToken.new(...args);
+      const otherToken = await DSToken.new(args[1]);
       await checkErrorRevert(colonyNetwork.startTokenAuction(otherToken.address));
     });
   });
@@ -103,7 +103,7 @@ contract("Colony Network Auction", accounts => {
 
     it("should set the minimum price correctly for quantity < 1e18", async () => {
       const args = getTokenArgs();
-      const otherToken = await ERC20ExtendedToken.new(...args);
+      const otherToken = await DSToken.new(args[1]);
       await otherToken.mint(WAD.divn(10));
       await otherToken.transfer(colonyNetwork.address, WAD.divn(10));
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);

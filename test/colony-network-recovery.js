@@ -24,7 +24,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const IColony = artifacts.require("IColony");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+const Token = artifacts.require("Token");
 const ReputationMiningCycle = artifacts.require("ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("ReputationMiningCycleRespond");
 const Resolver = artifacts.require("Resolver");
@@ -56,7 +56,7 @@ contract("Colony Network Recovery", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
-    clny = await ERC20ExtendedToken.at(clnyAddress);
+    clny = await Token.at(clnyAddress);
 
     client = new ReputationMiner({
       loader: contractLoader,

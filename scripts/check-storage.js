@@ -24,7 +24,6 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/EtherRouter.sol",
       "contracts/Migrations.sol",
       "contracts/Resolver.sol",
-      "contracts/ERC20ExtendedToken.sol", // Not directly used by any colony contracts
       "contracts/TokenLockingStorage.sol",
       "contracts/PatriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
