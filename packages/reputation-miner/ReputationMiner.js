@@ -121,6 +121,10 @@ class ReputationMiner {
 
     // How many updates from the logs do we have?
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockTag: blockNumber });
+    if (nLogEntries.toString() === "0") {
+      console.log('WARNING: No log entries found. If this is not one of the very first two cycles, something is wrong');
+      return;
+    }
 
     const nLogEntriesString = nLogEntries.sub(1).toString();
     const lastLogEntry = await repCycle.getReputationUpdateLogEntry(nLogEntriesString, { blockTag: blockNumber });

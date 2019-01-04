@@ -93,10 +93,10 @@ The Reputation Mining client is usable for testing, but has limited functionalit
 You can start the mining client using the following command:
 
 ```
-node packages/reputation-miner/bin/index.js --file ./reputations.json --colonyNetworkAddress 0xDF0F615d9548a5edc2377BB9CD88b81a846DfBC5 --minerAddress 0xb77d57f4959eafa0339424b83fcfaf9c15407461
+node packages/reputation-miner/bin/index.js --file ./reputations.json --colonyNetworkAddress 0x5CC4a96B08e8C88f2c6FC5772496FeD9666e4D1F --minerAddress 0x3a965407ced5e62c5ad71de491ce7b23da5331a4
 ```
 
-The `minerAddress` in the execution above is the first account in `ganache-accounts.json`.
+The `minerAddress` in the execution above is the sixth account in `ganache-accounts.json`.
 
 The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrades-to-the-colony-network/) for more information about the EtherRouter design pattern.
 
@@ -108,7 +108,7 @@ The client is set to provide a reputation update once per hour. For testing, you
 Move the network forward by an hour with:
 
 ```
-$ curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_increaseTime","params":[3600],"id": 1}' localhost:8545
+$ curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_increaseTime","params":[86400],"id": 1}' localhost:8545
 ```
 
 And mine a new block:
@@ -124,17 +124,17 @@ Note that because reputation is awarded for the *previous* submission window, yo
 The mining client will answer queries for Reputation scores locally over HTTP:
 
 ```
-http://127.0.0.1:3000/{colonyAddress}/{skillId}/{userAddress}
+http://127.0.0.1:3000/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
 ```
 
-For example, you can get the reputation score of the miner using the address of the Meta Colony (`0xdb8fe93a3a9c97f04f5c862f52a84f992bd331df`), the skill tag of `0`, and the address of the miner (0xb77d57f4959eafa0339424b83fcfaf9c15407461):
+The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state. For example, you can get the reputation score of the miner in the current reputation state (which after three updates, will be `0x7ad8c25e960b823336fea83f761f5199d690c7b230e846eb29a359187943eb33`) using the address of the Meta Colony (`0x1133560dB4AebBebC712d4273C8e3137f58c3A65`), the skill tag of `2`, and the address of the miner (`0x3a965407ced5e62c5ad71de491ce7b23da5331a4`):
 
 ```
-http://127.0.0.1:3000/0xdb8fe93a3a9c97f04f5c862f52a84f992bd331df/0/0xb77d57f4959eafa0339424b83fcfaf9c15407461
+http://127.0.0.1::3000/0x7ad8c25e960b823336fea83f761f5199d690c7b230e846eb29a359187943eb33/0x1133560dB4AebBebC712d4273C8e3137f58c3A65/2/0x3a965407ced5e62c5ad71de491ce7b23da5331a4
 ```
 
 The oracle should return something like this:
 
 ```
-{"branchMask":"0x00","siblings":[],"key":"0xdb8fe93a3a9c97f04f5c862f52a84f992bd331df0000000000000000000000000000000000000000000000000000000000000000b77d57f4959eafa0339424b83fcfaf9c15407461","value":"0x0000000000000000000000000000000000000000000000000de0b6b3a76400000000000000000000000000000000000000000000000000000000000000000001","reputationAmount":"1000000000000000000"}
+{"branchMask":"0x8000000000000000000000000000000000000000000000000000000000000000","siblings":["0x32c047a86aec6bbbfc1510bb2dd3a9086ec70b7524bd6f92ce1a12dfc7be32ca"],"key":"0x1133560db4aebbebc712d4273c8e3137f58c3a6500000000000000000000000000000000000000000000000000000000000000023a965407ced5e62c5ad71de491ce7b23da5331a4","value":"0x0000000000000000000000000000000000000000000000410d586a20a4c000000000000000000000000000000000000000000000000000000000000000000003","reputationAmount":"1200000000000000000000"}
 ```

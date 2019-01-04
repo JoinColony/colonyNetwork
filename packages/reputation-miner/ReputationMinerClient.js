@@ -82,7 +82,7 @@ class ReputationMinerClient {
     }
 
     console.log("🏁 Initialised");
-    if (this.auto) {
+    if (this._auto) {
       this.timeout = setTimeout(() => this.checkSubmissionWindow(), 0);
     }
   }
@@ -105,7 +105,7 @@ class ReputationMinerClient {
 
     const block = await this._miner.realProvider.getBlock("latest");
     const now = block.timestamp;
-    if (now - windowOpened > 3600) {
+    if (now - windowOpened > 86400) {
       console.log("⏰ Looks like it's time to submit an update");
       // If so, process the log
       await this._miner.addLogContentsToReputationTree();
@@ -113,7 +113,8 @@ class ReputationMinerClient {
       console.log("💾 Writing new reputation state to database");
       await this._miner.saveCurrentState();
 
-      console.log("#️⃣ Submitting new reputation hash");
+      const rootHash = await this._miner.getRootHash();
+      console.log("#️⃣ Submitting new reputation hash: ", rootHash);
 
       // Submit hash
       let tx = await this._miner.submitRootHash();
@@ -130,13 +131,13 @@ class ReputationMinerClient {
       tx = await repCycle.confirmNewHash(0, { gasLimit: 3500000, nonce: tx.nonce + 1 });
 
       console.log("✅ New reputation hash confirmed, via TX", tx);
-      // this.timeout = setTimeout(() => this.checkSubmissionWindow(), 3660000);
+      // this.timeout = setTimeout(() => this.checkSubmissionWindow(), 86400000);
       // console.log("⌛️ will next check in one hour and one minute");
       this.timeout = setTimeout(() => this.checkSubmissionWindow(), 10000);
     } else {
-      // Set a timeout for 3610 - (now - windowOpened)
+      // Set a timeout for 86410 - (now - windowOpened)
       this.timeout = setTimeout(() => this.checkSubmissionWindow(), 10000);
-      // const timeout = Math.max(3610 - (now - windowOpened), 10);
+      // const timeout = Math.max(86410 - (now - windowOpened), 10);
       // console.log("⌛️ will next check in ", timeout, "seconds");
       // this.timeout = setTimeout(() => this.checkSubmissionWindow(), timeout * 1000);
     }
