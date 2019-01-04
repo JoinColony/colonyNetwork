@@ -30,9 +30,9 @@ jobs:
     steps:
       - checkout
       - <<: *step_restore_cache
-      - <<: *step_setup_global_packages
       - setup_remote_docker
       - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
       - run:
           name: "Setup parity"
           command: |
