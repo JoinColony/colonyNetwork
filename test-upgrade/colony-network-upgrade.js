@@ -1,4 +1,5 @@
 /* globals artifacts */
+/* eslint-disable prefer-arrow-callback */
 import { getTokenArgs } from "../helpers/test-helper";
 
 const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
@@ -7,13 +8,13 @@ const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const UpdatedColonyNetwork = artifacts.require("UpdatedColonyNetwork");
 
-contract("ColonyNetwork contract upgrade", () => {
+contract("ColonyNetwork contract upgrade", function() {
   let colonyAddress1;
   let colonyAddress2;
   let colonyNetwork;
   let updatedColonyNetwork;
 
-  before(async () => {
+  before(async function() {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
 
@@ -36,13 +37,13 @@ contract("ColonyNetwork contract upgrade", () => {
     updatedColonyNetwork = await UpdatedColonyNetwork.at(etherRouter.address);
   });
 
-  describe("when upgrading ColonyNetwork contract", () => {
-    it("should return correct total number of colonies", async () => {
+  describe("when upgrading ColonyNetwork contract", function() {
+    it("should return correct total number of colonies", async function() {
       const updatedColonyCount = await updatedColonyNetwork.getColonyCount();
       assert.equal(3, updatedColonyCount.toNumber());
     });
 
-    it("should return correct colonies by index", async () => {
+    it("should return correct colonies by index", async function() {
       const colony1 = await updatedColonyNetwork.getColony(2);
       assert.equal(colony1, colonyAddress1);
 

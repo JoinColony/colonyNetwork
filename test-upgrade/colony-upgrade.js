@@ -1,4 +1,5 @@
 /* globals artifacts */
+/* eslint-disable prefer-arrow-callback */
 import { currentBlockTime, getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
 import { SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
@@ -31,7 +32,7 @@ contract("Colony contract upgrade", accounts => {
 
   let dueDate;
 
-  before(async () => {
+  before(async function() {
     const etherRouterColonyNetwork = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouterColonyNetwork.address);
     const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -69,23 +70,23 @@ contract("Colony contract upgrade", accounts => {
     updatedColony = await IUpdatedColony.at(colonyAddress);
   });
 
-  describe("when upgrading Colony contract", () => {
-    it("should have updated the version number", async () => {
+  describe("when upgrading Colony contract", function() {
+    it("should have updated the version number", async function() {
       const newVersion = await updatedColony.version();
       assert.equal(newVersion.toNumber(), updatedColonyVersion.toNumber());
     });
 
-    it("should be able to lookup newly registered function on Colony", async () => {
+    it("should be able to lookup newly registered function on Colony", async function() {
       const y = await updatedColony.isUpdated();
       assert.isTrue(y);
     });
 
-    it("should return correct total number of tasks", async () => {
+    it("should return correct total number of tasks", async function() {
       const updatedTaskCount = await updatedColony.getTaskCount();
       assert.equal(2, updatedTaskCount.toNumber());
     });
 
-    it("should return correct tasks", async () => {
+    it("should return correct tasks after Task struct is extended", async function() {
       const task1 = await updatedColony.getTask(1);
       assert.equal(task1[0], SPECIFICATION_HASH);
       assert.equal(task1[2].toNumber(), 0);
@@ -99,12 +100,12 @@ contract("Colony contract upgrade", accounts => {
       assert.equal(task2[4].toNumber(), 0);
     });
 
-    it("should return correct permissions", async () => {
+    it("should return correct permissions", async function() {
       const founder = await colony.hasUserRole(ACCOUNT_ONE, 0);
       assert.isTrue(founder);
     });
 
-    it("should return correct token address", async () => {
+    it("should return correct token address", async function() {
       const tokenAddress = await updatedColony.getToken();
       assert.equal(token.address, tokenAddress);
     });

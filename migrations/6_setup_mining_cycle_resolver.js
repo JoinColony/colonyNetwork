@@ -19,7 +19,7 @@ module.exports = async function(deployer) {
   const etherRouterDeployed = await EtherRouter.deployed();
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
 
-  // Register the new Colony contract version with the newly setup Resolver
+  // Register a new Resolver for ReputationMining instance and set it on the Network
   await setupReputationMiningCycleResolver(reputationMiningCycle, reputationMiningCycleRespond, resolver, colonyNetwork);
 
   console.log("### ReputationMiningCycle set to Resolver", resolver.address);
