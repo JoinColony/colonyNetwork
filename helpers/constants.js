@@ -5,6 +5,8 @@ import shortid from "shortid";
 const UINT256_MAX = new BN(0).notn(256);
 const INT256_MAX = new BN(0).notn(255);
 const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
+const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
+
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const MANAGER_ROLE = 0;
@@ -53,6 +55,7 @@ module.exports = {
   UINT256_MAX,
   INT256_MAX,
   INT128_MAX,
+  INT128_MIN,
   ZERO_ADDRESS,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
