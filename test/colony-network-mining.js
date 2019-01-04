@@ -2448,26 +2448,14 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      for (let i = 0; i < 10; i += 1) {
-        await setupFinalizedTask( // eslint-disable-line
-          {
-            colonyNetwork,
-            colony: metaColony,
-            token: clny,
-            workerRating: 2,
-            managerPayout: 10000000,
-            evaluatorPayout: 10000000,
-            workerPayout: 10000000
-          }
-        );
-      }
-
       const clients = await Promise.all(
         accounts.slice(3, 11).map(async (addr, index) => {
+          const entryToFalsify = 7 - index;
+          const amountToFalsify = index; // NB The first client is 'bad', but told to get the calculation wrong by 0, so is actually good.
           const client = new MaliciousReputationMinerExtraRep(
             { loader: contractLoader, minerAddress: addr, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-            accounts.length - index - 5,
-            index
+            entryToFalsify,
+            amountToFalsify
           );
           // Each client will get a different reputation update entry wrong by a different amount, apart from the first one which
           // will submit a correct hash.
@@ -2487,45 +2475,37 @@ contract("ColonyNetworkMining", accounts => {
         })
       );
 
-      const repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute(clients, this);
 
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      let nRemainingHashes = nSubmittedHashes.toNumber();
-      let cycle = 0;
-      while (nRemainingHashes > 1) {
-        for (let i = 0; i < clients.length; i += 2 * 2 ** cycle) {
-          let [client1round] = await clients[i].getMySubmissionRoundAndIndex(); // eslint-disable-line no-await-in-loop
-          client1round = new BN(client1round.toString());
-          let client2round = new BN("-1");
-          let client2idx = i;
-          while (!client1round.eq(client2round)) {
-            client2idx += 2 ** cycle;
-            if (!clients[client2idx]) {
-              break;
-            }
-            [client2round] = await clients[client2idx].getMySubmissionRoundAndIndex(); // eslint-disable-line no-await-in-loop
-            client2round = new BN(client2round.toString());
-          }
-          let error;
-          if (client2idx >= clients.length - 4) {
-            error = "colony-reputation-mining-decay-incorrect";
-          } else {
-            error = "colony-reputation-mining-invalid-newest-reputation-proof";
-          }
-          // eslint-disable-next-line no-await-in-loop
-          await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[i], clients[client2idx], {
-            client2: { respondToChallenge: error }
-          });
-          // These could all be done simultaneously, but the one-liner with Promise.all is very hard to read.
-          // It involved spread syntax and everything. If someone can come up with an easy-to-read version, I'll
-          // be all for it
-        }
-        cycle += 1;
-        const nInvalidatedHashes = await repCycle.getNInvalidatedHashes(); // eslint-disable-line no-await-in-loop
-        nRemainingHashes = nSubmittedHashes.sub(nInvalidatedHashes).toNumber();
-      }
-      await repCycle.confirmNewHash(cycle);
+      // Round 1
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[1], {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[2], clients[3], {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4], clients[5], {
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+      });
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[6], clients[7], {
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+      });
+
+      // Round 2
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[2], {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[4], clients[6], {
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+      });
+
+      // Round 3
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, clients[0], clients[4], {
+        client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
+      });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await repCycle.confirmNewHash(3);
     });
 
     it("should be able to process a large reputation update log", async () => {
