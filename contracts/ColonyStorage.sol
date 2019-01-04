@@ -31,62 +31,48 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
 
-  address colonyNetworkAddress;
-  ERC20Extended token;
-  uint256 rewardInverse;
+  address colonyNetworkAddress; // Storage slot 6
+  ERC20Extended token; // Storage slot 7
+  uint256 rewardInverse; // Storage slot 8
+
+  uint256 taskCount; // Storage slot 9
+  uint256 potCount; // Storage slot 10
+  uint256 domainCount; // Storage slot 11
 
   // Mapping function signature to 2 task roles whose approval is needed to execute
-  mapping (bytes4 => uint8[2]) reviewers;
+  mapping (bytes4 => TaskRole[2]) reviewers; // Storage slot 12
 
   // Role assignment functions require special type of sign-off.
   // This keeps track of which functions are related to role assignment
-  mapping (bytes4 => bool) roleAssignmentSigs;
+  mapping (bytes4 => bool) roleAssignmentSigs; // Storage slot 13
 
-  mapping (uint256 => Task) tasks;
+  mapping (uint256 => Task) tasks; // Storage slot 14
 
   // Pots can be tied to tasks or domains, so giving them their own mapping.
   // Pot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had some siphoned off in to the reward pot.
   // Pot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
-  mapping (uint256 => Pot) pots;
+  mapping (uint256 => Pot) pots; // Storage slot 15
 
   // Keeps track of all reward payout cycles
-  mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles;
+  mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 16
   // Active payouts for particular token address. Assures that one token is used for only one active payout
-  mapping (address => bool) activeRewardPayouts;
+  mapping (address => bool) activeRewardPayouts; // Storage slot 17
 
   // This keeps track of how much of the colony's funds that it owns have been moved into pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
   // This is decremented whenever a payout occurs and the colony loses control of the funds.
-  mapping (address => uint256) nonRewardPotsTotal;
+  mapping (address => uint256) nonRewardPotsTotal; // Storage slot 18
 
-  mapping (uint256 => RatingSecrets) public taskWorkRatings;
+  mapping (uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 19
 
-  mapping (uint256 => Domain) public domains;
-
-  uint256 taskCount;
-  uint256 potCount;
-  uint256 domainCount;
-
-  // Colony-wide roles
-  uint8 constant FOUNDER_ROLE = 0;
-  uint8 constant ADMIN_ROLE = 1;
-
-  // Task Roles
-  uint8 constant MANAGER = 0;
-  uint8 constant EVALUATOR = 1;
-  uint8 constant WORKER = 2;
-
-  // Task States
-  uint8 constant ACTIVE = 0;
-  uint8 constant CANCELLED = 1;
-  uint8 constant FINALIZED = 2;
+  mapping (uint256 => Domain) public domains; // Storage slot 20
 
   // Mapping task id to current "active" nonce for executing task changes
-  mapping (uint256 => uint256) taskChangeNonces;
+  mapping (uint256 => uint256) taskChangeNonces; // Storage slot 21
 
-  modifier confirmTaskRoleIdentity(uint256 _id, uint8 _role) {
-    Role storage role = tasks[_id].roles[_role];
+  modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
+    Role storage role = tasks[_id].roles[uint8(_role)];
     require(msg.sender == role.user, "colony-task-role-identity-mismatch");
     _;
   }
@@ -97,12 +83,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier taskNotFinalized(uint256 _id) {
-    require(tasks[_id].status != FINALIZED, "colony-task-already-finalized");
+    require(tasks[_id].status != TaskStatus.Finalized, "colony-task-already-finalized");
     _;
   }
 
   modifier taskFinalized(uint256 _id) {
-    require(tasks[_id].status == FINALIZED, "colony-task-not-finalized");
+    require(tasks[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
     _;
   }
 
@@ -140,7 +126,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier isAdmin(address _user) {
-    require(ColonyAuthority(address(authority)).hasUserRole(_user, ADMIN_ROLE), "colony-not-admin");
+    require(ColonyAuthority(address(authority)).hasUserRole(_user, uint8(ColonyRole.Admin)), "colony-not-admin");
     _;
   }
 

@@ -31,27 +31,27 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function setFounderRole(address _user) public stoppable auth {
     // To allow only one address to have founder role at a time, we have to remove current founder from their role
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    colonyAuthority.setUserRole(msg.sender, FOUNDER_ROLE, false);
-    colonyAuthority.setUserRole(_user, FOUNDER_ROLE, true);
+    colonyAuthority.setUserRole(msg.sender, uint8(ColonyRole.Founder), false);
+    colonyAuthority.setUserRole(_user, uint8(ColonyRole.Founder), true);
 
     emit ColonyFounderRoleSet(msg.sender, _user);
   }
 
   function setAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, true);
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), true);
 
     emit ColonyAdminRoleSet(_user);
   }
 
   // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, ADMIN_ROLE, false);
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), false);
 
     emit ColonyAdminRoleRemoved(_user);
   }
 
-  function hasUserRole(address _user, uint8 _role) public view returns (bool) {
-    return ColonyAuthority(address(authority)).hasUserRole(_user, _role);
+  function hasUserRole(address _user, ColonyRole _role) public view returns (bool) {
+    return ColonyAuthority(address(authority)).hasUserRole(_user, uint8(_role));
   }
 
   function getColonyNetwork() public view returns (address) {
@@ -69,17 +69,17 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     token = ERC20Extended(_token);
 
     // Initialise the task update reviewers
-    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), MANAGER, WORKER);
-    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), MANAGER, WORKER);
-    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), MANAGER, WORKER);
-    setFunctionReviewers(bytes4(keccak256("setTaskDomain(uint256,uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("setTaskDueDate(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("setTaskSkill(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("setTaskDomain(uint256,uint256)")), TaskRole.Manager, TaskRole.Worker);
     // We are setting a manager to both reviewers, but it will require just one signature from manager
-    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), MANAGER, MANAGER);
-    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), MANAGER, EVALUATOR);
-    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), MANAGER, WORKER);
-    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), MANAGER, EVALUATOR);
-    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), MANAGER, WORKER);
-    setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), MANAGER, WORKER);
+    setFunctionReviewers(bytes4(keccak256("setTaskManagerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Manager);
+    setFunctionReviewers(bytes4(keccak256("setTaskEvaluatorPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Evaluator);
+    setFunctionReviewers(bytes4(keccak256("setTaskWorkerPayout(uint256,address,uint256)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("removeTaskEvaluatorRole(uint256)")), TaskRole.Manager, TaskRole.Evaluator);
+    setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), TaskRole.Manager, TaskRole.Worker);
+    setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), TaskRole.Manager, TaskRole.Worker);
 
     setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
@@ -241,11 +241,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(!protected, "colony-protected-variable");
   }
 
-  function setFunctionReviewers(bytes4 _sig, uint8 _firstReviewer, uint8 _secondReviewer)
+  function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
   private
   {
-    uint8[2] memory _reviewers = [_firstReviewer, _secondReviewer];
-    reviewers[_sig] = _reviewers;
+    reviewers[_sig] = [_firstReviewer, _secondReviewer];
   }
 
   function setRoleAssignmentFunction(bytes4 _sig) private {

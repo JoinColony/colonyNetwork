@@ -24,18 +24,18 @@ import "./ITokenLocking.sol";
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, MANAGER, _token, _amount);
-    emit TaskPayoutSet(_id, MANAGER, _token, _amount);
+    setTaskPayout(_id, TaskRole.Manager, _token, _amount);
+    emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
   }
 
   function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, EVALUATOR, _token, _amount);
-    emit TaskPayoutSet(_id, EVALUATOR, _token, _amount);
+    setTaskPayout(_id, TaskRole.Evaluator, _token, _amount);
+    emit TaskPayoutSet(_id, TaskRole.Evaluator, _token, _amount);
   }
 
   function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, WORKER, _token, _amount);
-    emit TaskPayoutSet(_id, WORKER, _token, _amount);
+    setTaskPayout(_id, TaskRole.Worker, _token, _amount);
+    emit TaskPayoutSet(_id, TaskRole.Worker, _token, _amount);
   }
 
   function setAllTaskPayouts(
@@ -47,18 +47,21 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   )
   public
   stoppable
-  confirmTaskRoleIdentity(_id, MANAGER)
+  confirmTaskRoleIdentity(_id, TaskRole.Manager)
   {
     Task storage task = tasks[_id];
+    address manager = task.roles[uint8(TaskRole.Manager)].user;
+    address evaluator = task.roles[uint8(TaskRole.Evaluator)].user;
+    address worker = task.roles[uint8(TaskRole.Worker)].user;
 
     require(
-      task.roles[EVALUATOR].user == task.roles[MANAGER].user ||
-      task.roles[EVALUATOR].user == address(0x0),
+      evaluator == manager ||
+      evaluator == address(0x0),
       "colony-funding-evaluator-already-set");
 
     require(
-      task.roles[WORKER].user == task.roles[MANAGER].user ||
-      task.roles[WORKER].user == address(0x0),
+      worker == manager ||
+      worker == address(0x0),
       "colony-funding-worker-already-set");
 
     this.setTaskManagerPayout(_id, _token, _managerAmount);
@@ -159,7 +162,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       Task storage task = tasks[fromTaskId];
       uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
       uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
-      require(task.status == CANCELLED || surplus >= _amount, "colony-funding-task-bad-state");
+      require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
     }
 
     pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
@@ -400,14 +403,14 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
 
-  function setTaskPayout(uint256 _id, uint8 _role, address _token, uint256 _amount) private
+  function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotComplete(_id)
   {
     require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
 
     uint currentTotalAmount = getTotalTaskPayout(_id, _token);
-    tasks[_id].payouts[_role][_token] = _amount;
+    tasks[_id].payouts[uint8(_role)][_token] = _amount;
 
     // This call functions as a guard to make sure the new total payout doesn't overflow
     // If there is an overflow, the call will revert
