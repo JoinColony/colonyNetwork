@@ -44,7 +44,7 @@ import {
 import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+const DSToken = artifacts.require("DSToken");
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -86,14 +86,14 @@ contract("All", function(accounts) {
     await IColony.defaults({ gasPrice });
 
     const otherTokenArgs = getTokenArgs();
-    otherToken = await ERC20ExtendedToken.new(...otherTokenArgs);
+    otherToken = await DSToken.new(otherTokenArgs[1]);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
   describe("Gas costs", function() {
     it("when working with the Colony Network", async function() {
       const tokenArgs = getTokenArgs();
-      const colonyToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const colonyToken = await DSToken.new(tokenArgs[1]);
       await colonyNetwork.createColony(colonyToken.address);
     });
 
@@ -288,7 +288,7 @@ contract("All", function(accounts) {
       const initialFunding = WAD.muln(360);
 
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);

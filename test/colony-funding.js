@@ -52,8 +52,8 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
 const ITokenLocking = artifacts.require("ITokenLocking");
+const DSToken = artifacts.require("DSToken");
 const DSRoles = artifacts.require("DSRoles");
 
 const contractLoader = new TruffleLoader({
@@ -86,7 +86,7 @@ contract("Colony Funding", accounts => {
     await colony.setRewardInverse(100);
 
     const otherTokenArgs = getTokenArgs();
-    otherToken = await ERC20ExtendedToken.new(...otherTokenArgs);
+    otherToken = await DSToken.new(otherTokenArgs[0]);
   });
 
   describe("when receiving tokens", () => {
@@ -721,7 +721,7 @@ contract("Colony Funding", accounts => {
 
     it("should not be able to create reward payout if passed reputation is not from the correct colony", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -798,7 +798,7 @@ contract("Colony Funding", accounts => {
 
     it("should not be able to claim reward if skill id is not from root domain", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       let { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -844,7 +844,7 @@ contract("Colony Funding", accounts => {
 
     it("should not be able to start a reward payout if no one holds colony tokens", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -878,7 +878,7 @@ contract("Colony Funding", accounts => {
 
     it("should be able to collect rewards from multiple payouts of different token", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       await fundColonyWithTokens(colony, newToken, initialFunding);
 
       const tx1 = await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
@@ -893,7 +893,7 @@ contract("Colony Funding", accounts => {
 
     it("should not be able to claim payout if colony-wide reputation is 0", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -1037,7 +1037,7 @@ contract("Colony Funding", accounts => {
 
     it("should not be able to claim funds if previous payout is not claimed", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
       await fundColonyWithTokens(colony, newToken, initialFunding);
 
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
@@ -1140,7 +1140,7 @@ contract("Colony Funding", accounts => {
     it("should be able to collect payout from two colonies at the same time", async () => {
       // Setting up a new token and two colonies
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
 
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
@@ -1157,7 +1157,7 @@ contract("Colony Funding", accounts => {
       const newRoles = await DSRoles.new();
       await newRoles.setUserRole(colony1.address, adminRole, true);
       await newRoles.setUserRole(colony2.address, adminRole, true);
-      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(uint256)").slice(0, 10), true);
+      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(address,uint256)").slice(0, 10), true);
       await newToken.setAuthority(newRoles.address);
 
       await fundColonyWithTokens(colony1, otherToken, initialFunding);
@@ -1253,7 +1253,7 @@ contract("Colony Funding", accounts => {
     it("should not be able to claim reward payout from a colony that didn't created it", async () => {
       // Setting up a new token and two colonies
       const tokenArgs = getTokenArgs();
-      const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+      const newToken = await DSToken.new(tokenArgs[1]);
 
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
@@ -1270,7 +1270,7 @@ contract("Colony Funding", accounts => {
       const newRoles = await DSRoles.new();
       await newRoles.setUserRole(colony1.address, adminRole, true);
       await newRoles.setUserRole(colony2.address, adminRole, true);
-      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(uint256)").slice(0, 10), true);
+      await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(address,uint256)").slice(0, 10), true);
       await newToken.setAuthority(newRoles.address);
 
       await fundColonyWithTokens(colony1, otherToken, initialFunding);
@@ -1387,7 +1387,7 @@ contract("Colony Funding", accounts => {
         total reputation/tokens: ${data.totalReputation.toString()}`, async () => {
         // Setting up a new token and colony
         const tokenArgs = getTokenArgs();
-        const newToken = await ERC20ExtendedToken.new(...tokenArgs);
+        const newToken = await DSToken.new(tokenArgs[1]);
         let { logs } = await colonyNetwork.createColony(newToken.address);
         const { colonyAddress } = logs[0].args;
         await newToken.setOwner(colonyAddress);
@@ -1395,7 +1395,7 @@ contract("Colony Funding", accounts => {
         await newColony.setRewardInverse(100);
 
         const payoutTokenArgs = getTokenArgs();
-        const payoutToken = await ERC20ExtendedToken.new(...payoutTokenArgs);
+        const payoutToken = await DSToken.new(payoutTokenArgs[0]);
         await fundColonyWithTokens(newColony, payoutToken, data.totalAmountOfPayoutTokens);
         // Issuing colony's native tokens so they can be given to users in `bootstrapColony`
         await newColony.mintTokens(data.totalReputation);

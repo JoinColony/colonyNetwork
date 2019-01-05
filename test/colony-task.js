@@ -53,7 +53,7 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const Token = artifacts.require("Token");
+const DSToken = artifacts.require("DSToken");
 
 contract("ColonyTask", accounts => {
   const MANAGER = accounts[0];
@@ -79,7 +79,7 @@ contract("ColonyTask", accounts => {
     await colony.setAdminRole(COLONY_ADMIN);
 
     const otherTokenArgs = getTokenArgs();
-    otherToken = await Token.new(...otherTokenArgs);
+    otherToken = await DSToken.new(otherTokenArgs[1]);
   });
 
   describe("when creating tasks", () => {

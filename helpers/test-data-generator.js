@@ -26,7 +26,7 @@ const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+const DSToken = artifacts.require("DSToken");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -394,7 +394,7 @@ export async function setupColonyNetwork() {
 
 export async function setupRandomColony(colonyNetwork) {
   const tokenArgs = getTokenArgs();
-  const token = await ERC20ExtendedToken.new(...tokenArgs);
+  const token = await DSToken.new(tokenArgs[1]);
   const { logs } = await colonyNetwork.createColony(token.address);
   const { colonyAddress } = logs[0].args;
   const colony = await IColony.at(colonyAddress);

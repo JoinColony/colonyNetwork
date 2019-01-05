@@ -196,7 +196,9 @@ export function getRandomString(_length) {
 }
 
 export function getTokenArgs() {
-  return [getRandomString(5), getRandomString(3), 18];
+  const name = web3Utils.asciiToHex(getRandomString(5));
+  const symbol = web3Utils.asciiToHex(getRandomString(3));
+  return [name, symbol];
 }
 
 export async function currentBlockTime() {

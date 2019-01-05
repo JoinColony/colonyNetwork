@@ -2,7 +2,7 @@
 /* eslint-disable prefer-arrow-callback */
 import { getTokenArgs } from "../helpers/test-helper";
 
-const ERC20ExtendedToken = artifacts.require("ERC20ExtendedToken");
+const DSToken = artifacts.require("DSToken");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -20,12 +20,12 @@ contract("ColonyNetwork contract upgrade", function() {
 
     // Setup 2 test colonies
     const tokenArgs1 = getTokenArgs();
-    const newToken = await ERC20ExtendedToken.new(...tokenArgs1);
+    const newToken = await DSToken.new(tokenArgs1[1]);
     let { logs } = await colonyNetwork.createColony(newToken.address);
     colonyAddress1 = logs[0].args.colonyAddress;
 
     const tokenArgs2 = getTokenArgs();
-    const newToken2 = await ERC20ExtendedToken.new(...tokenArgs2);
+    const newToken2 = await DSToken.new(tokenArgs2[1]);
     ({ logs } = await colonyNetwork.createColony(newToken2.address));
     colonyAddress2 = logs[0].args.colonyAddress;
 
