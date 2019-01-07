@@ -102,8 +102,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 8. The branchMask of the proof for the most recently added reputation state in this hash's state tree in the last reputation state the two hashes in this challenge agreed on
   /// * 9. The index of the log entry that the update in question was implied by. Each log entry can imply multiple reputation updates, and so we expect the clients to pass
   ///      the log entry index corresponding to the update to avoid us having to iterate over the log.
-  /// *10. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// *11. Origin skill reputation branch mask. Nonzero for child reputation updates.
+  /// * 10. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+  /// * 11. Origin skill reputation branch mask. Nonzero for child reputation updates.
   ///
   /// * 12. The amount of reputation that the entry in the tree under dispute has in the agree state
   /// * 13. The UID that the entry in the tree under dispute has in the agree state
@@ -114,8 +114,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 18. The amount of reputation that the origin reputation entry in the tree has in the state being disputed
   /// * 19. The UID that the origin reputation entry in the tree has in the state being disputed
   /// * 20. The branchMask of the proof that the child reputation for the user being updated is in the agree state 
-  /// * 21. The amount of rpeutation that the child reputation for the user being updated is in the agree state
-  /// * 22. THe UID of the child reputation for the user being updated in the agree state 
+  /// * 21. The amount of reputation that the child reputation for the user being updated is in the agree state
+  /// * 22. The UID of the child reputation for the user being updated in the agree state 
   /// * 23. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
 
   /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
