@@ -77,6 +77,7 @@ contract("ColonyNetworkMining", accounts => {
   const MAIN_ACCOUNT = accounts[5];
   const OTHER_ACCOUNT = accounts[6];
   const OTHER_ACCOUNT2 = accounts[7];
+  const OTHER_ACCOUNT3 = accounts[8];
 
   let metaColony;
   let colonyNetwork;
@@ -1783,6 +1784,9 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if one person lies about what the origin skill is when there is an origin skill, should be handled correctly", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT2, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT3, DEFAULT_STAKE);
+
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -1827,7 +1831,7 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nLogEntries.toNumber(), 5);
-      badClient = new MaliciousReputationMinerClaimWrongOriginReputation(
+      const badClientWrongSkill = new MaliciousReputationMinerClaimWrongOriginReputation(
         {
           loader: contractLoader,
           minerAddress: OTHER_ACCOUNT,
@@ -1835,22 +1839,58 @@ contract("ColonyNetworkMining", accounts => {
           useJsTree
         },
         31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
-        30
+        30,
+        "skillId"
       );
-      // Moving the state to the bad client
-      await badClient.initialise(colonyNetwork.address);
+
+      const badClientWrongColony = new MaliciousReputationMinerClaimWrongOriginReputation(
+        {
+          loader: contractLoader,
+          minerAddress: OTHER_ACCOUNT2,
+          realProviderPort: REAL_PROVIDER_PORT,
+          useJsTree
+        },
+        31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
+        30,
+        "colonyAddress"
+      );
+
+      const badClientWrongUser = new MaliciousReputationMinerClaimWrongOriginReputation(
+        {
+          loader: contractLoader,
+          minerAddress: OTHER_ACCOUNT3,
+          realProviderPort: REAL_PROVIDER_PORT,
+          useJsTree
+        },
+        31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
+        30,
+        "userAddress"
+      );
+
+      // Moving the state to the bad clients
+      await badClientWrongUser.initialise(colonyNetwork.address);
+      await badClientWrongColony.initialise(colonyNetwork.address);
+      await badClientWrongSkill.initialise(colonyNetwork.address);
       const currentGoodClientState = await goodClient.getRootHash();
-      await badClient.loadState(currentGoodClientState);
+      await badClientWrongUser.loadState(currentGoodClientState);
+      await badClientWrongColony.loadState(currentGoodClientState);
+      await badClientWrongSkill.loadState(currentGoodClientState);
 
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await submitAndForwardTimeToDispute([goodClient, badClientWrongUser, badClientWrongColony, badClientWrongSkill], this);
       const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
+      const wronghash = await badClientWrongUser.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-origin-skill-incorrect" }
-      });
 
-      await repCycle.confirmNewHash(1);
+      // Run through the dispute until we can call respondToChallenge
+      await goodClient.confirmJustificationRootHash();
+      await badClientWrongUser.confirmJustificationRootHash();
+      await runBinarySearch(goodClient, badClientWrongUser);
+      await goodClient.confirmBinarySearchResult();
+      await badClientWrongUser.confirmBinarySearchResult();
+
+      await checkErrorRevertEthers(badClientWrongUser.respondToChallenge(), "colony-reputation-mining-origin-user-incorrect");
+      await checkErrorRevertEthers(badClientWrongColony.respondToChallenge(), "colony-reputation-mining-origin-colony-incorrect");
+      await checkErrorRevertEthers(badClientWrongSkill.respondToChallenge(), "colony-reputation-mining-origin-skill-incorrect");
     });
 
     it("if a colony wide total calculation (for a parent skill) is wrong, it should be handled correctly", async () => {
