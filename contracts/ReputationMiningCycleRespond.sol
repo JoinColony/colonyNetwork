@@ -153,11 +153,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   // Internal functions
   /////////////////////////
   function checkOriginReputation(
-    uint256[23] u,
-    bytes reputationKey,
-    bytes32[] agreeStateSiblings,
-    bytes originReputationKey,
-    bytes32[] originReputationSiblings) internal 
+    uint256[23] memory u,
+    bytes memory reputationKey,
+    bytes32[] memory agreeStateSiblings,
+    bytes memory originReputationKey,
+    bytes32[] memory originReputationSiblings) internal 
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     if (logEntry.amount > 0) {
@@ -192,7 +192,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
       // For colony wide updates the reputation key userAddress is 0x0, otherwise ensure it the user address of the origin and child skills match
       if (relativeUpdateNumber < nChildUpdates) {
-        require(userAddressChildRep == 0x0, "colony-reputation-mining-colony-wide-update-user-nonzero");
+        require(userAddressChildRep == address(0x0), "colony-reputation-mining-colony-wide-update-user-nonzero");
       } else {
         require(userAddressOriginRep == userAddressChildRep, "colony-reputation-mining-origin-user-incorrect");
       }
@@ -206,10 +206,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkChildReputation(
-    uint256[23] u,
-    bytes32[] agreeStateSiblings,
-    bytes childReputationKey,
-    bytes32[] childReputationSiblings) internal 
+    uint256[23] memory u,
+    bytes32[] memory agreeStateSiblings,
+    bytes memory childReputationKey,
+    bytes32[] memory childReputationSiblings) internal 
   {
     // This function is only called if the dispute is over a child reputation update of a colony-wide reputation total 
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
@@ -238,7 +238,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       childReputationSiblings);
   }
 
-  function confirmChallengeCompleted(uint256[23] u) internal {
+  function confirmChallengeCompleted(uint256[23] memory u) internal {
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
     disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
@@ -256,14 +256,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
   }
 
-  function checkKeyDecay(uint256[23] u, uint256 _updateNumber) internal pure {
+  function checkKeyDecay(uint256[23] memory u, uint256 _updateNumber) internal pure {
     // We check that the reputation UID is right for the decay transition being disputed.
     // The key is then implicitly checked when they prove that the key+value they supplied is in the
     // right intermediate state in their justification tree.
     require(u[U_AGREE_STATE_REPUTATION_UID]-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
-  function checkKeyLogEntry(uint256[23] u, bytes memory _reputationKey) internal view {
+  function checkKeyLogEntry(uint256[23] memory u, bytes memory _reputationKey) internal view {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     uint256 expectedSkillId;
@@ -288,7 +288,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(expectedSkillId == skillId, "colony-reputation-mining-skill-id-mismatch");
   }
 
-  function getExpectedSkillIdAndAddress(uint256[23] u, ReputationLogEntry storage logEntry) internal view
+  function getExpectedSkillIdAndAddress(uint256[23] memory u, ReputationLogEntry storage logEntry) internal view
   returns (uint256 expectedSkillId, address expectedAddress)
   {
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
@@ -411,7 +411,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveUID(
-    uint256[23] u,
+    uint256[23] memory u,
     uint256 _agreeStateReputationUID,
     uint256 _disagreeStateReputationUID
   ) internal
@@ -428,7 +428,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function proveValue(
-    uint256[23] u,
+    uint256[23] memory u,
     int256 _agreeStateReputationValue,
     int256 _disagreeStateReputationValue
   ) internal
@@ -501,7 +501,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   // Get the update number relative in the context of the log entry currently considered
   // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive) 
-  function getRelativeUpdateNumber(uint256[23] u, ReputationLogEntry logEntry) internal view returns (uint256) {
+  function getRelativeUpdateNumber(uint256[23] memory u, ReputationLogEntry memory logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 updateNumber = sub(sub(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound, 1), nNodes);
 
@@ -515,7 +515,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     return relativeUpdateNumber;
   }
 
-  function getChildAndParentNUpdatesForLogEntry(uint256[23] u) internal view returns (uint256, uint256) {
+  function getChildAndParentNUpdatesForLogEntry(uint256[23] memory u) internal view returns (uint256, uint256) {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     uint256 nParents = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId).nParents;
 
@@ -554,10 +554,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function checkOriginReputationInState(
-    uint256[23] u,
-    bytes32[] agreeStateSiblings,
-    bytes originReputationKey,
-    bytes32[] originReputationStateSiblings
+    uint256[23] memory u,
+    bytes32[] memory agreeStateSiblings,
+    bytes memory originReputationKey,
+    bytes32[] memory originReputationStateSiblings
     ) internal
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
@@ -632,7 +632,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
   }
 
-  function concatenateToBytes(uint256 a, uint256 b) internal pure returns (bytes) {
+  function concatenateToBytes(uint256 a, uint256 b) internal pure returns (bytes memory) {
     bytes memory retValue = new bytes(64);
     assembly {
       // Seems as if you access an external variable by name, you get the value, straight up...?
