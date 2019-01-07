@@ -1706,14 +1706,16 @@ contract("ColonyNetworkMining", accounts => {
       // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
     });
 
-    it("if one person claims an origin skill doesn't exist but the other does (and proves such), should be handled correctly", async () => {
+    beforeEach(async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(4));
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+    });
 
+    it("if one person claims an origin skill doesn't exist but the other does (and proves such), should be handled correctly", async () => {
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
@@ -1760,7 +1762,7 @@ contract("ColonyNetworkMining", accounts => {
           realProviderPort: REAL_PROVIDER_PORT,
           useJsTree
         },
-        34,
+        34, // Passing in update number for colony wide skillId: 5, user: 0
         1
       );
       // Moving the state to the bad client
@@ -1781,10 +1783,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if one person lies about what the origin skill is when there is an origin skill, should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(4));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -1836,7 +1834,7 @@ contract("ColonyNetworkMining", accounts => {
           realProviderPort: REAL_PROVIDER_PORT,
           useJsTree
         },
-        31,
+        31, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         30
       );
       // Moving the state to the bad client
@@ -1856,10 +1854,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if a colony wide total calculation (for a parent skill) is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
@@ -1899,7 +1893,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        28,
+        28, // Passing in colony wide update number for skillId: 4, user: 0
         "0xffff"
       );
       // Moving the state to the bad client
@@ -1919,10 +1913,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if origin skill reputation calculation underflows and is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(4));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -1965,7 +1955,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        30,
+        30, // Passing in colony wide update number for skillId: 4, user: 0
         "0xfffffffff"
       );
       // Moving the state to the bad client
@@ -1985,10 +1975,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if child skill reputation calculation is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
@@ -2028,7 +2014,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        29,
+        29, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         "0xf"
       );
 
@@ -2049,12 +2035,8 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if a child reputation calculation is wrong, it should be handled correctly if that user has never had that reputation before", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
@@ -2080,7 +2062,7 @@ contract("ColonyNetworkMining", accounts => {
       assert.equal(nLogEntries.toNumber(), 5);
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        21,
+        21, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         "0xffffffffffffffff"
       );
       // Moving the state to the bad client
@@ -2100,10 +2082,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if a child reputation colony-wide calculation is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
@@ -2144,7 +2122,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        26,
+        26, // Passing in update number for skillId: 5, user: 0
         "0xfffffffffff"
       );
       // Moving the state to the bad client
@@ -2164,10 +2142,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if user child skill (in a negative update) reputation calculation is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
@@ -2207,7 +2181,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        29,
+        29, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
         "4800000000000"
       );
       // Moving the state to the bad client
@@ -2227,10 +2201,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it("if a colony-wide child skill reputation amount calculation underflows and is wrong, it should be handled correctly", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
@@ -2270,7 +2240,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        26,
+        26, // Passing in colony wide update number for skillId: 5, user: 0
         "0xfffffffff"
       );
       // Moving the state to the bad client
@@ -2290,10 +2260,6 @@ contract("ColonyNetworkMining", accounts => {
     });
 
     it.skip("dispute should resolve if a bad actor responds on behalf of the good submission omitting some proofs that exist", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
@@ -2339,7 +2305,7 @@ contract("ColonyNetworkMining", accounts => {
 
       badClient = new MaliciousReputationMinerClaimNew(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        30
+        30 // Passing in update number for skillId: 1, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
       );
       await badClient.initialise(colonyNetwork.address);
 
