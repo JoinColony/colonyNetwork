@@ -21,7 +21,7 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
       console.log(this.reputations[reputationKey])
       const reputationValue = new BN(this.reputations[reputationKey].slice(2, 66), 16);
       this.replacementAmount = reputationValue.mul(new BN(-1));
-      console.log(this.replacementAmount)
+      console.log(this.replacementAmount.toString())
     }
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
 
@@ -29,8 +29,8 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
     const logEntryNumber = this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog));
     const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
     const originSkillUpdateNumber = logEntry.nUpdates.add(logEntry.nPreviousUpdates).add(this.nReputationsBeforeLatestLog).sub(1);
-    this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].originReputationProof.key = 
-      await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+    const originReputationKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+    this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].originReputationProof.key = originReputationKey;
 
     // Set the child skill key
     const relativeUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog).sub(logEntry.nPreviousUpdates);
