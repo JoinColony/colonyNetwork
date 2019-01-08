@@ -159,28 +159,33 @@ export async function checkErrorRevert(promise, errorMessage) {
 }
 
 export async function checkErrorRevertEthers(promise, errorMessage) {
-  const tx = await promise;
-  const txid = tx.hash;
+  let receipt;
+  try {
+    receipt = await promise;
+  } catch (err) {
+    const txid = err.transactionHash;
+    const tx = await web3GetTransaction(txid);
 
-  const receipt = await web3GetTransactionReceipt(txid);
-  assert.isFalse(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`);
+    const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
+    const reason = extractReasonString(response);
+    assert.equal(reason, errorMessage);
+    return;
+  }
 
-  const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
-  const reason = extractReasonString(response);
-  assert.equal(reason, errorMessage);
+  assert.equal(receipt.status, 0, `Transaction succeeded, but expected to fail with: ${errorMessage}`);
 }
 
 export async function checkSuccessEthers(promise, errorMessage) {
-  const tx = await promise;
-  const txid = tx.hash;
+  const receipt = await promise;
 
-  const receipt = await web3GetTransactionReceipt(txid);
-  if (receipt.status) {
+  if (receipt.status === 1) {
     return;
   }
-  const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.data, gas: tx.gasLimit.toNumber(), value: tx.value.toNumber() });
+  const txid = receipt.transactionHash;
+  const tx = await web3GetTransaction(txid);
+  const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
   const reason = extractReasonString(response);
-  assert.isTrue(receipt.status, `${errorMessage} with error ${reason}`);
+  assert.equal(receipt.status, 1, `${errorMessage} with error ${reason}`);
 }
 
 export function getRandomString(_length) {
@@ -421,8 +426,7 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
   for (let i = 0; i < clients.length; i += 1) {
     await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
-    const tx = await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
-    await tx.wait(); // eslint-disable-line no-await-in-loop
+    await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
   }
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 }
@@ -538,6 +542,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
     "Clients are not facing each other in this round"
   );
+
   if (submission2before.jrhNNodes === "0") {
     if (errors.client2.confirmJustificationRootHash) {
       await checkErrorRevertEthers(client2.confirmJustificationRootHash(), errors.client2.confirmJustificationRootHash);

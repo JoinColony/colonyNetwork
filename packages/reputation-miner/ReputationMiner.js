@@ -606,6 +606,7 @@ class ReputationMiner {
       return new Error("No valid entry for submission found");
     }
     // Submit that entry
+    const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, entryIndex);
     return repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
   }
 
@@ -701,7 +702,8 @@ class ReputationMiner {
       .add(this.nReputationsBeforeLatestLog);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    return repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
+    const tx = await repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
+    return tx.wait();
   }
 
   /**
@@ -766,9 +768,10 @@ class ReputationMiner {
         siblings
       );
     }
-    return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
+    const tx = await repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
       gasLimit: 1000000
     });
+    return tx.wait();
   }
 
   /**
@@ -785,9 +788,10 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
+    const tx = await repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
       gasLimit: 1000000
     });
+    return tx.wait();
   }
 
   /**
@@ -820,7 +824,7 @@ class ReputationMiner {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
 
-    return repCycle.respondToChallenge(
+    const tx = await repCycle.respondToChallenge(
       [
         round,
         index,
@@ -858,6 +862,8 @@ class ReputationMiner {
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
+
+    return tx.wait();
   }
 
   /**
