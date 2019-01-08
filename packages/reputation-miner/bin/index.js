@@ -1,3 +1,7 @@
+require("babel-register")({
+  presets: ["env"]
+});
+
 const path = require("path");
 const { argv } = require("yargs");
 const { TruffleLoader } = require("@colony/colony-js-contract-loader-fs");
