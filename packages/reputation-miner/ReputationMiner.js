@@ -568,6 +568,11 @@ class ReputationMiner {
     const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
+
+    // Get the JRH
+    const jrh = await this.justificationTree.getRootHash();
+    let gas; 
+
     for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
       const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
@@ -587,17 +592,20 @@ class ReputationMiner {
         .mul(constant);
       if (ethers.utils.bigNumberify(entryHash).lt(target)) {
         entryIndex = i;
-        break;
+        // Check we haven't submitted this already
+        try {
+          gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, entryIndex);
+          // If that didn't error, then we can submit this
+          break;
+        } catch (err) {
+          // We've submitted already (probably);
+        }
       }
     }
     if (!entryIndex) {
       return new Error("No valid entry for submission found");
     }
-    // Get the JRH
-    const jrh = await this.justificationTree.getRootHash();
     // Submit that entry
-    const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, entryIndex);
-
     return repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
   }
 

@@ -192,6 +192,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
       // For colony wide updates the reputation key userAddress is 0x0, otherwise ensure it the user address of the origin and child skills match
       if (relativeUpdateNumber < nChildUpdates) {
+        // I don't think this require is possible to hit - I can't see how to get checkKeyLogEntry to pass and this to fail
         require(userAddressChildRep == address(0x0), "colony-reputation-mining-colony-wide-update-user-nonzero");
       } else {
         require(userAddressOriginRep == userAddressChildRep, "colony-reputation-mining-origin-user-incorrect");
