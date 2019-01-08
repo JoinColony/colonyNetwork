@@ -362,8 +362,8 @@ contract("ColonyNetworkMining", accounts => {
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
-      await repCycle.confirmNewHash(1);
 
+      await repCycle.confirmNewHash(1);
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
       assert.notEqual(newRepCycle.address, ZERO_ADDRESS);
       assert.notEqual(repCycle.address, ZERO_ADDRESS);
@@ -924,29 +924,17 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       const addr = await colonyNetwork.getReputationMiningCycle(true);
-      let repCycle = await IReputationMiningCycle.at(addr);
+      const repCycle = await IReputationMiningCycle.at(addr);
 
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MAIN_ACCOUNT });
       await repCycle.confirmNewHash(0);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-nnodes-changed-by-not-1" }
+      });
 
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      await goodClient.respondToChallenge();
-      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-nnodes-changed-by-not-1");
-
-      // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      repCycle = await getActiveRepCycle(colonyNetwork);
-      await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
 
@@ -960,7 +948,7 @@ contract("ColonyNetworkMining", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the task.
-      let repCycle = await getActiveRepCycle(colonyNetwork);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 5);
 
@@ -973,23 +961,10 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-nnodes-changed" }
+      });
 
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      await goodClient.respondToChallenge();
-      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-nnodes-changed");
-
-      // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION / 6, this);
-      repCycle = await getActiveRepCycle(colonyNetwork);
-
-      await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
 
