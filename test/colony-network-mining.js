@@ -1892,6 +1892,12 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevertEthers(badClientWrongUser.respondToChallenge(), "colony-reputation-mining-origin-user-incorrect");
       await checkErrorRevertEthers(badClientWrongColony.respondToChallenge(), "colony-reputation-mining-origin-colony-incorrect");
       await checkErrorRevertEthers(badClientWrongSkill.respondToChallenge(), "colony-reputation-mining-origin-skill-incorrect");
+
+      // Cleanup
+      await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
     });
 
     it("if one person lies about what the child skill is when dealing with a colony-wide update, should be handled correctly", async () => {
@@ -2006,6 +2012,12 @@ contract("ColonyNetworkMining", accounts => {
       await checkErrorRevertEthers(badClientWrongUser.respondToChallenge(), "colony-reputation-mining-child-user-incorrect");
       await checkErrorRevertEthers(badClientWrongColony.respondToChallenge(), "colony-reputation-mining-child-colony-incorrect");
       await checkErrorRevertEthers(badClientWrongSkill.respondToChallenge(), "colony-reputation-mining-child-skill-incorrect");
+
+      // Cleanup
+      await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
     });
 
     it("if a colony wide total calculation (for a parent skill) is wrong, it should be handled correctly", async () => {
