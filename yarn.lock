@@ -6611,9 +6611,9 @@ solidity-parser-antlr@^0.2.10:
   version "0.2.15"
   resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.2.15.tgz#4be687a0a53da268c6a07398e0cfb3168896d610"
 
-solidity-parser-antlr@^0.3.2:
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.3.2.tgz#1cf9d019280550a31299dc380e87a310dc4ca154"
+solidity-parser-antlr@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.3.3.tgz#0352e35f914095daa7eef9f3a55cf8074e28cc5b"
 
 solidity-parser-sc@0.4.11:
   version "0.4.11"
