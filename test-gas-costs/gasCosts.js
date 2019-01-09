@@ -41,7 +41,7 @@ import {
   setupRandomColony
 } from "../helpers/test-data-generator";
 
-import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
+import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
 const DSToken = artifacts.require("DSToken");
@@ -220,7 +220,7 @@ contract("All", function(accounts) {
       await repCycle.submitRootHash("0x00", 0, "0x00", 1, { from: STAKER1 });
       await repCycle.confirmNewHash(0);
 
-      const goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
+      const goodClient = new ReputationMinerTestWrapper({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT },
         1,
@@ -305,7 +305,7 @@ contract("All", function(accounts) {
       await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MAIN_ACCOUNT });
       await repCycle.confirmNewHash(0);
 
-      const miningClient = new ReputationMiner({
+      const miningClient = new ReputationMinerTestWrapper({
         loader: contractLoader,
         minerAddress: accounts[8],
         realProviderPort: REAL_PROVIDER_PORT,

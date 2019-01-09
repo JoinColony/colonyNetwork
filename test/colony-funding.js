@@ -43,7 +43,7 @@ import {
   setupRandomColony
 } from "../helpers/test-data-generator";
 
-import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
+import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -679,7 +679,7 @@ contract("Colony Funding", accounts => {
       ];
 
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
-      client = new ReputationMiner({
+      client = new ReputationMinerTestWrapper({
         loader: contractLoader,
         minerAddress: accounts[4],
         realProviderPort: REAL_PROVIDER_PORT,
@@ -729,7 +729,7 @@ contract("Colony Funding", accounts => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
+      const globalKey = await ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await client.insert(globalKey, new BN(10), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -904,7 +904,7 @@ contract("Colony Funding", accounts => {
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
 
-      const globalKey = await ReputationMiner.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
+      const globalKey = await ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await client.insert(globalKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -964,7 +964,7 @@ contract("Colony Funding", accounts => {
 
       await colony.bootstrapColony([userAddress1], [userTokens3]);
 
-      const userKey = await ReputationMiner.getKey(colony.address, rootDomainSkill, userAddress3);
+      const userKey = await ReputationMinerTestWrapper.getKey(colony.address, rootDomainSkill, userAddress3);
       await client.insert(userKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });

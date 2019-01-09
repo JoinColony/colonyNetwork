@@ -701,8 +701,7 @@ class ReputationMiner {
       .add(this.nReputationsBeforeLatestLog);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    const tx = await repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
-    return tx.wait();
+    return repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
   }
 
   /**
@@ -767,10 +766,9 @@ class ReputationMiner {
         siblings
       );
     }
-    const tx = await repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
+    return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
       gasLimit: 1000000
     });
-    return tx.wait();
   }
 
   /**
@@ -787,10 +785,9 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
-    const tx = await repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
+    return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
       gasLimit: 1000000
     });
-    return tx.wait();
   }
 
   /**
@@ -823,7 +820,7 @@ class ReputationMiner {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
 
-    const tx = await repCycle.respondToChallenge(
+    return repCycle.respondToChallenge(
       [
         round,
         index,
@@ -861,8 +858,6 @@ class ReputationMiner {
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
-
-    return tx.wait();
   }
 
   /**

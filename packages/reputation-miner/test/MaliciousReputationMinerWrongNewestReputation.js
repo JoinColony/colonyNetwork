@@ -1,7 +1,7 @@
 import BN from "bn.js";
-import ReputationMiningClient from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMiningWrongNewestReputation extends ReputationMiningClient {
+class MaliciousReputationMiningWrongNewestReputation extends ReputationMinerTestWrapper {
   // This client will supply the wrong newest reputation as part of its proof
   constructor(opts, amountToFalsify) {
     super(opts);

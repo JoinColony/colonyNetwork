@@ -16,7 +16,7 @@ import {
   advanceMiningCycleNoContest
 } from "../helpers/test-helper";
 import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
-import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
+import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import { setupEtherRouter } from "../helpers/upgradable-contracts";
 import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
 
@@ -58,7 +58,7 @@ contract("Colony Network Recovery", accounts => {
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
 
-    client = new ReputationMiner({
+    client = new ReputationMinerTestWrapper({
       loader: contractLoader,
       minerAddress: accounts[5],
       realProviderPort: REAL_PROVIDER_PORT,
@@ -229,7 +229,7 @@ contract("Colony Network Recovery", accounts => {
           await client.saveCurrentState();
           const startingHash = await client.getRootHash();
 
-          const newClient = new ReputationMiner({
+          const newClient = new ReputationMinerTestWrapper({
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
@@ -300,7 +300,7 @@ contract("Colony Network Recovery", accounts => {
           await client.saveCurrentState();
           const startingHash = await client.getRootHash();
 
-          const ignorantclient = new ReputationMiner({
+          const ignorantclient = new ReputationMinerTestWrapper({
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,
@@ -447,7 +447,7 @@ contract("Colony Network Recovery", accounts => {
           await submitAndForwardTimeToDispute([client], this);
           await newActiveCycle.confirmNewHash(0);
 
-          const newClient = new ReputationMiner({
+          const newClient = new ReputationMinerTestWrapper({
             loader: contractLoader,
             minerAddress: accounts[5],
             realProviderPort: REAL_PROVIDER_PORT,

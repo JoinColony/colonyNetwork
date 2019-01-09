@@ -38,7 +38,7 @@ import {
   ZERO_ADDRESS
 } from "../helpers/constants";
 
-import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
+import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 import MaliciousReputationMinerWrongUID from "../packages/reputation-miner/test/MaliciousReputationMinerWrongUID";
 import MaliciousReputationMinerReuseUID from "../packages/reputation-miner/test/MaliciousReputationMinerReuseUID";
@@ -98,12 +98,22 @@ contract("ColonyNetworkMining", accounts => {
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
-    goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree });
+    goodClient = new ReputationMinerTestWrapper({
+      loader: contractLoader,
+      minerAddress: MAIN_ACCOUNT,
+      realProviderPort: REAL_PROVIDER_PORT,
+      useJsTree
+    });
     await goodClient.resetDB();
   });
 
   beforeEach(async () => {
-    goodClient = new ReputationMiner({ loader: contractLoader, minerAddress: MAIN_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree });
+    goodClient = new ReputationMinerTestWrapper({
+      loader: contractLoader,
+      minerAddress: MAIN_ACCOUNT,
+      realProviderPort: REAL_PROVIDER_PORT,
+      useJsTree
+    });
     // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
     badClient = new MaliciousReputationMinerExtraRep(
       { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -3225,7 +3235,7 @@ contract("ColonyNetworkMining", accounts => {
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
       const submission = await repCycle.getDisputeRounds(round, index);
       const targetNode = submission.lowerBound;
-      const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
+      const targetNodeKey = ReputationMinerTestWrapper.getHexString(targetNode, 64);
       const [branchMask, siblings] = await goodClient.justificationTree.getProof(targetNodeKey);
 
       await checkErrorRevert(
@@ -3912,8 +3922,8 @@ contract("ColonyNetworkMining", accounts => {
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
-      const userKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
+      const globalKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const userKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
       await goodClient.insert(userKey, INT128_MAX.subn(1), 0);
@@ -3957,8 +3967,8 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
-      const userKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
+      const globalKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const userKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
       await goodClient.insert(userKey, INT128_MAX.subn(1), 0);
@@ -3981,7 +3991,7 @@ contract("ColonyNetworkMining", accounts => {
       const largeCalculationResult = INT128_MAX.subn(1)
         .mul(DECAY_RATE.NUMERATOR)
         .div(DECAY_RATE.DENOMINATOR);
-      const decayKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
+      const decayKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
       const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
 
       assert.equal(
@@ -4343,8 +4353,8 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
-      const userKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
+      const globalKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const userKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
 
       await goodClient.insert(globalKey, new BN("1"), 0);
       await goodClient.insert(userKey, new BN("1"), 0);
@@ -4358,7 +4368,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MAIN_ACCOUNT });
       await repCycle.confirmNewHash(0);
 
-      const decayKey = await ReputationMiner.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
+      const decayKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MAIN_ACCOUNT);
 
       // Check we have exactly one reputation.
       assert.equal(
@@ -4454,7 +4464,7 @@ contract("ColonyNetworkMining", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
 
-      goodClient2 = new ReputationMiner({
+      goodClient2 = new ReputationMinerTestWrapper({
         loader: contractLoader,
         minerAddress: OTHER_ACCOUNT,
         realProviderPort: REAL_PROVIDER_PORT,

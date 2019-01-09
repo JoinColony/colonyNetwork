@@ -1,6 +1,6 @@
-import ReputationMiner from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMinerClaimNew extends ReputationMiner {
+class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it claims a reputation update
   // corresponds to a reputation that didn't previously exist in the tree.
   constructor(opts, entryToFalsify) {
@@ -22,7 +22,9 @@ class MaliciousReputationMinerClaimNew extends ReputationMiner {
     }
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber);
     if (updateNumber.toString() === this.entryToFalsify) {
-      this.justificationHashes[ReputationMiner.getHexString(updateNumber.sub(1), 64)].nextUpdateProof = await this.getReputationProofObject("0");
+      this.justificationHashes[
+        ReputationMinerTestWrapper.getHexString(updateNumber.sub(1), 64)
+      ].nextUpdateProof = await this.getReputationProofObject("0");
     }
     this.beWrongThisCycle = false;
   }

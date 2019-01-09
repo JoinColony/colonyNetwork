@@ -1,8 +1,8 @@
-import ReputationMiner from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
 
-class MaliciousReputationMinerWrongJRH extends ReputationMiner {
+class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
 
   constructor(opts, entryToFalsify) {
