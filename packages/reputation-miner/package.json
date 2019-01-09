@@ -22,5 +22,9 @@
     "sqlite": "^3.0.0",
     "web3-utils": "^1.0.0-beta.37",
     "yargs": "^12.0.1"
+  },
+  "devDependencies": {
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0"
   }
 }

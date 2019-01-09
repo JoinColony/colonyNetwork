@@ -13,4 +13,5 @@ lib/*
 ganache-accounts.json
 .vscode/
 yarn-error.log
+reputations.json
 reputationStates.sqlite
