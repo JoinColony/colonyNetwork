@@ -165,7 +165,6 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
   } catch (err) {
     const txid = err.transactionHash;
     const tx = await web3GetTransaction(txid);
-
     const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
     const reason = extractReasonString(response);
     assert.equal(reason, errorMessage);
@@ -436,15 +435,10 @@ export async function runBinarySearch(client1, client2) {
   // Binary search will error when it is complete.
   let noError = true;
   while (noError) {
-    let transactionObject;
-    transactionObject = await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-    let tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
-    if (!tx.status) {
-      noError = false;
-    }
-    transactionObject = await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
-    tx = await web3GetTransactionReceipt(transactionObject.hash); // eslint-disable-line no-await-in-loop
-    if (!tx.status) {
+    try {
+      await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+      await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+    } catch (err) {
       noError = false;
     }
   }
