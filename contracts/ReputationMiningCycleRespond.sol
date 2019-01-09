@@ -397,9 +397,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   ) internal
   {
 
-    require(u[U_AGREE_STATE_REPUTATION_VALUE] <= uint(MAX_INT128), "colony-reputation-mining-agreed-state-value-exceeds-max");
-    require(u[U_DISAGREE_STATE_REPUTATION_VALUE] <= uint(MAX_INT128), "colony-reputation-mining-disagree-state-value-exceeds-max");
-
     proveUID(
       u,
       u[U_AGREE_STATE_REPUTATION_UID],
@@ -436,7 +433,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
-    require(u[U_ORIGIN_REPUTATION_VALUE] <= uint(MAX_INT128), "colony-reputation-mining-origin-value-exceeds-max");
     int256 originReputationValue = int256(u[U_ORIGIN_REPUTATION_VALUE]);
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
