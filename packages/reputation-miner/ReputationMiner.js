@@ -606,7 +606,6 @@ class ReputationMiner {
       return new Error("No valid entry for submission found");
     }
     // Submit that entry
-    const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, entryIndex);
     return repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
   }
 

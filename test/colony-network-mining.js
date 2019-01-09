@@ -1058,13 +1058,7 @@ contract("ColonyNetworkMining", accounts => {
     it("should cope if the wrong reputation transition is the first transition", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      let repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION, this);
-
-      await goodClient.addLogContentsToReputationTree();
-      await goodClient.submitRootHash();
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
       badClient = new MaliciousReputationMinerExtraRep(
         { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -1084,7 +1078,7 @@ contract("ColonyNetworkMining", accounts => {
       const wronghash = await badClient.getRootHash();
       assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
 
-      repCycle = await getActiveRepCycle(colonyNetwork);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
       });
@@ -1097,12 +1091,7 @@ contract("ColonyNetworkMining", accounts => {
       it.skip(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
         await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-        let repCycle = await getActiveRepCycle(colonyNetwork);
-        await forwardTime(MINING_CYCLE_DURATION, this);
-        await goodClient.addLogContentsToReputationTree();
-        await goodClient.submitRootHash();
-        await repCycle.confirmNewHash(0);
+        await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
         badClient = new MaliciousReputationMinerExtraRep(
           { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
@@ -1121,7 +1110,7 @@ contract("ColonyNetworkMining", accounts => {
         const wronghash = await badClient.getRootHash();
         assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
 
-        repCycle = await getActiveRepCycle(colonyNetwork);
+        const repCycle = await getActiveRepCycle(colonyNetwork);
 
         let error;
         if (badIndex < 4) {
@@ -1270,9 +1259,8 @@ contract("ColonyNetworkMining", accounts => {
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
@@ -1282,7 +1270,6 @@ contract("ColonyNetworkMining", accounts => {
         "0xfffffffff"
       );
       await badClient.initialise(colonyNetwork.address);
-
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       const righthash = await goodClient.getRootHash();
@@ -1310,6 +1297,7 @@ contract("ColonyNetworkMining", accounts => {
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
     });
 
     it.skip("if a new reputation's uniqueID is wrong, that disagreement should be handled correctly", async () => {
@@ -1404,7 +1392,6 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
       assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
@@ -1436,6 +1423,7 @@ contract("ColonyNetworkMining", accounts => {
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
+
       const confirmedHash = await colonyNetwork.getReputationRootHash();
       assert.equal(confirmedHash, righthash);
     });
@@ -1531,7 +1519,6 @@ contract("ColonyNetworkMining", accounts => {
       await badClient2.addLogContentsToReputationTree();
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
@@ -1550,7 +1537,7 @@ contract("ColonyNetworkMining", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it(`if a reputation decay calculation is wrong, it should be handled correctly`, async () => {
+    it("if a reputation decay calculation is wrong, it should be handled correctly", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -1661,6 +1648,7 @@ contract("ColonyNetworkMining", accounts => {
       await badClient.initialise(colonyNetwork.address);
       const currentGoodClientState = await goodClient.getRootHash();
       await badClient.loadState(currentGoodClientState);
+
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       const righthash = await goodClient.getRootHash();
@@ -3557,7 +3545,7 @@ contract("ColonyNetworkMining", accounts => {
 
     [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 9, badClient2Argument: -1 }].forEach(
       async args => {
-        it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
+        it.skip(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
           is too ${args.word}`, async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
           await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT2, DEFAULT_STAKE);
