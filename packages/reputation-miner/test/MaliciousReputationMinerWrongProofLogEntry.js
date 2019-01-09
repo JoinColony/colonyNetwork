@@ -66,7 +66,7 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
-    return tx;
+    return tx.wait();
   }
 }
 

@@ -60,7 +60,8 @@ class MaliciousReputationMinerWrongJRH extends ReputationMiner {
     // Submit that entry
     const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, entryIndex);
 
-    return repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
+    const tx = await repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
+    return tx.wait();
   }
 }
 

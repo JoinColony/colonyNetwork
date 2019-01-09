@@ -3545,7 +3545,7 @@ contract("ColonyNetworkMining", accounts => {
 
     [{ word: "high", badClient1Argument: 1, badClient2Argument: 1 }, { word: "low", badClient1Argument: 9, badClient2Argument: -1 }].forEach(
       async args => {
-        it.skip(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
+        it(`should fail to respondToChallenge if supplied log entry does not correspond to the entry under disagreement and supplied log entry
           is too ${args.word}`, async () => {
           await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
           await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT2, DEFAULT_STAKE);

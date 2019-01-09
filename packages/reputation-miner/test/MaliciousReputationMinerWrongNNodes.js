@@ -50,7 +50,10 @@ class MaliciousReputationMinerWrongNNodes extends ReputationMiner {
     // Submit that entry with the wrong NNodes
     const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations.add(this.entryToFalsify), jrh, entryIndex);
 
-    return repCycle.submitRootHash(hash, this.nReputations.add(this.entryToFalsify), jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
+    const tx = await repCycle.submitRootHash(hash, this.nReputations.add(this.entryToFalsify), jrh, entryIndex, {
+      gasLimit: `0x${gas.toString(16)}`
+    });
+    return tx.wait();
   }
 
   async getMySubmissionRoundAndIndex() {
