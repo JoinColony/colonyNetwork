@@ -14,7 +14,10 @@ class ReputationMinerClient {
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, dbPath: file, useJsTree });
     this._seed = seed;
-    this._auto = auto || true;
+    this._auto = auto;
+    if (typeof this._auto === "undefined") {
+      this._auto = true;
+    }
 
     this._app = express();
     this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
