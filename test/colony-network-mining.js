@@ -3647,12 +3647,95 @@ contract("ColonyNetworkMining", accounts => {
     );
   });
 
+  describe("Another child reputation dispute", () => {
+    it("if reputation calculation is wrong, contracts should cope if child skills added during the mining cycle or dispute process", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT2, DEFAULT_STAKE);
+
+      await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(4));
+
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 5,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 5000000000000,
+        managerRating: 3,
+        workerRating: 3,
+        worker: OTHER_ACCOUNT
+      });
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 4,
+        managerPayout: 1000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 1000000000,
+        managerRating: 1,
+        workerRating: 1,
+        worker: OTHER_ACCOUNT
+      });
+
+      await goodClient.resetDB();
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
+      await goodClient.saveCurrentState();
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation update for one task completion (manager, worker, evaluator);
+      // That's five in total.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nLogEntries.toNumber(), 5);
+
+      badClient = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        27, // Passing in update number for skillId: 1, user: 0
+        "0xfffffffff"
+      );
+
+      badClient2 = new MaliciousReputationMinerExtraRep(
+        { loader: contractLoader, minerAddress: OTHER_ACCOUNT2, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
+        29, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
+        "0xfffffffff"
+      );
+
+      await metaColony.addGlobalSkill(5);
+
+      // Moving the state to the bad client
+      await badClient.initialise(colonyNetwork.address);
+      await badClient2.initialise(colonyNetwork.address);
+      const currentGoodClientState = await goodClient.getRootHash();
+      await badClient.loadState(currentGoodClientState);
+      await badClient2.loadState(currentGoodClientState);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
+      await metaColony.addGlobalSkill(6);
+
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+      });
+      await repCycle.invalidateHash(0, 3);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
+        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+      });
+      await repCycle.confirmNewHash(2);
+    });
+  });
+
   describe("Intended ('happy path') behaviours", () => {
     before(async () => {
       // We're not resetting the global skills tree as the Network is not reset
       // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
-      await metaColony.addGlobalSkill(5);
-      await metaColony.addGlobalSkill(6);
+
       await metaColony.addGlobalSkill(7);
       await metaColony.addGlobalSkill(8);
       await metaColony.addGlobalSkill(9);
