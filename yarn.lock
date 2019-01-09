@@ -1529,7 +1529,7 @@ chardet@^0.7.0:
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/chardet/-/chardet-0.7.0.tgz#90094849f0937f2eedc2425d0d28a9e5f0cbad9e"
 
-"charenc@>= 0.0.1", charenc@~0.0.1:
+charenc@~0.0.1:
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/charenc/-/charenc-0.0.2.tgz#c0a1d2f3a7092e03774bfa83f14c0fc5790a8667"
 
@@ -1825,7 +1825,7 @@ cross-spawn@^6.0.0, cross-spawn@^6.0.5:
     shebang-command "^1.2.0"
     which "^1.2.9"
 
-"crypt@>= 0.0.1", crypt@~0.0.1:
+crypt@~0.0.1:
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/crypt/-/crypt-0.0.2.tgz#88d7ff7ec0dfb86f713dc87bbb42d044d3e6c41b"
 
@@ -2458,9 +2458,9 @@ eth-ens-namehash@^2.0.8:
     idna-uts46-hx "^2.3.1"
     js-sha3 "^0.5.7"
 
-eth-gas-reporter@^0.1.12:
-  version "0.1.12"
-  resolved "https://registry.yarnpkg.com/eth-gas-reporter/-/eth-gas-reporter-0.1.12.tgz#6b761e05c33ae85be47840dd07468ab51d473dd8"
+eth-gas-reporter@0.1.10:
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/eth-gas-reporter/-/eth-gas-reporter-0.1.10.tgz#6ac24958f0e018d4729902e802dc8449e8a5ff72"
   dependencies:
     abi-decoder "^1.0.8"
     cli-table3 "^0.5.0"
@@ -2470,7 +2470,6 @@ eth-gas-reporter@^0.1.12:
     req-cwd "^2.0.0"
     request "^2.83.0"
     request-promise-native "^1.0.5"
-    sha1 "^1.1.1"
     shelljs "^0.7.8"
     solidity-parser-antlr "^0.2.10"
     sync-request "^6.0.0"
@@ -6456,13 +6455,6 @@ sha.js@^2.4.0, sha.js@^2.4.8:
   dependencies:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
-
-sha1@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/sha1/-/sha1-1.1.1.tgz#addaa7a93168f393f19eb2b15091618e2700f848"
-  dependencies:
-    charenc ">= 0.0.1"
-    crypt ">= 0.0.1"
 
 sha3@^1.1.0, sha3@^1.2.2:
   version "1.2.2"
