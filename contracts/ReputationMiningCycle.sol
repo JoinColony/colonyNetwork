@@ -202,7 +202,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       submission.proposedNewRootHash,
       submission.nNodes,
       submittedHashes[submission.proposedNewRootHash][submission.nNodes][submission.jrh],
-      1200 * WAD // TODO: Make this a function of reputation state
+      0 * WAD // TODO: Make this a function of reputation state
     );
     selfdestruct(colonyNetworkAddress);
   }

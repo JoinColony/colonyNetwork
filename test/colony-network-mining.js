@@ -63,7 +63,7 @@ const contractLoader = new TruffleLoader({
 
 const useJsTree = true;
 
-const REWARD = WAD.muln(1200); // 1200 CLNY
+const REWARD = WAD.muln(0); // No reward currently
 
 contract("ColonyNetworkMining", accounts => {
   const MANAGER = accounts[0];
@@ -650,7 +650,7 @@ contract("ColonyNetworkMining", accounts => {
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
       assert.strictEqual(repLogEntryMiner.user, MAIN_ACCOUNT);
-      assert.isTrue(new BN(repLogEntryMiner.amount).sub(REWARD.divn(2)).gtn(0));
+      assert.strictEqual(repLogEntryMiner.amount, "0"); // Reward is 0 for now
       assert.strictEqual(repLogEntryMiner.skillId, "3");
       assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
       assert.strictEqual(repLogEntryMiner.nUpdates, "4");
@@ -658,7 +658,7 @@ contract("ColonyNetworkMining", accounts => {
 
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
       assert.strictEqual(repLogEntryMiner.user, MAIN_ACCOUNT);
-      assert.isTrue(new BN(repLogEntryMiner.amount).sub(REWARD.divn(2)).ltn(0));
+      assert.strictEqual(repLogEntryMiner.amount, "0"); // Reward is 0 for now
       assert.strictEqual(repLogEntryMiner.skillId, "3");
       assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
       assert.strictEqual(repLogEntryMiner.nUpdates, "4");
@@ -765,11 +765,11 @@ contract("ColonyNetworkMining", accounts => {
       const balance1Updated = await clny.balanceOf(MAIN_ACCOUNT);
       const balance2Updated = await clny.balanceOf(OTHER_ACCOUNT);
       // More than half of the reward
-      assert.isTrue(balance1Updated.sub(REWARD.divn(2)).gtn(0), "Account was not rewarded properly");
+      assert.strictEqual(balance1Updated.toString(), "0"); // Reward is 0 for now
       // Less than half of the reward
-      assert.isTrue(balance2Updated.sub(REWARD.divn(2)).ltn(0), "Account was not rewarded properly");
+      assert.strictEqual(balance2Updated.toString(), "0"); // Reward is 0 for now
       // Sum is total reward within `stakers.length` wei of precision error
-      assert.closeTo(balance1Updated.add(balance2Updated).sub(REWARD).toNumber(), 0, 2); // eslint-disable-line prettier/prettier
+      assert.strictEqual(balance1Updated.add(balance2Updated).toString(), "0"); // Reward is 0 for now
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
