@@ -17,8 +17,7 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
   SECONDS_PER_DAY,
-  DEFAULT_STAKE,
-  MINING_CYCLE_DURATION
+  DEFAULT_STAKE
 } from "../helpers/constants";
 
 import {
@@ -27,9 +26,10 @@ import {
   forwardTime,
   bnSqrt,
   makeReputationKey,
-  runBinarySearch,
   getActiveRepCycle,
-  advanceMiningCycleNoContest
+  advanceMiningCycleNoContest,
+  submitAndForwardTimeToDispute,
+  accommodateChallengeAndInvalidateHash
 } from "../helpers/test-helper";
 
 import {
@@ -63,7 +63,6 @@ contract("All", function(accounts) {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
-  const MAIN_ACCOUNT = accounts[5];
 
   let colony;
   let token;
@@ -213,12 +212,7 @@ contract("All", function(accounts) {
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER2, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, STAKER3, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      let repCycle = await getActiveRepCycle(colonyNetwork);
-
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.submitRootHash("0x00", 0, "0x00", 1, { from: STAKER1 });
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, minerAddress: STAKER1 });
 
       const goodClient = new ReputationMinerTestWrapper({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
       const badClient = new MaliciousReputationMinerExtraRep(
@@ -236,45 +230,47 @@ contract("All", function(accounts) {
       await badClient2.initialise(colonyNetwork.address);
 
       // Submit hashes
-      await goodClient.addLogContentsToReputationTree();
-      await badClient.addLogContentsToReputationTree();
-      await badClient2.addLogContentsToReputationTree();
-
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
-      await goodClient.submitRootHash();
-      await badClient.submitRootHash();
-      await badClient2.submitRootHash();
-      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
 
       // Session of respond / invalidate between our 3 submissions
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-      await badClient2.confirmJustificationRootHash();
-
-      repCycle = await getActiveRepCycle(colonyNetwork);
-      await repCycle.invalidateHash(0, 3); // Bye for R1
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      // We now know where they disagree
-      await goodClient.respondToChallenge();
-      // badClient will fail this if we try
-      // await badClient.respondToChallenge();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.invalidateHash(0, 1);
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient2.confirmBinarySearchResult();
-
-      await goodClient.respondToChallenge();
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.invalidateHash(1, 0);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, badClient2); // Invalidate the 'null' that partners the third hash submitted.
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
+        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+      });
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(2);
+
+      // await goodClient.confirmJustificationRootHash();
+      // await badClient.confirmJustificationRootHash();
+      // await badClient2.confirmJustificationRootHash();
+
+      // repCycle = await getActiveRepCycle(colonyNetwork);
+      // await repCycle.invalidateHash(0, 3); // Bye for R1
+
+      // await runBinarySearch(goodClient, badClient);
+
+      // await goodClient.confirmBinarySearchResult();
+      // await badClient.confirmBinarySearchResult();
+
+      // // We now know where they disagree
+      // await goodClient.respondToChallenge();
+      // // badClient will fail this if we try
+      // // await badClient.respondToChallenge();
+      // await forwardTime(MINING_CYCLE_DURATION, this);
+      // await repCycle.invalidateHash(0, 1);
+
+      // await runBinarySearch(goodClient, badClient);
+
+      // await goodClient.confirmBinarySearchResult();
+      // await badClient2.confirmBinarySearchResult();
+
+      // await goodClient.respondToChallenge();
+      // await forwardTime(MINING_CYCLE_DURATION, this);
+      // await repCycle.invalidateHash(1, 0);
+      // await repCycle.confirmNewHash(2);
 
       // withdraw
       const clnyToken = await metaColony.getToken();
@@ -299,11 +295,7 @@ contract("All", function(accounts) {
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation, managerReputation]);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[8], DEFAULT_STAKE);
-
-      let repCycle = await getActiveRepCycle(colonyNetwork);
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MAIN_ACCOUNT });
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       const miningClient = new ReputationMinerTestWrapper({
         loader: contractLoader,
@@ -311,14 +303,9 @@ contract("All", function(accounts) {
         realProviderPort: REAL_PROVIDER_PORT,
         useJsTree: true
       });
+
       await miningClient.initialise(colonyNetwork.address);
-      await miningClient.addLogContentsToReputationTree();
-
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await miningClient.submitRootHash();
-
-      repCycle = await getActiveRepCycle(colonyNetwork);
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest({ colonyNetwork, client: miningClient, minerAddress: accounts[0], test: this });
 
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
