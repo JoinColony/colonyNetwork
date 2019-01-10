@@ -14,6 +14,8 @@ import {
 
 import {
   INT256_MAX,
+  INT128_MAX,
+  INT128_MIN,
   WAD,
   DELIVERABLE_HASH,
   MANAGER_PAYOUT,
@@ -305,7 +307,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       assert.strictEqual(repLogEntryWorker.user, WORKER);
-      assert.strictEqual(repLogEntryWorker.amount, MAX_PAYOUT.muln(3).divn(2).toString()); // eslint-disable-line prettier/prettier
+      assert.strictEqual(repLogEntryWorker.amount, INT128_MAX.toString()); // eslint-disable-line prettier/prettier
     });
 
     it("should correctly make large negative reputation updates", async () => {
@@ -330,7 +332,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       assert.strictEqual(repLogEntryWorker.user, WORKER);
-      assert.strictEqual(repLogEntryWorker.amount, MAX_PAYOUT.muln(3).divn(2).neg().toString()); // eslint-disable-line prettier/prettier
+      assert.strictEqual(repLogEntryWorker.amount, INT128_MIN.toString()); // eslint-disable-line prettier/prettier
     });
   });
 });

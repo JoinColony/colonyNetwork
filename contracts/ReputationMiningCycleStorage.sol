@@ -10,7 +10,7 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
-
+ 
   You should have received a copy of the GNU General Public License
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
@@ -50,4 +50,7 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
   // Records for which hashes, for which addresses, for which JRHs, for which entries have been accepted
   // Otherwise, people could keep submitting the same entry.
   mapping (bytes32 => mapping(address => mapping(bytes32 => mapping(uint256 => bool)))) submittedEntries; // Storage slot 14
+
+  int256 constant MAX_INT128 = 2**127 - 1;
+  int256 constant MIN_INT128 = (2**127)*(-1);
 }

@@ -22,7 +22,7 @@ contract ReputationMiningCycleDataTypes {
 
   struct ReputationLogEntry {
     address user;
-    int amount;
+    int256 amount;
     uint256 skillId;
     address colony;
     uint256 nUpdates;
@@ -61,4 +61,10 @@ contract ReputationMiningCycleDataTypes {
                                           // determines which part of the tree the search continues down looking for the first discrepancy in the 
                                           // Justification tree.
   }
+
+  /// @notice Event logged when a reputation UID is proven to be correct in a challenge
+  event ProveUIDSuccess(uint256 previousNewReputationUID, uint256 _disagreeStateReputationUID, bool existingUID);
+  
+  /// @notice Event logged when a reputation value is proven to be correct in a challenge
+  event ProveValueSuccess(int256 _agreeStateReputationValue, int256 _disagreeStateReputationValue, int256 _originReputationValue);
 }

@@ -4,6 +4,9 @@ import shortid from "shortid";
 
 const UINT256_MAX = new BN(0).notn(256);
 const INT256_MAX = new BN(0).notn(255);
+const INT128_MAX = new BN(2).pow(new BN(127)).sub(new BN(1));
+const INT128_MIN = new BN(2).pow(new BN(127)).mul(new BN(-1));
+
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 const MANAGER_ROLE = 0;
@@ -41,6 +44,7 @@ const CANCELLED_TASK_STATE = 1;
 const FINALIZED_TASK_STATE = 2;
 
 const SECONDS_PER_DAY = 86400;
+
 const MINING_CYCLE_DURATION = 60 * 60 * 24; // 24 hours
 const DECAY_RATE = {
   NUMERATOR:    new BN("992327946262944"), // eslint-disable-line prettier/prettier
@@ -50,6 +54,8 @@ const DECAY_RATE = {
 module.exports = {
   UINT256_MAX,
   INT256_MAX,
+  INT128_MAX,
+  INT128_MIN,
   ZERO_ADDRESS,
   MANAGER_ROLE,
   EVALUATOR_ROLE,
