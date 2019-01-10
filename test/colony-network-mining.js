@@ -933,18 +933,13 @@ contract("ColonyNetworkMining", accounts => {
       );
       await badClient.initialise(colonyNetwork.address);
 
-      const addr = await colonyNetwork.getReputationMiningCycle(true);
-      const repCycle = await IReputationMiningCycle.at(addr);
-
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MAIN_ACCOUNT });
-      await repCycle.confirmNewHash(0);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-nnodes-changed-by-not-1" }
       });
-
+      const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(1);
     });
 
