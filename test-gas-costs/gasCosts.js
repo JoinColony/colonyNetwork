@@ -231,14 +231,13 @@ contract("All", function(accounts) {
 
       // Submit hashes
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
-
       // Session of respond / invalidate between our 3 submissions
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, badClient2); // Invalidate the 'null' that partners the third hash submitted.
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
-        client2: { respondToChallenge: "colony-reputation-mining-invalid-newest-reputation-proof" }
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(2);
