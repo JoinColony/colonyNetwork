@@ -118,27 +118,28 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 22. The UID of the child reputation for the user being updated in the agree state 
   /// * 23. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
 
-  /// @param _reputationKey The key of the reputation being changed that the disagreement is over.
+  /// @param b A `bytes[4]` array. The elements of this arry, in order are:
+  /// * 1. Reputation key The key of the reputation being changed that the disagreement is over.
+  /// * 2. previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// * 3. originReputationKey Nonzero for child updates only. The key of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// * 4. childReputationKey Required for child updates of a colony-wide global skill. The key corresponding to the child skill of the user in this case
+
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
   /// @param disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
-  /// @param previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param previousNewReputationSiblings The siblings of the Merkle proof of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @param originReputationKey Nonzero for child updates only. The key of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param originReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// @param childReputationSiblings Nonzero for child updates of a colony-wide global skill. The siblings of the Merkle proof of the child skill reputation of the user in the same skill this global update is for
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
     uint256[23] memory u, //An array of 23 UINT Params, ordered as given above.
-    bytes memory _reputationKey,
+    bytes[4] memory b,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
-    bytes memory previousNewReputationKey,
     bytes32[] memory previousNewReputationSiblings,
-    bytes memory originReputationKey,
     bytes32[] memory originReputationSiblings,
-    bytes memory childReputationKey,
     bytes32[] memory childReputationSiblings) public;
 
   /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible

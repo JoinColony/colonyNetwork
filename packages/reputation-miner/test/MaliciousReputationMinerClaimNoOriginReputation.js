@@ -132,15 +132,17 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMinerTestWra
         this.justificationHashes[lastAgreeKey].childReputationProof.uid,
         "0"
       ],
-      reputationKey,
+      [
+        reputationKey,
+        this.justificationHashes[lastAgreeKey].newestReputationProof.key,
+        this.justificationHashes[lastAgreeKey].originReputationProof.key,
+        this.justificationHashes[lastAgreeKey].childReputationProof.key,
+      ],
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
       agreeStateSiblings,
       disagreeStateSiblings,
-      this.justificationHashes[lastAgreeKey].newestReputationProof.key,
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
-      this.justificationHashes[lastAgreeKey].originReputationProof.key,
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
-      this.justificationHashes[lastAgreeKey].childReputationProof.key,
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
