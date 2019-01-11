@@ -437,6 +437,11 @@ export async function runBinarySearch(client1, client2) {
   while (noError) {
     try {
       await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+    } catch (err) {
+      noError = false;
+    }
+
+    try {
       await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
     } catch (err) {
       noError = false;

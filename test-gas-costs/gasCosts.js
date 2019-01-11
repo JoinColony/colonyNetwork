@@ -243,35 +243,6 @@ contract("All", function(accounts) {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(2);
 
-      // await goodClient.confirmJustificationRootHash();
-      // await badClient.confirmJustificationRootHash();
-      // await badClient2.confirmJustificationRootHash();
-
-      // repCycle = await getActiveRepCycle(colonyNetwork);
-      // await repCycle.invalidateHash(0, 3); // Bye for R1
-
-      // await runBinarySearch(goodClient, badClient);
-
-      // await goodClient.confirmBinarySearchResult();
-      // await badClient.confirmBinarySearchResult();
-
-      // // We now know where they disagree
-      // await goodClient.respondToChallenge();
-      // // badClient will fail this if we try
-      // // await badClient.respondToChallenge();
-      // await forwardTime(MINING_CYCLE_DURATION, this);
-      // await repCycle.invalidateHash(0, 1);
-
-      // await runBinarySearch(goodClient, badClient);
-
-      // await goodClient.confirmBinarySearchResult();
-      // await badClient2.confirmBinarySearchResult();
-
-      // await goodClient.respondToChallenge();
-      // await forwardTime(MINING_CYCLE_DURATION, this);
-      // await repCycle.invalidateHash(1, 0);
-      // await repCycle.confirmNewHash(2);
-
       // withdraw
       const clnyToken = await metaColony.getToken();
       await tokenLocking.withdraw(clnyToken, DEFAULT_STAKE.divn(4), { from: STAKER1 });

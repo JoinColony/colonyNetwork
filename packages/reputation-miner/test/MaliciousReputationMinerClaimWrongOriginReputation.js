@@ -1,8 +1,8 @@
-import ReputationMiningClient from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const WRONG_ADDRESS = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
-class MaliciousReputationMiningWrongOriginReputation extends ReputationMiningClient {
+class MaliciousReputationMiningWrongOriginReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no originReputationUID, whether there is one or not
   //
   constructor(opts, entryToFalsify, amountToFalsify, whatToFalsify) {

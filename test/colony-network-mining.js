@@ -1725,6 +1725,7 @@ contract("ColonyNetworkMining", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nLogEntries.toNumber(), 9);
+
       badClient = new MaliciousReputationMinerClaimNoOriginReputation(
         {
           loader: contractLoader,
@@ -1735,6 +1736,7 @@ contract("ColonyNetworkMining", accounts => {
         34, // Passing in update number for colony wide skillId: 5, user: 0
         1
       );
+
       // Moving the state to the bad client
       await badClient.initialise(colonyNetwork.address);
       const currentGoodClientState = await goodClient.getRootHash();
@@ -1746,7 +1748,7 @@ contract("ColonyNetworkMining", accounts => {
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
 
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {});
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
       assert.equal(righthash, acceptedHash, "The correct hash was not accepted");
@@ -2576,17 +2578,7 @@ contract("ColonyNetworkMining", accounts => {
 
       // Check we can't confirm binary search before we've finished it
       // Check we can't respond to challenge before we've finished it
-
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
+      await runBinarySearch(goodClient, badClient);
 
       // Check we can't respond to challenge before we've confirmed the binary search result
       await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
