@@ -18,6 +18,7 @@ import {
   INT128_MIN,
   WAD,
   DELIVERABLE_HASH,
+  INITIAL_FUNDING,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
@@ -333,6 +334,15 @@ contract("Reputation Updates", accounts => {
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       assert.strictEqual(repLogEntryWorker.user, WORKER);
       assert.strictEqual(repLogEntryWorker.amount, INT128_MIN.toString()); // eslint-disable-line prettier/prettier
+    });
+
+    it("should not make zero-valued reputation updates", async () => {
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony, workerPayout: 0 });
+
+      // Entries for manager and evaluator only
+      const numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      assert.strictEqual(numUpdates.toNumber(), 2);
     });
   });
 });

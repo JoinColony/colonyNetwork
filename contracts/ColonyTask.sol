@@ -435,7 +435,7 @@ contract ColonyTask is ColonyStorage {
     uint256,
     uint256,
     uint256,
-    uint256[] memory) 
+    uint256[] memory)
   {
     Task storage t = tasks[_id];
     return (
