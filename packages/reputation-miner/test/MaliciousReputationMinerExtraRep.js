@@ -1,6 +1,6 @@
-import ReputationMiner from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMinerExtraRep extends ReputationMiner {
+class MaliciousReputationMinerExtraRep extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it adds some extra
   // reputation to one entry being parsed.
   constructor(opts, entryToFalsify, amountToFalsify) {

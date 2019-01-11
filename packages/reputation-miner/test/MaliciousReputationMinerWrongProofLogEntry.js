@@ -1,8 +1,8 @@
-import ReputationMiningClient from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
 
-class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient {
+class MaliciousReputationMiningWrongProofLogEntry extends ReputationMinerTestWrapper {
   // This client will supply the wrong log entry as part of its proof
   constructor(opts, amountToFalsify) {
     super(opts);
@@ -66,7 +66,8 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMiningClient
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
-    return tx;
+
+    return tx.wait();
   }
 }
 

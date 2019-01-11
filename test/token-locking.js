@@ -5,7 +5,7 @@ import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBloc
 import { giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
 import { MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
 
-import ReputationMiner from "../packages/reputation-miner/ReputationMiner";
+import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -45,7 +45,7 @@ contract("Token Locking", addresses => {
     otherToken = await DSToken.new(tokenArgs[1]);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
-    const client = new ReputationMiner({
+    const client = new ReputationMinerTestWrapper({
       loader: contractLoader,
       minerAddress: addresses[4],
       realProviderPort: REAL_PROVIDER_PORT,

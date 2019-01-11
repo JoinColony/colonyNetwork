@@ -1,7 +1,7 @@
 import BN from "bn.js";
-import ReputationMiner from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMinerReuseUID extends ReputationMiner {
+class MaliciousReputationMinerReuseUID extends ReputationMinerTestWrapper {
   // This client will reuse a UID for a reputation
   constructor(opts, entryToFalsify, amountToFalsify) {
     super(opts);

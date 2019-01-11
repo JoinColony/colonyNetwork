@@ -1,8 +1,8 @@
-import ReputationMiningClient from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const WRONG_ADDRESS = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
-class MaliciousReputationMiningWrongChildReputation extends ReputationMiningClient {
+class MaliciousReputationMiningWrongChildReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no originReputationUID, whether there is one or not
   //
   constructor(opts, whatToFalsify) {
@@ -13,7 +13,7 @@ class MaliciousReputationMiningWrongChildReputation extends ReputationMiningClie
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement);
 
-    const correctKey = this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].childReputationProof.key;
+    const correctKey = this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].childReputationProof.key;
     let wrongKey;
     if (this.whatToFalsify === "colonyAddress"){
       wrongKey = `0x${WRONG_ADDRESS}${correctKey.slice(WRONG_ADDRESS.length + 2)}`;
@@ -24,7 +24,7 @@ class MaliciousReputationMiningWrongChildReputation extends ReputationMiningClie
       // Falsify the user address
       wrongKey = `${correctKey.slice(0, WRONG_ADDRESS.length + 2 + 64)}${WRONG_ADDRESS}`;
     }
-    this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].childReputationProof.key = wrongKey;
+    this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].childReputationProof.key = wrongKey;
   }
 }
 

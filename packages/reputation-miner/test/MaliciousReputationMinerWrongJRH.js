@@ -1,8 +1,8 @@
-import ReputationMiner from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
 
-class MaliciousReputationMinerWrongJRH extends ReputationMiner {
+class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
 
   constructor(opts, entryToFalsify) {
@@ -60,7 +60,8 @@ class MaliciousReputationMinerWrongJRH extends ReputationMiner {
     // Submit that entry
     const gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, entryIndex);
 
-    return repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
+    const tx = await repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
+    return tx.wait();
   }
 }
 

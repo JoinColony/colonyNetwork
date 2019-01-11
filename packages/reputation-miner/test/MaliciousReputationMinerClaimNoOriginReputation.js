@@ -1,9 +1,9 @@
 import BN from "bn.js";
-import ReputationMiningClient from "../ReputationMiner";
+import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
 
-class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient {
+class MaliciousReputationMiningNoOriginReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no originReputationUID, whether there is one or not
   //
   constructor(opts, entryToFalsify, amountToFalsify) {
@@ -30,7 +30,7 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
     const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
     const originSkillUpdateNumber = logEntry.nUpdates.add(logEntry.nPreviousUpdates).add(this.nReputationsBeforeLatestLog).sub(1);
     const originReputationKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
-    this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].originReputationProof.key = originReputationKey;
+    this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].originReputationProof.key = originReputationKey;
 
     // Set the child skill key
     const relativeUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog).sub(logEntry.nPreviousUpdates);
@@ -44,7 +44,7 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
     } else {
       childKey = await this.getKeyForUpdateNumber(updateNumber);
     }
-    this.justificationHashes[ReputationMiningClient.getHexString(updateNumber, 64)].childReputationProof = 
+    this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].childReputationProof = 
       await this.getReputationProofObject(childKey);
 
     this.alterThisEntry = false;
@@ -67,8 +67,8 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
     const firstDisagreeIdx = submission[8];
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
-    const lastAgreeKey = ReputationMiningClient.getHexString(lastAgreeIdx, 64);
-    const firstDisagreeKey = ReputationMiningClient.getHexString(firstDisagreeIdx, 64);
+    const lastAgreeKey = ReputationMinerTestWrapper.getHexString(lastAgreeIdx, 64);
+    const firstDisagreeKey = ReputationMinerTestWrapper.getHexString(firstDisagreeIdx, 64);
 
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
@@ -77,15 +77,14 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
 
-
     // console.log([
     //   round,
     //   index,
     //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.branchMask,
     //   this.justificationHashes[lastAgreeKey].nextUpdateProof.nNodes,
-    //   ReputationMiningClient.getHexString(agreeStateBranchMask),
+    //   ReputationMinerTestWrapper.getHexString(agreeStateBranchMask),
     //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
-    //   ReputationMiningClient.getHexString(disagreeStateBranchMask),
+    //   ReputationMinerTestWrapper.getHexString(disagreeStateBranchMask),
     //   this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
     //   logEntryNumber,
     //   "0",
@@ -113,9 +112,9 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
         index,
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.branchMask,
         this.justificationHashes[lastAgreeKey].nextUpdateProof.nNodes,
-        ReputationMiningClient.getHexString(agreeStateBranchMask),
+        ReputationMinerTestWrapper.getHexString(agreeStateBranchMask),
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
-        ReputationMiningClient.getHexString(disagreeStateBranchMask),
+        ReputationMinerTestWrapper.getHexString(disagreeStateBranchMask),
         this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
         logEntryNumber,
         "0",
@@ -145,7 +144,7 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMiningClient
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
       { gasLimit: 4000000 }
     );
-    return tx;
+    return tx.wait();
   }
 }
 
