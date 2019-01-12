@@ -27,7 +27,7 @@ Reputation within a specific colony can only be earned and lost by completing ta
 ### Reputation Root Hashes
 Using a [Patricia Tree](https://github.com/ethereum/wiki/wiki/Patricia-Tree), all updates to the global state of reputation are maintained on-chain with a single "Reputation Root Hash".
 
-The Reputation Root Hash is effectively a fingerprint for the network state (of reputation). It is calculated off-chain, but it represents the collection of all reputation-updating events that have occured on the network, and even a single discrepancy in the complete history of reputational updates will result in a different Root Hash.  
+The Reputation Root Hash is effectively a fingerprint for the network state (of reputation). It is calculated off-chain, but it represents the collection of all reputation-updating events that have occurred on the network, and even a single discrepancy in the complete history of reputational updates will result in a different Root Hash.  
 
 
 ## The Reputation Mining Cycle
