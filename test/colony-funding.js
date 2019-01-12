@@ -14,11 +14,7 @@ import {
   ZERO_ADDRESS
 } from "../helpers/constants";
 
-import {
-  getTokenArgs,
-  checkErrorRevert,
-  web3GetBalance
-} from "../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../helpers/test-helper";
 
 import {
   fundColonyWithTokens,

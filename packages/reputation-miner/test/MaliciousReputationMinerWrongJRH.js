@@ -25,7 +25,7 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
     const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
     for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
-      const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash); // eslint-disable-line no-await-in-loop
+      const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
 
       const miningCycleDuration = 60 * 60 * 24;
       const constant = ethers.utils
@@ -34,7 +34,7 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
         .sub(1)
         .div(miningCycleDuration);
 
-      const block = await this.realProvider.getBlock("latest"); // eslint-disable-line no-await-in-loop
+      const block = await this.realProvider.getBlock("latest");
       const { timestamp } = block;
 
       const target = ethers.utils

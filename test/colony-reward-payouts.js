@@ -7,15 +7,7 @@ import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import {
-  INT128_MAX,
-  WAD,
-  MANAGER_ROLE,
-  INITIAL_FUNDING,
-  DEFAULT_STAKE,
-  ZERO_ADDRESS,
-  SECONDS_PER_DAY
-} from "../helpers/constants";
+import { INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, ZERO_ADDRESS, SECONDS_PER_DAY } from "../helpers/constants";
 
 import {
   getTokenArgs,
@@ -27,12 +19,7 @@ import {
   advanceMiningCycleNoContest
 } from "../helpers/test-helper";
 
-import {
-  fundColonyWithTokens,
-  setupFinalizedTask,
-  giveUserCLNYTokensAndStake,
-  setupRandomColony
-} from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
@@ -108,15 +95,7 @@ contract("Colony Reward Payouts", accounts => {
     const balance = await colony.getPotBalance(0, otherToken.address);
     const totalAmountSqrt = bnSqrt(balance);
 
-    initialSquareRoots = [
-      userReputationSqrt,
-      userTokensSqrt,
-      totalReputationSqrt,
-      totalTokensSqrt,
-      numeratorSqrt,
-      denominatorSqrt,
-      totalAmountSqrt
-    ];
+    initialSquareRoots = [userReputationSqrt, userTokensSqrt, totalReputationSqrt, totalTokensSqrt, numeratorSqrt, denominatorSqrt, totalAmountSqrt];
 
     await giveUserCLNYTokensAndStake(colonyNetwork, accounts[4], DEFAULT_STAKE);
     client = new ReputationMinerTestWrapper({
