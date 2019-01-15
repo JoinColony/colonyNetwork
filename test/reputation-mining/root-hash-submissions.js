@@ -28,11 +28,11 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
-const contractLoader = new TruffleLoader({
+const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const useJsTree = true;
 
 contract("Reputation mining - root hash submissions", accounts => {
@@ -58,24 +58,11 @@ contract("Reputation mining - root hash submissions", accounts => {
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
 
-    goodClient = new ReputationMinerTestWrapper({
-      loader: contractLoader,
-      minerAddress: MINER1,
-      realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree
-    });
+    goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
     // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
-    badClient = new MaliciousReputationMinerExtraRep(
-      { loader: contractLoader, minerAddress: MINER2, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-      1,
-      0xfffffffff
-    );
+    badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 1, 0xfffffffff);
     // Mess up the second calculation in a different way
-    badClient2 = new MaliciousReputationMinerExtraRep(
-      { loader: contractLoader, minerAddress: MINER3, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-      1,
-      0xeeeeeeeee
-    );
+    badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, 0xeeeeeeeee);
   });
 
   beforeEach(async () => {
@@ -541,11 +528,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       assert.equal(userLock2.balance, DEFAULT_STAKE.toString());
 
       // We want badClient2 to submit the same hash as badClient for this test.
-      badClient2 = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: MINER3, realProviderPort: REAL_PROVIDER_PORT, useJsTree },
-        1,
-        "0xfffffffff"
-      );
+      badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, "0xfffffffff");
       badClient2.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);

@@ -14,11 +14,11 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
-const contractLoader = new TruffleLoader({
+const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
 });
 
-const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const useJsTree = true;
 
 contract("Reputation mining - client syncing functionality", accounts => {
@@ -43,19 +43,8 @@ contract("Reputation mining - client syncing functionality", accounts => {
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
 
-    reputationMiner1 = new ReputationMinerTestWrapper({
-      loader: contractLoader,
-      minerAddress: MINER1,
-      realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree
-    });
-
-    reputationMiner2 = new ReputationMinerTestWrapper({
-      loader: contractLoader,
-      minerAddress: MINER2,
-      realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree
-    });
+    reputationMiner1 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
+    reputationMiner2 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree });
   });
 
   beforeEach(async () => {
