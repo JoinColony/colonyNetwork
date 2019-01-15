@@ -43,7 +43,6 @@ contract("Reputation mining - client core functionality", accounts => {
     clny = await Token.at(clnyAddress);
 
     reputationMiner = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree: true });
-    client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false });
   });
 
   beforeEach(async () => {
@@ -65,7 +64,7 @@ contract("Reputation mining - client core functionality", accounts => {
     await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner, test: this });
     await reputationMiner.saveCurrentState();
 
-    await client.resetDB();
+    client = new ReputationMinerClient({ loader, realProviderPort, minerAddress: MINER1, useJsTree: true, auto: false });
     await client.initialise(colonyNetwork.address);
   });
 
