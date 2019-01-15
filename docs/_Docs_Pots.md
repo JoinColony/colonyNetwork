@@ -32,7 +32,7 @@ Each task created within a domain also has its own pot, which is funded from the
 
 ## Funding Proposals
 
-Note: Funding Proposals are not slated for implementation in the first version of the colonyNetwork. Instead, movement of funds between pots in a colony is permissioned activity based on [authority roles](/colonyjs/api-authorityclient/). The rest of this page explains funding proposals as described in the Colony Whitepaper, which will be implemented in subsequent upgrades to the Colony Network.
+Note: Funding Proposals are not slated for implementation in the first version of the colonyNetwork. Instead, movement of funds between pots in a colony is permissioned activity based on [authority roles](/colonyjs/docs-authority/). The rest of this page explains funding proposals as described in the Colony Whitepaper, which will be implemented in subsequent upgrades to the Colony Network.
 
 Funding proposals are the mechanism that mediates the flow of funds between pots. Funding proposals are created by any user with sufficient reputation to stake in the relevant domain.
 

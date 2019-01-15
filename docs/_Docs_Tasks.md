@@ -12,7 +12,7 @@ There is intentionally no further prescription for how a task is meant to be use
 
 ### Task structure
 
-This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For a more exact description, please refer to the [colonyJS API](../../colonyjs/api-colonyclient/) or [IColony.sol](https://github.com/JoinColony/colonyNetwork/blob/develop/contracts/IColony.sol).
+This is a general description of the Task as it functions in the current Colony Network implementation, with some aspects suppressed for legibility. For a more exact description, please refer to the [colonyJS API](/colonyjs/api-colonyclient/) or [IColony.sol](https://github.com/JoinColony/colonyNetwork/blob/develop/contracts/IColony.sol).
 
 | component | description |
 |------------|---------|
@@ -32,9 +32,9 @@ Every task has three roles associated with it which determine permissions for ed
 |Evaluator [`1`]| A task's Evaluator role is a person who will independently establish the quality of the work done by the Worker.  
 |Worker [`2`]| A task's Worker role is the person who will fulfill the requirements of the task as specified in the task brief.
 
-Once created, some changes to a task require the signature of multiple roles. See the [colonyJS task lifecycle](/colonyjs/docs-task-lifecycle/) and [Multisignature transactions](/colonyjs/docs-multisignature-transactions/) for for further information about role permissions and multi-sig operations.
+Once created, some changes to a task require the signature of multiple roles. See the [colonyJS task lifecycle](/colonyjs/docs-task-lifecycle/) and [Multisignature transactions](/colonyjs/docs-multisignature/) for for further information about role permissions and multi-sig operations.
 
-Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/api-authorityclient/).
+Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/docs-authority/).
 
 ## The Task Life-cycle
 

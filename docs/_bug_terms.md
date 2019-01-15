@@ -12,7 +12,7 @@ To participate in this bug bounty you must:
 
 To qualify for a bounty you must:
 * Be the first to report a specific vulnerability
-* Report a vulnerability through the process outlined in the [Rules and Scope](link)
+* Report a vulnerability through the process outlined in the [Rules](https://docs.colony.io/colonynetwork/bug-bounty-program-overview/#rules)
 * Disclose the vulnerability responsibly and directly to Colony. Disclosure to other third parties before or during bug review will invalidate the submission
 * Not seek or leverage the vulnerability for additional or external bounties or rewards
 

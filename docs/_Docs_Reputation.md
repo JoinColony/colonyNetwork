@@ -14,7 +14,7 @@ The Reputation System in Colony is a tool for governance in a decentralized cont
 
 Reputation confers influence in a colony by mediating a member's ability to adjust various aspects of the organization. Whether it is the ability to move funds to fund tasks, to create new domains and skills, or to settle disputes, reputation determines influence by degrees.
 
-*It is important to note that in the first deployed version of the Colony Network, reputation will play a more passive role in a colony. Reputation will still determine payouts during the rewards cycle, but influence over domain/skill creation, funding tasks, and other important functions will instead be mediated by a permissioned [authority role](/colonyjs/api-authorityclient/).* 
+*It is important to note that in the first deployed version of the Colony Network, reputation will play a more passive role in a colony. Reputation will still determine payouts during the rewards cycle, but influence over domain/skill creation, funding tasks, and other important functions will instead be mediated by a permissioned [authority role](/colonyjs/api-authorityclient/).*
 
 ==TOC==
 
@@ -45,7 +45,7 @@ If an objection to any action is raised by another member, the reputation stake 
 
 If an objection is escalated to a dispute, a reputation-weighted vote is called within the objection's domain, in which both sides must stake reputation. The amount of reputation gained/lost by each side is determined by the vote's outcome ('landslide' outcomes punish the losing side harshly, while more contentious decisions have only small penalties for the losing side).
 
-See [Objections and Disputes](./docs-disputes/) for more information about reputation-weighted voting and the dispute resolution process.
+See [Objections and Disputes](/colonynetwork/docs-objections-and-disputes/) for more information about reputation-weighted voting and the dispute resolution process.
 
 ### Reputation Bootstrapping
 After a colony is created, reputation can only be gained and lost through normal interactions within a colony. But at the colony's beginning, we are presented with a bootstrapping problem: When a colony is new, no-one has yet completed any work in it and so nobody will have earned any reputation.
@@ -53,6 +53,6 @@ After a colony is created, reputation can only be gained and lost through normal
 During a colony's creation, the creator of the colony is granted the ability to designate an initial set of addresses to receive native tokens and an equivalent amount of reputation. Users receiving reputation are presumably the colony creator and their colleagues, and this starting reputation should be seen as a representation of the existing trust within the team.
 
 ## Reputation Decay
-One of the unique characteristics of reputation is that it decays over time. This is meant to incentivise frequent and consistent contributions to a colony, and to ensure that reputation represents _recent_ contributions.
+One of the unique characteristics of reputation is that it decays over time. This is meant to incentivize frequent and consistent contributions to a colony, and to ensure that reputation represents _recent_ contributions.
 
 Every 600000 blocks, a user’s reputation in every domain or skill decays by a factor of 2. This implies a 'reputation half-life' of about 3.5 months.
