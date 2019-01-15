@@ -14,7 +14,8 @@ import {
   advanceMiningCycleNoContest,
   submitAndForwardTimeToDispute,
   accommodateChallengeAndInvalidateHash,
-  getValidEntryNumber
+  getValidEntryNumber,
+  finishReputationMiningCycleAndWithdrawAllMinerStakes
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -100,46 +101,7 @@ contract("Reputation mining - root hash submissions", accounts => {
   });
 
   afterEach(async () => {
-    // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
-    await forwardTime(MINING_CYCLE_DURATION, this);
-    const repCycle = await getActiveRepCycle(colonyNetwork);
-    const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-    if (nSubmittedHashes.gtn(0)) {
-      const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
-      if (nSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
-        await repCycle.confirmNewHash(nSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
-        // But for now, that's okay.
-      } else {
-        // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
-        console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
-        // process.exit(1);
-        return;
-      }
-    }
-
-    // Actually do the withdrawal.
-    await Promise.all(
-      accounts.map(async user => {
-        const info = await tokenLocking.getUserLock(clny.address, user);
-        const stakedBalance = new BN(info.balance);
-
-        if (stakedBalance.gt(new BN(0))) {
-          if (user === MINER1) {
-            assert.isTrue(stakedBalance.gte(DEFAULT_STAKE), "Insufficient stake for MINER1");
-            if (stakedBalance.gt(DEFAULT_STAKE)) {
-              await tokenLocking.withdraw(clny.address, stakedBalance.sub(DEFAULT_STAKE), { from: user });
-            }
-          } else {
-            await tokenLocking.withdraw(clny.address, stakedBalance, { from: user });
-          }
-        }
-
-        const userBalance = await clny.balanceOf(user);
-        if (userBalance.gt(new BN(0))) {
-          await clny.burn(userBalance, { from: user });
-        }
-      })
-    );
+    await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
   });
 
   describe("when determining submission eligibility", () => {

@@ -7,10 +7,12 @@ import ethUtils from "ethereumjs-util";
 import BN from "bn.js";
 import fs from "fs";
 
-import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION } from "./constants";
+import { UINT256_MAX, MIN_STAKE, MINING_CYCLE_DURATION, DEFAULT_STAKE } from "./constants";
 
 const IColony = artifacts.require("IColony");
+const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
+const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 export function web3GetNetwork() {
@@ -614,4 +616,55 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   } else {
     await checkSuccessEthers(client2.respondToChallenge(), "Client 2 failed unexpectedly on respondToChallenge");
   }
+}
+
+export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, test) {
+  // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
+  await forwardTime(MINING_CYCLE_DURATION, test);
+  const repCycle = await getActiveRepCycle(colonyNetwork);
+  const nSubmittedHashes = await repCycle.getNSubmittedHashes();
+  if (nSubmittedHashes.gtn(0)) {
+    const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
+    if (nSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
+      await repCycle.confirmNewHash(nSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
+      // But for now, that's okay.
+    } else {
+      // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
+      console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
+      // process.exit(1);
+      return;
+    }
+  }
+
+  // Actually do the withdrawal.
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+  const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+  const metaColonyAddress = await colonyNetwork.getMetaColony();
+  const metaColony = await IMetaColony.at(metaColonyAddress);
+  const clnyAddress = await metaColony.getToken();
+  const clny = await Token.at(clnyAddress);
+
+  const accounts = await web3GetAccounts();
+  await Promise.all(
+    accounts.map(async user => {
+      const info = await tokenLocking.getUserLock(clny.address, user);
+      const stakedBalance = new BN(info.balance);
+
+      if (stakedBalance.gt(new BN(0))) {
+        if (user === accounts[5]) {
+          assert.isTrue(stakedBalance.gte(DEFAULT_STAKE), "Insufficient stake for MINER1");
+          if (stakedBalance.gt(DEFAULT_STAKE)) {
+            await tokenLocking.withdraw(clny.address, stakedBalance.sub(DEFAULT_STAKE), { from: user });
+          }
+        } else {
+          await tokenLocking.withdraw(clny.address, stakedBalance, { from: user });
+        }
+      }
+
+      const userBalance = await clny.balanceOf(user);
+      if (userBalance.gt(new BN(0))) {
+        await clny.burn(userBalance, { from: user });
+      }
+    })
+  );
 }
