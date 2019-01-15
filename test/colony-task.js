@@ -149,7 +149,7 @@ contract("ColonyTask", accounts => {
       const taskCountBefore = await colony.getTaskCount();
 
       for (let i = 0; i < 5; i += 1) {
-        await makeTask({ colony }); // eslint-disable-line no-await-in-loop
+        await makeTask({ colony });
       }
 
       const taskCountAfter = await colony.getTaskCount();
