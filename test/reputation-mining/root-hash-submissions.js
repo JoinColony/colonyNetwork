@@ -57,9 +57,7 @@ contract("Reputation mining - root hash submissions", accounts => {
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
-  });
 
-  beforeEach(async () => {
     goodClient = new ReputationMinerTestWrapper({
       loader: contractLoader,
       minerAddress: MINER1,
@@ -78,6 +76,13 @@ contract("Reputation mining - root hash submissions", accounts => {
       1,
       0xeeeeeeeee
     );
+  });
+
+  beforeEach(async () => {
+    await goodClient.resetDB();
+    await badClient.resetDB();
+    await badClient2.resetDB();
+
     await goodClient.initialise(colonyNetwork.address);
     await badClient.initialise(colonyNetwork.address);
     await badClient2.initialise(colonyNetwork.address);

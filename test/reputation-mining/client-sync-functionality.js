@@ -42,15 +42,24 @@ contract("Reputation mining - client syncing functionality", accounts => {
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
     clny = await Token.at(clnyAddress);
-  });
 
-  beforeEach(async () => {
     reputationMiner1 = new ReputationMinerTestWrapper({
       loader: contractLoader,
       minerAddress: MINER1,
       realProviderPort: REAL_PROVIDER_PORT,
       useJsTree
     });
+
+    reputationMiner2 = new ReputationMinerTestWrapper({
+      loader: contractLoader,
+      minerAddress: MINER2,
+      realProviderPort: REAL_PROVIDER_PORT,
+      useJsTree
+    });
+  });
+
+  beforeEach(async () => {
+    await reputationMiner1.resetDB();
     await reputationMiner1.initialise(colonyNetwork.address);
 
     const lock = await tokenLocking.getUserLock(clny.address, MINER1);
@@ -100,12 +109,7 @@ contract("Reputation mining - client syncing functionality", accounts => {
     await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
     await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-    reputationMiner2 = new ReputationMinerTestWrapper({
-      loader: contractLoader,
-      minerAddress: MINER2,
-      realProviderPort: REAL_PROVIDER_PORT,
-      useJsTree
-    });
+    await reputationMiner2.resetDB();
     await reputationMiner2.initialise(colonyNetwork.address);
   });
 
