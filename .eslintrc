@@ -16,7 +16,8 @@
     "flowtype/require-valid-file-annotation": "off",
     "import/named": "off",
     "no-console": "off",
-    "no-unused-expressions": "off"
+    "no-unused-expressions": "off",
+    "no-await-in-loop": "off"
   },
   "parserOptions": {
     "ecmaVersion": 2017

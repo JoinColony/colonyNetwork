@@ -314,8 +314,8 @@ export async function createSignatures(colony, taskId, signers, value, data) {
     let user = signers[i].toString();
     user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
-    const prefixedMessageHash = await ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex")); // eslint-disable-line no-await-in-loop
-    const sig = await ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex")); // eslint-disable-line no-await-in-loop
+    const prefixedMessageHash = await ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
+    const sig = await ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
 
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);
@@ -412,7 +412,7 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
   // or return an error
   const timestamp = await currentBlockTime();
   for (let i = startingEntryNumber; i <= nIter; i += 1) {
-    const entryHash = await repCycle.getEntryHash(account, i, hash); // eslint-disable-line no-await-in-loop
+    const entryHash = await repCycle.getEntryHash(account, i, hash);
     const target = new BN(timestamp).sub(reputationMiningWindowOpenTimestamp).mul(constant);
     if (new BN(entryHash.slice(2), 16).lt(target)) {
       return i;
@@ -424,8 +424,8 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 export async function submitAndForwardTimeToDispute(clients, test) {
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
   for (let i = 0; i < clients.length; i += 1) {
-    await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
-    await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
+    await clients[i].addLogContentsToReputationTree();
+    await clients[i].submitRootHash();
   }
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 }
@@ -436,13 +436,13 @@ export async function runBinarySearch(client1, client2) {
   let noError = true;
   while (noError) {
     try {
-      await client1.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+      await client1.respondToBinarySearchForChallenge();
     } catch (err) {
       noError = false;
     }
 
     try {
-      await client2.respondToBinarySearchForChallenge(); // eslint-disable-line no-await-in-loop
+      await client2.respondToBinarySearchForChallenge();
     } catch (err) {
       noError = false;
     }
@@ -562,26 +562,24 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
     binarySearchStep += 1;
     if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep]) {
-      await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+      await checkErrorRevertEthers(client1.respondToBinarySearchForChallenge(), errors.client1.respondToBinarySearchForChallenge[binarySearchStep]);
       binarySearchError = true;
     } else {
-      // eslint-disable-next-line no-await-in-loop
       await checkSuccessEthers(
         client1.respondToBinarySearchForChallenge(),
         `Client 1 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
       );
     }
     if (errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
-      await checkErrorRevertEthers(client2.respondToBinarySearchForChallenge(), errors.client2.respondToBinarySearchForChallenge[binarySearchStep]); // eslint-disable-line no-await-in-loop
+      await checkErrorRevertEthers(client2.respondToBinarySearchForChallenge(), errors.client2.respondToBinarySearchForChallenge[binarySearchStep]);
       binarySearchError = true;
     } else {
-      // eslint-disable-next-line no-await-in-loop
       await checkSuccessEthers(
         client2.respondToBinarySearchForChallenge(),
         `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
       );
     }
-    submission1 = await repCycle.getDisputeRounds(round1, idx1); // eslint-disable-line no-await-in-loop
+    submission1 = await repCycle.getDisputeRounds(round1, idx1);
   }
 
   if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep] || errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {

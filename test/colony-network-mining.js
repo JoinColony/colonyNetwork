@@ -686,8 +686,8 @@ contract("ColonyNetworkMining", accounts => {
 
       let entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", 1);
       for (let i = 1; i <= 12; i += 1) {
-        await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber, { from: MAIN_ACCOUNT }); // eslint-disable-line no-await-in-loop
-        entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", entryNumber + 1); // eslint-disable-line no-await-in-loop
+        await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber, { from: MAIN_ACCOUNT });
+        entryNumber = await getValidEntryNumber(colonyNetwork, MAIN_ACCOUNT, "0x12345678", entryNumber + 1);
       }
 
       await checkErrorRevert(
@@ -1578,7 +1578,7 @@ contract("ColonyNetworkMining", accounts => {
         const key = keys[i];
         const value = goodClient.reputations[key];
         const score = new BN(value.slice(2, 66), 16);
-        await badClient.insert(key, score, 0); // eslint-disable-line no-await-in-loop
+        await badClient.insert(key, score, 0);
       }
 
       righthash = await goodClient.getRootHash();
@@ -3115,8 +3115,8 @@ contract("ColonyNetworkMining", accounts => {
 
       await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(8));
       for (let i = 0; i < 8; i += 1) {
-        await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], DEFAULT_STAKE); // eslint-disable-line no-await-in-loop
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] }); // eslint-disable-line no-await-in-loop
+        await giveUserCLNYTokensAndStake(colonyNetwork, accountsForTest[i], DEFAULT_STAKE);
+        await setupFinalizedTask({ colonyNetwork, colony: metaColony, worker: accountsForTest[i] });
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
         // right taskId, so if they're all created at once it messes up.
       }
@@ -3144,9 +3144,9 @@ contract("ColonyNetworkMining", accounts => {
       for (let i = 0; i < 8; i += 1) {
         // Doing these individually rather than in a big loop because with many instances of the EVM
         // churning away at once, I *think* it's slower.
-        await clients[i].addLogContentsToReputationTree(); // eslint-disable-line no-await-in-loop
-        await clients[i].submitRootHash(); // eslint-disable-line no-await-in-loop
-        await clients[i].confirmJustificationRootHash(); // eslint-disable-line no-await-in-loop
+        await clients[i].addLogContentsToReputationTree();
+        await clients[i].submitRootHash();
+        await clients[i].confirmJustificationRootHash();
       }
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -3281,10 +3281,10 @@ contract("ColonyNetworkMining", accounts => {
           }
         );
 
-        const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength(); // eslint-disable-line no-await-in-loop
-        const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1); // eslint-disable-line no-await-in-loop
+        const nLogEntries = await inactiveRepCycle.getReputationUpdateLogLength();
+        const lastLogEntry = await inactiveRepCycle.getReputationUpdateLogEntry(nLogEntries - 1);
 
-        const currentHashNNodes = await colonyNetwork.getReputationRootHashNNodes(); // eslint-disable-line no-await-in-loop
+        const currentHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
         const nUpdates = new BN(lastLogEntry.nUpdates).add(new BN(lastLogEntry.nPreviousUpdates)).add(currentHashNNodes);
         // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
         // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
@@ -3706,7 +3706,7 @@ contract("ColonyNetworkMining", accounts => {
 
       // TODO: This test probably needs to be written more carefully to make sure all possible edge cases are dealt with
       for (let i = 3; i < 11; i += 1) {
-        await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], DEFAULT_STAKE); // eslint-disable-line no-await-in-loop
+        await giveUserCLNYTokensAndStake(colonyNetwork, accounts[i], DEFAULT_STAKE);
         // These have to be done sequentially because this function uses the total number of tasks as a proxy for getting the
         // right taskId, so if they're all created at once it messes up.
       }
@@ -4395,7 +4395,7 @@ contract("ColonyNetworkMining", accounts => {
         const key = keys[i];
         const value = goodClient.reputations[key];
         const score = new BN(value.slice(2, 66), 16);
-        await badClient.insert(key, score, 0); // eslint-disable-line no-await-in-loop
+        await badClient.insert(key, score, 0);
       }
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -4429,7 +4429,7 @@ contract("ColonyNetworkMining", accounts => {
       // Make multiple reputation cycles, with different numbers tasks and blocks in them.
       await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(5));
       for (let i = 0; i < 5; i += 1) {
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony }); // eslint-disable-line no-await-in-loop
+        await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       }
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
@@ -4444,7 +4444,7 @@ contract("ColonyNetworkMining", accounts => {
 
       await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(5));
       for (let i = 0; i < 5; i += 1) {
-        await setupFinalizedTask({ colonyNetwork, colony: metaColony }); // eslint-disable-line no-await-in-loop
+        await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       }
 
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
@@ -4485,7 +4485,7 @@ contract("ColonyNetworkMining", accounts => {
 
           fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(5));
           for (let i = 0; i < 5; i += 1) {
-            await setupFinalizedTask({ colonyNetwork, colony: metaColony }); // eslint-disable-line no-await-in-loop
+            await setupFinalizedTask({ colonyNetwork, colony: metaColony });
           }
 
           await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
