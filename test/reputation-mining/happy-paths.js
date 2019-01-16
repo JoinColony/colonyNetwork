@@ -51,7 +51,7 @@ const loader = new TruffleLoader({
 
 const useJsTree = true;
 
-contract("Reputation Mining - happy paths", accounts => {
+contract.only("Reputation Mining - happy paths", accounts => {
   const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
   const WORKER = accounts[2];

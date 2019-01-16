@@ -21,7 +21,7 @@ const loader = new TruffleLoader({
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const useJsTree = true;
 
-contract("Reputation mining - client syncing functionality", accounts => {
+contract("Reputation mining - client sync functionality", accounts => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
 

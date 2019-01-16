@@ -41,7 +41,7 @@ const loader = new TruffleLoader({
 
 const useJsTree = true;
 
-contract("Reputation Mining - misbehaviour during disputes resolution", accounts => {
+contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
