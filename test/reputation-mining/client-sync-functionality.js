@@ -28,7 +28,7 @@ contract("Reputation mining - client sync functionality", accounts => {
   let colonyNetwork;
   let tokenLocking;
   let metaColony;
-  let clny;
+  let clnyToken;
   let reputationMiner1;
   let reputationMiner2;
   let startingBlockNumber;
@@ -41,7 +41,7 @@ contract("Reputation mining - client sync functionality", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
-    clny = await Token.at(clnyAddress);
+    clnyToken = await Token.at(clnyAddress);
 
     reputationMiner1 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
     reputationMiner2 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree });
@@ -51,7 +51,7 @@ contract("Reputation mining - client sync functionality", accounts => {
     await reputationMiner1.resetDB();
     await reputationMiner1.initialise(colonyNetwork.address);
 
-    const lock = await tokenLocking.getUserLock(clny.address, MINER1);
+    const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
     assert.equal(lock.balance, DEFAULT_STAKE.toString());
 
     // Advance two cycles to clear active and inactive state.
@@ -65,8 +65,8 @@ contract("Reputation mining - client sync functionality", accounts => {
     assert.equal(nInactiveLogEntries.toNumber(), 1);
 
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
-    const userBalance = await clny.balanceOf(MINER1);
-    await clny.burn(userBalance, { from: MINER1 });
+    const userBalance = await clnyToken.balanceOf(MINER1);
+    await clnyToken.burn(userBalance, { from: MINER1 });
 
     const startingBlock = await currentBlock();
     startingBlockNumber = startingBlock.number;
@@ -74,7 +74,7 @@ contract("Reputation mining - client sync functionality", accounts => {
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
     // Make multiple reputation cycles, with different numbers tasks and blocks in them.
-    await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(5));
+    await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
     for (let i = 0; i < 5; i += 1) {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
     }
@@ -89,7 +89,7 @@ contract("Reputation mining - client sync functionality", accounts => {
 
     await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-    await fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(5));
+    await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
     for (let i = 0; i < 5; i += 1) {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
     }
@@ -126,7 +126,7 @@ contract("Reputation mining - client sync functionality", accounts => {
           // Do some additional updates.
           await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-          fundColonyWithTokens(metaColony, clny, INITIAL_FUNDING.muln(5));
+          fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
           for (let i = 0; i < 5; i += 1) {
             await setupFinalizedTask({ colonyNetwork, colony: metaColony });
           }

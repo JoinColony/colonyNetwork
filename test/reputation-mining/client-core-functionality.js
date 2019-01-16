@@ -28,7 +28,7 @@ contract("Reputation mining - client core functionality", accounts => {
   let colonyNetwork;
   let tokenLocking;
   let metaColony;
-  let clny;
+  let clnyToken;
   let reputationMiner;
   let client;
 
@@ -40,15 +40,15 @@ contract("Reputation mining - client core functionality", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
-    clny = await Token.at(clnyAddress);
+    clnyToken = await Token.at(clnyAddress);
+
+    const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
+    assert.equal(lock.balance, DEFAULT_STAKE.toString());
 
     reputationMiner = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree: true });
   });
 
   beforeEach(async () => {
-    const lock = await tokenLocking.getUserLock(clny.address, MINER1);
-    assert.equal(lock.balance, DEFAULT_STAKE.toString());
-
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });

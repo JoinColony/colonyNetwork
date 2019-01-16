@@ -43,7 +43,7 @@ contract("Reputation mining - root hash submissions", accounts => {
   let colonyNetwork;
   let tokenLocking;
   let metaColony;
-  let clny;
+  let clnyToken;
   let goodClient;
   let badClient;
   let badClient2;
@@ -56,7 +56,7 @@ contract("Reputation mining - root hash submissions", accounts => {
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IMetaColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
-    clny = await Token.at(clnyAddress);
+    clnyToken = await Token.at(clnyAddress);
 
     goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
     // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
@@ -74,7 +74,7 @@ contract("Reputation mining - root hash submissions", accounts => {
     await badClient.initialise(colonyNetwork.address);
     await badClient2.initialise(colonyNetwork.address);
 
-    const lock = await tokenLocking.getUserLock(clny.address, MINER1);
+    const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
     assert.equal(lock.balance, DEFAULT_STAKE.toString());
 
     // Advance two cycles to clear active and inactive state.
@@ -88,8 +88,8 @@ contract("Reputation mining - root hash submissions", accounts => {
     assert.equal(nInactiveLogEntries.toNumber(), 1);
 
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
-    const userBalance = await clny.balanceOf(MINER1);
-    await clny.burn(userBalance, { from: MINER1 });
+    const userBalance = await clnyToken.balanceOf(MINER1);
+    await clnyToken.burn(userBalance, { from: MINER1 });
   });
 
   afterEach(async () => {
@@ -206,7 +206,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       await repCycle.confirmNewHash(0);
 
       // Check that they received the reward
-      const balance1Updated = await clny.balanceOf(MINER1);
+      const balance1Updated = await clnyToken.balanceOf(MINER1);
       assert.equal(balance1Updated.toString(), REWARD.toString(), "Account was not rewarded properly");
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
@@ -303,8 +303,8 @@ contract("Reputation mining - root hash submissions", accounts => {
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 });
 
-      const userLock = await tokenLocking.getUserLock(clny.address, MINER1);
-      await checkErrorRevert(tokenLocking.withdraw(clny.address, userLock.balance, { from: MINER1 }), "colony-token-locking-hash-submitted");
+      const userLock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
+      await checkErrorRevert(tokenLocking.withdraw(clnyToken.address, userLock.balance, { from: MINER1 }), "colony-token-locking-hash-submitted");
     });
 
     it("should allow a new reputation hash to be set if only one was submitted", async () => {
@@ -518,13 +518,13 @@ contract("Reputation mining - root hash submissions", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-      let userLock0 = await tokenLocking.getUserLock(clny.address, MINER1);
+      let userLock0 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       assert.equal(userLock0.balance, DEFAULT_STAKE.toString());
 
-      let userLock1 = await tokenLocking.getUserLock(clny.address, MINER2);
+      let userLock1 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       assert.equal(userLock1.balance, DEFAULT_STAKE.toString());
 
-      let userLock2 = await tokenLocking.getUserLock(clny.address, MINER3);
+      let userLock2 = await tokenLocking.getUserLock(clnyToken.address, MINER3);
       assert.equal(userLock2.balance, DEFAULT_STAKE.toString());
 
       // We want badClient2 to submit the same hash as badClient for this test.
@@ -536,20 +536,20 @@ contract("Reputation mining - root hash submissions", accounts => {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
 
-      userLock0 = await tokenLocking.getUserLock(clny.address, MINER1);
+      userLock0 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
       assert.equal(userLock0.balance, DEFAULT_STAKE.add(MIN_STAKE.muln(2)).toString(), "Account was not rewarded properly");
 
-      userLock1 = await tokenLocking.getUserLock(clny.address, MINER2);
+      userLock1 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       assert.equal(userLock1.balance, DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
 
-      userLock2 = await tokenLocking.getUserLock(clny.address, MINER3);
+      userLock2 = await tokenLocking.getUserLock(clnyToken.address, MINER3);
       assert.equal(userLock2.balance, DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-      await clny.burn(REWARD, { from: MINER1 });
+      await clnyToken.burn(REWARD, { from: MINER1 });
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
@@ -564,8 +564,8 @@ contract("Reputation mining - root hash submissions", accounts => {
       await repCycle.confirmNewHash(0);
 
       // Check that they have had their balance increase
-      const balance1Updated = await clny.balanceOf(MINER1);
-      const balance2Updated = await clny.balanceOf(MINER2);
+      const balance1Updated = await clnyToken.balanceOf(MINER1);
+      const balance2Updated = await clnyToken.balanceOf(MINER2);
       // More than half of the reward
       assert.strictEqual(balance1Updated.toString(), "0"); // Reward is 0 for now
       // Less than half of the reward
