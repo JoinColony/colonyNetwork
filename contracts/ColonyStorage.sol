@@ -32,7 +32,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // and add it to IColony.sol
 
   address colonyNetworkAddress; // Storage slot 6
-  ERC20Extended token; // Storage slot 7
+  address token; // Storage slot 7
   uint256 rewardInverse; // Storage slot 8
 
   uint256 taskCount; // Storage slot 9
