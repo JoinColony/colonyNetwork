@@ -115,6 +115,8 @@ class ReputationMiner {
     }
 
     this.justificationHashes = {};
+    this.reverseReputationHashLookup = {};
+
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
@@ -177,6 +179,7 @@ class ReputationMiner {
     let justUpdatedProof;
     let originReputationProof;
     let childReputationProof = await this.getReputationProofObject("0x00");
+    let adjacentReputationProof = await this.getReputationProofObject("0x00");
     let logEntry;
     let amount;
 
@@ -296,6 +299,35 @@ class ReputationMiner {
     const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
 
+    // Work out what is the closest reputation to this one.
+    // This is only ever necessary if the reputation about to be added is new, so check for that.
+    this.reverseReputationHashLookup[web3Utils.soliditySha3(key)] = key;
+    if (!this.reputations[key]) {
+      const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
+      const keyPosition = sortedHashes.indexOf(web3Utils.soliditySha3(key));
+
+      let adjacentKeyPosition;
+      if (keyPosition === 0){
+        adjacentKeyPosition = keyPosition + 1;
+      } else if (keyPosition === sortedHashes.length - 1){
+        adjacentKeyPosition = keyPosition - 1;
+      } else {
+        const possibleAdjacentKeyHash1 = new BN(sortedHashes[keyPosition - 1].slice(2), 16);
+        const possibleAdjacentKeyHash2 = new BN(sortedHashes[keyPosition + 1].slice(2), 16);
+        // Which is most similar, bitwise?
+        // Pick the key that has the most similarity to the reputation being questioned.
+        const keyHash = new BN(web3Utils.soliditySha3(key).slice(2), 16);
+        if (possibleAdjacentKeyHash1.xor(keyHash).lt(possibleAdjacentKeyHash2.xor(keyHash))) {
+          // Note that these xor'd numbers can never be equal
+          adjacentKeyPosition = keyPosition - 1;
+        } else {
+          adjacentKeyPosition = keyPosition + 1;
+        }
+      }
+
+      const adjacentKey = this.reverseReputationHashLookup[sortedHashes[adjacentKeyPosition]];
+      adjacentReputationProof = await this.getReputationProofObject(adjacentKey);
+    }
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
@@ -305,7 +337,8 @@ class ReputationMiner {
         nextUpdateProof,
         newestReputationProof,
         originReputationProof,
-        childReputationProof
+        childReputationProof,
+        adjacentReputationProof
       })
     );
     // console.log("updateNumber", updateNumber.toString());
@@ -846,6 +879,10 @@ class ReputationMiner {
         this.justificationHashes[lastAgreeKey].childReputationProof.branchMask,
         this.justificationHashes[lastAgreeKey].childReputationProof.reputation,
         this.justificationHashes[lastAgreeKey].childReputationProof.uid,
+        "0",
+        this.justificationHashes[lastAgreeKey].adjacentReputationProof.branchMask,
+        this.justificationHashes[lastAgreeKey].adjacentReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].adjacentReputationProof.uid,
         "0"
       ],
       [
@@ -853,6 +890,7 @@ class ReputationMiner {
         this.justificationHashes[lastAgreeKey].newestReputationProof.key,
         this.justificationHashes[lastAgreeKey].originReputationProof.key,
         this.justificationHashes[lastAgreeKey].childReputationProof.key,
+        this.justificationHashes[lastAgreeKey].adjacentReputationProof.key
       ],
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
       agreeStateSiblings,
@@ -860,6 +898,7 @@ class ReputationMiner {
       this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
       this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
+      this.justificationHashes[lastAgreeKey].adjacentReputationProof.siblings,
       { gasLimit: 4000000 }
     );
   }

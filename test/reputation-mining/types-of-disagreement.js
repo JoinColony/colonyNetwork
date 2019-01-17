@@ -97,7 +97,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
   });
 
   describe("when there is a dispute over reputation root hash", () => {
-    it.skip("should cope when a new reputation is correctly added and an extra reputation is added elsewhere at the same time", async () => {
+    it("should cope when a new reputation is correctly added and an extra reputation is added elsewhere at the same time", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MAIN_ACCOUNT, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
       await fundColonyWithTokens(metaColony, clnyToken);
@@ -113,11 +113,12 @@ contract("Reputation Mining - types of disagreement", accounts => {
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
       assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
-      console.log("accommodate");
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-disagree-state-disagreement" }
+      });
       await repCycle.confirmNewHash(1);
     });
-
+    
     it("should allow a user to confirm a submitted JRH with proofs for a submission", async () => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: OTHER_ACCOUNT }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
