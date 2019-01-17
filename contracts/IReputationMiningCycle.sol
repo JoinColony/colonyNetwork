@@ -172,13 +172,13 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     int256 _amount,
     uint256 _skillId,
     address _colonyAddress,
-    uint256 _nParents,
-    uint256 _nChildren
+    uint128 _nParents,
+    uint128 _nChildren
     ) public;
 
   /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract
   /// @return nUpdates
-  function getReputationUpdateLogLength() public view returns (uint nUpdates);
+  function getReputationUpdateLogLength() public view returns (uint128 nUpdates);
 
   /// @notice Get the `ReputationLogEntry` at index `_id`
   /// @param _id The reputation log members array index of the entry to get

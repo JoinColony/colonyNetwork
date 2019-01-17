@@ -97,9 +97,9 @@ contract ColonyNetworkDataTypes {
 
   struct Skill {
     // total number of parent skills
-    uint256 nParents;
+    uint128 nParents;
     // total number of child skills
-    uint256 nChildren;
+    uint128 nChildren;
     // array of `skill_id`s of parent skills starting from the 1st to `n`th, where `n` is an integer power of two larger than or equal to 1
     uint256[] parents;
     // array of `skill_id`s of all child skills
@@ -118,7 +118,7 @@ contract ColonyNetworkDataTypes {
     int amount;
     uint256 skillId;
     address colony;
-    uint256 nUpdates;
-    uint256 nPreviousUpdates;
+    uint128 nUpdates;
+    uint128 nPreviousUpdates;
   }
 }

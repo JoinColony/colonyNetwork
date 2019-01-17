@@ -378,14 +378,17 @@ contract("Colony Network Recovery", accounts => {
           await newActiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
           const arrayStartingSlot = soliditySha3(6);
           for (let i = 0; i < nLogEntries; i += 1) {
-            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 6));
+            /* eslint-disable no-await-in-loop */
+            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
             const logEntry = await oldActiveCycle.getReputationUpdateLogEntry(i);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
             await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(4), `0x${new BN(logEntry.nUpdates).toString(16, 64)}`);
-            await newActiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
+            await newActiveCycleAsRecovery.setStorageSlot(
+              logEntryStartingSlot.addn(4),
+              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`
+            );
 
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
             assert.strictEqual(portedLogEntry.user, logEntry.user);
@@ -405,14 +408,17 @@ contract("Colony Network Recovery", accounts => {
           await newInactiveCycleAsRecovery.setStorageSlot(6, nLogEntries);
 
           for (let i = 0; i < nLogEntries; i += 1) {
-            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 6));
+            /* eslint-disable no-await-in-loop */
+            const logEntryStartingSlot = new BN(arrayStartingSlot.slice(2), 16).add(new BN(i * 5));
             const logEntry = await oldInactiveCycle.getReputationUpdateLogEntry(i);
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot, `0x000000000000000000000000${logEntry.user.slice(2)}`);
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(1), `0x${padLeft(new BN(logEntry.amount).toTwos(256), 64)}`);
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(2), `0x${new BN(logEntry.skillId).toString(16, 64)}`);
             await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(3), `0x000000000000000000000000${logEntry.colony.slice(2)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(4), `0x${new BN(logEntry.nUpdates).toString(16, 64)}`);
-            await newInactiveCycleAsRecovery.setStorageSlot(logEntryStartingSlot.addn(5), `0x${new BN(logEntry.nPreviousUpdates).toString(16, 64)}`);
+            await newInactiveCycleAsRecovery.setStorageSlot(
+              logEntryStartingSlot.addn(4),
+              `0x${new BN(logEntry.nPreviousUpdates).toString(16, 32)}${new BN(logEntry.nUpdates).toString(16, 32)}`
+            );
 
             const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
 

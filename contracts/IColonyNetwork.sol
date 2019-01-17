@@ -51,8 +51,8 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
     int _amount,
     uint256 _skillId,
     address _colony,
-    uint256 _nUpdates,
-    uint256 _nPreviousUpdates
+    uint128 _nUpdates,
+    uint128 _nPreviousUpdates
     ) public;
 
   /// @notice Get a replacement log entry (if set) for the log entry _id in the mining cycle that was at the address _reputationMiningCycle
@@ -92,8 +92,8 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Get the `nParents` and `nChildren` of skill with id `_skillId`
   /// @param _skillId Id of the skill
-  /// @return nParents uint256 `skill.nParents` i.e. the number of parent skills of skill with id `_skillId`
-  /// @return nChildren uint256 `skill.nChildren` i.e. the number of child skills of skill with id `_skillId`
+  /// @return nParents uint128`skill.nParents` i.e. the number of parent skills of skill with id `_skillId`
+  /// @return nChildren uint128`skill.nChildren` i.e. the number of child skills of skill with id `_skillId`
   /// @return isGlobalSkill true if specified skill is a global skill, otherwise false
   function getSkill(uint256 _skillId) public view returns (Skill memory skill);
 
@@ -104,7 +104,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Get the number of parents the specified skill has 
   /// @return nParents uint256
-  function getSkillNParents(uint256 _skillId) public view returns (uint256 nParents);
+  function getSkillNParents(uint256 _skillId) public view returns (uint128 nParents);
 
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or

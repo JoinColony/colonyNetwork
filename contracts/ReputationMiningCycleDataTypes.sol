@@ -25,8 +25,8 @@ contract ReputationMiningCycleDataTypes {
     int256 amount;
     uint256 skillId;
     address colony;
-    uint256 nUpdates;
-    uint256 nPreviousUpdates;
+    uint128 nUpdates;
+    uint128 nPreviousUpdates;
   }
 
   struct Submission {
