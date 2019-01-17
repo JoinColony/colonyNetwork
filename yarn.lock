@@ -7161,9 +7161,9 @@ trim@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/trim/-/trim-0.0.1.tgz#5858547f6b290757ee95cccc666fb50084c460dd"
 
-truffle@^5.0.1:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.1.tgz#bd4c3aa15201935c8e35506d9fbabd07814d2323"
+truffle@^5.0.2:
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.2.tgz#7fc99c8309314e885ddaadacc081675adebddd81"
   dependencies:
     app-module-path "^2.2.0"
     mocha "^4.1.0"
