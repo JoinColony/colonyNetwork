@@ -24,6 +24,10 @@ step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
       command: docker pull ethereum/solc:0.4.23
+step_pull_mythril_docker: &step_pull_mythril_docker
+    run:
+      name: "Pull mythril dev docker image"
+      command: docker pull mythril/myth-dev
 jobs:
   lint-and-unit-test:
     <<: *job_common
@@ -104,10 +108,34 @@ jobs:
       # Save coverage artifacts
       - store_artifacts:
           path: coverage
-
+  security-analysis:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker
+      - <<: *step_pull_solc_docker
+      - <<: *step_pull_mythril_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Mythril security analysis"
+          command: | 
+            docker create -v "$pwd"/build --name colonynetwork alpine:3.4 /bin/true
+            docker cp build/* colonynetwork:/build 
+            docker run --volumes-from colonynetwork mythril/myth-dev myth --truffle --execution-timeout 40 -v 3
 workflows:
   version: 2
   commit:
     jobs:
       - lint-and-unit-test
       - test-coverage
+nightly:
+    triggers:
+      - schedule:
+          cron: "0 1 * * *" # 1am UTC
+          filters:
+            branches:
+              only:
+                - develop
+    jobs:
+      - security-analysis
