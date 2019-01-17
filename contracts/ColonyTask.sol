@@ -469,7 +469,7 @@ contract ColonyTask is ColonyStorage {
       role.rating = role.rateFail ? TaskRatings.Unsatisfactory : TaskRatings.Satisfactory;
     }
 
-    uint256 payout = task.payouts[roleId][address(token)];
+    uint256 payout = task.payouts[roleId][token];
     int256 reputation = getReputation(payout, role.rating, role.rateFail);
 
     colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);

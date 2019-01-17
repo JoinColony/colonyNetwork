@@ -59,14 +59,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function getToken() public view returns (address) {
-    return address(token);
+    return token;
   }
 
   function initialiseColony(address _colonyNetworkAddress, address _token) public stoppable {
     require(colonyNetworkAddress == address(0x0), "colony-already-initialised-network");
-    require(address(token) == address(0x0), "colony-already-initialised-token");
+    require(token == address(0x0), "colony-already-initialised-token");
     colonyNetworkAddress = _colonyNetworkAddress;
-    token = ERC20Extended(_token);
+    token = _token;
 
     // Initialise the task update reviewers
     setFunctionReviewers(bytes4(keccak256("setTaskBrief(uint256,bytes32)")), TaskRole.Manager, TaskRole.Worker);
@@ -106,7 +106,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     for (uint i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
       
-      token.transfer(_users[i], uint(_amounts[i]));
+      ERC20Extended(token).transfer(_users[i], uint(_amounts[i]));
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
@@ -118,9 +118,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   auth
   {
     if (address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony()) {
-      token.mint(_wad);
+      ERC20Extended(token).mint(_wad);
     } else {
-      token.mint(address(this), _wad);
+      ERC20Extended(token).mint(address(this), _wad);
     }
   }
 
@@ -129,8 +129,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(msg.sender == colonyNetworkAddress, "colony-access-denied-only-network-allowed");
     // Function only valid on the Meta Colony
     require(address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony(), "colony-access-denied-only-meta-colony-allowed");
-    token.mint(_wad);
-    token.transfer(colonyNetworkAddress, _wad);
+    ERC20Extended(token).mint(_wad);
+    ERC20Extended(token).transfer(colonyNetworkAddress, _wad);
   }
 
   function registerColonyLabel(string memory colonyName, string memory orbitdb) public stoppable auth {

@@ -203,11 +203,11 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   public auth stoppable
   {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    uint256 totalLockCount = tokenLocking.lockToken(address(token));
+    uint256 totalLockCount = tokenLocking.lockToken(token);
 
     require(!activeRewardPayouts[_token], "colony-reward-payout-token-active");
 
-    uint256 totalTokens = sub(token.totalSupply(), token.balanceOf(address(this)));
+    uint256 totalTokens = sub(ERC20Extended(token).totalSupply(), ERC20Extended(token).balanceOf(address(this)));
     require(totalTokens > 0, "colony-reward-payout-invalid-total-tokens");
 
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
@@ -338,8 +338,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     require(block.timestamp - payout.blockTimestamp <= 60 days, "colony-reward-payout-not-active");
 
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
-    uint256 userDepositTimestamp = tokenLocking.getUserLock(address(token), msg.sender).timestamp;
-    uint256 userTokens = tokenLocking.getUserLock(address(token), msg.sender).balance;
+    uint256 userDepositTimestamp = tokenLocking.getUserLock(token, msg.sender).timestamp;
+    uint256 userTokens = tokenLocking.getUserLock(token, msg.sender).balance;
 
     require(userDepositTimestamp < payout.blockTimestamp, "colony-reward-payout-deposit-too-recent");
     require(userTokens > 0, "colony-reward-payout-invalid-user-tokens");
@@ -366,7 +366,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     uint256 reward = (mul(squareRoots[4], squareRoots[6]) / squareRoots[5]) ** 2;
 
-    tokenLocking.unlockTokenForUser(address(token), msg.sender, payoutId);
+    tokenLocking.unlockTokenForUser(token, msg.sender, payoutId);
 
     return (payout.tokenAddress, reward);
   }
