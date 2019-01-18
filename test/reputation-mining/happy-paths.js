@@ -680,16 +680,6 @@ contract("Reputation Mining - happy paths", accounts => {
     });
 
     it("should cope if the wrong reputation transition is a distant parent", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
-      await metaColony.addGlobalSkill(5);
-      await metaColony.addGlobalSkill(6);
-      await metaColony.addGlobalSkill(7);
-      await metaColony.addGlobalSkill(8);
-      await metaColony.addGlobalSkill(9);
-
-      // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
-
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
