@@ -118,7 +118,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       });
       await repCycle.confirmNewHash(1);
     });
-    
+
     it("should allow a user to confirm a submitted JRH with proofs for a submission", async () => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: OTHER_ACCOUNT }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
