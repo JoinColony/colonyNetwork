@@ -401,7 +401,7 @@ class ReputationMiner {
 
     while (!upper.eq(lower)) {
       const testIdx = lower.add(upper.sub(lower).div(2));
-      const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockTag: blockNumber }); // eslint-disable-line no-await-in-loop
+      const testLogEntry = await repCycle.getReputationUpdateLogEntry(testIdx, { blockTag: blockNumber });
       const nPreviousUpdates = ethers.utils.bigNumberify(testLogEntry.nPreviousUpdates);
       if (nPreviousUpdates.gt(updateNumber)) {
         upper = testIdx.sub(1);
@@ -758,7 +758,6 @@ class ReputationMiner {
       // Remove the first sibling
       siblings = siblings.slice(1);
       // Recalulate ending hash
-      // eslint-disable-next-line no-await-in-loop
       proofEndingHash = await this.justificationTree.getImpliedRoot(
         targetNodeKey,
         this.justificationHashes[targetNodeKey].jhLeafValue,

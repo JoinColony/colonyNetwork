@@ -23,6 +23,7 @@ const DELIVERABLE_HASH = "0xfb027a4d64f29d83e27769cb05d945e67ef7396fa1bd73ef53f0
 const WAD = new BN(10).pow(new BN(18));
 const MIN_STAKE = WAD.muln(2000);
 const DEFAULT_STAKE = MIN_STAKE.muln(1000);
+const REWARD = WAD.muln(0); // No reward currently
 
 const INITIAL_FUNDING = WAD.muln(360);
 const MANAGER_PAYOUT = WAD.muln(100);
@@ -66,6 +67,7 @@ module.exports = {
   WAD,
   MIN_STAKE,
   DEFAULT_STAKE,
+  REWARD,
   INITIAL_FUNDING,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,

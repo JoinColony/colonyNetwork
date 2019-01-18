@@ -46,13 +46,6 @@ contract("Colony Network Recovery", accounts => {
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-  });
-
-  beforeEach(async () => {
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-    await giveUserCLNYTokensAndStake(colonyNetwork, accounts[5], DEFAULT_STAKE);
-
     const metaColonyAddress = await colonyNetwork.getMetaColony();
     metaColony = await IColony.at(metaColonyAddress);
     const clnyAddress = await metaColony.getToken();
@@ -64,10 +57,14 @@ contract("Colony Network Recovery", accounts => {
       realProviderPort: REAL_PROVIDER_PORT,
       useJsTree: true
     });
+  });
 
+  beforeEach(async () => {
     await client.resetDB();
     await client.initialise(colonyNetwork.address);
 
+    // Advance two cycles to clear active and inactive state.
+    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
     const block = await currentBlock();
@@ -217,7 +214,9 @@ contract("Colony Network Recovery", accounts => {
       assert.equal(rootHash, "0x0200000000000000000000000000000000000000000000000000000000000000");
       assert.equal(nNodes.toNumber(), 7);
     });
+  });
 
+  describe("when using recovery mode, miners should work correctly", async () => {
     process.env.SOLIDITY_COVERAGE
       ? it.skip
       : it("miner should be able to correctly interpret historical reputation logs replaced during recovery mode", async () => {
