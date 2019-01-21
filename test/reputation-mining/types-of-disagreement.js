@@ -370,7 +370,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
       assert.equal(nInactiveLogEntries.toNumber(), 13);
 
-      const badClient = new MaliciousReputationMinerClaimNew({ loader, realProviderPort, useJsTree, minerAddress: OTHER_ACCOUNT }, 20);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: OTHER_ACCOUNT }, 27, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -387,19 +387,9 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.confirmBinarySearchResult();
 
       await goodClient.respondToChallenge();
-      await badClient.respondToChallenge();
-
       await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-challenge-already-responded");
-      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-challenge-already-responded");
+      await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-increased-reputation-value-incorrect");
 
-      // Check
-      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
-      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted, 1);
-
-      // Both sides have completed the same amount of challenges, but one has proved that the reputation existed previously,
-      // whereas the other has not, and any respondToChallenges after the first didn't work.
-      // Check that we can't invalidate the good client submission
       await checkErrorRevert(repCycle.invalidateHash(0, 0), "colony-reputation-mining-less-challenge-rounds-completed");
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
@@ -408,6 +398,36 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const confirmedHash = await colonyNetwork.getReputationRootHash();
       assert.equal(confirmedHash, righthash);
+    });
+
+    it("if someone tries to insert a second copy of an existing reputation as a new one, it should fail", async () => {
+      await giveUserCLNYTokensAndStake(colonyNetwork, OTHER_ACCOUNT, DEFAULT_STAKE);
+
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
+      const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nInactiveLogEntries.toNumber(), 13);
+
+      const badClient = new MaliciousReputationMinerClaimNew({ loader, realProviderPort, useJsTree, minerAddress: OTHER_ACCOUNT }, 20);
+      await badClient.initialise(colonyNetwork.address);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-branchmask-incorrect" }
+      });
+
+      // Cleanup
+      await repCycle.confirmNewHash(1);
     });
   });
 

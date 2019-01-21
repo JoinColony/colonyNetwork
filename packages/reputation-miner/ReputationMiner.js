@@ -165,6 +165,38 @@ class ReputationMiner {
   }
 
   /**
+   * Get the key already in the tree that has the highest number of bits at the start the same as the supplied
+   * @param  {string}  key The key we wish to find the adjacentKey for
+   * @return {String}
+   */
+
+  getAdjacentKey(key) {
+    const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
+    const keyPosition = sortedHashes.indexOf(web3Utils.soliditySha3(key));
+
+    let adjacentKeyPosition;
+    if (keyPosition === 0){
+      adjacentKeyPosition = keyPosition + 1;
+    } else if (keyPosition === sortedHashes.length - 1){
+      adjacentKeyPosition = keyPosition - 1;
+    } else {
+      const possibleAdjacentKeyHash1 = new BN(sortedHashes[keyPosition - 1].slice(2), 16);
+      const possibleAdjacentKeyHash2 = new BN(sortedHashes[keyPosition + 1].slice(2), 16);
+      // Which is most similar, bitwise?
+      // Pick the key that has the most similarity to the reputation being questioned.
+      const keyHash = new BN(web3Utils.soliditySha3(key).slice(2), 16);
+      if (possibleAdjacentKeyHash1.xor(keyHash).lt(possibleAdjacentKeyHash2.xor(keyHash))) {
+        // Note that these xor'd numbers can never be equal
+        adjacentKeyPosition = keyPosition - 1;
+      } else {
+        adjacentKeyPosition = keyPosition + 1;
+      }
+    }
+
+    return this.reverseReputationHashLookup[sortedHashes[adjacentKeyPosition]];
+  }
+
+  /**
    * Process a single update and add to the current reputation state and the justificationtree.
    * @param  {BigNumber}  updateNumber     The number of the update that should be considered.
    * @param  {Contract}   repCycle         The contract object representing reputation mining cycle contract we're processing the logs of
@@ -303,29 +335,7 @@ class ReputationMiner {
     // This is only ever necessary if the reputation about to be added is new, so check for that.
     this.reverseReputationHashLookup[web3Utils.soliditySha3(key)] = key;
     if (!this.reputations[key]) {
-      const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
-      const keyPosition = sortedHashes.indexOf(web3Utils.soliditySha3(key));
-
-      let adjacentKeyPosition;
-      if (keyPosition === 0){
-        adjacentKeyPosition = keyPosition + 1;
-      } else if (keyPosition === sortedHashes.length - 1){
-        adjacentKeyPosition = keyPosition - 1;
-      } else {
-        const possibleAdjacentKeyHash1 = new BN(sortedHashes[keyPosition - 1].slice(2), 16);
-        const possibleAdjacentKeyHash2 = new BN(sortedHashes[keyPosition + 1].slice(2), 16);
-        // Which is most similar, bitwise?
-        // Pick the key that has the most similarity to the reputation being questioned.
-        const keyHash = new BN(web3Utils.soliditySha3(key).slice(2), 16);
-        if (possibleAdjacentKeyHash1.xor(keyHash).lt(possibleAdjacentKeyHash2.xor(keyHash))) {
-          // Note that these xor'd numbers can never be equal
-          adjacentKeyPosition = keyPosition - 1;
-        } else {
-          adjacentKeyPosition = keyPosition + 1;
-        }
-      }
-
-      const adjacentKey = this.reverseReputationHashLookup[sortedHashes[adjacentKeyPosition]];
+      const adjacentKey = await this.getAdjacentKey(key);
       adjacentReputationProof = await this.getReputationProofObject(adjacentKey);
     }
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
