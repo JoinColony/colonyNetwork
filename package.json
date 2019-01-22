@@ -54,7 +54,7 @@
   "devDependencies": {
     "@babel/core": "^7.0.0",
     "@babel/polyfill": "^7.2.5",
-    "@babel/preset-env": "^7.0.0",
+    "@babel/preset-env": "^7.3.1",
     "@babel/register": "^7.0.0",
     "@colony/colony-js-contract-loader-fs": "1.8.1",
     "@colony/eslint-config-colony": "7.0.0",
