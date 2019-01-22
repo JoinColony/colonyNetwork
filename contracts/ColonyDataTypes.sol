@@ -54,7 +54,7 @@ contract ColonyDataTypes {
   /// @param toPot The targer funding pot
   /// @param amount The amount that was transferred
   /// @param token The token address being transferred
-  event ColonyFundsMovedBetweenFundingPots(uint256 fromPot, uint256 toPot, uint256 amount, address token);
+  event ColonyFundsMovedBetweenFundingPots(uint256 indexed fromPot, uint256 indexed toPot, uint256 amount, address token);
 
   /// @notice Event logged when colony funds are moved to the top-level domain pot
   /// @param token The token address
@@ -88,66 +88,66 @@ contract ColonyDataTypes {
   /// @notice Event logged when a task's specification hash changes
   /// @param taskId Id of the task
   /// @param specificationHash New specification hash of the task
-  event TaskBriefSet(uint256 taskId, bytes32 specificationHash);
+  event TaskBriefSet(uint256 indexed taskId, bytes32 specificationHash);
 
   /// @notice Event logged when a task's due date changes
   /// @param taskId Id of the task
   /// @param dueDate New due date of the task
-  event TaskDueDateSet(uint256 taskId, uint256 dueDate);
+  event TaskDueDateSet(uint256 indexed taskId, uint256 dueDate);
 
   /// @notice Event logged when a task's domain changes
   /// @param taskId Id of the task
   /// @param domainId New domain id of the task
-  event TaskDomainSet(uint256 taskId, uint256 domainId);
+  event TaskDomainSet(uint256 indexed taskId, uint256 indexed domainId);
 
   /// @notice Event logged when a task's skill changes
   /// @param taskId Id of the task
   /// @param skillId New skill id of the task
-  event TaskSkillSet(uint256 taskId, uint256 skillId);
+  event TaskSkillSet(uint256 indexed taskId, uint256 indexed skillId);
 
   /// @notice Event logged when a task's role user changes
   /// @param taskId Id of the task
   /// @param role Role of the user
   /// @param user User that fulfills the designated role
-  event TaskRoleUserSet(uint256 taskId, TaskRole role, address user);
+  event TaskRoleUserSet(uint256 indexed taskId, TaskRole role, address indexed user);
 
   /// @notice Event logged when a task payout changes
   /// @param taskId Id of the task
   /// @param role Task role whose payout is being changed
   /// @param token Token of the payout funding
   /// @param amount Amount of the payout funding
-  event TaskPayoutSet(uint256 taskId, TaskRole role, address token, uint256 amount);
+  event TaskPayoutSet(uint256 indexed taskId, TaskRole role, address token, uint256 amount);
 
   /// @notice Event logged when a deliverable has been submitted for a task
   /// @param taskId Id of the task
   /// @param deliverableHash Hash of the work performed
-  event TaskDeliverableSubmitted(uint256 taskId, bytes32 deliverableHash);
+  event TaskDeliverableSubmitted(uint256 indexed taskId, bytes32 deliverableHash);
 
   /// @notice Event logged when a task has been completed. This is either because the dueDate has passed
   /// and the manager closed the task, or the worker has submitted the deliverable. In the
   /// latter case, TaskDeliverableSubmitted will also be emitted.
-  event TaskCompleted(uint256 taskId);
+  event TaskCompleted(uint256 indexed taskId);
 
   /// @notice Event logged when the rating of a role was revealed
   /// @param taskId Id of the task
   /// @param role Role that got rated
   /// @param rating Rating the role received
-  event TaskWorkRatingRevealed(uint256 taskId, TaskRole role, uint8 rating);
+  event TaskWorkRatingRevealed(uint256 indexed taskId, TaskRole role, uint8 rating);
 
   /// @notice Event logged when a task has been finalized
   /// @param taskId Id of the finalized task
-  event TaskFinalized(uint256 taskId);
+  event TaskFinalized(uint256 indexed taskId);
 
   /// @notice Event logged when a task payout is claimed
   /// @param taskId Id of the task
   /// @param role Task role for which the payout is being claimed
   /// @param token Token of the payout claim
   /// @param amount Amount of the payout claim
-  event TaskPayoutClaimed(uint256 taskId, uint256 role, address token, uint256 amount);
+  event TaskPayoutClaimed(uint256 indexed taskId, uint256 role, address token, uint256 amount);
 
   /// @notice Event logged when a task has been canceled
   /// @param taskId Id of the canceled task
-  event TaskCanceled(uint256 taskId);
+  event TaskCanceled(uint256 indexed taskId);
 
   /// @notice Event logged when a new Domain is added
   /// @param domainId Id of the newly-created Domain
