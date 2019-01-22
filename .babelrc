@@ -1,4 +1,13 @@
 {
-  "presets": ["es2015", "stage-2"],
-  "plugins": ["babel-plugin-transform-runtime"],
+  "presets": ["@babel/preset-env"],
+  "plugins": ["@babel/plugin-proposal-class-properties",
+    "@babel/plugin-syntax-dynamic-import",
+    "@babel/plugin-transform-runtime",
+    ["@babel/plugin-proposal-decorators", { "legacy": true }],
+    "@babel/plugin-proposal-export-namespace-from",
+    "@babel/plugin-proposal-function-sent",
+    "@babel/plugin-proposal-json-strings",
+    "@babel/plugin-proposal-numeric-separator",
+    "@babel/plugin-proposal-throw-expressions",
+    "@babel/plugin-syntax-import-meta"]
 }
