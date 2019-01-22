@@ -115,7 +115,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _id Id of the pot which details to get
   /// @return uint256 The taskId the pot is associated with
   /// @return uint256 The domainId the pot is associated with
-  /// @dev Exactly one of taskId and domainId should return nonzero, unless _id is 0 (the reward pot, which is 
+  /// @dev Exactly one of taskId and domainId should return nonzero, unless _id is 0 (the reward pot, which is
   ///      the only pot not associated with a task or a domain), in which case both are.
   function getPotInformation(uint256 _id) public view returns (uint256 taskId, uint256 domainId);
 
@@ -332,7 +332,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns ( 
+  function getTask(uint256 _id) public view returns (
     bytes32 specificationHash,
     bytes32 deliverableHash,
     TaskStatus status,
@@ -480,4 +480,11 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Total amount of tokens in pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) public view returns (uint256 amount);
+
+  /// @notice A one-transaction task flow for making easy payments out of the root domain.
+  /// @param _worker The address to send the money
+  /// @param _domainId The domain the task occurs in
+  /// @param _token The token to use
+  /// @param _amount The amount of the payment
+  function makePayment(address _worker, uint256 _domainId, address _token, uint256 _amount) public;
 }

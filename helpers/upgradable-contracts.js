@@ -63,11 +63,12 @@ export async function setupEtherRouter(interfaceContract, deployedImplementation
   }
 }
 
-export async function setupColonyVersionResolver(colony, colonyTask, colonyFunding, contractRecovery, resolver) {
+export async function setupColonyVersionResolver(colony, colonyTask, colonyFunding, colonyAbstraction, contractRecovery, resolver) {
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
   deployedImplementations.ColonyTask = colonyTask.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
+  deployedImplementations.ColonyAbstraction = colonyAbstraction.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
   await setupEtherRouter("IMetaColony", deployedImplementations, resolver);

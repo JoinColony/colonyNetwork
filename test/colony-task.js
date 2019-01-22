@@ -1749,5 +1749,16 @@ contract("ColonyTask", accounts => {
       expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
     });
+
+    it.only("should be able to make one-transaction payouts", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const tx = await colony.makePayment(WORKER, 1, token.address, WORKER_PAYOUT);
+      const { taskId } = tx.logs.filter(log => log.event === "TaskAdded")[0].args;
+      console.log("Gas used:", tx.receipt.gasUsed);
+
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      const workerBalance = await token.balanceOf(WORKER);
+      expect(workerBalance).to.eq.BN(WORKER_PAYOUT.divn(100).muln(99).subn(1)); // eslint-disable-line prettier/prettier
+    });
   });
 });
