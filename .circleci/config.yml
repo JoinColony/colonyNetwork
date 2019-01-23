@@ -129,7 +129,7 @@ workflows:
     jobs:
       - lint-and-unit-test
       - test-coverage
-nightly:
+  nightly:
     triggers:
       - schedule:
           cron: "0 1 * * *" # 1am UTC
