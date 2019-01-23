@@ -11,6 +11,7 @@ const sqlite = require("sqlite");
 // do in the future.
 // const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
+const miningCycleDuration = 60 * 60 * 24; // 24 hours
 
 class ReputationMiner {
   /**
@@ -291,7 +292,7 @@ class ReputationMiner {
 
     const key = await this.getKeyForUpdateNumber(updateNumber, blockNumber);
     const nextUpdateProof = await this.getReputationProofObject(key);
-    
+
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
@@ -571,31 +572,30 @@ class ReputationMiner {
 
     // Get the JRH
     const jrh = await this.justificationTree.getRootHash();
-    let gas; 
+    let gas;
+
+    const constant = ethers.utils
+      .bigNumberify(2)
+      .pow(256)
+      .sub(1)
+      .div(miningCycleDuration);
 
     for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
       const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
-
-      const miningCycleDuration = 60 * 60 * 24;
-      const constant = ethers.utils
-        .bigNumberify(2)
-        .pow(256)
-        .sub(1)
-        .div(miningCycleDuration);
-
       const block = await this.realProvider.getBlock("latest");
       const { timestamp } = block;
       const target = ethers.utils
         .bigNumberify(timestamp)
         .sub(reputationMiningWindowOpenTimestamp)
         .mul(constant);
+
       if (ethers.utils.bigNumberify(entryHash).lt(target)) {
-        entryIndex = i;
         // Check we haven't submitted this already
         try {
-          gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, entryIndex);
+          gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, i);
           // If that didn't error, then we can submit this
+          entryIndex = i;
           break;
         } catch (err) {
           // We've submitted already (probably);
@@ -603,7 +603,7 @@ class ReputationMiner {
       }
     }
     if (!entryIndex) {
-      return new Error("No valid entry for submission found");
+      throw new Error("No valid entry for submission found.");
     }
     // Submit that entry
     return repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });

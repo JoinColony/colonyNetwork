@@ -98,7 +98,6 @@ contract("Reputation mining - root hash submissions", accounts => {
 
   describe("when determining submission eligibility", () => {
     it("should allow a new reputation hash to be submitted", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 });
