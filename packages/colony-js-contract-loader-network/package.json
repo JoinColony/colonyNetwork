@@ -12,14 +12,15 @@
   "author": "Christian Maniewski <chris@colony.io>",
   "license": "GPL-3.0",
   "dependencies": {
+    "@babel/runtime": "^7.0.0",
     "@colony/colony-js-contract-loader": "1.8.1",
-    "assert": "^1.4.1",
-    "babel-runtime": "^6.26.0"
+    "assert": "^1.4.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-jest": "^23.0.1",
-    "jest": "^23.1.0",
+    "@babel/cli": "^7.0.0",
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-jest": "^23.6.0",
+    "jest": "^23.6.0",
     "shx": "^0.3.0"
   }
 }
