@@ -7,8 +7,8 @@
     "eslint-staged": "bash ./scripts/eslint.sh",
     "eslint": "eslint .",
     "solium": "solium --dir .",
-    "check:storagevars": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-storage.js",
-    "check:recoverymods": "./node_modules/babel-cli/bin/babel-node.js ./scripts/check-recovery.js",
+    "check:storagevars": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-storage.js",
+    "check:recoverymods": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-recovery.js",
     "version:contracts": "bash ./scripts/version-contracts.sh",
     "generate:test:contracts": "bash ./scripts/generate-test-contracts.sh",
     "clean:test:contracts": "rimraf ./contracts/*Updated*.*",
@@ -53,6 +53,7 @@
   "homepage": "https://github.com/JoinColony/colonyNetwork#readme",
   "devDependencies": {
     "@babel/core": "^7.0.0",
+    "@babel/node": "^7.2.2",
     "@babel/polyfill": "^7.2.5",
     "@babel/preset-env": "^7.3.1",
     "@babel/register": "^7.0.0",
