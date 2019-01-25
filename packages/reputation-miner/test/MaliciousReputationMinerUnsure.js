@@ -1,6 +1,6 @@
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
+class MaliciousReputationMinerUnsure extends ReputationMinerTestWrapper {
   // Not really sure how to describe this malicous mining client...
   // It ends up proving a too-large newest reputation for the nNodes it claimed in the
   // JRH (so in the test in question, the intermediate value had 6 nodes, but it proves
@@ -38,4 +38,4 @@ class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
   }
 }
 
-export default MaliciousReputationMinerClaimNew;
+export default MaliciousReputationMinerUnsure;
