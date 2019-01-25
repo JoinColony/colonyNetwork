@@ -91,7 +91,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes32[] memory siblings) public;
 
   /// @notice Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
-  /// @param u A `uint256[23]` array. The elements of this array, in order are:
+  /// @param u A `uint256[27]` array. The elements of this array, in order are:
   /// * 1. The current round of the hash being responded on behalf of
   /// * 2. The current index in the round of the hash being responded on behalf of
   /// * 3. The branchMask of the proof that the reputation is in the reputation state tree for the reputation with the disputed change
@@ -122,7 +122,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 26. The UID of the reputation adjacent to the new reputation being inserted 
   /// * 27. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
 
-  /// @param b A `bytes[4]` array. The elements of this arry, in order are:
+  /// @param b A `bytes[5]` array. The elements of this array, in order are:
   /// * 1. Reputation key The key of the reputation being changed that the disagreement is over.
   /// * 2. previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// * 3. originReputationKey Nonzero for child updates only. The key of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on

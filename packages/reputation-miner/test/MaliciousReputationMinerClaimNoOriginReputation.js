@@ -77,35 +77,6 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMinerTestWra
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
 
-    // console.log([
-    //   round,
-    //   index,
-    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.branchMask,
-    //   this.justificationHashes[lastAgreeKey].nextUpdateProof.nNodes,
-    //   ReputationMinerTestWrapper.getHexString(agreeStateBranchMask),
-    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
-    //   ReputationMinerTestWrapper.getHexString(disagreeStateBranchMask),
-    //   this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
-    //   logEntryNumber,
-    //   "0",
-    //   this.justificationHashes[lastAgreeKey].originReputationProof.branchMask,
-    //   this.justificationHashes[lastAgreeKey].nextUpdateProof.reputation,
-    //   this.justificationHashes[lastAgreeKey].nextUpdateProof.uid,
-    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.reputation,
-    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.uid,
-    //   this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
-    //   this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
-    //   "0x0",
-    //   "0x0"
-    // ],
-    //   reputationKey,
-    //   this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
-    //   agreeStateSiblings,
-    //   disagreeStateSiblings,
-    //   this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-    //   this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
-    //   this.justificationHashes[lastAgreeKey].originReputationProof.key,
-    //   this.justificationHashes[lastAgreeKey].originReputationProof.siblings,);
     const tx = await repCycle.respondToChallenge(
       [
         round,

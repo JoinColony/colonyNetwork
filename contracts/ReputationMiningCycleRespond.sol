@@ -193,7 +193,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-adjacent-agree-state-disagreement");
 
     // The bit added to the branchmask is based on where the (hashes of the) two keys first differ.
-    uint256 firstDifferenceBit = Bits.highestBitSet(uint256(keccak256(b[B_ADJACENT_REPUTATION_KEY]) ^ keccak256(b[B_REPUTATION_KEY])));
+    uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(keccak256(b[B_ADJACENT_REPUTATION_KEY]) ^ keccak256(b[B_REPUTATION_KEY]))));
     uint256 afterInsertionBranchMask = u[U_ADJACENT_REPUTATION_BRANCH_MASK] | uint256(2**firstDifferenceBit);
     // If a key that exists in the lastAgreeState has been passed in as the reputationKey, the adjacent key will already have a branch at the
     // first difference bit, and this check will fail.

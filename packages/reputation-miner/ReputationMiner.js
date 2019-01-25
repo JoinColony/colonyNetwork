@@ -169,7 +169,6 @@ class ReputationMiner {
    * @param  {string}  key The key we wish to find the adjacentKey for
    * @return {String}
    */
-
   getAdjacentKey(key) {
     const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
     const keyPosition = sortedHashes.indexOf(web3Utils.soliditySha3(key));
