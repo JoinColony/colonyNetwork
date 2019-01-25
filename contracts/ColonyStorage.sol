@@ -27,6 +27,8 @@ import "./ColonyDataTypes.sol";
 
 
 contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
+  uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
+
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol

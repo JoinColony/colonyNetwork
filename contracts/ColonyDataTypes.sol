@@ -173,14 +173,14 @@ contract ColonyDataTypes {
   }
 
   struct Task {
+    TaskStatus status;
     bytes32 specificationHash;
     bytes32 deliverableHash;
-    TaskStatus status;
+    uint256 domainId;
+    uint256 potId;
     uint256 dueDate;
     uint256 payoutsWeCannotMake;
-    uint256 potId;
     uint256 completionTimestamp;
-    uint256 domainId;
     uint256[] skills;
 
     mapping (uint8 => Role) roles;

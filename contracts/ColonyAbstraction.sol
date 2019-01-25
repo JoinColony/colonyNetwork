@@ -18,22 +18,31 @@
 pragma solidity >=0.4.23 <0.5.0;
 pragma experimental ABIEncoderV2;
 
-import "./ColonyTask.sol";
-import "./ColonyFunding.sol";
+import "./IColony.sol";
+import "./IColonyNetwork.sol";
 import "./ColonyStorage.sol";
 
 
 contract ColonyAbstraction is ColonyStorage {
 
+  // 595623 / 309209
   function makePayment(address _worker, uint256 _domainId, address _token, uint256 _amount) public stoppable {
-    ColonyTask(address(this)).makeTask(0, _domainId, 1, now);
-    ColonyFunding(address(this)).moveFundsBetweenPots(1, tasks[taskCount].potId, _amount, _token);
-    ColonyFunding(address(this)).setTaskWorkerPayout(taskCount, _token, _amount);
-    ColonyTask(address(this)).setTaskWorkerRole(taskCount, _worker);
-    tasks[taskCount].completionTimestamp = now;
-    tasks[taskCount].roles[uint8(TaskRole.Worker)].rating = TaskRatings.Satisfactory;
-    tasks[taskCount].roles[uint8(TaskRole.Manager)].rating = TaskRatings.Satisfactory;
-    ColonyTask(address(this)).finalizeTask(taskCount);
+    IColony colony = IColony(address(this));
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+
+    colony.createPayment(_domainId);
+    Task task = tasks[taskCount];
+    task.skills[0] = 1; // Dummy skill
+
+    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
+    colony.moveFundsBetweenPots(1, task.potId, _amount, _token);
+    task.payouts[uint8(TaskRole.Worker)][_token] = _amount;
+    task.roles[uint8(TaskRole.Worker)].user = _worker;
+    task.status = TaskStatus.Finalized;
+
+    if (_token == token) {
+      colonyNetwork.appendReputationUpdateLog(_worker, int256(_amount), domains[task.domainId].skillId);
+    }
   }
 
 }

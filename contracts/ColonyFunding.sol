@@ -401,8 +401,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
-
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotComplete(_id)

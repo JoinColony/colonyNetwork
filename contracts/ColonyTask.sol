@@ -84,23 +84,32 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
+  function createPayment(uint256 _domainId) public stoppable domainExists(_domainId) {
+    taskCount += 1;
+    potCount += 1;
+
+    Task memory task;
+    task.potId = potCount;
+    task.domainId = _domainId;
+    task.skills = new uint256[](1);
+    tasks[taskCount] = task;
+
+    pots[potCount].taskId = taskCount;
+
+    emit PotAdded(potCount);
+    emit TaskAdded(taskCount);
+  }
+
   function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public
   stoppable
   auth
   domainExists(_domainId)
   {
-    taskCount += 1;
-    potCount += 1;
+    createPayment(_domainId);
 
-    Task memory task;
-    task.specificationHash = _specificationHash;
-    task.potId = potCount;
-    task.domainId = _domainId;
-    task.skills = new uint256[](1);
-    tasks[taskCount] = task;
+    tasks[taskCount].specificationHash = _specificationHash;
     tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
     tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msg.sender;
-    pots[potCount].taskId = taskCount;
 
     if (_skillId > 0) {
       this.setTaskSkill(taskCount, _skillId);
@@ -113,9 +122,6 @@ contract ColonyTask is ColonyStorage {
       dueDate = now + 90 days;
     }
     this.setTaskDueDate(taskCount, dueDate);
-
-    emit PotAdded(potCount);
-    emit TaskAdded(taskCount);
   }
 
   function getTaskCount() public view returns (uint256) {
