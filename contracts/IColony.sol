@@ -136,7 +136,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
     public view returns (bool isValid);
 
-  function createPayment(uint256 _domainId) public;
+  function initializePayment(uint256 _domainId, uint256 _skillId) public;
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members

@@ -25,23 +25,20 @@ import "./ColonyStorage.sol";
 
 contract ColonyAbstraction is ColonyStorage {
 
-  // 595623 / 309209
+  // 480148
+  // Bureaucrat permission only
   function makePayment(address _worker, uint256 _domainId, address _token, uint256 _amount) public stoppable {
     IColony colony = IColony(address(this));
-    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
 
-    colony.createPayment(_domainId);
-    Task task = tasks[taskCount];
-    task.skills[0] = 1; // Dummy skill
+    colony.initializePayment(_domainId, 1);
+    colony.setTaskWorkerRole(taskCount, _worker);
+    colony.setTaskWorkerPayout(taskCount, _token, _amount);
+    tasks[taskCount].status = TaskStatus.Finalized;
 
-    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
-    colony.moveFundsBetweenPots(1, task.potId, _amount, _token);
-    task.payouts[uint8(TaskRole.Worker)][_token] = _amount;
-    task.roles[uint8(TaskRole.Worker)].user = _worker;
-    task.status = TaskStatus.Finalized;
-
+    // Shouldn't be here...
     if (_token == token) {
-      colonyNetwork.appendReputationUpdateLog(_worker, int256(_amount), domains[task.domainId].skillId);
+      IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+      colonyNetwork.appendReputationUpdateLog(_worker, int256(_amount), domains[tasks[taskCount].domainId].skillId);
     }
   }
 

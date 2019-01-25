@@ -1756,6 +1756,9 @@ contract("ColonyTask", accounts => {
       const { taskId } = tx.logs.filter(log => log.event === "TaskAdded")[0].args;
       console.log("Gas used:", tx.receipt.gasUsed);
 
+      const task = await colony.getTask(taskId);
+      await colony.moveFundsBetweenPots(1, task.potId, WORKER_PAYOUT, token.address);
+
       await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
       const workerBalance = await token.balanceOf(WORKER);
       expect(workerBalance).to.eq.BN(WORKER_PAYOUT.divn(100).muln(99).subn(1)); // eslint-disable-line prettier/prettier

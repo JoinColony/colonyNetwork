@@ -84,7 +84,7 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  function createPayment(uint256 _domainId) public stoppable domainExists(_domainId) {
+  function initializePayment(uint256 _domainId, uint256 _skillId) public stoppable domainExists(_domainId) {
     taskCount += 1;
     potCount += 1;
 
@@ -92,8 +92,10 @@ contract ColonyTask is ColonyStorage {
     task.potId = potCount;
     task.domainId = _domainId;
     task.skills = new uint256[](1);
-    tasks[taskCount] = task;
+    task.skills[0] = _skillId;
 
+    tasks[taskCount] = task;
+    tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
     pots[potCount].taskId = taskCount;
 
     emit PotAdded(potCount);
@@ -105,10 +107,9 @@ contract ColonyTask is ColonyStorage {
   auth
   domainExists(_domainId)
   {
-    createPayment(_domainId);
+    initializePayment(_domainId, _skillId);
 
     tasks[taskCount].specificationHash = _specificationHash;
-    tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
     tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msg.sender;
 
     if (_skillId > 0) {
