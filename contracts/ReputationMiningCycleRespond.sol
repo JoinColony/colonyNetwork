@@ -512,11 +512,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     return relativeUpdateNumber;
   }
 
-  function getChildAndParentNUpdatesForLogEntry(uint256[23] memory u) internal view returns (uint256, uint256) {
+  function getChildAndParentNUpdatesForLogEntry(uint256[23] memory u) internal view returns (uint128, uint128) {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
-    uint256 nParents = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId).nParents;
+    uint128 nParents = IColonyNetwork(colonyNetworkAddress).getSkill(logEntry.skillId).nParents;
 
-    uint nChildUpdates;
+    uint128 nChildUpdates;
     if (logEntry.amount < 0) {
       nChildUpdates = logEntry.nUpdates/2 - 1 - nParents;
       // NB This is not necessarily the same as nChildren. However, this is the number of child updates

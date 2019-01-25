@@ -405,17 +405,17 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     int256 _amount,
     uint256 _skillId,
     address _colonyAddress,
-    uint256 _nParents,
-    uint256 _nChildren
+    uint128 _nParents,
+    uint128 _nChildren
   ) public
   {
     require(colonyNetworkAddress == msg.sender, "colony-reputation-mining-sender-not-network");
     uint reputationUpdateLogLength = reputationUpdateLog.length;
-    uint nPreviousUpdates = 0;
+    uint128 nPreviousUpdates = 0;
     if (reputationUpdateLogLength > 0) {
       nPreviousUpdates = reputationUpdateLog[reputationUpdateLogLength-1].nPreviousUpdates + reputationUpdateLog[reputationUpdateLogLength-1].nUpdates;
     }
-    uint nUpdates = (_nParents + 1) * 2;
+    uint128 nUpdates = (_nParents + 1) * 2;
     if (_amount < 0) {
       nUpdates += 2 * _nChildren;
     }
@@ -464,7 +464,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     require(msg.sender == colonyNetworkAddress, "colony-reputation-mining-sender-not-network");
     require(reputationUpdateLog.length == 0, "colony-reputation-mining-log-length-non-zero");
     require(stakers.length == weights.length, "colony-reputation-mining-staker-weight-mismatch");
-    for (uint256 i = 0; i < stakers.length; i++) {
+    for (uint128 i = 0; i < stakers.length; i++) {
       // We *know* we're the first entries in this reputation update log, so we don't need all the bookkeeping in
       // the AppendReputationUpdateLog function
 

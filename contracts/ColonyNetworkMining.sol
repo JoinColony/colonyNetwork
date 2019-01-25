@@ -40,8 +40,8 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
     int _amount,
     uint256 _skillId,
     address _colony,
-    uint256 _nUpdates,
-    uint256 _nPreviousUpdates)
+    uint128 _nUpdates,
+    uint128 _nPreviousUpdates)
     public recovery auth
     {
     replacementReputationUpdateLogsExist[_reputationMiningCycle] = true;

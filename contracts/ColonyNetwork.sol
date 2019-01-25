@@ -78,7 +78,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     globalSkill = skills[_skillId].globalSkill;
   }
 
-  function getSkillNParents(uint256 _skillId) public view returns (uint256 nParents) {
+  function getSkillNParents(uint256 _skillId) public view returns (uint128 nParents) {
     nParents = skills[_skillId].nParents;
   }
 
@@ -272,9 +272,9 @@ contract ColonyNetwork is ColonyNetworkStorage {
       return;
     }
 
-    uint nParents = skills[_skillId].nParents;
+    uint128 nParents = skills[_skillId].nParents;
     // We only update child skill reputation if the update is negative, otherwise just set nChildren to 0 to save gas
-    uint nChildren = _amount < 0 ? skills[_skillId].nChildren : 0;
+    uint128 nChildren = _amount < 0 ? skills[_skillId].nChildren : 0;
     IReputationMiningCycle(inactiveReputationMiningCycle).appendReputationUpdateLog(
       _user,
       _amount,
