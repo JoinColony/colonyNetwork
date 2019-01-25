@@ -89,15 +89,6 @@ export async function executeSignedRoleAssignment({ colony, taskId, functionName
 
 export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {
   if (manager !== evaluator) {
-    await executeSignedTaskChange({
-      colony,
-      taskId,
-      functionName: "removeTaskEvaluatorRole",
-      signers: [manager],
-      sigTypes: [0],
-      args: [taskId]
-    });
-
     await executeSignedRoleAssignment({
       colony,
       taskId,

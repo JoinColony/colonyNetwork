@@ -57,7 +57,7 @@ const DSToken = artifacts.require("DSToken");
 
 contract("ColonyTask", accounts => {
   const MANAGER = accounts[0];
-  const EVALUATOR = MANAGER;
+  const EVALUATOR = accounts[1];
   const WORKER = accounts[2];
   const OTHER = accounts[3];
   const COLONY_ADMIN = accounts[4];
@@ -112,37 +112,24 @@ contract("ColonyTask", accounts => {
     });
 
     it("should allow the reassignment of evaluator", async () => {
-      const newEvaluator = accounts[1];
-      assert.notEqual(MANAGER, newEvaluator);
+      assert.notEqual(MANAGER, EVALUATOR);
 
       const taskId = await makeTask({ colony });
 
       let taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(taskEvaluator.user, EVALUATOR);
-
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "removeTaskEvaluatorRole",
-        signers: [MANAGER], // NOTE: only one signature because manager === evaluator
-        sigTypes: [0],
-        args: [taskId]
-      });
-
-      taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(taskEvaluator.user, ZERO_ADDRESS);
+      assert.equal(taskEvaluator.user, MANAGER);
 
       await executeSignedRoleAssignment({
         colony,
         taskId,
         functionName: "setTaskEvaluatorRole",
-        signers: [MANAGER, newEvaluator],
+        signers: [MANAGER, EVALUATOR],
         sigTypes: [0, 0],
-        args: [taskId, newEvaluator]
+        args: [taskId, EVALUATOR]
       });
 
       taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(taskEvaluator.user, newEvaluator);
+      assert.equal(taskEvaluator.user, EVALUATOR);
     });
 
     it("should return the correct number of tasks", async () => {
@@ -298,8 +285,7 @@ contract("ColonyTask", accounts => {
     });
 
     it("should not allow the worker or evaluator roles to be assigned only by manager", async () => {
-      const newEvaluator = accounts[1];
-      assert.notEqual(MANAGER, newEvaluator);
+      assert.notEqual(MANAGER, EVALUATOR);
 
       const taskId = await makeTask({ colony });
 
@@ -319,13 +305,13 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskEvaluatorRole",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, newEvaluator]
+          args: [taskId, EVALUATOR]
         }),
         "colony-task-role-assignment-does-not-meet-required-signatures"
       );
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluator.user, ZERO_ADDRESS);
+      assert.equal(evaluator.user, MANAGER);
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -366,6 +352,15 @@ contract("ColonyTask", accounts => {
         }),
         "colony-task-role-assignment-execution-failed"
       );
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, EVALUATOR],
+        sigTypes: [0, 0],
+        args: [taskId, EVALUATOR]
+      });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({

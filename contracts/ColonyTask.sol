@@ -273,6 +273,10 @@ contract ColonyTask is ColonyStorage {
     require(rating != TaskRatings.None, "colony-task-rating-missing");
     tasks[_id].roles[uint8(_role)].rating = rating;
 
+    if (_role == TaskRole.Worker) {
+      tasks[_id].roles[uint8(TaskRole.Evaluator)].rating = TaskRatings.Satisfactory;
+    }
+
     emit TaskWorkRatingRevealed(_id, _role, _rating);
   }
 
@@ -297,9 +301,10 @@ contract ColonyTask is ColonyStorage {
   }
 
   function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
-    // Can only assign role if no one is currently assigned to it
+    // Can only assign role if manager is currently assigned.
     Role storage evaluatorRole = tasks[_id].roles[uint8(TaskRole.Evaluator)];
-    require(evaluatorRole.user == address(0x0), "colony-task-evaluator-role-already-assigned");
+    Role storage managerRole = tasks[_id].roles[uint8(TaskRole.Manager)];
+    require(evaluatorRole.user == managerRole.user, "colony-task-evaluator-role-already-assigned");
     setTaskRoleUser(_id, TaskRole.Evaluator, _user);
   }
 
@@ -312,7 +317,8 @@ contract ColonyTask is ColonyStorage {
   }
 
   function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, TaskRole.Evaluator, address(0x0));
+    Role storage managerRole = tasks[_id].roles[uint8(TaskRole.Manager)];
+    setTaskRoleUser(_id, TaskRole.Evaluator, managerRole.user);
   }
 
   function removeTaskWorkerRole(uint256 _id) public stoppable self {
@@ -408,9 +414,9 @@ contract ColonyTask is ColonyStorage {
     Task storage task = tasks[_id];
     task.status = TaskStatus.Finalized;
 
-    for (uint8 roleId = 0; roleId <= 2; roleId++) {
-      updateReputation(TaskRole(roleId), task);
-    }
+    updateReputation(TaskRole.Manager, task);
+    updateReputation(TaskRole.Evaluator, task);
+    updateReputation(TaskRole.Worker, task);
 
     emit TaskFinalized(_id);
   }
@@ -461,17 +467,13 @@ contract ColonyTask is ColonyStorage {
   }
 
   function updateReputation(TaskRole taskRole, Task storage task) internal {
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     uint8 roleId = uint8(taskRole);
     Role storage role = task.roles[roleId];
-
-    if (taskRole == TaskRole.Evaluator) { // They had one job!
-      role.rating = role.rateFail ? TaskRatings.Unsatisfactory : TaskRatings.Satisfactory;
-    }
 
     uint256 payout = task.payouts[roleId][token];
     int256 reputation = getReputation(payout, role.rating, role.rateFail);
 
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
     if (taskRole == TaskRole.Worker) {
       colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
@@ -568,6 +570,7 @@ contract ColonyTask is ColonyStorage {
 
     if (workerRole.rating == TaskRatings.None) {
       evaluatorRole.rateFail = true;
+      evaluatorRole.rating = TaskRatings.Unsatisfactory;
       workerRole.rating = TaskRatings.Excellent;
     }
 
