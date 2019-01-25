@@ -29,6 +29,7 @@ import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/Rep
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNew";
 import MaliciousReputationMinerClaimNoOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoOriginReputation";
+import MaliciousReputationMinerClaimNoUserChildReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoUserChildReputation"; // eslint-disable-line max-len
 import MaliciousReputationMinerClaimWrongOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation"; // eslint-disable-line max-len
 import MaliciousReputationMinerClaimWrongChildReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongChildReputation"; // eslint-disable-line max-len
 import MaliciousReputationMinerGlobalOriginNotChildOrigin from "../../packages/reputation-miner/test/MaliciousReputationMinerGlobalOriginNotChildOrigin"; // eslint-disable-line max-len
@@ -159,6 +160,73 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
       const righthash = await goodClient.getRootHash();
       expect(righthash, "The correct hash was not accepted").to.equal(acceptedHash);
+    });
+
+    it("if one person claims a user's child skill doesn't exist but the other does (and proves such)", async () => {
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
+      // any update caused by the second task
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 5,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 5000000000000,
+        managerRating: 3,
+        workerRating: 3,
+        worker: MINER2
+      });
+
+      // Task two payouts are less so that the reputation should bee nonzero afterwards
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 4,
+        managerPayout: 100000000000,
+        evaluatorPayout: 100000000,
+        workerPayout: 500000000000,
+        managerRating: 1,
+        workerRating: 1,
+        worker: MINER2
+      });
+
+      await goodClient.resetDB();
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
+      await goodClient.saveCurrentState();
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for two task completions (manager, worker, evaluator);
+      // That's nine in total.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nLogEntries.toNumber(), 9);
+
+      const badClient = new MaliciousReputationMinerClaimNoUserChildReputation(
+        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        34, // Passing in update number for colony wide skillId: 5, user: 0
+        1
+      );
+
+      // Moving the state to the bad client
+      await badClient.initialise(colonyNetwork.address);
+      const currentGoodClientState = await goodClient.getRootHash();
+      await badClient.loadState(currentGoodClientState);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient);
+
+      await repCycle.confirmNewHash(1);
+      const acceptedHash = await colonyNetwork.getReputationRootHash();
+      assert.equal(righthash, acceptedHash, "The correct hash was not accepted");
     });
 
     it.skip("if one person lies about what the origin skill is when there is an origin skill for a user update", async () => {
