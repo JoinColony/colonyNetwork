@@ -3,7 +3,6 @@ import PatriciaTreeNoHash from "./patriciaNoHashKey";
 
 const BN = require("bn.js");
 const web3Utils = require("web3-utils");
-const ganache = require("ganache-core");
 const ethers = require("ethers");
 const sqlite = require("sqlite");
 
@@ -26,6 +25,10 @@ class ReputationMiner {
 
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
+      // If this require is global, line numbers are broken in all our tests. If we move it here, it's only an issue if we're not
+      // using the JS tree. There is an issue open at ganache-core about this, and this require will have to remain here until it's fixed. 
+      // https://github.com/trufflesuite/ganache-core/issues/287
+      const ganache = require("ganache-core"); // eslint-disable-line global-require
       const ganacheProvider = ganache.provider({
         network_id: 515,
         vmErrorsOnRPCResponse: false,
