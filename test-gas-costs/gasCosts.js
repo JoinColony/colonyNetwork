@@ -214,14 +214,19 @@ contract("All", function(accounts) {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, minerAddress: STAKER1 });
 
-      const goodClient = new ReputationMinerTestWrapper({ loader: contractLoader, minerAddress: STAKER1, realProviderPort: REAL_PROVIDER_PORT });
+      const goodClient = new ReputationMinerTestWrapper({
+        loader: contractLoader,
+        minerAddress: STAKER1,
+        realProviderPort: REAL_PROVIDER_PORT,
+        useJsTree: true
+      });
       const badClient = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: STAKER2, realProviderPort: REAL_PROVIDER_PORT, useJsTree: true },
         1,
         0xfffffffff
       );
       const badClient2 = new MaliciousReputationMinerExtraRep(
-        { loader: contractLoader, minerAddress: STAKER3, realProviderPort: REAL_PROVIDER_PORT },
+        { loader: contractLoader, minerAddress: STAKER3, realProviderPort: REAL_PROVIDER_PORT, useJsTree: true },
         2,
         0xfffffffff
       );
