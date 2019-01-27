@@ -177,7 +177,12 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
 }
 
 export async function checkSuccessEthers(promise, errorMessage) {
-  const receipt = await promise;
+  let receipt;
+  try {
+    receipt = await promise;
+  } catch (err) {
+    receipt = err;
+  }
 
   if (receipt.status === 1) {
     return;

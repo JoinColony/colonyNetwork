@@ -9,6 +9,7 @@ class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber) {
+    let adjacentReputationProof;
     if (updateNumber.toString() === this.entryToFalsify) {
       let key;
       if (updateNumber.lt(this.nReputationsBeforeLatestLog)) {
@@ -18,6 +19,8 @@ class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
       }
       delete this.reputations[key];
       this.beWrongThisCycle = true;
+      const adjacentKey = await this.getAdjacentKey(key);
+      adjacentReputationProof = await this.getReputationProofObject(adjacentKey);
       // Note that this won't remove it from the PatriciaTree - which is what we want
     }
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber);
@@ -25,6 +28,9 @@ class MaliciousReputationMinerClaimNew extends ReputationMinerTestWrapper {
       this.justificationHashes[
         ReputationMinerTestWrapper.getHexString(updateNumber.sub(1), 64)
       ].nextUpdateProof = await this.getReputationProofObject("0");
+      this.justificationHashes[
+        ReputationMinerTestWrapper.getHexString(updateNumber.sub(1), 64)
+      ].adjacentReputationProof = adjacentReputationProof;
     }
     this.beWrongThisCycle = false;
   }

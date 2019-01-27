@@ -987,16 +987,30 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         0,
         // This is the right line.
         // goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.reputation,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.uid
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.uid,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.branchMask,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.reputation,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.uid,
+        "0",
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.branchMask,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.reputation,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.uid,
+        "0"
       ],
-      reputationKey,
+      [
+        reputationKey,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.key,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.key,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.key,
+        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.key
+      ],
       goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,
       agreeStateSiblings,
       disagreeStateSiblings,
-      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.key,
       goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.siblings,
-      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.key,
       goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.siblings,
+      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.siblings,
+      goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.siblings,
       { gasLimit: 4000000 }
     );
 
