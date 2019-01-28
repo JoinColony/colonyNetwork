@@ -366,5 +366,14 @@ contract("Colony Network", accounts => {
       response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'addr(bytes32)'
       expect(response).to.be.true;
     });
+
+    it("owner should be able to set and get the ttl of their node", async () => {
+      ensRegistry = await ENSRegistry.new();
+      const hash = namehash.hash("jane.user.joincolony.eth");
+
+      await ensRegistry.setTTL(hash, 123);
+      const ttl = await ensRegistry.ttl(hash);
+      expect(ttl).to.eq.BN(123);
+    });
   });
 });
