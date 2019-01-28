@@ -61,7 +61,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK = 7;
   uint constant U_LOG_ENTRY_NUMBER = 8;
   uint constant U_DECAY_TRANSITION = 9;
-  uint constant U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK = 10;
+  uint constant U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK = 10;
 
   uint constant U_AGREE_STATE_REPUTATION_VALUE = 11;
   uint constant U_AGREE_STATE_REPUTATION_UID = 12;
@@ -69,8 +69,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_DISAGREE_STATE_REPUTATION_UID= 14;
   uint constant U_PREVIOUS_NEW_REPUTATION_VALUE = 15;
   uint constant U_PREVIOUS_NEW_REPUTATION_UID = 16;
-  uint constant U_ORIGIN_REPUTATION_VALUE = 17;
-  uint constant U_ORIGIN_REPUTATION_UID = 18;
+  uint constant U_USER_ORIGIN_REPUTATION_VALUE = 17;
+  uint constant U_USER_ORIGIN_REPUTATION_UID = 18;
   uint constant U_CHILD_REPUTATION_BRANCH_MASK = 19;
   uint constant U_CHILD_REPUTATION_VALUE = 20;
   uint constant U_CHILD_REPUTATION_UID = 21;
@@ -96,7 +96,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
     bytes32[] memory previousNewReputationSiblings,
-    bytes32[] memory originReputationSiblings,
+    bytes32[] memory userOriginReputationSiblings,
     bytes32[] memory childReputationSiblings,
     bytes32[] memory adjacentReputationSiblings
   ) public
@@ -133,7 +133,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     performReputationCalculation(u);
 
     if (u[U_DECAY_TRANSITION] == 0) {
-      checkOriginReputation(u, b, agreeStateSiblings, originReputationSiblings);
+      checkUserOriginReputation(u, b, agreeStateSiblings, userOriginReputationSiblings);
     }
 
     if (u[U_GLOBAL_CHILD_UPDATE] == 1) {
@@ -265,11 +265,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     return afterInsertionAdjacentReputationSiblings;
   }
 
-  function checkOriginReputation(
+  function checkUserOriginReputation(
     uint256[27] memory u,
     bytes[5] memory b,
     bytes32[] memory agreeStateSiblings,
-    bytes32[] memory originReputationSiblings) internal 
+    bytes32[] memory userOriginReputationSiblings) internal 
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     if (logEntry.amount > 0) {
@@ -277,7 +277,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
 
     bytes memory reputationKey = b[B_REPUTATION_KEY];
-    bytes memory originReputationKey = b[B_ORIGIN_REPUTATION_KEY];
+    bytes memory userOriginReputationKey = b[B_ORIGIN_REPUTATION_KEY];
 
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
     uint256 nChildUpdates;
@@ -285,39 +285,25 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     // Skip origin reputation checks for anything but child reputation updates
     if (relativeUpdateNumber % (logEntry.nUpdates/2) < nChildUpdates) {
-      // Check the origin reputation key matches the colony, user address and skill id of the child skill
+      // Check the user origin reputation key matches the colony, user address and skill id of the log
       address colonyAddressOriginRep;
       address userAddressOriginRep;
       uint256 skillIdOriginRep;
       assembly {
-          colonyAddressOriginRep := mload(add(originReputationKey,20))
-          skillIdOriginRep := mload(add(originReputationKey, 52))
-          userAddressOriginRep := mload(add(originReputationKey,72))
+          colonyAddressOriginRep := mload(add(userOriginReputationKey,20))
+          skillIdOriginRep := mload(add(userOriginReputationKey, 52))
+          userAddressOriginRep := mload(add(userOriginReputationKey,72))
       }
 
-      address colonyAddressChildRep;
-      address userAddressChildRep;
-      assembly {
-          colonyAddressChildRep := mload(add(reputationKey,20))
-          userAddressChildRep := mload(add(reputationKey,72))
-      }
-
-      require(colonyAddressOriginRep == colonyAddressChildRep, "colony-reputation-mining-origin-colony-incorrect");
+      require(colonyAddressOriginRep == logEntry.colony, "colony-reputation-mining-origin-colony-incorrect");
       require(skillIdOriginRep == logEntry.skillId, "colony-reputation-mining-origin-skill-incorrect");
-
-      // For colony wide updates the reputation key userAddress is 0x0, otherwise ensure it the user address of the origin and child skills match
-      if (relativeUpdateNumber < nChildUpdates) {
-        // I don't think this require is possible to hit - I can't see how to get checkKeyLogEntry to pass and this to fail
-        require(userAddressChildRep == address(0x0), "colony-reputation-mining-colony-wide-update-user-nonzero");
-      } else {
-        require(userAddressOriginRep == userAddressChildRep, "colony-reputation-mining-origin-user-incorrect");
-      }
+      require(userAddressOriginRep == logEntry.user, "colony-reputation-mining-origin-user-incorrect");
       
-      checkOriginReputationInState(
+      checkUserOriginReputationInState(
         u,
         agreeStateSiblings,
-        originReputationKey,
-        originReputationSiblings);
+        userOriginReputationKey,
+        userOriginReputationSiblings);
     }
   }
 
@@ -552,7 +538,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
-    int256 originReputationValue = int256(u[U_ORIGIN_REPUTATION_VALUE]);
+    int256 userOriginReputationValue = int256(u[U_USER_ORIGIN_REPUTATION_VALUE]);
 
     // We don't care about underflows for the purposes of comparison, but for the calculation we deem 'correct'.
     // i.e. a reputation can't be negative.
@@ -587,12 +573,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           }
 
           int256 childReputationChange;
-          if (originReputationValue == 0) {
+          if (userOriginReputationValue == 0) {
             // If the origin reputation value is 0, the change is 0
             childReputationChange = 0;
           } else {
             // Calculate the proportional change expected
-            childReputationChange = logEntry.amount * userChildReputationValue / originReputationValue;
+            childReputationChange = logEntry.amount * userChildReputationValue / userOriginReputationValue;
           }
           // Don't allow reputation to become negative
           if (_agreeStateReputationValue + logEntry.amount < 0) {
@@ -612,7 +598,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       }
     }
 
-    emit ProveValueSuccess(_agreeStateReputationValue, _disagreeStateReputationValue, originReputationValue);
+    emit ProveValueSuccess(_agreeStateReputationValue, _disagreeStateReputationValue, userOriginReputationValue);
   }
 
   // Get the update number relative in the context of the log entry currently considered
@@ -670,23 +656,23 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
-  function checkOriginReputationInState(
+  function checkUserOriginReputationInState(
     uint256[27] memory u,
     bytes32[] memory agreeStateSiblings,
-    bytes memory originReputationKey,
-    bytes32[] memory originReputationStateSiblings
+    bytes memory userOriginReputationKey,
+    bytes32[] memory userOriginReputationStateSiblings
     ) internal
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes memory originReputationValueBytes = abi.encodePacked(u[U_ORIGIN_REPUTATION_VALUE], u[U_ORIGIN_REPUTATION_UID]);
+    bytes memory userOriginReputationValueBytes = abi.encodePacked(u[U_USER_ORIGIN_REPUTATION_VALUE], u[U_USER_ORIGIN_REPUTATION_UID]);
 
     bytes32 reputationRootHash = getImpliedRootHashKey(
-      originReputationKey,
-      originReputationValueBytes,
-      u[U_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
-      originReputationStateSiblings
+      userOriginReputationKey,
+      userOriginReputationValueBytes,
+      u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
+      userOriginReputationStateSiblings
     );
     
     bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
@@ -695,7 +681,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
     
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
-    if (u[U_ORIGIN_REPUTATION_VALUE] == 0 && impliedRoot != jrh) {
+    if (u[U_USER_ORIGIN_REPUTATION_VALUE] == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
       return;
     }

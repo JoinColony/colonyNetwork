@@ -111,8 +111,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 15. The UID that the entry in the tree under dispute has in the disagree state
   /// * 16. The amount of reputation that the most recently added entry in the tree has in the state being disputed
   /// * 17. The UID that the most recently added entry in the tree has in the state being disputed
-  /// * 18. The amount of reputation that the origin reputation entry in the tree has in the state being disputed
-  /// * 19. The UID that the origin reputation entry in the tree has in the state being disputed
+  /// * 18. The amount of reputation that the user's origin reputation entry in the tree has in the state being disputed
+  /// * 19. The UID that the user's origin reputation entry in the tree has in the state being disputed
   /// * 20. The branchMask of the proof that the child reputation for the user being updated is in the agree state 
   /// * 21. The amount of reputation that the child reputation for the user being updated is in the agree state
   /// * 22. The UID of the child reputation for the user being updated in the agree state 
@@ -125,7 +125,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param b A `bytes[5]` array. The elements of this array, in order are:
   /// * 1. Reputation key The key of the reputation being changed that the disagreement is over.
   /// * 2. previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// * 3. originReputationKey Nonzero for child updates only. The key of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// * 3. userOriginReputationKey Nonzero for child updates only. The key of the user's origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// * 4. childReputationKey Required for child updates of a colony-wide global skill. The key corresponding to the child skill of the user in this case
   /// * 5. adjacentReputationKey Key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
 
@@ -133,7 +133,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
   /// @param disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
   /// @param previousNewReputationSiblings The siblings of the Merkle proof of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// @param originReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// @param userOriginReputationSiblings Nonzero for child updates only. The siblings of the Merkle proof of the user's origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// @param childReputationSiblings Nonzero for child updates of a colony-wide global skill. The siblings of the Merkle proof of the child skill reputation of the user in the same skill this global update is for
   /// @param adjacentReputationSiblings Nonzero for updates involving insertion of a new skill. The siblings of the Merkle proof of a reputation in the agree state that ends adjacent to the new reputation
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
@@ -145,7 +145,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
     bytes32[] memory previousNewReputationSiblings,
-    bytes32[] memory originReputationSiblings,
+    bytes32[] memory userOriginReputationSiblings,
     bytes32[] memory childReputationSiblings,
     bytes32[] memory adjacentReputationSiblings) public;
 
