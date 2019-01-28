@@ -380,5 +380,18 @@ contract("Colony Network", accounts => {
       const ttl = await ensRegistry.ttl(hash);
       expect(ttl).to.eq.BN(123);
     });
+
+    it("use should NOT be able to set and get the ttl of a node they don't own", async () => {
+      const hash = namehash.hash("jane.user.joincolony.eth");
+      await colonyNetwork.registerUserLabel("jane", orbitDBAddress);
+      await checkErrorRevert(ensRegistry.setTTL(hash, 123), "colony-ens-non-owner-access");
+    });
+
+    it("setting owner on a subnode should fail for a non existent subnode", async () => {
+      ensRegistry = await ENSRegistry.new();
+      const hash = namehash.hash("jane.user.joincolony.eth");
+
+      await checkErrorRevert(ensRegistry.setSubnodeOwner(hash, hash, accounts[0]), "unowned-node");
+    });
   });
 });
