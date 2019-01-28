@@ -31,6 +31,7 @@ import MaliciousReputationMinerClaimNew from "../../packages/reputation-miner/te
 import MaliciousReputationMinerClaimNoOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimNoOriginReputation";
 import MaliciousReputationMinerClaimWrongOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation"; // eslint-disable-line max-len
 import MaliciousReputationMinerClaimWrongChildReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongChildReputation"; // eslint-disable-line max-len
+import MaliciousReputationMinerGlobalOriginNotChildOrigin from "../../packages/reputation-miner/test/MaliciousReputationMinerGlobalOriginNotChildOrigin"; // eslint-disable-line max-len
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -340,6 +341,77 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
   });
 
   describe("should correctly resolve a dispute over child skill", () => {
+    it("if the global origin skill is provided instead of the child origin skill", async () => {
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 5,
+        managerPayout: 5000000000000,
+        evaluatorPayout: 5000000000000,
+        workerPayout: 5000000000000,
+        managerRating: 3,
+        workerRating: 3,
+        worker: MINER2
+      });
+
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 5,
+        managerPayout: 5000000000000,
+        evaluatorPayout: 5000000000000,
+        workerPayout: 5000000000000,
+        managerRating: 3,
+        workerRating: 3,
+        worker: MINER1
+      });
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 4,
+        managerPayout: 1000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 1000000000,
+        managerRating: 1,
+        workerRating: 1,
+        worker: MINER2
+      });
+
+      await goodClient.resetDB();
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
+      await goodClient.saveCurrentState();
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation update for one task completion (manager, worker, evaluator);
+      // That's five in total.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nLogEntries.toNumber(), 5);
+
+      const badClient = new MaliciousReputationMinerGlobalOriginNotChildOrigin(
+        { loader, minerAddress: MINER2, realProviderPort, useJsTree },
+        29 // Passing in update number for skillId: 5, user: 0000000000000000000000000000000000000000
+      );
+
+      // Moving the state to the bad client
+      await badClient.initialise(colonyNetwork.address);
+      const currentGoodClientState = await goodClient.getRootHash();
+      await badClient.loadState(currentGoodClientState);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      const righthash = await goodClient.getRootHash();
+      const wronghash = await badClient.getRootHash();
+      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-origin-user-incorrect" }
+      });
+      await repCycle.confirmNewHash(1);
+    });
+
     it("if child skill reputation calculation is wrong", async () => {
       await setupFinalizedTask({
         colonyNetwork,
