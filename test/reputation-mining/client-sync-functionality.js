@@ -26,93 +26,93 @@ const loader = new TruffleLoader({
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const useJsTree = true;
 
-contract("Reputation mining - client sync functionality", accounts => {
-  const MINER1 = accounts[5];
-  const MINER2 = accounts[6];
+process.env.SOLIDITY_COVERAGE
+  ? contract.skip
+  : contract("Reputation mining - client sync functionality", accounts => {
+      const MINER1 = accounts[5];
+      const MINER2 = accounts[6];
 
-  let colonyNetwork;
-  let tokenLocking;
-  let metaColony;
-  let clnyToken;
-  let reputationMiner1;
-  let reputationMiner2;
-  let startingBlockNumber;
+      let colonyNetwork;
+      let tokenLocking;
+      let metaColony;
+      let clnyToken;
+      let reputationMiner1;
+      let reputationMiner2;
+      let startingBlockNumber;
 
-  before(async () => {
-    const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    const clnyAddress = await metaColony.getToken();
-    clnyToken = await Token.at(clnyAddress);
+      before(async () => {
+        const etherRouter = await EtherRouter.deployed();
+        colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+        const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+        tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+        const metaColonyAddress = await colonyNetwork.getMetaColony();
+        metaColony = await IMetaColony.at(metaColonyAddress);
+        const clnyAddress = await metaColony.getToken();
+        clnyToken = await Token.at(clnyAddress);
 
-    reputationMiner1 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
-    reputationMiner2 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree });
-  });
+        reputationMiner1 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
+        reputationMiner2 = new ReputationMinerTestWrapper({ loader, minerAddress: MINER2, realProviderPort, useJsTree });
+      });
 
-  beforeEach(async () => {
-    await reputationMiner1.resetDB();
-    await reputationMiner1.initialise(colonyNetwork.address);
+      beforeEach(async () => {
+        await reputationMiner1.resetDB();
+        await reputationMiner1.initialise(colonyNetwork.address);
 
-    const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-    expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
+        const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
+        expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
-    // Advance two cycles to clear active and inactive state.
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-    await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+        // Advance two cycles to clear active and inactive state.
+        await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+        await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
-    // The inactive reputation log now has the reward for this miner, and the accepted state is empty.
-    // This is the same starting point for all tests.
-    const repCycle = await getActiveRepCycle(colonyNetwork);
-    const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-    expect(nInactiveLogEntries).to.eq.BN(1);
+        // The inactive reputation log now has the reward for this miner, and the accepted state is empty.
+        // This is the same starting point for all tests.
+        const repCycle = await getActiveRepCycle(colonyNetwork);
+        const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
+        expect(nInactiveLogEntries).to.eq.BN(1);
 
-    // Burn MAIN_ACCOUNTS accumulated mining rewards.
-    const userBalance = await clnyToken.balanceOf(MINER1);
-    await clnyToken.burn(userBalance, { from: MINER1 });
+        // Burn MAIN_ACCOUNTS accumulated mining rewards.
+        const userBalance = await clnyToken.balanceOf(MINER1);
+        await clnyToken.burn(userBalance, { from: MINER1 });
 
-    const startingBlock = await currentBlock();
-    startingBlockNumber = startingBlock.number;
+        const startingBlock = await currentBlock();
+        startingBlockNumber = startingBlock.number;
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+        await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
-    // Make multiple reputation cycles, with different numbers tasks and blocks in them.
-    await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
-    for (let i = 0; i < 5; i += 1) {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-    }
+        // Make multiple reputation cycles, with different numbers tasks and blocks in them.
+        await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
+        for (let i = 0; i < 5; i += 1) {
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+        }
 
-    await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+        await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-    // Advance four blocks
-    await forwardTime(1, this);
-    await forwardTime(1, this);
-    await forwardTime(1, this);
-    await forwardTime(1, this);
+        // Advance four blocks
+        await forwardTime(1, this);
+        await forwardTime(1, this);
+        await forwardTime(1, this);
+        await forwardTime(1, this);
 
-    await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+        await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-    await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
-    for (let i = 0; i < 5; i += 1) {
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-    }
+        await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(5));
+        for (let i = 0; i < 5; i += 1) {
+          await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+        }
 
-    await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
-    await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
-    await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+        await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+        await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+        await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
 
-    await reputationMiner2.resetDB();
-    await reputationMiner2.initialise(colonyNetwork.address);
-  });
+        await reputationMiner2.resetDB();
+        await reputationMiner2.initialise(colonyNetwork.address);
+      });
 
-  describe("when synchronising reputation mining client", () => {
-    // Because these tests rely on a custom, teeny-tiny-hacked version of ganache-cli, they don't work with solidity-coverage.
-    // But that's okay, because these tests don't test anything meaningful in the contracts.
-    process.env.SOLIDITY_COVERAGE
-      ? it.skip
-      : it("should be able to correctly sync to the current state from scratch just from on-chain interactions", async () => {
+      describe("when synchronising reputation mining client", () => {
+        // Because these tests rely on a custom, teeny-tiny-hacked version of ganache-cli, they don't work with solidity-coverage.
+        // But that's okay, because these tests don't test anything meaningful in the contracts.
+        it("should be able to correctly sync to the current state from scratch just from on-chain interactions", async () => {
           // Now sync reputationMiner2
           await reputationMiner2.sync(startingBlockNumber);
 
@@ -122,9 +122,7 @@ contract("Reputation mining - client sync functionality", accounts => {
           expect(client1Hash).to.equal(client2Hash);
         });
 
-    process.env.SOLIDITY_COVERAGE
-      ? it.skip
-      : it("should be able to correctly sync to the current state from an old, correct state", async () => {
+        it("should be able to correctly sync to the current state from an old, correct state", async () => {
           // Bring client up to date
           await reputationMiner2.sync(startingBlockNumber);
 
@@ -156,9 +154,7 @@ contract("Reputation mining - client sync functionality", accounts => {
           expect(client1Hash).to.equal(client2Hash);
         });
 
-    process.env.SOLIDITY_COVERAGE
-      ? it.skip
-      : it("should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
+        it("should be able to correctly sync to the current state from an old, correct state loaded from the database", async () => {
           // Save to the database
           await reputationMiner1.saveCurrentState();
           const savedHash = await reputationMiner1.reputationTree.getRootHash();
@@ -182,45 +178,44 @@ contract("Reputation mining - client sync functionality", accounts => {
           expect(client1Hash).to.equal(client2Hash);
         });
 
-    it("should be able to successfully save the current state to the database and then load it", async () => {
-      await reputationMiner1.saveCurrentState();
+        it("should be able to successfully save the current state to the database and then load it", async () => {
+          await reputationMiner1.saveCurrentState();
 
-      const client1Hash = await reputationMiner1.reputationTree.getRootHash();
-      await reputationMiner2.loadState(client1Hash);
+          const client1Hash = await reputationMiner1.reputationTree.getRootHash();
+          await reputationMiner2.loadState(client1Hash);
 
-      const client2Hash = await reputationMiner2.reputationTree.getRootHash();
-      expect(client1Hash).to.equal(client2Hash);
+          const client2Hash = await reputationMiner2.reputationTree.getRootHash();
+          expect(client1Hash).to.equal(client2Hash);
+        });
+
+        it("should be able to correctly get the proof for a reputation in a historical state without affecting the current miner state", async () => {
+          await reputationMiner1.saveCurrentState();
+
+          const clientHash1 = await reputationMiner1.reputationTree.getRootHash();
+          const key = Object.keys(reputationMiner1.reputations)[0];
+          const value = reputationMiner1.reputations[key];
+          const [branchMask, siblings] = await reputationMiner1.getProof(key);
+
+          await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
+
+          // So now we have a different state
+          await reputationMiner1.saveCurrentState();
+          const clientHash2 = await reputationMiner1.reputationTree.getRootHash();
+          expect(clientHash1).to.not.equal(clientHash2);
+
+          const [retrievedBranchMask, retrievedSiblings, retrievedValue] = await reputationMiner1.getHistoricalProofAndValue(clientHash1, key);
+
+          // Check they're right
+          expect(value).to.equal(retrievedValue);
+          expect(branchMask).to.equal(retrievedBranchMask);
+          expect(siblings.length).to.equal(retrievedSiblings.length);
+
+          for (let i = 0; i < retrievedSiblings.length; i += 1) {
+            expect(siblings[i]).to.equal(retrievedSiblings[i]);
+          }
+
+          const clientHash3 = await reputationMiner1.reputationTree.getRootHash();
+          expect(clientHash2).to.equal(clientHash3);
+        });
+      });
     });
-
-    it("should be able to correctly get the proof for a reputation in a historical state without affecting the current miner state", async () => {
-      await reputationMiner1.saveCurrentState();
-
-      const clientHash1 = await reputationMiner1.reputationTree.getRootHash();
-      const key = Object.keys(reputationMiner1.reputations)[0];
-      const value = reputationMiner1.reputations[key];
-      const [branchMask, siblings] = await reputationMiner1.getProof(key);
-
-      await advanceMiningCycleNoContest({ colonyNetwork, client: reputationMiner1, test: this });
-
-      // So now we have a different state
-      await reputationMiner1.saveCurrentState();
-      const clientHash2 = await reputationMiner1.reputationTree.getRootHash();
-      expect(clientHash1).to.not.equal(clientHash2);
-
-      const [retrievedBranchMask, retrievedSiblings, retrievedValue] = await reputationMiner1.getHistoricalProofAndValue(clientHash1, key);
-
-      // Check they're right
-      expect(value).to.equal(retrievedValue);
-      expect(branchMask).to.equal(retrievedBranchMask);
-      expect(siblings.length).to.equal(retrievedSiblings.length);
-
-      for (let i = 0; i < retrievedSiblings.length; i += 1) {
-        expect(siblings[i]).to.equal(retrievedSiblings[i]);
-        expect(siblings[i]).to.equal(retrievedSiblings[i]);
-      }
-
-      const clientHash3 = await reputationMiner1.reputationTree.getRootHash();
-      expect(clientHash2).to.equal(clientHash3);
-    });
-  });
-});
