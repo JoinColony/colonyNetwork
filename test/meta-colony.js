@@ -532,4 +532,10 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(0), "colony-network-fee-inverse-cannot-be-zero");
     });
   });
+
+  describe("when minting tokens for the Network", () => {
+    it("should NOT allow anyone but the Network to call mintTokensForColonyNetwork", async () => {
+      await checkErrorRevert(metaColony.mintTokensForColonyNetwork(100), "colony-access-denied-only-network-allowed");
+    });
+  });
 });
