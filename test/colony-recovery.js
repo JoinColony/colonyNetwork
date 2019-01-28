@@ -26,6 +26,15 @@ contract("Colony Recovery", accounts => {
   });
 
   describe("when using recovery mode", () => {
+    it("should be able to check whether we are in recovery mode", async () => {
+      const founder = accounts[0];
+      await colony.setRecoveryRole(founder);
+      await colony.enterRecoveryMode();
+
+      const recoveryMode = await colony.isInRecoveryMode();
+      assert.isTrue(recoveryMode);
+    });
+
     it("should be able to add and remove recovery roles when not in recovery", async () => {
       const founder = accounts[0];
       let numRecoveryRoles;
@@ -148,6 +157,8 @@ contract("Colony Recovery", accounts => {
       await colony.setRecoveryRole(founder);
       await colony.enterRecoveryMode();
       await checkErrorRevert(colony.setStorageSlotRecovery(0, "0xdeadbeef"), "colony-common-protected-variable");
+      await checkErrorRevert(colony.setStorageSlotRecovery(1, "0xdeadbeef"), "colony-common-protected-variable");
+      await checkErrorRevert(colony.setStorageSlotRecovery(2, "0xdeadbeef"), "colony-common-protected-variable");
       // '6' is a protected location in Colony, but not ColonyNetwork. We get a different error.
       await checkErrorRevert(colony.setStorageSlotRecovery(6, "0xdeadbeef"), "colony-protected-variable");
     });
