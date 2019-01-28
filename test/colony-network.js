@@ -250,6 +250,11 @@ contract("Colony Network", accounts => {
       await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
     });
 
+    it("should be able to get the ENSRegistrar", async () => {
+      const registrarAddress = await colonyNetwork.getENSRegistrar();
+      assert.equal(registrarAddress, ensRegistry.address);
+    });
+
     it("should own the root domains", async () => {
       let owner;
       owner = await ensRegistry.owner(rootNode);

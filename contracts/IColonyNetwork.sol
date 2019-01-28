@@ -250,6 +250,10 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return address The address the supplied node resolves to
   function addr(bytes32 node) public view returns (address);
 
+  /// @notice Returns the address of the ENSRegistrar for the Network
+  /// @return address The address the ENSRegistrar resolves to
+  function getENSRegistrar() public view returns (address);
+
   /// @notice Set the resolver to be used by new instances of ReputationMiningCycle
   /// @param miningResolverAddress The address of the Resolver contract with the functions correctly wired.
   function setMiningResolver(address miningResolverAddress) public;

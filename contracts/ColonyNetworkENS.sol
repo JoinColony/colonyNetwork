@@ -108,4 +108,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
     return records[node].addr;
   }
 
+  function getENSRegistrar() public view returns (address) {
+    return ens;
+  }
 }
