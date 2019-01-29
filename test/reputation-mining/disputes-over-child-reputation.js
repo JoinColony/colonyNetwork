@@ -701,7 +701,8 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("if one person lies about what the child skill is", async () => {
+    it.skip("if one person lies about what the child skill is", async () => {
+      // We deduce the child reputation key from the logEntry on chain now so the client cannot lie about it
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
@@ -1074,7 +1075,6 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       [
         reputationKey,
         goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.key,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.key,
         goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.key
       ],
       goodClient.justificationHashes[`0x${new BN(firstDisagreeIdx).toString(16, 64)}`].justUpdatedProof.siblings,

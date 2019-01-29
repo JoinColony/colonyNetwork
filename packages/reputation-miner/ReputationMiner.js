@@ -897,7 +897,6 @@ class ReputationMiner {
       [
         reputationKey,
         this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-        this.justificationHashes[lastAgreeKey].childReputationProof.key,
         this.justificationHashes[lastAgreeKey].adjacentReputationProof.key
       ],
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
