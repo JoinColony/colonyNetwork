@@ -82,16 +82,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   uint constant B_REPUTATION_KEY = 0;
   uint constant B_PREVIOUS_NEW_REPUTATION_KEY = 1;
-  uint constant B_ORIGIN_REPUTATION_KEY = 2;
-  uint constant B_CHILD_REPUTATION_KEY = 3;
-  uint constant B_ADJACENT_REPUTATION_KEY = 4;
+  uint constant B_CHILD_REPUTATION_KEY = 2;
+  uint constant B_ADJACENT_REPUTATION_KEY = 3;
 
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function respondToChallenge(
     uint256[27] memory u, //An array of 27 UINT Params, ordered as given above.
-    bytes[5] memory b, // An array of 5 bytes params, ordered as given above
+    bytes[4] memory b, // An array of 5 bytes params, ordered as given above
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
@@ -169,7 +168,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   
   function checkAdjacentReputation(
     uint256[27] memory u,
-    bytes[5] memory b,
+    bytes[4] memory b,
     bytes32[] memory adjacentReputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings
@@ -217,7 +216,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function buildNewSiblingsArray(
     uint256[27] memory u, 
-    bytes[5] memory b, 
+    bytes[4] memory b, 
     uint256 firstDifferenceBit, 
     bytes32[] memory adjacentReputationSiblings
     ) internal returns (bytes32[] memory) 
@@ -267,7 +266,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function checkUserOriginReputation(
     uint256[27] memory u,
-    bytes[5] memory b,
+    bytes[4] memory b,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory userOriginReputationSiblings) internal 
   {
@@ -277,8 +276,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     }
 
     bytes memory reputationKey = b[B_REPUTATION_KEY];
-    bytes memory userOriginReputationKey = b[B_ORIGIN_REPUTATION_KEY];
-
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
     uint256 nChildUpdates;
     (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
@@ -286,30 +283,18 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Skip origin reputation checks for anything but child reputation updates
     if (relativeUpdateNumber % (logEntry.nUpdates/2) < nChildUpdates) {
       // Check the user origin reputation key matches the colony, user address and skill id of the log
-      address colonyAddressOriginRep;
-      address userAddressOriginRep;
-      uint256 skillIdOriginRep;
-      assembly {
-          colonyAddressOriginRep := mload(add(userOriginReputationKey,20))
-          skillIdOriginRep := mload(add(userOriginReputationKey, 52))
-          userAddressOriginRep := mload(add(userOriginReputationKey,72))
-      }
-
-      require(colonyAddressOriginRep == logEntry.colony, "colony-reputation-mining-origin-colony-incorrect");
-      require(skillIdOriginRep == logEntry.skillId, "colony-reputation-mining-origin-skill-incorrect");
-      require(userAddressOriginRep == logEntry.user, "colony-reputation-mining-origin-user-incorrect");
-      
+      bytes memory userOriginReputationKeyBytes = abi.encodePacked(logEntry.colony, logEntry.skillId, logEntry.user);
       checkUserOriginReputationInState(
         u,
         agreeStateSiblings,
-        userOriginReputationKey,
+        userOriginReputationKeyBytes,
         userOriginReputationSiblings);
     }
   }
 
   function checkChildReputation(
     uint256[27] memory u,
-    bytes[5] memory b,
+    bytes[4] memory b,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory childReputationSiblings) internal 
   {
@@ -348,7 +333,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
   }
 
-  function checkKey(uint256[27] memory u, bytes[5] memory b) internal view {
+  function checkKey(uint256[27] memory u, bytes[4] memory b) internal view {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -367,7 +352,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(u[U_AGREE_STATE_REPUTATION_UID]-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
-  function checkKeyLogEntry(uint256[27] memory u, bytes[5] memory b) internal view {
+  function checkKeyLogEntry(uint256[27] memory u, bytes[4] memory b) internal view {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     uint256 expectedSkillId;
@@ -424,7 +409,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function proveBeforeReputationValue(
     uint256[27] memory u,
-    bytes[5] memory b,
+    bytes[4] memory b,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings
   ) internal
@@ -469,7 +454,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function proveAfterReputationValue(
     uint256[27] memory u,
-    bytes[5] memory b,
+    bytes[4] memory b,
     bytes32[] memory reputationSiblings,
     bytes32[] memory disagreeStateSiblings
   ) internal view
@@ -633,7 +618,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function checkPreviousReputationInState(
     uint256[27] memory u,
-    bytes[5] memory b,
+    bytes[4] memory b,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory previousNewReputationSiblings
     ) internal view
@@ -659,7 +644,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   function checkUserOriginReputationInState(
     uint256[27] memory u,
     bytes32[] memory agreeStateSiblings,
-    bytes memory userOriginReputationKey,
+    bytes memory userOriginReputationKeyBytes,
     bytes32[] memory userOriginReputationStateSiblings
     ) internal
   {
@@ -669,7 +654,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes memory userOriginReputationValueBytes = abi.encodePacked(u[U_USER_ORIGIN_REPUTATION_VALUE], u[U_USER_ORIGIN_REPUTATION_UID]);
 
     bytes32 reputationRootHash = getImpliedRootHashKey(
-      userOriginReputationKey,
+      userOriginReputationKeyBytes,
       userOriginReputationValueBytes,
       u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       userOriginReputationStateSiblings

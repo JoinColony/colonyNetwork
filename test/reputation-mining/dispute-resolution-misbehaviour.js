@@ -527,7 +527,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
           [
             reputationKey,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key
           ],
@@ -653,7 +652,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
           [
             reputationKey,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key
           ],
@@ -705,7 +703,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
           [
             reputationKey,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key
           ],
@@ -807,7 +804,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
           [
             reputationKey,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key
           ],
@@ -901,7 +897,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
           [
             reputationKey,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key
           ],
@@ -954,7 +949,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
           [
             reputationKey,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.key,
             goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key
           ],
@@ -1017,7 +1011,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [wrongColonyKey, "0x00", "0x00", "0x00", "0x00"],
+          [wrongColonyKey, "0x00", "0x00", "0x00"],
           [],
           [],
           [],
@@ -1032,7 +1026,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [wrongReputationKey, "0x00", "0x00", "0x00", "0x00"],
+          [wrongReputationKey, "0x00", "0x00", "0x00"],
           [],
           [],
           [],
@@ -1047,7 +1041,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await checkErrorRevert(
         repCycle.respondToChallenge(
           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-          [wrongUserKey, "0x00", "0x00", "0x00", "0x00"],
+          [wrongUserKey, "0x00", "0x00", "0x00"],
           [],
           [],
           [],

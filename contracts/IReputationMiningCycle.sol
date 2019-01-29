@@ -122,12 +122,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 26. The UID of the reputation adjacent to the new reputation being inserted 
   /// * 27. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
 
-  /// @param b A `bytes[5]` array. The elements of this array, in order are:
+  /// @param b A `bytes[4]` array. The elements of this array, in order are:
   /// * 1. Reputation key The key of the reputation being changed that the disagreement is over.
   /// * 2. previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// * 3. userOriginReputationKey Nonzero for child updates only. The key of the user's origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// * 4. childReputationKey Required for child updates of a colony-wide global skill. The key corresponding to the child skill of the user in this case
-  /// * 5. adjacentReputationKey Key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
+  /// * 3. childReputationKey Required for child updates of a colony-wide global skill. The key corresponding to the child skill of the user in this case
+  /// * 4. adjacentReputationKey Key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
 
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
@@ -140,7 +139,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
     uint256[27] memory u, //An array of 27 UINT Params, ordered as given above.
-    bytes[5] memory b,
+    bytes[4] memory b,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,

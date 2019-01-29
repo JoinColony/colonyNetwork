@@ -174,7 +174,8 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       assert.equal(righthash, acceptedHash, "The correct hash was not accepted");
     });
 
-    it("if one person lies about what the origin skill is when there is an origin skill for a user update", async () => {
+    it.skip("if one person lies about what the origin skill is when there is an origin skill for a user update", async () => {
+      // We deduce the origin reputation key from the logEntry on chain now so the client cannot lie about it
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER4, DEFAULT_STAKE);
 
@@ -341,7 +342,8 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
   });
 
   describe("should correctly resolve a dispute over child skill", () => {
-    it("if the global origin skill is provided instead of the child origin skill", async () => {
+    it.skip("if the global origin skill is provided instead of the child origin skill", async () => {
+      // We deduce the origin reputation key from the logEntry on chain now so the client cannot lie about it
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
@@ -1072,7 +1074,6 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       [
         reputationKey,
         goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].newestReputationProof.key,
-        goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].originReputationProof.key,
         goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].childReputationProof.key,
         goodClient.justificationHashes[`0x${new BN(lastAgreeIdx).toString(16, 64)}`].adjacentReputationProof.key
       ],
