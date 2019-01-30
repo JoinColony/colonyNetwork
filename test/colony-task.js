@@ -1531,6 +1531,32 @@ contract("ColonyTask", accounts => {
       await checkErrorRevert(colony.setAllTaskPayouts(taskId, ZERO_ADDRESS, 5000, 1000, 98000), "colony-funding-worker-already-set");
     });
 
+    it("should not be able to set all payments at once if evaluator is assigned and not manager", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate, evaluator: accounts[6] });
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "removeTaskEvaluatorRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId]
+      });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, accounts[4]],
+        sigTypes: [0, 0],
+        args: [taskId, accounts[4]]
+      });
+
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, ZERO_ADDRESS, 5000, 1000, 98000), "colony-funding-evaluator-already-set");
+    });
+
     it("should log a TaskWorkerPayoutSet event, if the task's worker's payout changed", async () => {
       const taskId = await makeTask({ colony });
 
