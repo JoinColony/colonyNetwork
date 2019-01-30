@@ -61,8 +61,6 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMinerTestWra
       [
         reputationKey,
         this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-        this.justificationHashes[lastAgreeKey].originReputationProof.key,
-        this.justificationHashes[lastAgreeKey].childReputationProof.key,
         this.justificationHashes[lastAgreeKey].adjacentReputationProof.key
       ],
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
