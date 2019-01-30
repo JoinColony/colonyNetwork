@@ -2,7 +2,8 @@ module.exports = {
     skipFiles: [
       'Migrations.sol',
       'EtherRouter.sol',
-      'PatriciaTree'
+      'PatriciaTree',
+      'ContractEditing' // Covered implicitly via the colony-network-recovery.js tests
     ],
     copyPackages: ['openzeppelin-solidity'],
     compileCommand: 'yarn run provision:token:contracts',
