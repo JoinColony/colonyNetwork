@@ -39,7 +39,7 @@ contract("Colony Network", accounts => {
     it("should accept ether", async () => {
       await colonyNetwork.send(1);
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
-      assert.equal(colonyNetworkBalance, 1);
+      expect(colonyNetworkBalance).to.eq.BN(1);
     });
 
     it("should have the correct current Colony version set", async () => {
@@ -49,7 +49,7 @@ contract("Colony Network", accounts => {
 
     it("should have the Resolver for current Colony version set", async () => {
       const currentResolver = await colonyNetwork.getColonyVersionResolver(version);
-      assert.notEqual(currentResolver, ZERO_ADDRESS);
+      expect(currentResolver).to.not.equal(ZERO_ADDRESS);
     });
 
     it("should be able to register a higher Colony contract version", async () => {
@@ -58,9 +58,9 @@ contract("Colony Network", accounts => {
       await metaColony.addNetworkColonyVersion(updatedVersion, SAMPLE_RESOLVER);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      assert.equal(updatedColonyVersion.toNumber(), updatedVersion);
+      expect(updatedColonyVersion).to.eq.BN(updatedVersion);
       const currentResolver = await colonyNetwork.getColonyVersionResolver(updatedVersion);
-      assert.equal(currentResolver.toLowerCase(), SAMPLE_RESOLVER);
+      expect(currentResolver.toLowerCase()).to.equal(SAMPLE_RESOLVER);
     });
 
     it("when registering a lower version of the Colony contract, should NOT update the current (latest) colony version", async () => {
@@ -68,7 +68,7 @@ contract("Colony Network", accounts => {
       await metaColony.addNetworkColonyVersion(currentColonyVersion.subn(1), SAMPLE_RESOLVER);
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
-      assert.equal(updatedColonyVersion.toNumber(), currentColonyVersion.toNumber());
+      expect(updatedColonyVersion).to.eq.BN(currentColonyVersion);
     });
   });
 
@@ -76,7 +76,7 @@ contract("Colony Network", accounts => {
     it("should allow users to create new colonies", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const colonyCount = await colonyNetwork.getColonyCount();
-      assert.notEqual(colony.address, ZERO_ADDRESS);
+      expect(colony.address).to.not.equal(ZERO_ADDRESS);
       expect(colonyCount).to.eq.BN(2);
     });
 
@@ -184,7 +184,7 @@ contract("Colony Network", accounts => {
 
       await colony.upgrade(newVersion);
       const colonyResolver = await colonyEtherRouter.resolver();
-      assert.equal(colonyResolver.toLowerCase(), SAMPLE_RESOLVER);
+      expect(colonyResolver.toLowerCase()).to.equal(SAMPLE_RESOLVER);
     });
 
     it("should not be able to set colony resolver by directly calling `setResolver`", async () => {
@@ -253,13 +253,13 @@ contract("Colony Network", accounts => {
     it("should own the root domains", async () => {
       let owner;
       owner = await ensRegistry.owner(rootNode);
-      assert.equal(owner, colonyNetwork.address);
+      expect(owner).to.equal(colonyNetwork.address);
 
       owner = await ensRegistry.owner(namehash.hash("user.joincolony.eth"));
-      assert.equal(owner, colonyNetwork.address);
+      expect(owner).to.equal(colonyNetwork.address);
 
       owner = await ensRegistry.owner(namehash.hash("colony.joincolony.eth"));
-      assert.equal(owner, colonyNetwork.address);
+      expect(owner).to.equal(colonyNetwork.address);
     });
 
     it("should be able to register one unique label per user", async () => {
@@ -276,20 +276,20 @@ contract("Colony Network", accounts => {
       // Check label resolves correctly.
       // First, query the registry to get the resolver
       const resolverAddress = await ensRegistry.resolver(hash);
-      assert.equal(resolverAddress, colonyNetwork.address);
+      expect(resolverAddress).to.equal(colonyNetwork.address);
       // Then query the resolver
       const resolvedAddress = await colonyNetwork.addr(hash);
-      assert.equal(resolvedAddress, accounts[1]);
+      expect(resolvedAddress).to.equal(accounts[1]);
       const owner = await ensRegistry.owner(hash);
-      assert.equal(owner, colonyNetwork.address);
+      expect(owner).to.equal(colonyNetwork.address);
 
       // Check reverse lookup
       const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
-      assert.equal(lookedUpENSDomain, "test.user.joincolony.eth");
+      expect(lookedUpENSDomain).to.equal("test.user.joincolony.eth");
 
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
-      assert.equal(retrievedOrbitDB, orbitDBAddress);
+      expect(retrievedOrbitDB).to.equal(orbitDBAddress);
 
       // Label already in use
       await checkErrorRevert(colonyNetwork.registerUserLabel(username, orbitDBAddress, { from: accounts[2] }), "colony-label-already-owned");
@@ -314,22 +314,22 @@ contract("Colony Network", accounts => {
       // Founder can register label for colony
       await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
       const owner = await ensRegistry.owner(hash);
-      assert.equal(owner, colonyNetwork.address);
+      expect(owner).to.equal(colonyNetwork.address);
 
       // Check label resolves correctly
       // First, query the registry to get the resolver
       const resolverAddress = await ensRegistry.resolver(hash);
-      assert.equal(resolverAddress, colonyNetwork.address);
+      expect(resolverAddress).to.equal(colonyNetwork.address);
       // Then query the resolver
       const resolvedAddress = await colonyNetwork.addr(hash);
-      assert.equal(resolvedAddress, colony.address);
+      expect(resolvedAddress).to.equal(colony.address);
 
       // Check reverse lookup
       const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
-      assert.equal(lookedUpENSDomain, "test.colony.joincolony.eth");
+      expect(lookedUpENSDomain).to.equal("test.colony.joincolony.eth");
       // Get stored orbitdb address
       const retrievedOrbitDB = await colonyNetwork.getProfileDBAddress(hash);
-      assert.equal(retrievedOrbitDB, orbitDBAddress);
+      expect(retrievedOrbitDB).to.equal(orbitDBAddress);
 
       // Can't register two labels for a colony
       await checkErrorRevert(colony.registerColonyLabel(colonyName2, orbitDBAddress, { from: accounts[0] }), "colony-already-labeled");
@@ -348,23 +348,23 @@ contract("Colony Network", accounts => {
 
       // Check reverse lookup for colony
       const lookedUpENSDomainColony = await colonyNetwork.lookupRegisteredENSDomain(colony.address);
-      assert.equal(lookedUpENSDomainColony, "test.colony.joincolony.eth");
+      expect(lookedUpENSDomainColony).to.equal("test.colony.joincolony.eth");
 
       // Check reverse lookup
       const lookedUpENSDomainUser = await colonyNetwork.lookupRegisteredENSDomain(accounts[1]);
-      assert.equal(lookedUpENSDomainUser, "test.user.joincolony.eth");
+      expect(lookedUpENSDomainUser).to.equal("test.user.joincolony.eth");
     });
 
     it("should return a blank address if looking up an address with no Colony-based ENS name", async () => {
       const lookedUpENSDomain = await colonyNetwork.lookupRegisteredENSDomain(accounts[2]);
-      assert.equal(lookedUpENSDomain, "");
+      expect(lookedUpENSDomain).to.equal("");
     });
 
     it("should respond correctly to queries regarding ENS interfaces it supports", async () => {
       let response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'supportsInterface(bytes4)'
-      assert.isTrue(response);
+      expect(response).to.be.true;
       response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'addr(bytes32)'
-      assert.isTrue(response);
+      expect(response).to.be.true;
     });
   });
 });
