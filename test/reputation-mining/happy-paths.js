@@ -724,8 +724,22 @@ contract("Reputation Mining - happy paths", accounts => {
       const key = makeReputationKey(metaColony.address, new BN("2"), MINER1);
       const value = goodClient.reputations[key];
       const [branchMask, siblings] = await goodClient.getProof(key);
-      const isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER1 });
+      // Checking all good parameters confirms a good proof
+      let isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER1 });
       expect(isValid).to.be.true;
+
+      const badKey = makeReputationKey("0xdeadbeef", new BN("2"), MINER1);
+      // Check using a bad key confirms an invalid proof
+      isValid = await metaColony.verifyReputationProof(badKey, value, branchMask, siblings, { from: MINER1 });
+      expect(isValid).to.be.false;
+
+      // Check using a bad user confirms an invalid proof
+      isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER2 });
+      expect(isValid).to.be.false;
+
+      // Check using a bad branchmask confirms an invalid proof
+      isValid = await metaColony.verifyReputationProof(key, value, 123, siblings, { from: MINER1 });
+      expect(isValid).to.be.false;
     });
 
     it("should correctly decay a reputation to zero, and then 'decay' to zero in subsequent cycles", async () => {
