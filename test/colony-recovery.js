@@ -1,6 +1,12 @@
+import chai from "chai";
+import bnChai from "bn-chai";
+
 import { SPECIFICATION_HASH, ZERO_ADDRESS } from "../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 contract("Colony Recovery", accounts => {
   let colony;
@@ -25,28 +31,28 @@ contract("Colony Recovery", accounts => {
       let numRecoveryRoles;
 
       numRecoveryRoles = await colony.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 0);
+      expect(numRecoveryRoles).to.eq.BN(0);
 
       await colony.setRecoveryRole(founder);
       await colony.setRecoveryRole(accounts[1]);
       await colony.setRecoveryRole(accounts[2]);
       numRecoveryRoles = await colony.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 3);
+      expect(numRecoveryRoles).to.eq.BN(3);
 
       // Can remove recovery roles
       await colony.removeRecoveryRole(accounts[2]);
       numRecoveryRoles = await colony.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 2);
+      expect(numRecoveryRoles).to.eq.BN(2);
 
       // Can't remove twice
       await colony.removeRecoveryRole(accounts[2]);
       numRecoveryRoles = await colony.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 2);
+      expect(numRecoveryRoles).to.eq.BN(2);
 
       // Can remove founder
       await colony.removeRecoveryRole(founder);
       numRecoveryRoles = await colony.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 1);
+      expect(numRecoveryRoles).to.eq.BN(1);
     });
 
     it("should not be able to add and remove roles when in recovery", async () => {
@@ -133,7 +139,7 @@ contract("Colony Recovery", accounts => {
       await colony.setStorageSlotRecovery(5, "0xdeadbeef");
 
       const unprotected = await web3GetStorageAt(colony.address, 5);
-      assert.equal(unprotected.toString(), `0xdeadbeef${"0".repeat(56)}`);
+      expect(unprotected).to.eq.BN(`0xdeadbeef${"0".repeat(56)}`);
     });
 
     it("should not allow editing of protected variables", async () => {
