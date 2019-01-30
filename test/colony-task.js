@@ -1761,5 +1761,58 @@ contract("ColonyTask", accounts => {
       expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
     });
+
+    it("should take the whole payout as fee, when network fee is 1 (=100%)", async () => {
+      await metaColony.setNetworkFeeInverse(1);
+
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFinalizedTask({
+        colonyNetwork,
+        colony,
+        token,
+        managerPayout: 99,
+        workerPayout: 1,
+        evaluatorPayout: 2
+      });
+
+      const networkBalance1 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceBefore = await token.balanceOf(MANAGER);
+
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
+      const networkBalance2 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceAfter = await token.balanceOf(MANAGER);
+      expect(networkBalance2.sub(networkBalance1)).to.eq.BN(99);
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.be.zero;
+
+      const workerBalanceBefore = await token.balanceOf(WORKER);
+
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      const networkBalance3 = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceAfter = await token.balanceOf(WORKER);
+      expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
+    });
+
+    it("should payout 0 network fees, for 0 value payouts", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFinalizedTask({
+        colonyNetwork,
+        colony,
+        token,
+        managerPayout: 100,
+        workerPayout: 0,
+        evaluatorPayout: 0
+      });
+
+      const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceBefore = await token.balanceOf(WORKER);
+
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+
+      const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceAfter = await token.balanceOf(WORKER);
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.be.zero;
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
+    });
   });
 });
