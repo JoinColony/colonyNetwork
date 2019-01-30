@@ -457,6 +457,10 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _payoutId Id of the reward payout
   function finalizeRewardPayout(uint256 _payoutId) public;
 
+  /// @notice Get the number of funding pots in the colony
+  /// @return count The funding pots count
+  function getPotCount() public view returns (uint256 count);
+
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
