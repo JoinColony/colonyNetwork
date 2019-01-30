@@ -72,6 +72,17 @@ contract("Colony Network", accounts => {
     });
   });
 
+  describe("when managing the mining process", () => {
+    it("should not allow reinitialisation of reputation mining process", async () => {
+      await colonyNetwork.initialiseReputationMining();
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
+    });
+
+    it("should not allow another mining cycle to start if the process isn't initialised", async () => {
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-not-initialised");
+    });
+  });
+
   describe("when creating new colonies", () => {
     it("should allow users to create new colonies", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
