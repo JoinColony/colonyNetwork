@@ -383,7 +383,7 @@ class ReputationMiner {
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, reputation, uid, nNodes: this.nReputations.toString() };
   }
 
-  static async getKey(_colonyAddress, _skillId, _userAddress) {
+  static getKey(_colonyAddress, _skillId, _userAddress) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
 
