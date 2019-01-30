@@ -102,10 +102,6 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @dev Returns false if skill does not exist
   function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
 
-  /// @notice Get the number of parents the specified skill has 
-  /// @return nParents uint256
-  function getSkillNParents(uint256 _skillId) public view returns (uint128 nParents);
-
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or
   /// @param _user The address of the user for the reputation update
