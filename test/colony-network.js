@@ -13,6 +13,8 @@ chai.use(bnChai(web3.utils.BN));
 
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
+const Resolver = artifacts.require("Resolver");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DSToken = artifacts.require("DSToken");
 
 contract("Colony Network", accounts => {
@@ -69,6 +71,27 @@ contract("Colony Network", accounts => {
 
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       expect(updatedColonyVersion).to.eq.BN(currentColonyVersion);
+    });
+
+    it("should not be able to set the token locking contract twice", async () => {
+      await colonyNetwork.setTokenLocking("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA");
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ZERO_ADDRESS), "colony-invalid-token-locking-address");
+    });
+
+    it("should not be able to initialise network twice", async () => {
+      await checkErrorRevert(colonyNetwork.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA"), "colony-network-already-initialised");
+    });
+
+    it("should not be able to create a colony if the network is not initialised", async () => {
+      const resolverColonyNetworkDeployed = await Resolver.deployed();
+      const etherRouter = await EtherRouter.new();
+      await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+      colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+      await checkErrorRevert(
+        colonyNetwork.createColony("0x8972e86549bb8E350673e0562fba9a4889d01637"),
+        "colony-network-not-initialised-cannot-create-colony"
+      );
     });
   });
 
