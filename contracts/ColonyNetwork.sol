@@ -143,6 +143,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   returns (address)
   {
     require(currentColonyVersion > 0, "colony-network-not-initialised-cannot-create-colony");
+    require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     EtherRouter etherRouter = new EtherRouter();
     IColony colony = IColony(address(etherRouter));
     address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];

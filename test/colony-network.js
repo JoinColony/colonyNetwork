@@ -129,6 +129,10 @@ contract("Colony Network", accounts => {
       await checkErrorRevert(colonyNetwork.createMetaColony(token.address), "colony-meta-colony-exists-already");
     });
 
+    it("should not allow users to create a colony with empty token", async () => {
+      await checkErrorRevert(colonyNetwork.createColony(ZERO_ADDRESS), "colony-token-invalid-address");
+    });
+
     it("when any colony is created, should have the root local skill initialised", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
 
