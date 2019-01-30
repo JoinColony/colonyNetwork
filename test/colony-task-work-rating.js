@@ -134,7 +134,19 @@ contract("Colony Task Work Rating", accounts => {
       await checkErrorRevert(colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR }), "colony-task-not-complete");
     });
 
-    it("should fail if I try to rate work on behalf of a worker", async () => {
+    it("should fail if user rates worker on behalf of the evaluator", async () => {
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+      await colony.completeTask(taskId);
+      await checkErrorRevert(
+        colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: OTHER }),
+        "colony-user-cannot-rate-task-worker"
+      );
+      const ratingSecrets = await colony.getTaskWorkRatings(taskId);
+      assert.equal(ratingSecrets[1], 0);
+    });
+
+    it("should fail if user rates manager on behalf of the worker", async () => {
       const dueDate = await currentBlockTime();
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.completeTask(taskId);
