@@ -628,6 +628,10 @@ contract("Reputation mining - root hash submissions", accounts => {
       // Smallest weight (staked for 0, last submission)
       weight = await colonyNetwork.calculateMinerWeight(0, 11);
       expect(weight).to.be.zero;
+
+      // Use submissionIndex higher than the max allowed number of miners
+      weight = await colonyNetwork.calculateMinerWeight(0, 100);
+      expect(weight).to.be.zero;
     });
   });
 });

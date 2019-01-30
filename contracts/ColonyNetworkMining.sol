@@ -124,7 +124,10 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
   uint256 constant MAX_MINERS = 12;
 
   function calculateMinerWeight(uint256 timeStaked, uint256 submissonIndex) public pure returns (uint256) {
-    require((submissonIndex >= 0) && (submissonIndex < MAX_MINERS), "colony-reputation-mining-invalid-submission-index");
+    if (submissonIndex >= MAX_MINERS) {
+      return 0;
+    }
+
     uint256 timeStakedMax = min(timeStaked, UINT32_MAX); // Maximum of ~136 years (uint32)
 
     // (1 - exp{-t_n/T}) * (1 - (n-1)/N), 3rd degree Taylor expansion for exponential term
