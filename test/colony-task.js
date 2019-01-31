@@ -87,11 +87,11 @@ contract("ColonyTask", accounts => {
       const dueDate = await currentBlockTime();
       const taskId = await makeTask({ colony, dueDate });
       const task = await colony.getTask(taskId);
-      assert.equal(task[0], SPECIFICATION_HASH);
-      assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
-      assert.equal(task[2].toNumber(), ACTIVE_TASK_STATE);
-      assert.equal(task[3].toNumber(), dueDate);
-      assert.equal(task[4].toNumber(), 0);
+      expect(task[0]).to.equal(SPECIFICATION_HASH);
+      expect(task[1]).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(task[2]).to.eq.BN(ACTIVE_TASK_STATE);
+      expect(task[3]).to.eq.BN(dueDate);
+      expect(task[4]).to.be.zero;
     });
 
     it("should fail if a non-admin user tries to make a task", async () => {
@@ -105,20 +105,20 @@ contract("ColonyTask", accounts => {
       const taskId = await makeTask({ colony });
 
       const taskManager = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(taskManager.user, MANAGER);
+      expect(taskManager.user).to.equal(MANAGER);
 
       const taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(taskEvaluator.user, MANAGER);
+      expect(taskEvaluator.user).to.equal(MANAGER);
     });
 
     it("should allow the reassignment of evaluator", async () => {
       const newEvaluator = accounts[1];
-      assert.notEqual(MANAGER, newEvaluator);
+      expect(MANAGER).to.not.equal(newEvaluator);
 
       const taskId = await makeTask({ colony });
 
       let taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(taskEvaluator.user, EVALUATOR);
+      expect(taskEvaluator.user).to.equal(EVALUATOR);
 
       await executeSignedTaskChange({
         colony,
@@ -130,7 +130,7 @@ contract("ColonyTask", accounts => {
       });
 
       taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(taskEvaluator.user, ZERO_ADDRESS);
+      expect(taskEvaluator.user).to.equal(ZERO_ADDRESS);
 
       await executeSignedRoleAssignment({
         colony,
@@ -142,7 +142,7 @@ contract("ColonyTask", accounts => {
       });
 
       taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(taskEvaluator.user, newEvaluator);
+      expect(taskEvaluator.user).to.equal(newEvaluator);
     });
 
     it("should return the correct number of tasks", async () => {
@@ -160,7 +160,7 @@ contract("ColonyTask", accounts => {
       await colony.addDomain(1);
       const taskId = await makeTask({ colony, domainId: 2 });
       const task = await colony.getTask(taskId);
-      assert.equal(task[7].toNumber(), 2);
+      expect(task[7]).to.eq.BN(2);
     });
 
     it("should log TaskAdded and PotAdded events", async () => {
@@ -174,8 +174,8 @@ contract("ColonyTask", accounts => {
 
       const taskId = await makeTask({ colony, skillId, dueDate });
       const task = await colony.getTask(taskId);
-      assert.equal(task[3].toNumber(), dueDate);
-      assert.equal(task[8][0].toNumber(), skillId);
+      expect(task[3]).to.eq.BN(dueDate);
+      expect(task[8][0]).to.eq.BN(skillId);
     });
 
     it("should set the due date to 90 days from now if unspecified", async () => {
@@ -185,7 +185,7 @@ contract("ColonyTask", accounts => {
       const task = await colony.getTask(taskId);
       const currTime = await currentBlockTime();
       const expectedDueDate = currTime + SECONDS_PER_DAY * 90;
-      assert.equal(task[3].toNumber(), expectedDueDate);
+      expect(task[3]).to.eq.BN(expectedDueDate);
     });
   });
 
@@ -257,10 +257,10 @@ contract("ColonyTask", accounts => {
       });
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(worker.user, WORKER);
+      expect(worker.user).to.equal(WORKER);
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluator.user, newEvaluator);
+      expect(evaluator.user).to.equal(newEvaluator);
     });
 
     it("should not allow a worker to be assigned if the task has no skill", async () => {
@@ -325,7 +325,7 @@ contract("ColonyTask", accounts => {
       );
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      assert.equal(evaluator.user, ZERO_ADDRESS);
+      expect(evaluator.user).to.equal(ZERO_ADDRESS);
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -340,7 +340,7 @@ contract("ColonyTask", accounts => {
       );
 
       const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(worker.user, ZERO_ADDRESS);
+      expect(worker.user).to.equal(ZERO_ADDRESS);
     });
 
     it("should not allow role to be assigned if it is already assigned to somebody", async () => {
@@ -393,7 +393,7 @@ contract("ColonyTask", accounts => {
       });
 
       let workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(workerInfo.user, WORKER);
+      expect(workerInfo.user).to.equal(WORKER);
 
       await executeSignedTaskChange({
         colony,
@@ -405,7 +405,7 @@ contract("ColonyTask", accounts => {
       });
 
       workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(workerInfo.user, ZERO_ADDRESS);
+      expect(workerInfo.user).to.equal(ZERO_ADDRESS);
     });
 
     it("should not allow role to be unassigned, if current assigned address does not agree", async () => {
@@ -433,12 +433,12 @@ contract("ColonyTask", accounts => {
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(workerInfo.user, WORKER);
+      expect(workerInfo.user).to.equal(WORKER);
     });
 
     it("should not allow role to be assigned if passed address is not equal to one of the signers", async () => {
       const newEvaluator = accounts[1];
-      assert.notEqual(MANAGER, newEvaluator);
+      expect(MANAGER).to.not.equal(newEvaluator);
 
       const taskId = await makeTask({ colony });
 
@@ -455,7 +455,7 @@ contract("ColonyTask", accounts => {
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(workerInfo.user, ZERO_ADDRESS);
+      expect(workerInfo.user).to.equal(ZERO_ADDRESS);
     });
 
     it("should allow manager to assign himself to a role", async () => {
@@ -471,7 +471,7 @@ contract("ColonyTask", accounts => {
       });
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(workerInfo.user, MANAGER);
+      expect(workerInfo.user).to.equal(MANAGER);
     });
 
     it("should not allow anyone to assign himself to a role with one signature except manager", async () => {
@@ -490,7 +490,7 @@ contract("ColonyTask", accounts => {
       );
 
       const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(workerInfo.user, ZERO_ADDRESS);
+      expect(workerInfo.user).to.equal(ZERO_ADDRESS);
     });
 
     it("should allow different modes of signing when assigning roles", async () => {
@@ -505,8 +505,8 @@ contract("ColonyTask", accounts => {
         args: [taskId, WORKER]
       });
 
-      const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(worker.user, WORKER);
+      const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
+      expect(workerInfo.user).to.equal(WORKER);
     });
 
     it("should not allow role assignment if none of the signers is manager", async () => {
@@ -524,8 +524,8 @@ contract("ColonyTask", accounts => {
         "colony-task-role-assignment-not-signed-by-manager"
       );
 
-      const worker = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(worker.user, ZERO_ADDRESS);
+      const workerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
+      expect(workerInfo.user).to.equal(ZERO_ADDRESS);
     });
 
     it("should allow to change manager role if the user agrees", async () => {
@@ -541,7 +541,7 @@ contract("ColonyTask", accounts => {
       });
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(managerInfo.user, COLONY_ADMIN);
+      expect(managerInfo.user).to.equal(COLONY_ADMIN);
     });
 
     it("should not allow assignment of manager to other role with 1 signature if signer is not manager", async () => {
@@ -560,7 +560,7 @@ contract("ColonyTask", accounts => {
       );
 
       const managerInfo = await colony.getTaskRole(taskId, WORKER_ROLE);
-      assert.equal(managerInfo.user, ZERO_ADDRESS);
+      expect(managerInfo.user).to.equal(ZERO_ADDRESS);
     });
 
     it("should not allow assignment of manager role if the user does not agree", async () => {
@@ -579,7 +579,7 @@ contract("ColonyTask", accounts => {
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(managerInfo.user, MANAGER);
+      expect(managerInfo.user).to.equal(MANAGER);
     });
 
     it("should not allow assignment of manager role if user is not an admin", async () => {
@@ -598,7 +598,7 @@ contract("ColonyTask", accounts => {
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(managerInfo.user, MANAGER);
+      expect(managerInfo.user).to.equal(MANAGER);
     });
 
     it("should not allow removal of manager role", async () => {
@@ -617,12 +617,12 @@ contract("ColonyTask", accounts => {
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(managerInfo.user, MANAGER);
+      expect(managerInfo.user).to.equal(MANAGER);
     });
 
     it("should not allow assignment of manager role if current manager is not one of the signers", async () => {
       const newEvaluator = accounts[1];
-      assert.notEqual(MANAGER, newEvaluator);
+      expect(MANAGER).to.not.equal(newEvaluator);
 
       const taskId = await makeTask({ colony });
 
@@ -669,7 +669,7 @@ contract("ColonyTask", accounts => {
       );
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
-      assert.equal(managerInfo.user, MANAGER);
+      expect(managerInfo.user).to.equal(MANAGER);
     });
 
     it("should correctly increment `taskChangeNonce` for multiple updates on a single task", async () => {
@@ -686,7 +686,7 @@ contract("ColonyTask", accounts => {
       });
 
       let taskChangeNonce = await colony.getTaskChangeNonce(taskId);
-      assert.equal(taskChangeNonce, 1);
+      expect(taskChangeNonce).to.eq.BN(1);
 
       // Change the due date
       const dueDate = await currentBlockTime();
@@ -701,7 +701,7 @@ contract("ColonyTask", accounts => {
       });
 
       taskChangeNonce = await colony.getTaskChangeNonce(taskId);
-      assert.equal(taskChangeNonce, 2);
+      expect(taskChangeNonce).to.eq.BN(2);
     });
 
     it("should correctly increment `taskChangeNonce` for multiple updates on multiple tasks", async () => {
@@ -718,7 +718,7 @@ contract("ColonyTask", accounts => {
         args: [taskId1, SPECIFICATION_HASH_UPDATED]
       });
       let taskChangeNonce = await colony.getTaskChangeNonce(taskId1);
-      assert.equal(taskChangeNonce, 1);
+      expect(taskChangeNonce).to.eq.BN(1);
 
       await executeSignedTaskChange({
         colony,
@@ -730,7 +730,7 @@ contract("ColonyTask", accounts => {
       });
 
       taskChangeNonce = await colony.getTaskChangeNonce(taskId2);
-      assert.equal(taskChangeNonce, 1);
+      expect(taskChangeNonce).to.eq.BN(1);
 
       // Change the task2 due date
       const dueDate = await currentBlockTime();
@@ -745,7 +745,7 @@ contract("ColonyTask", accounts => {
       });
 
       taskChangeNonce = await colony.getTaskChangeNonce(taskId2);
-      assert.equal(taskChangeNonce, 2);
+      expect(taskChangeNonce).to.eq.BN(2);
     });
 
     it("should allow update of task brief signed by manager only when worker has not been assigned", async () => {
@@ -759,8 +759,9 @@ contract("ColonyTask", accounts => {
         sigTypes: [0],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
+
       const task = await colony.getTask(taskId);
-      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
+      expect(task[0]).to.eq.BN(SPECIFICATION_HASH_UPDATED);
     });
 
     it("should allow update of task brief signed by manager and worker", async () => {
@@ -783,8 +784,9 @@ contract("ColonyTask", accounts => {
         sigTypes: [0, 0],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
+
       const task = await colony.getTask(taskId);
-      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
+      expect(task[0]).to.eq.BN(SPECIFICATION_HASH_UPDATED);
     });
 
     it("should allow update of task brief signed by manager and worker using Trezor-style signatures", async () => {
@@ -807,8 +809,9 @@ contract("ColonyTask", accounts => {
         sigTypes: [1, 1],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
+
       const task = await colony.getTask(taskId);
-      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
+      expect(task[0]).to.eq.BN(SPECIFICATION_HASH_UPDATED);
     });
 
     it("should allow update of task brief signed by manager and worker if one uses Trezor-style signatures and the other does not", async () => {
@@ -831,8 +834,9 @@ contract("ColonyTask", accounts => {
         sigTypes: [0, 1],
         args: [taskId, SPECIFICATION_HASH_UPDATED]
       });
+
       const task = await colony.getTask(taskId);
-      assert.equal(task[0], SPECIFICATION_HASH_UPDATED);
+      expect(task[0]).to.eq.BN(SPECIFICATION_HASH_UPDATED);
     });
 
     it("should not allow update of task brief signed by manager twice, with two different signature styles", async () => {
@@ -858,13 +862,13 @@ contract("ColonyTask", accounts => {
         }),
         "colony-task-duplicate-reviewers"
       );
+
       const task = await colony.getTask(taskId);
-      assert.equal(task[0], SPECIFICATION_HASH);
+      expect(task[0]).to.eq.BN(SPECIFICATION_HASH);
     });
 
     it("should allow update of task due date signed by manager and worker", async () => {
       const dueDate = await currentBlockTime();
-
       const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
@@ -886,12 +890,11 @@ contract("ColonyTask", accounts => {
       });
 
       const task = await colony.getTask(taskId);
-      assert.equal(task[3], dueDate);
+      expect(task[3]).to.eq.BN(dueDate);
     });
 
     it("should not allow update of task due if it is trying to be set to 0", async () => {
       const dueDate = await currentBlockTime();
-
       const taskId = await makeTask({ colony, dueDate });
 
       await checkErrorRevert(
@@ -900,7 +903,7 @@ contract("ColonyTask", accounts => {
       );
 
       const task = await colony.getTask(taskId);
-      assert.equal(task[3], dueDate);
+      expect(task[3]).to.eq.BN(dueDate);
     });
 
     it("should fail if a non-colony call is made to the task update functions", async () => {
@@ -1048,6 +1051,7 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const dueDate = await currentBlockTime();
       const taskId = await setupFundedTask({ colonyNetwork, colony, token, dueDate });
+
       await forwardTime(SECONDS_PER_DAY);
       await colony.completeTask(taskId);
 
@@ -1157,13 +1161,13 @@ contract("ColonyTask", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
       let task = await colony.getTask(taskId);
-      assert.equal(task[1], "0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(task[1]).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
 
-      const currentTime = await currentBlockTime();
       await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
+      const currentTime = await currentBlockTime();
       task = await colony.getTask(taskId);
-      assert.equal(task[1], DELIVERABLE_HASH);
-      assert.closeTo(task[6].toNumber(), currentTime, 2);
+      expect(task[1]).to.equal(DELIVERABLE_HASH);
+      expect(task[6]).to.eq.BN(currentTime);
     });
 
     it("should fail if I try to submit work for a task that is complete", async () => {
@@ -1187,7 +1191,7 @@ contract("ColonyTask", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
       await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
       const task = await colony.getTask(taskId);
-      assert.equal(task[1], DELIVERABLE_HASH);
+      expect(task[1]).to.equal(DELIVERABLE_HASH);
     });
 
     it("should fail if I try to submit work for a task using an invalid id", async () => {
@@ -1204,7 +1208,7 @@ contract("ColonyTask", accounts => {
 
       await checkErrorRevert(colony.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: WORKER }), "colony-task-complete");
       const task = await colony.getTask(taskId);
-      assert.equal(task[1], DELIVERABLE_HASH);
+      expect(task[1]).to.equal(DELIVERABLE_HASH);
     });
 
     it("should fail if I try to submit work if I'm not the assigned worker", async () => {
@@ -1214,7 +1218,7 @@ contract("ColonyTask", accounts => {
 
       await checkErrorRevert(colony.submitTaskDeliverable(taskId, SPECIFICATION_HASH, { from: OTHER }), "colony-task-role-identity-mismatch");
       const task = await colony.getTask(taskId);
-      assert.notEqual(task[1], DELIVERABLE_HASH);
+      expect(task[1]).to.not.equal(DELIVERABLE_HASH);
     });
 
     it("should log a TaskDeliverableSubmitted event", async () => {
@@ -1231,7 +1235,7 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
       const task = await colony.getTask(taskId);
-      assert.equal(task[2].toNumber(), FINALIZED_TASK_STATE);
+      expect(task[2]).to.eq.BN(FINALIZED_TASK_STATE);
     });
 
     it("should fail if the task work ratings have not been assigned and they still have time to be", async () => {
@@ -1275,7 +1279,7 @@ contract("ColonyTask", accounts => {
       });
 
       const task = await colony.getTask(taskId);
-      assert.equal(task[2].toNumber(), CANCELLED_TASK_STATE);
+      expect(task[2]).to.eq.BN(CANCELLED_TASK_STATE);
     });
 
     it("should be possible to return funds back to the domain", async () => {
@@ -1328,15 +1332,18 @@ contract("ColonyTask", accounts => {
       const cancelledDomainTokenBalance = await colony.getPotBalance(domain.potId, token.address);
       const cancelledTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
       const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domain.potId, otherToken.address);
-      assert.isFalse(originalTaskEtherBalance.eq(cancelledTaskEtherBalance));
-      assert.isFalse(originalDomainEtherBalance.eq(cancelledDomainEtherBalance));
-      assert.isFalse(originalTaskTokenBalance.eq(cancelledTaskTokenBalance));
-      assert.isFalse(originalDomainTokenBalance.eq(cancelledDomainTokenBalance));
-      assert.isFalse(originalTaskOtherTokenBalance.eq(cancelledTaskOtherTokenBalance));
-      assert.isFalse(originalDomainOtherTokenBalance.eq(cancelledDomainOtherTokenBalance));
-      assert.equal(cancelledTaskEtherBalance.toNumber(), 0);
-      assert.equal(cancelledTaskTokenBalance.toNumber(), 0);
-      assert.equal(cancelledTaskOtherTokenBalance.toNumber(), 0);
+
+      expect(originalTaskEtherBalance).to.not.eq.BN(cancelledTaskEtherBalance);
+      expect(originalDomainEtherBalance).to.not.eq.BN(cancelledDomainEtherBalance);
+      expect(originalTaskTokenBalance).to.not.eq.BN(cancelledTaskTokenBalance);
+      expect(originalDomainTokenBalance).to.not.eq.BN(cancelledDomainTokenBalance);
+      expect(originalTaskOtherTokenBalance).to.not.eq.BN(cancelledTaskOtherTokenBalance);
+      expect(originalDomainOtherTokenBalance).to.not.eq.BN(cancelledDomainOtherTokenBalance);
+
+      expect(cancelledTaskEtherBalance).to.be.zero;
+      expect(cancelledTaskTokenBalance).to.be.zero;
+      expect(cancelledTaskOtherTokenBalance).to.be.zero;
+
       expect(originalDomainEtherBalance.add(originalTaskEtherBalance)).to.eq.BN(cancelledDomainEtherBalance);
       expect(originalDomainTokenBalance.add(originalTaskTokenBalance)).to.eq.BN(cancelledDomainTokenBalance);
       expect(originalDomainOtherTokenBalance.add(originalTaskOtherTokenBalance)).to.eq.BN(cancelledDomainOtherTokenBalance);
@@ -1470,19 +1477,19 @@ contract("ColonyTask", accounts => {
       });
 
       const taskPayoutManager1 = await colony.getTaskPayout(taskId, MANAGER_ROLE, ZERO_ADDRESS);
-      assert.equal(taskPayoutManager1.toNumber(), 5000);
+      expect(taskPayoutManager1).to.eq.BN(5000);
       const taskPayoutManager2 = await colony.getTaskPayout(taskId, MANAGER_ROLE, token.address);
-      assert.equal(taskPayoutManager2.toNumber(), 100);
+      expect(taskPayoutManager2).to.eq.BN(100);
 
       const taskPayoutEvaluator1 = await colony.getTaskPayout(taskId, EVALUATOR_ROLE, ZERO_ADDRESS);
-      assert.equal(taskPayoutEvaluator1.toNumber(), 1000);
+      expect(taskPayoutEvaluator1).to.eq.BN(1000);
       const taskPayoutEvaluator2 = await colony.getTaskPayout(taskId, EVALUATOR_ROLE, token.address);
-      assert.equal(taskPayoutEvaluator2.toNumber(), 40);
+      expect(taskPayoutEvaluator2).to.eq.BN(40);
 
       const taskPayoutWorker1 = await colony.getTaskPayout(taskId, WORKER_ROLE, ZERO_ADDRESS);
-      assert.equal(taskPayoutWorker1.toNumber(), 98000);
+      expect(taskPayoutWorker1).to.eq.BN(98000);
       const taskPayoutWorker2 = await colony.getTaskPayout(taskId, WORKER_ROLE, token.address);
-      assert.equal(taskPayoutWorker2.toNumber(), 200);
+      expect(taskPayoutWorker2).to.eq.BN(200);
     });
 
     it("should be able (if manager) to set all payments at once if evaluator and worker are manager or unassigned", async () => {
@@ -1497,13 +1504,13 @@ contract("ColonyTask", accounts => {
       await colony.setAllTaskPayouts(taskId, ZERO_ADDRESS, 5000, 1000, 98000);
 
       const taskPayoutManager = await colony.getTaskPayout(taskId, MANAGER_ROLE, ZERO_ADDRESS);
-      assert.equal(taskPayoutManager.toNumber(), 5000);
+      expect(taskPayoutManager).to.eq.BN(5000);
 
       const taskPayoutEvaluator = await colony.getTaskPayout(taskId, EVALUATOR_ROLE, ZERO_ADDRESS);
-      assert.equal(taskPayoutEvaluator.toNumber(), 1000);
+      expect(taskPayoutEvaluator).to.eq.BN(1000);
 
       const taskPayoutWorker = await colony.getTaskPayout(taskId, WORKER_ROLE, ZERO_ADDRESS);
-      assert.equal(taskPayoutWorker.toNumber(), 98000);
+      expect(taskPayoutWorker).to.eq.BN(98000);
     });
 
     it("should not be able to set all payments at once if worker is assigned and not manager", async () => {
@@ -1557,7 +1564,7 @@ contract("ColonyTask", accounts => {
 
       const totalTokenPayout = await colony.getTotalTaskPayout(taskId, token.address);
       const totalTokenPayoutExpected = MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT);
-      assert.equal(totalTokenPayout.toString(), totalTokenPayoutExpected.toString());
+      expect(totalTokenPayout).to.eq.BN(totalTokenPayoutExpected);
     });
 
     it("should not be able to set a payout above the limit", async () => {
