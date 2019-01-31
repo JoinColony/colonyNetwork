@@ -474,7 +474,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -533,7 +533,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -580,7 +580,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -701,7 +701,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -773,7 +773,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -935,7 +935,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -1015,11 +1015,11 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-capped-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.invalidateHash(0, 3);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(2);
     });

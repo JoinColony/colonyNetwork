@@ -276,7 +276,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-decreased-capped-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -308,7 +308,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });

@@ -528,6 +528,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
         uint256 nChildUpdates;
         (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
 
+        int256 reputationChange;
+
         // Skip origin reputation checks for anything but child reputation updates
         if (relativeUpdateNumber % (logEntry.nUpdates/2) < nChildUpdates) {
           int256 userChildReputationValue;
@@ -549,16 +551,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           }
 
           // Cap change based on current value of the user's child reputation.
-          if (userChildReputationValue < (childReputationChange * -1)) {
-            childReputationChange = userChildReputationValue * -1;
-          }
-
-          // Don't allow reputation to become negative
-          if (_agreeStateReputationValue + childReputationChange < 0) {
-            // I think this is impossible, now.
-            require(_disagreeStateReputationValue == 0, "colony-reputation-mining-child-reputation-value-non-zero");
+          if (userChildReputationValue + childReputationChange < 0) {
+            reputationChange = userChildReputationValue * -1;
           } else {
-            require(_agreeStateReputationValue + childReputationChange == _disagreeStateReputationValue, "colony-reputation-mining-child-reputation-value-incorrect");
+            reputationChange = childReputationChange;
           }
 
         } else {
@@ -566,13 +562,14 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           // Note we are not worried about underflows here; colony-wide totals for origin skill and all parents are greater than or equal to a user's origin skill.
           // If we're subtracting the origin reputation value, we therefore can't underflow, and if we're subtracting the logEntryAmount, it was absolutely smaller than
           // the origin reputation value, and so can't underflow either.
-
           if (int256(u[U_USER_ORIGIN_REPUTATION_VALUE]) + logEntry.amount < 0) {
             reputationChange = -1 * int256(u[U_USER_ORIGIN_REPUTATION_VALUE]);
           } else {
-            require(_agreeStateReputationValue + logEntry.amount == _disagreeStateReputationValue, "colony-reputation-mining-decreased-reputation-value-incorrect");
+            reputationChange = logEntry.amount;
           }
         }
+
+        require(_agreeStateReputationValue + reputationChange == _disagreeStateReputationValue, "colony-reputation-mining-decreased-reputation-value-incorrect");
       }
     }
 
