@@ -95,11 +95,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 100,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Skills in 1 / 4 / 5
@@ -109,11 +105,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 100,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER1
       });
       // Miner 1: (100 / 100 / 100)
@@ -123,11 +115,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 900,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Miner 1: (100 / 100 / 100)
@@ -137,11 +125,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 1,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 1000,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Miner 1: (100 / 100 / 100)
@@ -151,8 +135,6 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
         workerPayout: 200,
         workerRating: 1,
         worker: MINER2
@@ -182,11 +164,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 100,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Skills in 1 / 4 / 5
@@ -196,11 +174,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 100,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER1
       });
       // Miner 1: (100 / 100 / 100)
@@ -210,11 +184,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 900,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Miner 1: (100 / 100 / 100)
@@ -224,8 +194,6 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
         workerPayout: 200,
         workerRating: 1,
         worker: MINER2
@@ -255,11 +223,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 100,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Skills in 1 / 4 / 5
@@ -269,11 +233,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 5,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 100,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER1
       });
       // Miner 1: (100 / 100 / 100)
@@ -283,11 +243,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 900,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Miner 1: (100 / 100 / 100)
@@ -297,11 +253,7 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 1,
-        managerPayout: 1000000000000,
-        evaluatorPayout: 1000000000,
         workerPayout: 500,
-        managerRating: 2,
-        workerRating: 2,
         worker: MINER2
       });
       // Miner 1: (100 / 100 / 100)
@@ -311,8 +263,6 @@ contract("Reputation mining - client reputation calculations", accounts => {
         colonyNetwork,
         colony: metaColony,
         skillId: 4,
-        managerPayout: 100000000000,
-        evaluatorPayout: 100000000,
         workerPayout: 100000000,
         workerRating: 1,
         worker: MINER2
