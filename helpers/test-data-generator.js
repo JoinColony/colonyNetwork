@@ -47,7 +47,7 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }
 
-async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
+export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
   const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
   const convertedArgs = [];

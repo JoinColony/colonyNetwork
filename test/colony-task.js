@@ -41,6 +41,7 @@ import {
   setupFundedTask,
   executeSignedTaskChange,
   executeSignedRoleAssignment,
+  getSigsAndTransactionData,
   makeTask,
   setupRandomColony
 } from "../helpers/test-data-generator";
@@ -1151,6 +1152,49 @@ contract("ColonyTask", accounts => {
         }),
         "TaskRoleUserSet"
       );
+    });
+
+    it("should fail to execute task change with a non zero value", async () => {
+      const taskId = await makeTask({ colony });
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskDomain",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 1]
+      });
+
+      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 100, txData), "colony-task-change-non-zero-value");
+    });
+
+    it("should fail to execute task change with a mismatched set of signature parts", async () => {
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskDomain",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, 1]
+      });
+
+      await checkErrorRevert(colony.executeTaskChange([sigV[0]], sigR, sigS, [0], 0, txData), "colony-task-change-signatures-count-do-not-match");
+    });
+
+    it("should fail to execute task change send for a task role assignment call (which should be using executeTaskRoleAssignment)", async () => {
+      const taskId = await makeTask({ colony });
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, "0x29738B9BB168790211D84C99c4AEAd215c34D731"]
+      });
+
+      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignement");
     });
   });
 
