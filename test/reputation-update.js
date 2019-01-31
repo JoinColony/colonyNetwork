@@ -68,28 +68,28 @@ contract("Reputation Updates", accounts => {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.strictEqual(repLogEntryManager.user, MANAGER);
-      expect(new BN(repLogEntryManager.amount)).to.eq.BN(MANAGER_PAYOUT);
-      assert.strictEqual(repLogEntryManager.skillId, "2");
-      assert.strictEqual(repLogEntryManager.colony, metaColony.address);
-      assert.strictEqual(repLogEntryManager.nUpdates, "2");
-      assert.strictEqual(repLogEntryManager.nPreviousUpdates, "0");
+      expect(repLogEntryManager.user).to.equal(MANAGER);
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT);
+      expect(repLogEntryManager.skillId).to.eq.BN(2);
+      expect(repLogEntryManager.colony).to.equal(metaColony.address);
+      expect(repLogEntryManager.nUpdates).to.eq.BN(2);
+      expect(repLogEntryManager.nPreviousUpdates).to.be.zero;
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
-      assert.strictEqual(repLogEntryEvaluator.user, EVALUATOR);
-      expect(new BN(repLogEntryEvaluator.amount)).to.eq.BN(EVALUATOR_PAYOUT);
-      assert.strictEqual(repLogEntryEvaluator.skillId, "2");
-      assert.strictEqual(repLogEntryEvaluator.colony, metaColony.address);
-      assert.strictEqual(repLogEntryEvaluator.nUpdates, "2");
-      assert.strictEqual(repLogEntryEvaluator.nPreviousUpdates, "2");
+      expect(repLogEntryEvaluator.user).to.equal(EVALUATOR);
+      expect(repLogEntryEvaluator.amount).to.eq.BN(EVALUATOR_PAYOUT);
+      expect(repLogEntryEvaluator.skillId).to.eq.BN(2);
+      expect(repLogEntryEvaluator.colony).to.equal(metaColony.address);
+      expect(repLogEntryEvaluator.nUpdates).to.eq.BN(2);
+      expect(repLogEntryEvaluator.nPreviousUpdates).to.eq.BN(2);
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
-      assert.strictEqual(repLogEntryWorker.user, WORKER);
-      expect(new BN(repLogEntryWorker.amount)).to.eq.BN(WORKER_PAYOUT);
-      assert.strictEqual(repLogEntryWorker.skillId, "2");
-      assert.strictEqual(repLogEntryWorker.colony, metaColony.address);
-      assert.strictEqual(repLogEntryWorker.nUpdates, "2");
-      assert.strictEqual(repLogEntryWorker.nPreviousUpdates, "4");
+      expect(repLogEntryWorker.user).to.equal(WORKER);
+      expect(repLogEntryWorker.amount).to.eq.BN(WORKER_PAYOUT);
+      expect(repLogEntryWorker.skillId).to.eq.BN(2);
+      expect(repLogEntryWorker.colony).to.equal(metaColony.address);
+      expect(repLogEntryWorker.nUpdates).to.eq.BN(2);
+      expect(repLogEntryWorker.nPreviousUpdates).to.eq.BN(4);
     });
 
     const ratings = [
@@ -123,37 +123,38 @@ contract("Reputation Updates", accounts => {
         });
 
         const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-        assert.strictEqual(repLogEntryManager.user, MANAGER);
-        assert.strictEqual(repLogEntryManager.amount, rating.reputationChangeManager.toString());
-        assert.strictEqual(repLogEntryManager.skillId, "2");
-        assert.strictEqual(repLogEntryManager.colony, metaColony.address);
+        expect(repLogEntryManager.user).to.equal(MANAGER);
+        expect(repLogEntryManager.amount).to.eq.BN(rating.reputationChangeManager);
+        expect(repLogEntryManager.skillId).to.eq.BN(2);
+        expect(repLogEntryManager.colony).to.equal(metaColony.address);
+
         // If the rating is less than 2, then we also subtract reputation from all child skills. In the case
         // of the metaColony here, the task was created in the root domain of the metaColony, and a child of the
         // root skill is the mining skill. So the number we expect here differs depending on whether it's a reputation
         // gain or loss that we're logging.
         if (rating.manager >= 2) {
-          assert.strictEqual(repLogEntryManager.nUpdates, "2");
+          expect(repLogEntryManager.nUpdates).to.eq.BN(2);
         } else {
-          assert.strictEqual(repLogEntryManager.nUpdates, "4");
+          expect(repLogEntryManager.nUpdates).to.eq.BN(4);
         }
-        assert.strictEqual(repLogEntryManager.nPreviousUpdates, "0");
+        expect(repLogEntryManager.nPreviousUpdates).to.be.zero;
 
         const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
-        assert.strictEqual(repLogEntryWorker.user, WORKER);
-        assert.strictEqual(repLogEntryWorker.amount, rating.reputationChangeWorker.toString());
-        assert.strictEqual(repLogEntryWorker.skillId, "2");
-        assert.strictEqual(repLogEntryWorker.colony, metaColony.address);
+        expect(repLogEntryWorker.user).to.equal(WORKER);
+        expect(repLogEntryWorker.amount).to.eq.BN(rating.reputationChangeWorker);
+        expect(repLogEntryWorker.skillId).to.eq.BN(2);
+        expect(repLogEntryWorker.colony).to.equal(metaColony.address);
         if (rating.worker >= 2) {
-          assert.strictEqual(repLogEntryWorker.nUpdates, "2");
+          expect(repLogEntryWorker.nUpdates).to.eq.BN(2);
         } else {
-          assert.strictEqual(repLogEntryWorker.nUpdates, "4");
+          expect(repLogEntryWorker.nUpdates).to.eq.BN(4);
         }
         // This last entry in the log entry is nPreviousUpdates, which depends on whether the manager was given a reputation
         // gain or loss.
         if (rating.manager >= 2) {
-          assert.strictEqual(repLogEntryWorker.nPreviousUpdates, "4");
+          expect(repLogEntryWorker.nPreviousUpdates).to.eq.BN(4);
         } else {
-          assert.strictEqual(repLogEntryWorker.nPreviousUpdates, "6");
+          expect(repLogEntryWorker.nPreviousUpdates).to.eq.BN(6);
         }
       });
     });
@@ -165,73 +166,45 @@ contract("Reputation Updates", accounts => {
       await metaColony.finalizeTask(taskId);
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.strictEqual(repLogEntryManager.user, MANAGER);
-      assert.strictEqual(
-        repLogEntryManager.amount,
-        MANAGER_PAYOUT.muln(3)
-          .divn(2)
-          .toString()
-      );
+      expect(repLogEntryManager.user).to.equal(MANAGER);
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT.muln(3).divn(2));
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
-      assert.strictEqual(repLogEntryEvaluator.user, accounts[1]);
-      assert.strictEqual(
-        repLogEntryEvaluator.amount,
-        EVALUATOR_PAYOUT.muln(3)
-          .divn(2)
-          .mul(new BN(-1))
-          .toString()
-      );
+      expect(repLogEntryEvaluator.user).to.equal(accounts[1]);
+      expect(repLogEntryEvaluator.amount).to.eq.BN(EVALUATOR_PAYOUT.muln(3).divn(2).neg()); // eslint-disable-line prettier/prettier
 
       const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
-      assert.strictEqual(repLogEntryWorker1.user, WORKER);
-      assert.strictEqual(repLogEntryWorker1.amount, WORKER_PAYOUT.toString());
+      expect(repLogEntryWorker1.user).to.equal(WORKER);
+      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT);
 
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      assert.strictEqual(repLogEntryWorker2.user, WORKER);
-      assert.strictEqual(repLogEntryWorker2.amount, WORKER_PAYOUT.toString());
+      expect(repLogEntryWorker2.user).to.equal(WORKER);
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
     it("should set the correct reputation change amount in log when evaluator has failed to rate", async () => {
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, evaluator: accounts[1] });
-      await metaColony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
-      await metaColony.submitTaskWorkRating(taskId, MANAGER_ROLE, RATING_2_SECRET, { from: WORKER });
+      await metaColony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_2_SECRET, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 6, this);
       await metaColony.revealTaskWorkRating(taskId, MANAGER_ROLE, 2, RATING_2_SALT, { from: WORKER });
       await forwardTime(SECONDS_PER_DAY * 6, this);
       await metaColony.finalizeTask(taskId);
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.strictEqual(repLogEntryManager.user, MANAGER);
-      assert.strictEqual(repLogEntryManager.amount, MANAGER_PAYOUT.toString());
+      expect(repLogEntryManager.user).to.equal(MANAGER);
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT);
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
-      assert.strictEqual(repLogEntryEvaluator.user, accounts[1]);
-      assert.strictEqual(
-        repLogEntryEvaluator.amount,
-        EVALUATOR_PAYOUT.muln(3)
-          .divn(2)
-          .mul(new BN(-1))
-          .toString()
-      );
+      expect(repLogEntryEvaluator.user).to.equal(accounts[1]);
+      expect(repLogEntryEvaluator.amount).to.eq.BN(EVALUATOR_PAYOUT.muln(3).divn(2).neg()); // eslint-disable-line prettier/prettier
 
       const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
-      assert.strictEqual(repLogEntryWorker1.user, WORKER);
-      assert.strictEqual(
-        repLogEntryWorker1.amount,
-        WORKER_PAYOUT.muln(3)
-          .divn(2)
-          .toString()
-      );
+      expect(repLogEntryWorker1.user).to.equal(WORKER);
+      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
 
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      assert.strictEqual(repLogEntryWorker2.user, WORKER);
-      assert.strictEqual(
-        repLogEntryWorker2.amount,
-        WORKER_PAYOUT.muln(3)
-          .divn(2)
-          .toString()
-      );
+      expect(repLogEntryWorker2.user).to.equal(WORKER);
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
     });
 
     it("should set the correct reputation change amount in log when worker has failed to rate", async () => {
@@ -244,32 +217,27 @@ contract("Reputation Updates", accounts => {
       await metaColony.finalizeTask(taskId);
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.strictEqual(repLogEntryManager.user, MANAGER);
-      assert.strictEqual(
-        repLogEntryManager.amount,
-        MANAGER_PAYOUT.muln(3)
-          .divn(2)
-          .toString()
-      );
+      expect(repLogEntryManager.user).to.equal(MANAGER);
+      expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT.muln(3).divn(2));
 
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
-      assert.strictEqual(repLogEntryEvaluator.user, accounts[1]);
-      assert.strictEqual(repLogEntryEvaluator.amount, EVALUATOR_PAYOUT.toString());
+      expect(repLogEntryEvaluator.user).to.equal(accounts[1]);
+      expect(repLogEntryEvaluator.amount).to.eq.BN(EVALUATOR_PAYOUT);
 
       const repLogEntryWorker1 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
-      assert.strictEqual(repLogEntryWorker1.user, WORKER);
-      assert.strictEqual(repLogEntryWorker1.amount, WORKER_PAYOUT.divn(2).toString());
+      expect(repLogEntryWorker1.user).to.equal(WORKER);
+      expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
 
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      assert.strictEqual(repLogEntryWorker2.user, WORKER);
-      assert.strictEqual(repLogEntryWorker2.amount, WORKER_PAYOUT.divn(2).toString());
+      expect(repLogEntryWorker2.user).to.equal(WORKER);
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
     });
 
     it("should not be able to be appended by an account that is not a colony", async () => {
       const lengthBefore = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2), "colony-caller-must-be-colony");
       const lengthAfter = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      assert.equal(lengthBefore.toNumber(), lengthAfter.toNumber());
+      expect(lengthBefore).to.eq.BN(lengthAfter);
     });
 
     it("should populate nPreviousUpdates correctly", async () => {
@@ -278,11 +246,11 @@ contract("Reputation Updates", accounts => {
       let repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength);
       const nPrevious = new BN(repLogEntry.nPreviousUpdates);
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 1);
-      assert.equal(repLogEntry.nPreviousUpdates, nPrevious.addn(2).toNumber());
+      expect(repLogEntry.nPreviousUpdates).to.eq.BN(nPrevious.addn(2));
 
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       repLogEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(initialRepLogLength + 2);
-      assert.equal(repLogEntry.nPreviousUpdates, nPrevious.addn(4).toNumber());
+      expect(repLogEntry.nPreviousUpdates).to.eq.BN(nPrevious.addn(4));
     });
 
     it("should calculate nUpdates correctly when making a log", async () => {
@@ -293,13 +261,13 @@ contract("Reputation Updates", accounts => {
 
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 5 });
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      assert.strictEqual(repLogEntryWorker.amount, WORKER_PAYOUT.toString());
-      assert.strictEqual(repLogEntryWorker.nUpdates, "6");
+      expect(repLogEntryWorker.amount).to.eq.BN(WORKER_PAYOUT);
+      expect(repLogEntryWorker.nUpdates).to.eq.BN(6);
 
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 6 });
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(7);
-      assert.strictEqual(repLogEntryWorker.amount, WORKER_PAYOUT.toString());
-      assert.strictEqual(repLogEntryWorker.nUpdates, "8"); // Negative reputation change means children change as well.
+      expect(repLogEntryWorker.amount).to.eq.BN(WORKER_PAYOUT);
+      expect(repLogEntryWorker.nUpdates).to.eq.BN(8); // Negative reputation change means children change as well.
     });
 
     it("should correctly make large positive reputation updates", async () => {
@@ -307,8 +275,8 @@ contract("Reputation Updates", accounts => {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT, workerRating: 3 });
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      assert.strictEqual(repLogEntryWorker.user, WORKER);
-      assert.strictEqual(repLogEntryWorker.amount, INT128_MAX.toString()); // eslint-disable-line prettier/prettier
+      expect(repLogEntryWorker.user).to.equal(WORKER);
+      expect(repLogEntryWorker.amount).to.eq.BN(INT128_MAX);
     });
 
     it("should correctly make large negative reputation updates", async () => {
@@ -328,12 +296,12 @@ contract("Reputation Updates", accounts => {
       await metaColony.finalizeTask(taskId);
 
       const roleWorker = await metaColony.getTaskRole(taskId, WORKER_ROLE);
-      assert.isTrue(roleWorker.rateFail);
-      assert.equal(roleWorker.rating, workerRating);
+      expect(roleWorker.rateFail).to.be.true;
+      expect(roleWorker.rating).to.eq.BN(workerRating);
 
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
-      assert.strictEqual(repLogEntryWorker.user, WORKER);
-      assert.strictEqual(repLogEntryWorker.amount, INT128_MIN.toString()); // eslint-disable-line prettier/prettier
+      expect(repLogEntryWorker.user).to.equal(WORKER);
+      expect(repLogEntryWorker.amount).to.eq.BN(INT128_MIN);
     });
 
     it("should not make zero-valued reputation updates", async () => {
@@ -342,7 +310,7 @@ contract("Reputation Updates", accounts => {
 
       // Entries for manager and evaluator only
       const numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      assert.strictEqual(numUpdates.toNumber(), 2);
+      expect(numUpdates).to.eq.BN(2);
     });
   });
 });
