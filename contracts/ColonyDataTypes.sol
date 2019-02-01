@@ -81,6 +81,10 @@ contract ColonyDataTypes {
   /// @param rewardInverse The reward inverse value
   event ColonyRewardInverseSet(uint256 rewardInverse);
 
+  /// @notice Event logged when a new payment is added
+  /// @param paymentId The newly added payment id
+  event PaymentAdded(uint256 paymentId);
+
   /// @notice Event logged when a new task is added
   /// @param taskId The newly added task id
   event TaskAdded(uint256 taskId);
@@ -172,20 +176,23 @@ contract ColonyDataTypes {
     uint256 blockTimestamp;
   }
 
-  struct Task {
-    bytes32 specificationHash;
-    bytes32 deliverableHash;
+  struct Payment {
     TaskStatus status;
-    uint256 dueDate;
-    uint256 payoutsWeCannotMake;
-    uint256 fundingPotId;
-    uint256 completionTimestamp;
     uint256 domainId;
+    uint256 fundingPotId;
+    uint256 payoutsWeCannotMake;
     uint256[] skills;
 
     mapping (uint8 => Role) roles;
     // Maps task role ids (0,1,2..) to a token amount to be paid on task completion
     mapping (uint8 => mapping (address => uint256)) payouts;
+  }
+
+  struct Task {
+    bytes32 specificationHash;
+    bytes32 deliverableHash;
+    uint256 dueDate;
+    uint256 completionTimestamp;
   }
 
   enum TaskRatings { None, Unsatisfactory, Satisfactory, Excellent }

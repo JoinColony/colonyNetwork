@@ -15,7 +15,7 @@ import {
   WAD
 } from "../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
-import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
+import { makePayment, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -111,11 +111,11 @@ contract("Colony", accounts => {
     });
 
     it("should let funding pot information be read", async () => {
-      const taskId = await makeTask({ colony });
-      const taskInfo = await colony.getTask(taskId);
-      let potInfo = await colony.getFundingPot(taskInfo.fundingPotId);
+      const paymentId = await makePayment({ colony });
+      const paymentInfo = await colony.getTask(paymentId);
+      let potInfo = await colony.getFundingPot(paymentInfo.fundingPotId);
       expect(potInfo.associatedType).to.eq.BN(2);
-      expect(potInfo.associatedTypeId).to.eq.BN(taskId);
+      expect(potInfo.associatedTypeId).to.eq.BN(paymentId);
 
       // Read pot info about a pot in a domain
       const domainInfo = await colony.getDomain(1);
@@ -314,7 +314,7 @@ contract("Colony", accounts => {
 
     it("should not allow bootstrapping if colony is not in bootstrap state", async () => {
       await colony.mintTokens(WAD.muln(14));
-      await makeTask({ colony });
+      await makePayment({ colony });
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-not-in-bootstrap-mode");
     });
   });

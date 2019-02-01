@@ -37,6 +37,17 @@ const ColonyTask = artifacts.require("ColonyTask");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
+export async function makePayment({ colony, domainId = 1, manager }) {
+  const accounts = await web3GetAccounts();
+  manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
+  // Only Colony admins are allowed to make Payments, make the account an admin
+  await colony.setAdminRole(manager);
+  const { logs } = await colony.makePayment(domainId, { from: manager });
+
+  // Reading the ID out of the event triggered by our transaction will allow us to make multiple payments in parallel in the future.
+  return logs.filter(log => log.event === "PaymentAdded")[0].args.paymentId;
+}
+
 export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 1, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign

@@ -49,10 +49,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   stoppable
   confirmTaskRoleIdentity(_id, TaskRole.Manager)
   {
-    Task storage task = tasks[_id];
-    address manager = task.roles[uint8(TaskRole.Manager)].user;
-    address evaluator = task.roles[uint8(TaskRole.Evaluator)].user;
-    address worker = task.roles[uint8(TaskRole.Worker)].user;
+    Payment storage payment = payments[_id];
+    address manager = payment.roles[uint8(TaskRole.Manager)].user;
+    address evaluator = payment.roles[uint8(TaskRole.Evaluator)].user;
+    address worker = payment.roles[uint8(TaskRole.Worker)].user;
 
     require(
       evaluator == manager ||
@@ -71,9 +71,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   // To get all payouts for a task iterate over roles.length
   function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256) {
-    Task storage task = tasks[_id];
-    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
-    return unsatisfactory ? 0 : task.payouts[_role][_token];
+    Payment storage payment = payments[_id];
+    bool unsatisfactory = payment.roles[_role].rating == TaskRatings.Unsatisfactory;
+    return unsatisfactory ? 0 : payment.payouts[_role][_token];
   }
 
   function getTotalTaskPayout(uint256 _id, address _token) public view returns(uint256) {
@@ -88,18 +88,18 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   stoppable
   taskFinalized(_id)
   {
-    Task storage task = tasks[_id];
-    assert(task.roles[_role].user != address(0x0));
+    Payment storage payment = payments[_id];
+    assert(payment.roles[_role].user != address(0x0));
 
-    uint payout = task.payouts[_role][_token];
+    uint payout = payment.payouts[_role][_token];
 
-    if (task.roles[_role].rating == TaskRatings.Unsatisfactory || payout == 0) {
+    if (payment.roles[_role].rating == TaskRatings.Unsatisfactory || payout == 0) {
       return;
     }
 
-    task.payouts[_role][_token] = 0;
+    payment.payouts[_role][_token] = 0;
 
-    fundingPots[task.fundingPotId].balance[_token] = sub(fundingPots[task.fundingPotId].balance[_token], payout);
+    fundingPots[payment.fundingPotId].balance[_token] = sub(fundingPots[payment.fundingPotId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
 
     uint fee = calculateNetworkFeeForPayout(payout);
@@ -107,7 +107,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     if (_token == address(0x0)) {
       // Payout ether
-      task.roles[_role].user.transfer(remainder);
+      payment.roles[_role].user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address metaColonyAddress = colonyNetworkContract.getMetaColony();
@@ -117,7 +117,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(task.roles[_role].user, remainder);
+      payoutToken.transfer(payment.roles[_role].user, remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
     }
 
@@ -159,18 +159,17 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     fundingPots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
     fundingPots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
 
-    // If this pot is associated with a Task, prevent money being taken from the pot
+    // If this pot is associated with a Payment, prevent money being taken from the pot
     // if the remaining balance is less than the amount needed for payouts,
-    // unless the task was cancelled.
+    // unless the payment was cancelled.
     FundingPotAssociatedType fromPotAssociatedType = fundingPots[_fromPot].associatedType;
 
     if (fromPotAssociatedType == FundingPotAssociatedType.Task) {
       uint fromTaskId = fundingPots[_fromPot].associatedTypeId;
-      Task storage task = tasks[fromTaskId];
+      Payment storage payment = payments[fromTaskId];
       uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
       uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
-      require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
-
+      require(payment.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
       updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
     }
 
@@ -382,33 +381,32 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
-    
-    Task storage task = tasks[_id];
+    Payment storage payment = payments[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = fundingPots[task.fundingPotId].balance[_token];
+    uint tokenPot = fundingPots[payment.fundingPotId].balance[_token];
 
-    if (_prev >= totalTokenPayout) {                  // If the old amount in the pot was enough to pay for the budget
-      if (tokenPot < totalTokenPayout) {              // And the new amount in the pot is not enough to pay for the budget...
-        task.payoutsWeCannotMake += 1;                // Then this is a set of payouts we cannot make that we could before.
+    if (_prev >= totalTokenPayout) {                                  // If the old amount in the pot was enough to pay for the budget
+      if (tokenPot < totalTokenPayout) {                              // And the new amount in the pot is not enough to pay for the budget...
+        payment.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
       }
-    } else {                                          // If this 'else' is running, then the old amount in the pot could not pay for the budget
-      if (tokenPot >= totalTokenPayout) {             // And the new amount in the pot can pay for the budget
-        task.payoutsWeCannotMake -= 1;                // Then this is a set of payouts we can make that we could not before.
+    } else {                                                          // If this 'else' is running, then the old amount in the pot could not pay for the budget
+      if (tokenPot >= totalTokenPayout) {                             // And the new amount in the pot can pay for the budget
+        payment.payoutsWeCannotMake -= 1;                                // Then this is a set of payouts we can make that we could not before.
       }
     }
   }
 
   function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
-    Task storage task = tasks[_id];
+    Payment storage payment = payments[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = fundingPots[task.fundingPotId].balance[_token];
+    uint tokenPot = fundingPots[payment.fundingPotId].balance[_token];
     if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
       if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
-        task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
+        payment.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
       }
     } else {                                                          // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
       if (tokenPot >= totalTokenPayout) {                             // And the amount is enough to pay for the new budget...
-        task.payoutsWeCannotMake -= 1;                                // Then this is a set of payouts we can make that we could not before.
+        payment.payoutsWeCannotMake -= 1;                                // Then this is a set of payouts we can make that we could not before.
       }
     }
   }
@@ -422,7 +420,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
 
     uint currentTotalAmount = getTotalTaskPayout(_id, _token);
-    tasks[_id].payouts[uint8(_role)][_token] = _amount;
+    payments[_id].payouts[uint8(_role)][_token] = _amount;
 
     // This call functions as a guard to make sure the new total payout doesn't overflow
     // If there is an overflow, the call will revert

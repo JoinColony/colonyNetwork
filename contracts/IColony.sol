@@ -136,6 +136,10 @@ contract IColony is ColonyDataTypes, IRecovery {
     public view returns (bool isValid);
 
   // Implemented in ColonyTask.sol
+  /// @notice Make a new payment in the colony. Secured function to authorised members
+  /// @param _domainId The domain where the payment belongs
+  function makePayment(uint256 _domainId) public;
+
   /// @notice Make a new task in the colony. Secured function to authorised members
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
@@ -302,6 +306,11 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _ratingSecret Rating secret for manager
   function submitTaskDeliverableAndRating(uint256 _id, bytes32 _deliverableHash, bytes32 _ratingSecret) public;
 
+  /// @notice Called after the recipients and amounts have been set
+  /// @dev Set the `payment.finalized` property to true
+  /// @param _id Id of the payment
+  function finalizePayment(uint256 _id) public;
+
   /// @notice Called after task work rating is complete which closes the task and logs the respective reputation log updates
   /// Allowed to be called once per task. Secured function to authorised members
   /// @dev Set the `task.finalized` property to true
@@ -320,6 +329,19 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _id Id of the task
   function completeTask(uint256 _id) public;
 
+  /// @notice Get a payment with id `_id`
+  /// @param _id Id of the payment
+  /// @return status TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
+  /// @return domainId Payment domain id, default is root colony domain with id 1
+  /// @return fundingPotId Id of funding pot for payment
+  /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current payment funding
+  function getPayment(uint256 _id) public view returns (
+    TaskStatus status,
+    uint256 domainId,
+    uint256 fundingPotId,
+    uint256 payoutsWeCannotMake
+    );
+
   /// @notice Get a task with id `_id`
   /// @param _id Id of the task
   /// @return specificationHash Task brief hash
@@ -331,7 +353,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns ( 
+  function getTask(uint256 _id) public view returns (
     bytes32 specificationHash,
     bytes32 deliverableHash,
     TaskStatus status,

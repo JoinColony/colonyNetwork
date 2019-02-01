@@ -35,7 +35,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   address token; // Storage slot 7
   uint256 rewardInverse; // Storage slot 8
 
-  uint256 taskCount; // Storage slot 9
+  uint256 paymentCount; // Storage slot 9
   uint256 fundingPotCount; // Storage slot 10
   uint256 domainCount; // Storage slot 11
 
@@ -46,49 +46,51 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // This keeps track of which functions are related to role assignment
   mapping (bytes4 => bool) roleAssignmentSigs; // Storage slot 13
 
-  mapping (uint256 => Task) tasks; // Storage slot 14
+  // Every Task contains a Payment, but not vice-versa.
+  mapping (uint256 => Payment) payments; // Storage slot 14
+  mapping (uint256 => Task) tasks; // Storage slot 15
 
   // FundingPots can be tied to tasks or domains, so giving them their own mapping.
   // FundingPot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had some siphoned off in to the reward pot.
   // FundingPot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
-  mapping (uint256 => FundingPot) fundingPots; // Storage slot 15
+  mapping (uint256 => FundingPot) fundingPots; // Storage slot 16
 
   // Keeps track of all reward payout cycles
-  mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 16
+  mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 17
   // Active payouts for particular token address. Assures that one token is used for only one active payout
-  mapping (address => bool) activeRewardPayouts; // Storage slot 17
+  mapping (address => bool) activeRewardPayouts; // Storage slot 18
 
   // This keeps track of how much of the colony's funds that it owns have been moved into funding pots other than pot 0,
   // which (by definition) have also had the reward amount siphoned off and put in to pot 0.
   // This is decremented whenever a payout occurs and the colony loses control of the funds.
-  mapping (address => uint256) nonRewardPotsTotal; // Storage slot 18
+  mapping (address => uint256) nonRewardPotsTotal; // Storage slot 19
 
-  mapping (uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 19
+  mapping (uint256 => RatingSecrets) public taskWorkRatings; // Storage slot 20
 
-  mapping (uint256 => Domain) public domains; // Storage slot 20
+  mapping (uint256 => Domain) public domains; // Storage slot 21
 
   // Mapping task id to current "active" nonce for executing task changes
-  mapping (uint256 => uint256) taskChangeNonces; // Storage slot 21
+  mapping (uint256 => uint256) taskChangeNonces; // Storage slot 22
 
   modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
-    Role storage role = tasks[_id].roles[uint8(_role)];
+    Role storage role = payments[_id].roles[uint8(_role)];
     require(msg.sender == role.user, "colony-task-role-identity-mismatch");
     _;
   }
 
   modifier taskExists(uint256 _id) {
-    require(_id > 0 && _id <= taskCount, "colony-task-does-not-exist");
+    require(_id > 0 && _id <= paymentCount, "colony-task-does-not-exist");
     _;
   }
 
   modifier taskNotFinalized(uint256 _id) {
-    require(tasks[_id].status != TaskStatus.Finalized, "colony-task-already-finalized");
+    require(payments[_id].status != TaskStatus.Finalized, "colony-task-already-finalized");
     _;
   }
 
   modifier taskFinalized(uint256 _id) {
-    require(tasks[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
+    require(payments[_id].status == TaskStatus.Finalized, "colony-task-not-finalized");
     _;
   }
 
@@ -121,7 +123,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier isInBootstrapPhase() {
-    require(taskCount == 0, "colony-not-in-bootstrap-mode");
+    require(paymentCount == 0, "colony-not-in-bootstrap-mode");
     _;
   }
 
