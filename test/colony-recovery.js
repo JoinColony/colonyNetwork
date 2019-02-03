@@ -31,7 +31,7 @@ contract("Colony Recovery", accounts => {
       let numRecoveryRoles;
 
       numRecoveryRoles = await colony.numRecoveryRoles();
-      expect(numRecoveryRoles).to.eq.BN(0);
+      expect(numRecoveryRoles).to.be.zero;
 
       await colony.setRecoveryRole(founder);
       await colony.setRecoveryRole(accounts[1]);

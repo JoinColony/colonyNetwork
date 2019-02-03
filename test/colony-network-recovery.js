@@ -89,7 +89,7 @@ contract("Colony Network Recovery", accounts => {
       let numRecoveryRoles;
 
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
-      expect(numRecoveryRoles).to.eq.BN(0);
+      expect(numRecoveryRoles).to.be.zero;
       colonyNetwork.setRecoveryRole(founder);
       await colonyNetwork.setRecoveryRole(accounts[1]);
       await colonyNetwork.setRecoveryRole(accounts[2]);
@@ -205,7 +205,7 @@ contract("Colony Network Recovery", accounts => {
       let rootHash = await colonyNetwork.getReputationRootHash();
       let nNodes = await colonyNetwork.getReputationRootHashNNodes();
       expect(rootHash).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
-      expect(nNodes).to.eq.BN(0);
+      expect(nNodes).to.be.zero;
 
       await colonyNetwork.enterRecoveryMode();
 
@@ -295,7 +295,7 @@ contract("Colony Network Recovery", accounts => {
 
           await newClient.sync(startingBlockNumber);
           const newValue = newClient.reputations[reputationKey].slice(2, 66);
-          expect(new BN(newValue, 16)).to.eq.BN(0);
+          expect(new BN(newValue, 16)).to.be.zero;
         });
 
     process.env.SOLIDITY_COVERAGE

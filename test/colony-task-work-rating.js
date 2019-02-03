@@ -55,7 +55,7 @@ contract("Colony Task Work Rating", accounts => {
       const currentTime1 = await currentBlockTime();
       const rating1 = await colony.getTaskWorkRatings(taskId);
       expect(rating1.nSecrets).to.eq.BN(1);
-      expect(rating1.lastSubmittedAt).to.eq.BN(currentTime1);
+      expect(rating1.lastSubmittedAt.toNumber()).to.be.closeTo(currentTime1, 2);
       const ratingSecret1 = await colony.getTaskWorkRatingSecret(taskId, WORKER_ROLE);
       expect(ratingSecret1).to.eq.BN(RATING_2_SECRET);
 
@@ -63,7 +63,7 @@ contract("Colony Task Work Rating", accounts => {
       const currentTime2 = await currentBlockTime();
       const rating2 = await colony.getTaskWorkRatings(taskId);
       expect(rating2.nSecrets).to.eq.BN(2);
-      expect(rating2.lastSubmittedAt).to.eq.BN(currentTime2);
+      expect(rating2.lastSubmittedAt.toNumber()).to.be.closeTo(currentTime2, 2);
       const ratingSecret2 = await colony.getTaskWorkRatingSecret(taskId, MANAGER_ROLE);
       expect(ratingSecret2).to.eq.BN(RATING_1_SECRET);
     });
@@ -77,7 +77,7 @@ contract("Colony Task Work Rating", accounts => {
       const currentTime2 = await currentBlockTime();
       const ratings = await colony.getTaskWorkRatings(taskId);
       expect(ratings.nSecrets).to.eq.BN(1);
-      expect(ratings.lastSubmittedAt).to.eq.BN(currentTime2);
+      expect(ratings.lastSubmittedAt.toNumber()).to.be.closeTo(currentTime2, 2);
       const ratingSecret = await colony.getTaskWorkRatingSecret(taskId, MANAGER_ROLE);
       expect(ratingSecret).to.eq.BN(RATING_1_SECRET);
     });

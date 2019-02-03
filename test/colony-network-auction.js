@@ -81,7 +81,7 @@ contract("Colony Network Auction", accounts => {
 
       const supplyAfter = await clnyToken.totalSupply();
       const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
-      expect(balanceAfter).to.eq.BN(0);
+      expect(balanceAfter).to.be.zero;
       expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
     });
 
@@ -335,7 +335,7 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.finalize();
 
       const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
-      expect(balanceAfter).to.eq.BN(0);
+      expect(balanceAfter).to.be.zero;
       const supplyAfter = await clnyToken.totalSupply();
       expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
     });
@@ -414,7 +414,7 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.finalize();
       await tokenAuction.claim({ from: BIDDER_1 });
       const bid = await tokenAuction.bids(BIDDER_1);
-      expect(bid).to.eq.BN(0);
+      expect(bid).to.be.zero;
     });
   });
 

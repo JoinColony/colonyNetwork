@@ -50,7 +50,7 @@ contract("EtherRouter / Resolver", accounts => {
       const { transactionId } = tx.logs[0].args;
       const isConfirmed = await multisig.isConfirmed(transactionId);
       const resolverUpdated = await etherRouter.resolver();
-      assert.isFalse(isConfirmed);
+      expect(isConfirmed).to.be.false;
       expect(resolverUpdated).to.equal(resolver.address);
     });
   });

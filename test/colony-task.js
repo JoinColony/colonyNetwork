@@ -225,7 +225,7 @@ contract("ColonyTask", accounts => {
 
     it("should allow the worker and evaluator roles to be assigned", async () => {
       const newEvaluator = accounts[1];
-      assert.notEqual(MANAGER, newEvaluator);
+      expect(MANAGER).to.not.equal(newEvaluator);
 
       const taskId = await makeTask({ colony });
 
@@ -299,7 +299,7 @@ contract("ColonyTask", accounts => {
 
     it("should not allow the worker or evaluator roles to be assigned only by manager", async () => {
       const newEvaluator = accounts[1];
-      assert.notEqual(MANAGER, newEvaluator);
+      expect(MANAGER).to.not.equal(newEvaluator);
 
       const taskId = await makeTask({ colony });
 
