@@ -2,6 +2,8 @@
 
 import path from "path";
 import BN from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
@@ -39,6 +41,9 @@ import {
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -108,7 +113,7 @@ contract("Reputation Mining - happy paths", accounts => {
     // This is the same starting point for all tests.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(nInactiveLogEntries.toNumber(), 1);
+    expect(nInactiveLogEntries).to.eq.BN(1);
 
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
@@ -395,10 +400,8 @@ contract("Reputation Mining - happy paths", accounts => {
       const decayKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
       const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
 
-      assert.equal(
-        largeCalculationResult.toString(16, 64),
-        goodClient.reputations[decayKey].slice(2, 66),
-        `Incorrect decay. Actual value is ${decimalValueDecay}`
+      expect(largeCalculationResult.toString(16, 64), `Incorrect decay. Actual value is ${decimalValueDecay}`).to.equal(
+        goodClient.reputations[decayKey].slice(2, 66)
       );
     });
 
@@ -415,10 +418,10 @@ contract("Reputation Mining - happy paths", accounts => {
 
       // This confirmation should freeze the reputation log that we added the above task entries to and move it to the inactive rep log
       const repCycle = await getActiveRepCycle(colonyNetwork);
-      assert.equal(inactiveReputationMiningCycle.address, repCycle.address);
+      expect(inactiveReputationMiningCycle.address).to.equal(repCycle.address);
 
       const finalRepLogLength = await repCycle.getReputationUpdateLogLength();
-      assert.equal(finalRepLogLength.toNumber(), initialRepLogLength.toNumber());
+      expect(finalRepLogLength).to.eq.BN(initialRepLogLength);
 
       // Check the active log now has one entry in it (which will be the rewards for the miner who submitted
       // the accepted hash.
@@ -426,7 +429,7 @@ contract("Reputation Mining - happy paths", accounts => {
       inactiveReputationMiningCycle = await IReputationMiningCycle.at(addr);
 
       const activeRepLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      assert.equal(activeRepLogLength.toNumber(), 1);
+      expect(activeRepLogLength).to.eq.BN(1);
     });
 
     it("should insert reputation updates from the log", async () => {
@@ -453,21 +456,18 @@ contract("Reputation Mining - happy paths", accounts => {
       // Should be 17 updates: 1 for the previous mining cycle and 4x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const activeLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(activeLogEntries.toNumber(), 17);
+      expect(activeLogEntries).to.eq.BN(17);
 
       await goodClient.resetDB();
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-      assert.equal(Object.keys(goodClient.reputations).length, 27);
+      expect(Object.keys(goodClient.reputations).length).to.equal(27);
 
       const GLOBAL_SKILL = new BN(1);
       const META_ROOT_SKILL = new BN(2);
       const MINING_SKILL = new BN(3);
 
-      const META_ROOT_SKILL_TOTAL = REWARD.add(
-        MANAGER_PAYOUT.add(EVALUATOR_PAYOUT)
-          .add(WORKER_PAYOUT)
-          .muln(3)
-      )
+      const META_ROOT_SKILL_TOTAL = REWARD // eslint-disable-line prettier/prettier
+        .add(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT).muln(3)) // eslint-disable-line prettier/prettier
         .add(new BN(1000000000))
         .sub(new BN(1000000000000))
         .sub(new BN(5000000000000));
@@ -482,9 +482,7 @@ contract("Reputation Mining - happy paths", accounts => {
           id: 5,
           skill: META_ROOT_SKILL,
           account: MANAGER,
-          value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT)
-            .muln(3)
-            .sub(new BN(1000000000000))
+          value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).muln(3).sub(new BN(1000000000000)) // eslint-disable-line prettier/prettier
         },
         { id: 6, skill: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT.muln(3) },
         // TODO: This next check needs to be updated once colony wide reputation is fixed for child updates
@@ -517,7 +515,7 @@ contract("Reputation Mining - happy paths", accounts => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
-        assert.equal(goodClient.reputations[key], value.toString(), `${reputationProp.id} failed. Actual value is ${decimalValue}`);
+        expect(goodClient.reputations[key], `${reputationProp.id} failed. Actual value is ${decimalValue}`).to.eq.BN(value);
       });
     });
 
@@ -557,10 +555,10 @@ contract("Reputation Mining - happy paths", accounts => {
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-      assert.equal(Object.keys(goodClient.reputations).length, 24);
+      expect(Object.keys(goodClient.reputations).length).to.equal(24);
 
       const GLOBAL_SKILL = new BN(1);
       const META_ROOT_SKILL = new BN(2);
@@ -607,7 +605,7 @@ contract("Reputation Mining - happy paths", accounts => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
-        assert.equal(goodClient.reputations[key], value.toString(), `${reputationProp.id} failed. Actual value is ${decimalValue}`);
+        expect(goodClient.reputations[key], `${reputationProp.id} failed. Actual value is ${decimalValue}`).to.eq.BN(value);
       });
     });
 
@@ -633,7 +631,7 @@ contract("Reputation Mining - happy paths", accounts => {
       // That's 9 in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const activeLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(activeLogEntries.toNumber(), 5);
+      expect(activeLogEntries).to.eq.BN(5);
 
       await goodClient.addLogContentsToReputationTree();
 
@@ -669,13 +667,13 @@ contract("Reputation Mining - happy paths", accounts => {
         { id: 23, skillId: 10, account: WORKER, value: WORKER_PAYOUT }
       ];
 
-      assert.equal(Object.keys(goodClient.reputations).length, reputationProps.length);
+      expect(Object.keys(goodClient.reputations).length).to.equal(reputationProps.length);
 
       reputationProps.forEach(reputationProp => {
         const key = makeReputationKey(metaColony.address, new BN(reputationProp.skillId), reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
-        assert.equal(goodClient.reputations[key], value, `${reputationProp.id} failed. Actual value is ${decimalValue}`);
+        expect(goodClient.reputations[key], `${reputationProp.id} failed. Actual value is ${decimalValue}`).to.eq.BN(value);
       });
     });
 
@@ -692,7 +690,7 @@ contract("Reputation Mining - happy paths", accounts => {
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       // Skill 4
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 40, 0xfffffffff);
@@ -702,7 +700,7 @@ contract("Reputation Mining - happy paths", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
@@ -726,7 +724,7 @@ contract("Reputation Mining - happy paths", accounts => {
       const value = goodClient.reputations[key];
       const [branchMask, siblings] = await goodClient.getProof(key);
       const isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER1 });
-      assert.isTrue(isValid);
+      expect(isValid).to.be.true;
     });
 
     it("should correctly decay a reputation to zero, and then 'decay' to zero in subsequent cycles", async () => {
@@ -755,10 +753,9 @@ contract("Reputation Mining - happy paths", accounts => {
       const decayKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       // Check we have exactly one reputation.
-      assert.equal(
-        "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002",
-        goodClient.reputations[decayKey]
-      );
+      expect(
+        "0x00000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000002"
+      ).to.equal(goodClient.reputations[decayKey]);
 
       repCycle = await getActiveRepCycle(colonyNetwork);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
@@ -774,10 +771,9 @@ contract("Reputation Mining - happy paths", accounts => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       // Check it decayed from 1 to 0.
-      assert.equal(
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
-        goodClient.reputations[decayKey]
-      );
+      expect(
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
+      ).to.equal(goodClient.reputations[decayKey]);
 
       // If we use the existing badClient we get `Error: invalid BigNumber value`, not sure why.
       await badClient.resetDB();
@@ -800,10 +796,9 @@ contract("Reputation Mining - happy paths", accounts => {
       await repCycle.confirmNewHash(1);
 
       // Check it 'decayed' from 0 to 0
-      assert.equal(
-        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002",
-        goodClient.reputations[decayKey]
-      );
+      expect(
+        "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002"
+      ).to.equal(goodClient.reputations[decayKey]);
     });
   });
 });

@@ -1,12 +1,17 @@
 /* globals artifacts */
-import path from "path";
 
+import path from "path";
+import chai from "chai";
+import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
 import { forwardTime, currentBlock, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -52,7 +57,7 @@ contract("Reputation mining - client sync functionality", accounts => {
     await reputationMiner1.initialise(colonyNetwork.address);
 
     const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-    assert.equal(lock.balance, DEFAULT_STAKE.toString());
+    expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -62,7 +67,7 @@ contract("Reputation mining - client sync functionality", accounts => {
     // This is the same starting point for all tests.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(nInactiveLogEntries.toNumber(), 1);
+    expect(nInactiveLogEntries).to.eq.BN(1);
 
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
@@ -114,7 +119,7 @@ contract("Reputation mining - client sync functionality", accounts => {
           // Require reputationMiner1 and reputationMiner2 have the same hashes.
           const client1Hash = await reputationMiner1.reputationTree.getRootHash();
           const client2Hash = await reputationMiner2.reputationTree.getRootHash();
-          assert.equal(client1Hash, client2Hash);
+          expect(client1Hash).to.equal(client2Hash);
         });
 
     process.env.SOLIDITY_COVERAGE
@@ -148,7 +153,7 @@ contract("Reputation mining - client sync functionality", accounts => {
 
           const client1Hash = await reputationMiner1.reputationTree.getRootHash();
           const client2Hash = await reputationMiner2.reputationTree.getRootHash();
-          assert.equal(client1Hash, client2Hash);
+          expect(client1Hash).to.equal(client2Hash);
         });
 
     process.env.SOLIDITY_COVERAGE
@@ -174,7 +179,7 @@ contract("Reputation mining - client sync functionality", accounts => {
 
           const client1Hash = await reputationMiner1.reputationTree.getRootHash();
           const client2Hash = await reputationMiner2.reputationTree.getRootHash();
-          assert.equal(client1Hash, client2Hash);
+          expect(client1Hash).to.equal(client2Hash);
         });
 
     it("should be able to successfully save the current state to the database and then load it", async () => {
@@ -184,7 +189,7 @@ contract("Reputation mining - client sync functionality", accounts => {
       await reputationMiner2.loadState(client1Hash);
 
       const client2Hash = await reputationMiner2.reputationTree.getRootHash();
-      assert.equal(client1Hash, client2Hash);
+      expect(client1Hash).to.equal(client2Hash);
     });
 
     it("should be able to correctly get the proof for a reputation in a historical state without affecting the current miner state", async () => {
@@ -200,22 +205,22 @@ contract("Reputation mining - client sync functionality", accounts => {
       // So now we have a different state
       await reputationMiner1.saveCurrentState();
       const clientHash2 = await reputationMiner1.reputationTree.getRootHash();
-      assert.notEqual(clientHash1, clientHash2);
+      expect(clientHash1).to.not.equal(clientHash2);
 
       const [retrievedBranchMask, retrievedSiblings, retrievedValue] = await reputationMiner1.getHistoricalProofAndValue(clientHash1, key);
 
       // Check they're right
-      assert.equal(value, retrievedValue);
-      assert.equal(branchMask, retrievedBranchMask);
-      assert.equal(siblings.length, retrievedSiblings.length);
+      expect(value).to.equal(retrievedValue);
+      expect(branchMask).to.equal(retrievedBranchMask);
+      expect(siblings.length).to.equal(retrievedSiblings.length);
 
       for (let i = 0; i < retrievedSiblings.length; i += 1) {
-        assert.equal(siblings[i], retrievedSiblings[i]);
-        assert.equal(siblings[i], retrievedSiblings[i]);
+        expect(siblings[i]).to.equal(retrievedSiblings[i]);
+        expect(siblings[i]).to.equal(retrievedSiblings[i]);
       }
 
       const clientHash3 = await reputationMiner1.reputationTree.getRootHash();
-      assert.equal(clientHash2, clientHash3);
+      expect(clientHash2).to.equal(clientHash3);
     });
   });
 });

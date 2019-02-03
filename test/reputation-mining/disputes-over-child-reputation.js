@@ -2,6 +2,8 @@
 
 import path from "path";
 import BN from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
@@ -32,6 +34,9 @@ import MaliciousReputationMinerClaimNoOriginReputation from "../../packages/repu
 import MaliciousReputationMinerClaimWrongOriginReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongOriginReputation"; // eslint-disable-line max-len
 import MaliciousReputationMinerClaimWrongChildReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerClaimWrongChildReputation"; // eslint-disable-line max-len
 import MaliciousReputationMinerGlobalOriginNotChildOrigin from "../../packages/reputation-miner/test/MaliciousReputationMinerGlobalOriginNotChildOrigin"; // eslint-disable-line max-len
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -92,7 +97,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
     // This is the same starting point for all tests.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(nInactiveLogEntries.toNumber(), 1);
+    expect(nInactiveLogEntries).to.eq.BN(1);
 
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
@@ -149,7 +154,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's nine in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 9);
+      expect(nLogEntries).to.eq.BN(9);
 
       const badClient = new MaliciousReputationMinerClaimNoOriginReputation(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
@@ -166,12 +171,12 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient);
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
-      assert.equal(righthash, acceptedHash, "The correct hash was not accepted");
+      expect(righthash, "The correct hash was not accepted").to.equal(acceptedHash);
     });
 
     it.skip("if one person lies about what the origin skill is when there is an origin skill for a user update", async () => {
@@ -222,7 +227,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClientWrongSkill = new MaliciousReputationMinerClaimWrongOriginReputation(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
@@ -258,7 +263,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClientWrongUser, badClientWrongColony, badClientWrongSkill], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClientWrongUser.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       // Run through the dispute until we can call respondToChallenge
       await goodClient.confirmJustificationRootHash();
@@ -317,7 +322,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -332,7 +337,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
@@ -391,7 +396,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerGlobalOriginNotChildOrigin(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -406,7 +411,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-origin-user-incorrect" }
@@ -450,7 +455,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -466,7 +471,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
@@ -510,7 +515,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -525,7 +530,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
@@ -558,7 +563,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // update cycle, and reputation update for one task completion (manager, worker, evaluator);
       // That's five in total.
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
         21, // Passing in update number for skillId: 5, user: 9f485401a3c22529ab6ea15e2ebd5a8ca54a5430
@@ -572,7 +577,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-non-zero" }
@@ -618,7 +623,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -633,7 +638,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
@@ -678,7 +683,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // update cycle, and reputation update for one task completion (manager, worker, evaluator);
       // That's five in total.
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -693,7 +698,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-incorrect" }
@@ -752,7 +757,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClientWrongSkill = new MaliciousReputationMinerClaimWrongChildReputation(
         { loader, realProviderPort, useJsTree, minerAddress: MINER1 },
@@ -784,7 +789,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient, badClientWrongUser, badClientWrongColony, badClientWrongSkill], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       // Run through the dispute until we can call respondToChallenge
       await goodClient.confirmJustificationRootHash();
@@ -840,7 +845,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -855,7 +860,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-non-zero" }
@@ -907,7 +912,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
@@ -935,7 +940,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
@@ -990,7 +995,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
     // That's five in total.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(nLogEntries.toNumber(), 5);
+    expect(nLogEntries).to.eq.BN(5);
 
     const badClient = new MaliciousReputationMinerClaimNew(
       { loader, minerAddress: MINER2, realProviderPort, useJsTree },
@@ -1099,6 +1104,6 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
     await repCycle.confirmNewHash(1);
     const acceptedHash = await colonyNetwork.getReputationRootHash();
     const goodHash = await goodClient.getRootHash();
-    assert.equal(acceptedHash, goodHash);
+    expect(acceptedHash).to.equal(goodHash);
   });
 });
