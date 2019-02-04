@@ -542,7 +542,7 @@ class ReputationMiner {
       // Then the skill being update is the skill itself - not a parent or child
       skillId = logEntry.skillId; // eslint-disable-line prefer-destructuring
     }
-    const key = await ReputationMiner.getKey(logEntry.colony, skillId, skillAddress);
+    const key = ReputationMiner.getKey(logEntry.colony, skillId, skillAddress);
     return key;
   }
 
@@ -700,7 +700,7 @@ class ReputationMiner {
     }
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const rowKey = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
       await tree.insert(rowKey, row.value);
     }
 
@@ -1086,7 +1086,7 @@ class ReputationMiner {
     this.nReputations = ethers.utils.bigNumberify(res.length);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const key = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
       await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
       this.reputations[key] = row.value;
     }

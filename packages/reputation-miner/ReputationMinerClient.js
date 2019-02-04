@@ -21,7 +21,7 @@ class ReputationMinerClient {
 
     this._app = express();
     this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
-      const key = await ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
+      const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
       const currentHash = await this._miner.getRootHash();
       if (currentHash === req.params.rootHash) {
         if (this._miner.reputations[key]) {
