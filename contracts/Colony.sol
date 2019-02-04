@@ -105,8 +105,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     for (uint i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
-      
-      ERC20Extended(token).transfer(_users[i], uint(_amounts[i]));
+      require(uint256(_amounts[i]) <= pots[1].balance[token], "colony-bootstrap-not-enough-tokens");
+      pots[1].balance[token] = sub(pots[1].balance[token], uint256(_amounts[i]));
+      nonRewardPotsTotal[token] = sub(nonRewardPotsTotal[token], uint256(_amounts[i]));
+
+      ERC20Extended(token).transfer(_users[i], uint256(_amounts[i]));
       IColonyNetwork(colonyNetworkAddress).appendReputationUpdateLog(_users[i], _amounts[i], domains[1].skillId);
     }
 
