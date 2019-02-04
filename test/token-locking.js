@@ -1,11 +1,17 @@
 /* globals artifacts */
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
+import chai from "chai";
+import bnChai from "bn-chai";
+
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
 import { MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -70,21 +76,21 @@ contract("Token Locking", addresses => {
     it("should correctly set colony network address", async () => {
       await tokenLocking.setColonyNetwork(ZERO_ADDRESS);
       let colonyNetworkAddress = await tokenLocking.getColonyNetwork();
-      assert.equal(colonyNetworkAddress, ZERO_ADDRESS);
+      expect(colonyNetworkAddress).to.equal(ZERO_ADDRESS);
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
       colonyNetworkAddress = await tokenLocking.getColonyNetwork();
-      assert.equal(colonyNetworkAddress, colonyNetwork.address);
+      expect(colonyNetworkAddress).to.equal(colonyNetwork.address);
     });
 
     it("should correctly deposit tokens", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.balance, usersTokens);
+      expect(info.balance).to.eq.BN(usersTokens);
 
       const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
-      assert.equal(tokenLockingContractBalance.toNumber(), usersTokens);
+      expect(tokenLockingContractBalance).to.eq.BN(usersTokens);
     });
 
     it("should correctly set deposit timestamp", async () => {
@@ -95,8 +101,8 @@ contract("Token Locking", addresses => {
       tx = await tokenLocking.deposit(token.address, quarter * 3, { from: userAddress });
       const time1 = await getBlockTime(tx.receipt.blockNumber);
       const info1 = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info1.balance, quarter * 3);
-      assert.equal(info1.timestamp, time1);
+      expect(info1.balance).to.eq.BN(quarter * 3);
+      expect(info1.timestamp).to.eq.BN(time1);
 
       await forwardTime(3600);
 
@@ -105,16 +111,16 @@ contract("Token Locking", addresses => {
       const info2 = await tokenLocking.getUserLock(token.address, userAddress);
 
       const weightedAvgTime = Math.floor((time1 * 3 + time2) / 4);
-      assert.equal(info2.balance, quarter * 4);
-      assert.equal(info2.timestamp, weightedAvgTime);
+      expect(info2.balance).to.eq.BN(quarter * 4);
+      expect(info2.timestamp).to.eq.BN(weightedAvgTime);
     });
 
     it("should not be able to deposit tokens if they are not approved", async () => {
       await checkErrorRevert(tokenLocking.deposit(token.address, usersTokens, { from: userAddress }), "ds-token-insufficient-approval");
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.balance, 0);
+      expect(info.balance).to.be.zero;
       const userBalance = await token.balanceOf(userAddress);
-      assert.equal(userBalance.toNumber(), usersTokens);
+      expect(userBalance).to.eq.BN(usersTokens);
     });
 
     it("should not be able to withdraw if specified amount is greated than deposited", async () => {
@@ -127,19 +133,20 @@ contract("Token Locking", addresses => {
 
       await checkErrorRevert(tokenLocking.withdraw(token.address, otherUserTokens, { from: userAddress }), "ds-math-sub-underflow");
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.balance, usersTokens);
+      expect(info.balance).to.eq.BN(usersTokens);
       const userBalance = await token.balanceOf(userAddress);
-      assert.equal(userBalance.toNumber(), 0);
+      expect(userBalance).to.be.zero;
     });
 
     it("should correctly withdraw tokens", async () => {
       await token.approve(tokenLocking.address, usersTokens, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       await tokenLocking.withdraw(token.address, usersTokens, { from: userAddress });
+
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.balance, 0);
+      expect(info.balance).to.be.zero;
       const userBalance = await token.balanceOf(userAddress);
-      assert.equal(userBalance.toNumber(), usersTokens);
+      expect(userBalance).to.eq.BN(usersTokens);
     });
 
     it("should not be able to deposit 0 tokens", async () => {
@@ -153,7 +160,7 @@ contract("Token Locking", addresses => {
       await checkErrorRevert(tokenLocking.withdraw(token.address, 0, { from: userAddress }), "colony-token-locking-invalid-amount");
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.balance, usersTokens);
+      expect(info.balance).to.eq.BN(usersTokens);
     });
 
     it("should correctly increment total lock count", async () => {
@@ -161,7 +168,7 @@ contract("Token Locking", addresses => {
       await tokenLocking.deposit(token.address, usersTokens, { from: userAddress });
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
-      assert.equal(totalLockCount.toNumber(), 1);
+      expect(totalLockCount).to.eq.BN(1);
     });
 
     it("should correctly increment users lock count", async () => {
@@ -172,7 +179,7 @@ contract("Token Locking", addresses => {
 
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.lockCount, 1);
+      expect(info.lockCount).to.eq.BN(1);
     });
 
     it("should not be able to waive to id that does not exist", async () => {
@@ -199,7 +206,7 @@ contract("Token Locking", addresses => {
       await tokenLocking.deposit(token.address, usersTokens / 2, { from: userAddress });
       await tokenLocking.deposit(token.address, usersTokens / 2, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.balance, usersTokens);
+      expect(info.balance).to.eq.BN(usersTokens);
     });
 
     it("should not be able to deposit tokens while they are locked", async () => {
@@ -224,7 +231,7 @@ contract("Token Locking", addresses => {
       await tokenLocking.incrementLockCounterTo(token.address, payoutId, { from: userAddress });
       await tokenLocking.withdraw(token.address, usersTokens, { from: userAddress });
       const info = await tokenLocking.getUserLock(token.address, userAddress);
-      assert.equal(info.balance, 0);
+      expect(info.balance).to.be.zero;
     });
 
     it("should be able to lock tokens twice", async () => {
@@ -237,7 +244,7 @@ contract("Token Locking", addresses => {
       await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
 
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
-      assert.equal(totalLockCount.toNumber(), 2);
+      expect(totalLockCount).to.eq.BN(2);
     });
 
     it("should be able to set user lock count equal to total lock count when depositing if user had 0 deposited tokens", async () => {
@@ -248,8 +255,7 @@ contract("Token Locking", addresses => {
 
       const info = await tokenLocking.getUserLock(token.address, userAddress);
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
-
-      assert.equal(info.lockCount, totalLockCount.toString());
+      expect(info.lockCount).to.eq.BN(totalLockCount);
     });
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {

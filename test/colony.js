@@ -47,31 +47,31 @@ contract("Colony", accounts => {
   describe("when initialised", () => {
     it("should have the network and token set", async () => {
       const network = await colony.getColonyNetwork();
-      assert.equal(network, colonyNetwork.address);
+      expect(network).to.equal(colonyNetwork.address);
 
       const colonyToken = await colony.getToken();
-      assert.equal(colonyToken, token.address);
+      expect(colonyToken).to.equal(token.address);
     });
 
     it("should accept ether", async () => {
       await colony.send(1);
       const colonyBalance = await web3GetBalance(colony.address);
-      assert.equal(colonyBalance, 1);
+      expect(colonyBalance).to.eq.BN(1);
     });
 
     it("should not have owner", async () => {
       const owner = await colony.owner();
-      assert.equal(owner, ZERO_ADDRESS);
+      expect(owner).to.be.equal(ZERO_ADDRESS);
     });
 
     it("should return zero task count", async () => {
       const taskCount = await colony.getTaskCount();
-      assert.equal(taskCount, 0);
+      expect(taskCount).to.be.zero;
     });
 
     it("should return zero for taskChangeNonce", async () => {
       const taskChangeNonce = await colony.getTaskChangeNonce(1);
-      assert.equal(taskChangeNonce, 0);
+      expect(taskChangeNonce).to.be.zero;
     });
 
     it("should emit correct Mint event when minting tokens", async () => {
@@ -90,38 +90,38 @@ contract("Colony", accounts => {
 
     it("should correctly generate a rating secret", async () => {
       const ratingSecret1 = await colony.generateSecret(RATING_1_SALT, MANAGER_RATING);
-      assert.equal(ratingSecret1, RATING_1_SECRET);
       const ratingSecret2 = await colony.generateSecret(RATING_2_SALT, WORKER_RATING);
-      assert.equal(ratingSecret2, RATING_2_SECRET);
+      expect(ratingSecret1).to.eq.BN(RATING_1_SECRET);
+      expect(ratingSecret2).to.eq.BN(RATING_2_SECRET);
     });
 
     it("should initialise the root domain", async () => {
       // There should be one domain (the root domain)
       const domainCount = await colony.getDomainCount();
-      assert.equal(domainCount, 1);
+      expect(domainCount).to.eq.BN(1);
 
       const domain = await colony.getDomain(domainCount);
 
       // The first pot should have been created and assigned to the domain
-      assert.equal(domain.potId, 1);
+      expect(domain.potId).to.eq.BN(1);
 
       // A root skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
-      assert.equal(domain.skillId, rootLocalSkillId.toNumber());
+      expect(domain.skillId).to.eq.BN(rootLocalSkillId);
     });
 
     it("should let pot information be read", async () => {
       const taskId = await makeTask({ colony });
       const taskInfo = await colony.getTask(taskId);
       let potInfo = await colony.getPotInformation(taskInfo.potId);
-      assert.equal(potInfo.taskId.toString(), taskId.toString(), "Unexpected pot task ID");
-      assert.equal(potInfo.domainId.toString(), "0", "Unexpected pot task ID");
+      expect(potInfo.taskId).to.eq.BN(taskId);
+      expect(potInfo.domainId).to.be.zero;
 
       // Read pot info about a pot in a domain
       const domainInfo = await colony.getDomain(1);
       potInfo = await colony.getPotInformation(domainInfo.potId);
-      assert.equal(potInfo.taskId.toString(), "0", "Unexpected pot task ID");
-      assert.equal(potInfo.domainId.toString(), "1", "Unexpected pot task ID");
+      expect(potInfo.taskId).to.be.zero;
+      expect(potInfo.domainId).to.eq.BN(1);
     });
   });
 
@@ -132,12 +132,12 @@ contract("Colony", accounts => {
       const newFounder = accounts[2];
 
       let hasRole = await colony.hasUserRole(currentFounder, founderRole);
-      assert.isTrue(hasRole, `${currentFounder} does not have founder role`);
+      expect(hasRole, `${currentFounder} does not have founder role`).to.be.true;
 
       await colony.setFounderRole(newFounder);
 
       hasRole = await colony.hasUserRole(newFounder, founderRole);
-      assert.isTrue(hasRole, `Founder role not transfered to ${newFounder}`);
+      expect(hasRole, `Founder role not transfered to ${newFounder}`).to.be.true;
     });
 
     it("should allow admin to assign colony admin role", async () => {
@@ -150,12 +150,12 @@ contract("Colony", accounts => {
 
       const functionSig = getFunctionSignature("setAdminRole(address)");
       const canCall = await authority.canCall(user1, colony.address, functionSig);
-      assert.isTrue(canCall, `Address ${user1} can't call 'setAdminRole' function`);
+      expect(canCall, `Address ${user1} can't call 'setAdminRole' function`).to.be.true;
 
       await colony.setAdminRole(user5, { from: user1 });
 
       const hasRole = await colony.hasUserRole(user5, adminRole);
-      assert.isTrue(hasRole, `Admin role not assigned to ${user5}`);
+      expect(hasRole, `Admin role not assigned to ${user5}`).to.be.true;
     });
 
     it("should allow founder to remove colony admin role", async () => {
@@ -166,12 +166,12 @@ contract("Colony", accounts => {
       await colony.setAdminRole(user1);
 
       let hasRole = await colony.hasUserRole(user1, adminRole);
-      assert.isTrue(hasRole, `Admin role not assigned to ${user1}`);
+      expect(hasRole, `Admin role not assigned to ${user1}`).to.be.true;
 
       await colony.removeAdminRole(user1);
 
       hasRole = await colony.hasUserRole(user1, adminRole);
-      assert.isTrue(!hasRole, `Admin role not removed from ${user1}`);
+      expect(!hasRole, `Admin role not removed from ${user1}`).to.be.true;
     });
 
     it("should not allow admin to remove admin role", async () => {
@@ -184,14 +184,14 @@ contract("Colony", accounts => {
       await colony.setAdminRole(user2);
 
       let hasRole = await colony.hasUserRole(user1, adminRole);
-      assert.isTrue(hasRole, `Admin role not assigned to ${user1}`);
+      expect(hasRole, `Admin role not assigned to ${user1}`).to.be.true;
       hasRole = await colony.hasUserRole(user2, adminRole);
-      assert.isTrue(hasRole, `Admin role not assigned to ${user2}`);
+      expect(hasRole, `Admin role not assigned to ${user2}`).to.be.true;
 
       await checkErrorRevert(colony.removeAdminRole(user1, { from: user2 }), "ds-auth-unauthorized");
 
       hasRole = await colony.hasUserRole(user1, adminRole);
-      assert.isTrue(hasRole, `${user1} is removed from admin role from another admin`);
+      expect(hasRole, `${user1} is removed from admin role from another admin`).to.be.true;
     });
 
     it("should allow admin to call predetermined functions", async () => {
@@ -202,31 +202,31 @@ contract("Colony", accounts => {
 
       let functionSig = getFunctionSignature("moveFundsBetweenPots(uint256,uint256,uint256,address)");
       let canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.isTrue(canCall);
+      expect(canCall).to.be.true;
 
       functionSig = getFunctionSignature("addDomain(uint256)");
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.isTrue(canCall);
+      expect(canCall).to.be.true;
 
       functionSig = getFunctionSignature("makeTask(bytes32,uint256,uint256,uint256)");
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.isTrue(canCall);
+      expect(canCall).to.be.true;
 
       functionSig = getFunctionSignature("startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.isTrue(canCall);
+      expect(canCall).to.be.true;
 
       functionSig = getFunctionSignature("bootstrapColony(address[],int256[])");
       canCall = await authority.canCall(founder, colony.address, functionSig);
-      assert.isTrue(canCall);
+      expect(canCall).to.be.true;
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.isFalse(canCall);
+      expect(canCall).to.be.false;
 
       functionSig = getFunctionSignature("mintTokens(uint256)");
       canCall = await authority.canCall(founder, colony.address, functionSig);
-      assert.isTrue(canCall);
+      expect(canCall).to.be.true;
       canCall = await authority.canCall(user3, colony.address, functionSig);
-      assert.isFalse(canCall);
+      expect(canCall).to.be.false;
     });
   });
 
@@ -248,11 +248,11 @@ contract("Colony", accounts => {
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
       const numberOfReputationLogs = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      assert.strictEqual(numberOfReputationLogs.toNumber(), INITIAL_ADDRESSES.length);
+      expect(numberOfReputationLogs).to.eq.BN(INITIAL_ADDRESSES.length);
       const updateLog = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(0);
-      assert.strictEqual(updateLog.user, INITIAL_ADDRESSES[0]);
-      assert.strictEqual(updateLog.amount, INITIAL_REPUTATIONS[0].toString());
-      assert.strictEqual(updateLog.skillId, skillCount.toString());
+      expect(updateLog.user).to.eq.BN(INITIAL_ADDRESSES[0]);
+      expect(updateLog.amount).to.eq.BN(INITIAL_REPUTATIONS[0]);
+      expect(updateLog.skillId).to.eq.BN(skillCount);
     });
 
     it("should assign tokens correctly when bootstrapping the colony", async () => {
@@ -260,7 +260,7 @@ contract("Colony", accounts => {
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
-      assert.equal(balance.toString(), INITIAL_REPUTATIONS[0]);
+      expect(balance).to.eq.BN(INITIAL_REPUTATIONS[0]);
     });
 
     it("should be able to bootstrap colony more than once", async () => {
@@ -269,7 +269,7 @@ contract("Colony", accounts => {
       await colony.bootstrapColony([INITIAL_ADDRESSES[0]], [INITIAL_REPUTATIONS[0]]);
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
-      assert.equal(balance.toString(), WAD.muln(10).toString());
+      expect(balance).to.eq.BN(WAD.muln(10));
     });
 
     it("should throw if length of inputs is not equal", async () => {
@@ -288,7 +288,7 @@ contract("Colony", accounts => {
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "ds-token-insufficient-balance");
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
-      assert.equal(balance.toString(), "0");
+      expect(balance).to.be.zero;
     });
 
     it("should not allow non-creator to bootstrap reputation", async () => {

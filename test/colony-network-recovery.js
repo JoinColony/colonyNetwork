@@ -2,6 +2,8 @@
 
 import { padLeft, soliditySha3, numberToHex } from "web3-utils";
 import BN from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import {
@@ -19,6 +21,9 @@ import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, s
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import { setupEtherRouter } from "../helpers/upgradable-contracts";
 import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -84,26 +89,26 @@ contract("Colony Network Recovery", accounts => {
       let numRecoveryRoles;
 
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 0);
+      expect(numRecoveryRoles).to.be.zero;
       colonyNetwork.setRecoveryRole(founder);
       await colonyNetwork.setRecoveryRole(accounts[1]);
       await colonyNetwork.setRecoveryRole(accounts[2]);
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 3);
+      expect(numRecoveryRoles).to.eq.BN(3);
 
       // Can remove recovery roles
       await colonyNetwork.removeRecoveryRole(accounts[2]);
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 2);
+      expect(numRecoveryRoles).to.eq.BN(2);
 
       // Can't remove twice
       await colonyNetwork.removeRecoveryRole(accounts[2]);
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 2);
+      expect(numRecoveryRoles).to.eq.BN(2);
 
       await colonyNetwork.removeRecoveryRole(founder);
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
-      assert.equal(numRecoveryRoles.toNumber(), 1);
+      expect(numRecoveryRoles).to.eq.BN(1);
     });
 
     it("should not be able to add and remove roles when in recovery", async () => {
@@ -175,7 +180,7 @@ contract("Colony Network Recovery", accounts => {
       await colonyNetwork.setStorageSlotRecovery(5, "0xdeadbeef");
 
       const unprotected = await web3GetStorageAt(colonyNetwork.address, 5);
-      assert.equal(unprotected.toString(), `0xdeadbeef${"0".repeat(56)}`);
+      expect(unprotected.toString()).to.equal(`0xdeadbeef${"0".repeat(56)}`);
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();
     });
@@ -199,8 +204,8 @@ contract("Colony Network Recovery", accounts => {
 
       let rootHash = await colonyNetwork.getReputationRootHash();
       let nNodes = await colonyNetwork.getReputationRootHashNNodes();
-      assert.equal(rootHash, "0x0000000000000000000000000000000000000000000000000000000000000000");
-      assert.equal(nNodes.toNumber(), 0);
+      expect(rootHash).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(nNodes).to.be.zero;
 
       await colonyNetwork.enterRecoveryMode();
 
@@ -211,8 +216,8 @@ contract("Colony Network Recovery", accounts => {
       await colonyNetwork.exitRecoveryMode();
       rootHash = await colonyNetwork.getReputationRootHash();
       nNodes = await colonyNetwork.getReputationRootHashNNodes();
-      assert.equal(rootHash, "0x0200000000000000000000000000000000000000000000000000000000000000");
-      assert.equal(nNodes.toNumber(), 7);
+      expect(rootHash).to.equal("0x0200000000000000000000000000000000000000000000000000000000000000");
+      expect(nNodes).to.eq.BN(7);
     });
   });
 
@@ -252,7 +257,7 @@ contract("Colony Network Recovery", accounts => {
           const rootSkill = domain.skillId;
           const reputationKey = makeReputationKey(colony.address, rootSkill, accounts[5]);
           const originalValue = client.reputations[reputationKey].slice(2, 66);
-          assert.equal(parseInt(originalValue, 16), 1000000000000000);
+          expect(parseInt(originalValue, 16)).to.equal(1000000000000000);
 
           await colonyNetwork.enterRecoveryMode();
 
@@ -285,12 +290,12 @@ contract("Colony Network Recovery", accounts => {
 
           const newHash = await colonyNetwork.getReputationRootHash();
           const newHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-          assert.equal(newHash, rootHash);
-          assert.equal(newHashNNodes.toNumber(), nNodes.toNumber());
+          expect(newHash).to.equal(rootHash);
+          expect(newHashNNodes).to.eq.BN(nNodes.toString()); // nNodes is a BigNumber :sob:
 
           await newClient.sync(startingBlockNumber);
           const newValue = newClient.reputations[reputationKey].slice(2, 66);
-          assert.equal(new BN(newValue, 16).toNumber(), 0);
+          expect(new BN(newValue, 16)).to.be.zero;
         });
 
     process.env.SOLIDITY_COVERAGE
@@ -391,12 +396,12 @@ contract("Colony Network Recovery", accounts => {
             );
 
             const portedLogEntry = await newActiveCycle.getReputationUpdateLogEntry(i);
-            assert.strictEqual(portedLogEntry.user, logEntry.user);
-            assert.strictEqual(portedLogEntry.amount, logEntry.amount);
-            assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
-            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
-            assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
-            assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
+            expect(portedLogEntry.user).to.equal(logEntry.user);
+            expect(portedLogEntry.amount).to.equal(logEntry.amount);
+            expect(portedLogEntry.skillId).to.equal(logEntry.skillId);
+            expect(portedLogEntry.colony).to.equal(logEntry.colony);
+            expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
+            expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
           }
 
           // We change the amount the first log entry is for - this is a 'wrong' entry we are fixing.
@@ -422,21 +427,21 @@ contract("Colony Network Recovery", accounts => {
 
             const portedLogEntry = await newInactiveCycle.getReputationUpdateLogEntry(i);
 
-            assert.strictEqual(portedLogEntry.user, logEntry.user);
-            assert.strictEqual(portedLogEntry.amount, logEntry.amount);
-            assert.strictEqual(portedLogEntry.skillId, logEntry.skillId);
-            assert.strictEqual(portedLogEntry.colony, logEntry.colony);
-            assert.strictEqual(portedLogEntry.nUpdates, logEntry.nUpdates);
-            assert.strictEqual(portedLogEntry.nPreviousUpdates, logEntry.nPreviousUpdates);
+            expect(portedLogEntry.user).to.equal(logEntry.user);
+            expect(portedLogEntry.amount).to.equal(logEntry.amount);
+            expect(portedLogEntry.skillId).to.equal(logEntry.skillId);
+            expect(portedLogEntry.colony).to.equal(logEntry.colony);
+            expect(portedLogEntry.nUpdates).to.equal(logEntry.nUpdates);
+            expect(portedLogEntry.nPreviousUpdates).to.equal(logEntry.nPreviousUpdates);
           }
 
           // Set the new cycles
           await colonyNetwork.setStorageSlotRecovery(16, `0x000000000000000000000000${newActiveCycle.address.slice(2)}`);
           await colonyNetwork.setStorageSlotRecovery(17, `0x000000000000000000000000${newInactiveCycle.address.slice(2)}`);
           const retrievedActiveCycleAddress = await colonyNetwork.getReputationMiningCycle(true);
-          assert.strictEqual(retrievedActiveCycleAddress, newActiveCycle.address);
+          expect(retrievedActiveCycleAddress).to.equal(newActiveCycle.address);
           const retrievedInactiveCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
-          assert.strictEqual(retrievedInactiveCycleAddress, newInactiveCycle.address);
+          expect(retrievedInactiveCycleAddress).to.equal(newInactiveCycle.address);
 
           // Exit recovery mode
           await colonyNetwork.approveExitRecovery();
@@ -462,18 +467,18 @@ contract("Colony Network Recovery", accounts => {
           const newClientHash = await newClient.getRootHash();
           const oldClientHash = await client.getRootHash();
 
-          assert.equal(newClientHash, oldClientHash);
+          expect(newClientHash).to.equal(oldClientHash);
 
           let ignorantClientHash = await ignorantclient.getRootHash();
           // We changed one log entry, so these hashes should be different
-          assert.notEqual(newClientHash, ignorantClientHash);
+          expect(newClientHash).to.not.equal(ignorantClientHash);
 
           // Now check the ignorant client can recover. Load a state from before we entered recovery mode
           await ignorantclient.loadState(startingHash);
           await ignorantclient.sync(startingBlockNumber);
           ignorantClientHash = await ignorantclient.getRootHash();
 
-          assert.equal(ignorantClientHash, newClientHash);
+          expect(ignorantClientHash).to.equal(newClientHash);
         });
   });
 });

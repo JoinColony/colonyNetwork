@@ -23,6 +23,7 @@ import { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, s
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
+const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
@@ -429,7 +430,7 @@ contract("Colony Reward Payouts", accounts => {
       await tokenLocking.withdraw(token.address, userReputation, { from: userAddress1 });
 
       const balance = await token.balanceOf(userAddress1);
-      assert.equal(balance.toString(), userReputation.toString());
+      expect(balance).to.eq.BN(userReputation);
     });
 
     it("should not be able to claim tokens after the payout period has expired", async () => {
@@ -667,7 +668,7 @@ contract("Colony Reward Payouts", accounts => {
       claimInPayout2 = claimInPayout2.sub(fee2);
 
       const userBalance = await otherToken.balanceOf(userAddress1);
-      assert.equal(userBalance.toString(), claimInPayout1.add(claimInPayout2).toString());
+      expect(userBalance).to.eq.BN(claimInPayout1.add(claimInPayout2).toString());
     });
 
     it("should not be able to claim reward payout from a colony that didn't created it", async () => {
@@ -769,12 +770,12 @@ contract("Colony Reward Payouts", accounts => {
       const reputationRootHash = await colonyNetwork.getReputationRootHash();
 
       const info = await colony.getRewardPayoutInfo(payoutId);
-      assert.equal(info.reputationState, reputationRootHash);
-      assert.equal(info.colonyWideReputation, totalReputation.toString());
-      assert.equal(info.totalTokens, totalTokens.toString());
-      assert.equal(info.amount, balance.toString());
-      assert.equal(info.tokenAddress, otherToken.address);
-      assert.equal(info.blockTimestamp, blockTimestamp.toString());
+      expect(info.reputationState).to.eq.BN(reputationRootHash);
+      expect(info.colonyWideReputation).to.eq.BN(totalReputation);
+      expect(info.totalTokens).to.eq.BN(totalTokens);
+      expect(info.amount).to.eq.BN(balance);
+      expect(info.tokenAddress).to.equal(otherToken.address);
+      expect(info.blockTimestamp).to.eq.BN(blockTimestamp);
     });
 
     const reputations = [
@@ -908,13 +909,7 @@ contract("Colony Reward Payouts", accounts => {
         const user1BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         const colonyNetworkBalanceAfterClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
         const colonyNetworkFeeClaim1 = colonyNetworkBalanceAfterClaim1.sub(colonyNetworkBalanceBeforeClaim1);
-        assert.equal(
-          user1BalanceAfterClaim.toString(),
-          amountAvailableForPayout
-            .sub(remainingAfterClaim1)
-            .sub(colonyNetworkFeeClaim1)
-            .toString()
-        );
+        expect(user1BalanceAfterClaim).to.eq.BN(amountAvailableForPayout.sub(remainingAfterClaim1).sub(colonyNetworkFeeClaim1));
 
         const solidityReward = amountAvailableForPayout.sub(remainingAfterClaim1).sub(colonyNetworkFeeClaim1);
         console.log("\nCorrect (Javascript): ", reward.toString());
@@ -922,11 +917,7 @@ contract("Colony Reward Payouts", accounts => {
 
         console.log(
           "Percentage Wrong: ",
-          solidityReward
-            .sub(reward)
-            .muln(100)
-            .div(reward)
-            .toString(),
+          solidityReward.sub(reward).muln(100).div(reward).toString(), // eslint-disable-line prettier/prettier
           "%"
         );
         console.log("Absolute Wrong: ", solidityReward.sub(reward).toString(), "\n");
@@ -947,14 +938,12 @@ contract("Colony Reward Payouts", accounts => {
 
         const remainingAfterClaim2 = await newColony.getPotBalance(0, payoutToken.address);
         const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
-        assert.equal(
-          user2BalanceAfterClaim.toString(),
+        expect(user2BalanceAfterClaim).to.eq.BN(
           amountAvailableForPayout
             .sub(user1BalanceAfterClaim)
             .sub(colonyNetworkFeeClaim1)
             .sub(remainingAfterClaim2)
             .sub(colonyNetworkFeeClaim2)
-            .toString()
         );
 
         console.log("Remaining after claim 2: ", remainingAfterClaim2.toString());
@@ -972,8 +961,7 @@ contract("Colony Reward Payouts", accounts => {
 
         const remainingAfterClaim3 = await newColony.getPotBalance(0, payoutToken.address);
         const user3BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
-        assert.equal(
-          user3BalanceAfterClaim.toString(),
+        expect(user3BalanceAfterClaim).to.eq.BN(
           amountAvailableForPayout
             .sub(user1BalanceAfterClaim)
             .sub(user2BalanceAfterClaim)
@@ -981,7 +969,6 @@ contract("Colony Reward Payouts", accounts => {
             .sub(colonyNetworkFeeClaim2)
             .sub(colonyNetworkFeeClaim3)
             .sub(remainingAfterClaim3)
-            .toString()
         );
 
         console.log("Remaining after claim 3: ", remainingAfterClaim3.toString());

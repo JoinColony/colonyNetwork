@@ -1,5 +1,12 @@
 /* globals artifacts */
+import chai from "chai";
+import bnChai from "bn-chai";
+
 import { checkErrorRevert } from "../helpers/test-helper";
+import { ZERO_ADDRESS } from "../helpers/constants";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const MultiSigWallet = artifacts.require("gnosis/MultiSigWallet");
 const EtherRouter = artifacts.require("EtherRouter");
@@ -34,7 +41,7 @@ contract("EtherRouter / Resolver", accounts => {
         "ds-auth-unauthorized"
       );
       const resolverUpdated = await etherRouter.resolver();
-      assert.equal(resolverUpdated, resolver.address);
+      expect(resolverUpdated).to.equal(resolver.address);
     });
 
     it("should not change resolver on EtherRouter if there have been insufficient number of confirmations", async () => {
@@ -43,8 +50,8 @@ contract("EtherRouter / Resolver", accounts => {
       const { transactionId } = tx.logs[0].args;
       const isConfirmed = await multisig.isConfirmed(transactionId);
       const resolverUpdated = await etherRouter.resolver();
-      assert.isFalse(isConfirmed);
-      assert.equal(resolverUpdated, resolver.address);
+      expect(isConfirmed).to.be.false;
+      expect(resolverUpdated).to.equal(resolver.address);
     });
   });
 
@@ -53,17 +60,17 @@ contract("EtherRouter / Resolver", accounts => {
       const deployedColonyNetwork = await ColonyNetwork.deployed();
       const signature = await resolver.stringToSig("createColony(address)");
       const destination = await resolver.lookup(signature);
-      assert.equal(destination, deployedColonyNetwork.address);
+      expect(destination).to.equal(deployedColonyNetwork.address);
     });
 
     it("when checking destination for a function that doesn't exist, should return 0", async () => {
       const destination = await resolver.lookup("0xdeadbeef");
-      assert.equal(destination, 0);
+      expect(destination).to.equal(ZERO_ADDRESS);
     });
 
     it("should return correctly encoded function signature", async () => {
       const signature = await resolver.stringToSig("transferFrom(address,address,uint256)");
-      assert.equal(signature, "0x23b872dd");
+      expect(signature).to.equal("0x23b872dd");
     });
   });
 });

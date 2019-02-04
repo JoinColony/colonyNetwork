@@ -64,9 +64,9 @@ contract("Colony Network Auction", accounts => {
   describe("when initialising an auction", async () => {
     it("should initialise auction with correct given parameters", async () => {
       const clnyAddress = await tokenAuction.clnyToken();
-      assert.equal(clnyAddress, clnyToken.address);
+      expect(clnyAddress).to.equal(clnyToken.address);
       const tokenAddress = await tokenAuction.token();
-      assert.equal(tokenAddress, token.address);
+      expect(tokenAddress).to.equal(token.address);
     });
 
     it("should fail with a zero address token", async () => {
@@ -81,8 +81,8 @@ contract("Colony Network Auction", accounts => {
 
       const supplyAfter = await clnyToken.totalSupply();
       const balanceAfter = await clnyToken.balanceOf(colonyNetwork.address);
-      assert.equal(balanceAfter.toString(), "0");
-      assert.equal(supplyBefore.sub(balanceBefore).toString(), supplyAfter.toString());
+      expect(balanceAfter).to.be.zero;
+      expect(supplyBefore.sub(balanceBefore)).to.eq.BN(supplyAfter);
     });
 
     it("should fail with zero quantity", async () => {
@@ -95,10 +95,10 @@ contract("Colony Network Auction", accounts => {
   describe("when starting an auction", async () => {
     it("should set the `quantity` correctly and minPrice to 1", async () => {
       const quantityNow = await tokenAuction.quantity();
-      assert.equal(quantityNow.toString(10), quantity.toString());
+      expect(quantityNow).to.eq.BN(quantity);
 
       const minPrice = await tokenAuction.minPrice();
-      assert.equal(minPrice.toString(10), 1);
+      expect(minPrice).to.eq.BN(1);
     });
 
     it("should set the minimum price correctly for quantity < 1e18", async () => {
@@ -110,7 +110,7 @@ contract("Colony Network Auction", accounts => {
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
       const minPrice = await tokenAuction.minPrice();
-      assert.equal(minPrice.toString(10), 10);
+      expect(minPrice).to.eq.BN(10);
     });
 
     it("should set the `startTime` correctly", async () => {
@@ -118,12 +118,12 @@ contract("Colony Network Auction", accounts => {
       const blockTime = await getBlockTime(createAuctionTxBlockNumber);
 
       const startTime = await tokenAuction.startTime();
-      assert.equal(startTime.toNumber(), blockTime);
+      expect(startTime).to.eq.BN(blockTime);
     });
 
     it("should set the `started` property correctly", async () => {
       const started = await tokenAuction.started();
-      assert.isTrue(started);
+      expect(started).to.be.true;
     });
 
     it("should fail starting the auction twice", async () => {
@@ -215,9 +215,12 @@ contract("Colony Network Auction", accounts => {
 
       await token.mint(quantity);
       await token.transfer(colonyNetwork.address, quantity);
-      await colonyNetwork.startTokenAuction(token.address);
-      const newAuctionStartTime = await tokenAuction.startTime();
-      assert.notEqual(previousAuctionStartTime, newAuctionStartTime);
+
+      const { logs } = await colonyNetwork.startTokenAuction(token.address);
+      const auctionAddress = logs[0].args.auction;
+      const newTokenAuction = await DutchAuction.at(auctionAddress);
+      const newAuctionStartTime = await newTokenAuction.startTime();
+      expect(previousAuctionStartTime).to.not.eq.BN(newAuctionStartTime);
     });
   });
 
@@ -227,9 +230,9 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, WAD, { from: BIDDER_1 });
       await tokenAuction.bid(WAD, { from: BIDDER_1 });
       const bid = await tokenAuction.bids(BIDDER_1);
-      assert.equal(bid.toString(), WAD.toString());
+      expect(bid).to.eq.BN(WAD);
       const bidCount = await tokenAuction.bidCount();
-      assert.equal(bidCount.toNumber(), 1);
+      expect(bidCount).to.eq.BN(1);
     });
 
     it("bid tokens are locked", async () => {
@@ -237,7 +240,7 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, WAD, { from: BIDDER_1 });
       await tokenAuction.bid(WAD, { from: BIDDER_1 });
       const lockedTokens = await clnyToken.balanceOf(tokenAuction.address);
-      assert.equal(lockedTokens.toString(), WAD.toString());
+      expect(lockedTokens).to.eq.BN(WAD);
     });
 
     it("can bid more than once", async () => {
@@ -246,7 +249,7 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.bid("1100000000000000000", { from: BIDDER_1 });
       await tokenAuction.bid("900000000000000000", { from: BIDDER_1 });
       const bidCount = await tokenAuction.bidCount();
-      assert.equal(bidCount.toNumber(), 1);
+      expect(bidCount).to.eq.BN(1);
     });
 
     it("once target reached, endTime is set correctly", async () => {
@@ -265,10 +268,10 @@ contract("Colony Network Auction", accounts => {
       const bidReceiptBlock = receipt.blockNumber;
       const blockTime = await getBlockTime(bidReceiptBlock);
       const endTime = await tokenAuction.endTime();
-      assert.equal(endTime.toString(), blockTime);
+      expect(endTime).to.eq.BN(blockTime);
 
       const bidCount = await tokenAuction.bidCount();
-      assert.equal(bidCount.toNumber(), 3);
+      expect(bidCount).to.eq.BN(3);
     });
 
     it("if bid overshoots the target quantity, it is only partially accepted", async () => {
@@ -279,9 +282,9 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.bid(amount, { from: BIDDER_1 });
       const receivedTotal = await tokenAuction.receivedTotal();
       const bid = await tokenAuction.bids(BIDDER_1);
-      assert.isTrue(bid.lte(totalToEndAuction));
-      assert.isTrue(receivedTotal.lte(totalToEndAuction));
-      assert.equal(receivedTotal.toString(), bid.toString());
+      expect(bid).to.be.lte.BN(totalToEndAuction);
+      expect(receivedTotal).to.be.lte.BN(totalToEndAuction);
+      expect(receivedTotal).to.eq.BN(bid.toString());
     });
 
     it("after target is sold, bid is rejected", async () => {
@@ -313,30 +316,28 @@ contract("Colony Network Auction", accounts => {
     it("sets correct final token price", async () => {
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
-      const endPrice = WAD.mul(receivedTotal)
-        .div(quantity)
-        .addn(1);
+      const endPrice = WAD.mul(receivedTotal).div(quantity).addn(1); // eslint-disable-line prettier/prettier
       const finalPrice = await tokenAuction.finalPrice();
-      assert.equal(endPrice.toString(), finalPrice.toString(10));
+      expect(endPrice).to.eq.BN(finalPrice);
     });
 
     it("sets the finalized property", async () => {
       await tokenAuction.finalize();
       const finalized = await tokenAuction.finalized();
-      assert.isTrue(finalized);
+      expect(finalized).to.be.true;
     });
 
     it("all CLNY sent to the auction in bids is burned", async () => {
       const balanceBefore = await clnyToken.balanceOf(tokenAuction.address);
       const supplyBefore = await clnyToken.totalSupply();
       const receivedTotal = await tokenAuction.receivedTotal();
-      assert.isFalse(receivedTotal.isZero());
+      expect(receivedTotal).to.not.be.zero;
       await tokenAuction.finalize();
 
       const balanceAfter = await clnyToken.balanceOf(tokenAuction.address);
-      assert.equal(balanceAfter.toString(), "0");
+      expect(balanceAfter).to.be.zero;
       const supplyAfter = await clnyToken.totalSupply();
-      assert.equal(supplyBefore.sub(supplyAfter).toString(), balanceBefore.toString());
+      expect(supplyBefore.sub(supplyAfter)).to.eq.BN(balanceBefore);
     });
 
     it("cannot bid after finalized", async () => {
@@ -383,27 +384,27 @@ contract("Colony Network Auction", accounts => {
 
       await tokenAuction.claim({ from: BIDDER_1 });
       claimCount = await tokenAuction.claimCount();
-      assert.equal(claimCount.toNumber(), 1);
+      expect(claimCount).to.eq.BN(1);
 
       tokenBidderBalance = await token.balanceOf(BIDDER_1);
       tokensToClaim = WAD.mul(bidAmount1).div(finalPrice);
-      assert.equal(tokenBidderBalance.toString(10), tokensToClaim.toString());
+      expect(tokenBidderBalance).to.eq.BN(tokensToClaim);
 
       await tokenAuction.claim({ from: BIDDER_2 });
       claimCount = await tokenAuction.claimCount();
-      assert.equal(claimCount.toNumber(), 2);
+      expect(claimCount).to.eq.BN(2);
       tokenBidderBalance = await token.balanceOf(BIDDER_2);
       tokensToClaim = WAD.mul(bidAmount2).div(finalPrice);
-      assert.equal(tokenBidderBalance.toString(10), tokensToClaim.toString());
+      expect(tokenBidderBalance).to.eq.BN(tokensToClaim);
 
       const bid3 = await tokenAuction.bids(BIDDER_3);
       await tokenAuction.claim({ from: BIDDER_3 });
       claimCount = await tokenAuction.claimCount();
-      assert.equal(claimCount.toNumber(), 3);
+      expect(claimCount).to.eq.BN(3);
       tokenBidderBalance = await token.balanceOf(BIDDER_3);
       const bid3BN = new BN(bid3.toString(10));
       tokensToClaim = WAD.mul(bid3BN).div(finalPrice);
-      assert.equal(tokenBidderBalance.toString(10), tokensToClaim.toString());
+      expect(tokenBidderBalance).to.eq.BN(tokensToClaim);
     });
 
     it("should set the bid amount to 0", async () => {
@@ -413,7 +414,7 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.finalize();
       await tokenAuction.claim({ from: BIDDER_1 });
       const bid = await tokenAuction.bids(BIDDER_1);
-      assert.equal(bid.toNumber(), 0);
+      expect(bid).to.be.zero;
     });
   });
 
@@ -429,7 +430,7 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.claim({ from: BIDDER_1 });
       await tokenAuction.destruct();
       const code = await web3GetCode(tokenAuction.address);
-      assert.equal(code, "0x0");
+      expect(code).to.equal("0x0");
     });
 
     it("should fail if auction not finalized", async () => {
