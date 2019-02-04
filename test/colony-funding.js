@@ -418,7 +418,7 @@ contract("Colony Funding", accounts => {
       const taskCountBefore = await colony.getTaskCount();
       expect(taskCountBefore).to.be.zero;
       const potCountBefore = await colony.getPotCount();
-      // Expect there to be a single funding pot for the rood Domain created.
+      // Expect there to be a single funding pot for the root Domain created.
       // Note that the reward pot with id 0 is NOT included in the Colony Funding pots count
       expect(potCountBefore).to.eq.BN(1);
 

@@ -91,7 +91,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   auth
   {
     // Token locking address can't be changed
-    require(tokenLocking == address(0x0), "colony-invalid-token-locking-address");
+    require(tokenLocking == address(0x0), "colony-token-locking-address-already-set");
     tokenLocking = _tokenLocking;
 
     emit TokenLockingAddressSet(_tokenLocking);

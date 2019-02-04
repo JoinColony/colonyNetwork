@@ -29,9 +29,12 @@ contract("Colony Recovery", accounts => {
     it("should be able to check whether we are in recovery mode", async () => {
       const founder = accounts[0];
       await colony.setRecoveryRole(founder);
+
+      let recoveryMode = await colony.isInRecoveryMode();
+      assert.isFalse(recoveryMode);
       await colony.enterRecoveryMode();
 
-      const recoveryMode = await colony.isInRecoveryMode();
+      recoveryMode = await colony.isInRecoveryMode();
       assert.isTrue(recoveryMode);
     });
 

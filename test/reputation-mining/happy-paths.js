@@ -728,9 +728,14 @@ contract("Reputation Mining - happy paths", accounts => {
       let isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER1 });
       expect(isValid).to.be.true;
 
-      const badKey = makeReputationKey("0xdeadbeef", new BN("2"), MINER1);
       // Check using a bad key confirms an invalid proof
+      const badKey = makeReputationKey("0xdeadbeef", new BN("2"), MINER1);
       isValid = await metaColony.verifyReputationProof(badKey, value, branchMask, siblings, { from: MINER1 });
+      expect(isValid).to.be.false;
+
+      // Check using a bad value confirms an invalid proof
+      const badValue = makeReputationValue(new BN("12345678"), "123");
+      isValid = await metaColony.verifyReputationProof(key, badValue, branchMask, siblings, { from: MINER1 });
       expect(isValid).to.be.false;
 
       // Check using a bad user confirms an invalid proof
@@ -739,6 +744,16 @@ contract("Reputation Mining - happy paths", accounts => {
 
       // Check using a bad branchmask confirms an invalid proof
       isValid = await metaColony.verifyReputationProof(key, value, 123, siblings, { from: MINER1 });
+      expect(isValid).to.be.false;
+
+      // Check using bad siblings confirms an invalid proof
+      isValid = await metaColony.verifyReputationProof(
+        key,
+        value,
+        branchMask,
+        ["0xbfb84f69f3b58ba43019d6e253d476669af78901fe05eaedfc98ed345dbd8221"],
+        { from: MINER1 }
+      );
       expect(isValid).to.be.false;
     });
 
