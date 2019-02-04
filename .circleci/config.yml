@@ -8,11 +8,11 @@ step_save_cache: &step_save_cache
   save_cache:
     paths:
       - ~/.cache/yarn
-    key: node-modules-{{ checksum "package.json" }}
+    key: node-modules-{{ checksum "yarn.lock" }}
 step_restore_cache: &step_restore_cache
   restore_cache:
     keys:
-      - node-modules-{{ checksum "package.json" }}
+      - node-modules-{{ checksum "yarn.lock" }}
 step_setup_global_packages: &step_setup_global_packages
   run:
     name: "Set up global packages"
