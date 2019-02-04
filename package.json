@@ -21,7 +21,7 @@
     "test:contracts:upgrade:ganache": "npm run start:blockchain:client & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./test-upgrade/* --network development",
     "test:contracts:gasCosts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-gas-costs/gasCosts.js --network development",
     "test:contracts:patricia": "npm run start:blockchain:client parity & truffle migrate --reset --compile-all && truffle test packages/reputation-miner/patricia-test.js --network development",
-    "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 94 --branches 88 --functions 92 --lines 94",
+    "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 99 --branches 94 --functions 99 --lines 99",
     "test:contracts:watch": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle watch --network development",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
