@@ -286,28 +286,27 @@ class ReputationMiner {
           }
           childReputationProof = await this.getReputationProofObject(keyUsedInCalculations);
 
-
-          const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
-          let reputation;
-          if (keyExists) {
-            reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
-          } else {
-            reputation = ethers.utils.bigNumberify("0");
-          }
           if (originReputation.eq(0)) {
             amount = ethers.utils.bigNumberify("0");
           } else {
+            let reputation = ethers.utils.bigNumberify("0");
+            const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
+            if (keyExists) {
+              reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
+            }
+
             amount = amount.mul(reputation).div(originReputation);
+
+            // We can't lose more reputation than we have in this reputation
+            if (reputation.lt(amount.mul(-1))) {
+              amount = reputation.mul(-1);
+            }
           }
-          // We can't lose more reputation than we have in this reputation
-          if (reputation.lt(amount.mul(-1))) {
-            amount = reputation.mul(-1);
-          }
-        }
-        // We can't lose more reputation in any skill than we have in the origin skill. 
-        // Cap change based on origin skill 
-        if (originReputation.lt(amount.mul(-1))) {
-          amount = originReputation.mul(-1)
+        } else if (originReputation.lt(amount.mul(-1))) {
+          // If the 'if' above didn't match, it's either an origin or a parent skill update. 
+          // We can't lose more reputation in an origin or parent skill than we have in the origin skill. 
+          // Cap change based on origin skill if needed.
+          amount = originReputation.mul(-1);
         }
       }
     }
