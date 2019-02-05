@@ -14,7 +14,7 @@ The Reputation System in Colony is a tool for governance in a decentralized cont
 
 Reputation confers influence in a colony by mediating a member's ability to adjust various aspects of the organization. Whether it is the ability to move funds to fund tasks, to create new domains and skills, or to settle disputes, reputation determines influence by degrees.
 
-*It is important to note that in the first deployed version of the Colony Network, reputation will play a more passive role in a colony. Reputation will still determine payouts during the rewards cycle, but influence over domain/skill creation, funding tasks, and other important functions will instead be mediated by a permissioned [authority role](/colonyjs/api-authorityclient/).*
+*It is important to note that in the first deployed version of the Colony Network, reputation will play a more passive role in a colony. Reputation will still determine payouts during the rewards cycle, but influence over domain/skill creation, funding tasks, and other important functions will instead be mediated by a permissioned [authority role](/colonyjs/topics-managing-permissions/).*
 
 ==TOC==
 
@@ -34,7 +34,7 @@ When a payout is received for the completion of a task, reputation is awarded wi
 
 See [Tasks](/colonynetwork/docs-tasks/) for more information about the task workflow and ratings.
 
-See the colonyJS [task lifecycle](/colonyjs/docs-task-lifecycle/) for implementation examples.
+See the colonyJS [task lifecycle](/colonyjs/topics-task-lifecycle/) for implementation examples.
 
 ### Staking Reputation
 Almost every interaction with a colony requires that the user stake some amount of reputation. How much reputation is required to stake depends on how important the interaction is. Actions like the creation and funding of tasks require a nominal amount of reputation, while things like creating a new domain require comparatively more.

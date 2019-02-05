@@ -32,9 +32,9 @@ Every task has three roles associated with it which determine permissions for ed
 |Evaluator [`1`]| A task's Evaluator role is a person who will independently establish the quality of the work done by the Worker.  
 |Worker [`2`]| A task's Worker role is the person who will fulfill the requirements of the task as specified in the task brief.
 
-Once created, some changes to a task require the signature of multiple roles. See the [colonyJS task lifecycle](/colonyjs/docs-task-lifecycle/) and [Multisignature transactions](/colonyjs/docs-multisignature/) for for further information about role permissions and multi-sig operations.
+Once created, some changes to a task require the signature of multiple roles. See the colonyJS [Task Lifecycle](/colonyjs/topics-task-lifecycle/) and [Using Multisignature](/colonyjs/topics-using-multisignature/) documentation for for further information about role permissions and multi-sig operations.
 
-Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/docs-authority/).
+Additionally, in the first version of the Colony Network, the creation and modification of tasks is mediated by `auth` roles as described in the [AuthorityClient API](/colonyjs/topics-managing-permissions/).
 
 ## The Task Life-cycle
 
