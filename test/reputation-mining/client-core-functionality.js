@@ -51,7 +51,7 @@ process.env.SOLIDITY_COVERAGE
         clnyToken = await Token.at(clnyAddress);
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-        expect(lock.balance).to.equal.BN(DEFAULT_STAKE);
+        expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
         reputationMiner = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree: true });
       });

@@ -290,7 +290,7 @@ contract("Colony Network", accounts => {
 
     it("should be able to get the ENSRegistrar", async () => {
       const registrarAddress = await colonyNetwork.getENSRegistrar();
-      assert.equal(registrarAddress, ensRegistry.address);
+      expect(registrarAddress).to.equal(ensRegistry.address);
     });
 
     it("should own the root domains", async () => {

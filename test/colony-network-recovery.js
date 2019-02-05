@@ -243,12 +243,12 @@ contract("Colony Network Recovery", accounts => {
       );
 
       const replacementEntry = await colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, 0);
-      assert.equal(entry.user, replacementEntry.user);
-      assert.equal(entry.amount, replacementEntry.amount);
-      assert.equal(entry.skillId, replacementEntry.skillId);
-      assert.equal(entry.colony, replacementEntry.colony);
-      assert.equal(entry.nUpdates, replacementEntry.nUpdates);
-      assert.equal(entry.nPreviousUpdates, replacementEntry.nPreviousUpdates);
+      expect(entry.user).to.equal(replacementEntry.user);
+      expect(entry.amount).to.equal(replacementEntry.amount);
+      expect(entry.skillId).to.equal(replacementEntry.skillId);
+      expect(entry.colony).to.equal(replacementEntry.colony);
+      expect(entry.nUpdates).to.equal(replacementEntry.nUpdates);
+      expect(entry.nPreviousUpdates).to.equal(replacementEntry.nPreviousUpdates);
 
       await colonyNetwork.approveExitRecovery();
       await colonyNetwork.exitRecoveryMode();

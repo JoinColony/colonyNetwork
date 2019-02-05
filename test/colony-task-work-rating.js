@@ -143,7 +143,7 @@ contract("Colony Task Work Rating", accounts => {
         "colony-user-cannot-rate-task-worker"
       );
       const ratingSecrets = await colony.getTaskWorkRatings(taskId);
-      assert.equal(ratingSecrets[1], 0);
+      expect(ratingSecrets[1]).to.be.zero;
     });
 
     it("should fail if user rates manager on behalf of the worker", async () => {

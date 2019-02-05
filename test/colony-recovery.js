@@ -31,11 +31,11 @@ contract("Colony Recovery", accounts => {
       await colony.setRecoveryRole(founder);
 
       let recoveryMode = await colony.isInRecoveryMode();
-      assert.isFalse(recoveryMode);
+      expect(recoveryMode).to.be.false;
       await colony.enterRecoveryMode();
 
       recoveryMode = await colony.isInRecoveryMode();
-      assert.isTrue(recoveryMode);
+      expect(recoveryMode).to.be.true;
     });
 
     it("should be able to add and remove recovery roles when not in recovery", async () => {
