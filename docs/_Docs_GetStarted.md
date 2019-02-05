@@ -80,7 +80,7 @@ yarn run start:blockchain:client
 ./node_modules/.bin/truffle migrate --reset --compile-all
 ```
 
-For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Get Started](/colonyjs/docs-get-started/) documentation.
+For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Local Setup](/colonyjs/intro-local-setup/) documentation.
 
 ## Reputation Miner
 

@@ -8,11 +8,6 @@ This package provides a means to load the Colony Network Ethereum smart contract
 yarn add @colony/colony-js-contract-loader-network
 ```
 
-## Usage
-
-Please see [the full documentation](https://docs.colony.io/colonyjs/api-loaders/#networkloader).
-
-
 ## Contributing
 
 This package is part of the [colonyNetwork repo](https://github.com/JoinColony/colonyNetwork).
