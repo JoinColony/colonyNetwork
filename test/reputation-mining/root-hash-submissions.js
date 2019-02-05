@@ -5,8 +5,10 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
+
 import { ZERO_ADDRESS, MINING_CYCLE_DURATION, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE } from "../../helpers/constants";
+
 import {
   forwardTime,
   checkErrorRevert,
@@ -24,11 +26,7 @@ import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/te
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const EtherRouter = artifacts.require("EtherRouter");
-const IMetaColony = artifacts.require("IMetaColony");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
@@ -52,14 +50,15 @@ contract("Reputation mining - root hash submissions", accounts => {
   let badClient2;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    // Setup a new network instance as we'll be modifying the global skills tree
+    colonyNetwork = await setupColonyNetwork();
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    const clnyAddress = await metaColony.getToken();
-    clnyToken = await Token.at(clnyAddress);
+    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+    await colonyNetwork.initialiseReputationMining();
+    await colonyNetwork.startNextCycle();
 
     goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
     // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.

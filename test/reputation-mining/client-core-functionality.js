@@ -10,6 +10,7 @@ import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { DEFAULT_STAKE } from "../../helpers/constants";
 import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import ReputationMinerClient from "../../packages/reputation-miner/ReputationMinerClient";
 
@@ -19,8 +20,6 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const IMetaColony = artifacts.require("IMetaColony");
-const Token = artifacts.require("Token");
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
@@ -41,14 +40,21 @@ process.env.SOLIDITY_COVERAGE
       let client;
 
       before(async () => {
+        // Get the address of the token locking contract from the existing colony Network
         const etherRouter = await EtherRouter.deployed();
-        colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-        const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+        const colonyNetworkDeployed = await IColonyNetwork.at(etherRouter.address);
+        const tokenLockingAddress = await colonyNetworkDeployed.getTokenLocking();
         tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-        const metaColonyAddress = await colonyNetwork.getMetaColony();
-        metaColony = await IMetaColony.at(metaColonyAddress);
-        const clnyAddress = await metaColony.getToken();
-        clnyToken = await Token.at(clnyAddress);
+
+        // Setup a new network instance as we'll be modifying the global skills tree
+        colonyNetwork = await setupColonyNetwork();
+        await colonyNetwork.setTokenLocking(tokenLockingAddress);
+        await tokenLocking.setColonyNetwork(colonyNetwork.address);
+        ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+        await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+        await colonyNetwork.initialiseReputationMining();
+        await colonyNetwork.startNextCycle();
 
         const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
         expect(lock.balance).to.eq.BN(DEFAULT_STAKE);

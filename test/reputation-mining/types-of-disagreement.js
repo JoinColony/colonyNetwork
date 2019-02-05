@@ -19,7 +19,13 @@ import {
   finishReputationMiningCycleAndWithdrawAllMinerStakes
 } from "../../helpers/test-helper";
 
-import { giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
+import {
+  giveUserCLNYTokensAndStake,
+  setupFinalizedTask,
+  fundColonyWithTokens,
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken
+} from "../../helpers/test-data-generator";
 
 import { INT128_MAX, DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../helpers/constants";
 
@@ -38,11 +44,7 @@ import MaliciousReputationMinerAddNewReputation from "../../packages/reputation-
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const EtherRouter = artifacts.require("EtherRouter");
-const IMetaColony = artifacts.require("IMetaColony");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const Token = artifacts.require("Token");
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
@@ -62,14 +64,15 @@ contract("Reputation Mining - types of disagreement", accounts => {
   const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
   before(async () => {
-    const etherRouter = await EtherRouter.deployed();
-    colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    // Setup a new network instance as we'll be modifying the global skills tree
+    colonyNetwork = await setupColonyNetwork();
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
-    const clnyAddress = await metaColony.getToken();
-    clnyToken = await Token.at(clnyAddress);
+    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+    await colonyNetwork.initialiseReputationMining();
+    await colonyNetwork.startNextCycle();
 
     goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
   });
