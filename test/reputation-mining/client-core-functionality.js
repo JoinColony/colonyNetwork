@@ -30,7 +30,7 @@ const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract.only("Reputation mining - client core functionality", accounts => {
+  : contract("Reputation mining - client core functionality", accounts => {
       const MINER1 = accounts[5];
 
       let colonyNetwork;
