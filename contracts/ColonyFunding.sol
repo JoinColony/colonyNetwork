@@ -89,13 +89,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   taskFinalized(_id)
   {
     Task storage task = tasks[_id];
-    require(task.roles[_role].user == msg.sender, "colony-claim-payout-access-denied");
+    uint payout = task.payouts[_role][_token];
 
-    if (task.roles[_role].rating == TaskRatings.Unsatisfactory) {
+    if (task.roles[_role].rating == TaskRatings.Unsatisfactory || payout == 0) {
       return;
     }
 
-    uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
 
     fundingPots[task.fundingPotId].balance[_token] = sub(fundingPots[task.fundingPotId].balance[_token], payout);
@@ -106,7 +105,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     if (_token == address(0x0)) {
       // Payout ether
-      msg.sender.transfer(remainder);
+      task.roles[_role].user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address metaColonyAddress = colonyNetworkContract.getMetaColony();

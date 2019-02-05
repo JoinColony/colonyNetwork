@@ -1796,13 +1796,6 @@ contract("ColonyTask", accounts => {
       await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address), "colony-task-not-finalized");
     });
 
-    it("should return error when called by account that doesn't match the role", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
-
-      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }), "colony-claim-payout-access-denied");
-    });
-
     it("should payout correct rounded up network fees, for small task payouts", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFinalizedTask({
