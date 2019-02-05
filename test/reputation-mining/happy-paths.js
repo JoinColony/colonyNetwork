@@ -686,11 +686,6 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash);
-
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });

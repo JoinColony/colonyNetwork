@@ -1124,10 +1124,6 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
           await submitAndForwardTimeToDispute([badClient, badClient2], this);
 
-          const wronghash = await badClient.getRootHash();
-          const wronghash2 = await badClient2.getRootHash();
-          expect(wronghash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash2);
-
           await badClient.confirmJustificationRootHash();
           await badClient2.confirmJustificationRootHash();
 

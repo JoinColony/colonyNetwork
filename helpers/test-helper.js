@@ -1,7 +1,7 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 import shortid from "shortid";
-import { assert } from "chai";
+import { assert, chai } from "chai";
 import web3Utils from "web3-utils";
 import ethUtils from "ethereumjs-util";
 import BN from "bn.js";
@@ -14,6 +14,8 @@ const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+
+const { expect } = chai;
 
 export function web3GetNetwork() {
   return new Promise((resolve, reject) => {
@@ -435,6 +437,16 @@ export async function submitAndForwardTimeToDispute(clients, test) {
     await clients[i].submitRootHash();
   }
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
+
+  // If there are multiple submissions, ensure they are different
+  if (clients.length > 1) {
+    let previousHash = await clients[0].getRootHash();
+    for (let i = 1; i < clients.length; i += 1) {
+      const currentHash = await clients[i].getRootHash();
+      expect(previousHash, "Hashes from clients are equal, surprisingly").to.not.equal(currentHash);
+      previousHash = currentHash;
+    }
+  }
 }
 
 export async function runBinarySearch(client1, client2) {
