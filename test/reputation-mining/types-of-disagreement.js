@@ -3,6 +3,8 @@
 import path from "path";
 import BN from "bn.js";
 import { toBN } from "web3-utils";
+import chai from "chai";
+import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import {
@@ -32,6 +34,9 @@ import MaliciousReputationMinerWrongJRH from "../../packages/reputation-miner/te
 import MaliciousReputationMinerWrongNNodes from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes";
 import MaliciousReputationMinerWrongNNodes2 from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongNNodes2";
 import MaliciousReputationMinerAddNewReputation from "../../packages/reputation-miner/test/MaliciousReputationMinerAddNewReputation";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -75,7 +80,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
     // Kick off reputation mining.
     const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-    assert.equal(lock.balance, DEFAULT_STAKE.toString());
+    expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -85,7 +90,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
     // This is the same starting point for all tests.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(nInactiveLogEntries.toNumber(), 1);
+    expect(nInactiveLogEntries).to.eq.BN(1);
 
     // Burn MINER1S accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
@@ -112,7 +117,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-disagree-state-disagreement" }
       });
@@ -133,20 +138,20 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Should be 5 updates: 1 for the previous mining cycle and 4 for the task.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 5);
+      expect(nInactiveLogEntries).to.eq.BN(5);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      assert.equal(nSubmittedHashes, 2);
+      expect(nSubmittedHashes).to.eq.BN(2);
 
       const submission = await repCycle.getDisputeRounds(0, 0);
 
-      assert.equal(submission.jrhNNodes, "0");
+      expect(submission.jrhNNodes).to.be.zero;
       await forwardTime(10, this); // This is just to ensure that the timestamps checked below will be different if JRH was submitted.
 
       await goodClient.confirmJustificationRootHash();
@@ -156,10 +161,10 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
-      assert.equal(submissionAfterJRHConfirmed.jrh, jrh);
+      expect(submissionAfterJRHConfirmed.jrh).to.eq.BN(jrh);
 
       // Check 'last response' was updated.
-      assert.notEqual(submission.lastResponseTimestamp, submissionAfterJRHConfirmed.lastResponseTimestamp);
+      expect(submission.lastResponseTimestamp).to.not.eq.BN(submissionAfterJRHConfirmed.lastResponseTimestamp);
 
       // Cleanup
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
@@ -185,7 +190,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
@@ -213,7 +218,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
         const righthash = await goodClient.getRootHash();
         const wronghash = await badClient.getRootHash();
-        assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+        expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
         const repCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -243,7 +248,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the task.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 12, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
@@ -252,84 +257,84 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      assert.equal(nSubmittedHashes, 2);
+      expect(nSubmittedHashes).to.eq.BN(2);
 
       await goodClient.confirmJustificationRootHash();
       const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
-      assert.equal(submissionAfterJRHConfirmed.jrh, jrh);
+      expect(submissionAfterJRHConfirmed.jrh).to.eq.BN(jrh);
 
       await badClient.confirmJustificationRootHash();
       const badSubmissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 1);
       const badJrh = await badClient.justificationTree.getRootHash();
-      assert.equal(badSubmissionAfterJRHConfirmed.jrh, badJrh);
+      expect(badSubmissionAfterJRHConfirmed.jrh).to.eq.BN(badJrh);
 
       let goodSubmission = await repCycle.getDisputeRounds(0, 0);
       let badSubmission = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmission.challengeStepCompleted, 1); // Challenge steps completed
-      assert.equal(goodSubmission.lowerBound, 0); // Lower bound for binary search
-      assert.equal(goodSubmission.upperBound, 28); // Upper bound for binary search
-      assert.equal(badSubmission.challengeStepCompleted, 1);
-      assert.equal(badSubmission.lowerBound, 0);
-      assert.equal(badSubmission.upperBound, 28);
+      expect(goodSubmission.challengeStepCompleted).to.eq.BN(1); // Challenge steps completed
+      expect(goodSubmission.lowerBound).to.be.zero; // Lower bound for binary search
+      expect(goodSubmission.upperBound).to.eq.BN(28); // Upper bound for binary search
+      expect(badSubmission.challengeStepCompleted).to.eq.BN(1);
+      expect(badSubmission.lowerBound).to.be.zero;
+      expect(badSubmission.upperBound).to.eq.BN(28);
 
       await goodClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
       badSubmission = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmission.challengeStepCompleted, 2);
-      assert.equal(goodSubmission.lowerBound, 0);
-      assert.equal(goodSubmission.upperBound, 28);
-      assert.equal(badSubmission.challengeStepCompleted, 1);
-      assert.equal(badSubmission.lowerBound, 0);
-      assert.equal(badSubmission.upperBound, 28);
+      expect(goodSubmission.challengeStepCompleted).to.eq.BN(2);
+      expect(goodSubmission.lowerBound).to.be.zero;
+      expect(goodSubmission.upperBound).to.eq.BN(28);
+      expect(badSubmission.challengeStepCompleted).to.eq.BN(1);
+      expect(badSubmission.lowerBound).to.be.zero;
+      expect(badSubmission.upperBound).to.eq.BN(28);
 
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
       badSubmission = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmission.lowerBound, 0);
-      assert.equal(goodSubmission.upperBound, 15);
-      assert.equal(badSubmission.lowerBound, 0);
-      assert.equal(badSubmission.upperBound, 15);
-
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmission.lowerBound, 8);
-      assert.equal(goodSubmission.upperBound, 15);
-      assert.equal(badSubmission.lowerBound, 8);
-      assert.equal(badSubmission.upperBound, 15);
+      expect(goodSubmission.lowerBound).to.be.zero;
+      expect(goodSubmission.upperBound).to.eq.BN(15);
+      expect(badSubmission.lowerBound).to.be.zero;
+      expect(badSubmission.upperBound).to.eq.BN(15);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
       badSubmission = await repCycle.getDisputeRounds(0, 1);
-
-      assert.equal(goodSubmission.lowerBound, 12);
-      assert.equal(goodSubmission.upperBound, 15);
-      assert.equal(badSubmission.lowerBound, 12);
-      assert.equal(badSubmission.upperBound, 15);
-
-      await goodClient.respondToBinarySearchForChallenge();
-      await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmission.lowerBound, 12);
-      assert.equal(goodSubmission.upperBound, 13);
-      assert.equal(badSubmission.lowerBound, 12);
-      assert.equal(badSubmission.upperBound, 13);
+      expect(goodSubmission.lowerBound).to.eq.BN(8);
+      expect(goodSubmission.upperBound).to.eq.BN(15);
+      expect(badSubmission.lowerBound).to.eq.BN(8);
+      expect(badSubmission.upperBound).to.eq.BN(15);
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
       goodSubmission = await repCycle.getDisputeRounds(0, 0);
       badSubmission = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmission.lowerBound, 13);
-      assert.equal(goodSubmission.upperBound, 13);
-      assert.equal(badSubmission.lowerBound, 13);
-      assert.equal(badSubmission.upperBound, 13);
+
+      expect(goodSubmission.lowerBound).to.eq.BN(12);
+      expect(goodSubmission.upperBound).to.eq.BN(15);
+      expect(badSubmission.lowerBound).to.eq.BN(12);
+      expect(badSubmission.upperBound).to.eq.BN(15);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmission = await repCycle.getDisputeRounds(0, 0);
+      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      expect(goodSubmission.lowerBound).to.eq.BN(12);
+      expect(goodSubmission.upperBound).to.eq.BN(13);
+      expect(badSubmission.lowerBound).to.eq.BN(12);
+      expect(badSubmission.upperBound).to.eq.BN(13);
+
+      await goodClient.respondToBinarySearchForChallenge();
+      await badClient.respondToBinarySearchForChallenge();
+      goodSubmission = await repCycle.getDisputeRounds(0, 0);
+      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      expect(goodSubmission.lowerBound).to.eq.BN(13);
+      expect(goodSubmission.upperBound).to.eq.BN(13);
+      expect(badSubmission.lowerBound).to.eq.BN(13);
+      expect(badSubmission.upperBound).to.eq.BN(13);
 
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
@@ -341,7 +346,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted, 2);
+      const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
+      expect(delta).to.eq.BN(2);
       // checks that challengeStepCompleted is two more for the good submission than the bad one.
       // it's two, because we proved the starting reputation was in the starting reputation state, rather than claiming
       // it was a new reputation not in the tree with value 0.
@@ -364,7 +370,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 27, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
@@ -372,7 +378,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
@@ -393,7 +399,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await repCycle.confirmNewHash(1);
 
       const confirmedHash = await colonyNetwork.getReputationRootHash();
-      assert.equal(confirmedHash, righthash);
+      expect(confirmedHash).to.eq.BN(righthash);
     });
 
     it("if someone tries to insert a second copy of an existing reputation as a new one, it should fail", async () => {
@@ -409,7 +415,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       const badClient = new MaliciousReputationMinerClaimNew({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 20);
       await badClient.initialise(colonyNetwork.address);
@@ -417,7 +423,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-branchmask-incorrect" }
       });
@@ -439,7 +445,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the task.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 5);
+      expect(nInactiveLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerWrongNNodes({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 8);
       await badClient.initialise(colonyNetwork.address);
@@ -481,7 +487,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the task.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 5);
+      expect(nInactiveLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerWrongNNodes2({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 8, 1);
       await badClient.initialise(colonyNetwork.address);
@@ -507,7 +513,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 5);
+      expect(nInactiveLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerWrongJRH({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 8);
       await badClient.initialise(colonyNetwork.address);
@@ -532,7 +538,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Should be 5 updates: 1 for the previous mining cycle and 1x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 5);
+      expect(nInactiveLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerWrongJRH({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 500000);
       await badClient.initialise(colonyNetwork.address);
@@ -562,7 +568,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // That's 13 in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       const badClient = new MaliciousReputationMinerWrongJRH({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 30);
       await badClient.initialise(colonyNetwork.address);
@@ -588,7 +594,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       const badClient = new MaliciousReputationMinerWrongUID({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 12, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
@@ -596,7 +602,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
@@ -612,7 +618,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted, 2);
+      const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
+      expect(delta).to.eq.BN(2);
       // checks that challengeStepCompleted is two more for the good submission than the bad one.
       // it's two, because we proved the starting reputation was in the starting reputation state, rather than claiming
       // it was a new reputation not in the tree with value 0.
@@ -648,7 +655,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       const badClient = new MaliciousReputationMinerReuseUID({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 3, 1);
       await badClient.initialise(colonyNetwork.address);
@@ -657,7 +664,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
@@ -673,7 +680,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Check
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted, 0);
+      const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
+      expect(delta).to.be.zero;
       // Both sides have completed the same amount of challenges, but one has proved that a large number already exists
       // than the other, so when we call invalidate hash, only one will be eliminated.
 
@@ -684,7 +692,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
       const confirmedHash = await colonyNetwork.getReputationRootHash();
-      assert.equal(confirmedHash, righthash);
+      expect(confirmedHash).to.eq.BN(righthash);
     });
 
     it("if a new reputation's uniqueID is not proved right because a too-old previous ID is proved", async () => {
@@ -756,7 +764,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       // Should be 13 updates: 1 for the previous mining cycle and 3x4 for the tasks.
       const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nInactiveLogEntries.toNumber(), 13);
+      expect(nInactiveLogEntries).to.eq.BN(13);
 
       const badClient = new MaliciousReputationMinerUnsure({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 20, 0xffff);
       await badClient.initialise(colonyNetwork.address);
@@ -765,7 +773,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
@@ -781,13 +789,14 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Check badClient respondToChallenge failed
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
-      assert.equal(goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted, 2);
+      const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
+      expect(delta).to.eq.BN(2);
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
       const confirmedHash = await colonyNetwork.getReputationRootHash();
-      assert.equal(confirmedHash, righthash);
+      expect(confirmedHash).to.eq.BN(righthash);
     });
 
     it("if a reputation decay calculation is wrong", async () => {
@@ -803,7 +812,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       let righthash = await goodClient.getRootHash();
       let wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
@@ -823,13 +832,13 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       righthash = await goodClient.getRootHash();
       wronghash = await badClient.getRootHash();
-      assert.isTrue(righthash === wronghash, "Hashes from clients are not equal - not starting from the same state");
+      expect(righthash, "Hashes from clients are not equal - not starting from the same state").to.eq.BN(wronghash);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       righthash = await goodClient.getRootHash();
       wronghash = await badClient.getRootHash();
-      assert.notEqual(righthash, wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
@@ -881,7 +890,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // That's five in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 5);
+      expect(nLogEntries).to.eq.BN(5);
 
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
@@ -898,7 +907,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       const righthash = await goodClient.getRootHash();
       const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
+      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" }

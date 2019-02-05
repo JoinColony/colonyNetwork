@@ -1,7 +1,10 @@
 /* globals artifacts */
+
 import path from "path";
 import request from "async-request";
 import BN from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
@@ -9,6 +12,9 @@ import { DEFAULT_STAKE } from "../../helpers/constants";
 import { currentBlock, makeReputationKey, advanceMiningCycleNoContest, getActiveRepCycle } from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import ReputationMinerClient from "../../packages/reputation-miner/ReputationMinerClient";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -43,7 +49,7 @@ contract("Reputation mining - client core functionality", accounts => {
     clnyToken = await Token.at(clnyAddress);
 
     const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-    assert.equal(lock.balance, DEFAULT_STAKE.toString());
+    expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
     reputationMiner = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree: true });
   });
@@ -57,7 +63,7 @@ contract("Reputation mining - client core functionality", accounts => {
     // This is the same starting point for all tests.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const activeLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(activeLogEntries.toNumber(), 1);
+    expect(activeLogEntries).to.eq.BN(1);
 
     await reputationMiner.resetDB();
     await reputationMiner.initialise(colonyNetwork.address);
@@ -77,7 +83,7 @@ contract("Reputation mining - client core functionality", accounts => {
       const rootHash = await reputationMiner.getRootHash();
       const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}`;
       const res = await request(url);
-      assert.equal(res.statusCode, 200);
+      expect(res.statusCode).to.equal(200);
 
       const oracleProofObject = JSON.parse(res.body);
       const key = makeReputationKey(metaColony.address, new BN(2), MINER1);
@@ -85,16 +91,16 @@ contract("Reputation mining - client core functionality", accounts => {
       const [branchMask, siblings] = await reputationMiner.getProof(key);
       const value = reputationMiner.reputations[key];
 
-      assert.equal(branchMask, oracleProofObject.branchMask);
-      assert.equal(siblings.length, oracleProofObject.siblings.length);
+      expect(branchMask).to.equal(oracleProofObject.branchMask);
+      expect(siblings.length).to.equal(oracleProofObject.siblings.length);
 
       for (let i = 0; i < oracleProofObject.siblings.length; i += 1) {
-        assert.equal(siblings[i], oracleProofObject.siblings[i]);
-        assert.equal(siblings[i], oracleProofObject.siblings[i]);
+        expect(siblings[i]).to.equal(oracleProofObject.siblings[i]);
+        expect(siblings[i]).to.equal(oracleProofObject.siblings[i]);
       }
 
-      assert.equal(key, oracleProofObject.key);
-      assert.equal(value, oracleProofObject.value);
+      expect(key).to.equal(oracleProofObject.key);
+      expect(value).to.equal(oracleProofObject.value);
     });
 
     it("should correctly respond to a request for a reputation state in a previous state", async () => {
@@ -107,27 +113,27 @@ contract("Reputation mining - client core functionality", accounts => {
 
       const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${MINER1}`;
       const res = await request(url);
-      assert.equal(res.statusCode, 200);
+      expect(res.statusCode).to.equal(200);
 
       const oracleProofObject = JSON.parse(res.body);
-      assert.equal(branchMask, oracleProofObject.branchMask);
-      assert.equal(siblings.length, oracleProofObject.siblings.length);
+      expect(branchMask).to.equal(oracleProofObject.branchMask);
+      expect(siblings.length).to.equal(oracleProofObject.siblings.length);
 
       for (let i = 0; i < oracleProofObject.siblings.length; i += 1) {
-        assert.equal(siblings[i], oracleProofObject.siblings[i]);
-        assert.equal(siblings[i], oracleProofObject.siblings[i]);
+        expect(siblings[i]).to.equal(oracleProofObject.siblings[i]);
+        expect(siblings[i]).to.equal(oracleProofObject.siblings[i]);
       }
 
-      assert.equal(key, oracleProofObject.key);
-      assert.equal(value, oracleProofObject.value);
+      expect(key).to.equal(oracleProofObject.key);
+      expect(value).to.equal(oracleProofObject.value);
     });
 
     it("should correctly respond to a request for a valid key in an invalid reputation state", async () => {
       const rootHash = await reputationMiner.getRootHash();
       const url = `http://127.0.0.1:3000/${rootHash.slice(4)}0000/${metaColony.address}/2/${MINER1}`;
       const res = await request(url);
-      assert.equal(res.statusCode, 400);
-      assert.equal(JSON.parse(res.body).message, "Requested reputation does not exist or invalid request");
+      expect(res.statusCode).to.equal(400);
+      expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
     });
 
     process.env.SOLIDITY_COVERAGE
@@ -142,8 +148,8 @@ contract("Reputation mining - client core functionality", accounts => {
 
           const url = `http://127.0.0.1:3000/${rootHash}/${metaColony.address}/2/${accounts[4]}`;
           const res = await request(url);
-          assert.equal(res.statusCode, 400);
-          assert.equal(JSON.parse(res.body).message, "Requested reputation does not exist or invalid request");
+          expect(res.statusCode).to.equal(400);
+          expect(JSON.parse(res.body).message).to.equal("Requested reputation does not exist or invalid request");
         });
   });
 });

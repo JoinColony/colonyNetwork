@@ -1,9 +1,15 @@
 /* globals artifacts */
+
 import BN from "bn.js";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 import { MINING_CYCLE_DURATION, ZERO_ADDRESS } from "../../helpers/constants";
 import { forwardTime, checkErrorRevert, getActiveRepCycle } from "../../helpers/test-helper";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -58,11 +64,11 @@ contract("Reputation mining - basic functionality", accounts => {
       await tokenLocking.deposit(clnyToken.address, 5000, { from: MINER2 });
 
       const userBalance = await clnyToken.balanceOf(MINER2);
-      assert.equal(userBalance.toNumber(), 4000);
+      expect(userBalance).to.eq.BN(4000);
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const stakedBalance = new BN(info.balance);
-      assert.equal(stakedBalance.toNumber(), 5000);
+      expect(stakedBalance).to.eq.BN(5000);
     });
 
     it("should allow miners to withdraw staked CLNY", async () => {
@@ -72,7 +78,7 @@ contract("Reputation mining - basic functionality", accounts => {
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const stakedBalance = new BN(info.balance);
-      assert.equal(stakedBalance.toNumber(), 0);
+      expect(stakedBalance).to.be.zero;
     });
 
     it("should not allow miners to deposit more CLNY than they have", async () => {
@@ -82,11 +88,11 @@ contract("Reputation mining - basic functionality", accounts => {
       await checkErrorRevert(tokenLocking.deposit(clnyToken.address, 10000, { from: MINER2 }));
 
       const userBalance = await clnyToken.balanceOf(MINER2);
-      assert.equal(userBalance.toNumber(), 9000);
+      expect(userBalance).to.eq.BN(9000);
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const stakedBalance = new BN(info.balance);
-      assert.equal(stakedBalance.toNumber(), 0);
+      expect(stakedBalance).to.be.zero;
     });
 
     it("should not allow miners to withdraw more CLNY than they staked, even if enough has been staked total", async () => {
@@ -96,10 +102,10 @@ contract("Reputation mining - basic functionality", accounts => {
 
       const info = await tokenLocking.getUserLock(clnyToken.address, MINER2);
       const stakedBalance = new BN(info.balance);
-      assert.equal(stakedBalance.toNumber(), 9000);
+      expect(stakedBalance).to.eq.BN(9000);
 
       const userBalance = await clnyToken.balanceOf(MINER2);
-      assert.equal(userBalance.toNumber(), 0);
+      expect(userBalance).to.be.zero;
     });
 
     it("should not allow someone to submit a new reputation hash if they are not staking", async () => {
@@ -109,7 +115,7 @@ contract("Reputation mining - basic functionality", accounts => {
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, "0x00", 0), "colony-reputation-mining-zero-entry-index-passed");
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      assert.isTrue(nSubmittedHashes.isZero());
+      expect(nSubmittedHashes).to.be.zero;
     });
   });
 
@@ -138,7 +144,7 @@ contract("Reputation mining - basic functionality", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await forwardTime(MINING_CYCLE_DURATION, this);
 
-      assert.isTrue(parseInt(repCycle.address, 16) !== 0);
+      expect(repCycle.address).to.not.be.zero;
 
       await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-still-active");
     });

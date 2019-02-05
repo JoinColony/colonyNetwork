@@ -3,6 +3,8 @@
 import path from "path";
 import BN from "bn.js";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
+import chai from "chai";
+import bnChai from "bn-chai";
 
 import {
   forwardTime,
@@ -29,6 +31,9 @@ import { DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../hel
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 import MaliciousReputationMinerWrongProofLogEntry from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -89,7 +94,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
     // This is the same starting point for all tests.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(nInactiveLogEntries.toNumber(), 1);
+    expect(nInactiveLogEntries).to.eq.BN(1);
 
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
@@ -169,7 +174,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
     it("should prevent a hash from advancing if it might still get an opponent", async function advancingTest() {
       this.timeout(10000000);
 
-      assert.isTrue(accounts.length >= 11, "Not enough accounts for test to run");
+      expect(accounts.length, "Not enough accounts for test to run").to.be.at.least(11);
       const accountsForTest = accounts.slice(3, 11);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(8));
@@ -592,7 +597,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       // That's 9 in total.
       const repCycle = await getActiveRepCycle(colonyNetwork);
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
-      assert.equal(nLogEntries.toNumber(), 9);
+      expect(nLogEntries).to.eq.BN(9);
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 26, 0xfffff);
       await badClient.initialise(colonyNetwork.address);
@@ -1133,7 +1138,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
           const wronghash = await badClient.getRootHash();
           const wronghash2 = await badClient2.getRootHash();
-          assert.notEqual(wronghash, wronghash2, "Hashes from clients are equal, surprisingly");
+          expect(wronghash, "Hashes from clients are equal, surprisingly").to.not.equal(wronghash2);
 
           await badClient.confirmJustificationRootHash();
           await badClient2.confirmJustificationRootHash();

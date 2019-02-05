@@ -1,8 +1,8 @@
 /* globals artifacts */
 
-import BN from "bn.js";
 import path from "path";
-
+import chai from "chai";
+import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
@@ -20,6 +20,9 @@ import {
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
+
+const { expect } = chai;
+chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
@@ -75,7 +78,7 @@ contract("Reputation mining - root hash submissions", accounts => {
     await badClient2.initialise(colonyNetwork.address);
 
     const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-    assert.equal(lock.balance, DEFAULT_STAKE.toString());
+    expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
 
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -85,7 +88,7 @@ contract("Reputation mining - root hash submissions", accounts => {
     // This is the same starting point for all tests.
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
-    assert.equal(nInactiveLogEntries.toNumber(), 1);
+    expect(nInactiveLogEntries).to.eq.BN(1);
 
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
@@ -103,7 +106,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 });
 
       const submitterAddress = await repCycle.getSubmittedHashes("0x12345678", 10, "0x00", 0);
-      assert.equal(submitterAddress, MINER1);
+      expect(submitterAddress).to.equal(MINER1);
     });
 
     it("should not allow someone to submit a new reputation hash if they are ineligible", async () => {
@@ -171,7 +174,7 @@ contract("Reputation mining - root hash submissions", accounts => {
         "colony-reputation-mining-submitting-different-jrh"
       );
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      assert(nSubmittedHashes.eq(new BN(1)));
+      expect(nSubmittedHashes).to.eq.BN(1);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
     });
 
@@ -199,37 +202,37 @@ contract("Reputation mining - root hash submissions", accounts => {
       await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber2, { from: MINER1 });
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      assert.isTrue(nSubmittedHashes.eq(new BN(1)));
+      expect(nSubmittedHashes).to.eq.BN(1);
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.confirmNewHash(0);
 
       // Check that they received the reward
       const balance1Updated = await clnyToken.balanceOf(MINER1);
-      assert.equal(balance1Updated.toString(), REWARD.toString(), "Account was not rewarded properly");
+      expect(balance1Updated, "Account was not rewarded properly").to.be.zero; // Reward is 0 for now
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
 
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
-      assert.strictEqual(repLogEntryMiner.user, MINER1);
-      assert.strictEqual(repLogEntryMiner.amount, "0"); // Reward is 0 for now
-      assert.strictEqual(repLogEntryMiner.skillId, "3");
-      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
-      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
-      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "0");
+      expect(repLogEntryMiner.user).to.equal(MINER1);
+      expect(repLogEntryMiner.amount).to.be.zero; // Reward is 0 for now
+      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
 
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
-      assert.strictEqual(repLogEntryMiner.user, MINER1);
-      assert.strictEqual(repLogEntryMiner.amount, "0"); // Reward is 0 for now
-      assert.strictEqual(repLogEntryMiner.skillId, "3");
-      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
-      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
-      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "4");
+      expect(repLogEntryMiner.user).to.equal(MINER1);
+      expect(repLogEntryMiner.amount).to.be.zero; // Reward is 0 for now
+      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);
 
       const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
-      assert.equal(reputationUpdateLogLength.toString(), 2);
+      expect(reputationUpdateLogLength).to.eq.BN(2);
     });
 
     it("should only allow 12 entries to back a single hash in each cycle", async () => {
@@ -280,7 +283,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       );
 
       const submitterAddress = await repCycle.getSubmittedHashes("0x12345678", 10, "0x00", 0);
-      assert.equal(submitterAddress, MINER1);
+      expect(submitterAddress).to.equal(MINER1);
     });
 
     it("should not allow someone to submit a new reputation hash if they stake after the cycle begins", async () => {
@@ -311,15 +314,15 @@ contract("Reputation mining - root hash submissions", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this }); // Defaults to (0x00, 0)
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
-      assert.notEqual(newRepCycle.address, ZERO_ADDRESS);
-      assert.notEqual(repCycle.address, ZERO_ADDRESS);
-      assert.notEqual(newRepCycle.address, repCycle.address);
+      expect(newRepCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newRepCycle.address).to.not.equal(repCycle.address);
 
       const rootHash = await colonyNetwork.getReputationRootHash();
-      assert.equal(rootHash, "0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(rootHash).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
 
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-      assert.equal(rootHashNNodes.toNumber(), 0);
+      expect(rootHashNNodes).to.be.zero;
     });
   });
 
@@ -336,16 +339,16 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       await repCycle.confirmNewHash(1);
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
-      assert.notEqual(newRepCycle.address, ZERO_ADDRESS);
-      assert.notEqual(repCycle.address, ZERO_ADDRESS);
-      assert.notEqual(newRepCycle.address, repCycle.address);
+      expect(newRepCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newRepCycle.address).to.not.equal(repCycle.address);
 
       const rootHash = await colonyNetwork.getReputationRootHash();
       const clientRootHash = await goodClient.getRootHash();
-      assert.equal(rootHash, clientRootHash);
+      expect(rootHash).to.eq.BN(clientRootHash);
 
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-      assert.equal(rootHashNNodes.toString(), goodClient.nReputations.toString());
+      expect(rootHashNNodes).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
     });
 
     it("should allow a new reputation hash to be moved to the next stage of competition even if it does not have a partner", async () => {
@@ -365,16 +368,16 @@ contract("Reputation mining - root hash submissions", accounts => {
       await repCycle.confirmNewHash(2);
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
-      assert.notEqual(newRepCycle.address, ZERO_ADDRESS);
-      assert.notEqual(repCycle.address, ZERO_ADDRESS);
-      assert.notEqual(newRepCycle.address, repCycle.address);
+      expect(newRepCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newRepCycle.address).to.not.equal(repCycle.address);
 
       const rootHash = await colonyNetwork.getReputationRootHash();
       const clientRootHash = await goodClient.getRootHash();
-      assert.equal(rootHash, clientRootHash);
+      expect(rootHash).to.eq.BN(clientRootHash);
 
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
-      assert.equal(rootHashNNodes.toString(), goodClient.nReputations.toString());
+      expect(rootHashNNodes).to.eq.BN(goodClient.nReputations.toString()); // It's a BigNumber :sob:
     });
 
     it("should not allow a new reputation hash to be set if more than one was submitted and they have not been elimintated", async () => {
@@ -386,9 +389,10 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-final-round-not-complete");
       const newAddr = await colonyNetwork.getReputationMiningCycle(true);
-      assert.isTrue(newAddr !== ZERO_ADDRESS);
-      assert.isTrue(repCycle.address !== ZERO_ADDRESS);
-      assert.isTrue(newAddr === repCycle.address);
+      expect(newAddr).to.not.equal(ZERO_ADDRESS);
+      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newAddr).to.equal(repCycle.address);
+
       // Eliminate one so that the afterAll works.
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
@@ -518,13 +522,13 @@ contract("Reputation mining - root hash submissions", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       let userLock0 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-      assert.equal(userLock0.balance, DEFAULT_STAKE.toString());
+      expect(userLock0.balance).to.eq.BN(DEFAULT_STAKE);
 
       let userLock1 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
-      assert.equal(userLock1.balance, DEFAULT_STAKE.toString());
+      expect(userLock1.balance).to.eq.BN(DEFAULT_STAKE);
 
       let userLock2 = await tokenLocking.getUserLock(clnyToken.address, MINER3);
-      assert.equal(userLock2.balance, DEFAULT_STAKE.toString());
+      expect(userLock2.balance).to.eq.BN(DEFAULT_STAKE);
 
       // We want badClient2 to submit the same hash as badClient for this test.
       badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, "0xfffffffff");
@@ -536,13 +540,13 @@ contract("Reputation mining - root hash submissions", accounts => {
       });
 
       userLock0 = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-      assert.equal(userLock0.balance, DEFAULT_STAKE.add(MIN_STAKE.muln(2)).toString(), "Account was not rewarded properly");
+      expect(userLock0.balance, "Account was not rewarded properly").to.eq.BN(DEFAULT_STAKE.add(MIN_STAKE.muln(2)));
 
       userLock1 = await tokenLocking.getUserLock(clnyToken.address, MINER2);
-      assert.equal(userLock1.balance, DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
+      expect(userLock1.balance, "Account was not punished properly").to.eq.BN(DEFAULT_STAKE.sub(MIN_STAKE));
 
       userLock2 = await tokenLocking.getUserLock(clnyToken.address, MINER3);
-      assert.equal(userLock2.balance, DEFAULT_STAKE.sub(MIN_STAKE).toString(), "Account was not punished properly");
+      expect(userLock2.balance, "Account was not punished properly").to.eq.BN(DEFAULT_STAKE.sub(MIN_STAKE));
     });
 
     it("should reward all stakers if they submitted the agreed new hash", async () => {
@@ -566,34 +570,34 @@ contract("Reputation mining - root hash submissions", accounts => {
       const balance1Updated = await clnyToken.balanceOf(MINER1);
       const balance2Updated = await clnyToken.balanceOf(MINER2);
       // More than half of the reward
-      assert.strictEqual(balance1Updated.toString(), "0"); // Reward is 0 for now
+      expect(balance1Updated).to.be.zero; // Reward is 0 for now
       // Less than half of the reward
-      assert.strictEqual(balance2Updated.toString(), "0"); // Reward is 0 for now
+      expect(balance2Updated).to.be.zero; // Reward is 0 for now
       // Sum is total reward within `stakers.length` wei of precision error
-      assert.strictEqual(balance1Updated.add(balance2Updated).toString(), "0"); // Reward is 0 for now
+      expect(balance1Updated.add(balance2Updated)).to.be.zero; // Reward is 0 for now
 
       const addr = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
 
       // Check that they will be getting the reputation owed to them.
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
-      assert.strictEqual(repLogEntryMiner.user, MINER1);
-      assert.strictEqual(repLogEntryMiner.amount, balance1Updated.toString());
-      assert.strictEqual(repLogEntryMiner.skillId, "3");
-      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
-      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
-      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "0");
+      expect(repLogEntryMiner.user).to.equal(MINER1);
+      expect(repLogEntryMiner.amount).to.eq.BN(balance1Updated);
+      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
 
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
-      assert.strictEqual(repLogEntryMiner.user, MINER2);
-      assert.strictEqual(repLogEntryMiner.amount, balance2Updated.toString());
-      assert.strictEqual(repLogEntryMiner.skillId, "3");
-      assert.strictEqual(repLogEntryMiner.colony, metaColony.address);
-      assert.strictEqual(repLogEntryMiner.nUpdates, "4");
-      assert.strictEqual(repLogEntryMiner.nPreviousUpdates, "4");
+      expect(repLogEntryMiner.user).to.equal(MINER2);
+      expect(repLogEntryMiner.amount).to.eq.BN(balance2Updated);
+      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.colony).to.equal(metaColony.address);
+      expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
+      expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);
 
       const reputationUpdateLogLength = await inactiveRepCycle.getReputationUpdateLogLength();
-      assert.equal(reputationUpdateLogLength.toString(), 2);
+      expect(reputationUpdateLogLength).to.eq.BN(2);
     });
 
     it("should correctly calculate the miner weight", async () => {
@@ -603,27 +607,27 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       // Large weight (staked for UINT256_MAX, first submission)
       weight = await colonyNetwork.calculateMinerWeight(UINT256_MAX, 0);
-      assert.equal("999999964585636861", weight.toString());
+      expect(weight).to.eq.BN("999999964585636861");
 
       // Large weight (staked for UINT32_MAX, first submission)
       weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 0);
-      assert.equal("999999964585636861", weight.toString());
+      expect(weight).to.eq.BN("999999964585636861");
 
       // Middle weight (staked for UINT32_MAX, last submission)
       weight = await colonyNetwork.calculateMinerWeight(UINT32_MAX, 11);
-      assert.equal("541666647483886633", weight.toString());
+      expect(weight).to.eq.BN("541666647483886633");
 
       // Middle weight I (staked for T, first submission)
       weight = await colonyNetwork.calculateMinerWeight(T, 0);
-      assert.equal("625000000000000000", weight.toString());
+      expect(weight).to.eq.BN("625000000000000000");
 
       // Middle weight II (staked for T, last submission)
       weight = await colonyNetwork.calculateMinerWeight(T, 11);
-      assert.equal("338541666666666667", weight.toString());
+      expect(weight).to.eq.BN("338541666666666667");
 
       // Smallest weight (staked for 0, last submission)
       weight = await colonyNetwork.calculateMinerWeight(0, 11);
-      assert.equal("0", weight.toString());
+      expect(weight).to.be.zero;
     });
   });
 });
