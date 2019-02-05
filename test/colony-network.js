@@ -74,7 +74,6 @@ contract("Colony Network", accounts => {
     });
 
     it("should not be able to set the token locking contract twice", async () => {
-      await colonyNetwork.setTokenLocking("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA");
       await checkErrorRevert(colonyNetwork.setTokenLocking(ZERO_ADDRESS), "colony-token-locking-address-already-set");
     });
 

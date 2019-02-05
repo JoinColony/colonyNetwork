@@ -17,8 +17,6 @@ import ReputationMinerClient from "../../packages/reputation-miner/ReputationMin
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const EtherRouter = artifacts.require("EtherRouter");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
 
 const loader = new TruffleLoader({
@@ -33,23 +31,16 @@ process.env.SOLIDITY_COVERAGE
       const MINER1 = accounts[5];
 
       let colonyNetwork;
-      let tokenLocking;
       let metaColony;
       let clnyToken;
       let reputationMiner;
       let client;
 
       before(async () => {
-        // Get the address of the token locking contract from the existing colony Network
-        const etherRouter = await EtherRouter.deployed();
-        const colonyNetworkDeployed = await IColonyNetwork.at(etherRouter.address);
-        const tokenLockingAddress = await colonyNetworkDeployed.getTokenLocking();
-        tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-
         // Setup a new network instance as we'll be modifying the global skills tree
         colonyNetwork = await setupColonyNetwork();
-        await colonyNetwork.setTokenLocking(tokenLockingAddress);
-        await tokenLocking.setColonyNetwork(colonyNetwork.address);
+        const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+        const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
         ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);

@@ -40,9 +40,6 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const EtherRouter = artifacts.require("EtherRouter");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ITokenLocking = artifacts.require("ITokenLocking");
 
 contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -57,17 +54,8 @@ contract("Reputation Updates", accounts => {
   let inactiveReputationMiningCycle;
 
   before(async () => {
-    // Get the address of the token locking contract from the existing colony Network
-    const etherRouter = await EtherRouter.deployed();
-    const colonyNetworkDeployed = await IColonyNetwork.at(etherRouter.address);
-    const tokenLockingAddress = await colonyNetworkDeployed.getTokenLocking();
-    const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-
     // Setup a new network instance as we'll be modifying the global skills tree
     colonyNetwork = await setupColonyNetwork();
-    await colonyNetwork.setTokenLocking(tokenLockingAddress);
-    await tokenLocking.setColonyNetwork(colonyNetwork.address);
-
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);

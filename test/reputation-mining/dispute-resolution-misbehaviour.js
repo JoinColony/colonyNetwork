@@ -35,9 +35,6 @@ import MaliciousReputationMinerWrongProofLogEntry from "../../packages/reputatio
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const EtherRouter = artifacts.require("EtherRouter");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
@@ -53,22 +50,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
   let metaColony;
   let colonyNetwork;
-  let tokenLocking;
   let clnyToken;
   let goodClient;
   const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
   before(async () => {
-    // Get the address of the token locking contract from the existing colony Network
-    const etherRouter = await EtherRouter.deployed();
-    const colonyNetworkDeployed = await IColonyNetwork.at(etherRouter.address);
-    const tokenLockingAddress = await colonyNetworkDeployed.getTokenLocking();
-    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-
     // Setup a new network instance as we'll be modifying the global skills tree
     colonyNetwork = await setupColonyNetwork();
-    await colonyNetwork.setTokenLocking(tokenLockingAddress);
-    await tokenLocking.setColonyNetwork(colonyNetwork.address);
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3

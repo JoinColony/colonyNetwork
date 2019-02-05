@@ -20,10 +20,11 @@ import {
 } from "./constants";
 import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
-const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
+const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
+const TokenLocking = artifacts.require("TokenLocking");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const DSToken = artifacts.require("DSToken");
@@ -388,6 +389,15 @@ export async function setupColonyNetwork() {
   const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
   const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
   await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+
+  const tokenLockingResolver = await Resolver.new();
+  const tokenLockingEtherRouter = await EtherRouter.new();
+  const tokenLockingContract = await TokenLocking.new();
+  await setupUpgradableTokenLocking(tokenLockingEtherRouter, tokenLockingResolver, tokenLockingContract);
+
+  await colonyNetwork.setTokenLocking(tokenLockingEtherRouter.address);
+  const tokenLocking = await ITokenLocking.at(tokenLockingEtherRouter.address);
+  await tokenLocking.setColonyNetwork(colonyNetwork.address);
 
   return colonyNetwork;
 }

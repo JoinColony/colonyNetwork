@@ -430,7 +430,8 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.claim({ from: BIDDER_1 });
       await tokenAuction.destruct();
       const code = await web3GetCode(tokenAuction.address);
-      expect(code).to.equal("0x");
+      const emptyCode = process.env.SOLIDITY_COVERAGE ? "0x0" : "0x";
+      expect(code).to.equal(emptyCode);
     });
 
     it("should fail if auction not finalized", async () => {
