@@ -229,7 +229,7 @@ contract("Colony Network Recovery", accounts => {
       const entryToModify = logLength.subn(1);
 
       const entry = await repCycle.getReputationUpdateLogEntry(entryToModify);
-      entry.amount = 123456789;
+      entry.amount = new BN(123456789);
 
       await colonyNetwork.setReplacementReputationUpdateLogEntry(
         repCycle.address,
@@ -244,7 +244,7 @@ contract("Colony Network Recovery", accounts => {
 
       const replacementEntry = await colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, 0);
       expect(entry.user).to.equal(replacementEntry.user);
-      expect(entry.amount).to.equal(replacementEntry.amount);
+      expect(entry.amount).to.eq.BN(new BN(replacementEntry.amount));
       expect(entry.skillId).to.equal(replacementEntry.skillId);
       expect(entry.colony).to.equal(replacementEntry.colony);
       expect(entry.nUpdates).to.equal(replacementEntry.nUpdates);
