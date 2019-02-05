@@ -513,7 +513,10 @@ contract("Reputation Mining - happy paths", accounts => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
-        expect(goodClient.reputations[key], `${reputationProp.id} failed. Actual value is ${decimalValue}, and expected ${reputationProp.value}`).to.eq.BN(value);
+        expect(
+          goodClient.reputations[key],
+          `${reputationProp.id} failed. Actual value is ${decimalValue}, and expected ${reputationProp.value}`
+        ).to.eq.BN(value);
       });
     });
 
