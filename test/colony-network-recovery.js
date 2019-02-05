@@ -275,8 +275,9 @@ contract("Colony Network Recovery", accounts => {
           });
           await newClient.initialise(colonyNetwork.address);
 
-          const { colony } = await setupRandomColony(colonyNetwork);
+          const { colony, token } = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
+          await colony.claimColonyFunds(token.address);
           await colony.bootstrapColony([accounts[5]], [1000000000000000]);
 
           await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -346,8 +347,10 @@ contract("Colony Network Recovery", accounts => {
           });
           await ignorantclient.initialise(colonyNetwork.address);
 
-          const { colony } = await setupRandomColony(colonyNetwork);
+          const { colony, token } = await setupRandomColony(colonyNetwork);
           await colony.mintTokens(1000000000000000);
+          await colony.claimColonyFunds(token.address);
+
           await colony.bootstrapColony([accounts[0]], [1000000000000000]);
 
           // A well intentioned miner makes a submission
