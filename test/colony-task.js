@@ -1346,7 +1346,7 @@ contract("ColonyTask", accounts => {
       await colony.claimColonyFunds(otherToken.address);
       await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
 
-      // Keep track of original Ether balance in pots
+      // Keep track of original Ether balance in funding pots
       const originalDomainEtherBalance = await colony.getPotBalance(domain.fundingPotId, ZERO_ADDRESS);
       const originalTaskEtherBalance = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
       // And same for the token
@@ -1356,7 +1356,7 @@ contract("ColonyTask", accounts => {
       const originalDomainOtherTokenBalance = await colony.getPotBalance(domain.fundingPotId, otherToken.address);
       const originalTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
 
-      // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
+      // Now that everything is set up, let's cancel the task, move funds and compare funding pots afterwards
       await executeSignedTaskChange({
         colony,
         taskId,

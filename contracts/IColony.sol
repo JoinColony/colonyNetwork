@@ -482,6 +482,6 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards
   /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return amount Total amount of tokens in pots other than the rewards pot (id 0)
+  /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) public view returns (uint256 amount);
 }

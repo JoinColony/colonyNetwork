@@ -99,7 +99,7 @@ contract ColonyTask is ColonyStorage {
     tasks[taskCount] = task;
     tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
     tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msg.sender;
-    pots[potCount].taskId = taskCount;
+    fundingPots[potCount].taskId = taskCount;
 
     if (_skillId > 0) {
       this.setTaskSkill(taskCount, _skillId);

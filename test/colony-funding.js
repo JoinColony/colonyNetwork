@@ -84,7 +84,7 @@ contract("Colony Funding", accounts => {
       expect(colonyRewardPotBalance).to.eq.BN(1);
     });
 
-    it("should let tokens be moved between pots", async () => {
+    it("should let tokens be moved between funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 51, otherToken.address);
@@ -414,12 +414,12 @@ contract("Colony Funding", accounts => {
       expect(colonyPotBalance).to.eq.BN(297);
     });
 
-    it("should return correct number of funding pots", async () => {
+    it("should return correct number of funding funding pots", async () => {
       const taskCountBefore = await colony.getTaskCount();
       expect(taskCountBefore).to.be.zero;
       const potCountBefore = await colony.getPotCount();
       // Expect there to be a single funding pot for the root Domain created.
-      // Note that the reward pot with id 0 is NOT included in the Colony Funding pots count
+      // Note that the reward pot with id 0 is NOT included in the Colony Funding funding pots count
       expect(potCountBefore).to.eq.BN(1);
 
       await colony.addDomain(1);
@@ -436,14 +436,14 @@ contract("Colony Funding", accounts => {
       expect(potCountAfter).to.eq.BN(7);
     });
 
-    it("should not allow contributions to nonexistent pots", async () => {
+    it("should not allow contributions to nonexistent funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 5, 40, otherToken.address), "colony-funding-nonexistent-pot");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       expect(colonyPotBalance).to.eq.BN(99);
     });
 
-    it("should not allow attempts to move funds from nonexistent pots", async () => {
+    it("should not allow attempts to move funds from nonexistent funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await checkErrorRevert(colony.moveFundsBetweenPots(5, 1, 40, otherToken.address), "colony-funding-from-nonexistent-pot");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
@@ -514,7 +514,7 @@ contract("Colony Funding", accounts => {
       expect(colonyPotBalance).to.eq.BN(99);
     });
 
-    it("should let ether be moved between pots", async () => {
+    it("should let ether be moved between funding pots", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(ZERO_ADDRESS);
       await makeTask({ colony });
