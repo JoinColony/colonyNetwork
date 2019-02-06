@@ -276,7 +276,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-reputation-value-non-zero" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -308,7 +308,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-child-reputation-value-non-zero" }
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
       });
       await repCycle.confirmNewHash(1);
     });
@@ -332,8 +332,8 @@ contract("Reputation Mining - happy paths", accounts => {
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
-      const userKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
       await goodClient.insert(userKey, INT128_MAX.subn(1), 0);
@@ -373,8 +373,8 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
-      const userKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
       await goodClient.insert(userKey, INT128_MAX.subn(1), 0);
@@ -397,7 +397,7 @@ contract("Reputation Mining - happy paths", accounts => {
       const largeCalculationResult = INT128_MAX.subn(1)
         .mul(DECAY_RATE.NUMERATOR)
         .div(DECAY_RATE.DENOMINATOR);
-      const decayKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
+      const decayKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
       const decimalValueDecay = new BN(goodClient.reputations[decayKey].slice(2, 66), 16);
 
       expect(largeCalculationResult.toString(16, 64), `Incorrect decay. Actual value is ${decimalValueDecay}`).to.equal(
@@ -469,8 +469,8 @@ contract("Reputation Mining - happy paths", accounts => {
       const META_ROOT_SKILL_TOTAL = REWARD // eslint-disable-line prettier/prettier
         .add(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT).muln(3)) // eslint-disable-line prettier/prettier
         .add(new BN(1000000000))
-        .sub(new BN(1000000000000))
-        .sub(new BN(5000000000000));
+        .sub(new BN(1000000000000));
+      // .sub(new BN(5000000000000)); // Worker cannot lose skill they never had
 
       const reputationProps = [
         { id: 1, skill: META_ROOT_SKILL, account: undefined, value: META_ROOT_SKILL_TOTAL },
@@ -485,9 +485,7 @@ contract("Reputation Mining - happy paths", accounts => {
           value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).muln(3).sub(new BN(1000000000000)) // eslint-disable-line prettier/prettier
         },
         { id: 6, skill: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT.muln(3) },
-        // TODO: This next check needs to be updated once colony wide reputation is fixed for child updates
-        // It needs to NOT deduct anything from the global skill rep as the user had 0 rep in the child skill
-        { id: 7, skill: GLOBAL_SKILL, account: undefined, value: WORKER_PAYOUT.muln(3).sub(new BN(5000000000000)) },
+        { id: 7, skill: GLOBAL_SKILL, account: undefined, value: WORKER_PAYOUT.muln(3) },
         { id: 8, skill: GLOBAL_SKILL, account: WORKER, value: WORKER_PAYOUT.muln(3) },
         // Completing a task in skill 4
         { id: 9, skill: MINING_SKILL, account: MANAGER, value: new BN(0) },
@@ -515,7 +513,10 @@ contract("Reputation Mining - happy paths", accounts => {
         const key = makeReputationKey(metaColony.address, reputationProp.skill, reputationProp.account);
         const value = makeReputationValue(reputationProp.value, reputationProp.id);
         const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
-        expect(goodClient.reputations[key], `${reputationProp.id} failed. Actual value is ${decimalValue}`).to.eq.BN(value);
+        expect(
+          goodClient.reputations[key],
+          `${reputationProp.id} failed. Actual value is ${decimalValue}, and expected ${reputationProp.value}`
+        ).to.eq.BN(value);
       });
     });
 
@@ -735,8 +736,8 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
-      const userKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       await goodClient.insert(globalKey, new BN("1"), 0);
       await goodClient.insert(userKey, new BN("1"), 0);
@@ -750,7 +751,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await repCycle.submitRootHash(rootHash, 2, "0x00", 10, { from: MINER1 });
       await repCycle.confirmNewHash(0);
 
-      const decayKey = await ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
+      const decayKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       // Check we have exactly one reputation.
       expect(

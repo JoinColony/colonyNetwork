@@ -150,7 +150,7 @@ contract("Colony Reward Payouts", accounts => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-      const globalKey = await ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
+      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await client.insert(globalKey, new BN(10), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -325,7 +325,7 @@ contract("Colony Reward Payouts", accounts => {
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
 
-      const globalKey = await ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
+      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
       await client.insert(globalKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -385,7 +385,7 @@ contract("Colony Reward Payouts", accounts => {
 
       await colony.bootstrapColony([userAddress1], [userTokens3]);
 
-      const userKey = await ReputationMinerTestWrapper.getKey(colony.address, rootDomainSkill, userAddress3);
+      const userKey = ReputationMinerTestWrapper.getKey(colony.address, rootDomainSkill, userAddress3);
       await client.insert(userKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });

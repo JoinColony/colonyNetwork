@@ -246,7 +246,7 @@ class ReputationMiner {
       const reputationChange = ethers.utils.bigNumberify(logEntry.amount);
       amount = this.getAmount(updateNumber, reputationChange);
 
-      // When reputation amount update is negative, adjust its value for child reputation updates
+      // When reputation amount update is negative, adjust its value for child reputation updates and parent updates
       // We update colonywide sums first (children, parents, skill)
       // Then the user-specifc sums in the order children, parents, skill.
       if (amount.lt(0)) {
@@ -256,15 +256,26 @@ class ReputationMiner {
         const relativeUpdateNumber = updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog);
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
         // and user-specific updates located in the first nChildUpdates of the second half of the nUpdates set.
+        
+        // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
+        const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
+        const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
+        originReputationProof = await this.getReputationProofObject(originSkillKey);
+        const originSkillKeyExists = this.reputations[originSkillKey] !== undefined;
+
+        let originReputation;
+        if (originSkillKeyExists) {
+          // Look up value from our JSON.
+          const originReputationValueBytes = this.reputations[originSkillKey];
+          originReputation = ethers.utils.bigNumberify(`0x${originReputationValueBytes.slice(2, 66)}`);
+        } else {
+          originReputation = ethers.utils.bigNumberify("0");
+        }
+
         if (
           relativeUpdateNumber.lt(nChildUpdates) ||
           (relativeUpdateNumber.gte(nUpdates.div(2)) && relativeUpdateNumber.lt(nUpdates.div(2).add(nChildUpdates)))
         ) {
-          // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
-          const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
-          const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
-          originReputationProof = await this.getReputationProofObject(originSkillKey);
-
           // Get the user-specific child reputation key.
           let keyUsedInCalculations;
           if (relativeUpdateNumber.lt(nChildUpdates)) {
@@ -275,37 +286,27 @@ class ReputationMiner {
           }
           childReputationProof = await this.getReputationProofObject(keyUsedInCalculations);
 
-          const originSkillKeyExists = this.reputations[originSkillKey] !== undefined;
-          if (originSkillKeyExists) {
-            // Look up value from our JSON.
-            const originReputationValueBytes = this.reputations[originSkillKey];
-            const originReputation = ethers.utils.bigNumberify(`0x${originReputationValueBytes.slice(2, 66)}`);
-
-            let targetAmount;
-            if (originReputation.add(amount).lt(0)) {        // Origin reputation cannot become negative
-              targetAmount = originReputation.mul(-1);
-            } else if (originReputation.isZero()) {          // If origin reputation is zero, then the rest reputation updates will be zero
-              targetAmount = ethers.utils.bigNumberify("0");
-            } else {
-
-              const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
-              if (keyExists) {
-                const reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
-                targetAmount = reputation.mul(amount).div(originReputation);
-
-                // Ensure the child reputation update doesn't underflow
-                targetAmount = reputation.add(targetAmount).lt(0) ? reputation.mul(-1) : targetAmount;
-              } else {
-                // Set to 0, if the child skill does not exist yet, as that cannot go negative
-                targetAmount = ethers.utils.bigNumberify("0");
-              }
+          if (originReputation.eq(0)) {
+            amount = ethers.utils.bigNumberify("0");
+          } else {
+            let reputation = ethers.utils.bigNumberify("0");
+            const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
+            if (keyExists) {
+              reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
             }
 
-            amount = targetAmount;
-          } else {
-            // Set to 0, if the origin skill does not exist yet and therefore has no value that can be used in calulations
-            amount = ethers.utils.bigNumberify("0");
+            amount = amount.mul(reputation).div(originReputation);
+
+            // We can't lose more reputation than we have in this reputation
+            if (reputation.lt(amount.mul(-1))) {
+              amount = reputation.mul(-1);
+            }
           }
+        } else if (originReputation.lt(amount.mul(-1))) {
+          // If the 'if' above didn't match, it's either an origin or a parent skill update. 
+          // We can't lose more reputation in an origin or parent skill than we have in the origin skill. 
+          // Cap change based on origin skill if needed.
+          amount = originReputation.mul(-1);
         }
       }
     }
@@ -383,7 +384,7 @@ class ReputationMiner {
     return { branchMask: `${branchMask.toString(16)}`, siblings, key, value, reputation, uid, nNodes: this.nReputations.toString() };
   }
 
-  static async getKey(_colonyAddress, _skillId, _userAddress) {
+  static getKey(_colonyAddress, _skillId, _userAddress) {
     let colonyAddress = _colonyAddress;
     let userAddress = _userAddress;
 
@@ -540,7 +541,7 @@ class ReputationMiner {
       // Then the skill being update is the skill itself - not a parent or child
       skillId = logEntry.skillId; // eslint-disable-line prefer-destructuring
     }
-    const key = await ReputationMiner.getKey(logEntry.colony, skillId, skillAddress);
+    const key = ReputationMiner.getKey(logEntry.colony, skillId, skillAddress);
     return key;
   }
 
@@ -698,7 +699,7 @@ class ReputationMiner {
     }
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const rowKey = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const rowKey = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
       await tree.insert(rowKey, row.value);
     }
 
@@ -1084,7 +1085,7 @@ class ReputationMiner {
     this.nReputations = ethers.utils.bigNumberify(res.length);
     for (let i = 0; i < res.length; i += 1) {
       const row = res[i];
-      const key = await ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
+      const key = ReputationMiner.getKey(row.colony_address, row.skill_id, row.user_address);
       await this.reputationTree.insert(key, row.value, { gasLimit: 4000000 });
       this.reputations[key] = row.value;
     }
