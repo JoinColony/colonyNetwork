@@ -172,6 +172,14 @@ contract ColonyDataTypes {
     uint256 blockTimestamp;
   }
 
+  struct Payment {
+    address recipient;
+    uint256 potId;
+    uint256 domainId;
+    uint256[] skills;
+    mapping (address => uint256) payouts;
+  }
+
   struct Task {
     bytes32 specificationHash;
     bytes32 deliverableHash;

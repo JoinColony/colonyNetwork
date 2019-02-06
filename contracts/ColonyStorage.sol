@@ -71,6 +71,9 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   // Mapping task id to current "active" nonce for executing task changes
   mapping (uint256 => uint256) taskChangeNonces; // Storage slot 21
 
+  uint256 paymentsCount; // Storage slot 22
+  mapping (uint256 => Payment) payments; // Storage slot 23
+
   modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
     Role storage role = tasks[_id].roles[uint8(_role)];
     require(msg.sender == role.user, "colony-task-role-identity-mismatch");
