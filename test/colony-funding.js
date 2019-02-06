@@ -414,7 +414,7 @@ contract("Colony Funding", accounts => {
       expect(colonyPotBalance).to.eq.BN(297);
     });
 
-    it("should return correct number of funding funding pots", async () => {
+    it("should return correct number of funding pots", async () => {
       const taskCountBefore = await colony.getTaskCount();
       expect(taskCountBefore).to.be.zero;
       const potCountBefore = await colony.getFundingPotCount();
