@@ -613,9 +613,9 @@
     lodash "^4.17.10"
     to-fast-properties "^2.0.0"
 
-"@colony/colony-js-contract-loader-fs@1.8.1":
-  version "1.8.1"
-  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader-fs/-/colony-js-contract-loader-fs-1.8.1.tgz#70e5001e01678abc20e02acea3467f6ca85606c0"
+"@colony/colony-js-contract-loader-fs@1.10.0":
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/@colony/colony-js-contract-loader-fs/-/colony-js-contract-loader-fs-1.10.0.tgz#46d7e10d77424c296e3a7aba3e1909b5878ace6a"
   dependencies:
     "@colony/colony-js-contract-loader" "^1.8.1"
     jsonfile "^4.0.0"
