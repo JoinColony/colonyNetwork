@@ -89,7 +89,12 @@ contract ColonyTask is ColonyStorage {
   domainExists(_domainId)
   {
     taskCount += 1;
+    
     fundingPotCount += 1;
+    fundingPots[fundingPotCount] = FundingPot({
+      associatedType: FundingPotAssociatedType.Task,
+      associatedTypeId: taskCount
+    });
 
     Task memory task;
     task.specificationHash = _specificationHash;
@@ -99,7 +104,6 @@ contract ColonyTask is ColonyStorage {
     tasks[taskCount] = task;
     tasks[taskCount].roles[uint8(TaskRole.Manager)].user = msg.sender;
     tasks[taskCount].roles[uint8(TaskRole.Evaluator)].user = msg.sender;
-    fundingPots[fundingPotCount].taskId = taskCount;
 
     if (_skillId > 0) {
       this.setTaskSkill(taskCount, _skillId);

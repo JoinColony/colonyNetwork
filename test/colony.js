@@ -110,18 +110,18 @@ contract("Colony", accounts => {
       expect(domain.skillId).to.eq.BN(rootLocalSkillId);
     });
 
-    it("should let pot information be read", async () => {
+    it("should let funding pot information be read", async () => {
       const taskId = await makeTask({ colony });
       const taskInfo = await colony.getTask(taskId);
       let potInfo = await colony.getPotInformation(taskInfo.fundingPotId);
-      expect(potInfo.taskId).to.eq.BN(taskId);
-      expect(potInfo.domainId).to.be.zero;
+      expect(potInfo.associatedType).to.eq.BN(1);
+      expect(potInfo.associatedTypeId).to.eq.BN(taskId);
 
       // Read pot info about a pot in a domain
       const domainInfo = await colony.getDomain(1);
       potInfo = await colony.getPotInformation(domainInfo.fundingPotId);
-      expect(potInfo.taskId).to.be.zero;
-      expect(potInfo.domainId).to.eq.BN(1);
+      expect(potInfo.associatedType).to.be.zero;
+      expect(potInfo.associatedTypeId).to.eq.BN(1);
     });
   });
 

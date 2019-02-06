@@ -211,10 +211,14 @@ contract ColonyDataTypes {
     mapping (uint8 => bytes32) secret;
   }
 
+  enum FundingPotAssociatedType { Domain, Task }
+
   struct FundingPot {
+    // Funding pots can store multiple token balances, for ETH use 0x0 address
     mapping (address => uint256) balance;
-    uint256 taskId;
-    uint256 domainId;
+    // Funding pots can be associated with different fundable entities, for now these are: payments, tasks and domains.
+    FundingPotAssociatedType associatedType;
+    uint256 associatedTypeId;
   }
 
   struct Domain {

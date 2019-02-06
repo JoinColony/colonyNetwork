@@ -132,10 +132,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return fundingPots[_potId].balance[_token];
   }
 
-  function getPotInformation(uint256 _potId) public view returns (uint256 taskId, uint256 domainId) {
+  function getPotInformation(uint256 _potId) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId) {
     FundingPot storage pot = fundingPots[_potId];
-    taskId = pot.taskId;
-    domainId = pot.domainId;
+    return (pot.associatedType, pot.associatedTypeId);
   }
 
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
@@ -154,16 +153,16 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
     require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
 
-    uint fromTaskId = fundingPots[_fromPot].taskId;
-    uint toTaskId = fundingPots[_toPot].taskId;
-
     uint fromPotPreviousAmount = fundingPots[_fromPot].balance[_token];
     uint toPotPreviousAmount = fundingPots[_toPot].balance[_token];
 
     // If this pot is associated with a task, prevent money being taken from the pot
     // if the remaining balance is less than the amount needed for payouts,
     // unless the task was cancelled.
-    if (fromTaskId > 0) {
+    FundingPotAssociatedType fromPotAssociatedType = fundingPots[_fromPot].associatedType;
+    uint fromTaskId = fundingPots[_fromPot].associatedTypeId; // TODO: This line has to move inside the following `if`
+
+    if (fromPotAssociatedType == FundingPotAssociatedType.Task) {  
       Task storage task = tasks[fromTaskId];
       uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
       uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
@@ -172,6 +171,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     fundingPots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
     fundingPots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
+
+    // TODO: This should possibly only be called on Task and Payments, not Domains
+    uint toTaskId = fundingPots[_toPot].associatedTypeId;
     updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
     updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
 
