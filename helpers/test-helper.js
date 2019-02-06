@@ -1,7 +1,7 @@
 /* globals artifacts */
 /* eslint-disable no-console */
 import shortid from "shortid";
-import { assert, chai } from "chai";
+import chai from "chai";
 import web3Utils from "web3-utils";
 import ethUtils from "ethereumjs-util";
 import BN from "bn.js";
@@ -156,10 +156,10 @@ export async function checkErrorRevert(promise, errorMessage) {
     }
   } catch (err) {
     ({ receipt, reason } = err);
-    assert.equal(reason, errorMessage);
+    expect(reason).to.equal(errorMessage);
   }
   // Check the receipt `status` to ensure transaction failed.
-  assert.isFalse(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`);
+  expect(receipt.status, `Transaction succeeded, but expected error ${errorMessage}`).to.be.false;
 }
 
 export async function checkErrorRevertEthers(promise, errorMessage) {
@@ -171,11 +171,11 @@ export async function checkErrorRevertEthers(promise, errorMessage) {
     const tx = await web3GetTransaction(txid);
     const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
     const reason = extractReasonString(response);
-    assert.equal(reason, errorMessage);
+    expect(reason).to.equal(errorMessage);
     return;
   }
 
-  assert.equal(receipt.status, 0, `Transaction succeeded, but expected to fail with: ${errorMessage}`);
+  expect(receipt.status, `Transaction succeeded, but expected to fail with: ${errorMessage}`).to.be.zero;
 }
 
 export async function checkSuccessEthers(promise, errorMessage) {
@@ -193,7 +193,7 @@ export async function checkSuccessEthers(promise, errorMessage) {
   const tx = await web3GetTransaction(txid);
   const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
   const reason = extractReasonString(response);
-  assert.equal(receipt.status, 1, `${errorMessage} with error ${reason}`);
+  expect(receipt.status, `${errorMessage} with error ${reason}`).to.equal(1);
 }
 
 export function getRandomString(_length) {
@@ -253,13 +253,13 @@ export async function getBlockTime(blockNumber) {
 export async function expectEvent(tx, eventName) {
   const { logs } = await tx;
   const event = logs.find(e => e.event === eventName);
-  return assert.exists(event);
+  return expect(event).to.exist;
 }
 
 export async function expectAllEvents(tx, eventNames) {
   const { logs } = await tx;
   const events = eventNames.every(eventName => logs.find(e => e.event === eventName));
-  return assert.isTrue(events);
+  return expect(events).to.be.true;
 }
 
 export async function forwardTime(seconds, test) {
@@ -559,12 +559,12 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   }
 
   const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
-  assert.isTrue(round1.eq(round2), "Clients do not have submissions in the same round");
+  expect(round1.eq(round2), "Clients do not have submissions in the same round").to.be.true;
   const submission2before = await repCycle.getDisputeRounds(round2, idx2);
-  assert.isTrue(
+  expect(
     idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
     "Clients are not facing each other in this round"
-  );
+  ).to.be.true;
 
   if (submission2before.jrhNNodes === "0") {
     if (errors.client2.confirmJustificationRootHash) {
@@ -674,7 +674,7 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
 
       if (stakedBalance.gt(new BN(0))) {
         if (user === accounts[5]) {
-          assert.isTrue(stakedBalance.gte(DEFAULT_STAKE), "Insufficient stake for MINER1");
+          expect(stakedBalance.gte(DEFAULT_STAKE), "Insufficient stake for MINER1").to.be.true;
           if (stakedBalance.gt(DEFAULT_STAKE)) {
             await tokenLocking.withdraw(clny.address, stakedBalance.sub(DEFAULT_STAKE), { from: user });
           }
