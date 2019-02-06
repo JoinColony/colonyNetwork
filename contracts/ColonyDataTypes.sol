@@ -153,8 +153,8 @@ contract ColonyDataTypes {
   /// @param domainId Id of the newly-created Domain
   event DomainAdded(uint256 domainId);
 
-  /// @notice Event logged when a new Pot is added
-  /// @param potId Id of the newly-created Pot
+  /// @notice Event logged when a new FundingPot is added
+  /// @param potId Id of the newly-created FundingPot
   event PotAdded(uint256 potId);
 
   struct RewardPayoutCycle {
@@ -211,7 +211,7 @@ contract ColonyDataTypes {
     mapping (uint8 => bytes32) secret;
   }
 
-  struct Pot {
+  struct FundingPot {
     mapping (address => uint256) balance;
     uint256 taskId;
     uint256 domainId;

@@ -48,11 +48,11 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
 
   mapping (uint256 => Task) tasks; // Storage slot 14
 
-  // Pots can be tied to tasks or domains, so giving them their own mapping.
-  // Pot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
+  // FundingPots can be tied to tasks or domains, so giving them their own mapping.
+  // FundingPot 1 can be thought of as the pot belonging to the colony itself that hasn't been assigned
   // to anything yet, but has had some siphoned off in to the reward pot.
-  // Pot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
-  mapping (uint256 => Pot) pots; // Storage slot 15
+  // FundingPot 0 is the 'reward' pot containing funds that can be paid to holders of colony tokens in the future.
+  mapping (uint256 => FundingPot) pots; // Storage slot 15
 
   // Keeps track of all reward payout cycles
   mapping (uint256 => RewardPayoutCycle) rewardPayoutCycles; // Storage slot 16
