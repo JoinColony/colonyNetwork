@@ -41,6 +41,7 @@ import {
   setupFundedTask,
   executeSignedTaskChange,
   executeSignedRoleAssignment,
+  getSigsAndTransactionData,
   makeTask,
   setupRandomColony
 } from "../helpers/test-data-generator";
@@ -1152,6 +1153,49 @@ contract("ColonyTask", accounts => {
         "TaskRoleUserSet"
       );
     });
+
+    it("should fail to execute task change with a non zero value", async () => {
+      const taskId = await makeTask({ colony });
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskDomain",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, 1]
+      });
+
+      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 100, txData), "colony-task-change-non-zero-value");
+    });
+
+    it("should fail to execute task change with a mismatched set of signature parts", async () => {
+      const dueDate = await currentBlockTime();
+      const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskDomain",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, 1]
+      });
+
+      await checkErrorRevert(colony.executeTaskChange([sigV[0]], sigR, sigS, [0], 0, txData), "colony-task-change-signatures-count-do-not-match");
+    });
+
+    it("should fail to execute task change send for a task role assignment call (which should be using executeTaskRoleAssignment)", async () => {
+      const taskId = await makeTask({ colony });
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId, "0x29738B9BB168790211D84C99c4AEAd215c34D731"]
+      });
+
+      await checkErrorRevert(colony.executeTaskChange(sigV, sigR, sigS, [0], 0, txData), "colony-task-change-is-role-assignement");
+    });
   });
 
   describe("when submitting task deliverable", () => {
@@ -1531,6 +1575,32 @@ contract("ColonyTask", accounts => {
       await checkErrorRevert(colony.setAllTaskPayouts(taskId, ZERO_ADDRESS, 5000, 1000, 98000), "colony-funding-worker-already-set");
     });
 
+    it("should not be able to set all payments at once if evaluator is assigned and not manager", async () => {
+      let dueDate = await currentBlockTime();
+      dueDate += SECONDS_PER_DAY * 7;
+
+      const taskId = await makeTask({ colony, dueDate, evaluator: accounts[6] });
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "removeTaskEvaluatorRole",
+        signers: [MANAGER],
+        sigTypes: [0],
+        args: [taskId]
+      });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, accounts[4]],
+        sigTypes: [0, 0],
+        args: [taskId, accounts[4]]
+      });
+
+      await checkErrorRevert(colony.setAllTaskPayouts(taskId, ZERO_ADDRESS, 5000, 1000, 98000), "colony-funding-evaluator-already-set");
+    });
+
     it("should log a TaskWorkerPayoutSet event, if the task's worker's payout changed", async () => {
       const taskId = await makeTask({ colony });
 
@@ -1759,6 +1829,59 @@ contract("ColonyTask", accounts => {
       const networkBalance3 = await token.balanceOf(colonyNetwork.address);
       const workerBalanceAfter = await token.balanceOf(WORKER);
       expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
+    });
+
+    it("should take the whole payout as fee, when network fee is 1 (=100%)", async () => {
+      await metaColony.setNetworkFeeInverse(1);
+
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFinalizedTask({
+        colonyNetwork,
+        colony,
+        token,
+        managerPayout: 99,
+        workerPayout: 1,
+        evaluatorPayout: 2
+      });
+
+      const networkBalance1 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceBefore = await token.balanceOf(MANAGER);
+
+      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
+      const networkBalance2 = await token.balanceOf(colonyNetwork.address);
+      const managerBalanceAfter = await token.balanceOf(MANAGER);
+      expect(networkBalance2.sub(networkBalance1)).to.eq.BN(99);
+      expect(managerBalanceAfter.sub(managerBalanceBefore)).to.be.zero;
+
+      const workerBalanceBefore = await token.balanceOf(WORKER);
+
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      const networkBalance3 = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceAfter = await token.balanceOf(WORKER);
+      expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
+      expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
+    });
+
+    it("should payout 0 network fees, for 0 value payouts", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFinalizedTask({
+        colonyNetwork,
+        colony,
+        token,
+        managerPayout: 100,
+        workerPayout: 0,
+        evaluatorPayout: 0
+      });
+
+      const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceBefore = await token.balanceOf(WORKER);
+
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+
+      const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      const workerBalanceAfter = await token.balanceOf(WORKER);
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.be.zero;
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
     });
   });

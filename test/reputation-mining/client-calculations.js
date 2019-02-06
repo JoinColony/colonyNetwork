@@ -1,4 +1,3 @@
-/* globals artifacts */
 import path from "path";
 import BN from "bn.js";
 import chai from "chai";
@@ -23,10 +22,6 @@ const useJsTree = true;
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const EtherRouter = artifacts.require("EtherRouter");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ITokenLocking = artifacts.require("ITokenLocking");
-
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
 });
@@ -40,22 +35,13 @@ process.env.SOLIDITY_COVERAGE
       const MINER2 = accounts[6];
 
       let colonyNetwork;
-      let tokenLocking;
       let metaColony;
       let clnyToken;
       let goodClient;
 
       before(async () => {
-        // Get the address of the token locking contract from the existing colony Network
-        const etherRouter = await EtherRouter.deployed();
-        const colonyNetworkDeployed = await IColonyNetwork.at(etherRouter.address);
-        const tokenLockingAddress = await colonyNetworkDeployed.getTokenLocking();
-        tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-
         // Setup a new network instance as we'll be modifying the global skills tree
         colonyNetwork = await setupColonyNetwork();
-        await colonyNetwork.setTokenLocking(tokenLockingAddress);
-        await tokenLocking.setColonyNetwork(colonyNetwork.address);
         ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
         // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3

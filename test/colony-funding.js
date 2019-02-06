@@ -414,6 +414,28 @@ contract("Colony Funding", accounts => {
       expect(colonyPotBalance).to.eq.BN(297);
     });
 
+    it("should return correct number of funding pots", async () => {
+      const taskCountBefore = await colony.getTaskCount();
+      expect(taskCountBefore).to.be.zero;
+      const potCountBefore = await colony.getPotCount();
+      // Expect there to be a single funding pot for the root Domain created.
+      // Note that the reward pot with id 0 is NOT included in the Colony Funding pots count
+      expect(potCountBefore).to.eq.BN(1);
+
+      await colony.addDomain(1);
+      const potCountAfterAddingDomain = await colony.getPotCount();
+      expect(potCountAfterAddingDomain).to.eq.BN(2);
+
+      for (let i = 0; i < 5; i += 1) {
+        await makeTask({ colony });
+      }
+
+      const taskCountAfter = await colony.getTaskCount();
+      expect(taskCountAfter).to.be.eq.BN(5);
+      const potCountAfter = await colony.getPotCount();
+      expect(potCountAfter).to.eq.BN(7);
+    });
+
     it("should not allow contributions to nonexistent pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 5, 40, otherToken.address), "colony-funding-nonexistent-pot");

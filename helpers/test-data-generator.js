@@ -20,10 +20,11 @@ import {
 } from "./constants";
 import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
-const { setupColonyVersionResolver } = require("../helpers/upgradable-contracts");
+const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
+const TokenLocking = artifacts.require("TokenLocking");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const DSToken = artifacts.require("DSToken");
@@ -47,7 +48,7 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }
 
-async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
+export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
   const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
   const convertedArgs = [];
@@ -388,6 +389,15 @@ export async function setupColonyNetwork() {
   const deployedColonyNetwork = await IColonyNetwork.at(EtherRouter.address);
   const reputationMiningCycleResolverAddress = await deployedColonyNetwork.getMiningResolver();
   await colonyNetwork.setMiningResolver(reputationMiningCycleResolverAddress);
+
+  const tokenLockingResolver = await Resolver.new();
+  const tokenLockingEtherRouter = await EtherRouter.new();
+  const tokenLockingContract = await TokenLocking.new();
+  await setupUpgradableTokenLocking(tokenLockingEtherRouter, tokenLockingResolver, tokenLockingContract);
+
+  await colonyNetwork.setTokenLocking(tokenLockingEtherRouter.address);
+  const tokenLocking = await ITokenLocking.at(tokenLockingEtherRouter.address);
+  await tokenLocking.setColonyNetwork(colonyNetwork.address);
 
   return colonyNetwork;
 }

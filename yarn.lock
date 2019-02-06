@@ -3186,9 +3186,9 @@ ethereumjs-wallet@0.6.2:
     utf8 "^3.0.0"
     uuid "^3.3.2"
 
-ethers@^4.0.20:
-  version "4.0.20"
-  resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.20.tgz#2b072b283bb19f4870daf42cf5593e5375697504"
+"ethers@https://github.com/area/ethers.js#fix/call-blocktag":
+  version "4.0.24"
+  resolved "https://github.com/area/ethers.js#36331578c05b6926694983a3064eda2fc90808ce"
   dependencies:
     "@types/node" "^10.3.2"
     aes-js "3.0.0"
@@ -3684,11 +3684,13 @@ functional-red-black-tree@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/functional-red-black-tree/-/functional-red-black-tree-1.0.1.tgz#1b0ab3bd553b2a0d6399d29c0e3ea0b252078327"
 
-"ganache-cli@https://github.com/area/ganache-cli.git#fakefix/eth_call_selfdestruct":
-  version "6.1.6"
-  resolved "https://github.com/area/ganache-cli.git#0c9cf313055bd65e0be158b2c2587ffb973dd1c5"
+ganache-cli@^6.3.0:
+  version "6.3.0"
+  resolved "https://registry.yarnpkg.com/ganache-cli/-/ganache-cli-6.3.0.tgz#574f9d35aaec8da6e01c2be49db8fe73129eb561"
   dependencies:
-    source-map-support "^0.5.3"
+    bn.js "4.11.8"
+    source-map-support "0.5.9"
+    yargs "11.1.0"
 
 ganache-core@2.3.3:
   version "2.3.3"
@@ -8527,6 +8529,23 @@ yargs-parser@^9.0.2:
   dependencies:
     camelcase "^4.1.0"
 
+yargs@11.1.0, yargs@^11.0.0:
+  version "11.1.0"
+  resolved "http://registry.npmjs.org/yargs/-/yargs-11.1.0.tgz#90b869934ed6e871115ea2ff58b03f4724ed2d77"
+  dependencies:
+    cliui "^4.0.0"
+    decamelize "^1.1.1"
+    find-up "^2.1.0"
+    get-caller-file "^1.0.1"
+    os-locale "^2.0.0"
+    require-directory "^2.1.1"
+    require-main-filename "^1.0.1"
+    set-blocking "^2.0.0"
+    string-width "^2.0.0"
+    which-module "^2.0.0"
+    y18n "^3.2.1"
+    yargs-parser "^9.0.2"
+
 yargs@^10.0.3:
   version "10.1.2"
   resolved "https://registry.yarnpkg.com/yargs/-/yargs-10.1.2.tgz#454d074c2b16a51a43e2fb7807e4f9de69ccb5c5"
@@ -8543,23 +8562,6 @@ yargs@^10.0.3:
     which-module "^2.0.0"
     y18n "^3.2.1"
     yargs-parser "^8.1.0"
-
-yargs@^11.0.0:
-  version "11.1.0"
-  resolved "http://registry.npmjs.org/yargs/-/yargs-11.1.0.tgz#90b869934ed6e871115ea2ff58b03f4724ed2d77"
-  dependencies:
-    cliui "^4.0.0"
-    decamelize "^1.1.1"
-    find-up "^2.1.0"
-    get-caller-file "^1.0.1"
-    os-locale "^2.0.0"
-    require-directory "^2.1.1"
-    require-main-filename "^1.0.1"
-    set-blocking "^2.0.0"
-    string-width "^2.0.0"
-    which-module "^2.0.0"
-    y18n "^3.2.1"
-    yargs-parser "^9.0.2"
 
 yargs@^12.0.1:
   version "12.0.5"

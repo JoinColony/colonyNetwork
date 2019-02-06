@@ -13,6 +13,8 @@ chai.use(bnChai(web3.utils.BN));
 
 const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
+const Resolver = artifacts.require("Resolver");
+const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DSToken = artifacts.require("DSToken");
 
 contract("Colony Network", accounts => {
@@ -70,6 +72,37 @@ contract("Colony Network", accounts => {
       const updatedColonyVersion = await colonyNetwork.getCurrentColonyVersion();
       expect(updatedColonyVersion).to.eq.BN(currentColonyVersion);
     });
+
+    it("should not be able to set the token locking contract twice", async () => {
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ZERO_ADDRESS), "colony-token-locking-address-already-set");
+    });
+
+    it("should not be able to initialise network twice", async () => {
+      await checkErrorRevert(colonyNetwork.initialise("0xDde1400C69752A6596a7B2C1f2420Fb9A71c1FDA"), "colony-network-already-initialised");
+    });
+
+    it("should not be able to create a colony if the network is not initialised", async () => {
+      const resolverColonyNetworkDeployed = await Resolver.deployed();
+      const etherRouter = await EtherRouter.new();
+      await etherRouter.setResolver(resolverColonyNetworkDeployed.address);
+      colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+
+      await checkErrorRevert(
+        colonyNetwork.createColony("0x8972e86549bb8E350673e0562fba9a4889d01637"),
+        "colony-network-not-initialised-cannot-create-colony"
+      );
+    });
+  });
+
+  describe("when managing the mining process", () => {
+    it("should not allow reinitialisation of reputation mining process", async () => {
+      await colonyNetwork.initialiseReputationMining();
+      await checkErrorRevert(colonyNetwork.initialiseReputationMining(), "colony-reputation-mining-already-initialised");
+    });
+
+    it("should not allow another mining cycle to start if the process isn't initialised", async () => {
+      await checkErrorRevert(colonyNetwork.startNextCycle(), "colony-reputation-mining-not-initialised");
+    });
   });
 
   describe("when creating new colonies", () => {
@@ -116,6 +149,10 @@ contract("Colony Network", accounts => {
     it("should fail to create meta colony if it already exists", async () => {
       const token = await DSToken.new(TOKEN_ARGS[1]);
       await checkErrorRevert(colonyNetwork.createMetaColony(token.address), "colony-meta-colony-exists-already");
+    });
+
+    it("should not allow users to create a colony with empty token", async () => {
+      await checkErrorRevert(colonyNetwork.createColony(ZERO_ADDRESS), "colony-token-invalid-address");
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
@@ -250,6 +287,11 @@ contract("Colony Network", accounts => {
       await colonyNetwork.setupRegistrar(ensRegistry.address, rootNode);
     });
 
+    it("should be able to get the ENSRegistrar", async () => {
+      const registrarAddress = await colonyNetwork.getENSRegistrar();
+      expect(registrarAddress).to.equal(ensRegistry.address);
+    });
+
     it("should own the root domains", async () => {
       let owner;
       owner = await ensRegistry.owner(rootNode);
@@ -365,6 +407,28 @@ contract("Colony Network", accounts => {
       expect(response).to.be.true;
       response = await colonyNetwork.supportsInterface("0x01ffc9a7"); // supports 'addr(bytes32)'
       expect(response).to.be.true;
+    });
+
+    it("owner should be able to set and get the ttl of their node", async () => {
+      ensRegistry = await ENSRegistry.new();
+      const hash = namehash.hash("jane.user.joincolony.eth");
+
+      await ensRegistry.setTTL(hash, 123);
+      const ttl = await ensRegistry.ttl(hash);
+      expect(ttl).to.eq.BN(123);
+    });
+
+    it("use should NOT be able to set and get the ttl of a node they don't own", async () => {
+      const hash = namehash.hash("jane.user.joincolony.eth");
+      await colonyNetwork.registerUserLabel("jane", orbitDBAddress);
+      await checkErrorRevert(ensRegistry.setTTL(hash, 123), "colony-ens-non-owner-access");
+    });
+
+    it("setting owner on a subnode should fail for a non existent subnode", async () => {
+      ensRegistry = await ENSRegistry.new();
+      const hash = namehash.hash("jane.user.joincolony.eth");
+
+      await checkErrorRevert(ensRegistry.setSubnodeOwner(hash, hash, accounts[0]), "unowned-node");
     });
   });
 });

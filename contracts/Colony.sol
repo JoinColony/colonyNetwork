@@ -188,7 +188,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return domainCount;
   }
 
-  modifier verifyKey(bytes memory key) {
+  function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
+  public view
+  stoppable
+  returns (bool)
+  {
     uint256 colonyAddress;
     uint256 skillid;
     uint256 userAddress;
@@ -199,22 +203,19 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     }
     colonyAddress >>= 96;
     userAddress >>= 96;
-    // Require that the user is proving their own reputation in this colony.
-    require(address(colonyAddress) == address(this), "colony-invalid-reputation-key-colony-address");
-    require(address(userAddress) == msg.sender, "colony-invalid-reputation-key-user-address");
-    _;
-  }
 
-  function verifyReputationProof(bytes memory key, bytes memory value, uint branchMask, bytes32[] memory siblings)
-  public view
-  stoppable
-  verifyKey(key)
-  returns (bool)
-  {
+    // Require that the user is proving their own reputation in this colony.
+    if (address(colonyAddress) != address(this) || address(userAddress) != msg.sender) {
+      return false;
+    }
+
     // Get roothash from colonynetwork
     bytes32 rootHash = IColonyNetwork(colonyNetworkAddress).getReputationRootHash();
     bytes32 impliedHash = getImpliedRootHashKey(key, value, branchMask, siblings);
-    require(rootHash==impliedHash, "colony-invalid-reputation-proof");
+    if (rootHash != impliedHash) {
+      return false;
+    }
+
     return true;
   }
 

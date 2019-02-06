@@ -123,6 +123,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     emit TaskPayoutClaimed(_id, _role, _token, remainder);
   }
 
+  function getPotCount() public view returns (uint256 count) {
+    return potCount;
+  }
+
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256) {
     return pots[_potId].balance[_token];
   }

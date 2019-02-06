@@ -219,6 +219,40 @@ contract("Colony Network Recovery", accounts => {
       expect(rootHash).to.equal("0x0200000000000000000000000000000000000000000000000000000000000000");
       expect(nNodes).to.eq.BN(7);
     });
+
+    it("should be able to set replacement reputation log entry", async () => {
+      await colonyNetwork.enterRecoveryMode();
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const logLength = await repCycle.getReputationUpdateLogLength();
+      // Use the last entry
+      const entryToModify = logLength.subn(1);
+
+      const entry = await repCycle.getReputationUpdateLogEntry(entryToModify);
+      entry.amount = new BN(123456789);
+
+      await colonyNetwork.setReplacementReputationUpdateLogEntry(
+        repCycle.address,
+        entryToModify,
+        entry.user,
+        entry.amount,
+        entry.skillId,
+        entry.colony,
+        entry.nUpdates,
+        entry.nPreviousUpdates
+      );
+
+      const replacementEntry = await colonyNetwork.getReplacementReputationUpdateLogEntry(repCycle.address, 0);
+      expect(entry.user).to.equal(replacementEntry.user);
+      expect(entry.amount).to.eq.BN(new BN(replacementEntry.amount));
+      expect(entry.skillId).to.equal(replacementEntry.skillId);
+      expect(entry.colony).to.equal(replacementEntry.colony);
+      expect(entry.nUpdates).to.equal(replacementEntry.nUpdates);
+      expect(entry.nPreviousUpdates).to.equal(replacementEntry.nPreviousUpdates);
+
+      await colonyNetwork.approveExitRecovery();
+      await colonyNetwork.exitRecoveryMode();
+    });
   });
 
   describe("when using recovery mode, miners should work correctly", async () => {

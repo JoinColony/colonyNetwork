@@ -102,10 +102,6 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @dev Returns false if skill does not exist
   function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
 
-  /// @notice Get the number of parents the specified skill has 
-  /// @return nParents uint256
-  function getSkillNParents(uint256 _skillId) public view returns (uint128 nParents);
-
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or
   /// @param _user The address of the user for the reputation update
@@ -249,6 +245,10 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param node The namehash of the ENS address being requested
   /// @return address The address the supplied node resolves to
   function addr(bytes32 node) public view returns (address);
+
+  /// @notice Returns the address of the ENSRegistrar for the Network
+  /// @return address The address the ENSRegistrar resolves to
+  function getENSRegistrar() public view returns (address);
 
   /// @notice Set the resolver to be used by new instances of ReputationMiningCycle
   /// @param miningResolverAddress The address of the Resolver contract with the functions correctly wired.

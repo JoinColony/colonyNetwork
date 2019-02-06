@@ -45,9 +45,6 @@ import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/te
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const EtherRouter = artifacts.require("EtherRouter");
-const IColonyNetwork = artifacts.require("IColonyNetwork");
-const ITokenLocking = artifacts.require("ITokenLocking");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
@@ -66,22 +63,13 @@ contract("Reputation Mining - happy paths", accounts => {
 
   let metaColony;
   let colonyNetwork;
-  let tokenLocking;
   let clnyToken;
   let goodClient;
   const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
   before(async () => {
-    // Get the address of the token locking contract from the existing colony Network
-    const etherRouter = await EtherRouter.deployed();
-    const colonyNetworkDeployed = await IColonyNetwork.at(etherRouter.address);
-    const tokenLockingAddress = await colonyNetworkDeployed.getTokenLocking();
-    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-
     // Setup a new network instance as we'll be modifying the global skills tree
     colonyNetwork = await setupColonyNetwork();
-    await colonyNetwork.setTokenLocking(tokenLockingAddress);
-    await tokenLocking.setColonyNetwork(colonyNetwork.address);
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
@@ -724,8 +712,37 @@ contract("Reputation Mining - happy paths", accounts => {
       const key = makeReputationKey(metaColony.address, new BN("2"), MINER1);
       const value = goodClient.reputations[key];
       const [branchMask, siblings] = await goodClient.getProof(key);
-      const isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER1 });
+      // Checking all good parameters confirms a good proof
+      let isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER1 });
       expect(isValid).to.be.true;
+
+      // Check using a bad key confirms an invalid proof
+      const badKey = makeReputationKey("0xdeadbeef", new BN("2"), MINER1);
+      isValid = await metaColony.verifyReputationProof(badKey, value, branchMask, siblings, { from: MINER1 });
+      expect(isValid).to.be.false;
+
+      // Check using a bad value confirms an invalid proof
+      const badValue = makeReputationValue(new BN("12345678"), "123");
+      isValid = await metaColony.verifyReputationProof(key, badValue, branchMask, siblings, { from: MINER1 });
+      expect(isValid).to.be.false;
+
+      // Check using a bad user confirms an invalid proof
+      isValid = await metaColony.verifyReputationProof(key, value, branchMask, siblings, { from: MINER2 });
+      expect(isValid).to.be.false;
+
+      // Check using a bad branchmask confirms an invalid proof
+      isValid = await metaColony.verifyReputationProof(key, value, 123, siblings, { from: MINER1 });
+      expect(isValid).to.be.false;
+
+      // Check using bad siblings confirms an invalid proof
+      isValid = await metaColony.verifyReputationProof(
+        key,
+        value,
+        branchMask,
+        ["0xbfb84f69f3b58ba43019d6e253d476669af78901fe05eaedfc98ed345dbd8221"],
+        { from: MINER1 }
+      );
+      expect(isValid).to.be.false;
     });
 
     it("should correctly decay a reputation to zero, and then 'decay' to zero in subsequent cycles", async () => {
