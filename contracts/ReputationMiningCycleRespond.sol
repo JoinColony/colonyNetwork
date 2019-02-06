@@ -428,14 +428,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == jrh, "colony-reputation-mining-invalid-before-reputation-proof");
     // Check that they have not changed nNodes from the agree state 
     require(u[U_DISAGREE_STATE_NNODES] == u[U_AGREE_STATE_NNODES], "colony-reputation-mining-nnodes-changed");
-    // They've actually verified whatever they claimed. We increment their challengeStepCompleted by one to indicate this.
-    // In the event that our opponent lied about this reputation not existing yet in the tree, they will both complete
-    // a call to respondToChallenge, but we will have a higher challengeStepCompleted value, and so they will be the ones
-    // eliminated.
-    disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
-    // I think this trick can be used exactly once, and only because this is the last function to be called in the challege,
-    // and I'm choosing to use it here. I *think* this is okay, because the only situation
-    // where we don't prove anything with merkle proofs in this whole dance is here.
+    // They've actually verified whatever they claimed. 
+    // In the event that our opponent lied about this reputation not existing yet in the tree, they will fail on checkAdjacentReputation,
+    // as the branchmask generated will indicate that the node already exists
   }
 
   function proveAfterReputationValue(
@@ -667,6 +662,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     require(impliedRoot == jrh, "colony-reputation-mining-origin-skill-state-disagreement");
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
+    // If the submission has proved that the reputation already exists in the tree, we give it extra 'challengeStepCompleted' so that if
+    // its opponent got a different state by ignoring an existing reputation in the tree, we still out-score them.
   }
 
   function checkChildReputationInState(
@@ -701,6 +698,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     require(impliedRoot == jrh, "colony-reputation-mining-child-skill-state-disagreement");
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
+    // If the submission has proved that the reputation already exists in the tree, we give it extra 'challengeStepCompleted' so that if
+    // its opponent got a different state by ignoring an existing reputation in the tree, we still out-score them.
   }
 
   function saveProvedReputation(uint256[27] memory u) internal {

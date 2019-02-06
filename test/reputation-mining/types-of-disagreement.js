@@ -330,10 +330,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
       const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
-      expect(delta).to.eq.BN(2);
-      // checks that challengeStepCompleted is two more for the good submission than the bad one.
-      // it's two, because we proved the starting reputation was in the starting reputation state, rather than claiming
-      // it was a new reputation not in the tree with value 0.
+      expect(delta).to.eq.BN(1);
+      // checks that challengeStepCompleted is one more for the good submission than the bad one.
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
@@ -448,7 +446,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-nnodes-changed-by-not-1" }
+        client2: { respondToChallenge: "colony-network-mining-more-than-one-node-added" }
       });
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await repCycle.confirmNewHash(1);
@@ -472,7 +470,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-        client2: { respondToChallenge: "colony-reputation-mining-nnodes-changed" }
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-agree-state-disagreement" }
       });
 
       await repCycle.confirmNewHash(1);
@@ -593,10 +591,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
       const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
       const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
-      expect(delta).to.eq.BN(2);
-      // checks that challengeStepCompleted is two more for the good submission than the bad one.
-      // it's two, because we proved the starting reputation was in the starting reputation state, rather than claiming
-      // it was a new reputation not in the tree with value 0.
+      expect(delta).to.eq.BN(1);
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
