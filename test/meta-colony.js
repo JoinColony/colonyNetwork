@@ -262,7 +262,7 @@ contract("Meta Colony", accounts => {
 
       const newDomain = await metaColony.getDomain(1);
       expect(newDomain.skillId).to.eq.BN(2);
-      expect(newDomain.potId).to.eq.BN(1);
+      expect(newDomain.fundingPotId).to.eq.BN(1);
 
       // Check root local skill.nChildren is now 2
       // One special mining skill, and the skill associated with the domain we just added
@@ -306,15 +306,15 @@ contract("Meta Colony", accounts => {
 
       const rootDomain = await colony.getDomain(1);
       expect(rootDomain.skillId).to.eq.BN(4);
-      expect(rootDomain.potId).to.eq.BN(1);
+      expect(rootDomain.fundingPotId).to.eq.BN(1);
 
       const newDomain2 = await colony.getDomain(2);
       expect(newDomain2.skillId).to.eq.BN(5);
-      expect(newDomain2.potId).to.eq.BN(2);
+      expect(newDomain2.fundingPotId).to.eq.BN(2);
 
       const newDomain3 = await colony.getDomain(3);
       expect(newDomain3.skillId).to.eq.BN(6);
-      expect(newDomain3.potId).to.eq.BN(3);
+      expect(newDomain3.fundingPotId).to.eq.BN(3);
 
       // Check root local skill.nChildren is now 3
       const rootLocalSkill = await colonyNetwork.getSkill(4);

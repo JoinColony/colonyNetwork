@@ -164,8 +164,8 @@ contract("ColonyTask", accounts => {
       expect(task[7]).to.eq.BN(2);
     });
 
-    it("should log TaskAdded and PotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1, 1, 0), ["TaskAdded", "PotAdded"]);
+    it("should log TaskAdded and FundingPotAdded events", async () => {
+      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1, 1, 0), ["TaskAdded", "FundingPotAdded"]);
     });
 
     it("should optionally set the skill and due date", async () => {
@@ -1346,17 +1346,17 @@ contract("ColonyTask", accounts => {
       await colony.claimColonyFunds(otherToken.address);
       await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
 
-      // Keep track of original Ether balance in pots
-      const originalDomainEtherBalance = await colony.getPotBalance(domain.potId, ZERO_ADDRESS);
+      // Keep track of original Ether balance in funding pots
+      const originalDomainEtherBalance = await colony.getPotBalance(domain.fundingPotId, ZERO_ADDRESS);
       const originalTaskEtherBalance = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
       // And same for the token
-      const originalDomainTokenBalance = await colony.getPotBalance(domain.potId, token.address);
+      const originalDomainTokenBalance = await colony.getPotBalance(domain.fundingPotId, token.address);
       const originalTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
       // And the other token
-      const originalDomainOtherTokenBalance = await colony.getPotBalance(domain.potId, otherToken.address);
+      const originalDomainOtherTokenBalance = await colony.getPotBalance(domain.fundingPotId, otherToken.address);
       const originalTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
 
-      // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
+      // Now that everything is set up, let's cancel the task, move funds and compare funding pots afterwards
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -1366,16 +1366,16 @@ contract("ColonyTask", accounts => {
         args: [taskId]
       });
 
-      await colony.moveFundsBetweenPots(taskPotId, domain.potId, originalTaskEtherBalance, ZERO_ADDRESS);
-      await colony.moveFundsBetweenPots(taskPotId, domain.potId, originalTaskTokenBalance, token.address);
-      await colony.moveFundsBetweenPots(taskPotId, domain.potId, originalTaskOtherTokenBalance, otherToken.address);
+      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskEtherBalance, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskTokenBalance, token.address);
+      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskOtherTokenBalance, otherToken.address);
 
       const cancelledTaskEtherBalance = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
-      const cancelledDomainEtherBalance = await colony.getPotBalance(domain.potId, ZERO_ADDRESS);
+      const cancelledDomainEtherBalance = await colony.getPotBalance(domain.fundingPotId, ZERO_ADDRESS);
       const cancelledTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
-      const cancelledDomainTokenBalance = await colony.getPotBalance(domain.potId, token.address);
+      const cancelledDomainTokenBalance = await colony.getPotBalance(domain.fundingPotId, token.address);
       const cancelledTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
-      const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domain.potId, otherToken.address);
+      const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domain.fundingPotId, otherToken.address);
 
       expect(originalTaskEtherBalance).to.not.eq.BN(cancelledTaskEtherBalance);
       expect(originalDomainEtherBalance).to.not.eq.BN(cancelledDomainEtherBalance);

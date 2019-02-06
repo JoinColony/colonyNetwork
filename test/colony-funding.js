@@ -84,7 +84,7 @@ contract("Colony Funding", accounts => {
       expect(colonyRewardPotBalance).to.eq.BN(1);
     });
 
-    it("should let tokens be moved between pots", async () => {
+    it("should let tokens be moved between funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 51, otherToken.address);
@@ -149,15 +149,15 @@ contract("Colony Funding", accounts => {
 
     it("should correctly track if we are able to make token payouts", async () => {
       // There are eighteen scenarios to test here.
-      // Pot was below payout, now equal (1 + 2)
-      // Pot was below payout, now above (3 + 4)
-      // Pot was equal to payout, now above (5 + 6)
-      // Pot was equal to payout, now below (7 + 8)
-      // Pot was above payout, now below (9 + 10)
-      // Pot was above payout, now equal (11 + 12)
-      // Pot was below payout, still below (13 + 14)
-      // Pot was above payout, still above (15 + 16)
-      // Pot was equal to payout, still equal (17 + 18)
+      // FundingPot was below payout, now equal (1 + 2)
+      // FundingPot was below payout, now above (3 + 4)
+      // FundingPot was equal to payout, now above (5 + 6)
+      // FundingPot was equal to payout, now below (7 + 8)
+      // FundingPot was above payout, now below (9 + 10)
+      // FundingPot was above payout, now equal (11 + 12)
+      // FundingPot was below payout, still below (13 + 14)
+      // FundingPot was above payout, still above (15 + 16)
+      // FundingPot was equal to payout, still equal (17 + 18)
       //
       // And, for each of these, we have to check that the update is correctly tracked when
       // the pot changes (odd numbers), and when the payout changes (even numbers)
@@ -178,8 +178,8 @@ contract("Colony Funding", accounts => {
         sigTypes: [0, 0],
         args: [taskId, WORKER]
       });
-      // Pot 0, Payout 0
-      // Pot was equal to payout, transition to pot being equal by changing payout (18)
+      // FundingPot 0, Payout 0
+      // FundingPot was equal to payout, transition to pot being equal by changing payout (18)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -191,14 +191,14 @@ contract("Colony Funding", accounts => {
       let task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 0, Payout 0
-      // Pot was equal to payout, transition to pot being equal by changing pot (17)
+      // FundingPot 0, Payout 0
+      // FundingPot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1, 2, 0, otherToken.address);
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 0, Payout 0
-      // Pot was equal to payout, transition to pot being lower by increasing payout (8)
+      // FundingPot 0, Payout 0
+      // FundingPot was equal to payout, transition to pot being lower by increasing payout (8)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -210,20 +210,20 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.eq.BN(1);
 
-      // Pot 0, Payout 40
-      // Pot was below payout, transition to being equal by increasing pot (1)
+      // FundingPot 0, Payout 40
+      // FundingPot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 40, Payout 40
-      // Pot was equal to payout, transition to being above by increasing pot (5)
+      // FundingPot 40, Payout 40
+      // FundingPot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 80, Payout 40
-      // Pot was above payout, transition to being equal by increasing payout (12)
+      // FundingPot 80, Payout 40
+      // FundingPot was above payout, transition to being equal by increasing payout (12)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -235,8 +235,8 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 80, Payout 80
-      // Pot was equal to payout, transition to being above by decreasing payout (6)
+      // FundingPot 80, Payout 80
+      // FundingPot was equal to payout, transition to being above by decreasing payout (6)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -248,14 +248,14 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 80, Payout 40
-      // Pot was above payout, transition to being equal by decreasing pot (11)
+      // FundingPot 80, Payout 40
+      // FundingPot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2, 1, 40, otherToken.address);
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 40, Payout 40
-      // Pot was equal to payout, transition to pot being below payout by changing pot (7)
+      // FundingPot 40, Payout 40
+      // FundingPot was equal to payout, transition to pot being below payout by changing pot (7)
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 20, otherToken.address), "colony-funding-task-bad-state");
 
       // Remove 20 from pot
@@ -277,14 +277,14 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 40]
       });
 
-      // Pot 20, Payout 40
-      // Pot was below payout, change to being above by changing pot (3)
+      // FundingPot 20, Payout 40
+      // FundingPot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1, 2, 60, otherToken.address);
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 80, Payout 40
-      // Pot was above payout, change to being below by changing pot (9)
+      // FundingPot 80, Payout 40
+      // FundingPot was above payout, change to being below by changing pot (9)
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 60, otherToken.address), "colony-funding-task-bad-state");
 
       // Remove 60 from pot
@@ -306,8 +306,8 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 40]
       });
 
-      // Pot 20, Payout 40
-      // Pot was below payout, change to being above by changing payout (4)
+      // FundingPot 20, Payout 40
+      // FundingPot was below payout, change to being above by changing payout (4)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -319,8 +319,8 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 20, Payout 10
-      // Pot was above, change to being above by changing payout (16)
+      // FundingPot 20, Payout 10
+      // FundingPot was above, change to being above by changing payout (16)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -332,14 +332,14 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 20, Payout 5
-      // Pot was above, change to being above by changing pot (15)
+      // FundingPot 20, Payout 5
+      // FundingPot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 10, Payout 5
-      // Pot was above payout, change to being below by changing payout (10)
+      // FundingPot 10, Payout 5
+      // FundingPot was above payout, change to being below by changing payout (10)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -351,8 +351,8 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.eq.BN(1);
 
-      // Pot 10, Payout 40
-      // Pot was below payout, change to being below by changing payout (14)
+      // FundingPot 10, Payout 40
+      // FundingPot was below payout, change to being below by changing payout (14)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -364,8 +364,8 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.eq.BN(1);
 
-      // Pot 10, Payout 30
-      // Pot was below payout, change to being below by changing pot (13)
+      // FundingPot 10, Payout 30
+      // FundingPot was below payout, change to being below by changing pot (13)
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 5, otherToken.address), "colony-funding-task-bad-state");
 
       // Remove 5 from pot
@@ -387,8 +387,8 @@ contract("Colony Funding", accounts => {
         args: [taskId, otherToken.address, 30]
       });
 
-      // Pot 5, Payout 30
-      // Pot was below payout, change to being equal by changing payout (2)
+      // FundingPot 5, Payout 30
+      // FundingPot was below payout, change to being equal by changing payout (2)
       await executeSignedTaskChange({
         colony,
         taskId,
@@ -400,7 +400,7 @@ contract("Colony Funding", accounts => {
       task = await colony.getTask(taskId);
       expect(task[4]).to.be.zero;
 
-      // Pot 5, Payout 5
+      // FundingPot 5, Payout 5
     });
 
     it("should pay fees on revenue correctly", async () => {
@@ -417,13 +417,13 @@ contract("Colony Funding", accounts => {
     it("should return correct number of funding pots", async () => {
       const taskCountBefore = await colony.getTaskCount();
       expect(taskCountBefore).to.be.zero;
-      const potCountBefore = await colony.getPotCount();
+      const potCountBefore = await colony.getFundingPotCount();
       // Expect there to be a single funding pot for the root Domain created.
-      // Note that the reward pot with id 0 is NOT included in the Colony Funding pots count
+      // Note that the reward pot with id 0 is NOT included in the Colony Funding funding pots count
       expect(potCountBefore).to.eq.BN(1);
 
       await colony.addDomain(1);
-      const potCountAfterAddingDomain = await colony.getPotCount();
+      const potCountAfterAddingDomain = await colony.getFundingPotCount();
       expect(potCountAfterAddingDomain).to.eq.BN(2);
 
       for (let i = 0; i < 5; i += 1) {
@@ -432,18 +432,18 @@ contract("Colony Funding", accounts => {
 
       const taskCountAfter = await colony.getTaskCount();
       expect(taskCountAfter).to.be.eq.BN(5);
-      const potCountAfter = await colony.getPotCount();
+      const potCountAfter = await colony.getFundingPotCount();
       expect(potCountAfter).to.eq.BN(7);
     });
 
-    it("should not allow contributions to nonexistent pots", async () => {
+    it("should not allow contributions to nonexistent funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 5, 40, otherToken.address), "colony-funding-nonexistent-pot");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       expect(colonyPotBalance).to.eq.BN(99);
     });
 
-    it("should not allow attempts to move funds from nonexistent pots", async () => {
+    it("should not allow attempts to move funds from nonexistent funding pots", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
       await checkErrorRevert(colony.moveFundsBetweenPots(5, 1, 40, otherToken.address), "colony-funding-from-nonexistent-pot");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
@@ -514,7 +514,7 @@ contract("Colony Funding", accounts => {
       expect(colonyPotBalance).to.eq.BN(99);
     });
 
-    it("should let ether be moved between pots", async () => {
+    it("should let ether be moved between funding pots", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(ZERO_ADDRESS);
       await makeTask({ colony });

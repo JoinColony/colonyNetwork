@@ -328,7 +328,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return status TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
   /// @return dueDate Due date
   /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current task funding
-  /// @return potId Id of funding pot for task
+  /// @return fundingPotId Id of funding pot for task
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
@@ -338,7 +338,7 @@ contract IColony is ColonyDataTypes, IRecovery {
     TaskStatus status,
     uint256 dueDate,
     uint256 payoutsWeCannotMake,
-    uint256 potId,
+    uint256 fundingPotId,
     uint256 completionTimestamp,
     uint256 domainId,
     uint256[] memory skillIds
@@ -459,7 +459,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the number of funding pots in the colony
   /// @return count The funding pots count
-  function getPotCount() public view returns (uint256 count);
+  function getFundingPotCount() public view returns (uint256 count);
 
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot
@@ -482,6 +482,6 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the total amount of tokens `_token` minus amount reserved to be paid to the reputation and token holders as rewards
   /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return amount Total amount of tokens in pots other than the rewards pot (id 0)
+  /// @return amount Total amount of tokens in funding pots other than the rewards pot (id 0)
   function getNonRewardPotsTotal(address _token) public view returns (uint256 amount);
 }

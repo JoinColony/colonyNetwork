@@ -98,7 +98,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
 
-    pots[task.potId].balance[_token] = sub(pots[task.potId].balance[_token], payout);
+    fundingPots[task.fundingPotId].balance[_token] = sub(fundingPots[task.fundingPotId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
 
     uint fee = calculateNetworkFeeForPayout(payout);
@@ -123,16 +123,16 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     emit TaskPayoutClaimed(_id, _role, _token, remainder);
   }
 
-  function getPotCount() public view returns (uint256 count) {
-    return potCount;
+  function getFundingPotCount() public view returns (uint256 count) {
+    return fundingPotCount;
   }
 
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256) {
-    return pots[_potId].balance[_token];
+    return fundingPots[_potId].balance[_token];
   }
 
   function getPotInformation(uint256 _potId) public view returns (uint256 taskId, uint256 domainId) {
-    Pot storage pot = pots[_potId];
+    FundingPot storage pot = fundingPots[_potId];
     taskId = pot.taskId;
     domainId = pot.domainId;
   }
@@ -148,16 +148,16 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     // Prevent people moving funds from the pot for paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
 
-    // Preventing sending from non-existent pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
-    // prevent sending to nonexistent pots) but doing this check explicitly gives us the error message for clients.
-    require(_fromPot <= potCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
-    require(_toPot <= potCount, "colony-funding-nonexistent-pot"); // Only allow sending to created pots
+    // Preventing sending from non-existent funding pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
+    // prevent sending to nonexistent funding pots) but doing this check explicitly gives us the error message for clients.
+    require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
+    require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
 
-    uint fromTaskId = pots[_fromPot].taskId;
-    uint toTaskId = pots[_toPot].taskId;
+    uint fromTaskId = fundingPots[_fromPot].taskId;
+    uint toTaskId = fundingPots[_toPot].taskId;
 
-    uint fromPotPreviousAmount = pots[_fromPot].balance[_token];
-    uint toPotPreviousAmount = pots[_toPot].balance[_token];
+    uint fromPotPreviousAmount = fundingPots[_fromPot].balance[_token];
+    uint toPotPreviousAmount = fundingPots[_toPot].balance[_token];
 
     // If this pot is associated with a task, prevent money being taken from the pot
     // if the remaining balance is less than the amount needed for payouts,
@@ -169,8 +169,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
     }
 
-    pots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
-    pots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
+    fundingPots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
+    fundingPots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
     updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
     updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
 
@@ -183,18 +183,18 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint remainder;
     if (_token == address(0x0)) {
       // It's ether
-      toClaim = sub(sub(address(this).balance, nonRewardPotsTotal[_token]), pots[0].balance[_token]);
+      toClaim = sub(sub(address(this).balance, nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]);
     } else {
       // Assume it's an ERC 20 token.
       ERC20Extended targetToken = ERC20Extended(_token);
-      toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), pots[0].balance[_token]);
+      toClaim = sub(sub(targetToken.balanceOf(address(this)), nonRewardPotsTotal[_token]), fundingPots[0].balance[_token]);
     }
 
     feeToPay = toClaim / getRewardInverse();
     remainder = sub(toClaim, feeToPay);
     nonRewardPotsTotal[_token] = add(nonRewardPotsTotal[_token], remainder);
-    pots[1].balance[_token] = add(pots[1].balance[_token], remainder);
-    pots[0].balance[_token] = add(pots[0].balance[_token], feeToPay);
+    fundingPots[1].balance[_token] = add(fundingPots[1].balance[_token], remainder);
+    fundingPots[0].balance[_token] = add(fundingPots[0].balance[_token], feeToPay);
 
     emit ColonyFundsClaimed(_token, feeToPay, remainder);
   }
@@ -232,7 +232,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       rootHash,
       colonyWideReputation,
       totalTokens,
-      pots[0].balance[_token],
+      fundingPots[0].balance[_token],
       _token,
       block.timestamp
     );
@@ -266,7 +266,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint fee = calculateNetworkFeeForPayout(reward);
     uint remainder = sub(reward, fee);
 
-    pots[0].balance[tokenAddress] = sub(pots[0].balance[tokenAddress], reward);
+    fundingPots[0].balance[tokenAddress] = sub(fundingPots[0].balance[tokenAddress], reward);
 
     ERC20Extended(tokenAddress).transfer(msg.sender, remainder);
     ERC20Extended(tokenAddress).transfer(colonyNetworkAddress, fee);
@@ -378,7 +378,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = pots[task.potId].balance[_token];
+    uint tokenPot = fundingPots[task.fundingPotId].balance[_token];
     if (_prev >= totalTokenPayout) {                                  // If the old amount in the pot was enough to pay for the budget
       if (tokenPot < totalTokenPayout) {                              // And the new amount in the pot is not enough to pay for the budget...
         task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
@@ -393,7 +393,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = pots[task.potId].balance[_token];
+    uint tokenPot = fundingPots[task.fundingPotId].balance[_token];
     if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
       if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
         task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.

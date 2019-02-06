@@ -105,8 +105,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     for (uint i = 0; i < _users.length; i++) {
       require(_amounts[i] >= 0, "colony-bootstrap-bad-amount-input");
-      require(uint256(_amounts[i]) <= pots[1].balance[token], "colony-bootstrap-not-enough-tokens");
-      pots[1].balance[token] = sub(pots[1].balance[token], uint256(_amounts[i]));
+      require(uint256(_amounts[i]) <= fundingPots[1].balance[token], "colony-bootstrap-not-enough-tokens");
+      fundingPots[1].balance[token] = sub(fundingPots[1].balance[token], uint256(_amounts[i]));
       nonRewardPotsTotal[token] = sub(nonRewardPotsTotal[token], uint256(_amounts[i]));
 
       ERC20Extended(token).transfer(_users[i], uint256(_amounts[i]));
@@ -261,18 +261,18 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {
     // Create a new pot
-    potCount += 1;
+    fundingPotCount += 1;
 
     // Create a new domain with the given skill and new pot
     domainCount += 1;
     domains[domainCount] = Domain({
       skillId: _skillId,
-      potId: potCount
+      fundingPotId: fundingPotCount
     });
 
-    pots[potCount].domainId = domainCount;
+    fundingPots[fundingPotCount].domainId = domainCount;
 
     emit DomainAdded(domainCount);
-    emit PotAdded(potCount);
+    emit FundingPotAdded(fundingPotCount);
   }
 }
