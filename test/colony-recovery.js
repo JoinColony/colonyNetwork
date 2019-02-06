@@ -67,6 +67,25 @@ contract("Colony Recovery", accounts => {
       expect(numRecoveryRoles).to.eq.BN(1);
     });
 
+    it("should not error when adding recovery roles for existing recovery users", async () => {
+      const founder = accounts[0];
+      let numRecoveryRoles;
+
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      expect(numRecoveryRoles).to.be.zero;
+
+      await colony.setRecoveryRole(founder);
+      await colony.setRecoveryRole(accounts[1]);
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      expect(numRecoveryRoles).to.eq.BN(2);
+
+      // Can add twice
+      await colony.setRecoveryRole(founder);
+      await colony.setRecoveryRole(accounts[1]);
+      numRecoveryRoles = await colony.numRecoveryRoles();
+      expect(numRecoveryRoles).to.eq.BN(2);
+    });
+
     it("should not be able to add and remove roles when in recovery", async () => {
       const founder = accounts[0];
       await colony.setRecoveryRole(founder);
