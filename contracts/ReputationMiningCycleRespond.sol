@@ -398,6 +398,16 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory agreeStateSiblings
   ) internal
   {
+    if (u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1) {
+      // This implies they are claiming that this is a new hash.
+      // Check they have incremented nNodes by one
+      require(u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1, "colony-reputation-mining-nnodes-changed-by-not-1");
+      // Flag we need to check the adjacent hash
+      u[U_NEW_REPUTATION] = 1;
+      return;
+    }
+    // Otherwise, it's an existing hash and we've just changed its value.
+
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     // We binary searched to the first disagreement, so the last agreement is the one before.
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -414,16 +424,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on.
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-
-    if (u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1) {
-      // This implies they are claiming that this is a new hash.
-      // Check they have incremented nNodes by one 
-      require(u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1, "colony-reputation-mining-nnodes-changed-by-not-1");
-      // Flag we need to check the adjacent hash
-      u[U_NEW_REPUTATION] = 1;
-      // TODO: Move to top of function.
-      return;
-    }
 
     require(impliedRoot == jrh, "colony-reputation-mining-invalid-before-reputation-proof");
     // Check that they have not changed nNodes from the agree state 
