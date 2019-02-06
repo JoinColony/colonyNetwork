@@ -34,7 +34,6 @@ const DSToken = artifacts.require("DSToken");
 
 contract("Colony Funding", accounts => {
   const MANAGER = accounts[0];
-  const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
 
   let colony;
@@ -463,8 +462,8 @@ contract("Colony Funding", accounts => {
       const taskId = await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
       await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
-      await colony.claimPayout(taskId, WORKER_ROLE, otherToken.address, { from: WORKER });
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, otherToken.address, { from: EVALUATOR });
+      await colony.claimPayout(taskId, WORKER_ROLE, otherToken.address);
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, otherToken.address);
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
 
       const colonyPotBalance = await colony.getPotBalance(2, otherToken.address);
@@ -481,8 +480,8 @@ contract("Colony Funding", accounts => {
       });
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: EVALUATOR });
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address);
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
 
       const taskInfo = await colony.getTask(taskId);
       const taskPotId = taskInfo[5];
