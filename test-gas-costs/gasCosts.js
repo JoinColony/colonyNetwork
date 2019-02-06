@@ -267,6 +267,7 @@ contract("All", function(accounts) {
 
       await fundColonyWithTokens(newColony, otherToken, initialFunding);
       await newColony.mintTokens(workerReputation.add(managerReputation));
+      await newColony.claimColonyFunds(newToken.address);
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation, managerReputation]);
 
       await giveUserCLNYTokensAndStake(colonyNetwork, accounts[8], DEFAULT_STAKE);

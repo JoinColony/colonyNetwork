@@ -44,7 +44,8 @@ contract("Token Locking", addresses => {
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
-    await colony.mintTokens(usersTokens + otherUserTokens);
+    await colony.mintTokens(Math.ceil(((usersTokens + otherUserTokens) * 100) / 99));
+    await colony.claimColonyFunds(token.address);
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
     const tokenArgs = getTokenArgs();
@@ -124,6 +125,7 @@ contract("Token Locking", addresses => {
     });
 
     it("should not be able to withdraw if specified amount is greated than deposited", async () => {
+      await colony.claimColonyFunds(token.address);
       await colony.bootstrapColony([addresses[0]], [otherUserTokens]);
       await token.approve(tokenLocking.address, otherUserTokens);
       await tokenLocking.deposit(token.address, otherUserTokens);

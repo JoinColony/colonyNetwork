@@ -244,6 +244,7 @@ contract("Colony", accounts => {
       const skillCount = await colonyNetwork.getSkillCount();
 
       await colony.mintTokens(WAD.muln(14));
+      await colony.claimColonyFunds(token.address);
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const inactiveReputationMiningCycleAddress = await colonyNetwork.getReputationMiningCycle(false);
       const inactiveReputationMiningCycle = await IReputationMiningCycle.at(inactiveReputationMiningCycleAddress);
@@ -257,14 +258,24 @@ contract("Colony", accounts => {
 
     it("should assign tokens correctly when bootstrapping the colony", async () => {
       await colony.mintTokens(WAD.muln(14));
-      await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-bootstrap-not-enough-tokens");
 
+      await colony.claimColonyFunds(token.address);
+      const potBalanceBefore = await colony.getPotBalance(1, token.address);
+      expect(potBalanceBefore).to.eq.BN(WAD.muln(14));
+
+      await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
       expect(balance).to.eq.BN(INITIAL_REPUTATIONS[0]);
+
+      const potBalanceAfter = await colony.getPotBalance(1, token.address);
+      expect(potBalanceAfter).to.be.zero;
     });
 
     it("should be able to bootstrap colony more than once", async () => {
       await colony.mintTokens(WAD.muln(10));
+      await colony.claimColonyFunds(token.address);
+
       await colony.bootstrapColony([INITIAL_ADDRESSES[0]], [INITIAL_REPUTATIONS[0]]);
       await colony.bootstrapColony([INITIAL_ADDRESSES[0]], [INITIAL_REPUTATIONS[0]]);
 
@@ -285,7 +296,7 @@ contract("Colony", accounts => {
 
     it("should throw if there is not enough funds to send", async () => {
       await colony.mintTokens(WAD.muln(10));
-      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "ds-token-insufficient-balance");
+      await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-bootstrap-not-enough-tokens");
 
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
       expect(balance).to.be.zero;

@@ -77,7 +77,8 @@ contract("Colony Reward Payouts", accounts => {
     otherToken = await DSToken.new(otherTokenArgs[0]);
 
     await fundColonyWithTokens(colony, otherToken, initialFunding);
-    await colony.mintTokens(initialFunding);
+    await colony.mintTokens(initialFunding.muln(100).divn(99)); // Tke in to account 1% being siphoned off for rewards
+    await colony.claimColonyFunds(token.address);
     await colony.bootstrapColony([userAddress1], [userReputation]);
 
     await token.approve(tokenLocking.address, userTokens, { from: userAddress1 });
@@ -190,6 +191,7 @@ contract("Colony Reward Payouts", accounts => {
     });
 
     it("should not be able to claim the reward if passed reputation is not sender's", async () => {
+      await colony.claimColonyFunds(token.address);
       await colony.bootstrapColony([userAddress2], [userReputation]);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -269,10 +271,12 @@ contract("Colony Reward Payouts", accounts => {
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
-      await newColony.setRewardInverse(100);
 
       await newToken.setOwner(newColony.address);
       await newColony.mintTokens(userTokens);
+      await newColony.claimColonyFunds(newToken.address);
+
+      await newColony.setRewardInverse(100);
       await newColony.bootstrapColony([userAddress1], [userTokens]);
       await newToken.transfer(newColony.address, userTokens, { from: userAddress1 });
 
@@ -566,12 +570,10 @@ contract("Colony Reward Payouts", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
-      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
-      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -581,16 +583,22 @@ contract("Colony Reward Payouts", accounts => {
       await newRoles.setRoleCapability(adminRole, newToken.address, sha3("mint(address,uint256)").slice(0, 10), true);
       await newToken.setAuthority(newRoles.address);
 
-      await fundColonyWithTokens(colony1, otherToken, initialFunding);
-      await fundColonyWithTokens(colony2, otherToken, initialFunding);
-
       // Minting the tokens so we can give them to users
       await colony1.mintTokens(userReputation);
       await colony2.mintTokens(userReputation);
 
+      // Claim tokens so we can use them in bootstrapping
+      await colony1.claimColonyFunds(newToken.address);
+      await colony2.claimColonyFunds(newToken.address);
+
       // Giving the user colony's native tokens and reputation so they can participate in reward payout
       await colony1.bootstrapColony([userAddress1], [userReputation]);
       await colony2.bootstrapColony([userAddress1], [userReputation]);
+
+      await colony1.setRewardInverse(100);
+      await colony2.setRewardInverse(100);
+      await fundColonyWithTokens(colony1, otherToken, initialFunding);
+      await fundColonyWithTokens(colony2, otherToken, initialFunding);
 
       // Submit current hash in active reputation mining cycle
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -671,7 +679,7 @@ contract("Colony Reward Payouts", accounts => {
       expect(userBalance).to.eq.BN(claimInPayout1.add(claimInPayout2).toString());
     });
 
-    it("should not be able to claim reward payout from a colony that didn't created it", async () => {
+    it("should not be able to claim reward payout from a colony that didn't create it", async () => {
       // Setting up a new token and two colonies
       const tokenArgs = getTokenArgs();
       const newToken = await DSToken.new(tokenArgs[1]);
@@ -679,12 +687,10 @@ contract("Colony Reward Payouts", accounts => {
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
       const colony1 = await IColony.at(colonyAddress);
-      await colony1.setRewardInverse(100);
 
       ({ logs } = await colonyNetwork.createColony(newToken.address));
       ({ colonyAddress } = logs[0].args);
       const colony2 = await IColony.at(colonyAddress);
-      await colony2.setRewardInverse(100);
 
       // Giving both colonies the capability to call `mint` function
       const adminRole = 1;
@@ -701,9 +707,16 @@ contract("Colony Reward Payouts", accounts => {
       await colony1.mintTokens(userReputation);
       await colony2.mintTokens(userReputation);
 
+      // Claim tokens so we can use them in bootstrapping
+      await colony1.claimColonyFunds(newToken.address);
+      await colony2.claimColonyFunds(newToken.address);
+
       // Giving the user colony's native tokens and reputation so they can participate in reward payout
       await colony1.bootstrapColony([userAddress1], [userReputation]);
       await colony2.bootstrapColony([userAddress1], [userReputation]);
+
+      await colony1.setRewardInverse(100);
+      await colony2.setRewardInverse(100);
 
       // Submit current hash in active reputation mining cycle
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -813,7 +826,6 @@ contract("Colony Reward Payouts", accounts => {
         const { colonyAddress } = logs[0].args;
         await newToken.setOwner(colonyAddress);
         const newColony = await IColony.at(colonyAddress);
-        await newColony.setRewardInverse(100);
 
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await DSToken.new(payoutTokenArgs[0]);
@@ -826,7 +838,10 @@ contract("Colony Reward Payouts", accounts => {
         const tokensPerUser = new BN(reputationPerUser);
         // Giving colony's native tokens to 3 users.
         // Reputation log is appended to inactive reputation mining cycle
+        await newColony.claimColonyFunds(newToken.address);
         await newColony.bootstrapColony([userAddress1, userAddress2, userAddress3], [reputationPerUser, reputationPerUser, reputationPerUser]);
+
+        await newColony.setRewardInverse(100);
 
         // Submit current hash in active reputation mining cycle
         await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
