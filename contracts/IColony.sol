@@ -459,7 +459,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the number of funding pots in the colony
   /// @return count The funding pots count
-  function getPotCount() public view returns (uint256 count);
+  function getFundingPotCount() public view returns (uint256 count);
 
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot

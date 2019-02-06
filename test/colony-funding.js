@@ -417,13 +417,13 @@ contract("Colony Funding", accounts => {
     it("should return correct number of funding funding pots", async () => {
       const taskCountBefore = await colony.getTaskCount();
       expect(taskCountBefore).to.be.zero;
-      const potCountBefore = await colony.getPotCount();
+      const potCountBefore = await colony.getFundingPotCount();
       // Expect there to be a single funding pot for the root Domain created.
       // Note that the reward pot with id 0 is NOT included in the Colony Funding funding pots count
       expect(potCountBefore).to.eq.BN(1);
 
       await colony.addDomain(1);
-      const potCountAfterAddingDomain = await colony.getPotCount();
+      const potCountAfterAddingDomain = await colony.getFundingPotCount();
       expect(potCountAfterAddingDomain).to.eq.BN(2);
 
       for (let i = 0; i < 5; i += 1) {
@@ -432,7 +432,7 @@ contract("Colony Funding", accounts => {
 
       const taskCountAfter = await colony.getTaskCount();
       expect(taskCountAfter).to.be.eq.BN(5);
-      const potCountAfter = await colony.getPotCount();
+      const potCountAfter = await colony.getFundingPotCount();
       expect(potCountAfter).to.eq.BN(7);
     });
 

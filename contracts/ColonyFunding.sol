@@ -123,8 +123,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     emit TaskPayoutClaimed(_id, _role, _token, remainder);
   }
 
-  function getPotCount() public view returns (uint256 count) {
-    return potCount;
+  function getFundingPotCount() public view returns (uint256 count) {
+    return fundingPotCount;
   }
 
   function getPotBalance(uint256 _potId, address _token) public view returns (uint256) {
@@ -150,8 +150,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     // Preventing sending from non-existent funding pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
     // prevent sending to nonexistent funding pots) but doing this check explicitly gives us the error message for clients.
-    require(_fromPot <= potCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
-    require(_toPot <= potCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
+    require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
+    require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
 
     uint fromTaskId = fundingPots[_fromPot].taskId;
     uint toTaskId = fundingPots[_toPot].taskId;

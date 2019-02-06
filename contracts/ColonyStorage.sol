@@ -36,7 +36,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   uint256 rewardInverse; // Storage slot 8
 
   uint256 taskCount; // Storage slot 9
-  uint256 potCount; // Storage slot 10
+  uint256 fundingPotCount; // Storage slot 10
   uint256 domainCount; // Storage slot 11
 
   // Mapping function signature to 2 task roles whose approval is needed to execute

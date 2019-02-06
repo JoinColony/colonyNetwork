@@ -261,18 +261,18 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {
     // Create a new pot
-    potCount += 1;
+    fundingPotCount += 1;
 
     // Create a new domain with the given skill and new pot
     domainCount += 1;
     domains[domainCount] = Domain({
       skillId: _skillId,
-      fundingPotId: potCount
+      fundingPotId: fundingPotCount
     });
 
-    fundingPots[potCount].domainId = domainCount;
+    fundingPots[fundingPotCount].domainId = domainCount;
 
     emit DomainAdded(domainCount);
-    emit FundingPotAdded(potCount);
+    emit FundingPotAdded(fundingPotCount);
   }
 }
