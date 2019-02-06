@@ -231,8 +231,8 @@ contract("Colony", accounts => {
   });
 
   describe("when adding domains", () => {
-    it("should log DomainAdded and PotAdded events", async () => {
-      await expectAllEvents(colony.addDomain(1), ["DomainAdded", "PotAdded"]);
+    it("should log DomainAdded and FundingPotAdded events", async () => {
+      await expectAllEvents(colony.addDomain(1), ["DomainAdded", "FundingPotAdded"]);
     });
   });
 

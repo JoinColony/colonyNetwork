@@ -273,6 +273,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     pots[potCount].domainId = domainCount;
 
     emit DomainAdded(domainCount);
-    emit PotAdded(potCount);
+    emit FundingPotAdded(potCount);
   }
 }

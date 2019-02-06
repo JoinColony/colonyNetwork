@@ -113,7 +113,7 @@ contract ColonyTask is ColonyStorage {
     }
     this.setTaskDueDate(taskCount, dueDate);
 
-    emit PotAdded(potCount);
+    emit FundingPotAdded(potCount);
     emit TaskAdded(taskCount);
   }
 

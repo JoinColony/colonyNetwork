@@ -164,8 +164,8 @@ contract("ColonyTask", accounts => {
       expect(task[7]).to.eq.BN(2);
     });
 
-    it("should log TaskAdded and PotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1, 1, 0), ["TaskAdded", "PotAdded"]);
+    it("should log TaskAdded and FundingPotAdded events", async () => {
+      await expectAllEvents(colony.makeTask(SPECIFICATION_HASH, 1, 1, 0), ["TaskAdded", "FundingPotAdded"]);
     });
 
     it("should optionally set the skill and due date", async () => {

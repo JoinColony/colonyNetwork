@@ -155,7 +155,7 @@ contract ColonyDataTypes {
 
   /// @notice Event logged when a new FundingPot is added
   /// @param potId Id of the newly-created FundingPot
-  event PotAdded(uint256 potId);
+  event FundingPotAdded(uint256 potId);
 
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
