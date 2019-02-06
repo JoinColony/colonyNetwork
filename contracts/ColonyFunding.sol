@@ -98,7 +98,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint payout = task.payouts[_role][_token];
     task.payouts[_role][_token] = 0;
 
-    pots[task.potId].balance[_token] = sub(pots[task.potId].balance[_token], payout);
+    pots[task.fundingPotId].balance[_token] = sub(pots[task.fundingPotId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
 
     uint fee = calculateNetworkFeeForPayout(payout);
@@ -378,7 +378,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = pots[task.potId].balance[_token];
+    uint tokenPot = pots[task.fundingPotId].balance[_token];
     if (_prev >= totalTokenPayout) {                                  // If the old amount in the pot was enough to pay for the budget
       if (tokenPot < totalTokenPayout) {                              // And the new amount in the pot is not enough to pay for the budget...
         task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
@@ -393,7 +393,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
     Task storage task = tasks[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = pots[task.potId].balance[_token];
+    uint tokenPot = pots[task.fundingPotId].balance[_token];
     if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
       if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
         task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.

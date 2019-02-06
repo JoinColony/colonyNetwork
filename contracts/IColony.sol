@@ -328,7 +328,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return status TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
   /// @return dueDate Due date
   /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current task funding
-  /// @return potId Id of funding pot for task
+  /// @return fundingPotId Id of funding pot for task
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
@@ -338,7 +338,7 @@ contract IColony is ColonyDataTypes, IRecovery {
     TaskStatus status,
     uint256 dueDate,
     uint256 payoutsWeCannotMake,
-    uint256 potId,
+    uint256 fundingPotId,
     uint256 completionTimestamp,
     uint256 domainId,
     uint256[] memory skillIds

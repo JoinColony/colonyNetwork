@@ -267,7 +267,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     domainCount += 1;
     domains[domainCount] = Domain({
       skillId: _skillId,
-      potId: potCount
+      fundingPotId: potCount
     });
 
     pots[potCount].domainId = domainCount;

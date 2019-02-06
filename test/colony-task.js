@@ -1347,13 +1347,13 @@ contract("ColonyTask", accounts => {
       await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
 
       // Keep track of original Ether balance in pots
-      const originalDomainEtherBalance = await colony.getPotBalance(domain.potId, ZERO_ADDRESS);
+      const originalDomainEtherBalance = await colony.getPotBalance(domain.fundingPotId, ZERO_ADDRESS);
       const originalTaskEtherBalance = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
       // And same for the token
-      const originalDomainTokenBalance = await colony.getPotBalance(domain.potId, token.address);
+      const originalDomainTokenBalance = await colony.getPotBalance(domain.fundingPotId, token.address);
       const originalTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
       // And the other token
-      const originalDomainOtherTokenBalance = await colony.getPotBalance(domain.potId, otherToken.address);
+      const originalDomainOtherTokenBalance = await colony.getPotBalance(domain.fundingPotId, otherToken.address);
       const originalTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
 
       // Now that everything is set up, let's cancel the task, move funds and compare pots afterwards
@@ -1366,16 +1366,16 @@ contract("ColonyTask", accounts => {
         args: [taskId]
       });
 
-      await colony.moveFundsBetweenPots(taskPotId, domain.potId, originalTaskEtherBalance, ZERO_ADDRESS);
-      await colony.moveFundsBetweenPots(taskPotId, domain.potId, originalTaskTokenBalance, token.address);
-      await colony.moveFundsBetweenPots(taskPotId, domain.potId, originalTaskOtherTokenBalance, otherToken.address);
+      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskEtherBalance, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskTokenBalance, token.address);
+      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskOtherTokenBalance, otherToken.address);
 
       const cancelledTaskEtherBalance = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
-      const cancelledDomainEtherBalance = await colony.getPotBalance(domain.potId, ZERO_ADDRESS);
+      const cancelledDomainEtherBalance = await colony.getPotBalance(domain.fundingPotId, ZERO_ADDRESS);
       const cancelledTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
-      const cancelledDomainTokenBalance = await colony.getPotBalance(domain.potId, token.address);
+      const cancelledDomainTokenBalance = await colony.getPotBalance(domain.fundingPotId, token.address);
       const cancelledTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
-      const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domain.potId, otherToken.address);
+      const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domain.fundingPotId, otherToken.address);
 
       expect(originalTaskEtherBalance).to.not.eq.BN(cancelledTaskEtherBalance);
       expect(originalDomainEtherBalance).to.not.eq.BN(cancelledDomainEtherBalance);

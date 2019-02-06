@@ -93,7 +93,7 @@ contract ColonyTask is ColonyStorage {
 
     Task memory task;
     task.specificationHash = _specificationHash;
-    task.potId = potCount;
+    task.fundingPotId = potCount;
     task.domainId = _domainId;
     task.skills = new uint256[](1);
     tasks[taskCount] = task;
@@ -443,7 +443,7 @@ contract ColonyTask is ColonyStorage {
       t.status,
       t.dueDate,
       t.payoutsWeCannotMake,
-      t.potId,
+      t.fundingPotId,
       t.completionTimestamp,
       t.domainId,
       t.skills

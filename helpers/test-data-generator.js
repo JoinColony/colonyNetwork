@@ -173,12 +173,12 @@ export async function setupFundedTask({
 
   const taskId = await setupTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
   const task = await colony.getTask(taskId);
-  const potId = task[5];
+  const fundingPotId = task[5];
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
-  await colony.moveFundsBetweenPots(1, potId, totalPayouts, tokenAddress);
+  await colony.moveFundsBetweenPots(1, fundingPotId, totalPayouts, tokenAddress);
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 

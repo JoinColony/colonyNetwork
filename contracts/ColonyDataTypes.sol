@@ -154,8 +154,8 @@ contract ColonyDataTypes {
   event DomainAdded(uint256 domainId);
 
   /// @notice Event logged when a new FundingPot is added
-  /// @param potId Id of the newly-created FundingPot
-  event FundingPotAdded(uint256 potId);
+  /// @param fundingPotId Id of the newly-created FundingPot
+  event FundingPotAdded(uint256 fundingPotId);
 
   struct RewardPayoutCycle {
     // Reputation root hash at the time of reward payout creation
@@ -178,7 +178,7 @@ contract ColonyDataTypes {
     TaskStatus status;
     uint256 dueDate;
     uint256 payoutsWeCannotMake;
-    uint256 potId;
+    uint256 fundingPotId;
     uint256 completionTimestamp;
     uint256 domainId;
     uint256[] skills;
@@ -219,6 +219,6 @@ contract ColonyDataTypes {
 
   struct Domain {
     uint256 skillId;
-    uint256 potId;
+    uint256 fundingPotId;
   }
 }

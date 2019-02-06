@@ -103,7 +103,7 @@ contract("Colony", accounts => {
       const domain = await colony.getDomain(domainCount);
 
       // The first pot should have been created and assigned to the domain
-      expect(domain.potId).to.eq.BN(1);
+      expect(domain.fundingPotId).to.eq.BN(1);
 
       // A root skill should have been created for the Colony
       const rootLocalSkillId = await colonyNetwork.getSkillCount();
@@ -113,13 +113,13 @@ contract("Colony", accounts => {
     it("should let pot information be read", async () => {
       const taskId = await makeTask({ colony });
       const taskInfo = await colony.getTask(taskId);
-      let potInfo = await colony.getPotInformation(taskInfo.potId);
+      let potInfo = await colony.getPotInformation(taskInfo.fundingPotId);
       expect(potInfo.taskId).to.eq.BN(taskId);
       expect(potInfo.domainId).to.be.zero;
 
       // Read pot info about a pot in a domain
       const domainInfo = await colony.getDomain(1);
-      potInfo = await colony.getPotInformation(domainInfo.potId);
+      potInfo = await colony.getPotInformation(domainInfo.fundingPotId);
       expect(potInfo.taskId).to.be.zero;
       expect(potInfo.domainId).to.eq.BN(1);
     });
