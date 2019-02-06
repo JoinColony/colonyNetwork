@@ -156,26 +156,29 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint fromPotPreviousAmount = fundingPots[_fromPot].balance[_token];
     uint toPotPreviousAmount = fundingPots[_toPot].balance[_token];
 
-    // If this pot is associated with a task, prevent money being taken from the pot
+    fundingPots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
+    fundingPots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
+
+    // If this pot is associated with a Task, prevent money being taken from the pot
     // if the remaining balance is less than the amount needed for payouts,
     // unless the task was cancelled.
     FundingPotAssociatedType fromPotAssociatedType = fundingPots[_fromPot].associatedType;
-    uint fromTaskId = fundingPots[_fromPot].associatedTypeId; // TODO: This line has to move inside the following `if`
 
-    if (fromPotAssociatedType == FundingPotAssociatedType.Task) {  
+    if (fromPotAssociatedType == FundingPotAssociatedType.Task) {
+      uint fromTaskId = fundingPots[_fromPot].associatedTypeId;
       Task storage task = tasks[fromTaskId];
       uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
       uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
       require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
+
+      updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
     }
 
-    fundingPots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
-    fundingPots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
-
-    // TODO: This should possibly only be called on Task and Payments, not Domains
-    uint toTaskId = fundingPots[_toPot].associatedTypeId;
-    updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
-    updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
+    FundingPotAssociatedType toPotAssociatedType = fundingPots[_toPot].associatedType;
+    if (toPotAssociatedType == FundingPotAssociatedType.Task) {
+      uint toTaskId = fundingPots[_toPot].associatedTypeId;
+      updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
+    }
 
     emit ColonyFundsMovedBetweenFundingPots(_fromPot, _toPot, _amount, _token);
   }
@@ -379,16 +382,18 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
+    
     Task storage task = tasks[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
     uint tokenPot = fundingPots[task.fundingPotId].balance[_token];
-    if (_prev >= totalTokenPayout) {                                  // If the old amount in the pot was enough to pay for the budget
-      if (tokenPot < totalTokenPayout) {                              // And the new amount in the pot is not enough to pay for the budget...
-        task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
+
+    if (_prev >= totalTokenPayout) {                  // If the old amount in the pot was enough to pay for the budget
+      if (tokenPot < totalTokenPayout) {              // And the new amount in the pot is not enough to pay for the budget...
+        task.payoutsWeCannotMake += 1;                // Then this is a set of payouts we cannot make that we could before.
       }
-    } else {                                                          // If this 'else' is running, then the old amount in the pot could not pay for the budget
-      if (tokenPot >= totalTokenPayout) {                             // And the new amount in the pot can pay for the budget
-        task.payoutsWeCannotMake -= 1;                                // Then this is a set of payouts we can make that we could not before.
+    } else {                                          // If this 'else' is running, then the old amount in the pot could not pay for the budget
+      if (tokenPot >= totalTokenPayout) {             // And the new amount in the pot can pay for the budget
+        task.payoutsWeCannotMake -= 1;                // Then this is a set of payouts we can make that we could not before.
       }
     }
   }

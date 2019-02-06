@@ -113,14 +113,14 @@ contract("Colony", accounts => {
     it("should let funding pot information be read", async () => {
       const taskId = await makeTask({ colony });
       const taskInfo = await colony.getTask(taskId);
-      let potInfo = await colony.getPotInformation(taskInfo.fundingPotId);
-      expect(potInfo.associatedType).to.eq.BN(1);
+      let potInfo = await colony.getFundingPot(taskInfo.fundingPotId);
+      expect(potInfo.associatedType).to.eq.BN(2);
       expect(potInfo.associatedTypeId).to.eq.BN(taskId);
 
       // Read pot info about a pot in a domain
       const domainInfo = await colony.getDomain(1);
-      potInfo = await colony.getPotInformation(domainInfo.fundingPotId);
-      expect(potInfo.associatedType).to.be.zero;
+      potInfo = await colony.getFundingPot(domainInfo.fundingPotId);
+      expect(potInfo.associatedType).to.eq.BN(1);
       expect(potInfo.associatedTypeId).to.eq.BN(1);
     });
   });

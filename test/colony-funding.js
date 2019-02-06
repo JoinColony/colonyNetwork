@@ -135,7 +135,7 @@ contract("Colony Funding", accounts => {
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, otherToken.address), "colony-funding-task-bad-state");
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, otherToken.address), "ds-math-sub-underflow");
       const colonyPotBalance = await colony.getPotBalance(1, otherToken.address);
       const colonyTokenBalance = await otherToken.balanceOf(colony.address);
       const pot2Balance = await colony.getPotBalance(2, otherToken.address);
@@ -533,7 +533,7 @@ contract("Colony Funding", accounts => {
       await makeTask({ colony });
       await colony.moveFundsBetweenPots(1, 2, 40, ZERO_ADDRESS);
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, ZERO_ADDRESS), "colony-funding-task-bad-state");
+      await checkErrorRevert(colony.moveFundsBetweenPots(2, 3, 50, ZERO_ADDRESS), "ds-math-sub-underflow");
       const colonyEtherBalance = await web3GetBalance(colony.address);
       const colonyPotBalance = await colony.getPotBalance(1, ZERO_ADDRESS);
       const pot2Balance = await colony.getPotBalance(2, ZERO_ADDRESS);
