@@ -1710,7 +1710,7 @@ contract("ColonyTask", accounts => {
       const workerBalanceBefore = await web3GetBalance(WORKER);
       const metaBalanceBefore = await web3GetBalance(metaColony.address);
 
-      await colony.claimPayout(taskId, WORKER_ROLE, ZERO_ADDRESS, { from: WORKER, gasPrice: 0 });
+      await colony.claimPayout(taskId, WORKER_ROLE, ZERO_ADDRESS, { gasPrice: 0 });
 
       const workerBalanceAfter = await web3GetBalance(WORKER);
       expect(new BN(workerBalanceAfter).sub(new BN(workerBalanceBefore))).to.eq.BN(new BN(197));
@@ -1739,8 +1739,8 @@ contract("ColonyTask", accounts => {
       });
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address);
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
       expect(managerBalanceAfter.sub(managerBalanceBefore)).to.be.zero;
@@ -1771,8 +1771,8 @@ contract("ColonyTask", accounts => {
       await colony.finalizeTask(taskId);
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address, { from: evaluator });
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
+      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address);
 
       const managerBalanceAfter = await token.balanceOf(MANAGER);
       const managerPayout = MANAGER_PAYOUT.divn(100)
@@ -1794,13 +1794,6 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address), "colony-task-not-finalized");
-    });
-
-    it("should return error when called by account that doesn't match the role", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
-
-      await checkErrorRevert(colony.claimPayout(taskId, MANAGER_ROLE, token.address, { from: OTHER }), "colony-claim-payout-access-denied");
     });
 
     it("should payout correct rounded up network fees, for small task payouts", async () => {
@@ -1825,7 +1818,7 @@ contract("ColonyTask", accounts => {
 
       const workerBalanceBefore = await token.balanceOf(WORKER);
 
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
       const networkBalance3 = await token.balanceOf(colonyNetwork.address);
       const workerBalanceAfter = await token.balanceOf(WORKER);
       expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
@@ -1856,7 +1849,7 @@ contract("ColonyTask", accounts => {
 
       const workerBalanceBefore = await token.balanceOf(WORKER);
 
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
       const networkBalance3 = await token.balanceOf(colonyNetwork.address);
       const workerBalanceAfter = await token.balanceOf(WORKER);
       expect(networkBalance3.sub(networkBalance2)).to.eq.BN(1);
@@ -1877,7 +1870,7 @@ contract("ColonyTask", accounts => {
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       const workerBalanceBefore = await token.balanceOf(WORKER);
 
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address, { from: WORKER });
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
 
       const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
       const workerBalanceAfter = await token.balanceOf(WORKER);
