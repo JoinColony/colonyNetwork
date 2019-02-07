@@ -20,7 +20,7 @@ function correctRecoveryModifier(functionDef) {
 
 walkSync("./contracts/").forEach(contractName => {
   // These contracts don't need to be checked, since they're not used in recovery mode
-  // Basically only Colony.sol, ColonyFunding.sol, and ColonyTask.sol are
+  // Basically only Colony.sol, ColonyFunding.sol, ColonyTask.sol and ColonyPayment.sol are
   // ColonyNetwork, ColonyNetworkAuction, ColonyNetworkENS, ColonyNetworkMining
   if (
     [

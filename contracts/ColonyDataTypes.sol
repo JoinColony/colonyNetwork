@@ -81,6 +81,10 @@ contract ColonyDataTypes {
   /// @param rewardInverse The reward inverse value
   event ColonyRewardInverseSet(uint256 rewardInverse);
 
+  /// @notice Event logged when a new payment is added
+  /// @param paymentId The newly added payment id
+  event PaymentAdded(uint256 paymentId);
+
   /// @notice Event logged when a new task is added
   /// @param taskId The newly added task id
   event TaskAdded(uint256 taskId);

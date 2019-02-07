@@ -135,6 +135,17 @@ contract IColony is ColonyDataTypes, IRecovery {
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
     public view returns (bool isValid);
 
+  // Implemented in ColonyPayment.sol
+  /// @notice Add a new payment in the colony. Secured function to authorised members
+  /// @param _recipient Address of the paymnet recipient
+  /// @param _domainId The domain where the payment belongs
+  /// @param _skillId The skill associated with the payment
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function addPayment(address _recipient, uint256 _domainId, uint256 _skillId, address _token, uint256 _amount) public;
+  function getPayment(uint256 id) public view returns(address recipient, uint256 fundingPotId, uint256 domainId, uint256[] memory skills);
+  function getPaymentCount() public view returns (uint256 count);
+
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
   /// @param _specificationHash Database identifier where the task specification is stored
