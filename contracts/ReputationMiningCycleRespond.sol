@@ -400,8 +400,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     if (u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1) {
       // This implies they are claiming that this is a new hash.
-      // Check they have incremented nNodes by one
-      require(u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1, "colony-reputation-mining-nnodes-changed-by-not-1");
       // Flag we need to check the adjacent hash
       u[U_NEW_REPUTATION] = 1;
       return;
@@ -427,7 +425,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     require(impliedRoot == jrh, "colony-reputation-mining-invalid-before-reputation-proof");
     // Check that they have not changed nNodes from the agree state 
-    require(u[U_DISAGREE_STATE_NNODES] == u[U_AGREE_STATE_NNODES], "colony-reputation-mining-nnodes-changed");
+    // There is a check at the very start of RespondToChallenge that this difference is either 0 or 1.
+    // There is an 'if' statement above that returns if this difference is 1.
+    // Therefore the difference is 0, and we no longer need this check here.
+    // require(u[U_DISAGREE_STATE_NNODES] == u[U_AGREE_STATE_NNODES], "colony-reputation-mining-nnodes-changed");
     // They've actually verified whatever they claimed. 
     // In the event that our opponent lied about this reputation not existing yet in the tree, they will fail on checkAdjacentReputation,
     // as the branchmask generated will indicate that the node already exists
