@@ -218,7 +218,7 @@ contract ColonyDataTypes {
   struct FundingPot {
     // Funding pots can store multiple token balances, for ETH use 0x0 address
     mapping (address => uint256) balance;
-    // Funding pots can be associated with different fundable entities, for now these are: payments, tasks and domains.
+    // Funding pots can be associated with different fundable entities, for now these are: tasks and domains.
     FundingPotAssociatedType associatedType;
     uint256 associatedTypeId;
   }

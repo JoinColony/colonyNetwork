@@ -132,7 +132,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return fundingPots[_potId].balance[_token];
   }
 
-  function getPotInformation(uint256 _potId) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId) {
+  function getFundingPot(uint256 _potId) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId) {
     FundingPot storage pot = fundingPots[_potId];
     return (pot.associatedType, pot.associatedTypeId);
   }

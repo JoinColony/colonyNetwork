@@ -116,7 +116,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return FundingPotAssociatedType The associated type of the current funding pot, e.g. Domain, Task
   /// @return uint256 Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
   /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0)
-  function getPotInformation(uint256 _id) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId);
+  function getFundingPot(uint256 _id) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId);
 
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
