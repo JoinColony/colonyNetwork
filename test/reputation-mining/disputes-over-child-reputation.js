@@ -1042,6 +1042,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
   });
 
   it.skip("dispute should resolve if a bad actor responds on behalf of the good submission omitting some proofs that exist", async () => {
+    // This test is no longer possible to run - see the explanation in the PR 533.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
     // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
