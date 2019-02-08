@@ -85,9 +85,6 @@ jobs:
       - run:
           name: "Running patricia tree tests"
           command: yarn run test:contracts:patricia
-      - run:
-          name: "Running colony-contract-loader-network tests"
-          command: cd packages/colony-js-contract-loader-network && yarn run test
       - <<: *step_save_cache
       # Save test results
       - store_test_results:
@@ -119,9 +116,9 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "Mythril security analysis"
-          command: | 
+          command: |
             docker create -v "$pwd"/build --name colonynetwork alpine:3.4 /bin/true
-            docker cp build/* colonynetwork:/build 
+            docker cp build/* colonynetwork:/build
             docker run --volumes-from colonynetwork mythril/myth myth --truffle --execution-timeout 40 -v 3
 workflows:
   version: 2
