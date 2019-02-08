@@ -27,7 +27,7 @@ step_pull_solc_docker: &step_pull_solc_docker
 step_pull_mythril_docker: &step_pull_mythril_docker
     run:
       name: "Pull mythril dev docker image"
-      command: docker pull mythril/myth-dev
+      command: docker pull mythril/myth
 jobs:
   lint-and-unit-test:
     <<: *job_common
@@ -122,7 +122,7 @@ jobs:
           command: | 
             docker create -v "$pwd"/build --name colonynetwork alpine:3.4 /bin/true
             docker cp build/* colonynetwork:/build 
-            docker run --volumes-from colonynetwork mythril/myth-dev myth --truffle --execution-timeout 40 -v 3
+            docker run --volumes-from colonynetwork mythril/myth myth --truffle --execution-timeout 40 -v 3
 workflows:
   version: 2
   commit:
