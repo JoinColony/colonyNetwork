@@ -19,7 +19,13 @@ import {
   ACTIVE_TASK_STATE,
   CANCELLED_TASK_STATE,
   FINALIZED_TASK_STATE,
-  ZERO_ADDRESS
+  ZERO_ADDRESS,
+  MANAGER_RATING,
+  WORKER_RATING,
+  RATING_1_SALT,
+  RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET
 } from "../helpers/constants";
 
 import {
@@ -43,7 +49,8 @@ import {
   executeSignedRoleAssignment,
   getSigsAndTransactionData,
   makeTask,
-  setupRandomColony
+  setupRandomColony,
+  assignRoles
 } from "../helpers/test-data-generator";
 
 const ethers = require("ethers");
@@ -1288,6 +1295,19 @@ contract("ColonyTask", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate, token });
       await colony.completeTask(taskId);
       await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-ratings-incomplete");
+    });
+
+    it("should fail if it's not sufficiently funded to support all its payouts", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await makeTask({ colonyNetwork, colony, token });
+      await colony.setAllTaskPayouts(taskId, token.address, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, { from: MANAGER });
+      await assignRoles({ colony, taskId, manager: MANAGER, evaluator: EVALUATOR, worker: WORKER });
+
+      await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
+      await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
+      await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-not-funded");
     });
 
     it("should fail if I try to accept a task that was finalized before", async () => {

@@ -83,6 +83,12 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
+  modifier taskFunded(uint256 _id) {
+    Task storage task = tasks[_id];
+    require(task.payoutsWeCannotMake == 0, "colony-task-not-funded");
+    _;
+  }
+
   function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public
   stoppable
   auth
@@ -402,6 +408,7 @@ contract ColonyTask is ColonyStorage {
   stoppable
   taskComplete(_id)
   taskWorkRatingsComplete(_id)
+  taskFunded(_id)
   taskNotFinalized(_id)
   {
     if (!taskWorkRatingsAssigned(_id)) {
