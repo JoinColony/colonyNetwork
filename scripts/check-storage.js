@@ -15,6 +15,10 @@ walkSync("./contracts/").forEach(contractName => {
   // Contracts listed here are allowed to have storage variables
   if (
     [
+      "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
+      "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
+      "contracts/modules/OneClick.sol", // An external module
+      "contracts/PatriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
       "contracts/CommonAuthority.sol",
       "contracts/ColonyAuthority.sol",
       "contracts/ColonyNetworkAuthority.sol",
@@ -23,14 +27,11 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/CommonStorage.sol",
       "contracts/EtherRouter.sol",
       "contracts/Migrations.sol",
-      "contracts/Resolver.sol",
-      "contracts/TokenLockingStorage.sol",
-      "contracts/PatriciaTree/PatriciaTreeBase.sol", // Only used by mining clients
-      "contracts/gnosis/MultiSigWallet.sol", // Not directly used by any colony contracts
-      "contracts/ens/ENSRegistry.sol", // Not directly used by any colony contracts
       "contracts/ReputationMiningCycleStorage.sol",
+      "contracts/Resolver.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
-      "contracts/TokenAuthority.sol" // Imported from colonyToken repo
+      "contracts/TokenAuthority.sol", // Imported from colonyToken repo
+      "contracts/TokenLockingStorage.sol"
     ].indexOf(contractName) > -1
   ) {
     return;

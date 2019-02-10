@@ -23,19 +23,19 @@ import "./ITokenLocking.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
-  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable paymentManagerOrSelf(_id) {
     setTaskPayout(_id, TaskRole.Manager, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
+  }
+
+  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable paymentManagerOrSelf(_id) {
+    setTaskPayout(_id, TaskRole.Worker, _token, _amount);
+    emit TaskPayoutSet(_id, TaskRole.Worker, _token, _amount);
   }
 
   function setTaskEvaluatorPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, TaskRole.Evaluator, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Evaluator, _token, _amount);
-  }
-
-  function setTaskWorkerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
-    setTaskPayout(_id, TaskRole.Worker, _token, _amount);
-    emit TaskPayoutSet(_id, TaskRole.Worker, _token, _amount);
   }
 
   function setAllTaskPayouts(

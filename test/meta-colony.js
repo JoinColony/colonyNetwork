@@ -468,7 +468,7 @@ contract("Meta Colony", accounts => {
       await metaColony.addGlobalSkill(5);
 
       const taskId = await makeTask({ colony, skillId: 0 });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 5, { from: OTHER_ACCOUNT }), "colony-not-self");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 5, { from: OTHER_ACCOUNT }), "colony-not-payment-manager-or-self");
 
       const task = await colony.getTask(taskId);
       expect(task[8][0]).to.be.zero;

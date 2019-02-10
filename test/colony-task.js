@@ -271,31 +271,10 @@ contract("ColonyTask", accounts => {
       expect(evaluator.user).to.equal(newEvaluator);
     });
 
-    it("should not allow a worker to be assigned if the task has no skill", async () => {
+    it("should not allow work to be submitted if the task has no skill", async () => {
       const taskId = await makeTask({ colony, skillId: 0 });
 
-      await checkErrorRevert(
-        executeSignedRoleAssignment({
-          colony,
-          taskId,
-          functionName: "setTaskWorkerRole",
-          signers: [MANAGER, WORKER],
-          sigTypes: [0, 0],
-          args: [taskId, WORKER]
-        }),
-        "colony-task-role-assignment-execution-failed"
-      );
-
-      await executeSignedTaskChange({
-        colony,
-        taskId,
-        functionName: "setTaskSkill",
-        signers: [MANAGER],
-        sigTypes: [0],
-        args: [taskId, 1] // skillId 1
-      });
-
-      executeSignedRoleAssignment({
+      await executeSignedRoleAssignment({
         colony,
         taskId,
         functionName: "setTaskWorkerRole",
@@ -303,6 +282,19 @@ contract("ColonyTask", accounts => {
         sigTypes: [0, 0],
         args: [taskId, WORKER]
       });
+
+      await checkErrorRevert(colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER }), "colony-task-skill-not-set");
+
+      await executeSignedTaskChange({
+        colony,
+        taskId,
+        functionName: "setTaskSkill",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [taskId, 1] // skillId 1
+      });
+
+      await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
     });
 
     it("should not allow the worker or evaluator roles to be assigned only by manager", async () => {

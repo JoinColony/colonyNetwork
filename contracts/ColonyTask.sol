@@ -309,12 +309,25 @@ contract ColonyTask is ColonyStorage {
     return taskWorkRatings[_id].secret[_role];
   }
 
+  // Managing roles
+
   function setTaskManagerRole(uint256 _id, address _user) public
   stoppable
-  self()
+  paymentManagerOrSelf(_id)
   isAdmin(_user)
   {
     setTaskRoleUser(_id, TaskRole.Manager, _user);
+  }
+
+  function setTaskWorkerRole(uint256 _id, address _user) public stoppable paymentManagerOrSelf(_id) {
+    // Can only assign role if no one is currently assigned to it
+    Role storage workerRole = payments[_id].roles[uint8(TaskRole.Worker)];
+    require(workerRole.user == address(0x0), "colony-task-worker-role-already-assigned");
+    setTaskRoleUser(_id, TaskRole.Worker, _user);
+  }
+
+  function removeTaskWorkerRole(uint256 _id) public stoppable paymentManagerOrSelf(_id) {
+    setTaskRoleUser(_id, TaskRole.Worker, address(0x0));
   }
 
   function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
@@ -324,27 +337,18 @@ contract ColonyTask is ColonyStorage {
     setTaskRoleUser(_id, TaskRole.Evaluator, _user);
   }
 
-  function setTaskWorkerRole(uint256 _id, address _user) public stoppable self {
-    // Can only assign role if no one is currently assigned to it
-    Role storage workerRole = payments[_id].roles[uint8(TaskRole.Worker)];
-    require(workerRole.user == address(0x0), "colony-task-worker-role-already-assigned");
-    setTaskRoleUser(_id, TaskRole.Worker, _user);
-  }
-
   function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
     setTaskRoleUser(_id, TaskRole.Evaluator, address(0x0));
   }
 
-  function removeTaskWorkerRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, TaskRole.Worker, address(0x0));
-  }
+  // Managing parameters
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
   stoppable
   taskExists(_id)
   domainExists(_domainId)
   taskNotComplete(_id)
-  self()
+  paymentManagerOrSelf(_id)
   {
     payments[_id].domainId = _domainId;
 
@@ -357,7 +361,7 @@ contract ColonyTask is ColonyStorage {
   skillExists(_skillId)
   taskNotComplete(_id)
   globalSkill(_skillId)
-  self()
+  paymentManagerOrSelf(_id)
   {
     payments[_id].skills[0] = _skillId;
 
@@ -379,13 +383,15 @@ contract ColonyTask is ColonyStorage {
   stoppable
   taskExists(_id)
   taskNotComplete(_id)
-  self()
+  self
   {
     require (_dueDate > 0, "colony-task-due-date-cannot-be-zero");
     tasks[_id].dueDate = _dueDate;
 
     emit TaskDueDateSet(_id, _dueDate);
   }
+
+  // Payment and task flow
 
   function submitTaskDeliverable(uint256 _id, bytes32 _deliverableHash) public
   stoppable
@@ -446,7 +452,7 @@ contract ColonyTask is ColonyStorage {
   stoppable
   taskExists(_id)
   taskNotComplete(_id)
-  self()
+  paymentManagerOrSelf(_id)
   {
     payments[_id].status = TaskStatus.Cancelled;
 
