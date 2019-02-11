@@ -99,7 +99,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
   });
 
   describe("should correctly resolve a dispute over origin skill", () => {
-    it("if one person claims an origin skill doesn't exist but the other does (and proves such)", async () => {
+    it.only("if one person claims an origin skill doesn't exist but the other does (and proves such)", async () => {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });

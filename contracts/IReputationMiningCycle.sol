@@ -113,13 +113,13 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 17. The UID that the most recently added entry in the tree has in the state being disputed
   /// * 18. The amount of reputation that the user's origin reputation entry in the tree has in the state being disputed
   /// * 19. The UID that the user's origin reputation entry in the tree has in the state being disputed
-  /// * 20. The branchMask of the proof that the child reputation for the user being updated is in the agree state 
+  /// * 20. The branchMask of the proof that the child reputation for the user being updated is in the agree state
   /// * 21. The amount of reputation that the child reputation for the user being updated is in the agree state
-  /// * 22. The UID of the child reputation for the user being updated in the agree state 
+  /// * 22. The UID of the child reputation for the user being updated in the agree state
   /// * 23. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
-  /// * 24. The branchMask of the proof that the reputation adjacent to the new reputation being inserted is in the agree state 
+  /// * 24. The branchMask of the proof that the reputation adjacent to the new reputation being inserted is in the agree state
   /// * 25. The amount of reputation that the reputation adjacent to a new reputation being inserted has in the agree state
-  /// * 26. The UID of the reputation adjacent to the new reputation being inserted 
+  /// * 26. The UID of the reputation adjacent to the new reputation being inserted
   /// * 27. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
 
   /// @param b A `bytes[3]` array. The elements of this array, in order are:
@@ -137,8 +137,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[27] memory u, //An array of 27 UINT Params, ordered as given above.
-    bytes[3] memory b,
+    uint256[28] memory u, //An array of 28 UINT Params, ordered as given above.
+    bytes[4] memory b,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
