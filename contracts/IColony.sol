@@ -464,7 +464,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return balance Funding pot balance
-  function getPotBalance(uint256 _potId, address _token) public view returns (uint256 balance);
+  function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256 balance);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members

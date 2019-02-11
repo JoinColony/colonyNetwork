@@ -128,7 +128,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return fundingPotCount;
   }
 
-  function getPotBalance(uint256 _potId, address _token) public view returns (uint256) {
+  function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256) {
     return fundingPots[_potId].balance[_token];
   }
 

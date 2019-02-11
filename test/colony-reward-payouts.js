@@ -94,7 +94,7 @@ contract("Colony Reward Payouts", accounts => {
     const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
 
     // Total amount that will be paid out
-    const balance = await colony.getPotBalance(0, otherToken.address);
+    const balance = await colony.getFundingPotBalance(0, otherToken.address);
     const totalAmountSqrt = bnSqrt(balance);
 
     initialSquareRoots = [userReputationSqrt, userTokensSqrt, totalReputationSqrt, totalTokensSqrt, numeratorSqrt, denominatorSqrt, totalAmountSqrt];
@@ -366,7 +366,7 @@ contract("Colony Reward Payouts", accounts => {
       const totalTokensSqrt = bnSqrt(totalTokens);
 
       const denominatorSqrt = bnSqrt(userTokens.mul(userReputation.add(userReputation3)));
-      const balance = await colony.getPotBalance(0, otherToken.address);
+      const balance = await colony.getFundingPotBalance(0, otherToken.address);
       const amountAvailableForPayoutSqrt = bnSqrt(balance);
 
       const squareRoots = [userReputation3Sqrt, 0, totalReputationSqrt, totalTokensSqrt, 0, denominatorSqrt, amountAvailableForPayoutSqrt];
@@ -411,7 +411,7 @@ contract("Colony Reward Payouts", accounts => {
       const totalReputationSqrt = bnSqrt(totalReputation.add(userTokens3), true);
       const totalTokensSqrt = bnSqrt(userTokens.add(userTokens3), true);
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
-      const balance = await colony.getPotBalance(0, otherToken.address);
+      const balance = await colony.getFundingPotBalance(0, otherToken.address);
       const amountAvailableForPayoutSqrt = bnSqrt(balance);
 
       const squareRoots = [0, userTokens3Sqrt, totalReputationSqrt, totalTokensSqrt, 0, denominatorSqrt, amountAvailableForPayoutSqrt];
@@ -635,7 +635,7 @@ contract("Colony Reward Payouts", accounts => {
       const totalTokensSqrt = bnSqrt(userReputation.muln(2), true);
       const numeratorSqrt = bnSqrt(userReputationSqrt.mul(userTokensSqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
-      const balance = await colony.getPotBalance(0, otherToken.address);
+      const balance = await colony.getFundingPotBalance(0, otherToken.address);
       const totalAmountAvailableForPayoutSqrt = bnSqrt(balance);
 
       const squareRoots = [
@@ -663,8 +663,8 @@ contract("Colony Reward Payouts", accounts => {
       rewardPayoutInfo = await colony2.getRewardPayoutInfo(payoutId2);
       const amountAvailableForPayout2 = new BN(rewardPayoutInfo.amount);
 
-      const rewardPotBalanceAfterClaimInPayout1 = await colony1.getPotBalance(0, otherToken.address);
-      const rewardPotBalanceAfterClaimInPayout2 = await colony2.getPotBalance(0, otherToken.address);
+      const rewardPotBalanceAfterClaimInPayout1 = await colony1.getFundingPotBalance(0, otherToken.address);
+      const rewardPotBalanceAfterClaimInPayout2 = await colony2.getFundingPotBalance(0, otherToken.address);
 
       const feeInverse = await colonyNetwork.getFeeInverse();
 
@@ -751,7 +751,7 @@ contract("Colony Reward Payouts", accounts => {
       const totalTokensSqrt = bnSqrt(userReputation.muln(2), true);
       const numeratorSqrt = bnSqrt(userReputationSqrt.mul(userTokensSqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalTokensSqrt), true);
-      const balance = await colony.getPotBalance(0, otherToken.address);
+      const balance = await colony.getFundingPotBalance(0, otherToken.address);
       const totalAmountAvailableForPayoutSqrt = bnSqrt(balance);
 
       const squareRoots = [
@@ -778,7 +778,7 @@ contract("Colony Reward Payouts", accounts => {
       const { logs } = await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
-      const balance = await colony.getPotBalance(0, otherToken.address);
+      const balance = await colony.getFundingPotBalance(0, otherToken.address);
       const blockTimestamp = await currentBlockTime();
       const reputationRootHash = await colonyNetwork.getReputationRootHash();
 
@@ -870,7 +870,7 @@ contract("Colony Reward Payouts", accounts => {
         const payoutId = logs[0].args.rewardPayoutId;
 
         // Getting total amount available for payout
-        const amountAvailableForPayout = await newColony.getPotBalance(0, payoutToken.address);
+        const amountAvailableForPayout = await newColony.getFundingPotBalance(0, payoutToken.address);
 
         const totalSupply = await newToken.totalSupply();
         const colonyTokens = await newToken.balanceOf(newColony.address);
@@ -920,7 +920,7 @@ contract("Colony Reward Payouts", accounts => {
           from: userAddress1
         });
 
-        const remainingAfterClaim1 = await newColony.getPotBalance(0, payoutToken.address);
+        const remainingAfterClaim1 = await newColony.getFundingPotBalance(0, payoutToken.address);
         const user1BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         const colonyNetworkBalanceAfterClaim1 = await payoutToken.balanceOf(colonyNetwork.address);
         const colonyNetworkFeeClaim1 = colonyNetworkBalanceAfterClaim1.sub(colonyNetworkBalanceBeforeClaim1);
@@ -951,7 +951,7 @@ contract("Colony Reward Payouts", accounts => {
         const colonyNetworkBalanceAfterClaim2 = await payoutToken.balanceOf(colonyNetwork.address);
         const colonyNetworkFeeClaim2 = colonyNetworkBalanceAfterClaim2.sub(colonyNetworkBalanceAfterClaim1);
 
-        const remainingAfterClaim2 = await newColony.getPotBalance(0, payoutToken.address);
+        const remainingAfterClaim2 = await newColony.getFundingPotBalance(0, payoutToken.address);
         const user2BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         expect(user2BalanceAfterClaim).to.eq.BN(
           amountAvailableForPayout
@@ -974,7 +974,7 @@ contract("Colony Reward Payouts", accounts => {
         const colonyNetworkBalanceAfterClaim3 = await payoutToken.balanceOf(colonyNetwork.address);
         const colonyNetworkFeeClaim3 = colonyNetworkBalanceAfterClaim3.sub(colonyNetworkBalanceAfterClaim2);
 
-        const remainingAfterClaim3 = await newColony.getPotBalance(0, payoutToken.address);
+        const remainingAfterClaim3 = await newColony.getFundingPotBalance(0, payoutToken.address);
         const user3BalanceAfterClaim = await payoutToken.balanceOf(userAddress1);
         expect(user3BalanceAfterClaim).to.eq.BN(
           amountAvailableForPayout

@@ -261,14 +261,14 @@ contract("Colony", accounts => {
       await checkErrorRevert(colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS), "colony-bootstrap-not-enough-tokens");
 
       await colony.claimColonyFunds(token.address);
-      const potBalanceBefore = await colony.getPotBalance(1, token.address);
+      const potBalanceBefore = await colony.getFundingPotBalance(1, token.address);
       expect(potBalanceBefore).to.eq.BN(WAD.muln(14));
 
       await colony.bootstrapColony(INITIAL_ADDRESSES, INITIAL_REPUTATIONS);
       const balance = await token.balanceOf(INITIAL_ADDRESSES[0]);
       expect(balance).to.eq.BN(INITIAL_REPUTATIONS[0]);
 
-      const potBalanceAfter = await colony.getPotBalance(1, token.address);
+      const potBalanceAfter = await colony.getFundingPotBalance(1, token.address);
       expect(potBalanceAfter).to.be.zero;
     });
 

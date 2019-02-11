@@ -309,7 +309,7 @@ contract("All", function(accounts) {
       const numeratorSqrt = bnSqrt(workerReputationSqrt.mul(workerReputationSqrt));
       const denominatorSqrt = bnSqrt(totalReputationSqrt.mul(totalReputationSqrt), true);
 
-      const balance = await newColony.getPotBalance(0, otherToken.address);
+      const balance = await newColony.getFundingPotBalance(0, otherToken.address);
       const amountSqrt = bnSqrt(balance);
 
       const squareRoots = [
