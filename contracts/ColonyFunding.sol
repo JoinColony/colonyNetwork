@@ -134,6 +134,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     // TODO: Add a requirement for payment to be funded before it can be claimed
     Payment storage payment = payments[_id];
 
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+    require(fundingPot.balance[payment.token] >= payment.amount, "colony-payment-insufficient-funding");
+
     processPayment(payment.fundingPotId, payment.token, payment.amount, payment.recipient);
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);

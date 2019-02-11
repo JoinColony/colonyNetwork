@@ -82,5 +82,14 @@ contract("Colony Payment", accounts => {
       expect(recipientBalanceAfter.sub(recipientBalanceBefore)).to.eq.BN(new BN("989999999999999999"));
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(new BN("10000000000000001"));
     });
+
+    it("should error when payment is insufficiently funded", async () => {
+      await colony.addPayment(RECIPIENT, token.address, 10000, 1, 0);
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 9999, token.address);
+      await checkErrorRevert(colony.claimPayment(paymentId), "colony-payment-insufficient-funding");
+    });
   });
 });
