@@ -63,8 +63,8 @@ contract ColonyAuthority is CommonAuthority {
     setFounderRoleCapability(colony, "makeTask(bytes32,uint256,uint256,uint256)");
 
     // Add payment
-    setAdminRoleCapability(colony, "addPayment(address,uint256,uint256,address,uint256)");
-    setFounderRoleCapability(colony, "addPayment(address,uint256,uint256,address,uint256)");
+    setAdminRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
+    setFounderRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
 
     // Start next reward payout
     setAdminRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");

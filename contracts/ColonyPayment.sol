@@ -22,7 +22,7 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyPayment is ColonyStorage {
-  function addPayment(address _recipient, uint256 _domainId, uint256 _skillId, address _token, uint256 _amount) public
+  function addPayment(address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public
   stoppable
   auth
   {
@@ -36,21 +36,22 @@ contract ColonyPayment is ColonyStorage {
 
     Payment memory payment = Payment({
       recipient: _recipient,
+      token: _token,
+      amount: _amount,
       fundingPotId: fundingPotCount,
       domainId: _domainId,
       skills: new uint256[](_skillId)             
     });
 
     payments[paymentCount] = payment;
-    payments[paymentCount].payouts[_token] = _amount;
 
     emit FundingPotAdded(fundingPotCount);
     emit PaymentAdded(paymentCount);
   }
 
-  function getPayment(uint256 id) public view returns(address, uint256, uint256, uint256[] memory) {
+  function getPayment(uint256 id) public view returns(Payment memory) {
     Payment storage payment = payments[id];
-    return (payment.recipient, payment.fundingPotId, payment.domainId, payment.skills);
+    return payment;
   }
 
   function getPaymentCount() public view returns (uint256) {

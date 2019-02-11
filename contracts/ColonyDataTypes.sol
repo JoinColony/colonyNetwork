@@ -178,10 +178,11 @@ contract ColonyDataTypes {
 
   struct Payment {
     address recipient;
+    address token;
+    uint256 amount;
     uint256 fundingPotId;
     uint256 domainId;
     uint256[] skills;
-    mapping (address => uint256) payouts;
   }
 
   struct Task {

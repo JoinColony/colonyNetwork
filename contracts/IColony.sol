@@ -142,8 +142,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId The skill associated with the payment
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
-  function addPayment(address _recipient, uint256 _domainId, uint256 _skillId, address _token, uint256 _amount) public;
-  function getPayment(uint256 id) public view returns(address recipient, uint256 fundingPotId, uint256 domainId, uint256[] memory skills);
+  function addPayment(address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public;
+  function getPayment(uint256 id) public view returns(Payment memory payment);
   function getPaymentCount() public view returns (uint256 count);
 
   // Implemented in ColonyTask.sol

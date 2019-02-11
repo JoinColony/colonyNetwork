@@ -41,7 +41,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DSToken = artifacts.require("DSToken");
 
-contract("Colony Payment", accounts => {
+contract.only("Colony Payment", accounts => {
   const PAYMENT_ADMIN = accounts[1];
   const RECIPIENT = accounts[3];
   const COLONY_ADMIN = accounts[4];
@@ -70,27 +70,40 @@ contract("Colony Payment", accounts => {
   describe("when adding payments", () => {
     it("should allow admins to add payment", async () => {
       const paymentsCountBefore = await colony.getPaymentCount();
-      await colony.addPayment(RECIPIENT, 0, 0, token.address, WAD);
+      await colony.addPayment(RECIPIENT, token.address, WAD, 0, 0);
 
       const paymentsCountAfter = await colony.getPaymentCount();
       expect(paymentsCountAfter.sub(paymentsCountBefore)).to.eq.BN(1);
 
       const fundingPotId = await colony.getFundingPotCount();
       const payment = await colony.getPayment(paymentsCountAfter);
-      expect(payment[0]).to.equal(RECIPIENT);
-      expect(payment[1]).to.eq.BN(fundingPotId);
-      expect(payment[2]).to.be.zero;
+
+      expect(payment.recipient).to.equal(RECIPIENT);
+      expect(payment.token).to.equal(token.address);
+      expect(payment.amount).to.eq.BN(WAD);
+      expect(payment.fundingPotId).to.equal(fundingPotId);
+      expect(payment.domainId).to.be.zero;
     });
   });
 
   describe("when funding payments", () => {
     it("should allow admins to fund a payment", async () => {
-      await colony.addPayment(RECIPIENT, 0, 0, token.address, WAD);
+      await colony.addPayment(RECIPIENT, token.address, WAD, 0, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
-      const fundingPotId = payment[1];
 
-      await colony.moveFundsBetweenPots(1, fundingPotId, 40, token.address);
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 40, token.address);
+    });
+  });
+
+  describe.skip("when claiming payments", () => {
+    it("should allow recipient to claim their payment", async () => {
+      await colony.addPayment(RECIPIENT, token.address, WAD, 0, 0);
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD, token.address);
+      await colony.claimPayment(paymentId, { from: RECIPIENT });
     });
   });
 });
