@@ -67,7 +67,7 @@ export async function setupColonyVersionResolver(colony, colonyTask, colonyPayme
   const deployedImplementations = {};
   deployedImplementations.Colony = colony.address;
   deployedImplementations.ColonyTask = colonyTask.address;
-  deployedImplementations.colonyPayment = colonyPayment.address;
+  deployedImplementations.ColonyPayment = colonyPayment.address;
   deployedImplementations.ColonyFunding = colonyFunding.address;
   deployedImplementations.ContractRecovery = contractRecovery.address;
 
