@@ -254,15 +254,16 @@ contract("Meta Colony", accounts => {
   describe("when adding domains in the meta colony", () => {
     it("should be able to add new domains as children to the root domain", async () => {
       await metaColony.addDomain(1);
+      const newDomainId = await metaColony.getDomainCount();
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
       const domainCount = await metaColony.getDomainCount();
       expect(domainCount).to.eq.BN(2);
 
-      const newDomain = await metaColony.getDomain(1);
-      expect(newDomain.skillId).to.eq.BN(2);
-      expect(newDomain.fundingPotId).to.eq.BN(1);
+      const newDomain = await metaColony.getDomain(newDomainId);
+      expect(newDomain.skillId).to.eq.BN(4);
+      expect(newDomain.fundingPotId).to.eq.BN(2);
 
       // Check root local skill.nChildren is now 2
       // One special mining skill, and the skill associated with the domain we just added
