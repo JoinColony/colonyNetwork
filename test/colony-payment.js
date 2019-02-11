@@ -1,76 +1,40 @@
 /* global artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
+import { BN } from "bn.js";
 
-import {
-  WAD,
-  ZERO_ADDRESS
-} from "../helpers/constants";
-
-import {
-  getTokenArgs,
-  web3GetBalance,
-  checkErrorRevert,
-  expectEvent,
-  expectAllEvents,
-  forwardTime,
-  currentBlockTime,
-  createSignatures
-} from "../helpers/test-helper";
-
-import {
-  fundColonyWithTokens,
-  setupFinalizedTask,
-  setupRatedTask,
-  setupAssignedTask,
-  setupFundedTask,
-  executeSignedTaskChange,
-  executeSignedRoleAssignment,
-  getSigsAndTransactionData,
-  makeTask,
-  setupRandomColony
-} from "../helpers/test-data-generator";
-
-const ethers = require("ethers");
+import { WAD } from "../helpers/constants";
+import { checkErrorRevert } from "../helpers/test-helper";
+import { fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
-const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const DSToken = artifacts.require("DSToken");
 
-contract.only("Colony Payment", accounts => {
-  const PAYMENT_ADMIN = accounts[1];
+contract("Colony Payment", accounts => {
   const RECIPIENT = accounts[3];
   const COLONY_ADMIN = accounts[4];
 
   let colony;
-  let metaColony;
   let token;
-  let otherToken;
   let colonyNetwork;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
-    const metaColonyAddress = await colonyNetwork.getMetaColony();
-    metaColony = await IMetaColony.at(metaColonyAddress);
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
     await colony.setAdminRole(COLONY_ADMIN);
-
-    const otherTokenArgs = getTokenArgs();
-    otherToken = await DSToken.new(otherTokenArgs[1]);
-    await fundColonyWithTokens(colony, token, WAD);
+    await fundColonyWithTokens(colony, token, WAD.muln(2));
   });
 
   describe("when adding payments", () => {
     it("should allow admins to add payment", async () => {
       const paymentsCountBefore = await colony.getPaymentCount();
-      await colony.addPayment(RECIPIENT, token.address, WAD, 0, 0);
+      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
 
       const paymentsCountAfter = await colony.getPaymentCount();
       expect(paymentsCountAfter.sub(paymentsCountBefore)).to.eq.BN(1);
@@ -81,14 +45,19 @@ contract.only("Colony Payment", accounts => {
       expect(payment.recipient).to.equal(RECIPIENT);
       expect(payment.token).to.equal(token.address);
       expect(payment.amount).to.eq.BN(WAD);
-      expect(payment.fundingPotId).to.equal(fundingPotId);
-      expect(payment.domainId).to.be.zero;
+      expect(payment.fundingPotId).to.eq.BN(fundingPotId);
+      expect(payment.domainId).to.eq.BN(1);
+    });
+
+    // TODO
+    it.skip("should not allow admins to add payment with no domain set", async () => {
+      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, WAD, 0, 0), "");
     });
   });
 
   describe("when funding payments", () => {
     it("should allow admins to fund a payment", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 0, 0);
+      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
@@ -96,14 +65,22 @@ contract.only("Colony Payment", accounts => {
     });
   });
 
-  describe.skip("when claiming payments", () => {
-    it("should allow recipient to claim their payment", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 0, 0);
+  describe("when claiming payments", () => {
+    it("should allow recipient to claim their payment and network fee is deducated", async () => {
+      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD, token.address);
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+
+      const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
+      const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       await colony.claimPayment(paymentId, { from: RECIPIENT });
+
+      const recipientBalanceAfter = await token.balanceOf(RECIPIENT);
+      const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      expect(recipientBalanceAfter.sub(recipientBalanceBefore)).to.eq.BN(new BN("989999999999999999"));
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(new BN("10000000000000001"));
     });
   });
 });

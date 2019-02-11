@@ -144,6 +144,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _amount Payout amount
   function addPayment(address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public;
   function getPayment(uint256 id) public view returns(Payment memory payment);
+  function claimPayment(uint256) public;
   function getPaymentCount() public view returns (uint256 count);
 
   // Implemented in ColonyTask.sol

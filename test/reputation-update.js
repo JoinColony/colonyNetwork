@@ -249,6 +249,22 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
     });
 
+    it("should set the correct domain reputation change amount in log for payments", async () => {
+      const RECIPIENT = accounts[3];
+      await metaColony.addPayment(RECIPIENT, clnyToken.address, WAD, 1, 0);
+      const paymentId = await metaColony.getPaymentCount();
+
+      const payment = await metaColony.getPayment(paymentId);
+      await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
+      await metaColony.claimPayment(paymentId);
+
+      const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
+      expect(repLogEntryManager.user).to.equal(RECIPIENT);
+      expect(repLogEntryManager.amount).to.eq.BN(WAD);
+
+      // TODO test skill reputation is logged and also non colony home token is not logged
+    });
+
     it("should not be able to be appended by an account that is not a colony", async () => {
       const lengthBefore = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2), "colony-caller-must-be-colony");

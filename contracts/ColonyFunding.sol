@@ -99,7 +99,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     task.payouts[_role][_token] = 0;
 
-    fundingPots[task.fundingPotId].balance[_token] = sub(fundingPots[task.fundingPotId].balance[_token], payout);
+    processPayment(task.fundingPotId, _token, payout, task.roles[_role].user);
+
+    // TODO emit TaskPayoutClaimed(_id, _role, _token, remainder);
+  }
+
+  function processPayment(uint256 fundingPotId, address _token, uint256 payout, address user) private {
+    fundingPots[fundingPotId].balance[_token] = sub(fundingPots[fundingPotId].balance[_token], payout);
     nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
 
     uint fee = calculateNetworkFeeForPayout(payout);
@@ -107,7 +113,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     if (_token == address(0x0)) {
       // Payout ether
-      task.roles[_role].user.transfer(remainder);
+      user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
       address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
@@ -117,11 +123,30 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
       // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
       ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(task.roles[_role].user, remainder);
+      payoutToken.transfer(user, remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
     }
+  }
 
-    emit TaskPayoutClaimed(_id, _role, _token, remainder);
+  function claimPayment(uint256 _id) public
+  stoppable
+  {
+    // TODO: Add a requirement for payment to be funded before it can be claimed
+    Payment storage payment = payments[_id];
+
+    processPayment(payment.fundingPotId, payment.token, payment.amount, payment.recipient);
+
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    // All payments earn domain reputation
+    colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(payment.amount), payment.domainId);
+    // If skill was set, earn reputation there too
+    if (payment.skills.length > 0) {
+      // Currently we support at most one skill per Payment, similarly to Task model.
+      // This may change in future to allow multiple skills to be set on both Tasks and Payments
+      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(payment.amount), payment.skills[0]);
+    }
+
+    // TODO emit PaymentClaimed(_id);
   }
 
   function getFundingPotCount() public view returns (uint256 count) {
