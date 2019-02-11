@@ -3,8 +3,7 @@
     "default": {
       "packages": [
         "package.json",
-        "packages/reputation-miner/package.json",
-        "packages/colony-js-contract-loader-network/package.json"
+        "packages/reputation-miner/package.json"
       ]
     }
   }
