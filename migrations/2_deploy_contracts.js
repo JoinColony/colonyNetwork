@@ -2,7 +2,6 @@
 /* eslint-disable no-undef, no-console */
 
 const ContractRecovery = artifacts.require("./ContractRecovery");
-const ColonyTask = artifacts.require("./ColonyTask");
 const ColonyNetwork = artifacts.require("./ColonyNetwork");
 const ColonyNetworkMining = artifacts.require("./ColonyNetworkMining");
 const ColonyNetworkAuction = artifacts.require("./ColonyNetworkAuction");
@@ -21,7 +20,6 @@ artifacts.require("./ReputationMiningCycle");
 
 module.exports = (deployer, network) => {
   console.log(`## ${network} network ##`);
-  deployer.deploy(ColonyTask);
   deployer.deploy(ColonyNetwork);
   deployer.deploy(ColonyNetworkMining);
   deployer.deploy(ColonyNetworkAuction);

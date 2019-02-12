@@ -113,11 +113,10 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the non-mapping properties of a pot by id
   /// @param _id Id of the pot which details to get
-  /// @return uint256 The taskId the pot is associated with
-  /// @return uint256 The domainId the pot is associated with
-  /// @dev Exactly one of taskId and domainId should return nonzero, unless _id is 0 (the reward pot, which is 
-  ///      the only pot not associated with a task or a domain), in which case both are.
-  function getPotInformation(uint256 _id) public view returns (uint256 taskId, uint256 domainId);
+  /// @return FundingPotAssociatedType The associated type of the current funding pot, e.g. Domain, Task
+  /// @return uint256 Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
+  /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0)
+  function getFundingPot(uint256 _id) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId);
 
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
@@ -465,7 +464,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return balance Funding pot balance
-  function getPotBalance(uint256 _potId, address _token) public view returns (uint256 balance);
+  function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256 balance);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members

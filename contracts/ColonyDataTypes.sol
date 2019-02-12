@@ -211,10 +211,16 @@ contract ColonyDataTypes {
     mapping (uint8 => bytes32) secret;
   }
 
+  // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
+  // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
+  enum FundingPotAssociatedType { Unassigned, Domain, Task }
+
   struct FundingPot {
+    // Funding pots can store multiple token balances, for ETH use 0x0 address
     mapping (address => uint256) balance;
-    uint256 taskId;
-    uint256 domainId;
+    // Funding pots can be associated with different fundable entities, for now these are: tasks and domains.
+    FundingPotAssociatedType associatedType;
+    uint256 associatedTypeId;
   }
 
   struct Domain {

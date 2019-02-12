@@ -33,8 +33,8 @@ contract("Colony Token Integration", () => {
     it("should be able to correctly claim tokens in the colony funding pots", async () => {
       await erc20Mintable.mint(colony.address, 100);
 
-      let colonyRewardPotBalance = await colony.getPotBalance(0, erc20Mintable.address);
-      let colonyPotBalance = await colony.getPotBalance(1, erc20Mintable.address);
+      let colonyRewardPotBalance = await colony.getFundingPotBalance(0, erc20Mintable.address);
+      let colonyPotBalance = await colony.getFundingPotBalance(1, erc20Mintable.address);
       let colonyTokenBalance = await erc20Mintable.balanceOf(colony.address);
       expect(colonyRewardPotBalance).to.be.zero;
       expect(colonyPotBalance).to.be.zero;
@@ -42,8 +42,8 @@ contract("Colony Token Integration", () => {
 
       await colony.claimColonyFunds(erc20Mintable.address);
 
-      colonyRewardPotBalance = await colony.getPotBalance(0, erc20Mintable.address);
-      colonyPotBalance = await colony.getPotBalance(1, erc20Mintable.address);
+      colonyRewardPotBalance = await colony.getFundingPotBalance(0, erc20Mintable.address);
+      colonyPotBalance = await colony.getFundingPotBalance(1, erc20Mintable.address);
       colonyTokenBalance = await erc20Mintable.balanceOf(colony.address);
       expect(colonyRewardPotBalance).to.be.eq.BN(1);
       expect(colonyPotBalance).to.be.eq.BN(99);
@@ -61,8 +61,8 @@ contract("Colony Token Integration", () => {
     it("should be able to correctly claim tokens in the colony funding pots", async () => {
       await colony.mintTokens(100);
 
-      let colonyRewardPotBalance = await colony.getPotBalance(0, erc20Mintable.address);
-      let colonyPotBalance = await colony.getPotBalance(1, erc20Mintable.address);
+      let colonyRewardPotBalance = await colony.getFundingPotBalance(0, erc20Mintable.address);
+      let colonyPotBalance = await colony.getFundingPotBalance(1, erc20Mintable.address);
       let colonyTokenBalance = await erc20Mintable.balanceOf(colony.address);
       expect(colonyRewardPotBalance).to.be.zero;
       expect(colonyPotBalance).to.be.zero;
@@ -70,8 +70,8 @@ contract("Colony Token Integration", () => {
 
       await colony.claimColonyFunds(erc20Mintable.address);
 
-      colonyRewardPotBalance = await colony.getPotBalance(0, erc20Mintable.address);
-      colonyPotBalance = await colony.getPotBalance(1, erc20Mintable.address);
+      colonyRewardPotBalance = await colony.getFundingPotBalance(0, erc20Mintable.address);
+      colonyPotBalance = await colony.getFundingPotBalance(1, erc20Mintable.address);
       colonyTokenBalance = await erc20Mintable.balanceOf(colony.address);
       expect(colonyRewardPotBalance).to.be.eq.BN(1);
       expect(colonyPotBalance).to.be.eq.BN(99);

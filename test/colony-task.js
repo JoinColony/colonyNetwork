@@ -19,7 +19,13 @@ import {
   ACTIVE_TASK_STATE,
   CANCELLED_TASK_STATE,
   FINALIZED_TASK_STATE,
-  ZERO_ADDRESS
+  ZERO_ADDRESS,
+  MANAGER_RATING,
+  WORKER_RATING,
+  RATING_1_SALT,
+  RATING_2_SALT,
+  RATING_1_SECRET,
+  RATING_2_SECRET
 } from "../helpers/constants";
 
 import {
@@ -43,7 +49,8 @@ import {
   executeSignedRoleAssignment,
   getSigsAndTransactionData,
   makeTask,
-  setupRandomColony
+  setupRandomColony,
+  assignRoles
 } from "../helpers/test-data-generator";
 
 const ethers = require("ethers");
@@ -1290,6 +1297,19 @@ contract("ColonyTask", accounts => {
       await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-ratings-incomplete");
     });
 
+    it("should fail if it's not sufficiently funded to support all its payouts", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await makeTask({ colonyNetwork, colony, token });
+      await colony.setAllTaskPayouts(taskId, token.address, MANAGER_PAYOUT, EVALUATOR_PAYOUT, WORKER_PAYOUT, { from: MANAGER });
+      await assignRoles({ colony, taskId, manager: MANAGER, evaluator: EVALUATOR, worker: WORKER });
+
+      await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, RATING_1_SECRET, { from: WORKER });
+      await colony.submitTaskWorkRating(taskId, WORKER_ROLE, RATING_2_SECRET, { from: EVALUATOR });
+      await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, MANAGER_RATING, RATING_1_SALT, { from: WORKER });
+      await colony.revealTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING, RATING_2_SALT, { from: EVALUATOR });
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-not-funded");
+    });
+
     it("should fail if I try to accept a task that was finalized before", async () => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFinalizedTask({ colonyNetwork, colony, token });
@@ -1347,14 +1367,14 @@ contract("ColonyTask", accounts => {
       await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
 
       // Keep track of original Ether balance in funding pots
-      const originalDomainEtherBalance = await colony.getPotBalance(domain.fundingPotId, ZERO_ADDRESS);
-      const originalTaskEtherBalance = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
+      const originalDomainEtherBalance = await colony.getFundingPotBalance(domain.fundingPotId, ZERO_ADDRESS);
+      const originalTaskEtherBalance = await colony.getFundingPotBalance(taskPotId, ZERO_ADDRESS);
       // And same for the token
-      const originalDomainTokenBalance = await colony.getPotBalance(domain.fundingPotId, token.address);
-      const originalTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
+      const originalDomainTokenBalance = await colony.getFundingPotBalance(domain.fundingPotId, token.address);
+      const originalTaskTokenBalance = await colony.getFundingPotBalance(taskPotId, token.address);
       // And the other token
-      const originalDomainOtherTokenBalance = await colony.getPotBalance(domain.fundingPotId, otherToken.address);
-      const originalTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
+      const originalDomainOtherTokenBalance = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
+      const originalTaskOtherTokenBalance = await colony.getFundingPotBalance(taskPotId, otherToken.address);
 
       // Now that everything is set up, let's cancel the task, move funds and compare funding pots afterwards
       await executeSignedTaskChange({
@@ -1370,12 +1390,12 @@ contract("ColonyTask", accounts => {
       await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskTokenBalance, token.address);
       await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskOtherTokenBalance, otherToken.address);
 
-      const cancelledTaskEtherBalance = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
-      const cancelledDomainEtherBalance = await colony.getPotBalance(domain.fundingPotId, ZERO_ADDRESS);
-      const cancelledTaskTokenBalance = await colony.getPotBalance(taskPotId, token.address);
-      const cancelledDomainTokenBalance = await colony.getPotBalance(domain.fundingPotId, token.address);
-      const cancelledTaskOtherTokenBalance = await colony.getPotBalance(taskPotId, otherToken.address);
-      const cancelledDomainOtherTokenBalance = await colony.getPotBalance(domain.fundingPotId, otherToken.address);
+      const cancelledTaskEtherBalance = await colony.getFundingPotBalance(taskPotId, ZERO_ADDRESS);
+      const cancelledDomainEtherBalance = await colony.getFundingPotBalance(domain.fundingPotId, ZERO_ADDRESS);
+      const cancelledTaskTokenBalance = await colony.getFundingPotBalance(taskPotId, token.address);
+      const cancelledDomainTokenBalance = await colony.getFundingPotBalance(domain.fundingPotId, token.address);
+      const cancelledTaskOtherTokenBalance = await colony.getFundingPotBalance(taskPotId, otherToken.address);
+      const cancelledDomainOtherTokenBalance = await colony.getFundingPotBalance(domain.fundingPotId, otherToken.address);
 
       expect(originalTaskEtherBalance).to.not.eq.BN(cancelledTaskEtherBalance);
       expect(originalDomainEtherBalance).to.not.eq.BN(cancelledDomainEtherBalance);
@@ -1673,7 +1693,7 @@ contract("ColonyTask", accounts => {
 
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
       const managerBalanceBefore = await token.balanceOf(MANAGER);
-      const potBalanceBefore = await colony.getPotBalance(taskPotId, token.address);
+      const potBalanceBefore = await colony.getFundingPotBalance(taskPotId, token.address);
 
       await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
 
@@ -1683,7 +1703,7 @@ contract("ColonyTask", accounts => {
       const managerBalanceAfter = await token.balanceOf(MANAGER);
       expect(managerBalanceAfter.sub(managerBalanceBefore)).to.eq.BN(WAD.muln(99).subn(1));
 
-      const potBalanceAfter = await colony.getPotBalance(taskPotId, token.address);
+      const potBalanceAfter = await colony.getFundingPotBalance(taskPotId, token.address);
       expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(WAD.muln(100));
     });
 
@@ -1705,7 +1725,7 @@ contract("ColonyTask", accounts => {
 
       const task = await colony.getTask(taskId);
       const taskPotId = task[5];
-      const potBalanceBefore = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
+      const potBalanceBefore = await colony.getFundingPotBalance(taskPotId, ZERO_ADDRESS);
 
       const workerBalanceBefore = await web3GetBalance(WORKER);
       const metaBalanceBefore = await web3GetBalance(metaColony.address);
@@ -1718,7 +1738,7 @@ contract("ColonyTask", accounts => {
       const metaBalanceAfter = await web3GetBalance(metaColony.address);
       expect(new BN(metaBalanceAfter).sub(new BN(metaBalanceBefore))).to.eq.BN(3);
 
-      const potBalanceAfter = await colony.getPotBalance(taskPotId, ZERO_ADDRESS);
+      const potBalanceAfter = await colony.getFundingPotBalance(taskPotId, ZERO_ADDRESS);
       expect(potBalanceBefore.sub(potBalanceAfter)).to.eq.BN(new BN(200));
     });
 
