@@ -25,6 +25,7 @@ contract ColonyPayment is ColonyStorage {
   function addPayment(address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public
   stoppable
   auth
+  returns (uint256)
   {
     paymentCount += 1;
     
@@ -47,6 +48,8 @@ contract ColonyPayment is ColonyStorage {
 
     emit FundingPotAdded(fundingPotCount);
     emit PaymentAdded(paymentCount);
+
+    return paymentCount;
   }
 
   function getPayment(uint256 id) public view returns(Payment memory) {

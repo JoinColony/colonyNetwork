@@ -141,12 +141,12 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     // All payments earn domain reputation
-    colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(payment.amount), payment.domainId);
+    colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(payment.amount), domains[payment.domainId].skillId);
     // If skill was set, earn reputation there too
     if (payment.skills.length > 0) {
       // Currently we support at most one skill per Payment, similarly to Task model.
       // This may change in future to allow multiple skills to be set on both Tasks and Payments
-      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(payment.amount), payment.skills[0]);
+      // TODO colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(payment.amount), payment.skills[0]);
     }
 
     // TODO emit PaymentClaimed(_id);
