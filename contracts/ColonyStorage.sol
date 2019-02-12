@@ -74,7 +74,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   mapping (uint256 => uint256) taskChangeNonces; // Storage slot 22
 
   modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
-    require(hasTaskRole(_id, _role), "colony-task-role-identity-mismatch");
+    require(hasTaskRole(_id, _role, msg.sender), "colony-task-role-identity-mismatch");
     _;
   }
 
@@ -137,20 +137,20 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier paymentManagerOrSelf(uint256 _id) {
-    require((isPayment(_id) && hasTaskRole(_id, TaskRole.Manager)) || isSelf(), "colony-not-payment-manager-or-self");
+    require((isPayment(_id) && hasTaskRole(_id, TaskRole.Manager, msg.sender)) || isSelf(), "colony-not-payment-manager-or-self");
     _;
+  }
+
+  function isPayment(uint256 _id) public view returns (bool) {
+    return payments[_id].roles[uint8(TaskRole.Evaluator)].user == address(0x0);
   }
 
   function isSelf() internal view returns (bool) {
     return address(this) == msg.sender;
   }
 
-  function isPayment(uint256 _id) internal view returns (bool) {
-    return payments[_id].roles[uint8(TaskRole.Evaluator)].user == address(0x0);
-  }
-
-  function hasTaskRole(uint256 _id, TaskRole _role) internal view returns (bool) {
-    return msg.sender == payments[_id].roles[uint8(_role)].user;
+  function hasTaskRole(uint256 _id, TaskRole _role, address _user) internal view returns (bool) {
+    return _user == payments[_id].roles[uint8(_role)].user;
   }
 
 }

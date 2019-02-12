@@ -23,7 +23,7 @@ import "./ITokenLocking.sol";
 
 
 contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
-  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable paymentManagerOrSelf(_id) {
+  function setTaskManagerPayout(uint256 _id, address _token, uint256 _amount) public stoppable self {
     setTaskPayout(_id, TaskRole.Manager, _token, _amount);
     emit TaskPayoutSet(_id, TaskRole.Manager, _token, _amount);
   }
@@ -416,6 +416,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotComplete(_id)
+  taskNotFinalized(_id)
   {
     require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
 

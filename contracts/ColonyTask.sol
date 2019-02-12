@@ -29,9 +29,9 @@ contract ColonyTask is ColonyStorage {
     // Manager rated by worker
     // Worker rated by evaluator
     if (_role == TaskRole.Manager) {
-      require(payments[_id].roles[uint8(TaskRole.Worker)].user == msg.sender, "colony-user-cannot-rate-task-manager");
+      require(hasTaskRole(_id, TaskRole.Worker, msg.sender), "colony-user-cannot-rate-task-manager");
     } else if (_role == TaskRole.Worker) {
-      require(payments[_id].roles[uint8(TaskRole.Evaluator)].user == msg.sender, "colony-user-cannot-rate-task-worker");
+      require(hasTaskRole(_id, TaskRole.Evaluator, msg.sender), "colony-user-cannot-rate-task-worker");
     } else {
       revert("colony-unsupported-role-to-rate");
     }
@@ -234,6 +234,16 @@ contract ColonyTask is ColonyStorage {
     } else {
       nSignaturesRequired = 2;
     }
+
+    // Upgrading Payment to Task by assigning evaluator needs worker's approval.
+    if (
+      isPayment(taskId) &&
+      !hasTaskRole(taskId, TaskRole.Worker, address(0x0)) &&
+      sig == bytes4(keccak256("setTaskEvaluatorRole(uint256,address)"))
+    ) {
+      nSignaturesRequired += 1;
+    }
+
     require(_sigR.length == nSignaturesRequired, "colony-task-role-assignment-does-not-meet-required-signatures");
 
     bytes32 msgHash = keccak256(abi.encodePacked(address(this), address(this), _value, _data, taskChangeNonces[taskId]));
@@ -248,7 +258,7 @@ contract ColonyTask is ColonyStorage {
     if (nSignaturesRequired == 1) {
       // Since we want to set a manager as an evaluator, require just manager's signature
       require(reviewerAddresses[0] == manager, "colony-task-role-assignment-not-signed-by-manager");
-    } else {
+    } else if (nSignaturesRequired == 2) {
       // One of signers must be a manager
       require(
         reviewerAddresses[0] == manager ||
@@ -262,6 +272,34 @@ contract ColonyTask is ColonyStorage {
       // and if manager is both signers, then `userAddress` must also be a manager, and if
       // `userAddress` is a manager, then we require 1 signature (will be kept for possible future changes)
       require(reviewerAddresses[0] != reviewerAddresses[1], "colony-task-role-assignment-duplicate-signatures");
+    } else {
+      // One of signers must be a manager
+      require(
+        reviewerAddresses[0] == manager ||
+        reviewerAddresses[1] == manager ||
+        reviewerAddresses[2] == manager,
+        "colony-task-role-assignment-not-signed-by-manager"
+      );
+      // One of signers must be a worker
+      address worker = payments[taskId].roles[uint8(TaskRole.Worker)].user;
+      require(
+        reviewerAddresses[0] == worker ||
+        reviewerAddresses[1] == worker ||
+        reviewerAddresses[2] == worker,
+        "colony-task-role-assignment-not-signed-by-worker"
+      );
+      // One of the signers must be an address we want to set here
+      require(
+        userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1] || userAddress == reviewerAddresses[2],
+        "colony-task-role-assignment-not-signed-by-new-user-for-role"
+      );
+      // Make sure there are no duplicates
+      require(
+        reviewerAddresses[0] != reviewerAddresses[1] &&
+        reviewerAddresses[0] != reviewerAddresses[2] &&
+        reviewerAddresses[1] != reviewerAddresses[2],
+        "colony-task-role-assignment-duplicate-signatures"
+      );
     }
 
     taskChangeNonces[taskId]++;
@@ -331,14 +369,16 @@ contract ColonyTask is ColonyStorage {
   }
 
   function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
-    // Can only assign role if no one is currently assigned to it
+    // Can only assign role if no one or manager is currently assigned to it
     Role storage evaluatorRole = payments[_id].roles[uint8(TaskRole.Evaluator)];
-    require(evaluatorRole.user == address(0x0), "colony-task-evaluator-role-already-assigned");
+    Role storage managerRole = payments[_id].roles[uint8(TaskRole.Manager)];
+    require(evaluatorRole.user == address(0x0) || evaluatorRole.user == managerRole.user, "colony-task-evaluator-role-already-assigned");
     setTaskRoleUser(_id, TaskRole.Evaluator, _user);
   }
 
   function removeTaskEvaluatorRole(uint256 _id) public stoppable self {
-    setTaskRoleUser(_id, TaskRole.Evaluator, address(0x0));
+    Role storage managerRole = payments[_id].roles[uint8(TaskRole.Manager)];
+    setTaskRoleUser(_id, TaskRole.Evaluator, managerRole.user);
   }
 
   // Managing parameters
@@ -348,6 +388,7 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   domainExists(_domainId)
   taskNotComplete(_id)
+  taskNotFinalized(_id)
   paymentManagerOrSelf(_id)
   {
     payments[_id].domainId = _domainId;
@@ -360,6 +401,7 @@ contract ColonyTask is ColonyStorage {
   taskExists(_id)
   skillExists(_skillId)
   taskNotComplete(_id)
+  taskNotFinalized(_id)
   globalSkill(_skillId)
   paymentManagerOrSelf(_id)
   {
@@ -452,6 +494,7 @@ contract ColonyTask is ColonyStorage {
   stoppable
   taskExists(_id)
   taskNotComplete(_id)
+  taskNotFinalized(_id)
   paymentManagerOrSelf(_id)
   {
     payments[_id].status = TaskStatus.Cancelled;
@@ -621,6 +664,7 @@ contract ColonyTask is ColonyStorage {
   function setTaskRoleUser(uint256 _id, TaskRole _role, address _user) private
   taskExists(_id)
   taskNotComplete(_id)
+  taskNotFinalized(_id)
   {
     payments[_id].roles[uint8(_role)] = Role({
       user: _user,

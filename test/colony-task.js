@@ -48,6 +48,7 @@ import {
   executeSignedTaskChange,
   executeSignedRoleAssignment,
   getSigsAndTransactionData,
+  makePayment,
   makeTask,
   setupRandomColony,
   assignRoles
@@ -88,6 +89,201 @@ contract("ColonyTask", accounts => {
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await DSToken.new(otherTokenArgs[1]);
+
+    await colony.addDomain(1); // Domain 2
+  });
+
+  describe("when managing payments", () => {
+    it("should allow only admins to make payments", async () => {
+      await colony.makePayment(1);
+
+      await checkErrorRevert(colony.makePayment(1, { from: OTHER }), "ds-auth-unauthorized");
+    });
+
+    it("should allow the manager to manage payment lifecycle without co-signatories", async () => {
+      const paymentId = await makePayment({ colony, domainId: 1 });
+
+      // Setting domain
+      await colony.setTaskDomain(paymentId, 2);
+
+      // Setting worker payout
+      await colony.setTaskWorkerPayout(paymentId, token.address, WAD);
+
+      // Setting worker
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.removeTaskWorkerRole(paymentId);
+      await colony.setTaskWorkerRole(paymentId, OTHER);
+
+      await colony.finalizePayment(paymentId);
+    });
+
+    it("should not allow a payment to be finalized without a worker assigned", async () => {
+      const paymentId = await makePayment({ colony });
+
+      await checkErrorRevert(colony.finalizePayment(paymentId), "colony-task-payment-no-worker");
+
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.finalizePayment(paymentId);
+    });
+
+    it("should not allow the manager to change payment properties once finalized", async () => {
+      const paymentId = await makePayment({ colony, domainId: 1 });
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.finalizePayment(paymentId);
+
+      await checkErrorRevert(colony.setTaskDomain(paymentId, 2), "colony-task-already-finalized");
+      await checkErrorRevert(colony.setTaskWorkerPayout(paymentId, token.address, WAD), "colony-task-already-finalized");
+    });
+
+    it("should not allow non-managers to set payment fields", async () => {
+      const paymentId = await makePayment({ colony, domainId: 1 });
+
+      await checkErrorRevert(colony.setTaskDomain(paymentId, 2, { from: OTHER }), "colony-not-payment-manager-or-self");
+      await checkErrorRevert(colony.setTaskWorkerPayout(paymentId, token.address, WAD, { from: OTHER }), "colony-not-payment-manager-or-self");
+    });
+
+    it("should not allow the manager to set task-specific fields without co-signatories", async () => {
+      const paymentId = await makePayment({ colony });
+
+      // Setting task properties
+      await checkErrorRevert(colony.setTaskDueDate(paymentId, 10), "colony-not-self");
+      await checkErrorRevert(colony.setTaskBrief(paymentId, SPECIFICATION_HASH), "colony-not-self");
+
+      // Setting non-worker payouts
+      await checkErrorRevert(colony.setTaskManagerPayout(paymentId, token.address, WAD), "colony-not-self");
+      await checkErrorRevert(colony.setTaskEvaluatorPayout(paymentId, token.address, WAD), "colony-not-self");
+    });
+
+    it("should allow the manager to assign/unassign a worker without a signature", async () => {
+      const paymentId = await makePayment({ colony });
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.removeTaskWorkerRole(paymentId);
+    });
+
+    it("should allow the manager to assign an evaluator with two signatures, and upgrade to a task", async () => {
+      const newEvaluator = accounts[1];
+      const paymentId = await makePayment({ colony });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, newEvaluator],
+        sigTypes: [0, 0],
+        args: [paymentId, newEvaluator]
+      });
+    });
+
+    it("should allow the manager to assign a worker, and then evaluator with three signature, and upgrade to a task", async () => {
+      const newEvaluator = accounts[1];
+      const paymentId = await makePayment({ colony });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [paymentId, WORKER]
+      });
+
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId: paymentId,
+          functionName: "setTaskEvaluatorRole",
+          signers: [MANAGER, newEvaluator], // Only two signatures
+          sigTypes: [0, 0],
+          args: [paymentId, newEvaluator]
+        }),
+        "colony-task-role-assignment-does-not-meet-required-signatures"
+      );
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, WORKER, newEvaluator], // Three signatures
+        sigTypes: [0, 0, 0],
+        args: [paymentId, newEvaluator]
+      });
+    });
+
+    it("should support the three signatures in different orders", async () => {
+      const newEvaluator = accounts[1];
+      let paymentId = await makePayment({ colony });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [paymentId, WORKER]
+      });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [WORKER, MANAGER, newEvaluator],
+        sigTypes: [0, 0, 0],
+        args: [paymentId, newEvaluator]
+      });
+
+      paymentId = await makePayment({ colony });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, WORKER],
+        sigTypes: [0, 0],
+        args: [paymentId, WORKER]
+      });
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [newEvaluator, WORKER, MANAGER],
+        sigTypes: [0, 0, 0],
+        args: [paymentId, newEvaluator]
+      });
+    });
+
+    it("should allow only upgrades from payments to tasks, and not downgrades", async () => {
+      const paymentId = await makePayment({ colony });
+
+      const newEvaluator = accounts[1];
+
+      let evaluatorRole = await colony.getTaskRole(paymentId, EVALUATOR_ROLE);
+      expect(evaluatorRole.user).to.equal(ZERO_ADDRESS);
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId: paymentId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, newEvaluator],
+        sigTypes: [0, 0],
+        args: [paymentId, newEvaluator]
+      });
+
+      evaluatorRole = await colony.getTaskRole(paymentId, EVALUATOR_ROLE);
+      expect(evaluatorRole.user).to.equal(newEvaluator);
+
+      await executeSignedTaskChange({
+        colony,
+        taskId: paymentId,
+        functionName: "removeTaskEvaluatorRole",
+        signers: [MANAGER, newEvaluator],
+        sigTypes: [0, 0],
+        args: [paymentId]
+      });
+
+      evaluatorRole = await colony.getTaskRole(paymentId, EVALUATOR_ROLE);
+      expect(evaluatorRole.user).to.equal(MANAGER);
+    });
   });
 
   describe("when creating tasks", () => {
@@ -138,7 +334,7 @@ contract("ColonyTask", accounts => {
       });
 
       taskEvaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      expect(taskEvaluator.user).to.equal(ZERO_ADDRESS);
+      expect(taskEvaluator.user).to.equal(MANAGER);
 
       await executeSignedRoleAssignment({
         colony,
@@ -325,7 +521,7 @@ contract("ColonyTask", accounts => {
       );
 
       const evaluator = await colony.getTaskRole(taskId, EVALUATOR_ROLE);
-      expect(evaluator.user).to.equal(ZERO_ADDRESS);
+      expect(evaluator.user).to.equal(MANAGER);
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -343,7 +539,7 @@ contract("ColonyTask", accounts => {
       expect(worker.user).to.equal(ZERO_ADDRESS);
     });
 
-    it("should not allow role to be assigned if it is already assigned to somebody", async () => {
+    it("should not allow worker role to be assigned if it is already assigned to somebody", async () => {
       const taskId = await makeTask({ colony });
 
       await executeSignedRoleAssignment({
@@ -366,6 +562,20 @@ contract("ColonyTask", accounts => {
         }),
         "colony-task-role-assignment-execution-failed"
       );
+    });
+
+    it("should not allow evaluator role to be assigned if it is already assigned to somebody", async () => {
+      const taskId = await makeTask({ colony });
+      const newEvaluator = accounts[1];
+
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskEvaluatorRole",
+        signers: [MANAGER, newEvaluator],
+        sigTypes: [0, 0],
+        args: [taskId, newEvaluator]
+      });
 
       await checkErrorRevert(
         executeSignedRoleAssignment({
@@ -626,16 +836,6 @@ contract("ColonyTask", accounts => {
 
       const taskId = await makeTask({ colony });
 
-      // Setting the worker
-      await executeSignedRoleAssignment({
-        colony,
-        taskId,
-        functionName: "setTaskWorkerRole",
-        signers: [MANAGER, COLONY_ADMIN],
-        sigTypes: [0, 0],
-        args: [taskId, COLONY_ADMIN]
-      });
-
       // Setting the evaluator
       await executeSignedTaskChange({
         colony,
@@ -653,6 +853,16 @@ contract("ColonyTask", accounts => {
         signers: [MANAGER, newEvaluator],
         sigTypes: [0, 0],
         args: [taskId, newEvaluator]
+      });
+
+      // Setting the worker
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers: [MANAGER, COLONY_ADMIN],
+        sigTypes: [0, 0],
+        args: [taskId, COLONY_ADMIN]
       });
 
       await checkErrorRevert(
