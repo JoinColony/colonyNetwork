@@ -440,11 +440,18 @@ export async function submitAndForwardTimeToDispute(clients, test) {
 
   // If there are multiple submissions, ensure they are different
   if (clients.length > 1) {
-    let previousHash = await clients[0].getRootHash();
     for (let i = 1; i < clients.length; i += 1) {
+      const previousHash = await clients[i - 1].getRootHash();
+      const previousNReputations = await clients[i - 1].getRootHashNNodes();
+      const previousJRH = await clients[i - 1].justificationTree.getRootHash();
+
       const currentHash = await clients[i].getRootHash();
-      expect(previousHash, "Hashes from clients are equal, surprisingly").to.not.equal(currentHash);
-      previousHash = currentHash;
+      const currentNReputations = await clients[i].getRootHashNNodes();
+      const currentJRH = await clients[i].justificationTree.getRootHash();
+
+      if (previousHash === currentHash && previousNReputations.eq(currentNReputations) && previousJRH === currentJRH) {
+        throw new Error("Submissions from clients are equal, surprisingly");
+      }
     }
   }
 }
