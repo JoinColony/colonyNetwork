@@ -10,7 +10,7 @@ const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
 
-const { minerAddress, colonyNetworkAddress, rinkeby, privateKey, seed } = argv;
+const { minerAddress, colonyNetworkAddress, rinkeby, privateKey } = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress) {
   console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress on the command line!");
@@ -26,5 +26,5 @@ if (rinkeby) {
   provider = new ethers.providers.InfuraProvider("rinkeby");
 }
 
-const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, seed, useJsTree: true });
+const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true });
 client.initialise(colonyNetworkAddress);
