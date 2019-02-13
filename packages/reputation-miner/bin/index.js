@@ -10,7 +10,8 @@ const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
 
-const { minerAddress, colonyNetworkAddress, rinkeby, privateKey } = argv;
+const supportedInfuraNetworks = ["rinkeby", "ropsten", "kovan", "mainnet"];
+const { minerAddress, privateKey, colonyNetworkAddress, network } = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress) {
   console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress on the command line!");
@@ -22,8 +23,12 @@ const loader = new TruffleLoader({
 });
 
 let provider;
-if (rinkeby) {
-  provider = new ethers.providers.InfuraProvider("rinkeby");
+if (network) {
+  if (!supportedInfuraNetworks.includes(network)) {
+    console.log(`❗️ "network" option accepts only supported Infura networks: ${supportedInfuraNetworks} !`);
+    process.exit();
+  }
+  provider = new ethers.providers.InfuraProvider(network);
 }
 
 const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true });
