@@ -20,7 +20,6 @@ class ReputationMiner {
    */
   constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false, dbPath = "./reputationStates.sqlite" }) {
     this.loader = loader;
-    this.minerAddress = minerAddress;
     this.dbPath = dbPath;
 
     this.useJsTree = useJsTree;
@@ -53,11 +52,13 @@ class ReputationMiner {
     }
 
     if (minerAddress) {
+      this.minerAddress = minerAddress;
       this.realWallet = this.realProvider.getSigner(minerAddress);
     } else {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
+      this.minerAddress = this.realWallet.address;
       // TODO: Check that this wallet can stake?
-      console.log("Transactions will be signed from ", this.realWallet.address);
+      console.log("Transactions will be signed from ", this.minerAddress);
     }
   }
 
