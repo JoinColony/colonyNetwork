@@ -93,6 +93,54 @@ contract("ColonyTask", accounts => {
     await colony.addDomain(1); // Domain 2
   });
 
+  describe.only("breaking payments", () => {
+    it("should not be able to set payouts on a payment for roles other than the worker/recipient", async () => {
+      const paymentId = await makePayment({ colony, domainId: 1 });
+      await colony.setAllTaskPayouts(paymentId, token.address, 10, 20, 30);
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.finalizePayment(paymentId);
+    });
+
+    // Expliting tasks[some payment id].taskproperty will return the default
+    it("should not allow me to sneak into functions that are meant for tasks not payments", async () => {
+      const paymentId = await makePayment({ colony, domainId: 1 });
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.setTaskSkill(paymentId, 1);
+      await colony.submitTaskDeliverable(paymentId, DELIVERABLE_HASH, { from: WORKER });
+
+      const task = await colony.getTask(paymentId);
+      console.log("task", task); // Deliverable hash and completion timestamp will both be set
+    });
+
+    it("should not allow a payment to be rated, and potentially confuse reputation calculations", async () => {
+      const paymentId = await makePayment({ colony, domainId: 1 });
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.setTaskSkill(paymentId, 1);
+      await colony.submitTaskDeliverable(paymentId, DELIVERABLE_HASH, { from: WORKER });
+
+      await colony.submitTaskWorkRating(paymentId, MANAGER_ROLE, RATING_1_SECRET, { from: WORKER });
+      const currentTime = await currentBlockTime();
+      const rating = await colony.getTaskWorkRatings(paymentId);
+      expect(rating.nSecrets).to.eq.BN(1);
+      expect(rating.lastSubmittedAt.toNumber()).to.be.closeTo(currentTime, 2);
+      const ratingSecret = await colony.getTaskWorkRatingSecret(paymentId, MANAGER_ROLE);
+      expect(ratingSecret).to.eq.BN(RATING_1_SECRET);
+    });
+
+    it("user can finalise task and claim payout without doing any work", async () => {
+      const dueDate = await currentBlockTime();
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupFundedTask({ colonyNetwork, colony, token, dueDate });
+
+      // This fails
+      await checkErrorRevert(colony.finalizeTask(taskId), "colony-task-not-complete");
+
+      // But this succeeds and I can n
+      await colony.finalizePayment(taskId);
+      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
+    });
+  });
+
   describe("when managing payments", () => {
     it("should allow only admins to make payments", async () => {
       await colony.makePayment(1);
