@@ -173,7 +173,12 @@ class ReputationMiner {
    */
   getAdjacentKey(key) {
     const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
-    const keyPosition = sortedHashes.indexOf(soliditySha3(key));
+    let keyPosition = sortedHashes.indexOf(soliditySha3(key));
+    if (keyPosition === -1) {
+      sortedHashes.push(web3Utils.soliditySha3(key))
+      sortedHashes.sort()
+      keyPosition = sortedHashes.indexOf(web3Utils.soliditySha3(key));
+    }
 
     let adjacentKeyPosition;
     if (keyPosition === 0){
@@ -212,6 +217,7 @@ class ReputationMiner {
     let justUpdatedProof;
     let originReputationProof;
     let originAdjacentReputationProof = await this.getReputationProofObject("0x00");;
+    let childAdjacentReputationProof = await this.getReputationProofObject("0x00");;
     let childReputationProof = await this.getReputationProofObject("0x00");
     let adjacentReputationProof = await this.getReputationProofObject("0x00");
     let logEntry;
@@ -300,6 +306,9 @@ class ReputationMiner {
             const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
             if (keyExists) {
               reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
+            } else {
+              const childAdjacentKey = await this.getAdjacentKey(keyUsedInCalculations);
+              childAdjacentReputationProof = await this.getReputationProofObject(childAdjacentKey);
             }
 
             amount = amount.mul(reputation).div(originReputation);
@@ -356,7 +365,8 @@ class ReputationMiner {
         originReputationProof,
         childReputationProof,
         adjacentReputationProof,
-        originAdjacentReputationProof
+        originAdjacentReputationProof,
+        childAdjacentReputationProof
       })
     );
     // console.log("updateNumber", updateNumber.toString());
@@ -882,13 +892,21 @@ class ReputationMiner {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
     const lastAgreeJustifications = this.justificationHashes[lastAgreeKey];
-    const firstDisagreeJustifications = this.justificationHashes[firstDisagreeIdx];
+    const firstDisagreeJustifications = this.justificationHashes[firstDisagreeKey];
+    console.log(lastAgreeJustifications, firstDisagreeJustifications);
 
     if (lastAgreeJustifications.originAdjacentReputationProof.key !== "0x00") {
       // We generated the origin-adjacent reputation proof. We replace the origin proof with the originAdjacentReputationProof
       lastAgreeJustifications.originReputationProof.uid = lastAgreeJustifications.originAdjacentReputationProof.uid;
       lastAgreeJustifications.originReputationProof.branchMask = lastAgreeJustifications.originAdjacentReputationProof.branchMask;
       lastAgreeJustifications.originReputationProof.siblings = lastAgreeJustifications.originAdjacentReputationProof.siblings;
+    }
+
+    if (lastAgreeJustifications.childAdjacentReputationProof.key !== "0x00") {
+      // We generated the child-adjacent reputation proof. We replace the child proof with the childAdjacentReputationProof
+      lastAgreeJustifications.childReputationProof.uid = lastAgreeJustifications.childAdjacentReputationProof.uid;
+      lastAgreeJustifications.childReputationProof.branchMask = lastAgreeJustifications.childAdjacentReputationProof.branchMask;
+      lastAgreeJustifications.childReputationProof.siblings = lastAgreeJustifications.childAdjacentReputationProof.siblings;
     }
 
     return repCycle.respondToChallenge(
@@ -920,13 +938,15 @@ class ReputationMiner {
         lastAgreeJustifications.adjacentReputationProof.reputation,
         lastAgreeJustifications.adjacentReputationProof.uid,
         "0",
-        lastAgreeJustifications.originAdjacentReputationProof.reputation
+        lastAgreeJustifications.originAdjacentReputationProof.reputation,
+        lastAgreeJustifications.childAdjacentReputationProof.reputation
       ],
       [
         reputationKey,
         lastAgreeJustifications.newestReputationProof.key,
         lastAgreeJustifications.adjacentReputationProof.key,
-        lastAgreeJustifications.originAdjacentReputationProof.key
+        lastAgreeJustifications.originAdjacentReputationProof.key,
+        lastAgreeJustifications.childAdjacentReputationProof.key
       ],
       firstDisagreeJustifications.justUpdatedProof.siblings,
       agreeStateSiblings,

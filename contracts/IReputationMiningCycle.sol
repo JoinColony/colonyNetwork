@@ -137,8 +137,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev If you know that the disagreement doesn't involve a new reputation being added, the arguments corresponding to the previous new reputation can be zeroed, as they will not be used. You must be sure
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
-    uint256[28] memory u, //An array of 28 UINT Params, ordered as given above.
-    bytes[4] memory b,
+    uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
+    bytes[5] memory b,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
