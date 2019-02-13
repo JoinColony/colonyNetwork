@@ -1,25 +1,23 @@
-import BN from "bn.js";
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
-class MaliciousReputationMiningNoOriginReputation extends ReputationMinerTestWrapper {
-  // This client will claim there is no originReputationUID, whether there is one or not
-  //
+class MaliciousReputationMinerClaimNoOriginReputation extends ReputationMinerTestWrapper {
+  // This client will claim there is no origin reputation, whether there is one or not, if told to falsify a child update.
+  // Not sure what will happen otherwise!
   constructor(opts, entryToFalsify) {
     super(opts);
     this.entryToFalsify = entryToFalsify;
   }
 
   async addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement) {
-    if (updateNumber.toNumber() === this.entryToFalsify){
-      this.alterThisEntry = true;
-      const reputationKey = await this.getKeyForUpdateNumber(updateNumber);
-      const reputationValue = new BN(this.reputations[reputationKey].slice(2, 66), 16);
-      this.replacementAmount = reputationValue.mul(new BN(-1));
-    }
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
     if (updateNumber.toNumber() === this.entryToFalsify){
 
       // Set the origin skill key
+      // Because the amount is zero (due to our custom getAmount function below), the origin skill proof object and the user child proof object
+      // will have default (zero) values.
+      // We set the keys here, (because the keys are checked in respondToChallenge) and leave everything else the same.
+      // The amount variable represents the change in the reputation being updated, which for a child update is always zero when there is no origin reputation.
+      // The calculation is therefore self-consistent and will be able to pass respondToChallenge.
       const logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(updateNumber.sub(this.nReputationsBeforeLatestLog));
       const logEntry = await repCycle.getReputationUpdateLogEntry(logEntryNumber);
       const originSkillUpdateNumber = logEntry.nUpdates.add(logEntry.nPreviousUpdates).add(this.nReputationsBeforeLatestLog).sub(1);
@@ -37,10 +35,8 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMinerTestWra
       } else {
         childKey = await this.getKeyForUpdateNumber(updateNumber);
       }
-      this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].childReputationProof = 
+      this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].childReputationProof =
         await this.getReputationProofObject(childKey);
-
-      this.alterThisEntry = false;
     }
   }
 
@@ -54,4 +50,4 @@ class MaliciousReputationMiningNoOriginReputation extends ReputationMinerTestWra
   }
 }
 
-export default MaliciousReputationMiningNoOriginReputation;
+export default MaliciousReputationMinerClaimNoOriginReputation;

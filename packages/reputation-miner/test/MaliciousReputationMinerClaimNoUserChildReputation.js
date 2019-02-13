@@ -2,8 +2,8 @@ import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
 
-class MaliciousReputationMiningNoUserChildReputation extends ReputationMinerTestWrapper {
-  // This client will claim there is no originReputationUID, whether there is one or not
+class MaliciousReputationMiningClaimNoUserChildReputation extends ReputationMinerTestWrapper {
+  // This client will claim there is no user child reputation, whether there is one or not
   //
   constructor(opts, entryToFalsify) {
     super(opts);
@@ -26,6 +26,13 @@ class MaliciousReputationMiningNoUserChildReputation extends ReputationMinerTest
     }
     await super.addSingleReputationUpdate(updateNumber, repCycle, blockNumber, checkForReplacement)
     if (updateNumber.toNumber() === this.entryToFalsify){
+
+      // Because the amount is zero (due to our custom getAmount function below), the origin skill proof object and the user child proof object
+      // will have default (zero) values.
+      // We set the origin proof here here, (because we want to be able to prove that value), but set the child skill key
+      // (which is checked) and leave the other values alone.
+      // The amount variable represents the change in the reputation being updated, which for a child update is always zero when there is no user child reputation.
+      // The calculation is therefore self-consistent and will be able to pass respondToChallenge.
 
       // Set the origin proof
       this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].originReputationProof = originProof;
@@ -55,4 +62,4 @@ class MaliciousReputationMiningNoUserChildReputation extends ReputationMinerTest
   }
 }
 
-export default MaliciousReputationMiningNoUserChildReputation;
+export default MaliciousReputationMiningClaimNoUserChildReputation;

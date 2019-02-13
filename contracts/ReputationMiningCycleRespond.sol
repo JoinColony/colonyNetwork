@@ -166,7 +166,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /////////////////////////
   // Internal functions
   /////////////////////////
-  
+
   function checkAdjacentReputation(
     uint256[27] memory u,
     bytes[3] memory b,
@@ -216,11 +216,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   function buildNewSiblingsArray(
-    uint256[27] memory u, 
-    bytes[3] memory b, 
-    uint256 firstDifferenceBit, 
+    uint256[27] memory u,
+    bytes[3] memory b,
+    uint256 firstDifferenceBit,
     bytes32[] memory adjacentReputationSiblings
-    ) internal returns (bytes32[] memory) 
+    ) internal returns (bytes32[] memory)
   {
     bytes32 newSibling = keccak256(
       abi.encodePacked(
@@ -242,7 +242,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // This can be > or >= because the adjacent reputation branchmask will be a 0 in the
     // bit where the two keys first differ.
     while (i > 2**firstDifferenceBit) {
-      if (i & u[U_ADJACENT_REPUTATION_BRANCH_MASK] == i) { 
+      if (i & u[U_ADJACENT_REPUTATION_BRANCH_MASK] == i) {
         insert += 1;
       }
       i >>= 1;
@@ -252,7 +252,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Now actually build the new siblings array
     i = 0;
     while (i < afterInsertionAdjacentReputationSiblings.length) {
-      if (i < insert) { 
+      if (i < insert) {
         afterInsertionAdjacentReputationSiblings[i] = adjacentReputationSiblings[i];
       } else if (i == insert) {
         afterInsertionAdjacentReputationSiblings[i] = newSibling;
@@ -269,7 +269,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256[27] memory u,
     bytes[3] memory b,
     bytes32[] memory agreeStateSiblings,
-    bytes32[] memory userOriginReputationSiblings) internal 
+    bytes32[] memory userOriginReputationSiblings) internal
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     if (logEntry.amount >= 0) {
@@ -295,15 +295,15 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     uint256[27] memory u,
     bytes[3] memory b,
     bytes32[] memory agreeStateSiblings,
-    bytes32[] memory childReputationSiblings) internal 
+    bytes32[] memory childReputationSiblings) internal
   {
-    // This function is only called if the dispute is over a child reputation update of a colony-wide reputation total 
+    // This function is only called if the dispute is over a child reputation update of a colony-wide reputation total
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
     uint256 expectedSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(logEntry.skillId, relativeUpdateNumber);
     bytes memory childReputationKey = abi.encodePacked(logEntry.colony, expectedSkillId, logEntry.user);
-    
+
     checkChildReputationInState(
       u,
       agreeStateSiblings,
@@ -424,12 +424,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
 
     require(impliedRoot == jrh, "colony-reputation-mining-invalid-before-reputation-proof");
-    // Check that they have not changed nNodes from the agree state 
+    // Check that they have not changed nNodes from the agree state
     // There is a check at the very start of RespondToChallenge that this difference is either 0 or 1.
     // There is an 'if' statement above that returns if this difference is 1.
-    // Therefore the difference is 0, and we no longer need this check here.
-    // require(u[U_DISAGREE_STATE_NNODES] == u[U_AGREE_STATE_NNODES], "colony-reputation-mining-nnodes-changed");
-    // They've actually verified whatever they claimed. 
+    // Therefore the difference is 0, and this should always be true.
+    assert(u[U_DISAGREE_STATE_NNODES] == u[U_AGREE_STATE_NNODES]);
+    // They've actually verified whatever they claimed.
     // In the event that our opponent lied about this reputation not existing yet in the tree, they will fail on checkAdjacentReputation,
     // as the branchmask generated will indicate that the node already exists
   }
@@ -577,7 +577,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   }
 
   // Get the update number relative in the context of the log entry currently considered
-  // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive) 
+  // e.g. for log entry with 6 updates, the relative update number range is [0 .. 5] (inclusive)
   function getRelativeUpdateNumber(uint256[27] memory u, ReputationLogEntry memory logEntry) internal view returns (uint256) {
     uint256 nNodes = IColonyNetwork(colonyNetworkAddress).getReputationRootHashNNodes();
     uint256 updateNumber = sub(sub(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound, 1), nNodes);
@@ -602,7 +602,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       // NB This is not necessarily the same as nChildren. However, this is the number of child updates
       // that this entry in the log was expecting at the time it was created
     }
-    
+
     return (nChildUpdates, nParents);
   }
 
@@ -649,12 +649,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       userOriginReputationStateSiblings
     );
-    
+
     bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-    
+
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     if (u[U_USER_ORIGIN_REPUTATION_VALUE] == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
@@ -685,12 +685,12 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       u[U_CHILD_REPUTATION_BRANCH_MASK],
       childReputationStateSiblings
     );
-    
+
     bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
 
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(lastAgreeIdx), jhLeafValue, u[U_AGREE_STATE_BRANCH_MASK], agreeStateSiblings);
-    
+
     bytes32 jrh = disputeRounds[u[U_ROUND]][u[U_IDX]].jrh;
     if (u[U_CHILD_REPUTATION_VALUE] == 0 && impliedRoot != jrh) {
       // This implies they are claiming that this is a new hash.
