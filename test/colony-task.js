@@ -139,6 +139,53 @@ contract("ColonyTask", accounts => {
       await colony.finalizePayment(taskId);
       await colony.claimPayout(taskId, WORKER_ROLE, token.address);
     });
+
+    it("I can't upgrade a payment to what is a valid task", async () => {
+      // I can make a task where all three roles are the same
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      await setupFinalizedTask({ colonyNetwork, colony, token, worker: WORKER, manager: WORKER, evaluator: WORKER });
+
+      // But I can't upgrade a payment to that state.
+      const paymentId = await makePayment({ colony, domainId: 1 });
+      await colony.setTaskWorkerRole(paymentId, accounts[0]);
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId: paymentId,
+          functionName: "setTaskEvaluatorRole",
+          signers: [accounts[0]],
+          sigTypes: [0],
+          args: [paymentId, accounts[0]]
+        }),
+        "colony-task-role-assignment-does-not-meet-required-signatures"
+      );
+    });
+
+    it.only("lets me set a due date for a payment, leading to fun", async () => {
+      const paymentId = await makePayment({ colony, domainId: 1 });
+      console.log(paymentId);
+      const dueDate = await currentBlockTime();
+      await expectEvent(
+        executeSignedTaskChange({
+          colony,
+          taskId: paymentId,
+          functionName: "setTaskDueDate",
+          signers: [MANAGER],
+          sigTypes: [0],
+          args: [paymentId, dueDate]
+        }),
+        "TaskDueDateSet"
+      );
+      await colony.setTaskWorkerRole(paymentId, WORKER);
+      await colony.completeTask(paymentId);
+
+      // Forward time
+      await forwardTime(SECONDS_PER_DAY * 11);
+      await colony.finalizeTask(paymentId);
+      // But none of us rated anyone else! Probably not good for our reputation
+      await colony.claimPayout(paymentId, WORKER_ROLE, token.address);
+      // But at least I can still claim my payout.
+    });
   });
 
   describe("when managing payments", () => {
