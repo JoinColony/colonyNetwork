@@ -1,6 +1,5 @@
 const ethers = require("ethers");
 const express = require("express");
-const BN = require("bn.js");
 
 const ReputationMiner = require("./ReputationMiner");
 
@@ -10,10 +9,9 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ file, minerAddress, loader, realProviderPort, seed, privateKey, provider, useJsTree, auto }) {
+  constructor({ minerAddress, loader, realProviderPort, privateKey, provider, useJsTree, auto }) {
     this._loader = loader;
-    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, dbPath: file, useJsTree });
-    this._seed = seed;
+    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree });
     this._auto = auto;
     if (typeof this._auto === "undefined") {
       this._auto = true;
@@ -64,24 +62,6 @@ class ReputationMinerClient {
     await this._miner.loadState(latestReputationHash);
     if (this._miner.nReputations.eq(0)) {
       console.log("No existing reputations found - starting from scratch");
-      if (this._seed) {
-        // Temporary data if --seed is set and there's nothing to restore from.
-        const ADDRESS1 = "0x309e642dbf573119ca75153b25f5b8462ff1b90b";
-        const ADDRESS2 = "0xbc13dbc1a954b3443d6f75297a232faa513774b3";
-        const ADDRESS3 = "0x2b183746bd1403cdec8e4fe45139339da20bcf3d";
-        const ADDRESS4 = "0xcd0751d4181acda4f8edb2f3b33b915f91abeef0";
-        const ADDRESS0 = "0x0000000000000000000000000000000000000000";
-        await this._miner.insert(ADDRESS1, 1, ADDRESS2, new BN("999999999"));
-        await this._miner.insert(ADDRESS1, 1, ADDRESS0, new BN("999999999"));
-        await this._miner.insert(ADDRESS1, 2, ADDRESS2, new BN("888888888888888"));
-        await this._miner.insert(ADDRESS1, 2, ADDRESS0, new BN("888888888888888"));
-        await this._miner.insert(ADDRESS3, 1, ADDRESS2, new BN("100000000"));
-        await this._miner.insert(ADDRESS3, 1, ADDRESS4, new BN("100000000"));
-        await this._miner.insert(ADDRESS3, 1, ADDRESS0, new BN("200000000"));
-        console.log("💾 Writing initialised state with dummy data to database");
-
-        await this._miner.saveCurrentState();
-      }
     }
 
     console.log("🏁 Initialised");
