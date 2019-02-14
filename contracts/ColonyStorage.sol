@@ -78,8 +78,14 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
+  modifier paymentExists(uint256 _id) {
+    require(_id > 0 && _id <= paymentCount, "colony-task-does-not-exist");
+    _;
+  }
+
   modifier taskExists(uint256 _id) {
     require(_id > 0 && _id <= paymentCount, "colony-task-does-not-exist");
+    require(!isPayment(_id), "colony-task-is-payment");
     _;
   }
 

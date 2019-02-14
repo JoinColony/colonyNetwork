@@ -6,6 +6,7 @@ import bnChai from "bn-chai";
 
 import {
   fundColonyWithTokens,
+  makePayment,
   setupFundedTask,
   setupFinalizedTask,
   setupColonyNetwork,
@@ -80,7 +81,29 @@ contract("Reputation Updates", accounts => {
   });
 
   describe("when added", () => {
-    it("should be readable", async () => {
+    it("should be readable for payments", async () => {
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
+      const paymentId = await makePayment({ colony: metaColony, domainId: 1 });
+
+      await metaColony.setTaskWorkerPayout(paymentId, clnyToken.address, WAD);
+      await metaColony.setTaskWorkerRole(paymentId, WORKER);
+
+      const payment = await metaColony.getPayment(paymentId);
+      const domain = await metaColony.getDomain(1);
+      await metaColony.moveFundsBetweenPots(domain.fundingPotId, payment.fundingPotId, WAD, clnyToken.address);
+
+      await metaColony.finalizePayment(paymentId);
+
+      const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
+      expect(repLogEntryManager.user).to.equal(WORKER);
+      expect(repLogEntryManager.amount).to.eq.BN(WAD);
+      expect(repLogEntryManager.skillId).to.eq.BN(2);
+      expect(repLogEntryManager.colony).to.equal(metaColony.address);
+      expect(repLogEntryManager.nUpdates).to.eq.BN(2);
+      expect(repLogEntryManager.nPreviousUpdates).to.eq.BN(4); // There are 4 reputation miner updates
+    });
+
+    it("should be readable for tasks", async () => {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);

@@ -93,7 +93,7 @@ contract("ColonyTask", accounts => {
     await colony.addDomain(1); // Domain 2
   });
 
-  describe.only("breaking payments", () => {
+  describe.skip("breaking payments", () => {
     it("should not be able to set payouts on a payment for roles other than the worker/recipient", async () => {
       const paymentId = await makePayment({ colony, domainId: 1 });
       await colony.setAllTaskPayouts(paymentId, token.address, 10, 20, 30);
@@ -161,7 +161,7 @@ contract("ColonyTask", accounts => {
       );
     });
 
-    it.only("lets me set a due date for a payment, leading to fun", async () => {
+    it("lets me set a due date for a payment, leading to fun", async () => {
       const paymentId = await makePayment({ colony, domainId: 1 });
       console.log(paymentId);
       const dueDate = await currentBlockTime();
@@ -196,10 +196,10 @@ contract("ColonyTask", accounts => {
     });
 
     it("should allow the manager to manage payment lifecycle without co-signatories", async () => {
-      const paymentId = await makePayment({ colony, domainId: 1 });
+      const paymentId = await makePayment({ colony, domainId: 2 });
 
       // Setting domain
-      await colony.setTaskDomain(paymentId, 2);
+      await colony.setTaskDomain(paymentId, 1);
 
       // Setting worker payout
       await colony.setTaskWorkerPayout(paymentId, token.address, WAD);
@@ -208,6 +208,12 @@ contract("ColonyTask", accounts => {
       await colony.setTaskWorkerRole(paymentId, WORKER);
       await colony.removeTaskWorkerRole(paymentId);
       await colony.setTaskWorkerRole(paymentId, OTHER);
+
+      // Funding task
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const payment = await colony.getPayment(paymentId);
+      const domain = await colony.getDomain(payment.domainId);
+      await colony.moveFundsBetweenPots(domain.fundingPotId, payment.fundingPotId, WAD, token.address);
 
       await colony.finalizePayment(paymentId);
     });
@@ -237,14 +243,16 @@ contract("ColonyTask", accounts => {
       await checkErrorRevert(colony.setTaskWorkerPayout(paymentId, token.address, WAD, { from: OTHER }), "colony-not-payment-manager-or-self");
     });
 
-    it("should not allow the manager to set task-specific fields without co-signatories", async () => {
+    it("should not allow the manager to set task-specific fields", async () => {
       const paymentId = await makePayment({ colony });
 
-      // Setting task properties
-      await checkErrorRevert(colony.setTaskDueDate(paymentId, 10), "colony-not-self");
-      await checkErrorRevert(colony.setTaskBrief(paymentId, SPECIFICATION_HASH), "colony-not-self");
+      await checkErrorRevert(colony.setTaskDueDate(paymentId, 10), "colony-task-is-payment");
+      await checkErrorRevert(colony.setTaskBrief(paymentId, SPECIFICATION_HASH), "colony-task-is-payment");
+    });
 
-      // Setting non-worker payouts
+    it("should not allow the manager to set task fields without co-signers", async () => {
+      const paymentId = await makePayment({ colony });
+
       await checkErrorRevert(colony.setTaskManagerPayout(paymentId, token.address, WAD), "colony-not-self");
       await checkErrorRevert(colony.setTaskEvaluatorPayout(paymentId, token.address, WAD), "colony-not-self");
     });
@@ -1212,8 +1220,8 @@ contract("ColonyTask", accounts => {
     });
 
     it("should fail if a non-colony call is made to the task update functions", async () => {
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskBrief(1, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "colony-not-self");
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(colony.setTaskBrief(taskId, SPECIFICATION_HASH_UPDATED, { from: OTHER }), "colony-not-self");
     });
 
     it("should fail update of task brief signed by a non-registered role", async () => {
@@ -1617,7 +1625,7 @@ contract("ColonyTask", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskCount = await colony.getTaskCount();
       const nonExistentTaskId = taskCount.addn(10);
-      await checkErrorRevert(colony.finalizeTask(nonExistentTaskId), "colony-task-not-complete");
+      await checkErrorRevert(colony.finalizeTask(nonExistentTaskId), "colony-task-does-not-exist");
     });
 
     it("should log a TaskFinalized event", async () => {

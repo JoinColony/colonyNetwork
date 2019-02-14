@@ -21,6 +21,7 @@ contract("OneClick", accounts => {
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
     await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+    await colonyNetwork.initialiseReputationMining();
   });
 
   beforeEach(async () => {

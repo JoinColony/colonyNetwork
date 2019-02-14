@@ -237,9 +237,10 @@ contract ColonyTask is ColonyStorage {
 
     // Upgrading Payment to Task by assigning evaluator needs worker's approval.
     if (
+      sig == bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")) &&
       isPayment(taskId) &&
       !hasTaskRole(taskId, TaskRole.Worker, address(0x0)) &&
-      sig == bytes4(keccak256("setTaskEvaluatorRole(uint256,address)"))
+      !hasTaskRole(taskId, TaskRole.Worker, manager)
     ) {
       nSignaturesRequired += 1;
     }
@@ -385,7 +386,7 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskDomain(uint256 _id, uint256 _domainId) public
   stoppable
-  taskExists(_id)
+  paymentExists(_id)
   domainExists(_domainId)
   taskNotComplete(_id)
   taskNotFinalized(_id)
@@ -398,7 +399,7 @@ contract ColonyTask is ColonyStorage {
 
   function setTaskSkill(uint256 _id, uint256 _skillId) public
   stoppable
-  taskExists(_id)
+  paymentExists(_id)
   skillExists(_skillId)
   taskNotComplete(_id)
   taskNotFinalized(_id)
@@ -464,14 +465,31 @@ contract ColonyTask is ColonyStorage {
     markTaskCompleted(_id);
   }
 
-  function finalizePayment(uint256 _id) public stoppable {
+  function finalizePayment(uint256 _id) public
+  stoppable
+  paymentExists(_id)
+  taskFunded(_id)
+  taskNotFinalized(_id)
+  {
     Payment storage payment = payments[_id];
-    require(payment.roles[uint8(TaskRole.Worker)].user != address(0x0), "colony-task-payment-no-worker");
+    Role storage workerRole = payment.roles[uint8(TaskRole.Worker)];
+
+    require(isPayment(_id), "colony-task-not-payment");
+    require(workerRole.user != address(0x0), "colony-task-payment-no-worker");
+
     payment.status = TaskStatus.Finalized;
+
+    int256 reputation = int256(payment.payouts[uint8(TaskRole.Worker)][token]);
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputation, domains[payment.domainId].skillId);
+    if (payment.skills[0] > 0) {
+      colonyNetworkContract.appendReputationUpdateLog(workerRole.user, reputation, payment.skills[0]);
+    }
   }
 
   function finalizeTask(uint256 _id) public
   stoppable
+  taskExists(_id)
   taskComplete(_id)
   taskWorkRatingsComplete(_id)
   taskFunded(_id)
@@ -492,7 +510,7 @@ contract ColonyTask is ColonyStorage {
 
   function cancelTask(uint256 _id) public
   stoppable
-  taskExists(_id)
+  paymentExists(_id)
   taskNotComplete(_id)
   taskNotFinalized(_id)
   paymentManagerOrSelf(_id)
@@ -662,7 +680,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function setTaskRoleUser(uint256 _id, TaskRole _role, address _user) private
-  taskExists(_id)
+  paymentExists(_id)
   taskNotComplete(_id)
   taskNotFinalized(_id)
   {
