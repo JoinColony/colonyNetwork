@@ -1,6 +1,7 @@
 require("@babel/register")({
   presets: ["@babel/preset-env"]
 });
+require("@babel/polyfill");
 
 const path = require("path");
 const { argv } = require("yargs");
@@ -9,10 +10,11 @@ const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
 
-const { file, minerAddress, colonyNetworkAddress, rinkeby, privateKey, seed } = argv;
+const supportedInfuraNetworks = ["rinkeby", "ropsten", "kovan", "mainnet"];
+const { minerAddress, privateKey, colonyNetworkAddress, network } = argv;
 
-if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !file) {
-  console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ), --colonyNetworkAddress and --file on the command line!");
+if ((!minerAddress && !privateKey) || !colonyNetworkAddress) {
+  console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress on the command line!");
   process.exit();
 }
 
@@ -21,9 +23,13 @@ const loader = new TruffleLoader({
 });
 
 let provider;
-if (rinkeby) {
-  provider = new ethers.providers.InfuraProvider("rinkeby");
+if (network) {
+  if (!supportedInfuraNetworks.includes(network)) {
+    console.log(`❗️ "network" option accepts only supported Infura networks: ${supportedInfuraNetworks} !`);
+    process.exit();
+  }
+  provider = new ethers.providers.InfuraProvider(network);
 }
 
-const client = new ReputationMinerClient({ file, loader, minerAddress, privateKey, provider, seed, useJsTree: true });
+const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true });
 client.initialise(colonyNetworkAddress);

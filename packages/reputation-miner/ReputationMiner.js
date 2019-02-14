@@ -18,10 +18,9 @@ class ReputationMiner {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false, dbPath = "./reputationStates.sqlite" }) {
+  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false }) {
     this.loader = loader;
-    this.minerAddress = minerAddress;
-    this.dbPath = dbPath;
+    this.dbPath = "./reputationStates.sqlite";
 
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
@@ -53,11 +52,13 @@ class ReputationMiner {
     }
 
     if (minerAddress) {
+      this.minerAddress = minerAddress;
       this.realWallet = this.realProvider.getSigner(minerAddress);
     } else {
       this.realWallet = new ethers.Wallet(privateKey, this.realProvider);
+      this.minerAddress = this.realWallet.address;
       // TODO: Check that this wallet can stake?
-      console.log("Transactions will be signed from ", this.realWallet.address);
+      console.log("Transactions will be signed from ", this.minerAddress);
     }
   }
 
