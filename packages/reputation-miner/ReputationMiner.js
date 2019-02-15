@@ -18,9 +18,9 @@ class ReputationMiner {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false }) {
+  constructor({ loader, minerAddress, privateKey, provider, realProviderPort = 8545, useJsTree = false, dbPath = "./reputationStates.sqlite" }) {
     this.loader = loader;
-    this.dbPath = "./reputationStates.sqlite";
+    this.dbPath = dbPath;
 
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {

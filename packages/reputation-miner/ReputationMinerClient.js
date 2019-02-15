@@ -9,9 +9,9 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ minerAddress, loader, realProviderPort, privateKey, provider, useJsTree, auto }) {
+  constructor({ minerAddress, loader, realProviderPort, privateKey, provider, useJsTree, dbPath, auto }) {
     this._loader = loader;
-    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree });
+    this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
     if (typeof this._auto === "undefined") {
       this._auto = true;
