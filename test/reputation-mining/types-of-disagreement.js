@@ -117,10 +117,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-disagree-state-disagreement" }
       });
@@ -144,10 +140,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       expect(nInactiveLogEntries).to.eq.BN(5);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       expect(nSubmittedHashes).to.eq.BN(2);
@@ -191,10 +183,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
-
       const repCycle = await getActiveRepCycle(colonyNetwork);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
@@ -218,10 +206,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
         await badClient.loadState(savedHash);
 
         await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-        const righthash = await goodClient.getRootHash();
-        const wronghash = await badClient.getRootHash();
-        expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
         const repCycle = await getActiveRepCycle(colonyNetwork);
 
@@ -257,10 +241,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       expect(nSubmittedHashes).to.eq.BN(2);
@@ -379,9 +359,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
@@ -401,8 +378,9 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
 
+      const rightHash = await goodClient.getRootHash();
       const confirmedHash = await colonyNetwork.getReputationRootHash();
-      expect(confirmedHash).to.eq.BN(righthash);
+      expect(confirmedHash).to.equal(rightHash);
     });
 
     it("if someone tries to insert a second copy of an existing reputation as a new one, it should fail", async () => {
@@ -424,9 +402,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-branchmask-incorrect" }
       });
@@ -603,10 +578,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.initialise(colonyNetwork.address);
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
-
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
@@ -665,10 +636,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
-
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
@@ -694,8 +661,10 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
+
+      const rightHash = await goodClient.getRootHash();
       const confirmedHash = await colonyNetwork.getReputationRootHash();
-      expect(confirmedHash).to.eq.BN(righthash);
+      expect(confirmedHash).to.equal(rightHash);
     });
 
     it("if a new reputation's uniqueID is not proved right because a too-old previous ID is proved", async () => {
@@ -774,10 +743,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
-
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
@@ -798,8 +763,10 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
+
+      const rightHash = await goodClient.getRootHash();
       const confirmedHash = await colonyNetwork.getReputationRootHash();
-      expect(confirmedHash).to.eq.BN(righthash);
+      expect(confirmedHash).to.equal(rightHash);
     });
 
     it("if a reputation decay calculation is wrong", async () => {
@@ -812,10 +779,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      let righthash = await goodClient.getRootHash();
-      let wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
@@ -833,15 +796,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
         await badClient.insert(key, score, 0);
       }
 
-      righthash = await goodClient.getRootHash();
-      wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are not equal - not starting from the same state").to.eq.BN(wronghash);
-
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      righthash = await goodClient.getRootHash();
-      wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decay-incorrect" }
@@ -907,10 +862,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.loadState(currentGoodClientState);
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      expect(righthash, "Hashes from clients are equal, surprisingly").to.not.eq.BN(wronghash);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-reputation-not-max-int128" }

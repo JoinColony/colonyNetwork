@@ -610,6 +610,7 @@ class ReputationMiner {
    */
   async submitRootHash(startIndex = 1) {
     const hash = await this.getRootHash();
+    const nNodes = await this.getRootHashNNodes();
     const repCycle = await this.getActiveRepCycle();
     // Get how much we've staked, and thefore how many entries we have
     let entryIndex;
@@ -640,7 +641,7 @@ class ReputationMiner {
       if (ethers.utils.bigNumberify(entryHash).lt(target)) {
         // Check we haven't submitted this already
         try {
-          gas = await repCycle.estimate.submitRootHash(hash, this.nReputations, jrh, i);
+          gas = await repCycle.estimate.submitRootHash(hash, nNodes, jrh, i);
           // If that didn't error, then we can submit this
           entryIndex = i;
           break;
@@ -653,7 +654,7 @@ class ReputationMiner {
       throw new Error("No valid entry for submission found.");
     }
     // Submit that entry
-    return repCycle.submitRootHash(hash, this.nReputations, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
+    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
   }
 
   /**
@@ -662,6 +663,14 @@ class ReputationMiner {
    */
   async getRootHash() {
     return this.reputationTree.getRootHash();
+  }
+
+  /**
+   * Get what the client believes should be the next reputation state nNodes.
+   * @return {Promise}      Resolves to the nNodes as ethers BigNumber
+   */
+  async getRootHashNNodes() {
+    return this.nReputations;
   }
 
   /**
@@ -757,7 +766,7 @@ class ReputationMiner {
    */
   async getMySubmissionRoundAndIndex() {
     const submittedHash = await this.reputationTree.getRootHash();
-    const submittedNNodes = await this.nReputations;
+    const submittedNNodes = await this.getRootHashNNodes();
     const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
 

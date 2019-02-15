@@ -533,7 +533,16 @@ contract("Reputation mining - root hash submissions", accounts => {
       badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, "0xfffffffff");
       badClient2.initialise(colonyNetwork.address);
 
-      await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+      await badClient2.addLogContentsToReputationTree();
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+      await badClient2.submitRootHash();
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
