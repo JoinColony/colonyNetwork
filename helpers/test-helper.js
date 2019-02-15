@@ -3,7 +3,7 @@
 import shortid from "shortid";
 import chai from "chai";
 import web3Utils from "web3-utils";
-import ethUtils from "ethereumjs-util";
+import { hashPersonalMessage, ecsign } from "ethereumjs-util";
 import BN from "bn.js";
 import fs from "fs";
 
@@ -323,8 +323,8 @@ export async function createSignatures(colony, taskId, signers, value, data) {
     let user = signers[i].toString();
     user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
-    const prefixedMessageHash = await ethUtils.hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
-    const sig = await ethUtils.ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
+    const prefixedMessageHash = await hashPersonalMessage(Buffer.from(msgHash.slice(2), "hex"));
+    const sig = await ecsign(prefixedMessageHash, Buffer.from(privKey, "hex"));
 
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);
@@ -352,7 +352,7 @@ export async function createSignaturesTrezor(colony, taskId, signers, value, dat
     user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
     const prefixedMessageHash = web3Utils.soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
-    const sig = ethUtils.ecsign(Buffer.from(prefixedMessageHash.slice(2), "hex"), Buffer.from(privKey, "hex"));
+    const sig = ecsign(Buffer.from(prefixedMessageHash.slice(2), "hex"), Buffer.from(privKey, "hex"));
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);
     sigS.push(`0x${sig.s.toString("hex")}`);
