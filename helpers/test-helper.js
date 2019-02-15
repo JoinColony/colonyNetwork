@@ -432,7 +432,7 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 
 export async function submitAndForwardTimeToDispute(clients, test) {
   // For there to be a dispute we need at least 2 competing submisssions
-  expect(clients.length).to.be.abovet(1);
+  expect(clients.length).to.be.above(1);
 
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
   for (let i = 0; i < clients.length; i += 1) {
@@ -442,22 +442,16 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 
   // If there are multiple submissions, ensure they are all different
+  const submissionsPromise = clients.map(async client => {
+    const rootHash = await client.getRootHash();
+    const nNodes = await client.getRootHashNNodes();
+    const jrh = await client.justificationTree.getRootHash();
+    return rootHash + nNodes + jrh;
+  });
 
-  if (clients.length > 1) {
-    for (let i = 1; i < clients.length; i += 1) {
-      const previousHash = await clients[i - 1].getRootHash();
-      const previousNReputations = await clients[i - 1].getRootHashNNodes();
-      const previousJRH = await clients[i - 1].justificationTree.getRootHash();
-
-      const currentHash = await clients[i].getRootHash();
-      const currentNReputations = await clients[i].getRootHashNNodes();
-      const currentJRH = await clients[i].justificationTree.getRootHash();
-
-      if (previousHash === currentHash && previousNReputations.eq(currentNReputations) && previousJRH === currentJRH) {
-        throw new Error("Submissions from clients are equal, surprisingly");
-      }
-    }
-  }
+  const submissions = await Promise.all(submissionsPromise);
+  const uniqueSubmissions = [...new Set(submissions)];
+  expect(submissions.length, "Submissions from clients are equal, surprisingly").to.be.equal(uniqueSubmissions.length);
 }
 
 export async function runBinarySearch(client1, client2) {
