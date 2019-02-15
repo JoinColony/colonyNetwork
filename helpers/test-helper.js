@@ -431,6 +431,9 @@ export async function getValidEntryNumber(colonyNetwork, account, hash, starting
 }
 
 export async function submitAndForwardTimeToDispute(clients, test) {
+  // For there to be a dispute we need at least 2 competing submisssions
+  expect(clients.length).to.be.abovet(1);
+
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
   for (let i = 0; i < clients.length; i += 1) {
     await clients[i].addLogContentsToReputationTree();
@@ -438,7 +441,8 @@ export async function submitAndForwardTimeToDispute(clients, test) {
   }
   await forwardTime(MINING_CYCLE_DURATION / 2, test);
 
-  // If there are multiple submissions, ensure they are different
+  // If there are multiple submissions, ensure they are all different
+
   if (clients.length > 1) {
     for (let i = 1; i < clients.length; i += 1) {
       const previousHash = await clients[i - 1].getRootHash();

@@ -12,7 +12,6 @@ import {
   currentBlock,
   currentBlockTime,
   checkErrorRevert,
-  submitAndForwardTimeToDispute,
   web3GetStorageAt,
   getActiveRepCycle,
   advanceMiningCycleNoContest
@@ -485,12 +484,8 @@ contract("Colony Network Recovery", accounts => {
           await colonyNetwork.exitRecoveryMode();
 
           // Consume these reputation mining cycles.
-          await submitAndForwardTimeToDispute([client], this);
-          await newActiveCycle.confirmNewHash(0);
-
-          newActiveCycle = newInactiveCycle;
-          await submitAndForwardTimeToDispute([client], this);
-          await newActiveCycle.confirmNewHash(0);
+          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
+          await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
 
           const newClient = new ReputationMinerTestWrapper({
             loader: contractLoader,
