@@ -99,7 +99,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
   });
 
   describe("should correctly resolve a dispute over origin skill", () => {
-    it.only("if one person claims an origin skill doesn't exist but the other does (and proves such)", async () => {
+    it("if one person claims an origin skill doesn't exist but the other does (and proves such)", async () => {
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -155,6 +155,10 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient);
+
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-origin-not-adjacent-or-already-exists" }
+      });
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
 
@@ -222,7 +226,9 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       const wronghash = await badClient.getRootHash();
       assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
 
-      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-adjacent-child-not-adjacent-or-already-exists" }
+      });
 
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();

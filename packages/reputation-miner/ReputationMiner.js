@@ -175,9 +175,9 @@ class ReputationMiner {
     const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
     let keyPosition = sortedHashes.indexOf(soliditySha3(key));
     if (keyPosition === -1) {
-      sortedHashes.push(web3Utils.soliditySha3(key))
+      sortedHashes.push(soliditySha3(key))
       sortedHashes.sort()
-      keyPosition = sortedHashes.indexOf(web3Utils.soliditySha3(key));
+      keyPosition = sortedHashes.indexOf(soliditySha3(key));
     }
 
     let adjacentKeyPosition;
@@ -354,6 +354,7 @@ class ReputationMiner {
       const adjacentKey = await this.getAdjacentKey(key);
       adjacentReputationProof = await this.getReputationProofObject(adjacentKey);
     }
+
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
@@ -893,16 +894,15 @@ class ReputationMiner {
     }
     const lastAgreeJustifications = this.justificationHashes[lastAgreeKey];
     const firstDisagreeJustifications = this.justificationHashes[firstDisagreeKey];
-    console.log(lastAgreeJustifications, firstDisagreeJustifications);
 
-    if (lastAgreeJustifications.originAdjacentReputationProof.key !== "0x00") {
+    if (this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key !== "0x00") {
       // We generated the origin-adjacent reputation proof. We replace the origin proof with the originAdjacentReputationProof
       lastAgreeJustifications.originReputationProof.uid = lastAgreeJustifications.originAdjacentReputationProof.uid;
       lastAgreeJustifications.originReputationProof.branchMask = lastAgreeJustifications.originAdjacentReputationProof.branchMask;
       lastAgreeJustifications.originReputationProof.siblings = lastAgreeJustifications.originAdjacentReputationProof.siblings;
     }
 
-    if (lastAgreeJustifications.childAdjacentReputationProof.key !== "0x00") {
+    if (this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key !== "0x00") {
       // We generated the child-adjacent reputation proof. We replace the child proof with the childAdjacentReputationProof
       lastAgreeJustifications.childReputationProof.uid = lastAgreeJustifications.childAdjacentReputationProof.uid;
       lastAgreeJustifications.childReputationProof.branchMask = lastAgreeJustifications.childAdjacentReputationProof.branchMask;

@@ -676,6 +676,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       // They successfully proved the user origin value is in the lastAgreeState, so we're done here
       return;
     }
+    require(u[U_USER_ORIGIN_REPUTATION_VALUE] == 0, "colony-reputation-mining-origin-reputation-nonzero");
 
     // Otherwise, maybe the user's origin skill doesn't exist. If that's true, they can prove it.
     // In which case, the proof they supplied should be for a reputation that proves the origin reputation doesn't exist in the tree
@@ -734,6 +735,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       // They successfully proved the user origin value is in the lastAgreeState, so we're done here
       return;
     }
+
+    require(u[U_CHILD_REPUTATION_VALUE] == 0, "colony-reputation-mining-child-reputation-nonzero");
 
     // Otherwise, maybe the child skill doesn't exist. If that's true, they can prove it.
     // In which case, the proof they supplied should be for a reputation that proves the child reputation doesn't exist in the tree
