@@ -85,7 +85,7 @@
     "openzeppelin-solidity": "^2.1.2",
     "pre-commit": "^1.2.2",
     "prettier": "^1.16.4",
-    "rimraf": "^2.6.2",
+    "rimraf": "^2.6.3",
     "shortid": "^2.2.14",
     "solidity-coverage": "0.5.11",
     "solidity-parser-antlr": "^0.4.0",
