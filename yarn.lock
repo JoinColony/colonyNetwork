@@ -6510,9 +6510,9 @@ sqlite3@^4.0.0:
     node-pre-gyp "^0.10.3"
     request "^2.87.0"
 
-sqlite@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/sqlite/-/sqlite-3.0.0.tgz#94b70b6d1e837b1dff6881d393776ff609383c5c"
+sqlite@^3.0.2:
+  version "3.0.2"
+  resolved "https://registry.yarnpkg.com/sqlite/-/sqlite-3.0.2.tgz#5589e980a070b39e0b8810d723485285a87b9f2c"
   dependencies:
     sqlite3 "^4.0.0"
   optionalDependencies:
