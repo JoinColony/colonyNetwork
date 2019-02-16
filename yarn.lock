@@ -3010,9 +3010,9 @@ ethjs-util@0.1.6, ethjs-util@^0.1.3, ethjs-util@^0.1.6:
     is-hex-prefixed "1.0.0"
     strip-hex-prefix "1.0.0"
 
-ethlint@^1.2.2:
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/ethlint/-/ethlint-1.2.2.tgz#29efb5edd54a44863cbb694da1e4cd269b2fd5f9"
+ethlint@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/ethlint/-/ethlint-1.2.3.tgz#f0efd1970ccebc7156a3b8ae9b0510b3e57c8882"
   dependencies:
     ajv "^5.2.2"
     chokidar "^1.6.0"
