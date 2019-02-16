@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 import shortid from "shortid";
 import chai from "chai";
-import web3Utils from "web3-utils";
+import { asciiToHex, sha3, soliditySha3, padLeft } from "web3-utils";
 import { hashPersonalMessage, ecsign } from "ethereumjs-util";
 import BN from "bn.js";
 import fs from "fs";
@@ -209,8 +209,8 @@ export function getRandomString(_length) {
 }
 
 export function getTokenArgs() {
-  const name = web3Utils.asciiToHex(getRandomString(5));
-  const symbol = web3Utils.asciiToHex(getRandomString(3));
+  const name = asciiToHex(getRandomString(5));
+  const symbol = asciiToHex(getRandomString(3));
   return [name, symbol];
 }
 
@@ -302,7 +302,7 @@ export async function forwardTime(seconds, test) {
 }
 
 export function getFunctionSignature(sig) {
-  return web3Utils.sha3(sig).slice(0, 10);
+  return sha3(sig).slice(0, 10);
 }
 
 export async function createSignatures(colony, taskId, signers, value, data) {
@@ -311,13 +311,15 @@ export async function createSignatures(colony, taskId, signers, value, data) {
   const nonce = await colony.getTaskChangeNonce(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
 
-  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString(16), "64", "0")}${data.slice(
-    2
-  )}${web3Utils.padLeft(nonce.toString(16), "64", "0")}`; // eslint-disable-line max-len
+  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${padLeft(value.toString(16), "64", "0")}${data.slice(2)}${padLeft(
+    nonce.toString(16),
+    "64",
+    "0"
+  )}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];
   const sigS = [];
-  const msgHash = web3Utils.soliditySha3(input);
+  const msgHash = soliditySha3(input);
 
   for (let i = 0; i < signers.length; i += 1) {
     let user = signers[i].toString();
@@ -339,19 +341,21 @@ export async function createSignaturesTrezor(colony, taskId, signers, value, dat
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce(taskId);
   const accountsJson = JSON.parse(fs.readFileSync("./ganache-accounts.json", "utf8"));
-  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${web3Utils.padLeft(value.toString(16), "64", "0")}${data.slice(
-    2
-  )}${web3Utils.padLeft(nonce.toString(16), "64", "0")}`; // eslint-disable-line max-len
+  const input = `0x${sourceAddress.slice(2)}${destinationAddress.slice(2)}${padLeft(value.toString(16), "64", "0")}${data.slice(2)}${padLeft(
+    nonce.toString(16),
+    "64",
+    "0"
+  )}`; // eslint-disable-line max-len
   const sigV = [];
   const sigR = [];
   const sigS = [];
-  const msgHash = web3Utils.soliditySha3(input);
+  const msgHash = soliditySha3(input);
 
   for (let i = 0; i < signers.length; i += 1) {
     let user = signers[i].toString();
     user = user.toLowerCase();
     const privKey = accountsJson.private_keys[user];
-    const prefixedMessageHash = web3Utils.soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
+    const prefixedMessageHash = soliditySha3("\x19Ethereum Signed Message:\n\x20", msgHash);
     const sig = ecsign(Buffer.from(prefixedMessageHash.slice(2), "hex"), Buffer.from(privKey, "hex"));
     sigV.push(sig.v);
     sigR.push(`0x${sig.r.toString("hex")}`);

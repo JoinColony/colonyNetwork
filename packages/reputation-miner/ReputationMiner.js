@@ -1,9 +1,10 @@
-import PatriciaTree from "./patricia";
-import PatriciaTreeNoHash from "./patriciaNoHashKey";
 
-const BN = require("bn.js");
-const web3Utils = require("web3-utils");
-const ethers = require("ethers");
+import { BN } from "bn.js";
+import { soliditySha3, isAddress } from "web3-utils";
+import { ethers } from "ethers";
+import PatriciaTreeNoHash from "./patriciaNoHashKey";
+import PatriciaTree from "./patricia";
+
 const sqlite = require("sqlite");
 
 // We don't need the account address right now for this secret key, but I'm leaving it in in case we
@@ -172,7 +173,7 @@ class ReputationMiner {
    */
   getAdjacentKey(key) {
     const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
-    const keyPosition = sortedHashes.indexOf(web3Utils.soliditySha3(key));
+    const keyPosition = sortedHashes.indexOf(soliditySha3(key));
 
     let adjacentKeyPosition;
     if (keyPosition === 0){
@@ -184,7 +185,7 @@ class ReputationMiner {
       const possibleAdjacentKeyHash2 = new BN(sortedHashes[keyPosition + 1].slice(2), 16);
       // Which is most similar, bitwise?
       // Pick the key that has the most similarity to the reputation being questioned.
-      const keyHash = new BN(web3Utils.soliditySha3(key).slice(2), 16);
+      const keyHash = new BN(soliditySha3(key).slice(2), 16);
       if (possibleAdjacentKeyHash1.xor(keyHash).lt(possibleAdjacentKeyHash2.xor(keyHash))) {
         // Note that these xor'd numbers can never be equal
         adjacentKeyPosition = keyPosition - 1;
@@ -334,7 +335,7 @@ class ReputationMiner {
 
     // Work out what is the closest reputation to this one.
     // This is only ever necessary if the reputation about to be added is new, so check for that.
-    this.reverseReputationHashLookup[web3Utils.soliditySha3(key)] = key;
+    this.reverseReputationHashLookup[soliditySha3(key)] = key;
     if (!this.reputations[key]) {
       const adjacentKey = await this.getAdjacentKey(key);
       adjacentReputationProof = await this.getReputationProofObject(adjacentKey);
@@ -397,13 +398,13 @@ class ReputationMiner {
       base = 16;
     }
 
-    let isAddress = web3Utils.isAddress(colonyAddress);
+    let validAddress = isAddress(colonyAddress);
     // TODO should we return errors here?
-    if (!isAddress) {
+    if (!validAddress) {
       return false;
     }
-    isAddress = web3Utils.isAddress(userAddress);
-    if (!isAddress) {
+    validAddress = isAddress(userAddress);
+    if (!validAddress) {
       return false;
     }
     if (colonyAddress.substring(0, 2) === "0x") {

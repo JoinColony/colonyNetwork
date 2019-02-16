@@ -1,6 +1,6 @@
 /* globals artifacts */
 import { BN } from "bn.js";
-import web3Utils from "web3-utils";
+import { soliditySha3 } from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";
 
@@ -298,7 +298,7 @@ contract("Reputation Updates", accounts => {
 
     it("should correctly make large negative reputation updates", async function() {
       const workerRating = 1;
-      const workerRatingSecret = web3Utils.soliditySha3(RATING_2_SALT, workerRating);
+      const workerRatingSecret = soliditySha3(RATING_2_SALT, workerRating);
 
       await fundColonyWithTokens(metaColony, clnyToken, MAX_PAYOUT);
       const taskId = await setupFundedTask({ colonyNetwork, colony: metaColony, workerPayout: MAX_PAYOUT });
