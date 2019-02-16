@@ -1,7 +1,7 @@
 /* globals artifacts */
 
 import path from "path";
-import web3Utils from "web3-utils";
+import { fromAscii } from "web3-utils";
 
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import ReputationMiner from "./ReputationMiner";
@@ -52,8 +52,8 @@ contract("Javascript Patricia Tree", accounts => {
 
   describe("Javascript Patricia Tree implementation", () => {
     it("should have identical root hashes after one insert", async () => {
-      const dog = web3Utils.fromAscii("dog");
-      const fido = web3Utils.fromAscii("fido");
+      const dog = fromAscii("dog");
+      const fido = fromAscii("fido");
 
       await jsClient.reputationTree.insert(dog, fido);
       await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });
@@ -68,11 +68,11 @@ contract("Javascript Patricia Tree", accounts => {
     });
 
     it("should have identical root hashes after two inserts and one update", async () => {
-      const dog = web3Utils.fromAscii("dog");
-      const fido = web3Utils.fromAscii("fido");
-      const ape = web3Utils.fromAscii("ape");
-      const bubbles = web3Utils.fromAscii("bubbles");
-      const rover = web3Utils.fromAscii("rover");
+      const dog = fromAscii("dog");
+      const fido = fromAscii("fido");
+      const ape = fromAscii("ape");
+      const bubbles = fromAscii("bubbles");
+      const rover = fromAscii("rover");
 
       await jsClient.reputationTree.insert(dog, fido);
       await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });
@@ -95,11 +95,11 @@ contract("Javascript Patricia Tree", accounts => {
     });
 
     it("should give identical proofs after two inserts and one update", async () => {
-      const dog = web3Utils.fromAscii("dog");
-      const fido = web3Utils.fromAscii("fido");
-      const ape = web3Utils.fromAscii("ape");
-      const bubbles = web3Utils.fromAscii("bubbles");
-      const rover = web3Utils.fromAscii("rover");
+      const dog = fromAscii("dog");
+      const fido = fromAscii("fido");
+      const ape = fromAscii("ape");
+      const bubbles = fromAscii("bubbles");
+      const rover = fromAscii("rover");
 
       await jsClient.reputationTree.insert(dog, fido);
       await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });
@@ -131,11 +131,11 @@ contract("Javascript Patricia Tree", accounts => {
     });
 
     it("should recover identical root hashes from proofs", async () => {
-      const dog = web3Utils.fromAscii("dog");
-      const fido = web3Utils.fromAscii("fido");
-      const ape = web3Utils.fromAscii("ape");
-      const bubbles = web3Utils.fromAscii("bubbles");
-      const rover = web3Utils.fromAscii("rover");
+      const dog = fromAscii("dog");
+      const fido = fromAscii("fido");
+      const ape = fromAscii("ape");
+      const bubbles = fromAscii("bubbles");
+      const rover = fromAscii("rover");
 
       await jsClient.reputationTree.insert(dog, fido);
       await solClient.reputationTree.insert(dog, fido, { gasLimit: 4000000 });

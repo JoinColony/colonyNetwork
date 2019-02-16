@@ -1,5 +1,5 @@
 /* globals artifacts */
-import web3Utils from "web3-utils";
+import { soliditySha3 } from "web3-utils";
 import { BN } from "bn.js";
 import { ethers } from "ethers";
 
@@ -223,8 +223,8 @@ export async function setupRatedTask({
     workerPayout
   });
 
-  const WORKER_RATING_SECRET = web3Utils.soliditySha3(workerRatingSalt, workerRating);
-  const MANAGER_RATING_SECRET = web3Utils.soliditySha3(managerRatingSalt, managerRating);
+  const WORKER_RATING_SECRET = soliditySha3(workerRatingSalt, workerRating);
+  const MANAGER_RATING_SECRET = soliditySha3(managerRatingSalt, managerRating);
   await colony.submitTaskDeliverableAndRating(taskId, DELIVERABLE_HASH, MANAGER_RATING_SECRET, { from: worker });
   await colony.submitTaskWorkRating(taskId, WORKER_ROLE, WORKER_RATING_SECRET, { from: evaluator });
   await colony.revealTaskWorkRating(taskId, MANAGER_ROLE, managerRating, managerRatingSalt, { from: worker });

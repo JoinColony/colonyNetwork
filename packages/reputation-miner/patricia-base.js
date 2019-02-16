@@ -1,6 +1,6 @@
-const BN = require("bn.js");
-const web3Utils = require("web3-utils");
-const ethers = require("ethers");
+import { BN } from "bn.js";
+import { soliditySha3 } from "web3-utils";
+import { ethers } from "ethers";
 
 // //////
 // Patricia Tree
@@ -102,7 +102,7 @@ export default class PatriciaTreeBase {
       edgeHashes[bit] = PatriciaTreeBase.edgeEncodingHash(e);
       edgeHashes[1 - bit] = PatriciaTreeBase.sha2bn(siblings[siblings.length - i - 1]);
       e.nodeHash = PatriciaTreeBase.sha2bn(
-        web3Utils.soliditySha3(PatriciaTreeBase.bn2hex64(edgeHashes[0]), PatriciaTreeBase.bn2hex64(edgeHashes[1]))
+        soliditySha3(PatriciaTreeBase.bn2hex64(edgeHashes[0]), PatriciaTreeBase.bn2hex64(edgeHashes[1]))
       );
     }
     if (branchMask.zeroBits().toString() === "0") {
@@ -183,13 +183,13 @@ export default class PatriciaTreeBase {
   }
 
   static sha3(value) {
-    const hash = PatriciaTreeBase.sha2bn(web3Utils.soliditySha3(value));
+    const hash = PatriciaTreeBase.sha2bn(soliditySha3(value));
     return hash;
   }
 
   static edgeEncodingHash(edge) {
     const hash = PatriciaTreeBase.sha2bn(
-      web3Utils.soliditySha3(
+      soliditySha3(
         PatriciaTreeBase.bn2hex64(edge.nodeHash),
         PatriciaTreeBase.bn2hex64(new BN(edge.label.length)),
         PatriciaTreeBase.bn2hex64(edge.label.data)
@@ -200,7 +200,7 @@ export default class PatriciaTreeBase {
 
   static nodeEncodingHash(node) {
     const hash = PatriciaTreeBase.sha2bn(
-      web3Utils.soliditySha3(PatriciaTreeBase.edgeEncodingHash(node.children[0]), PatriciaTreeBase.edgeEncodingHash(node.children[1]))
+      soliditySha3(PatriciaTreeBase.edgeEncodingHash(node.children[0]), PatriciaTreeBase.edgeEncodingHash(node.children[1]))
     );
     return hash;
   }
