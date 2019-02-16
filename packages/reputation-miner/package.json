@@ -16,7 +16,7 @@
   "dependencies": {
     "@colony/colony-js-contract-loader-fs": "1.10.0",
     "bn.js": "^4.11.8",
-    "ethers": "^4.0.25",
+    "ethers": "https://github.com/ethers-io/ethers.js.git#05648177aa7a6bfaf50e0343606f7d08b541dc5a",
     "express": "^4.16.3",
     "ganache-core": "2.3.3",
     "sqlite": "^3.0.2",
