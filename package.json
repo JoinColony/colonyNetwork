@@ -84,7 +84,7 @@
     "mocha-circleci-reporter": "^0.0.3",
     "openzeppelin-solidity": "^2.1.1",
     "pre-commit": "^1.2.2",
-    "prettier": "^1.15.2",
+    "prettier": "^1.16.4",
     "rimraf": "^2.6.2",
     "shortid": "^2.2.14",
     "solidity-coverage": "0.5.11",
