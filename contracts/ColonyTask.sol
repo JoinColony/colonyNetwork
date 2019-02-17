@@ -256,55 +256,46 @@ contract ColonyTask is ColonyStorage {
       msgHash
     );
 
-    if (nSignaturesRequired == 1) {
-      // Since we want to set a manager as an evaluator, require just manager's signature
-      require(reviewerAddresses[0] == manager, "colony-task-role-assignment-not-signed-by-manager");
-    } else if (nSignaturesRequired == 2) {
-      // One of signers must be a manager
-      require(
-        reviewerAddresses[0] == manager ||
-        reviewerAddresses[1] == manager,
-        "colony-task-role-assignment-not-signed-by-manager"
-      );
-      // One of the signers must be an address we want to set here
-      require(userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1], "colony-task-role-assignment-not-signed-by-new-user-for-role");
-      // Require that signatures are not from the same address
-      // This will never throw, because we require that manager is one of the signers,
-      // and if manager is both signers, then `userAddress` must also be a manager, and if
-      // `userAddress` is a manager, then we require 1 signature (will be kept for possible future changes)
-      require(reviewerAddresses[0] != reviewerAddresses[1], "colony-task-role-assignment-duplicate-signatures");
-    } else {
-      // One of signers must be a manager
-      require(
-        reviewerAddresses[0] == manager ||
-        reviewerAddresses[1] == manager ||
-        reviewerAddresses[2] == manager,
-        "colony-task-role-assignment-not-signed-by-manager"
-      );
+    // One of signers must be a manager
+    require(verifyUserSignature(nSignaturesRequired, manager, reviewerAddresses), "colony-task-role-assignment-not-signed-by-manager");
+    // One of the signers must be an address we want to set here
+    require(
+      verifyUserSignature(nSignaturesRequired, userAddress, reviewerAddresses),
+      "colony-task-role-assignment-not-signed-by-new-user-for-role"
+    );
+    // Make sure there are no duplicates
+    require(verifyNoDuplicates(nSignaturesRequired, reviewerAddresses),  "colony-task-role-assignment-duplicate-signatures");
+
+    if (nSignaturesRequired == 3) {
       // One of signers must be a worker
       address worker = payments[taskId].roles[uint8(TaskRole.Worker)].user;
-      require(
-        reviewerAddresses[0] == worker ||
-        reviewerAddresses[1] == worker ||
-        reviewerAddresses[2] == worker,
-        "colony-task-role-assignment-not-signed-by-worker"
-      );
-      // One of the signers must be an address we want to set here
-      require(
-        userAddress == reviewerAddresses[0] || userAddress == reviewerAddresses[1] || userAddress == reviewerAddresses[2],
-        "colony-task-role-assignment-not-signed-by-new-user-for-role"
-      );
-      // Make sure there are no duplicates
-      require(
-        reviewerAddresses[0] != reviewerAddresses[1] &&
-        reviewerAddresses[0] != reviewerAddresses[2] &&
-        reviewerAddresses[1] != reviewerAddresses[2],
-        "colony-task-role-assignment-duplicate-signatures"
-      );
+      require(verifyUserSignature(nSignaturesRequired, worker, reviewerAddresses), "colony-task-role-assignment-not-signed-by-worker");
     }
 
     taskChangeNonces[taskId]++;
     require(executeCall(address(this), _value, _data), "colony-task-role-assignment-execution-failed");
+  }
+
+  function verifyUserSignature(uint8 nSigs, address user, address[] memory reviewers) public pure returns (bool) {
+    for (uint i; i < nSigs; i++) {
+      if (reviewers[i] == user) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function verifyNoDuplicates(uint8 nSigs, address[] memory reviewers) public pure returns (bool) {
+    uint i;
+    uint j;
+    for (i = 0; i < nSigs - 1; i++) {
+      for (j = i + 1; j < nSigs; j++) {
+        if (reviewers[i] == reviewers[j]) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   function submitTaskWorkRating(uint256 _id, TaskRole _role, bytes32 _ratingSecret) public
