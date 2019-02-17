@@ -63,15 +63,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "0.5.8",
-      docker: true,
-      settings: {
-        optimizer: {
-          enabled: true,
-          runs: 200
-        },
-        evmVersion: "petersburg"
-      }
+      version: "native"
     }
   },
   plugins: ["truffle-security"]
