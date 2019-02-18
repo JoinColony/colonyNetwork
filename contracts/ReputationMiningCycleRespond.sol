@@ -302,6 +302,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory childReputationSiblings) internal
   {
+    // If we think we need to check the child reputation because of the update number, but the origin reputation value is
+    // zero, we don't need check the child reputation because it isn't actually used in the calculation.
+    if (u[U_USER_ORIGIN_REPUTATION_VALUE] == 0) { return; }
     // This function is only called if the dispute is over a child reputation update of a colony-wide reputation total
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
@@ -550,19 +553,18 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           int256 childReputationChange;
           if (userOriginReputationValue == 0) {
             // If the origin reputation value is 0, the change is 0
-            childReputationChange = 0;
+            reputationChange = 0;
           } else {
             // Calculate the proportional change expected
             childReputationChange = logEntry.amount * userChildReputationValue / userOriginReputationValue;
+            // Cap change based on current value of the user's child reputation.
+            if (userChildReputationValue + childReputationChange < 0) {
+              reputationChange = userChildReputationValue * -1;
+            } else {
+              reputationChange = childReputationChange;
+            }
           }
-
-          // Cap change based on current value of the user's child reputation.
-          if (userChildReputationValue + childReputationChange < 0) {
-            reputationChange = userChildReputationValue * -1;
-          } else {
-            reputationChange = childReputationChange;
-          }
-
+          
         } else {
           // Cap change based on origin reputation value
           // Note we are not worried about underflows here; colony-wide totals for origin skill and all parents are greater than or equal to a user's origin skill.

@@ -56,12 +56,16 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMinerTestWra
         this.justificationHashes[lastAgreeKey].adjacentReputationProof.branchMask,
         this.justificationHashes[lastAgreeKey].adjacentReputationProof.reputation,
         this.justificationHashes[lastAgreeKey].adjacentReputationProof.uid,
-        "0"
+        "0",
+        this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.reputation,
+        this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.reputation
       ],
       [
         reputationKey,
         this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-        this.justificationHashes[lastAgreeKey].adjacentReputationProof.key
+        this.justificationHashes[lastAgreeKey].adjacentReputationProof.key,
+        this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key,
+        this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key
       ],
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
       agreeStateSiblings,
