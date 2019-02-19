@@ -110,7 +110,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       await Promise.all(domainsCheckPromise);
     });
 
-    it("can create 100 global skills", async function() {
+    it("can create a set of global skills", async function() {
       let skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(503); // Ensure we're starting from the intended skill
       // Build a better balanced skills tree hierarchy we're going to use in reputation
@@ -152,8 +152,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       await Promise.all(fundColoniesPromise);
     });
 
-    it("can create 5 tasks in each of the 100 colonies", async function() {
-      // Have 3 colonies with 5 tasks each cross populated with unique data for the purposes of testing earned reputation
+    it("can create a range of tasks accross colonies", async function() {
       const colonyTaskProps = [
         {
           // Index in the colonies[] array (note that this excludes the meta colony)
@@ -162,9 +161,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           skillId: 508,
           managerPayout: 200,
           evaluatorPayout: 100,
-          workerPayout: 700,
-          managerRating: 2,
-          workerRating: 2
+          workerPayout: 700
         },
         {
           colonyIdx: 1,
@@ -172,9 +169,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           skillId: 506,
           managerPayout: 20,
           evaluatorPayout: 10,
-          workerPayout: 70,
-          managerRating: 2,
-          workerRating: 2
+          workerPayout: 70
         },
         {
           colonyIdx: 1,
@@ -182,9 +177,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           skillId: 505,
           managerPayout: 40,
           evaluatorPayout: 5,
-          workerPayout: 800,
-          managerRating: 2,
-          workerRating: 2
+          workerPayout: 800
         },
         {
           colonyIdx: 1,
@@ -192,9 +185,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           skillId: 509,
           managerPayout: 20,
           evaluatorPayout: 10,
-          workerPayout: 70,
-          managerRating: 2,
-          workerRating: 2
+          workerPayout: 70
         },
         {
           colonyIdx: 1,
@@ -212,9 +203,33 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           skillId: 508,
           managerPayout: 200,
           evaluatorPayout: 100,
-          workerPayout: 700,
+          workerPayout: 700
+        },
+        {
+          colonyIdx: 25,
+          domainId: 5,
+          skillId: 510,
+          managerPayout: 200,
+          evaluatorPayout: 100,
+          workerPayout: 700
+        },
+        {
+          colonyIdx: 25,
+          domainId: 5,
+          skillId: 504,
+          managerPayout: 200,
+          evaluatorPayout: 100,
+          workerPayout: 300
+        },
+        {
+          colonyIdx: 25,
+          domainId: 5,
+          skillId: 504,
+          managerPayout: 200,
+          evaluatorPayout: 100,
+          workerPayout: 100,
           managerRating: 2,
-          workerRating: 2
+          workerRating: 1
         }
       ];
 
@@ -243,6 +258,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
 
       // For simplicity we are only validating the global reputation
       const globalReputations = [
+        // ColonyIdx 1
         { id: 1, colonyIdx: 1, skillId: 1, account: undefined, value: 1633 },
         { id: 2, colonyIdx: 1, skillId: 504, account: undefined, value: 1633 },
         { id: 3, colonyIdx: 1, skillId: 505, account: undefined, value: 797 },
@@ -261,10 +277,18 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         { id: 16, colonyIdx: 1, skillId: 509, account: WORKER, value: 70 },
         { id: 17, colonyIdx: 1, skillId: 510, account: WORKER, value: 0 },
         { id: 18, colonyIdx: 1, skillId: 511, account: WORKER, value: 0 },
+        // ColonyIdx 2
         { id: 19, colonyIdx: 2, skillId: 1, account: WORKER, value: 700 },
         { id: 20, colonyIdx: 2, skillId: 504, account: WORKER, value: 700 },
         { id: 21, colonyIdx: 2, skillId: 506, account: WORKER, value: 700 },
-        { id: 22, colonyIdx: 2, skillId: 508, account: WORKER, value: 700 }
+        { id: 22, colonyIdx: 2, skillId: 508, account: WORKER, value: 700 },
+        // ColonyIdx 25
+        { id: 23, colonyIdx: 25, skillId: 1, account: WORKER, value: 900 },
+        { id: 24, colonyIdx: 25, skillId: 504, account: WORKER, value: 900 },
+        { id: 25, colonyIdx: 25, skillId: 506, account: WORKER, value: 630 },
+        { id: 26, colonyIdx: 25, skillId: 508, account: WORKER, value: 630 },
+        { id: 27, colonyIdx: 25, skillId: 509, account: WORKER, value: 0 },
+        { id: 28, colonyIdx: 25, skillId: 510, account: WORKER, value: 630 }
       ];
 
       globalReputations.forEach(globalRep => {
