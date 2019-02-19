@@ -221,16 +221,81 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      const righthash = await goodClient.getRootHash();
-      const wronghash = await badClient.getRootHash();
-      assert(righthash !== wronghash, "Hashes from clients are equal, surprisingly");
-
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-adjacent-child-not-adjacent-or-already-exists" }
       });
 
       await repCycle.confirmNewHash(1);
       const acceptedHash = await colonyNetwork.getReputationRootHash();
+      const righthash = await goodClient.getRootHash();
+
+      assert.equal(righthash, acceptedHash, "The correct hash was not accepted");
+    });
+
+    it("if the dispute involves a child skill that doesn't exist, should resolve correctly", async () => {
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      // We make two tasks, which guarantees that the origin reputation actually exists if we disagree about
+      // any update caused by the second task
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 4,
+        managerPayout: 1000000000000,
+        evaluatorPayout: 1000000000,
+        workerPayout: 5000000000000,
+        managerRating: 3,
+        workerRating: 3,
+        worker: MINER2
+      });
+
+      // Task two payouts are less so that the reputation should bee nonzero afterwards
+      await setupFinalizedTask({
+        colonyNetwork,
+        colony: metaColony,
+        skillId: 4,
+        managerPayout: 100000000000,
+        evaluatorPayout: 100000000,
+        workerPayout: 500000000000,
+        managerRating: 1,
+        workerRating: 1,
+        worker: MINER2
+      });
+
+      await goodClient.resetDB();
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
+      await goodClient.saveCurrentState();
+
+      // The update log should contain the person being rewarded for the previous
+      // update cycle, and reputation updates for two task completions (manager, worker, evaluator);
+      // That's nine in total.
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const nLogEntries = await repCycle.getReputationUpdateLogLength();
+      assert.equal(nLogEntries.toNumber(), 9);
+
+      const badClient = new MaliciousReputationMinerExtraRep(
+        { loader, realProviderPort, useJsTree, minerAddress: MINER2 },
+        32, // Passing in update number for colony wide skillId: 5, user: 0
+        "0xfffffffffffffffffffffff"
+      );
+
+      // Moving the state to the bad client
+      await badClient.initialise(colonyNetwork.address);
+      const currentGoodClientState = await goodClient.getRootHash();
+      await badClient.loadState(currentGoodClientState);
+
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }
+      });
+
+      await repCycle.confirmNewHash(1);
+      const acceptedHash = await colonyNetwork.getReputationRootHash();
+      const righthash = await goodClient.getRootHash();
+
       assert.equal(righthash, acceptedHash, "The correct hash was not accepted");
     });
 
@@ -379,7 +444,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       const badClient = new MaliciousReputationMinerExtraRep(
         { loader, minerAddress: MINER2, realProviderPort, useJsTree },
         30, // Passing in colony wide update number for skillId: 4, user: 0
-        "0xfffffffff"
+        "0xfffffffffffffffffffffff"
       );
       // Moving the state to the bad client
       await badClient.initialise(colonyNetwork.address);
