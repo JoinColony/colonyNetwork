@@ -156,8 +156,9 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       // Have 3 colonies with 5 tasks each cross populated with unique data for the purposes of testing earned reputation
       const colonyTaskProps = [
         {
-          colonyIdx: 1, // Index in the colonies[] array (note that this excludes the meta colony)
-          domainId: 1, // Domain
+          // Index in the colonies[] array (note that this excludes the meta colony)
+          colonyIdx: 1,
+          domainId: 1,
           skillId: 508,
           managerPayout: 200,
           evaluatorPayout: 100,
@@ -204,6 +205,16 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           workerPayout: 7,
           managerRating: 2,
           workerRating: 1
+        },
+        {
+          colonyIdx: 2,
+          domainId: 1,
+          skillId: 508,
+          managerPayout: 200,
+          evaluatorPayout: 100,
+          workerPayout: 700,
+          managerRating: 2,
+          workerRating: 2
         }
       ];
 
@@ -224,23 +235,10 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           workerRating: taskProp.workerRating
         });
       });
-
-      // const tasksCheckPromise = colonies.map(async ({ colony }) => {
-      //   const taskCount = await colony.getTaskCount();
-      //   expect(taskCount).to.eq.BN(5);
-      // });
-      // await Promise.all(tasksCheckPromise);
     });
 
-    it("can mine reputation for 500 tasks", async function() {
+    it("can mine reputation for all tasks", async function() {
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, minerAddress: MINER1, test: this });
-
-      // This log processes 100 * 5 completed tasks + 1 miner reward for previous cycle
-      // All 500 tasks are incrementing the reputation amounts, i.e. there are no negative updates
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-      const reputationCycleNLogEntries = await repCycle.getReputationUpdateLogLength();
-      expect(reputationCycleNLogEntries).to.eq.BN(21);
-
       await goodClient.addLogContentsToReputationTree();
 
       // For simplicity we are only validating the global reputation
@@ -262,20 +260,26 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         { id: 15, colonyIdx: 1, skillId: 508, account: WORKER, value: 767 },
         { id: 16, colonyIdx: 1, skillId: 509, account: WORKER, value: 70 },
         { id: 17, colonyIdx: 1, skillId: 510, account: WORKER, value: 0 },
-        { id: 18, colonyIdx: 1, skillId: 511, account: WORKER, value: 0 }
+        { id: 18, colonyIdx: 1, skillId: 511, account: WORKER, value: 0 },
+        { id: 19, colonyIdx: 2, skillId: 1, account: WORKER, value: 700 },
+        { id: 20, colonyIdx: 2, skillId: 504, account: WORKER, value: 700 },
+        { id: 21, colonyIdx: 2, skillId: 506, account: WORKER, value: 700 },
+        { id: 22, colonyIdx: 2, skillId: 508, account: WORKER, value: 700 }
       ];
 
       globalReputations.forEach(globalRep => {
         const { colony } = colonies[globalRep.colonyIdx];
         const key = makeReputationKey(colony.address, new BN(globalRep.skillId), globalRep.account);
         const value = makeReputationValue(globalRep.value, globalRep.id);
-        const decimalValue = new BN(goodClient.reputations[key].slice(2, 66), 16);
-        expect(goodClient.reputations[key], `${globalRep.id} failed. Actual value is ${decimalValue}`).to.eq.BN(value);
+        // Just check the reputation amount matches
+        const decimalValueInClient = new BN(goodClient.reputations[key].slice(2, 66), 16);
+        const decimalValueExpected = new BN(value.slice(2, 66), 16);
+        expect(decimalValueInClient, `${globalRep.id} failed. Actual value is ${decimalValueInClient}`).to.eq.BN(decimalValueExpected);
       });
     });
   });
 
-  describe.skip("when there is a dispute over reputation root hash", function() {
+  describe("when there is a dispute over reputation root hash", function() {
     // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
     // correctly. Unsure if I should force them to be run every time.
     [0, 1, 2, 3, 4, 5, 6, 7].forEach(async badIndex => {
