@@ -20,6 +20,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/ColonyNetworkAuthority.sol",
       "contracts/ColonyNetworkStorage.sol",
       "contracts/ColonyStorage.sol",
+      "contracts/ColonyRoles.sol",
       "contracts/CommonStorage.sol",
       "contracts/EtherRouter.sol",
       "contracts/Migrations.sol",
