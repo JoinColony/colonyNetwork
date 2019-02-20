@@ -172,4 +172,15 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     require(address(this) == msg.sender, "colony-not-self");
     _;
   }
+
+  modifier auth(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
+    if (parentDomainId != childDomainId) {
+      domain storage parentDomain = domains[parentDomainId];
+      domain storage childDomain = domains[childDomainId];
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      require(colonyNetworkContract.getChildSkillId(parentDomain.skillId, childIndex) == childDomain.skillId, "invalid-domain-proof-for-auth");
+    }
+    require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
+    _;
+  }
 }
