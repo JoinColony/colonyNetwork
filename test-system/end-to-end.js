@@ -306,7 +306,8 @@ contract("End to end Colony network and Reputation mining testing", function(acc
   describe("when there is a dispute over reputation root hash", function() {
     // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
     // correctly. Unsure if I should force them to be run every time.
-    [0, 1, 2, 3, 4, 5, 6, 7].forEach(async badIndex => {
+    const updates = Array.from(Array(83).keys());
+    updates.forEach(async badIndex => {
       it(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -328,7 +329,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         const repCycle = await getActiveRepCycle(colonyNetwork);
 
         let error;
-        if (badIndex < 4) {
+        if (badIndex < 80) {
           error = "colony-reputation-mining-decay-incorrect";
         } else {
           error = "colony-reputation-mining-increased-reputation-value-incorrect";
