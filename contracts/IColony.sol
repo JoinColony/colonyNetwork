@@ -151,7 +151,8 @@ contract IColony is ColonyDataTypes, IRecovery {
     uint256 _skillId) 
     public returns (uint256 paymentId);
 
-  function getPayment(uint256 id) public view returns(Payment memory payment);
+  function getPayment(uint256 id) public view returns(address recipient, uint256 fundingPotId, uint256 domainId, uint256[] memory skills);
+  function getPaymentAmountForToken(uint256 id, address token) public view returns (uint256 amount);
   function claimPayment(uint256) public;
   function getPaymentCount() public view returns (uint256 count);
 

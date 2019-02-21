@@ -33,13 +33,14 @@ contract ColonyPayment is ColonyStorage {
     fundingPotCount += 1;
     fundingPots[fundingPotCount] = FundingPot({
       associatedType: FundingPotAssociatedType.Payment,
-      associatedTypeId: paymentCount
+      associatedTypeId: paymentCount,
+      payoutsWeCannotMake: 0
     });
+
+    fundingPots[fundingPotCount].payouts[_token] = _amount;
 
     Payment memory payment = Payment({
       recipient: _recipient,
-      token: _token,
-      amount: _amount,
       fundingPotId: fundingPotCount,
       domainId: _domainId,
       skills: new uint256[](_skillId)
@@ -53,9 +54,14 @@ contract ColonyPayment is ColonyStorage {
     return paymentCount;
   }
 
-  function getPayment(uint256 id) public view returns(Payment memory) {
+  function getPayment(uint256 id) public view returns(address, uint256, uint256, uint256[] memory) {
     Payment storage payment = payments[id];
-    return payment;
+    return (payment.recipient, payment.fundingPotId, payment.domainId, payment.skills);
+  }
+
+  function getPaymentAmountForToken(uint256 id, address token) public view returns(uint256) {
+    Payment storage payment = payments[id];
+    return payment.payouts[token];
   }
 
   function getPaymentCount() public view returns (uint256) {

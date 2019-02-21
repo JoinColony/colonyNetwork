@@ -178,8 +178,6 @@ contract ColonyDataTypes {
 
   struct Payment {
     address recipient;
-    address token;
-    uint256 amount;
     uint256 fundingPotId;
     uint256 domainId;
     uint256[] skills;
@@ -234,6 +232,9 @@ contract ColonyDataTypes {
     // Funding pots can be associated with different fundable entities, for now these are: tasks, domains and payments.
     FundingPotAssociatedType associatedType;
     uint256 associatedTypeId;
+    // VALIDATE: Consolidate payouts as part of the funding pot, laternative data structure can also be used, e.g. SpendingPot
+    mapping (address => uint256) payouts;
+    uint256 payoutsWeCannotMake;
   }
 
   struct Domain {

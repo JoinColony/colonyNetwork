@@ -34,10 +34,11 @@ contract OneTxPayment {
 
     // Add a new payment
     uint256 paymentId = colony.addPayment(_worker, _token, _amount, _domainId, _skillId);
-    ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
+    uint paymentFundingPotId;
+    (,paymentFundingPotId,,) = colony.getPayment(paymentId);
     ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
     // Fund the payment
-    colony.moveFundsBetweenPots(domain.fundingPotId, payment.fundingPotId, _amount, _token);
+    colony.moveFundsBetweenPots(domain.fundingPotId, paymentFundingPotId, _amount, _token);
     // Claim payout on behalf of the recipient
     colony.claimPayment(paymentId);
   }
