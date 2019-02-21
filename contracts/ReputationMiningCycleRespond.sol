@@ -564,13 +564,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
               reputationChange = childReputationChange;
             }
           }
-          
+
         } else {
           // Cap change based on origin reputation value
           // Note we are not worried about underflows here; colony-wide totals for origin skill and all parents are greater than or equal to a user's origin skill.
           // If we're subtracting the origin reputation value, we therefore can't underflow, and if we're subtracting the logEntryAmount, it was absolutely smaller than
           // the origin reputation value, and so can't underflow either.
-          if (int256(u[U_USER_ORIGIN_REPUTATION_VALUE]) + logEntry.amount < 0) {
+          if (int256(userOriginReputationValue) + logEntry.amount < 0) {
             reputationChange = -1 * int256(u[U_USER_ORIGIN_REPUTATION_VALUE]);
           } else {
             reputationChange = logEntry.amount;
@@ -639,7 +639,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
-  function checkKeysAdjacent(bytes key1, bytes key2, uint256 branchMask) internal returns (bool) {
+  function checkKeysAdjacent(bytes memory key1, bytes memory key2, uint256 branchMask) internal returns (bool) {
     // The bit that would be added to the branchmask is based on where the (hashes of the) two keys first differ.
     uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(keccak256(key1) ^ keccak256(key2))));
     uint256 afterInsertionBranchMask = branchMask | uint256(2**firstDifferenceBit);

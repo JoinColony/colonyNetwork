@@ -121,11 +121,15 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 25. The amount of reputation that the reputation adjacent to a new reputation being inserted has in the agree state
   /// * 26. The UID of the reputation adjacent to the new reputation being inserted
   /// * 27. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
+  /// * 28. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
+  /// * 29. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
 
   /// @param b A `bytes[3]` array. The elements of this array, in order are:
   /// * 1. Reputation key The key of the reputation being changed that the disagreement is over.
   /// * 2. previousNewReputationKey The key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
   /// * 3. adjacentReputationKey Key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
+  /// * 4  The key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
+  /// * 5. The key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
 
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
