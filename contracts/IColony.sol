@@ -111,13 +111,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return domain The domain
   function getDomain(uint256 _id) public view returns (Domain memory domain);
 
-  /// @notice Get the non-mapping properties of a pot by id
-  /// @param _id Id of the pot which details to get
-  /// @return FundingPotAssociatedType The associated type of the current funding pot, e.g. Domain, Task
-  /// @return uint256 Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
-  /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0)
-  function getFundingPot(uint256 _id) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId);
-
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
   function getDomainCount() public view returns (uint256 count);
@@ -152,8 +145,7 @@ contract IColony is ColonyDataTypes, IRecovery {
     public returns (uint256 paymentId);
 
   function getPayment(uint256 id) public view returns(address recipient, uint256 fundingPotId, uint256 domainId, uint256[] memory skills);
-  function getPaymentAmountForToken(uint256 id, address token) public view returns (uint256 amount);
-  function claimPayment(uint256) public;
+  function claimPayment(uint256 _id, address _token) public;
   function getPaymentCount() public view returns (uint256 count);
 
   // Implemented in ColonyTask.sol
@@ -347,7 +339,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return deliverableHash Task deliverable hash
   /// @return status TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
   /// @return dueDate Due date
-  /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current task funding
   /// @return fundingPotId Id of funding pot for task
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
@@ -357,7 +348,6 @@ contract IColony is ColonyDataTypes, IRecovery {
     bytes32 deliverableHash,
     TaskStatus status,
     uint256 dueDate,
-    uint256 payoutsWeCannotMake,
     uint256 fundingPotId,
     uint256 completionTimestamp,
     uint256 domainId,
@@ -384,12 +374,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Payout amount
   function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256 amount);
-
-  /// @notice Get total payout amount in `_token` denomination for task `_id`
-  /// @param _id Id of the task
-  /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return amount Payout amount
-  function getTotalTaskPayout(uint256 _id, address _token) public view returns (uint256 amount);
 
   /// @notice Set `_token` payout for manager in task `_id` to `_amount`
   /// @param _id Id of the task
@@ -424,7 +408,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in TaskRole enum
   /// @param _token Address of the token, `0x0` value indicates Ether
-  function claimPayout(uint256 _id, uint8 _role, address _token) public;
+  function claimTaskPayout(uint256 _id, uint8 _role, address _token) public;
 
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
@@ -477,6 +461,17 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _payoutId Id of the reward payout
   function finalizeRewardPayout(uint256 _payoutId) public;
 
+  /// @notice Get the non-mapping properties of a pot by id
+  /// @param _id Id of the pot which details to get
+  /// @return FundingPotAssociatedType The associated type of the current funding pot, e.g. Domain, Task, Payout
+  /// @return uint256 Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
+  /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current funding
+  /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0, 0)
+  function getFundingPot(uint256 _id) public view returns (
+    FundingPotAssociatedType associatedType,
+    uint256 associatedTypeId,
+    uint256 payoutsWeCannotMake);
+
   /// @notice Get the number of funding pots in the colony
   /// @return count The funding pots count
   function getFundingPotCount() public view returns (uint256 count);
@@ -484,8 +479,14 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return balance Funding pot balance
+  /// @return balance Funding pot supply balance
   function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256 balance);
+
+  /// @notice Get the assigned `_token` payouts of pot with id `_potId`
+  /// @param _potId Id of the funding pot
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @return balance Funding pot payout amount
+  function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256 payout);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members

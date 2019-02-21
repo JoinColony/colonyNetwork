@@ -265,7 +265,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     fundingPotCount += 1;
     fundingPots[fundingPotCount] = FundingPot({
       associatedType: FundingPotAssociatedType.Domain,
-      associatedTypeId: domainCount
+      associatedTypeId: domainCount,
+      payoutsWeCannotMake: 0
     });
 
     // Create a new domain with the given skill and new funding pot

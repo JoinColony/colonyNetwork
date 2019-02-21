@@ -256,7 +256,7 @@ contract("Reputation Updates", accounts => {
 
       const payment = await metaColony.getPayment(paymentId);
       await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
-      await metaColony.claimPayment(paymentId);
+      await metaColony.claimPayment(paymentId, clnyToken.address);
 
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(RECIPIENT);

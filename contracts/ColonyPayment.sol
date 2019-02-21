@@ -59,11 +59,6 @@ contract ColonyPayment is ColonyStorage {
     return (payment.recipient, payment.fundingPotId, payment.domainId, payment.skills);
   }
 
-  function getPaymentAmountForToken(uint256 id, address token) public view returns(uint256) {
-    Payment storage payment = payments[id];
-    return payment.payouts[token];
-  }
-
   function getPaymentCount() public view returns (uint256) {
     return paymentCount;
   }

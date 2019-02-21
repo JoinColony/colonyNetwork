@@ -40,6 +40,6 @@ contract OneTxPayment {
     // Fund the payment
     colony.moveFundsBetweenPots(domain.fundingPotId, paymentFundingPotId, _amount, _token);
     // Claim payout on behalf of the recipient
-    colony.claimPayment(paymentId);
+    colony.claimPayment(paymentId, _token);
   }
 }

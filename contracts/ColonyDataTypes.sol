@@ -142,12 +142,11 @@ contract ColonyDataTypes {
   /// @param taskId Id of the finalized task
   event TaskFinalized(uint256 indexed taskId);
 
-  /// @notice Event logged when a task payout is claimed
-  /// @param taskId Id of the task
-  /// @param role Task role for which the payout is being claimed
+  /// @notice Event logged when a payout is claimed, either from a Task or Payment
+  /// @param fundingPotId Id of the funding pot where payout comes from
   /// @param token Token of the payout claim
-  /// @param amount Amount of the payout claim
-  event TaskPayoutClaimed(uint256 indexed taskId, uint256 role, address token, uint256 amount);
+  /// @param amount Amount of the payout claimed, after network fee was deducted
+  event PayoutClaimed(uint256 fundingPotId, address token, uint256 amount);
 
   /// @notice Event logged when a task has been canceled
   /// @param taskId Id of the canceled task
@@ -188,7 +187,6 @@ contract ColonyDataTypes {
     bytes32 deliverableHash;
     TaskStatus status;
     uint256 dueDate;
-    uint256 payoutsWeCannotMake;
     uint256 fundingPotId;
     uint256 completionTimestamp;
     uint256 domainId;
@@ -232,7 +230,7 @@ contract ColonyDataTypes {
     // Funding pots can be associated with different fundable entities, for now these are: tasks, domains and payments.
     FundingPotAssociatedType associatedType;
     uint256 associatedTypeId;
-    // VALIDATE: Consolidate payouts as part of the funding pot, laternative data structure can also be used, e.g. SpendingPot
+    // Map any assigned payouts from this pot, note that in Tasks these are broken down to a more granular level on a per role basis
     mapping (address => uint256) payouts;
     uint256 payoutsWeCannotMake;
   }

@@ -84,8 +84,8 @@ contract ColonyTask is ColonyStorage {
   }
 
   modifier taskFunded(uint256 _id) {
-    Task storage task = tasks[_id];
-    require(task.payoutsWeCannotMake == 0, "colony-task-not-funded");
+    FundingPot storage fundingPot = fundingPots[tasks[_id].fundingPotId];
+    require(fundingPot.payoutsWeCannotMake == 0, "colony-task-not-funded");
     _;
   }
 
@@ -99,7 +99,8 @@ contract ColonyTask is ColonyStorage {
     fundingPotCount += 1;
     fundingPots[fundingPotCount] = FundingPot({
       associatedType: FundingPotAssociatedType.Task,
-      associatedTypeId: taskCount
+      associatedTypeId: taskCount,
+      payoutsWeCannotMake: 0
     });
 
     Task memory task;
@@ -444,7 +445,6 @@ contract ColonyTask is ColonyStorage {
     uint256,
     uint256,
     uint256,
-    uint256,
     uint256[] memory)
   {
     Task storage t = tasks[_id];
@@ -453,7 +453,6 @@ contract ColonyTask is ColonyStorage {
       t.deliverableHash,
       t.status,
       t.dueDate,
-      t.payoutsWeCannotMake,
       t.fundingPotId,
       t.completionTimestamp,
       t.domainId,

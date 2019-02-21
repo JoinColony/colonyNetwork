@@ -368,7 +368,7 @@ contract("Meta Colony", accounts => {
       });
 
       const task = await colony.getTask(taskId);
-      expect(task[7]).to.eq.BN(2);
+      expect(task.domainId).to.eq.BN(2);
     });
 
     it("should NOT allow a non-manager to set domain on task", async () => {
@@ -387,7 +387,7 @@ contract("Meta Colony", accounts => {
       );
 
       const task = await colony.getTask(taskId);
-      expect(task[7]).to.eq.BN(1);
+      expect(task.domainId).to.eq.BN(1);
     });
 
     it("should NOT be able to set a domain on nonexistent task", async () => {
@@ -423,7 +423,7 @@ contract("Meta Colony", accounts => {
       );
 
       const task = await colony.getTask(taskId);
-      expect(task[7]).to.eq.BN(1);
+      expect(task.domainId).to.eq.BN(1);
     });
 
     it("should NOT be able to set a domain on completed task", async () => {
@@ -460,7 +460,7 @@ contract("Meta Colony", accounts => {
       });
 
       const task = await colony.getTask(taskId);
-      expect(task[8][0]).to.eq.BN(6);
+      expect(task.skillIds[0]).to.eq.BN(6);
     });
 
     it("should not allow anyone but the colony to set global skill on task", async () => {
@@ -471,7 +471,7 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(taskId, 5, { from: OTHER_ACCOUNT }), "colony-not-self");
 
       const task = await colony.getTask(taskId);
-      expect(task[8][0]).to.be.zero;
+      expect(task.skillIds[0]).to.be.zero;
     });
 
     it("should NOT be able to set global skill on nonexistent task", async () => {
@@ -486,7 +486,7 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-complete");
 
       const task = await colony.getTask(taskId);
-      expect(task[8][0]).to.eq.BN(1);
+      expect(task.skillIds[0]).to.eq.BN(1);
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {
