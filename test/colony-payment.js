@@ -49,9 +49,8 @@ contract("Colony Payment", accounts => {
       expect(payment.domainId).to.eq.BN(1);
     });
 
-    // TODO
-    it.skip("should not allow admins to add payment with no domain set", async () => {
-      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, WAD, 0, 0), "");
+    it("should not allow admins to add payment with no domain set", async () => {
+      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, WAD, 0, 0), "colony-domain-does-not-exist");
     });
   });
 

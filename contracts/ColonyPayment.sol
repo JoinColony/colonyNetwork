@@ -23,6 +23,7 @@ import "./ColonyStorage.sol";
 
 contract ColonyPayment is ColonyStorage {
   function addPayment(address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public
+  domainExists(_domainId)
   stoppable
   auth
   returns (uint256)
@@ -41,7 +42,7 @@ contract ColonyPayment is ColonyStorage {
       amount: _amount,
       fundingPotId: fundingPotCount,
       domainId: _domainId,
-      skills: new uint256[](_skillId)             
+      skills: new uint256[](_skillId)
     });
 
     payments[paymentCount] = payment;
