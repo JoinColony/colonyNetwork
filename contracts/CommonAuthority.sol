@@ -21,7 +21,7 @@ import "../lib/dappsys/roles.sol";
 
 
 contract CommonAuthority is DSRoles {
-  uint8 recoveryRole = 2;
+  uint8 constant recoveryRole = 2;
 
   constructor(address contractAddress) public {
     setRecoveryRoleCapability(contractAddress, "enterRecoveryMode()");

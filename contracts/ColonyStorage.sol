@@ -173,14 +173,34 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier auth(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
-    if (parentDomainId != childDomainId) {
-      domain storage parentDomain = domains[parentDomainId];
-      domain storage childDomain = domains[childDomainId];
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      require(colonyNetworkContract.getChildSkillId(parentDomain.skillId, childIndex) == childDomain.skillId, "invalid-domain-proof-for-auth");
-    }
-    require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
+  // modifier auth(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
+  //   if (parentDomainId != childDomainId) {
+  //     uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[parentDomainId].skillId, childIndex);
+  //     require(childSkillId == domains[childDomainId].skillId, "ds-auth-invalid-domain-proof");
+  //   }
+  //   require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
+  //   _;
+  // }
+
+  modifier auth() {
+    require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
     _;
   }
+
+  function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
+    if (src == address(this)) {
+      return true;
+    } else if (src == owner) {
+      return true;
+    } else if (authority == DSAuthority(0)) {
+      return false;
+    } else {
+      return ColonyRoles(authority).canCall(src, domainId, address(this), sig);
+    }
+  }
+
+  function isAuthorized(address src, bytes4 sig) internal view returns (bool) {
+    return isAuthorized(src, 1, sig);
+  }
+
 }
