@@ -190,38 +190,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
-    // correctly. Unsure if I should force them to be run every time.
-    [0, 1, 2, 3, 4, 5, 6, 7].forEach(async badIndex => {
-      it.skip(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
-        await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-        await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-        await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
-
-        const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, badIndex, 0xfffffffff);
-        await badClient.initialise(colonyNetwork.address);
-
-        await goodClient.saveCurrentState();
-        const savedHash = await goodClient.reputationTree.getRootHash();
-        await badClient.loadState(savedHash);
-
-        await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-        const repCycle = await getActiveRepCycle(colonyNetwork);
-
-        let error;
-        if (badIndex < 4) {
-          error = "colony-reputation-mining-decay-incorrect";
-        } else {
-          error = "colony-reputation-mining-increased-reputation-value-incorrect";
-        }
-        await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
-          client2: { respondToChallenge: error }
-        });
-        await repCycle.confirmNewHash(1);
-      });
-    });
-
     it("should allow a binary search between opponents to take place to find their first disagreement", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 

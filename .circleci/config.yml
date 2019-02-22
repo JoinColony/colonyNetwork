@@ -120,6 +120,18 @@ jobs:
             docker create -v "$pwd"/build --name colonynetwork alpine:3.4 /bin/true
             docker cp build/* colonynetwork:/build
             docker run --volumes-from colonynetwork mythril/myth myth --truffle --execution-timeout 40 -v 3
+  end-to-end-tests:
+    <<: *job_common
+    steps:
+      - checkout
+      - <<: *step_restore_cache
+      - setup_remote_docker
+      - <<: *step_pull_solc_docker
+      - <<: *step_setup_global_packages
+      - run:
+          name: "Running end-to-end tests"
+          command: yarn run test:contracts:e2e
+
 workflows:
   version: 2
   commit:
@@ -136,3 +148,4 @@ workflows:
                 - develop
     jobs:
       - security-analysis
+      - end-to-end-tests
