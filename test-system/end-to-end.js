@@ -135,16 +135,14 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(511);
 
-      // TODO: The client was taking too long to process update of a node with ~500 children child skill updates.
-      // Would like to profile the client performance better and optimise that for larger still trees
       // Add 500 more skills which won't be used in reputation
-      // const s = Array.from(Array(500).keys());
-      // const skillsSetupPromise = s.map(() => metaColony.addGlobalSkill(1));
-      // await Promise.all(skillsSetupPromise);
+      const s = Array.from(Array(500).keys());
+      const skillsSetupPromise = s.map(() => metaColony.addGlobalSkill(1));
+      await Promise.all(skillsSetupPromise);
 
       skillCount = await colonyNetwork.getSkillCount();
       // 500 for the domain in each new colony + global skill + metaColony's 2 domain skills + 8 new ones we created
-      expect(skillCount).to.eq.BN(511);
+      expect(skillCount).to.eq.BN(1011);
     });
 
     it("can fund all colonies with own tokens", async function() {
