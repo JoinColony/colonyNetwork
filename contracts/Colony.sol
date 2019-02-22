@@ -43,6 +43,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyAdminRoleSet(_user);
   }
 
+  // TODO: Permission this correctly
+  function setAdministrationRole(address _user, uint256 _domainId) public stoppable {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), true);
+  }
+
   // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), false);

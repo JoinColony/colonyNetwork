@@ -173,14 +173,14 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  // modifier auth(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
-  //   if (parentDomainId != childDomainId) {
-  //     uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[parentDomainId].skillId, childIndex);
-  //     require(childSkillId == domains[childDomainId].skillId, "ds-auth-invalid-domain-proof");
-  //   }
-  //   require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
-  //   _;
-  // }
+  modifier auth2(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
+    if (parentDomainId != childDomainId) {
+      uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[parentDomainId].skillId, childIndex);
+      require(childSkillId == domains[childDomainId].skillId, "ds-auth-invalid-domain-proof");
+    }
+    require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
+    _;
+  }
 
   modifier auth() {
     require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");

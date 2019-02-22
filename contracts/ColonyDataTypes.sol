@@ -204,7 +204,7 @@ contract ColonyDataTypes {
 
   enum TaskStatus { Active, Cancelled, Finalized }
 
-  enum ColonyRole { Founder, Admin }
+  enum ColonyRole { Founder, Admin, Funding, Administration, Arbitration, Architecture, Root }
 
   struct Role {
     // Address of the user for the given role

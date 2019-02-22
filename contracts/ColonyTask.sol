@@ -89,9 +89,16 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public
+  function makeTask(
+    uint256 _parentDomainId,
+    uint256 _domainProofIndex,
+    bytes32 _specificationHash,
+    uint256 _domainId,
+    uint256 _skillId,
+    uint256 _dueDate
+  ) public
   stoppable
-  auth
+  auth2(_parentDomainId, _domainId, _domainProofIndex)
   domainExists(_domainId)
   {
     taskCount += 1;

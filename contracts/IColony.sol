@@ -67,6 +67,9 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _user User we want to give an admin role to
   function setAdminRole(address _user) public;
 
+  function setAdministrationRole(address _user, uint256 _domainId) public;
+
+
   /// @notice Remove colony admin.
   /// Can only be called by founder role.
   /// @param _user User we want to remove admin role from
@@ -187,11 +190,19 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
+  /// @param _parentDomainId The domain ID I am leveraging my reputation in to take this action
+  /// @param _domainProofIndex The index that the _domainId is relative to _parentDomainId
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
   /// @param _skillId The skill associated with the task, can set to 0 for no-op
   /// @param _dueDate The due date of the task, can set to 0 for no-op
-  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public;
+  function makeTask(
+    uint256 _parentDomainId,
+    uint256 _domainProofIndex,
+    bytes32 _specificationHash,
+    uint256 _domainId,
+    uint256 _skillId,
+    uint256 _dueDate) public;
 
   /// @notice Get the number of tasks in the colony
   /// @return count The task count
@@ -380,7 +391,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns ( 
+  function getTask(uint256 _id) public view returns (
     bytes32 specificationHash,
     bytes32 deliverableHash,
     TaskStatus status,

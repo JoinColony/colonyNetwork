@@ -42,9 +42,8 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   // Only Colony admins are allowed to make Tasks, make the account an admin
-  await colony.setAdminRole(manager);
-  const { logs } = await colony.makeTask(hash, domainId, skillId, dueDate, { from: manager });
-
+  await colony.setAdministrationRole(manager, domainId);
+  const { logs } = await colony.makeTask(1, 0, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }

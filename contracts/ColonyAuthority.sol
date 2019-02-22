@@ -24,6 +24,11 @@ import "./ColonyRoles.sol";
 contract ColonyAuthority is ColonyRoles {
   uint8 constant founderRole = uint8(ColonyDataTypes.ColonyRole.Founder);
   uint8 constant adminRole = uint8(ColonyDataTypes.ColonyRole.Admin);
+  uint8 constant fundingRole = uint8(ColonyDataTypes.ColonyRole.Funding);
+  uint8 constant administrationRole = uint8(ColonyDataTypes.ColonyRole.Administration);
+  uint8 constant arbitrationRole = uint8(ColonyDataTypes.ColonyRole.Arbitration);
+  uint8 constant architectureRole = uint8(ColonyDataTypes.ColonyRole.Architecture);
+  uint8 constant rootRole = uint8(ColonyDataTypes.ColonyRole.Root);
 
   constructor(address colony) public CommonAuthority(colony) {
     // Bootstrap colony
@@ -87,6 +92,9 @@ contract ColonyAuthority is ColonyRoles {
     // Set admin
     setAdminRoleCapability(colony, "setAdminRole(address)");
     setFounderRoleCapability(colony, "setAdminRole(address)");
+
+    // Add permissions for the Administration role
+    setRoleCapability(administrationRole, colony, bytes4(keccak256("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)")), true);
   }
 
   function setFounderRoleCapability(address colony, bytes memory sig) private {
