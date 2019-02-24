@@ -185,8 +185,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function initialise(address _resolver) public
-  auth
   stoppable
+  auth
   {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
     colonyVersionResolver[1] = _resolver;

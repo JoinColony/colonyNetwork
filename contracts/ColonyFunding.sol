@@ -155,20 +155,20 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     // If this pot is associated with a Task, prevent money being taken from the pot
     // if the remaining balance is less than the amount needed for payouts,
     // unless the task was cancelled.
-    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task) {
-      uint fromPotPreviousPayoutAmount = fundingPots[_fromPot].payouts[_token];
-      uint surplus = (fromPotPreviousAmount > fromPotPreviousPayoutAmount) ? sub(fromPotPreviousAmount, fromPotPreviousPayoutAmount) : 0;
- 
-      Task storage task = tasks[fundingPots[_fromPot].associatedTypeId];
-      require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
-    }
+    FundingPotAssociatedType fromPotAssociatedType = fundingPots[_fromPot].associatedType;
 
-    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task || 
+    if (fromPotAssociatedType == FundingPotAssociatedType.Task) {
+      uint fromTaskId = fundingPots[_fromPot].associatedTypeId;
+      uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
+      uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
+      require(tasks[fromTaskId].status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
+
+    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task ||
     fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Payment) {
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
-    if (fundingPots[_toPot].associatedType == FundingPotAssociatedType.Task || 
+    if (fundingPots[_toPot].associatedType == FundingPotAssociatedType.Task ||
     fundingPots[_toPot].associatedType == FundingPotAssociatedType.Payment) {
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
@@ -203,7 +203,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public auth stoppable
+  public stoppable auth
   {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(token);
@@ -414,7 +414,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint currentTotalAmount = fundingPot.payouts[_token];
     uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
     task.payouts[uint8(_role)][_token] = _amount;
-    
+
     fundingPot.payouts[_token] = add(sub(currentTotalAmount, currentTaskRolePayout), _amount);
 
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);

@@ -94,7 +94,7 @@ contract("Colony Recovery", accounts => {
       await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS, ZERO_ADDRESS), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.makeTask(SPECIFICATION_HASH, 0, 0, 0), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 0, 0, 0), "colony-in-recovery-mode");
     });
 
     it("should exit recovery mode with sufficient approvals", async () => {

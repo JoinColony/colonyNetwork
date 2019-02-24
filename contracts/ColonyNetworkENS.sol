@@ -43,7 +43,7 @@ contract ColonyNetworkENS is ColonyNetworkStorage {
       interfaceID == ADDR_INTERFACE_ID );
   }
 
-  function setupRegistrar(address _ens, bytes32 _rootNode) public auth stoppable {
+  function setupRegistrar(address _ens, bytes32 _rootNode) public stoppable auth {
     ens = _ens;
     rootNode = _rootNode;
     userNode = keccak256(abi.encodePacked(rootNode, USER_HASH));

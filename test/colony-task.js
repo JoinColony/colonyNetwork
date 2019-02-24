@@ -64,7 +64,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DSToken = artifacts.require("DSToken");
 
-contract.only("ColonyTask", accounts => {
+contract("ColonyTask", accounts => {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];

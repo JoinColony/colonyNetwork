@@ -220,13 +220,7 @@ contract("Colony Reward Payouts", accounts => {
     });
 
     it("should not be able to claim reward if skill id is not from root domain", async () => {
-      const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
-      let { logs } = await colonyNetwork.createColony(newToken.address);
-      const { colonyAddress } = logs[0].args;
-      const newColony = await IColony.at(colonyAddress);
-
-      await newToken.setOwner(newColony.address);
+      const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
       await fundColonyWithTokens(newColony, newToken, INITIAL_FUNDING);
 
       await newColony.addDomain(1);
@@ -252,7 +246,7 @@ contract("Colony Reward Payouts", accounts => {
       let { key, value, branchMask, siblings } = await client.getReputationProofObject(colonyWideReputationKey);
       colonyWideReputationProof = [key, value, branchMask, siblings];
 
-      ({ logs } = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof));
+      const { logs } = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId = logs[0].args.rewardPayoutId;
 
       const userReputationKey = makeReputationKey(newColony.address, domainSkill, userAddress1);
