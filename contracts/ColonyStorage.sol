@@ -174,10 +174,10 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier auth2(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
+    require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
     if (parentDomainId != childDomainId) {
       require(validateDomainProof(parentDomainId, childDomainId, childIndex), "ds-auth-invalid-domain-proof");
     }
-    require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
     _;
   }
 
@@ -199,7 +199,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     } else if (authority == DSAuthority(0)) {
       return false;
     } else {
-      return ColonyRoles(authority).canCall(src, domainId, address(this), sig);
+      return ColonyRoles(address(authority)).canCall(src, domainId, address(this), sig);
     }
   }
 

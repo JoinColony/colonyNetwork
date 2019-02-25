@@ -1360,13 +1360,13 @@ contract("ColonyTask", accounts => {
       // but we need some Ether, too
       await colony.send(101);
       await colony.claimColonyFunds(ZERO_ADDRESS);
-      await colony.moveFundsBetweenPots(1, taskPotId, 100, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, taskPotId, 100, ZERO_ADDRESS);
 
       // And another token
       await otherToken.mint(101);
       await otherToken.transfer(colony.address, 101);
       await colony.claimColonyFunds(otherToken.address);
-      await colony.moveFundsBetweenPots(1, taskPotId, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, taskPotId, 100, otherToken.address);
 
       // Keep track of original Ether balance in funding pots
       const originalDomainEtherBalance = await colony.getFundingPotBalance(domain.fundingPotId, ZERO_ADDRESS);
@@ -1388,9 +1388,9 @@ contract("ColonyTask", accounts => {
         args: [taskId]
       });
 
-      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskEtherBalance, ZERO_ADDRESS);
-      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskTokenBalance, token.address);
-      await colony.moveFundsBetweenPots(taskPotId, domain.fundingPotId, originalTaskOtherTokenBalance, otherToken.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, taskPotId, domain.fundingPotId, originalTaskEtherBalance, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(1, 0, 0, taskPotId, domain.fundingPotId, originalTaskTokenBalance, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, taskPotId, domain.fundingPotId, originalTaskOtherTokenBalance, otherToken.address);
 
       const cancelledTaskEtherBalance = await colony.getFundingPotBalance(taskPotId, ZERO_ADDRESS);
       const cancelledDomainEtherBalance = await colony.getFundingPotBalance(domain.fundingPotId, ZERO_ADDRESS);

@@ -178,7 +178,9 @@ export async function setupFundedTask({
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
-  await colony.moveFundsBetweenPots(1, fundingPotId, totalPayouts, tokenAddress);
+  await colony.setFundingRole(manager, 1);
+  // TODO: extend this to allow funding pots beyond the first child of root domain... :(
+  await colony.moveFundsBetweenPots(1, 0, 0, 1, fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 

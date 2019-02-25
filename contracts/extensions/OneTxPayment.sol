@@ -30,13 +30,13 @@ contract OneTxPayment {
     address _token,
     uint256 _amount,
     uint256 _domainId,
-    uint256 _skillId) public 
+    uint256 _skillId) public
   {
     IColony colony = IColony(_colony);
+
     // Check caller is able to call makePayment on the colony
-    DSRoles authority = DSRoles(colony.authority());
     require(
-      authority.canCall(
+      DSRoles(colony.authority()).canCall(
         msg.sender,
         _colony,
         bytes4(keccak256("addPayment(address,address,uint256,uint256,uint256)"))
@@ -46,12 +46,13 @@ contract OneTxPayment {
 
     // Add a new payment
     uint256 paymentId = colony.addPayment(_worker, _token, _amount, _domainId, _skillId);
-    uint fundingPotId;
     ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
     ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
+
     // Fund the payment
-    colony.moveFundsBetweenPots(domain.fundingPotId, payment.fundingPotId, _amount, _token);
+    colony.moveFundsBetweenPots(1, 0, 0, domain.fundingPotId, payment.fundingPotId, _amount, _token);
     colony.finalizePayment(paymentId);
+
     // Claim payout on behalf of the recipient
     colony.claimPayment(paymentId, _token);
   }

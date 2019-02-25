@@ -94,16 +94,45 @@ contract ColonyAuthority is ColonyRoles {
     setFounderRoleCapability(colony, "setAdminRole(address)");
 
     // Add permissions for the Administration role
-    setRoleCapability(administrationRole, colony, bytes4(keccak256("makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)")), true);
+    setAdministrationCapability(colony, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)");
+
+    // Add permissions for the Funding role
+    setFundingCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
   }
 
+  // Colony-wide roles
   function setFounderRoleCapability(address colony, bytes memory sig) private {
-    bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(founderRole, colony, functionSig, true);
+    addRoleCapability(founderRole, colony, sig);
   }
 
   function setAdminRoleCapability(address colony, bytes memory sig) private {
+    addRoleCapability(adminRole, colony, sig);
+  }
+
+  // Domain-level roles
+  function setAdministrationCapability(address colony, bytes memory sig) private {
+    addRoleCapability(administrationRole, colony, sig);
+  }
+
+  function setFundingCapability(address colony, bytes memory sig) private {
+    addRoleCapability(fundingRole, colony, sig);
+  }
+
+  function setArbitrationCapability(address colony, bytes memory sig) private {
+    addRoleCapability(arbitrationRole, colony, sig);
+  }
+
+  function setArchitectureCapability(address colony, bytes memory sig) private {
+    addRoleCapability(architectureRole, colony, sig);
+  }
+
+  function setRootCapability(address colony, bytes memory sig) private {
+    addRoleCapability(rootRole, colony, sig);
+  }
+
+  // Internal helper
+  function addRoleCapability(uint8 role, address colony, bytes memory sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(adminRole, colony, functionSig, true);
+    setRoleCapability(role, colony, functionSig, true);
   }
 }

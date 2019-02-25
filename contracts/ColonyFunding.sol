@@ -141,35 +141,43 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
   }
 
-  function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
+  function moveFundsBetweenPots(
+    uint256 _parentDomainId,
+    uint256 _fromDomainProofIndex,
+    uint256 _toDomainProofIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+  )
+  public
   stoppable
-  auth
+  auth2(_parentDomainId, getDomainFromFundingPot(_fromPot), _fromDomainProofIndex)
+  auth2(_parentDomainId, getDomainFromFundingPot(_toPot), _toDomainProofIndex)
   validFundingTransfer(_fromPot, _toPot)
   {
-    uint fromPotPreviousAmount = fundingPots[_fromPot].balance[_token];
-    uint toPotPreviousAmount = fundingPots[_toPot].balance[_token];
+    FundingPot storage fromPot = fundingPots[_fromPot];
+    FundingPot storage toPot = fundingPots[_toPot];
 
-    fundingPots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
-    fundingPots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
+    fromPot.balance[_token] = sub(fromPot.balance[_token], _amount);
+    toPot.balance[_token] = add(toPot.balance[_token], _amount);
 
-    // If this pot is associated with a Task, prevent money being taken from the pot
-    // if the remaining balance is less than the amount needed for payouts,
-    // unless the task was cancelled.
-    FundingPotAssociatedType fromPotAssociatedType = fundingPots[_fromPot].associatedType;
+    // If this pot is associated with a Task, prevent money being taken from the pot if the
+    // remaining balance is less than the amount needed for payouts, unless the task was cancelled.
+    if (fromPot.associatedType == FundingPotAssociatedType.Task) {
+      require(
+        tasks[fromPot.associatedTypeId].status == TaskStatus.Cancelled || fromPot.balance[_token] >= fromPot.payouts[_token],
+        "colony-funding-task-bad-state"
+      );
+    }
 
-    if (fromPotAssociatedType == FundingPotAssociatedType.Task) {
-      uint fromTaskId = fundingPots[_fromPot].associatedTypeId;
-      uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
-      uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
-      require(tasks[fromTaskId].status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
-
-    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task ||
-    fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Payment) {
+    if (fromPot.associatedType == FundingPotAssociatedType.Task || fromPot.associatedType == FundingPotAssociatedType.Payment) {
+      uint256 fromPotPreviousAmount = add(fromPot.balance[_token], _amount);
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
-    if (fundingPots[_toPot].associatedType == FundingPotAssociatedType.Task ||
-    fundingPots[_toPot].associatedType == FundingPotAssociatedType.Payment) {
+    if (toPot.associatedType == FundingPotAssociatedType.Task || toPot.associatedType == FundingPotAssociatedType.Payment) {
+      uint256 toPotPreviousAmount = sub(toPot.balance[_token], _amount);
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
 
@@ -456,6 +464,21 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       fee = _payout;
     } else {
       fee = _payout/feeInverse + 1;
+    }
+  }
+
+  function getDomainFromFundingPot(uint256 _fundingPotId) private view returns (uint256 domainId) {
+    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
+    FundingPot storage fundingPot = fundingPots[_fundingPotId];
+
+    if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
+      domainId = fundingPot.associatedTypeId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
+      domainId = tasks[fundingPot.associatedTypeId].domainId;
+    } else {
+      // If rewards pot, return root domain.
+      require(_fundingPotId == 0, "colony-funding-bad-pot-associated-type");
+      domainId = 1;
     }
   }
 }

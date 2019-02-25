@@ -69,6 +69,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   function setAdministrationRole(address _user, uint256 _domainId) public;
 
+  function setFundingRole(address _user, uint256 _domainId) public;
 
   /// @notice Remove colony admin.
   /// Can only be called by founder role.
@@ -538,11 +539,22 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members
+  /// @param _parentDomainId The domain ID I am leveraging my reputation in to take this action
+  /// @param _fromDomainProofIndex The index that the _domainId is relative to the domain for _fromPotId
+  /// @param _toDomainProofIndex The index that the _domainId is relative to the domain for _toPotId
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
   /// @param _amount Amount of funds
   /// @param _token Address of the token, `0x0` value indicates Ether
-  function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public;
+  function moveFundsBetweenPots(
+    uint256 _parentDomainId,
+    uint256 _fromDomainProofIndex,
+    uint256 _toDomainProofIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+    ) public;
 
   /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
   /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken
