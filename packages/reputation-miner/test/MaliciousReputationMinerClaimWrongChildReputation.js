@@ -2,7 +2,7 @@ import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const WRONG_ADDRESS = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 
-class MaliciousReputationMiningWrongChildReputation extends ReputationMinerTestWrapper {
+class MaliciousReputationMinerWrongChildReputation extends ReputationMinerTestWrapper {
   // This client will claim there is no originReputationUID, whether there is one or not
   //
   constructor(opts, whatToFalsify) {
@@ -28,4 +28,4 @@ class MaliciousReputationMiningWrongChildReputation extends ReputationMinerTestW
   }
 }
 
-export default MaliciousReputationMiningWrongChildReputation;
+export default MaliciousReputationMinerWrongChildReputation;

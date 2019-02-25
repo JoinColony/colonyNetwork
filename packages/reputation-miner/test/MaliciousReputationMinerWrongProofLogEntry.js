@@ -2,7 +2,7 @@ import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
 
-class MaliciousReputationMiningWrongProofLogEntry extends ReputationMinerTestWrapper {
+class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrapper {
   // This client will supply the wrong log entry as part of its proof
   constructor(opts, amountToFalsify) {
     super(opts);
@@ -17,8 +17,8 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMinerTestWra
     const firstDisagreeIdx = ethers.utils.bigNumberify(submission.lowerBound);
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
-    const lastAgreeKey = MaliciousReputationMiningWrongProofLogEntry.getHexString(lastAgreeIdx, 64);
-    const firstDisagreeKey = MaliciousReputationMiningWrongProofLogEntry.getHexString(firstDisagreeIdx, 64);
+    const lastAgreeKey = MaliciousReputationMinerWrongProofLogEntry.getHexString(lastAgreeIdx, 64);
+    const firstDisagreeKey = MaliciousReputationMinerWrongProofLogEntry.getHexString(firstDisagreeIdx, 64);
 
     const [agreeStateBranchMask, agreeStateSiblings] = await this.justificationTree.getProof(lastAgreeKey);
     const [disagreeStateBranchMask, disagreeStateSiblings] = await this.justificationTree.getProof(firstDisagreeKey);
@@ -34,9 +34,9 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMinerTestWra
         index,
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.branchMask,
         this.justificationHashes[lastAgreeKey].nextUpdateProof.nNodes,
-        MaliciousReputationMiningWrongProofLogEntry.getHexString(agreeStateBranchMask),
+        MaliciousReputationMinerWrongProofLogEntry.getHexString(agreeStateBranchMask),
         this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
-        MaliciousReputationMiningWrongProofLogEntry.getHexString(disagreeStateBranchMask),
+        MaliciousReputationMinerWrongProofLogEntry.getHexString(disagreeStateBranchMask),
         this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
         logEntryNumber,
         "0",
@@ -81,4 +81,4 @@ class MaliciousReputationMiningWrongProofLogEntry extends ReputationMinerTestWra
   }
 }
 
-export default MaliciousReputationMiningWrongProofLogEntry;
+export default MaliciousReputationMinerWrongProofLogEntry;

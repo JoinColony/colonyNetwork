@@ -30,6 +30,7 @@ import { DEFAULT_STAKE, INITIAL_FUNDING, MINING_CYCLE_DURATION } from "../../hel
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
+import MaliciousReputationMinerWrongResponse from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongResponse";
 import MaliciousReputationMinerWrongProofLogEntry from "../../packages/reputation-miner/test/MaliciousReputationMinerWrongProofLogEntry";
 
 const { expect } = chai;
@@ -462,83 +463,25 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 27, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 7, 123456);
+      await badClient2.initialise(colonyNetwork.address);
+
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await badClient2.addLogContentsToReputationTree();
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
       await runBinarySearch(goodClient, badClient);
-
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
-      // Now get all the information needed to fire off a respondToChallenge call
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.getDisputeRounds(round, index);
-      const firstDisagreeIdx = new BN(submission.lowerBound);
-      const lastAgreeIdx = firstDisagreeIdx.subn(1);
-      const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
-      const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
-      const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-      const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
-
-      await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [
-            round,
-            index,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.nNodes,
-            agreeStateBranchMask,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes,
-            disagreeStateBranchMask,
-            // This is the wrong line
-            123456,
-            // This is the correct line, for future reference
-            // this.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
-            logEntryNumber,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.reputation
-          ],
-          [
-            reputationKey,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.key
-          ],
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          agreeStateSiblings,
-          disagreeStateSiblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.siblings
-        ),
-        "colony-reputation-mining-last-state-disagreement"
-      );
+      await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-last-state-disagreement");
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION, this);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
       await goodClient.respondToChallenge();
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
@@ -593,7 +536,18 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
       const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 26, 0xfffff);
       await badClient.initialise(colonyNetwork.address);
+
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 10, 0);
+      await badClient2.initialise(colonyNetwork.address);
+
+      const badClient3 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 19, 0);
+      await badClient3.initialise(colonyNetwork.address);
+
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await badClient2.addLogContentsToReputationTree();
+      await badClient3.addLogContentsToReputationTree();
+
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
@@ -601,227 +555,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
-      // Now get all the information needed to fire off a respondToChallenge call
-      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.getDisputeRounds(round.toString(), index.toString());
-      const firstDisagreeIdx = new BN(submission.lowerBound);
-      const lastAgreeIdx = firstDisagreeIdx.subn(1);
-      const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
-      const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
-      const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-      const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
-
-      await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [
-            round.toString(),
-            index.toString(),
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
-            agreeStateBranchMask.toString(),
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
-            disagreeStateBranchMask.toString(),
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
-            logEntryNumber.toString(),
-            0,
-            // This is the wrong value
-            disagreeStateBranchMask.toString(),
-            // This is the correct line, for future reference
-            // goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.reputation
-          ],
-          [
-            reputationKey,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.key
-          ],
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          agreeStateSiblings,
-          disagreeStateSiblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.siblings
-        ),
-        "colony-reputation-mining-origin-reputation-nonzero"
-      );
-
-      await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [
-            round.toString(),
-            index.toString(),
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.branchMask.toString(),
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.nNodes.toString(),
-            agreeStateBranchMask.toString(),
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes.toString(),
-            disagreeStateBranchMask.toString(),
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
-            logEntryNumber.toString(),
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid,
-            // This is the wrong value
-            disagreeStateBranchMask.toString(),
-            // This is the correct line, for future reference
-            // goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.reputation
-          ],
-          [
-            reputationKey,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.key
-          ],
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          agreeStateSiblings,
-          disagreeStateSiblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.siblings
-        ),
-        "colony-reputation-mining-child-reputation-nonzero"
-      );
-
-      // Cleanup
-      await forwardTime(MINING_CYCLE_DURATION, this);
-      await goodClient.respondToChallenge();
-      await repCycle.invalidateHash(0, 1);
-      await repCycle.confirmNewHash(1);
-    });
-
-    it("should correctly check the UID of the reputation if the reputation update being disputed is a decay", async () => {
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
-      await badClient.initialise(colonyNetwork.address);
-
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
-      await fundColonyWithTokens(metaColony, clnyToken);
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony });
-
-      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-
-      await badClient.initialise(colonyNetwork.address);
-      await badClient.addLogContentsToReputationTree();
-
-      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, test: this });
-
-      await submitAndForwardTimeToDispute([goodClient, badClient], this);
-
-      await goodClient.confirmJustificationRootHash();
-      await badClient.confirmJustificationRootHash();
-
-      await runBinarySearch(goodClient, badClient);
-
-      await goodClient.confirmBinarySearchResult();
-      await badClient.confirmBinarySearchResult();
-
-      // Now get all the information needed to fire off a respondToChallenge call
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.getDisputeRounds(round, index);
-      const firstDisagreeIdx = new BN(submission.lowerBound);
-      const lastAgreeIdx = firstDisagreeIdx.subn(1);
-      const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
-      const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
-      const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-      const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
-
-      const agreeStateReputationUIDFake = new BN(
-        goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid.slice(2),
-        16
-      )
-        .addn(1)
-        .toString(16, 64);
-
-      await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [
-            round,
-            index,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.nNodes,
-            agreeStateBranchMask,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes,
-            disagreeStateBranchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
-            logEntryNumber,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
-            // This is the correct line
-            // goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
-            agreeStateReputationUIDFake,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.reputation
-          ],
-          [
-            reputationKey,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.key
-          ],
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          agreeStateSiblings,
-          disagreeStateSiblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.siblings
-        ),
-        "colony-reputation-mining-uid-not-decay"
-      );
+      await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-origin-reputation-nonzero");
+      await checkErrorRevertEthers(badClient3.respondToChallenge(), "colony-reputation-mining-child-reputation-nonzero");
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION, this);
@@ -843,139 +578,30 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 24, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
 
+      const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 4, 123456);
+      await badClient2.initialise(colonyNetwork.address);
+
+      const badClient3 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 6, 123456);
+      await badClient3.initialise(colonyNetwork.address);
+
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
+      await badClient2.addLogContentsToReputationTree();
+      await badClient3.addLogContentsToReputationTree();
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
 
       await runBinarySearch(goodClient, badClient);
-
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
-      // Now get all the information needed to fire off a respondToChallenge call
-      const repCycle = await getActiveRepCycle(colonyNetwork);
-      const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.getDisputeRounds(round, index);
-      const firstDisagreeIdx = new BN(submission.lowerBound);
-      const lastAgreeIdx = firstDisagreeIdx.subn(1);
-      const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
-      const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
-      const [disagreeStateBranchMask, disagreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${firstDisagreeIdx.toString(16, 64)}`);
-      const logEntryNumber = await goodClient.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.toString());
-
-      await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [
-            round,
-            index,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.nNodes,
-            // This is the right line
-            // agreeStateBranchMask,
-            // This is the wrong line
-            123456,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes,
-            disagreeStateBranchMask,
-            // This is the correct line, for future reference
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
-            logEntryNumber,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.reputation,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.reputation
-          ],
-          [
-            reputationKey,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.key
-          ],
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          agreeStateSiblings,
-          disagreeStateSiblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.siblings
-        ),
-        "colony-reputation-mining-invalid-before-reputation-proof"
-      );
-
-      await checkErrorRevert(
-        repCycle.respondToChallenge(
-          [
-            round,
-            index,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.nNodes,
-            agreeStateBranchMask,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.nNodes,
-            // This is the wrong line
-            123456,
-            // This is the right line
-            // disagreeStateBranchMask,
-            // This is the correct line, for future reference
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.branchMask,
-            logEntryNumber,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].nextUpdateProof.uid,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.reputation,
-            goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.uid,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.reputation,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.branchMask,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.uid,
-            0,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.reputation,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.reputation
-          ],
-          [
-            reputationKey,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originAdjacentReputationProof.key,
-            goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childAdjacentReputationProof.key
-          ],
-          goodClient.justificationHashes[`0x${firstDisagreeIdx.toString(16, 64)}`].justUpdatedProof.siblings,
-          agreeStateSiblings,
-          disagreeStateSiblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].newestReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].originReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].childReputationProof.siblings,
-          goodClient.justificationHashes[`0x${lastAgreeIdx.toString(16, 64)}`].adjacentReputationProof.siblings
-        ),
-        "colony-reputation-mining-invalid-after-reputation-proof"
-      );
+      await checkErrorRevertEthers(badClient2.respondToChallenge(), "colony-reputation-mining-invalid-before-reputation-proof");
+      await checkErrorRevertEthers(badClient3.respondToChallenge(), "colony-reputation-mining-invalid-after-reputation-proof");
 
       // Cleanup
       await forwardTime(MINING_CYCLE_DURATION, this);
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
       await goodClient.respondToChallenge();
       await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);

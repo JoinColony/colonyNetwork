@@ -570,8 +570,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           // Note we are not worried about underflows here; colony-wide totals for origin skill and all parents are greater than or equal to a user's origin skill.
           // If we're subtracting the origin reputation value, we therefore can't underflow, and if we're subtracting the logEntryAmount, it was absolutely smaller than
           // the origin reputation value, and so can't underflow either.
-          if (int256(userOriginReputationValue) + logEntry.amount < 0) {
-            reputationChange = -1 * int256(u[U_USER_ORIGIN_REPUTATION_VALUE]);
+          if (userOriginReputationValue + logEntry.amount < 0) {
+            reputationChange = -1 * userOriginReputationValue;
           } else {
             reputationChange = logEntry.amount;
           }
