@@ -98,6 +98,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function getSkill(uint256 _skillId) public view returns (Skill memory skill);
 
   /// @notice Get whether the skill with id _skillId is public or not.
+  /// @param _skillId Id of the skill
   /// @return isGlobalSkill bool
   /// @dev Returns false if skill does not exist
   function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);

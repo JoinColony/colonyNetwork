@@ -130,7 +130,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members
-  /// @param _recipient Address of the paymnet recipient
+  /// @param _recipient Address of the payment recipient
   /// @param _domainId The domain where the payment belongs
   /// @param _skillId The skill associated with the payment
   /// @param _token Address of the token, `0x0` value indicates Ether
@@ -144,8 +144,43 @@ contract IColony is ColonyDataTypes, IRecovery {
     uint256 _skillId) 
     public returns (uint256 paymentId);
 
+  /// @notice Sets the recipient on an existing payment. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _recipient Address of the payment recipient
+  function setPaymentRecipient(uint256 _id, address _recipient) public;
+
+  /// @notice Sets the domain on an existing payment. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _domainId Id of the new domain to set
+  function setPaymentDomain(uint256 _id, uint256 _domainId) public;
+
+  /// @notice Sets the skill on an existing payment. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _skillId Id of the new skill to set
+  function setPaymentSkill(uint256 _id, uint256 _skillId) public;
+
+  /// @notice Sets the payout for a given token on an existing payment's funding pot. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function setPayout(uint256 _id, address _token, uint256 _amount) public;
+
+  /// @notice Returns an exiting payment
+  /// @param _id Payment identifier
+  /// @return recipient Address of the payment recipient
+  /// @return fundingPotId Id of the associated funding pot
+  /// @return domainId The domain where the payment belongs
+  /// @return skills Array of global skill ids assigned to task
   function getPayment(uint256 id) public view returns(address recipient, uint256 fundingPotId, uint256 domainId, uint256[] memory skills);
+  
+  /// @notice Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout.
+  /// Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
+  /// @param _id Payment identifier
+  /// @param _token Address of the token, `0x0` value indicates Ether
   function claimPayment(uint256 _id, address _token) public;
+  
+  /// @notice Get the number of payments in the colony
+  /// @return count The payment count
   function getPaymentCount() public view returns (uint256 count);
 
   // Implemented in ColonyTask.sol
@@ -403,7 +438,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   function setAllTaskPayouts(uint256 _id, address _token, uint256 _managerAmount, uint256 _evaluatorAmount, uint256 _workerAmount) public;
 
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
-  /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
+  /// Allowed only after task is finalized. Here the network receives its fee from each payout.
   /// Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in TaskRole enum

@@ -28,6 +28,7 @@ contract ColonyPayment is ColonyStorage {
   auth
   returns (uint256)
   {
+    require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     paymentCount += 1;
     
     fundingPotCount += 1;
@@ -39,12 +40,15 @@ contract ColonyPayment is ColonyStorage {
 
     fundingPots[fundingPotCount].payouts[_token] = _amount;
 
-    Payment memory payment = Payment({
-      recipient: _recipient,
-      fundingPotId: fundingPotCount,
-      domainId: _domainId,
-      skills: new uint256[](_skillId)
-    });
+    Payment memory payment;
+    payment.recipient = _recipient;
+    payment.fundingPotId = fundingPotCount;
+    payment.domainId = _domainId;
+    payment.skills = new uint256[](1);
+
+    if (_skillId > 0) {
+      setPaymentSkill(paymentCount, _skillId);
+    }
 
     payments[paymentCount] = payment;
 
@@ -52,6 +56,30 @@ contract ColonyPayment is ColonyStorage {
     emit PaymentAdded(paymentCount);
 
     return paymentCount;
+  }
+
+  function setPaymentRecipient(uint256 _id, address _recipient) public 
+  stoppable
+  auth
+  {
+    require(_recipient != address(0x0), "colony-payment-invalid-recipient");
+    payments[_id].recipient = _recipient;
+  }
+
+  function setPaymentDomain(uint256 _id, uint256 _domainId) public
+  domainExists(_domainId)
+  stoppable
+  auth
+  {
+    payments[_id].domainId = _domainId;
+  }
+
+  function setPaymentSkill(uint256 _id, uint256 _skillId) public
+  globalSkill(_skillId)
+  stoppable
+  auth
+  {
+    payments[_id].skills[0] = _skillId;
   }
 
   function getPayment(uint256 id) public view returns(address, uint256, uint256, uint256[] memory) {

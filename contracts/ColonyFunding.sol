@@ -94,10 +94,14 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  function claimPayment(uint256 _id, address _token) public
+  function claimPayment(uint256 _paymentId, address _token) public
   stoppable
   {
-    Payment storage payment = payments[_id];
+    Payment storage payment = payments[_paymentId];
+
+    require (!payment.claimed, "colony-payment-already-claimed");
+    payment.claimed = true;
+
     FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
     require(fundingPot.balance[_token] >= fundingPot.payouts[_token], "colony-payment-insufficient-funding");
 
@@ -106,12 +110,27 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     // All payments earn domain reputation
     colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[_token]), domains[payment.domainId].skillId);
-    // If skill was set, earn reputation there too
-    if (payment.skills.length > 0) {
+
+    // If skill was set, earn reputation in the global skill
+    if (payment.skills[0] > 0) {
       // Currently we support at most one skill per Payment, similarly to Task model.
       // This may change in future to allow multiple skills to be set on both Tasks and Payments
-      // TODO colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[_token]), payment.skills[0]);
+      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[_token]), payment.skills[0]);
     }
+  }
+
+  function setPayout(uint256 _id, address _token, uint256 _amount) public
+  auth
+  stoppable
+  {
+    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
+
+    FundingPot storage fundingPot = fundingPots[_id];
+    require(fundingPot.associatedType == FundingPotAssociatedType.Payment, "colony-funding-pot-associated-with-non-payment");
+
+    uint currentTotalAmount = fundingPot.payouts[_token];
+    fundingPot.payouts[_token] = _amount;
+    updatePayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 
   function getFundingPotCount() public view returns (uint256 count) {
@@ -426,16 +445,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     // If there is an overflow, the call will revert
     // TODO: getTotalTaskPayout(_id, _token);
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
-  }
-
-  // TODO: 555
-  function setPayout(uint256 _id, address _token, uint256 _amount) public auth stoppable {
-    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
-
-    FundingPot storage fundingPot = fundingPots[_id];
-    uint currentTotalAmount = fundingPot.payouts[_token];
-    fundingPot.payouts[_token] = _amount;
-    updatePayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
   }
 
   function processPayout(uint256 fundingPotId, address _token, uint256 payout, address payable user) private {

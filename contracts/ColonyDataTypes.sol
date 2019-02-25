@@ -177,6 +177,7 @@ contract ColonyDataTypes {
 
   struct Payment {
     address recipient;
+    bool claimed;
     uint256 fundingPotId;
     uint256 domainId;
     uint256[] skills;
