@@ -104,15 +104,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     require(fundingPot.balance[_token] >= fundingPot.payouts[_token], "colony-payment-insufficient-funding");
 
     processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
-
-    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
-    colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), domains[payment.domainId].skillId);
-    if (payment.skills[0] > 0) {
-      // Currently we support at most one skill per Payment, similarly to Task model.
-      // This may change in future to allow multiple skills to be set on both Tasks and Payments
-      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), payment.skills[0]);
-    }
   }
 
   function setPayout(uint256 _id, address _token, uint256 _amount) public
@@ -200,7 +191,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       if (fundingPots[_toPot].associatedType == FundingPotAssociatedType.Payment) {
         // If payoutsWeCannotMake changes from non-zero to zero we have sufficient funding
         if (payoutsWeCannotMakePrev > 0 && fundingPots[_toPot].payoutsWeCannotMake == 0) {
-          payments[fundingPots[_toPot].associatedTypeId].finalized = true;
+          finalizePayment(fundingPots[_toPot].associatedTypeId);
         }
       }
     }
@@ -480,6 +471,22 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     }
 
     emit PayoutClaimed(fundingPotId, _token, remainder);
+  }
+
+  function finalizePayment(uint256 _id) private {
+    Payment storage payment = payments[_id];
+    payment.finalized = true;
+
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
+    colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), domains[payment.domainId].skillId);
+    if (payment.skills[0] > 0) {
+      // Currently we support at most one skill per Payment, similarly to Task model.
+      // This may change in future to allow multiple skills to be set on both Tasks and Payments
+      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), payment.skills[0]);
+    }
   }
 
   function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {
