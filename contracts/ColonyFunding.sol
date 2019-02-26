@@ -180,7 +180,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     if (fromPotAssociatedType == FundingPotAssociatedType.Task) {
       uint fromPotPreviousPayoutAmount = fundingPots[_fromPot].payouts[_token];
       uint surplus = (fromPotPreviousAmount > fromPotPreviousPayoutAmount) ? sub(fromPotPreviousAmount, fromPotPreviousPayoutAmount) : 0;
-      // TODO 555 This isn't very graceful
+ 
       Task storage task = tasks[fundingPots[_fromPot].associatedTypeId];
       require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
     }
