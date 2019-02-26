@@ -5,7 +5,7 @@ import { BN } from "bn.js";
 
 import { WAD, ZERO_ADDRESS, MAX_PAYOUT } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupRandomColony, makeTask } from "../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -180,6 +180,12 @@ contract("Colony Payment", accounts => {
       await colony.moveFundsBetweenPots(1, payment.fundingPotId, 10, token.address);
       payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.true;
+    });
+
+    it("should not allow task payouts to be set via setPayout", async () => {
+      const taskId = await makeTask({ colony });
+      const { fundingPotId } = await colony.getTask(taskId);
+      await checkErrorRevert(colony.setPayout(fundingPotId, token.address, 100), "colony-funding-pot-associated-with-non-payment");
     });
   });
 

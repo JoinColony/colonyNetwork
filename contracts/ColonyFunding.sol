@@ -101,7 +101,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     require (payment.finalized, "colony-payment-not-finalized");
 
     FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
-    require(fundingPot.balance[_token] >= fundingPot.payouts[_token], "colony-payment-insufficient-funding");
+    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
 
     processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
   }
