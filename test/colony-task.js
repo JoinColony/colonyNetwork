@@ -25,7 +25,8 @@ import {
   RATING_1_SALT,
   RATING_2_SALT,
   RATING_1_SECRET,
-  RATING_2_SECRET
+  RATING_2_SECRET,
+  MAX_PAYOUT
 } from "../helpers/constants";
 
 import {
@@ -1659,7 +1660,6 @@ contract("ColonyTask", accounts => {
     });
 
     it("should not be able to set a payout above the limit", async () => {
-      const maxPayout = new BN(0).notn(254);
       const taskId = await makeTask({ colony });
 
       await executeSignedTaskChange({
@@ -1668,7 +1668,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ZERO_ADDRESS, maxPayout]
+        args: [taskId, ZERO_ADDRESS, MAX_PAYOUT]
       });
 
       await checkErrorRevert(
@@ -1678,7 +1678,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerPayout",
           signers: [MANAGER],
           sigTypes: [0],
-          args: [taskId, ZERO_ADDRESS, maxPayout.addn(1)]
+          args: [taskId, ZERO_ADDRESS, MAX_PAYOUT.addn(1)]
         }),
         "colony-task-change-execution-failed" // Should be "colony-funding-payout-too-large"
       );

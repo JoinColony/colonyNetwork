@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { BN } from "bn.js";
 
-import { WAD, ZERO_ADDRESS } from "../helpers/constants";
+import { WAD, ZERO_ADDRESS, MAX_PAYOUT } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
 import { fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
 
@@ -69,11 +69,18 @@ contract("Colony Payment", accounts => {
     });
 
     it("should not allow admins to add payment with zero token amount set", async () => {
-      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, 0, 1, 0, { from: COLONY_ADMIN }), "colony-payment-invalid-amount");
+      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, 0, 1, 0, { from: COLONY_ADMIN }), "colony-payout-invalid-amount");
     });
 
     it("should not allow non-admins to add payment", async () => {
       await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: accounts[10] }), "ds-auth-unauthorized");
+    });
+
+    it("should not be able to set a payout above the limit", async () => {
+      await checkErrorRevert(
+        colony.addPayment(RECIPIENT, token.address, MAX_PAYOUT.addn(1), 1, 0, { from: COLONY_ADMIN }),
+        "colony-payout-too-large"
+      );
     });
   });
 
@@ -201,6 +208,10 @@ contract("Colony Payment", accounts => {
 
     it("should not allow admins to update payment", async () => {
       await checkErrorRevert(colony.setPayout(paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-funding-payment-finalized");
+    });
+
+    it("should not be able to set a payout above the limit", async () => {
+      await checkErrorRevert(colony.setPayout(paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }), "colony-payout-too-large");
     });
   });
 

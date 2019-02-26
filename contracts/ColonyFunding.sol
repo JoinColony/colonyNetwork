@@ -109,9 +109,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function setPayout(uint256 _id, address _token, uint256 _amount) public
   auth
   stoppable
+  validPayoutAmount(_amount)
   {
-    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
-
     FundingPot storage fundingPot = fundingPots[_id];
     require(fundingPot.associatedType == FundingPotAssociatedType.Payment, "colony-funding-pot-associated-with-non-payment");
     require(!payments[fundingPot.associatedTypeId].finalized, "colony-funding-payment-finalized");
@@ -431,8 +430,6 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       }
     }
   }
-
-  uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
 
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
   taskExists(_id)

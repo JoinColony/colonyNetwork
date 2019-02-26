@@ -24,12 +24,12 @@ import "./ColonyStorage.sol";
 contract ColonyPayment is ColonyStorage {
   function addPayment(address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public
   domainExists(_domainId)
+  validPayoutAmount(_amount)
   stoppable
   auth
   returns (uint256)
   {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
-    require(_amount > 0, "colony-payment-invalid-amount");
     paymentCount += 1;
 
     fundingPotCount += 1;
