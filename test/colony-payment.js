@@ -198,6 +198,10 @@ contract("Colony Payment", accounts => {
     it("should not allow admins to update skill", async () => {
       await checkErrorRevert(colony.setPaymentSkill(paymentId, 1, { from: COLONY_ADMIN }), "colony-payment-finalized");
     });
+
+    it("should not allow admins to update payment", async () => {
+      await checkErrorRevert(colony.setPayout(paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-funding-payment-finalized");
+    });
   });
 
   describe("when claiming payments", () => {

@@ -123,6 +123,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     FundingPot storage fundingPot = fundingPots[_id];
     require(fundingPot.associatedType == FundingPotAssociatedType.Payment, "colony-funding-pot-associated-with-non-payment");
+    require(!payments[fundingPot.associatedTypeId].finalized, "colony-funding-payment-finalized");
 
     uint currentTotalAmount = fundingPot.payouts[_token];
     fundingPot.payouts[_token] = _amount;
