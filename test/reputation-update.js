@@ -34,12 +34,13 @@ import {
   RATING_2_SECRET
 } from "../helpers/constants";
 
-import { checkErrorRevert, forwardTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
+import { checkErrorRevert, forwardTime, advanceMiningCycleNoContest, getTokenArgs } from "../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const DSToken = artifacts.require("DSToken");
 
 contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -337,6 +338,9 @@ contract("Reputation Updates", accounts => {
       await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
       await metaColony.claimPayment(paymentId, clnyToken.address);
 
+      const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      expect(reputationUpdateLogLength).to.eq.BN(3);
+
       let repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(RECIPIENT);
       expect(repLogEntryManager.amount).to.eq.BN(WAD);
@@ -347,6 +351,23 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryManager.user).to.equal(RECIPIENT);
       expect(repLogEntryManager.amount).to.eq.BN(WAD);
       expect(repLogEntryManager.skillId).to.eq.BN(7);
+    });
+
+    it("should not add entries to the reputation log for payments that are not in the colony home token", async () => {
+      const RECIPIENT = accounts[3];
+      const tokenArgs = getTokenArgs();
+      const otherToken = await DSToken.new(tokenArgs[1]);
+      await fundColonyWithTokens(metaColony, otherToken, WAD.muln(2));
+
+      await metaColony.addPayment(RECIPIENT, otherToken.address, WAD, 1, 7);
+      const paymentId = await metaColony.getPaymentCount();
+
+      const payment = await metaColony.getPayment(paymentId);
+      await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), otherToken.address);
+      await metaColony.claimPayment(paymentId, otherToken.address);
+
+      const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      expect(reputationUpdateLogLength).to.eq.BN(1);
     });
   });
 });
