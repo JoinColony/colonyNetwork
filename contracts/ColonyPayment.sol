@@ -59,7 +59,13 @@ contract ColonyPayment is ColonyStorage {
     return paymentCount;
   }
 
+  modifier paymentNotFinalized(uint256 _id) {
+    require(!payments[_id].finalized, "colony-payment-finalized");
+    _;
+  }
+
   function setPaymentRecipient(uint256 _id, address _recipient) public 
+  paymentNotFinalized(_id)
   stoppable
   auth
   {
@@ -68,6 +74,7 @@ contract ColonyPayment is ColonyStorage {
   }
 
   function setPaymentDomain(uint256 _id, uint256 _domainId) public
+  paymentNotFinalized(_id)
   domainExists(_domainId)
   stoppable
   auth
@@ -76,6 +83,7 @@ contract ColonyPayment is ColonyStorage {
   }
 
   function setPaymentSkill(uint256 _id, uint256 _skillId) public
+  paymentNotFinalized(_id)
   skillExists(_skillId)
   globalSkill(_skillId)
   stoppable

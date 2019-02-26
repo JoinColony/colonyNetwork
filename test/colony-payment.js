@@ -176,6 +176,30 @@ contract("Colony Payment", accounts => {
     });
   });
 
+  describe("when payment is finalized", () => {
+    let paymentId;
+
+    beforeEach(async () => {
+      await colony.addPayment(RECIPIENT, token.address, 40, 1, 0);
+      paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+      await fundColonyWithTokens(colony, token, 40);
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 40, token.address);
+    });
+
+    it("should not allow admins to update recipient", async () => {
+      await checkErrorRevert(colony.setPaymentRecipient(paymentId, accounts[6], { from: COLONY_ADMIN }), "colony-payment-finalized");
+    });
+
+    it("should not allow admins to update to empty domain", async () => {
+      await checkErrorRevert(colony.setPaymentDomain(paymentId, 2, { from: COLONY_ADMIN }), "colony-payment-finalized");
+    });
+
+    it("should not allow admins to update skill", async () => {
+      await checkErrorRevert(colony.setPaymentSkill(paymentId, 1, { from: COLONY_ADMIN }), "colony-payment-finalized");
+    });
+  });
+
   describe("when claiming payments", () => {
     it("should allow recipient to claim their payment and network fee is deducated", async () => {
       await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
