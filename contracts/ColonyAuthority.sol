@@ -98,6 +98,9 @@ contract ColonyAuthority is ColonyRoles {
 
     // Add permissions for the Funding role
     setFundingCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
+
+    // Add permissions for the Architecture role
+    setArchitectureCapability(colony, "addDomain(uint256,uint256,uint256)");
   }
 
   // Colony-wide roles

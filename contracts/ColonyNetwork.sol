@@ -155,6 +155,11 @@ contract ColonyNetwork is ColonyNetworkStorage {
     colony.setFounderRole(msg.sender);
     colony.setRecoveryRole(msg.sender);
 
+    // Assign all permissions in root domain
+    colony.setFundingRole(msg.sender, 1);
+    colony.setAdministrationRole(msg.sender, 1);
+    colony.setArchitectureRole(msg.sender, 1);
+
     // Colony will not have owner
     dsauth.setOwner(address(0x0));
 
@@ -259,6 +264,16 @@ contract ColonyNetwork is ColonyNetworkStorage {
     Skill storage skill = skills[_skillId];
     require(_childSkillIndex < skill.children.length, "colony-network-out-of-range-child-skill-index");
     return skill.children[_childSkillIndex];
+  }
+
+  function getChildSkillIndex(uint _skillId, uint _childSkillId) public view returns (uint256) {
+    Skill storage skill = skills[_skillId];
+    for (uint256 i; i < skill.children.length; i++) {
+      if (skill.children[i] == _childSkillId) {
+        return i;
+      }
+    }
+    return uint256(-1);
   }
 
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public

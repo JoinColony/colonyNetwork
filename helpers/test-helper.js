@@ -699,3 +699,10 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
     })
   );
 }
+
+export async function getChildDomainIndex(colonyNetwork, colony, parentDomainId, childDomainId) {
+  const parentDomain = await colony.getDomain(parentDomainId);
+  const childDomain = await colony.getDomain(childDomainId);
+  const skillIdx = await colonyNetwork.getChildSkillIndex(parentDomain.skillId, childDomain.skillId);
+  return skillIdx;
+}

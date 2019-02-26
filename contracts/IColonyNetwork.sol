@@ -171,6 +171,12 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return skillId Skill Id of the requested child skill
   function getChildSkillId(uint256 _skillId, uint256 _childSkillIndex) public view returns (uint256 skillId);
 
+  /// @notice Get the index of the child skill with id `_childSkillId` for skill with Id `_skillId`
+  /// @param _skillId Id of the skill
+  /// @param _childSkillId Skill Id of the child skill
+  /// @return skillIndex Index of the `skill.children` array with _childSkillId
+  function getChildSkillIndex(uint _skillId, uint _childSkillId) public view returns (uint256 skillIndex);
+
   /// @notice Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle
   /// is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to
   /// @param _active Whether the user wants the active or inactive reputation mining cycle

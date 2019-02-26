@@ -223,7 +223,7 @@ contract("Colony Reward Payouts", accounts => {
       const { colony: newColony, token: newToken } = await setupRandomColony(colonyNetwork);
       await fundColonyWithTokens(newColony, newToken, INITIAL_FUNDING);
 
-      await newColony.addDomain(1);
+      await newColony.addDomain(1, 0, 1);
       const domainCount = await newColony.getDomainCount();
       let domain = await newColony.getDomain(domainCount);
       const domainSkill = domain.skillId;

@@ -25,8 +25,6 @@ contract CommonStorage is DSAuth {
   uint256 constant OWNER_SLOT = 1;
   uint256 constant RESOLVER_SLOT = 2;
 
-  uint8 constant RECOVERY_ROLE = 2;
-
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 

@@ -2,7 +2,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
-import { checkErrorRevert } from "../helpers/test-helper";
+import { checkErrorRevert, getChildDomainIndex } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupFundedTask,
@@ -253,7 +253,7 @@ contract("Meta Colony", accounts => {
 
   describe("when adding domains in the meta colony", () => {
     it("should be able to add new domains as children to the root domain", async () => {
-      await metaColony.addDomain(1);
+      await metaColony.addDomain(1, 0, 1);
       const newDomainId = await metaColony.getDomainCount();
 
       const skillCount = await colonyNetwork.getSkillCount();
@@ -276,8 +276,10 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
-      await metaColony.addDomain(1);
-      await checkErrorRevert(metaColony.addDomain(2), "colony-parent-domain-not-root");
+      await metaColony.addDomain(1, 0, 1);
+      const childIdx = await getChildDomainIndex(colonyNetwork, metaColony, 1, 2);
+
+      await checkErrorRevert(metaColony.addDomain(1, childIdx, 2), "colony-parent-domain-not-root");
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
@@ -292,13 +294,13 @@ contract("Meta Colony", accounts => {
     });
 
     it("someone who does not have founder role should not be able to add domains", async () => {
-      await checkErrorRevert(colony.addDomain(1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.addDomain(1, 0, 1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
     it("should be able to add new domains as children to the root domain", async () => {
-      await colony.addDomain(1);
-      await colony.addDomain(1);
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, 0, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(7);
@@ -355,7 +357,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should be able to set domain on task", async () => {
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
       const taskId = await makeTask({ colony });
 
       await executeSignedTaskChange({
@@ -372,7 +374,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT allow a non-manager to set domain on task", async () => {
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
       const taskId = await makeTask({ colony });
       await checkErrorRevert(
         executeSignedTaskChange({

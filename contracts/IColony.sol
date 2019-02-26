@@ -71,6 +71,8 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   function setFundingRole(address _user, uint256 _domainId) public;
 
+  function setArchitectureRole(address _user, uint256 _domainId) public;
+
   /// @notice Remove colony admin.
   /// Can only be called by founder role.
   /// @param _user User we want to remove admin role from
@@ -106,9 +108,11 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
+  /// @param _permissionDomainId The domain ID I am leveraging my reputation in to take this action
+  /// @param _domainProofIndex The index that the _domainId is relative to _parentDomainId
   /// @param _parentDomainId Id of the domain under which the new one will be added
   /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1
-  function addDomain(uint256 _parentDomainId) public;
+  function addDomain(uint256 _permissionDomainId, uint256 _domainProofIndex, uint256 _parentDomainId) public;
 
   /// @notice Get a domain by id
   /// @param _id Id of the domain which details to get

@@ -135,8 +135,8 @@ contract("Colony Funding", accounts => {
 
     it("should not allow more tokens to leave a pot than the pot has (even if the colony has that many)", async () => {
       await fundColonyWithTokens(colony, otherToken, 100);
-      await colony.addDomain(1);
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, 0, 1);
 
       await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 40, otherToken.address);
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, otherToken.address), "ds-math-sub-underflow");
@@ -428,7 +428,7 @@ contract("Colony Funding", accounts => {
       // Note that the reward pot with id 0 is NOT included in the Colony Funding funding pots count
       expect(potCountBefore).to.eq.BN(1);
 
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
       const potCountAfterAddingDomain = await colony.getFundingPotCount();
       expect(potCountAfterAddingDomain).to.eq.BN(2);
 
@@ -536,8 +536,8 @@ contract("Colony Funding", accounts => {
     it("should not allow more ether to leave a pot than the pot has (even if the colony has that many)", async () => {
       await colony.send(100);
       await colony.claimColonyFunds(ZERO_ADDRESS);
-      await colony.addDomain(1);
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, 0, 1);
 
       await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 40, ZERO_ADDRESS);
       await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, ZERO_ADDRESS), "ds-math-sub-underflow");

@@ -53,6 +53,11 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), true);
   }
 
+  // TODO: Permission this correctly
+  function setArchitectureRole(address _user, uint256 _domainId) public stoppable {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), true);
+  }
+
   // Can only be called by the founder role.
   function removeAdminRole(address _user) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), false);
@@ -175,9 +180,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
-  function addDomain(uint256 _parentDomainId) public
+  function addDomain(uint256 _permissionDomainId, uint256 _domainProofIndex, uint256 _parentDomainId) public
   stoppable
-  auth
+  auth2(_permissionDomainId, _parentDomainId, _domainProofIndex)
   domainExists(_parentDomainId)
   {
     // Note: Remove when we want to allow more domain hierarchy levels
