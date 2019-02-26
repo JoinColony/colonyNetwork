@@ -118,7 +118,14 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
     uint currentTotalAmount = fundingPot.payouts[_token];
     fundingPot.payouts[_token] = _amount;
+    uint payoutsWeCannotMakePrev = fundingPot.payoutsWeCannotMake;
+
     updatePayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
+    
+    // If payoutsWeCannotMake changes from non-zero to zero we have sufficient funding
+    if (payoutsWeCannotMakePrev > 0 && fundingPot.payoutsWeCannotMake == 0) {
+      finalizePayment(fundingPot.associatedTypeId);
+    }
   }
 
   function getFundingPotCount() public view returns (uint256 count) {

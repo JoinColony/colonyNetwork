@@ -247,5 +247,39 @@ contract("Colony Payment", accounts => {
       await colony.moveFundsBetweenPots(1, payment.fundingPotId, 9999, token.address);
       await checkErrorRevert(colony.claimPayment(paymentId, token.address), "colony-payment-not-finalized");
     });
+
+    it("should allow multiple payouts to be claimed", async () => {
+      await colony.addPayment(RECIPIENT, token.address, 200, 1, 0, { from: COLONY_ADMIN });
+      const paymentId = await colony.getPaymentCount();
+      let payment = await colony.getPayment(paymentId);
+
+      await colony.setPayout(payment.fundingPotId, otherToken.address, 100);
+      await fundColonyWithTokens(colony, otherToken, 101);
+      let fundingPot = await colony.getFundingPot(payment.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(2);
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 199, token.address);
+      fundingPot = await colony.getFundingPot(payment.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(2);
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 100, otherToken.address);
+      fundingPot = await colony.getFundingPot(payment.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
+
+      await colony.setPayout(payment.fundingPotId, token.address, 199);
+      fundingPot = await colony.getFundingPot(payment.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
+      payment = await colony.getPayment(paymentId);
+      expect(payment.finalized).to.be.true;
+
+      const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
+      const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
+      await colony.claimPayment(paymentId, token.address);
+
+      const recipientBalanceAfter = await token.balanceOf(RECIPIENT);
+      const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
+      expect(recipientBalanceAfter.sub(recipientBalanceBefore)).to.eq.BN(new BN("197"));
+      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(new BN("2"));
+    });
   });
 });
