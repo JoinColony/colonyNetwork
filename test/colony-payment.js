@@ -54,6 +54,7 @@ contract("Colony Payment", accounts => {
       const fundingPot = await colony.getFundingPot(fundingPotId);
       expect(fundingPot.associatedType).to.eq.BN(3); // 3 = FundingPotAssociatedType.Payment
       expect(fundingPot.associatedTypeId).to.eq.BN(paymentsCountAfter);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       const payout = await colony.getFundingPotPayout(fundingPotId, token.address);
       expect(payout).to.eq.BN(WAD);
@@ -65,6 +66,10 @@ contract("Colony Payment", accounts => {
 
     it("should not allow admins to add payment with no recipient set", async () => {
       await checkErrorRevert(colony.addPayment(ZERO_ADDRESS, token.address, WAD, 1, 0, { from: COLONY_ADMIN }), "colony-payment-invalid-recipient");
+    });
+
+    it("should not allow admins to add payment with zero token amount set", async () => {
+      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, 0, 1, 0, { from: COLONY_ADMIN }), "colony-payment-invalid-amount");
     });
 
     it("should not allow non-admins to add payment", async () => {
@@ -152,6 +157,23 @@ contract("Colony Payment", accounts => {
       const fundingPotBalanceForToken = await colony.getFundingPotBalance(payment.fundingPotId, token.address);
       expect(fundingPotBalanceForToken).to.eq.BN(40);
     });
+
+    it("should set the payment as finalized when it is fully funded", async () => {
+      await colony.addPayment(RECIPIENT, token.address, 40, 1, 0);
+      const paymentId = await colony.getPaymentCount();
+      let payment = await colony.getPayment(paymentId);
+      expect(payment.finalized).to.be.false;
+
+      await fundColonyWithTokens(colony, token, 40);
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 30, token.address);
+      payment = await colony.getPayment(paymentId);
+      expect(payment.finalized).to.be.false;
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 10, token.address);
+      payment = await colony.getPayment(paymentId);
+      expect(payment.finalized).to.be.true;
+    });
   });
 
   describe("when claiming payments", () => {
@@ -189,24 +211,13 @@ contract("Colony Payment", accounts => {
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(new BN("10000000000000001"));
     });
 
-    it("should error when payment is insufficiently funded", async () => {
+    it("should error when payment is insufficiently funded (i.e. not finalized)", async () => {
       await colony.addPayment(RECIPIENT, token.address, 10000, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
       await colony.moveFundsBetweenPots(1, payment.fundingPotId, 9999, token.address);
-      await checkErrorRevert(colony.claimPayment(paymentId, token.address), "colony-payment-insufficient-funding");
-    });
-
-    it("should error if payment already claimed", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
-      const paymentId = await colony.getPaymentCount();
-      const payment = await colony.getPayment(paymentId);
-
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
-
-      await colony.claimPayment(paymentId, token.address, { from: RECIPIENT });
-      await checkErrorRevert(colony.claimPayment(paymentId, token.address, { from: RECIPIENT }), "colony-payment-already-claimed");
+      await checkErrorRevert(colony.claimPayment(paymentId, token.address), "colony-payment-not-finalized");
     });
   });
 });

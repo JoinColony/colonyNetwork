@@ -29,13 +29,14 @@ contract ColonyPayment is ColonyStorage {
   returns (uint256)
   {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
+    require(_amount > 0, "colony-payment-invalid-amount");
     paymentCount += 1;
-    
+
     fundingPotCount += 1;
     fundingPots[fundingPotCount] = FundingPot({
       associatedType: FundingPotAssociatedType.Payment,
       associatedTypeId: paymentCount,
-      payoutsWeCannotMake: 0
+      payoutsWeCannotMake: 1
     });
 
     fundingPots[fundingPotCount].payouts[_token] = _amount;
@@ -83,9 +84,9 @@ contract ColonyPayment is ColonyStorage {
     payments[_id].skills[0] = _skillId;
   }
 
-  function getPayment(uint256 _id) public view returns(address, uint256, uint256, uint256[] memory) {
+  function getPayment(uint256 _id) public view returns(address, bool, uint256, uint256, uint256[] memory) {
     Payment storage payment = payments[_id];
-    return (payment.recipient, payment.fundingPotId, payment.domainId, payment.skills);
+    return (payment.recipient, payment.finalized, payment.fundingPotId, payment.domainId, payment.skills);
   }
 
   function getPaymentCount() public view returns (uint256) {

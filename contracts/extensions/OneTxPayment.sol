@@ -47,7 +47,7 @@ contract OneTxPayment {
     // Add a new payment
     uint256 paymentId = colony.addPayment(_worker, _token, _amount, _domainId, _skillId);
     uint fundingPotId;
-    (,fundingPotId,,) = colony.getPayment(paymentId);
+    (,,fundingPotId,,) = colony.getPayment(paymentId);
     ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
     // Fund the payment
     colony.moveFundsBetweenPots(domain.fundingPotId, fundingPotId, _amount, _token);
