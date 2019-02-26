@@ -249,22 +249,6 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
     });
 
-    it("should set the correct domain reputation change amount in log for payments", async () => {
-      const RECIPIENT = accounts[3];
-      await metaColony.addPayment(RECIPIENT, clnyToken.address, WAD, 1, 0);
-      const paymentId = await metaColony.getPaymentCount();
-
-      const payment = await metaColony.getPayment(paymentId);
-      await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
-      await metaColony.claimPayment(paymentId, clnyToken.address);
-
-      const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
-      expect(repLogEntryManager.user).to.equal(RECIPIENT);
-      expect(repLogEntryManager.amount).to.eq.BN(WAD);
-
-      // TODO test skill reputation is logged and also non colony home token is not logged
-    });
-
     it("should not be able to be appended by an account that is not a colony", async () => {
       const lengthBefore = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       await checkErrorRevert(colonyNetwork.appendReputationUpdateLog(OTHER, 1, 2), "colony-caller-must-be-colony");
@@ -342,6 +326,27 @@ contract("Reputation Updates", accounts => {
       // Entries for manager and evaluator only + 1 for miner reward
       const numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       expect(numUpdates).to.eq.BN(3);
+    });
+
+    it("should set the correct domain and skill reputation change amount in log for payments", async () => {
+      const RECIPIENT = accounts[3];
+      await metaColony.addPayment(RECIPIENT, clnyToken.address, WAD, 1, 7);
+      const paymentId = await metaColony.getPaymentCount();
+
+      const payment = await metaColony.getPayment(paymentId);
+      await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
+      await metaColony.claimPayment(paymentId, clnyToken.address);
+
+      let repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
+      expect(repLogEntryManager.user).to.equal(RECIPIENT);
+      expect(repLogEntryManager.amount).to.eq.BN(WAD);
+      const { skillId } = await metaColony.getDomain(1);
+      expect(repLogEntryManager.skillId).to.eq.BN(skillId);
+
+      repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
+      expect(repLogEntryManager.user).to.equal(RECIPIENT);
+      expect(repLogEntryManager.amount).to.eq.BN(WAD);
+      expect(repLogEntryManager.skillId).to.eq.BN(7);
     });
   });
 });
