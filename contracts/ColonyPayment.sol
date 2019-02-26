@@ -46,11 +46,11 @@ contract ColonyPayment is ColonyStorage {
     payment.domainId = _domainId;
     payment.skills = new uint256[](1);
 
+    payments[paymentCount] = payment;
+
     if (_skillId > 0) {
       setPaymentSkill(paymentCount, _skillId);
     }
-
-    payments[paymentCount] = payment;
 
     emit FundingPotAdded(fundingPotCount);
     emit PaymentAdded(paymentCount);
@@ -75,6 +75,7 @@ contract ColonyPayment is ColonyStorage {
   }
 
   function setPaymentSkill(uint256 _id, uint256 _skillId) public
+  skillExists(_skillId)
   globalSkill(_skillId)
   stoppable
   auth
@@ -82,8 +83,8 @@ contract ColonyPayment is ColonyStorage {
     payments[_id].skills[0] = _skillId;
   }
 
-  function getPayment(uint256 id) public view returns(address, uint256, uint256, uint256[] memory) {
-    Payment storage payment = payments[id];
+  function getPayment(uint256 _id) public view returns(address, uint256, uint256, uint256[] memory) {
+    Payment storage payment = payments[_id];
     return (payment.recipient, payment.fundingPotId, payment.domainId, payment.skills);
   }
 

@@ -19,6 +19,7 @@ pragma solidity >=0.4.23 <0.5.0;
 pragma experimental ABIEncoderV2;
 
 import "./../IColony.sol";
+import "./../../lib/dappsys/roles.sol";
 
 
 contract OneTxPayment {
@@ -31,14 +32,25 @@ contract OneTxPayment {
     uint256 _skillId) public 
   {
     IColony colony = IColony(_colony);
+    // Check caller is able to call makePayment on the colony
+    // msg.sig is the same for this call as it is for the one we make below, so may as well use it here
+    DSRoles authority = DSRoles(colony.authority());
+    require(
+      authority.canCall(
+        msg.sender,
+        _colony,
+        bytes4(keccak256("addPayment(address,address,uint256,uint256,uint256)"))
+      ),
+      "colony-one-tx-payment-not-authorized"
+    );
 
     // Add a new payment
     uint256 paymentId = colony.addPayment(_worker, _token, _amount, _domainId, _skillId);
-    uint paymentFundingPotId;
-    (,paymentFundingPotId,,) = colony.getPayment(paymentId);
+    uint fundingPotId;
+    (,fundingPotId,,) = colony.getPayment(paymentId);
     ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
     // Fund the payment
-    colony.moveFundsBetweenPots(domain.fundingPotId, paymentFundingPotId, _amount, _token);
+    colony.moveFundsBetweenPots(domain.fundingPotId, fundingPotId, _amount, _token);
     // Claim payout on behalf of the recipient
     colony.claimPayment(paymentId, _token);
   }
