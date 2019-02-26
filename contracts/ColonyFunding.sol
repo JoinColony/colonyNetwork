@@ -94,10 +94,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     }
   }
 
-  function claimPayment(uint256 _paymentId, address _token) public
+  function claimPayment(uint256 _id, address _token) public
   stoppable
   {
-    Payment storage payment = payments[_paymentId];
+    Payment storage payment = payments[_id];
 
     require (!payment.claimed, "colony-payment-already-claimed");
     payment.claimed = true;

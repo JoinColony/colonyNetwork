@@ -92,16 +92,14 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Get the `nParents` and `nChildren` of skill with id `_skillId`
   /// @param _skillId Id of the skill
-  /// @return nParents uint128`skill.nParents` i.e. the number of parent skills of skill with id `_skillId`
-  /// @return nChildren uint128`skill.nChildren` i.e. the number of child skills of skill with id `_skillId`
-  /// @return isGlobalSkill true if specified skill is a global skill, otherwise false
+  /// @return skill The Skill struct
   function getSkill(uint256 _skillId) public view returns (Skill memory skill);
 
   /// @notice Get whether the skill with id _skillId is public or not.
   /// @param _skillId Id of the skill
-  /// @return isGlobalSkill bool
+  /// @return result bool
   /// @dev Returns false if skill does not exist
-  function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
+  function isGlobalSkill(uint256 _skillId) public view returns (bool result);
 
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or
