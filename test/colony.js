@@ -139,12 +139,12 @@ contract("Colony", accounts => {
       const currentFounder = accounts[0];
       const newFounder = accounts[2];
 
-      let hasRole = await colony.hasUserRole(currentFounder, founderRole);
+      let hasRole = await colony.hasUserRole(currentFounder, 1, founderRole);
       expect(hasRole, `${currentFounder} does not have founder role`).to.be.true;
 
       await colony.setFounderRole(newFounder);
 
-      hasRole = await colony.hasUserRole(newFounder, founderRole);
+      hasRole = await colony.hasUserRole(newFounder, 1, founderRole);
       expect(hasRole, `Founder role not transfered to ${newFounder}`).to.be.true;
     });
 
@@ -162,7 +162,7 @@ contract("Colony", accounts => {
 
       await colony.setAdminRole(user5, { from: user1 });
 
-      const hasRole = await colony.hasUserRole(user5, adminRole);
+      const hasRole = await colony.hasUserRole(user5, 1, adminRole);
       expect(hasRole, `Admin role not assigned to ${user5}`).to.be.true;
     });
 
@@ -173,12 +173,12 @@ contract("Colony", accounts => {
 
       await colony.setAdminRole(user1);
 
-      let hasRole = await colony.hasUserRole(user1, adminRole);
+      let hasRole = await colony.hasUserRole(user1, 1, adminRole);
       expect(hasRole, `Admin role not assigned to ${user1}`).to.be.true;
 
       await colony.removeAdminRole(user1);
 
-      hasRole = await colony.hasUserRole(user1, adminRole);
+      hasRole = await colony.hasUserRole(user1, 1, adminRole);
       expect(!hasRole, `Admin role not removed from ${user1}`).to.be.true;
     });
 
@@ -191,14 +191,14 @@ contract("Colony", accounts => {
       await colony.setAdminRole(user1);
       await colony.setAdminRole(user2);
 
-      let hasRole = await colony.hasUserRole(user1, adminRole);
+      let hasRole = await colony.hasUserRole(user1, 1, adminRole);
       expect(hasRole, `Admin role not assigned to ${user1}`).to.be.true;
-      hasRole = await colony.hasUserRole(user2, adminRole);
+      hasRole = await colony.hasUserRole(user2, 1, adminRole);
       expect(hasRole, `Admin role not assigned to ${user2}`).to.be.true;
 
       await checkErrorRevert(colony.removeAdminRole(user1, { from: user2 }), "ds-auth-unauthorized");
 
-      hasRole = await colony.hasUserRole(user1, adminRole);
+      hasRole = await colony.hasUserRole(user1, 1, adminRole);
       expect(hasRole, `${user1} is removed from admin role from another admin`).to.be.true;
     });
 

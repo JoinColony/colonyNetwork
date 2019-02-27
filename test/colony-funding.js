@@ -49,7 +49,6 @@ contract("Colony Funding", accounts => {
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
-    await colony.setFundingRole(MANAGER, 1);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await DSToken.new(otherTokenArgs[0]);

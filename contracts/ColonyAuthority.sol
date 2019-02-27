@@ -28,6 +28,7 @@ contract ColonyAuthority is ColonyRoles {
   uint8 constant administrationRole = uint8(ColonyDataTypes.ColonyRole.Administration);
   uint8 constant arbitrationRole = uint8(ColonyDataTypes.ColonyRole.Arbitration);
   uint8 constant architectureRole = uint8(ColonyDataTypes.ColonyRole.Architecture);
+  uint8 constant architectureSubdomainRole = uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain);
   uint8 constant rootRole = uint8(ColonyDataTypes.ColonyRole.Root);
 
   constructor(address colony) public CommonAuthority(colony) {
@@ -101,6 +102,15 @@ contract ColonyAuthority is ColonyRoles {
 
     // Add permissions for the Architecture role
     setArchitectureCapability(colony, "addDomain(uint256,uint256,uint256)");
+    setArchitectureSubdomainCapability(colony, "setFundingRole(uint256,uint256,address,uint256)");
+    setArchitectureSubdomainCapability(colony, "setAdministrationRole(uint256,uint256,address,uint256)");
+    setArchitectureSubdomainCapability(colony, "setArchitectureRole(uint256,uint256,address,uint256)");
+
+    // Add permissions for the Root role
+    setRootCapability(colony, "setFundingRole(uint256,uint256,address,uint256)");
+    setRootCapability(colony, "setAdministrationRole(uint256,uint256,address,uint256)");
+    setRootCapability(colony, "setArchitectureRole(uint256,uint256,address,uint256)");
+    setRootCapability(colony, "setRootRole(address)");
   }
 
   // Colony-wide roles
@@ -127,6 +137,10 @@ contract ColonyAuthority is ColonyRoles {
 
   function setArchitectureCapability(address colony, bytes memory sig) private {
     addRoleCapability(architectureRole, colony, sig);
+  }
+
+  function setArchitectureSubdomainCapability(address colony, bytes memory sig) private {
+    addRoleCapability(architectureSubdomainRole, colony, sig);
   }
 
   function setRootCapability(address colony, bytes memory sig) private {

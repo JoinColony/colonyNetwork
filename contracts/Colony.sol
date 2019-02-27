@@ -43,19 +43,41 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyAdminRoleSet(_user);
   }
 
-  // TODO: Permission this correctly
-  function setAdministrationRole(address _user, uint256 _domainId) public stoppable {
+  function setAdministrationRole(
+    uint256 _parentDomainId,
+    uint256 _domainProofIndex,
+    address _user,
+    uint256 _domainId
+  ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
+  {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), true);
   }
 
-  // TODO: Permission this correctly
-  function setFundingRole(address _user, uint256 _domainId) public stoppable {
+  function setFundingRole(
+    uint256 _parentDomainId,
+    uint256 _domainProofIndex,
+    address _user,
+    uint256 _domainId
+  ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
+  {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), true);
   }
 
-  // TODO: Permission this correctly
-  function setArchitectureRole(address _user, uint256 _domainId) public stoppable {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), true);
+  function setArchitectureRole(
+    uint256 _parentDomainId,
+    uint256 _domainProofIndex,
+    address _user,
+    uint256 _domainId
+  ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
+  {
+    // Because this permission has some restrictions on domains of action, we transparently implement it as two roles
+    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
+    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), true);
+    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.ArchitectureSubdomain), true);
+  }
+
+  function setRootRole(address _user) public stoppable auth2(1, 1, 0) {
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), true);
   }
 
   // Can only be called by the founder role.
@@ -65,8 +87,8 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyAdminRoleRemoved(_user);
   }
 
-  function hasUserRole(address _user, ColonyRole _role) public view returns (bool) {
-    return ColonyAuthority(address(authority)).hasUserRole(_user, uint8(_role));
+  function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {
+    return ColonyAuthority(address(authority)).hasUserRole(_user, _domainId, uint8(_role));
   }
 
   function getColonyNetwork() public view returns (address) {

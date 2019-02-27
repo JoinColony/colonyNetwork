@@ -157,7 +157,6 @@ contract("All", function(accounts) {
       });
 
       // moveFundsBetweenPots
-      await colony.setFundingRole(MANAGER, 1);
       await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 190, token.address);
 
       // setTaskManagerPayout

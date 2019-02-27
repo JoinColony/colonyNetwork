@@ -178,6 +178,9 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     if (parentDomainId != childDomainId) {
       require(validateDomainProof(parentDomainId, childDomainId, childIndex), "ds-auth-invalid-domain-proof");
     }
+    if (canCallBecauseArchitect(msg.sender, parentDomainId, msg.sig)) {
+      require(parentDomainId != childDomainId, "ds-auth-only-authorized-in-child-domain");
+    }
     _;
   }
 
@@ -189,6 +192,10 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   function validateDomainProof(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) internal view returns (bool) {
     uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[parentDomainId].skillId, childIndex);
     return childSkillId == domains[childDomainId].skillId;
+  }
+
+  function canCallBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
+    return ColonyRoles(authority).canCallBecause(src, domainId, uint8(ColonyRole.ArchitectureSubdomain), address(this), sig);
   }
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {

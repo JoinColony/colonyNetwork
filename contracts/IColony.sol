@@ -67,11 +67,13 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _user User we want to give an admin role to
   function setAdminRole(address _user) public;
 
-  function setAdministrationRole(address _user, uint256 _domainId) public;
+  function setAdministrationRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId) public;
 
-  function setFundingRole(address _user, uint256 _domainId) public;
+  function setFundingRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId) public;
 
-  function setArchitectureRole(address _user, uint256 _domainId) public;
+  function setArchitectureRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId) public;
+
+  function setRootRole(address _user) public;
 
   /// @notice Remove colony admin.
   /// Can only be called by founder role.
@@ -81,8 +83,9 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Check whether a given user has a given role for the colony.
   /// Calls the function of the same name on the colony's authority contract.
   /// @param _user The user whose role we want to check
+  /// @param _domainId The domain where we want to check for the role
   /// @param _role The role we want to check for
-  function hasUserRole(address _user, ColonyRole _role) public view returns (bool hasRole);
+  function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool hasRole);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
   /// @dev Sets the reward inverse to the uint max 2**256 - 1

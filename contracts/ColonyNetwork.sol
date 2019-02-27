@@ -156,9 +156,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     colony.setRecoveryRole(msg.sender);
 
     // Assign all permissions in root domain
-    colony.setFundingRole(msg.sender, 1);
-    colony.setAdministrationRole(msg.sender, 1);
-    colony.setArchitectureRole(msg.sender, 1);
+    colony.setRootRole(msg.sender);
+    colony.setFundingRole(1, 0, msg.sender, 1);
+    colony.setAdministrationRole(1, 0, msg.sender, 1);
+    colony.setArchitectureRole(1, 0, msg.sender, 1);
 
     // Colony will not have owner
     dsauth.setOwner(address(0x0));
