@@ -51,7 +51,7 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
       lastAgreeJustifications.childReputationProof.siblings = lastAgreeJustifications.childAdjacentReputationProof.siblings;
     }
 
-    return repCycle.respondToChallenge(
+    const tx = await repCycle.respondToChallenge(
       [
         this.responseToFalsify === 0 ? this.responseValue : round,
         this.responseToFalsify === 1 ? this.responseValue : index,
@@ -99,6 +99,7 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
       this.responseToFalsify === 40 ? this.responseValue : lastAgreeJustifications.adjacentReputationProof.siblings,
       { gasLimit: 4000000 }
     );
+    return tx.wait();
   }
 
 }
