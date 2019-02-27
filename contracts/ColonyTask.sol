@@ -95,7 +95,7 @@ contract ColonyTask is ColonyStorage {
   domainExists(_domainId)
   {
     taskCount += 1;
-    
+
     fundingPotCount += 1;
     fundingPots[fundingPotCount] = FundingPot({
       associatedType: FundingPotAssociatedType.Task,
@@ -297,7 +297,7 @@ contract ColonyTask is ColonyStorage {
     return taskWorkRatings[_id].secret[_role];
   }
 
-  function setTaskManagerRole(uint256 _id, address _user) public
+  function setTaskManagerRole(uint256 _id, address payable _user) public
   stoppable
   self()
   isAdmin(_user)
@@ -305,14 +305,14 @@ contract ColonyTask is ColonyStorage {
     setTaskRoleUser(_id, TaskRole.Manager, _user);
   }
 
-  function setTaskEvaluatorRole(uint256 _id, address _user) public stoppable self {
+  function setTaskEvaluatorRole(uint256 _id, address payable _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
     Role storage evaluatorRole = tasks[_id].roles[uint8(TaskRole.Evaluator)];
     require(evaluatorRole.user == address(0x0), "colony-task-evaluator-role-already-assigned");
     setTaskRoleUser(_id, TaskRole.Evaluator, _user);
   }
 
-  function setTaskWorkerRole(uint256 _id, address _user) public stoppable self {
+  function setTaskWorkerRole(uint256 _id, address payable _user) public stoppable self {
     // Can only assign role if no one is currently assigned to it
     Role storage workerRole = tasks[_id].roles[uint8(TaskRole.Worker)];
     require(workerRole.user == address(0x0), "colony-task-worker-role-already-assigned");
@@ -587,7 +587,7 @@ contract ColonyTask is ColonyStorage {
     }
   }
 
-  function setTaskRoleUser(uint256 _id, TaskRole _role, address _user) private
+  function setTaskRoleUser(uint256 _id, TaskRole _role, address payable _user) private
   taskExists(_id)
   taskNotComplete(_id)
   {

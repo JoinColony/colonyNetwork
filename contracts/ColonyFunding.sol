@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23 <0.5.0;
+pragma solidity >=0.5.3;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -110,7 +110,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       task.roles[_role].user.transfer(remainder);
       // Fee goes directly to Meta Colony
       IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      address metaColonyAddress = colonyNetworkContract.getMetaColony();
+      address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
       metaColonyAddress.transfer(fee);
     } else {
       // Payout token
@@ -382,7 +382,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
-    
+
     Task storage task = tasks[_id];
     uint totalTokenPayout = getTotalTaskPayout(_id, _token);
     uint tokenPot = fundingPots[task.fundingPotId].balance[_token];

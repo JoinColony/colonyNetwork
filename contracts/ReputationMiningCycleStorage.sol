@@ -10,12 +10,12 @@
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
- 
+
   You should have received a copy of the GNU General Public License
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23 <0.5.0;
+pragma solidity >=0.4.23 ;
 
 import "../lib/dappsys/auth.sol";
 import "./ReputationMiningCycleDataTypes.sol";
@@ -25,7 +25,7 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
   // Address of the Resolver contract used by EtherRouter for lookups and routing
   address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
 
-  address colonyNetworkAddress; // Storage slot 3
+  address payable colonyNetworkAddress; // Storage slot 3
   address tokenLockingAddress; // Storage slot 4
   address clnyTokenAddress; // Storage slot 5
 
