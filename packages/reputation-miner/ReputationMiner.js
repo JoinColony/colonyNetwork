@@ -26,7 +26,7 @@ class ReputationMiner {
     this.useJsTree = useJsTree;
     if (!this.useJsTree) {
       // If this require is global, line numbers are broken in all our tests. If we move it here, it's only an issue if we're not
-      // using the JS tree. There is an issue open at ganache-core about this, and this require will have to remain here until it's fixed. 
+      // using the JS tree. There is an issue open at ganache-core about this, and this require will have to remain here until it's fixed.
       // https://github.com/trufflesuite/ganache-core/issues/287
       const ganache = require("ganache-core"); // eslint-disable-line global-require
       const ganacheProvider = ganache.provider({
@@ -173,7 +173,12 @@ class ReputationMiner {
    */
   getAdjacentKey(key) {
     const sortedHashes = Object.keys(this.reverseReputationHashLookup).sort();
-    const keyPosition = sortedHashes.indexOf(soliditySha3(key));
+    let keyPosition = sortedHashes.indexOf(soliditySha3(key));
+    if (keyPosition === -1) {
+      sortedHashes.push(soliditySha3(key))
+      sortedHashes.sort()
+      keyPosition = sortedHashes.indexOf(soliditySha3(key));
+    }
 
     let adjacentKeyPosition;
     if (keyPosition === 0){
@@ -211,6 +216,8 @@ class ReputationMiner {
     let jhLeafValue;
     let justUpdatedProof;
     let originReputationProof;
+    let originAdjacentReputationProof = await this.getReputationProofObject("0x00");;
+    let childAdjacentReputationProof = await this.getReputationProofObject("0x00");;
     let childReputationProof = await this.getReputationProofObject("0x00");
     let adjacentReputationProof = await this.getReputationProofObject("0x00");
     let logEntry;
@@ -258,7 +265,7 @@ class ReputationMiner {
         const relativeUpdateNumber = updateNumber.sub(logEntry.nPreviousUpdates).sub(this.nReputationsBeforeLatestLog);
         // Child updates are two sets: colonywide sums for children - located in the first nChildUpdates,
         // and user-specific updates located in the first nChildUpdates of the second half of the nUpdates set.
-        
+
         // Get current reputation amount of the origin skill, which is positioned at the end of the current logEntry nUpdates.
         const originSkillUpdateNumber = updateNumber.sub(relativeUpdateNumber).add(nUpdates).sub(1);
         const originSkillKey = await this.getKeyForUpdateNumber(originSkillUpdateNumber);
@@ -272,6 +279,10 @@ class ReputationMiner {
           originReputation = ethers.utils.bigNumberify(`0x${originReputationValueBytes.slice(2, 66)}`);
         } else {
           originReputation = ethers.utils.bigNumberify("0");
+          // Get the proof for the reputation that exists in the tree that would be the adjacent reputation.
+          // We use this to prove that the origin reputation doesn't exist
+          const originAdjacentKey = await this.getAdjacentKey(originSkillKey);
+          originAdjacentReputationProof = await this.getReputationProofObject(originAdjacentKey);
         }
 
         if (
@@ -295,6 +306,9 @@ class ReputationMiner {
             const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
             if (keyExists) {
               reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
+            } else {
+              const childAdjacentKey = await this.getAdjacentKey(keyUsedInCalculations);
+              childAdjacentReputationProof = await this.getReputationProofObject(childAdjacentKey);
             }
 
             amount = amount.mul(reputation).div(originReputation);
@@ -305,8 +319,8 @@ class ReputationMiner {
             }
           }
         } else if (originReputation.lt(amount.mul(-1))) {
-          // If the 'if' above didn't match, it's either an origin or a parent skill update. 
-          // We can't lose more reputation in an origin or parent skill than we have in the origin skill. 
+          // If the 'if' above didn't match, it's either an origin or a parent skill update.
+          // We can't lose more reputation in an origin or parent skill than we have in the origin skill.
           // Cap change based on origin skill if needed.
           amount = originReputation.mul(-1);
         }
@@ -340,6 +354,7 @@ class ReputationMiner {
       const adjacentKey = await this.getAdjacentKey(key);
       adjacentReputationProof = await this.getReputationProofObject(adjacentKey);
     }
+
     this.justificationHashes[ReputationMiner.getHexString(updateNumber, 64)] = JSON.parse(
       JSON.stringify({
         interimHash,
@@ -350,7 +365,9 @@ class ReputationMiner {
         newestReputationProof,
         originReputationProof,
         childReputationProof,
-        adjacentReputationProof
+        adjacentReputationProof,
+        originAdjacentReputationProof,
+        childAdjacentReputationProof
       })
     );
     // console.log("updateNumber", updateNumber.toString());
@@ -875,49 +892,69 @@ class ReputationMiner {
     if (lastAgreeIdx.gte(this.nReputationsBeforeLatestLog)) {
       logEntryNumber = await this.getLogEntryNumberForLogUpdateNumber(lastAgreeIdx.sub(this.nReputationsBeforeLatestLog));
     }
+    const lastAgreeJustifications = this.justificationHashes[lastAgreeKey];
+    const firstDisagreeJustifications = this.justificationHashes[firstDisagreeKey];
+
+    if (this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key !== "0x00") {
+      // We generated the origin-adjacent reputation proof. We replace the origin proof with the originAdjacentReputationProof
+      lastAgreeJustifications.originReputationProof.uid = lastAgreeJustifications.originAdjacentReputationProof.uid;
+      lastAgreeJustifications.originReputationProof.branchMask = lastAgreeJustifications.originAdjacentReputationProof.branchMask;
+      lastAgreeJustifications.originReputationProof.siblings = lastAgreeJustifications.originAdjacentReputationProof.siblings;
+    }
+
+    if (this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key !== "0x00") {
+      // We generated the child-adjacent reputation proof. We replace the child proof with the childAdjacentReputationProof
+      lastAgreeJustifications.childReputationProof.uid = lastAgreeJustifications.childAdjacentReputationProof.uid;
+      lastAgreeJustifications.childReputationProof.branchMask = lastAgreeJustifications.childAdjacentReputationProof.branchMask;
+      lastAgreeJustifications.childReputationProof.siblings = lastAgreeJustifications.childAdjacentReputationProof.siblings;
+    }
 
     return repCycle.respondToChallenge(
       [
         round,
         index,
-        this.justificationHashes[firstDisagreeKey].justUpdatedProof.branchMask,
-        this.justificationHashes[lastAgreeKey].nextUpdateProof.nNodes,
+        firstDisagreeJustifications.justUpdatedProof.branchMask,
+        lastAgreeJustifications.nextUpdateProof.nNodes,
         ReputationMiner.getHexString(agreeStateBranchMask),
-        this.justificationHashes[firstDisagreeKey].justUpdatedProof.nNodes,
+        firstDisagreeJustifications.justUpdatedProof.nNodes,
         ReputationMiner.getHexString(disagreeStateBranchMask),
-        this.justificationHashes[lastAgreeKey].newestReputationProof.branchMask,
+        lastAgreeJustifications.newestReputationProof.branchMask,
         logEntryNumber,
         "0",
-        this.justificationHashes[lastAgreeKey].originReputationProof.branchMask,
-        this.justificationHashes[lastAgreeKey].nextUpdateProof.reputation,
-        this.justificationHashes[lastAgreeKey].nextUpdateProof.uid,
-        this.justificationHashes[firstDisagreeKey].justUpdatedProof.reputation,
-        this.justificationHashes[firstDisagreeKey].justUpdatedProof.uid,
-        this.justificationHashes[lastAgreeKey].newestReputationProof.reputation,
-        this.justificationHashes[lastAgreeKey].newestReputationProof.uid,
-        this.justificationHashes[lastAgreeKey].originReputationProof.reputation,
-        this.justificationHashes[lastAgreeKey].originReputationProof.uid,
-        this.justificationHashes[lastAgreeKey].childReputationProof.branchMask,
-        this.justificationHashes[lastAgreeKey].childReputationProof.reputation,
-        this.justificationHashes[lastAgreeKey].childReputationProof.uid,
+        lastAgreeJustifications.originReputationProof.branchMask,
+        lastAgreeJustifications.nextUpdateProof.reputation,
+        lastAgreeJustifications.nextUpdateProof.uid,
+        firstDisagreeJustifications.justUpdatedProof.reputation,
+        firstDisagreeJustifications.justUpdatedProof.uid,
+        lastAgreeJustifications.newestReputationProof.reputation,
+        lastAgreeJustifications.newestReputationProof.uid,
+        lastAgreeJustifications.originReputationProof.reputation,
+        lastAgreeJustifications.originReputationProof.uid,
+        lastAgreeJustifications.childReputationProof.branchMask,
+        lastAgreeJustifications.childReputationProof.reputation,
+        lastAgreeJustifications.childReputationProof.uid,
         "0",
-        this.justificationHashes[lastAgreeKey].adjacentReputationProof.branchMask,
-        this.justificationHashes[lastAgreeKey].adjacentReputationProof.reputation,
-        this.justificationHashes[lastAgreeKey].adjacentReputationProof.uid,
-        "0"
+        lastAgreeJustifications.adjacentReputationProof.branchMask,
+        lastAgreeJustifications.adjacentReputationProof.reputation,
+        lastAgreeJustifications.adjacentReputationProof.uid,
+        "0",
+        lastAgreeJustifications.originAdjacentReputationProof.reputation,
+        lastAgreeJustifications.childAdjacentReputationProof.reputation
       ],
       [
         reputationKey,
-        this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-        this.justificationHashes[lastAgreeKey].adjacentReputationProof.key
+        lastAgreeJustifications.newestReputationProof.key,
+        lastAgreeJustifications.adjacentReputationProof.key,
+        lastAgreeJustifications.originAdjacentReputationProof.key,
+        lastAgreeJustifications.childAdjacentReputationProof.key
       ],
-      this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
+      firstDisagreeJustifications.justUpdatedProof.siblings,
       agreeStateSiblings,
       disagreeStateSiblings,
-      this.justificationHashes[lastAgreeKey].newestReputationProof.siblings,
-      this.justificationHashes[lastAgreeKey].originReputationProof.siblings,
-      this.justificationHashes[lastAgreeKey].childReputationProof.siblings,
-      this.justificationHashes[lastAgreeKey].adjacentReputationProof.siblings,
+      lastAgreeJustifications.newestReputationProof.siblings,
+      lastAgreeJustifications.originReputationProof.siblings,
+      lastAgreeJustifications.childReputationProof.siblings,
+      lastAgreeJustifications.adjacentReputationProof.siblings,
       { gasLimit: 4000000 }
     );
   }
