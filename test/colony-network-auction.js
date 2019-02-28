@@ -632,23 +632,35 @@ contract.only("Colony Network Auction", accounts => {
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
 
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
-      await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
+      const bidAmount1 = new BN(300);
+      const bidAmount2 = new BN(20);
+      const bidAmount3 = new BN(900);
 
-      await forwardTime(SECONDS_PER_DAY * 34, this);
-      let endTime = await tokenAuction.endTime();
-      const amount = new BN(10).pow(new BN(16));
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount1);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, bidAmount2);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_3, bidAmount3);
+      await clnyToken.approve(tokenAuction.address, bidAmount1, { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, bidAmount2, { from: BIDDER_2 });
+      await clnyToken.approve(tokenAuction.address, bidAmount3, { from: BIDDER_3 });
 
-      while (endTime.isZero()) {
-        await forwardTime(SECONDS_PER_DAY, this);
-        await tokenAuction.bid(amount, { from: BIDDER_1 });
-        endTime = await tokenAuction.endTime();
-      }
+      await forwardTime(SECONDS_PER_DAY * 31, this);
+      await tokenAuction.bid(bidAmount1, { from: BIDDER_1 });
+      await tokenAuction.bid(bidAmount2, { from: BIDDER_2 });
+      await tokenAuction.bid(bidAmount3, { from: BIDDER_3 });
 
       await tokenAuction.finalize();
-      // Check the final price is the minimum price
-      const finalPrice = await tokenAuction.finalPrice();
-      expect(finalPrice).to.eq.BN(100);
+
+      await tokenAuction.claim({ from: BIDDER_1 });
+      const tokenBidder1Balance = await otherToken.balanceOf(BIDDER_1);
+      expect(tokenBidder1Balance).to.eq.BN(new BN("3003003003003003"));
+
+      await tokenAuction.claim({ from: BIDDER_2 });
+      const tokenBidder2Balance = await otherToken.balanceOf(BIDDER_2);
+      expect(tokenBidder2Balance).to.eq.BN(new BN("200200200200200"));
+
+      await tokenAuction.claim({ from: BIDDER_3 });
+      const tokenBidder3Balance = await otherToken.balanceOf(BIDDER_3);
+      expect(tokenBidder3Balance).to.eq.BN(new BN("6796796796796796"));
     });
   });
 
