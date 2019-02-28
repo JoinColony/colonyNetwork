@@ -13,7 +13,7 @@ chai.use(bnChai(web3.utils.BN));
 const DutchAuction = artifacts.require("DutchAuction");
 const DSToken = artifacts.require("DSToken");
 
-contract.only("Colony Network Auction", accounts => {
+contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
   const BIDDER_2 = accounts[2];
   const BIDDER_3 = accounts[3];
