@@ -62,6 +62,7 @@ contract DutchAuction is DSMath {
   uint public endTime;
   uint public minPrice;
   uint public constant TOKEN_MULTIPLIER = 10 ** 18;
+  uint public constant ACCURACY_CONST = 10 ** 18;
 
   // Keep track of all CLNY wei received
   uint public receivedTotal;
@@ -138,9 +139,14 @@ contract DutchAuction is DSMath {
   auctionStartedAndOpen
   returns (uint256)
   {
-    // Total amount to end the auction at the current price
-    uint totalToEndAuctionAtCurrentPrice = add(mul(quantity, price()) / TOKEN_MULTIPLIER, 1);
+    // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
+    if (mul(quantity, price()) < TOKEN_MULTIPLIER) {
+      return 1;
+    }
     
+    // Total amount to end the auction at the current price
+    uint totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
+
     uint _remainingToEndAuction = 0;
     if (totalToEndAuctionAtCurrentPrice > receivedTotal) {
       _remainingToEndAuction = sub(totalToEndAuctionAtCurrentPrice, receivedTotal);
@@ -206,7 +212,8 @@ contract DutchAuction is DSMath {
     // Burn all CLNY received
     clnyToken.burn(receivedTotal);
     finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
-    finalPrice = finalPrice <= minPrice ? minPrice : add(finalPrice, 1);
+    assert(finalPrice != 0);
+
     finalized = true;
     emit AuctionFinalized(finalPrice);
   }
@@ -218,14 +225,7 @@ contract DutchAuction is DSMath {
     uint amount = bids[msg.sender];
     require(amount > 0, "colony-auction-zero-bid-total");
 
-    uint tokens;
-    if (finalPrice != minPrice || quantity >= TOKEN_MULTIPLIER) {
-      tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
-      tokens = tokens == 0 ? 1 : tokens;
-      tokens = tokens > quantity ? quantity : tokens;
-    } else {
-      tokens = mul(amount, quantity);
-    }
+    uint tokens = mul(amount, quantity) / receivedTotal;
     claimCount += 1;
 
     // Set receiver bid to 0 before transferring the tokens

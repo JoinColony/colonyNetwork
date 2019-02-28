@@ -13,7 +13,7 @@ chai.use(bnChai(web3.utils.BN));
 const DutchAuction = artifacts.require("DutchAuction");
 const DSToken = artifacts.require("DSToken");
 
-contract("Colony Network Auction", accounts => {
+contract.only("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
   const BIDDER_2 = accounts[2];
   const BIDDER_3 = accounts[3];
@@ -28,8 +28,8 @@ contract("Colony Network Auction", accounts => {
   let createAuctionTxReceipt;
 
   before(async () => {
-    quantity = new BN(10).pow(new BN(36)).muln(3);
-    clnyNeededForMaxPriceAuctionSellout = new BN(10).pow(new BN(54)).muln(3).addn(1); // eslint-disable-line prettier/prettier
+    quantity = new BN(10).pow(new BN(18)).muln(3);
+    clnyNeededForMaxPriceAuctionSellout = new BN(10).pow(new BN(36)).muln(3); // eslint-disable-line prettier/prettier
   });
 
   beforeEach(async () => {
@@ -301,7 +301,7 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
 
       let endTime = await tokenAuction.endTime();
-      const amount = new BN(10).pow(new BN(20));
+      const amount = new BN(10).pow(new BN(10));
 
       while (endTime.isZero()) {
         await forwardTime(SECONDS_PER_DAY * 3, this);
@@ -312,9 +312,7 @@ contract("Colony Network Auction", accounts => {
 
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
-      const endPrice = WAD.mul(receivedTotal)
-        .div(quantity)
-        .addn(1);
+      const endPrice = WAD.mul(receivedTotal).div(quantity);
       const finalPrice = await tokenAuction.finalPrice();
       expect(endPrice).to.eq.BN(finalPrice);
     });
@@ -356,200 +354,152 @@ contract("Colony Network Auction", accounts => {
         scenario: 1,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        remainingToEndAuction: 100,
-        finalPrice: 101,
-        claimAmount: new BN("990099009900990099")
+        remainingToEndAuction: 99
       },
       {
         scenario: 2,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        remainingToEndAuction: 100,
-        finalPrice: 101,
-        claimAmount: new BN("990099009900990099")
+        remainingToEndAuction: 98
       },
       {
         scenario: 3,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        remainingToEndAuction: 10,
-        finalPrice: 110,
-        claimAmount: new BN("100000000000000000")
+        remainingToEndAuction: 10
       },
       {
         scenario: 4,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(17)),
-        remainingToEndAuction: 11,
-        finalPrice: 111,
-        claimAmount: new BN("99099099099099099")
+        remainingToEndAuction: 10
       },
       {
         scenario: 5,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(15)),
-        remainingToEndAuction: 2,
-        finalPrice: 2001, // = minPrice
-        claimAmount: new BN("999500249875062")
+        remainingToEndAuction: 1
       },
       {
         scenario: 6,
         daysOpen: 34,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        remainingToEndAuction: 1,
-        finalPrice: 999999942, // = minPrice
-        claimAmount: new BN(10).pow(new BN(9)).addn(58)
+        remainingToEndAuction: 1
       },
       {
         scenario: 7,
         daysOpen: 34,
-        quantity: new BN(10).pow(new BN(3)),
-        remainingToEndAuction: 2,
-        finalPrice: new BN(10).pow(new BN(15)).muln(2).addn(1), // eslint-disable-line prettier/prettier
-        claimAmount: new BN(999)
+        quantity: new BN(1000),
+        remainingToEndAuction: 1
       },
       {
         scenario: 8,
         daysOpen: 34,
         quantity: new BN(777),
-        remainingToEndAuction: 1,
-        finalPrice: new BN(1287001287001287), // = minPrice
-        claimAmount: new BN(777)
+        remainingToEndAuction: 1
       },
       // Day 35
       {
         scenario: 9,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        remainingToEndAuction: 9,
-        finalPrice: 10,
-        claimAmount: new BN("900000000000000000")
+        remainingToEndAuction: 8
       },
       {
         scenario: 10,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        remainingToEndAuction: 9,
-        finalPrice: 10,
-        claimAmount: new BN("909090909090909090")
+        remainingToEndAuction: 9
       },
       {
         scenario: 11,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        remainingToEndAuction: 1,
-        finalPrice: 9, // = minPrice
-        claimAmount: new BN(10).pow(new BN(17))
+        remainingToEndAuction: 1
       },
       {
         scenario: 12,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(17)),
-        remainingToEndAuction: 2,
-        finalPrice: 21, // = minPrice
-        claimAmount: new BN("95238095238095238")
+        remainingToEndAuction: 1
       },
       {
         scenario: 13,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(15)),
-        remainingToEndAuction: 2,
-        finalPrice: 2001, // = minPrice
-        claimAmount: new BN("999500249875062")
+        remainingToEndAuction: 1
       },
       {
         scenario: 14,
         daysOpen: 35,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        remainingToEndAuction: 1,
-        finalPrice: 999999942, // = minPrice
-        claimAmount: new BN(10).pow(new BN(9)).addn(58)
+        remainingToEndAuction: 1
       },
       {
         scenario: 15,
         daysOpen: 35,
         quantity: new BN(1000),
-        remainingToEndAuction: 2,
-        finalPrice: new BN(10).pow(new BN(15)).muln(2).addn(1), // eslint-disable-line prettier/prettier
-        claimAmount: new BN(999)
+        remainingToEndAuction: 1
       },
       {
         scenario: 16,
         daysOpen: 35,
         quantity: new BN(777),
-        remainingToEndAuction: 1,
-        finalPrice: new BN(1287001287001287), // = minPrice
-        claimAmount: new BN(777)
+        remainingToEndAuction: 1
       },
       // Day 36
       {
         scenario: 17,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(18)).subn(1),
-        remainingToEndAuction: 1,
-        finalPrice: 1, // = minPrice
-        claimAmount: new BN(10).pow(new BN(18)).subn(1)
+        remainingToEndAuction: 1
       },
       {
         scenario: 18,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(18)).subn(10000),
-        remainingToEndAuction: 1,
-        finalPrice: 1, // = minPrice
-        claimAmount: new BN(10).pow(new BN(18)).subn(10000)
+        remainingToEndAuction: 1
       },
       {
         scenario: 19,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(17)).addn(1),
-        remainingToEndAuction: 1,
-        finalPrice: 9, // = minPrice
-        claimAmount: new BN(10).pow(new BN(17)).addn(1)
+        remainingToEndAuction: 1
       },
       {
         scenario: 20,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(17)),
-        remainingToEndAuction: 2,
-        finalPrice: 21, // = minPrice
-        claimAmount: new BN("95238095238095238")
+        remainingToEndAuction: 1
       },
       {
         scenario: 21,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(15)),
-        remainingToEndAuction: 2,
-        finalPrice: 2001, // = minPrice
-        claimAmount: new BN("999500249875062")
+        remainingToEndAuction: 1
       },
       {
         scenario: 22,
         daysOpen: 36,
         quantity: new BN(10).pow(new BN(9)).addn(58),
-        remainingToEndAuction: 1,
-        finalPrice: 999999942, // = minPrice
-        claimAmount: new BN(10).pow(new BN(9)).addn(58)
+        remainingToEndAuction: 1
       },
       {
         scenario: 23,
         daysOpen: 36,
         quantity: new BN(1000),
-        remainingToEndAuction: 2,
-        finalPrice: new BN(10).pow(new BN(15)).muln(2).addn(1), // eslint-disable-line prettier/prettier
-        claimAmount: new BN(999)
+        remainingToEndAuction: 1
       },
       {
         scenario: 24,
         daysOpen: 36,
         quantity: new BN(777),
-        remainingToEndAuction: 1,
-        finalPrice: new BN(1287001287001287), // = minPrice
-        claimAmount: new BN(777)
+        remainingToEndAuction: 1
       }
     ];
 
     auctionPropsLowQuantitiesLowPrice.forEach(async auctionProp => {
-      it.skip(`should correctly accept bids at low price and finalise auction for scenario ${auctionProp.scenario}`, async () => {
+      it(`should correctly accept bids at low price and finalise auction for scenario ${auctionProp.scenario}`, async () => {
         const bidAmount = new BN(100000);
         await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount);
 
@@ -570,12 +520,10 @@ contract("Colony Network Auction", accounts => {
         expect(bid.subn(auctionProp.remainingToEndAuction).toNumber()).to.be.closeTo(0, 1);
 
         await tokenAuction.finalize();
-        const finalPrice = await tokenAuction.finalPrice();
-        expect(finalPrice.sub(new BN(auctionProp.finalPrice)).toNumber()).to.be.closeTo(0, 1);
 
         await tokenAuction.claim({ from: BIDDER_1 });
         const otherTokenBidderBalance = await otherToken.balanceOf(BIDDER_1);
-        expect(otherTokenBidderBalance.sub(new BN(auctionProp.claimAmount)).toNumber()).to.be.closeTo(0, 2);
+        expect(otherTokenBidderBalance).to.eq.BN(auctionProp.quantity);
       });
     });
 
@@ -593,21 +541,21 @@ contract("Colony Network Auction", accounts => {
         quantity: new BN(2),
         remainingToEndAuction: WAD,
         finalPrice: WAD.mul(WAD),
-        claimAmount: new BN(1)
+        claimAmount: new BN(2)
       },
       {
         daysOpen: 0,
         quantity: new BN(200),
         remainingToEndAuction: WAD,
         finalPrice: WAD.mul(WAD),
-        claimAmount: new BN(199)
+        claimAmount: new BN(200)
       },
       {
         daysOpen: 0,
         quantity: new BN(20000000000),
-        remainingToEndAuction: WAD.muln(2).addn(1),
+        remainingToEndAuction: WAD.muln(2),
         finalPrice: WAD.mul(WAD),
-        claimAmount: new BN(19999999999)
+        claimAmount: new BN(20000000000)
       }
     ];
 
@@ -658,8 +606,8 @@ contract("Colony Network Auction", accounts => {
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
 
-      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
-      await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, new BN(10).pow(new BN(36)).muln(3));
+      await clnyToken.approve(tokenAuction.address, new BN(10).pow(new BN(36)).muln(3), { from: BIDDER_1 });
 
       let endTime = await tokenAuction.endTime();
       const amount = new BN(10).pow(new BN(20));
@@ -673,7 +621,7 @@ contract("Colony Network Auction", accounts => {
 
       await tokenAuction.finalize();
       const finalPrice = await tokenAuction.finalPrice();
-      expect(finalPrice).to.eq.BN(new BN("40000000000000000000001"));
+      expect(finalPrice).to.eq.BN(new BN("40000000000000000000000"));
     });
 
     it("functions correctly even when price has reached the minimum", async () => {
@@ -700,7 +648,7 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.finalize();
       // Check the final price is the minimum price
       const finalPrice = await tokenAuction.finalPrice();
-      expect(finalPrice).to.eq.BN(201);
+      expect(finalPrice).to.eq.BN(100);
     });
   });
 
@@ -714,7 +662,7 @@ contract("Colony Network Auction", accounts => {
     it("sets correct final token price", async () => {
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
-      const endPrice = WAD.mul(receivedTotal).div(quantity).addn(1); // eslint-disable-line prettier/prettier
+      const endPrice = WAD.mul(receivedTotal).div(quantity); // eslint-disable-line prettier/prettier
       const finalPrice = await tokenAuction.finalPrice();
       expect(endPrice).to.eq.BN(finalPrice);
     });
@@ -757,9 +705,9 @@ contract("Colony Network Auction", accounts => {
 
   describe("when claiming tokens", async () => {
     it("should transfer to bidder correct number of tokens at finalPrice", async () => {
-      const bidAmount1 = new BN(10).pow(new BN(36));
-      const bidAmount2 = new BN(10).pow(new BN(38));
-      const bidAmount3 = new BN(10).pow(new BN(36)).muln(199);
+      const bidAmount1 = new BN(10).pow(new BN(18));
+      const bidAmount2 = new BN(10).pow(new BN(18));
+      const bidAmount3 = new BN(10).pow(new BN(18)).muln(199);
 
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount1);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_2, bidAmount2);
@@ -769,7 +717,7 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, bidAmount3, { from: BIDDER_3 });
 
       await tokenAuction.bid(bidAmount1, { from: BIDDER_1 }); // Bids at near max price of 1e36 CLNY per 1e18 Tokens
-      await forwardTime(SECONDS_PER_DAY * 16, this); // Gets us near price of 1e20 CLNY per 1e18 Tokens
+      await forwardTime(SECONDS_PER_DAY * 17, this); // Gets us near price of 1e20 CLNY per 1e18 Tokens
       await tokenAuction.bid(bidAmount2, { from: BIDDER_2 });
       await tokenAuction.bid(bidAmount3, { from: BIDDER_3 });
 
