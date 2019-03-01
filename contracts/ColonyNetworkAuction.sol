@@ -62,7 +62,6 @@ contract DutchAuction is DSMath {
   uint public endTime;
   uint public minPrice;
   uint public constant TOKEN_MULTIPLIER = 10 ** 18;
-  uint public constant ACCURACY_CONST = 10 ** 18;
 
   // Keep track of all CLNY wei received
   uint public receivedTotal;
@@ -212,30 +211,37 @@ contract DutchAuction is DSMath {
     // Burn all CLNY received
     clnyToken.burn(receivedTotal);
     finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
+    finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
     assert(finalPrice != 0);
 
     finalized = true;
     emit AuctionFinalized(finalPrice);
   }
 
-  function claim() public
+  function claim(address recipient) public
   auctionFinalized
   returns (bool)
   {
-    uint amount = bids[msg.sender];
+    uint amount = bids[recipient];
     require(amount > 0, "colony-auction-zero-bid-total");
 
-    uint tokens = mul(amount, quantity) / receivedTotal;
+    uint tokens;
+    if (mul(amount, quantity) < receivedTotal) {
+      tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+    } else {
+      tokens = mul(amount, quantity) / receivedTotal;
+    }
+
     claimCount += 1;
 
     // Set receiver bid to 0 before transferring the tokens
-    bids[msg.sender] = 0;
-    uint beforeClaimBalance = token.balanceOf(msg.sender);
-    require(token.transfer(msg.sender, tokens), "colony-auction-transfer-failed");
-    assert(token.balanceOf(msg.sender) == add(beforeClaimBalance, tokens));
-    assert(bids[msg.sender] == 0);
+    bids[recipient] = 0;
+    uint beforeClaimBalance = token.balanceOf(recipient);
+    require(token.transfer(recipient, tokens), "colony-auction-transfer-failed");
+    assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
+    assert(bids[recipient] == 0);
 
-    emit AuctionClaim(msg.sender, tokens);
+    emit AuctionClaim(recipient, tokens);
     return true;
   }
 
