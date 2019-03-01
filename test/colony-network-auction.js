@@ -80,6 +80,14 @@ contract("Colony Network Auction", accounts => {
       const otherToken = await DSToken.new(args[1]);
       await checkErrorRevert(colonyNetwork.startTokenAuction(otherToken.address));
     });
+
+    it("cannot bid if not started", async () => {
+      await token.mint(quantity);
+      await token.transfer(colonyNetwork.address, quantity);
+      tokenAuction = await DutchAuction.new(clnyToken.address, token.address, metaColony.address);
+
+      await checkErrorRevert(tokenAuction.bid(1000, { from: BIDDER_1 }), "colony-auction-not-started");
+    });
   });
 
   describe("when starting an auction", async () => {
@@ -849,6 +857,14 @@ contract("Colony Network Auction", accounts => {
       await tokenAuction.claim(BIDDER_1);
       const bid = await tokenAuction.bids(BIDDER_1);
       expect(bid).to.be.zero;
+    });
+
+    it("should fail if bidder amount is 0", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout);
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+      await tokenAuction.finalize();
+      await checkErrorRevert(tokenAuction.claim(BIDDER_2), "colony-auction-zero-bid-total");
     });
   });
 
