@@ -22,7 +22,10 @@ import "./ColonyNetworkStorage.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage {
 
-  function startTokenAuction(address _token) public stoppable {
+  function startTokenAuction(address _token) public
+  stoppable
+  auth
+  {
     require(_token != address(0x0), "colony-auction-invalid-token");
 
     uint lastAuctionTimestamp = recentAuctions[_token];

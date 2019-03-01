@@ -88,6 +88,10 @@ contract("Colony Network Auction", accounts => {
 
       await checkErrorRevert(tokenAuction.bid(1000, { from: BIDDER_1 }), "colony-auction-not-started");
     });
+
+    it("cannot initialise auction if not network owner", async () => {
+      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address, { from: accounts[10] }), "ds-auth-unauthorized");
+    });
   });
 
   describe("when starting an auction", async () => {
