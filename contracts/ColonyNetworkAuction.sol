@@ -141,13 +141,14 @@ contract DutchAuction is DSMath {
   auctionStartedAndOpen
   returns (uint256)
   {
-    // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
-    if (mul(quantity, price()) < TOKEN_MULTIPLIER) {
-      return 1;
-    }
-    
     // Total amount to end the auction at the current price
-    uint totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
+    uint totalToEndAuctionAtCurrentPrice;
+    // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
+    if (quantity < TOKEN_MULTIPLIER && price() == minPrice) {
+      totalToEndAuctionAtCurrentPrice = 1;
+    } else {
+      totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
+    }
 
     uint _remainingToEndAuction = 0;
     if (totalToEndAuctionAtCurrentPrice > receivedTotal) {
