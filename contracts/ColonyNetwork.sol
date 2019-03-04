@@ -153,6 +153,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     authority.setOwner(address(etherRouter));
     colony.setFounderRole(msg.sender);
+    colony.setRecoveryRole(msg.sender);
 
     // Colony will not have owner
     dsauth.setOwner(address(0x0));
