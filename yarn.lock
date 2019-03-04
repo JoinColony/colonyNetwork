@@ -6597,10 +6597,10 @@ solc@^0.4.2:
     semver "^5.3.0"
     yargs "^4.7.1"
 
-solidity-coverage@^0.6.0-beta.1:
-  version "0.6.0-beta.1"
-  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.6.0-beta.1.tgz#eda9ff750811d75bf6e67c649c30905e9eabdc64"
-  integrity sha512-rARkjQRK6E9Wp31eSys8ASkiU1WQEhLZC4xHvENdeIKoIWESGr8EhsCXSYxJKFUnud6Da24If3vF+fogq8sSng==
+solidity-coverage@^0.6.0-beta.2:
+  version "0.6.0-beta.2"
+  resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.6.0-beta.2.tgz#116e75a0b3a17a5333789c75047a60c96633bbf1"
+  integrity sha512-GUpU8/nRocEKm/xMUPazyFXk64rOwjM/EHihL4QDnL/s/WPocX7nxrRZjoiWALdhmoLCNKaziZ8PEQtXxFBlQw==
   dependencies:
     death "^1.1.0"
     ethereumjs-testrpc-sc "6.1.6"
