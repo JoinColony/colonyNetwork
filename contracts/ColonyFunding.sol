@@ -146,25 +146,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
   }
 
-  modifier test(uint256 _fromPot, uint256 _toPot) {
-    // Prevent moving funds from between the same pot, which otherwise would cause the pot balance to
-    // increment by _amount.
-    require(_fromPot != _toPot, "colony-funding-cannot-move-funds-between-the-same-pot");
-
-    // Prevent people moving funds from the pot for paying out token holders
-    require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
-
-    // Preventing sending from non-existent funding pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
-    // prevent sending to nonexistent funding pots) but doing this check explicitly gives us the error message for clients.
-    require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
-    require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
-    _;
-  }
-
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
   stoppable
   auth
-  test(_fromPot, _toPot)
+  validFundingTransfer(_fromPot, _toPot)
   {
     uint fromPotPreviousAmount = fundingPots[_fromPot].balance[_token];
     uint toPotPreviousAmount = fundingPots[_toPot].balance[_token];
@@ -443,11 +428,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
     task.payouts[uint8(_role)][_token] = _amount;
     
-    fundingPot.payouts[_token] = currentTotalAmount - currentTaskRolePayout + _amount;
+    fundingPot.payouts[_token] = add(sub(currentTotalAmount, currentTaskRolePayout), _amount);
 
-    // This call functions as a guard to make sure the new total payout doesn't overflow
-    // If there is an overflow, the call will revert
-    // TODO: getTotalTaskPayout(_id, _token);
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
   }
 

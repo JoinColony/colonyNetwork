@@ -129,6 +129,20 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
+  modifier validFundingTransfer(uint256 _fromPot, uint256 _toPot) {
+    // Prevent moving funds from between the same pot, which otherwise would cause the pot balance to increment by _amount.
+    require(_fromPot != _toPot, "colony-funding-cannot-move-funds-between-the-same-pot");
+
+    // Prevent people moving funds from the pot designated to paying out token holders
+    require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
+
+    // Preventing sending from non-existent funding pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
+    // prevent sending to nonexistent funding pots) but doing this check explicitly gives us the error message for clients.
+    require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
+    require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
+    _;
+  }
+
   modifier isInBootstrapPhase() {
     require(taskCount == 0, "colony-not-in-bootstrap-mode");
     _;
