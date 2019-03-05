@@ -71,7 +71,7 @@ contract DutchAuction is DSMath {
   uint public bidCount;
   uint public claimCount;
 
-  // Final price in CLNY per 10**18 Tokens (min 1, max 1e18)
+  // Final price in CLNY per 10**18 Tokens (min 1, max 1e36)
   uint public finalPrice;
   bool public finalized;
 
@@ -187,11 +187,11 @@ contract DutchAuction is DSMath {
     if (_remainingToEndAuction > _amount) {
       amount = _amount;
     } else if (_remainingToEndAuction != 0) {
-      // There is some amount left to auction but it is smaller than then required amount so adjust amount and close the auction
+      // Required amount left to end the auction is less than the bid, so adjust bid amount down to the required quantity only and close the auction
       amount = _remainingToEndAuction;
       endTime = now;
     } else {
-      // The remaining amount required to end the auction is zero so just close the auction and return
+      // We've received sufficient quantity to end the auction so just close the auction and return
       endTime = now;
       return;
     }
@@ -233,6 +233,9 @@ contract DutchAuction is DSMath {
     if (mul(amount, quantity) < receivedTotal) {
       tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
     } else {
+      // To avoid inaccuracies we substitute finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity
+      // in the above claim calculation tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+      // deriving the calculation below instead, which avoids using finaPrice altogether.
       tokens = mul(amount, quantity) / receivedTotal;
     }
 

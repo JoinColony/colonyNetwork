@@ -680,7 +680,8 @@ contract("Colony Network Auction", accounts => {
     // What's the fair distribution of these 2 tokens?
     // Here the second bidder gets 1 token and the first none
     // As the true distribution, if we had floats, should be 0.1 and 1.9
-    it("functions correctly when there are two bids are the far ends of the price spectrum", async () => {
+    it("functions correctly when there are two bids at the far ends of the price spectrum and one bid can't go over the claim threshold",
+    async () => {
       const totalAmount = new BN(2);
       await otherToken.mint(totalAmount);
       await otherToken.transfer(colonyNetwork.address, totalAmount);
@@ -714,7 +715,7 @@ contract("Colony Network Auction", accounts => {
     // after 17 days 1 bid for 9 CLNY and a third for 9 CLNY (1 of which is accepted) which closes the auction.
     // What's the fair distribution of these 2 tokens?
     // Here no bid gets any tokens
-    it("functions correctly when there are two bids are the far ends of the price spectrum 2", async () => {
+    it("functions correctly when there are three bids in a low quantity auction, and none gets over the claim threshold", async () => {
       const totalAmount = new BN(2);
       await otherToken.mint(totalAmount);
       await otherToken.transfer(colonyNetwork.address, totalAmount);
