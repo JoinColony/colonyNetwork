@@ -55,30 +55,25 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return tokenAddress Address of the token contract
   function getToken() public view returns (address tokenAddress);
 
-  /// @notice Set new colony founder role.
-  /// @dev There can only be one address assigned to founder role at a time.
-  /// Whoever calls this function will lose their founder role
-  /// Can be called by founder role.
-  /// @param _user User we want to give an founder role to
-  function setFounderRole(address _user) public;
-
   /// @notice Set new colony admin role.
   /// Can be called by founder role or admin role.
   /// @param _user User we want to give an admin role to
-  function setAdminRole(address _user) public;
+  function setAdministrationRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
 
-  function setAdministrationRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId) public;
+  /// @notice Set new colony funding role.
+  /// Can be called by founder role or funding role.
+  /// @param _user User we want to give an funding role to
+  function setFundingRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
 
-  function setFundingRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId) public;
+  /// @notice Set new colony architecture role.
+  /// Can be called by founder role or architecture role.
+  /// @param _user User we want to give an architecture role to
+  function setArchitectureRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
 
-  function setArchitectureRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId) public;
-
-  function setRootRole(address _user) public;
-
-  /// @notice Remove colony admin.
-  /// Can only be called by founder role.
-  /// @param _user User we want to remove admin role from
-  function removeAdminRole(address _user) public;
+  /// @notice Set new colony root role.
+  /// Can be called by founder role or root role.
+  /// @param _user User we want to give an root role to
+  function setRootRole(address _user, bool _setTo) public;
 
   /// @notice Check whether a given user has a given role for the colony.
   /// Calls the function of the same name on the colony's authority contract.

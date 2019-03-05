@@ -28,63 +28,52 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256 colonyVersion) { return 1; }
 
-  function setFounderRole(address _user) public stoppable auth {
-    // To allow only one address to have founder role at a time, we have to remove current founder from their role
-    ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    colonyAuthority.setUserRole(msg.sender, uint8(ColonyRole.Founder), false);
-    colonyAuthority.setUserRole(_user, uint8(ColonyRole.Founder), true);
-
-    emit ColonyFounderRoleSet(msg.sender, _user);
-  }
-
-  function setAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), true);
-
-    emit ColonyAdminRoleSet(_user);
-  }
-
   function setAdministrationRole(
     uint256 _parentDomainId,
     uint256 _domainProofIndex,
     address _user,
-    uint256 _domainId
+    uint256 _domainId,
+    bool _setTo
   ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
   {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), true);
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
+
+    emit ColonyAdministrationRoleSet(_user, _setTo);
   }
 
   function setFundingRole(
     uint256 _parentDomainId,
     uint256 _domainProofIndex,
     address _user,
-    uint256 _domainId
+    uint256 _domainId,
+    bool _setTo
   ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
   {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), true);
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
+
+    emit ColonyFundingRoleSet(_user, _setTo);
   }
 
   function setArchitectureRole(
     uint256 _parentDomainId,
     uint256 _domainProofIndex,
     address _user,
-    uint256 _domainId
+    uint256 _domainId,
+    bool _setTo
   ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
   {
     // Because this permission has some restrictions on domains of action, we transparently implement it as two roles
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), true);
-    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.ArchitectureSubdomain), true);
+    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
+    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.ArchitectureSubdomain), _setTo);
+
+    emit ColonyArchitectureRoleSet(_user, _setTo);
   }
 
-  function setRootRole(address _user) public stoppable auth2(1, 1, 0) {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), true);
-  }
+  function setRootRole(address _user, bool _setTo) public stoppable auth {
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
 
-  // Can only be called by the founder role.
-  function removeAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), false);
-
-    emit ColonyAdminRoleRemoved(_user);
+    emit ColonyRootRoleSet(_user, _setTo);
   }
 
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {

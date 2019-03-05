@@ -85,7 +85,7 @@ contract("ColonyTask", accounts => {
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
-    await colony.setAdminRole(COLONY_ADMIN);
+    await colony.setAdministrationRole(1, 0, COLONY_ADMIN, 1, true);
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await DSToken.new(otherTokenArgs[1]);

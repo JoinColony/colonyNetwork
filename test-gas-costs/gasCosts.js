@@ -117,7 +117,7 @@ contract("All", function(accounts) {
     it("when working with a Colony", async function() {
       await colony.mintTokens(200);
       await colony.claimColonyFunds(token.address);
-      await colony.setAdminRole(EVALUATOR);
+      await colony.setAdministratorRole(1, 0, EVALUATOR, true);
     });
 
     it("when working with a Task", async function() {

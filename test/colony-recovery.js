@@ -80,11 +80,12 @@ contract("Colony Recovery", accounts => {
 
     it("should not be able to add and remove roles when in recovery", async () => {
       await colony.enterRecoveryMode();
-      await checkErrorRevert(colony.setAdminRole(accounts[1]), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.removeAdminRole(accounts[1]), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdministrationRole(1, 0, accounts[1], 1, true), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setAdministrationRole(1, 0, accounts[1], 1, false), "colony-in-recovery-mode");
       await checkErrorRevert(colony.setRecoveryRole(accounts[1]), "colony-in-recovery-mode");
       await checkErrorRevert(colony.removeRecoveryRole(accounts[1]), "colony-in-recovery-mode");
-      await checkErrorRevert(colony.setFounderRole(accounts[1]), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setRootRole(accounts[1], true), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.setRootRole(accounts[1], false), "colony-in-recovery-mode");
     });
 
     it("should not be able to call normal functions while in recovery", async () => {
