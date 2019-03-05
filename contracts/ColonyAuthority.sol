@@ -22,14 +22,12 @@ import "./ColonyRoles.sol";
 
 
 contract ColonyAuthority is ColonyRoles {
-  uint8 constant founderRole = uint8(ColonyDataTypes.ColonyRole.Founder);
-  uint8 constant adminRole = uint8(ColonyDataTypes.ColonyRole.Admin);
-  uint8 constant fundingRole = uint8(ColonyDataTypes.ColonyRole.Funding);
-  uint8 constant administrationRole = uint8(ColonyDataTypes.ColonyRole.Administration);
-  uint8 constant arbitrationRole = uint8(ColonyDataTypes.ColonyRole.Arbitration);
-  uint8 constant architectureRole = uint8(ColonyDataTypes.ColonyRole.Architecture);
-  uint8 constant architectureSubdomainRole = uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain);
-  uint8 constant rootRole = uint8(ColonyDataTypes.ColonyRole.Root);
+  uint8 constant FUNDING_ROLE = uint8(ColonyDataTypes.ColonyRole.Funding);
+  uint8 constant ADMINISTRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Administration);
+  uint8 constant ARBITRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Arbitration);
+  uint8 constant ARCHITECTURE_ROLE = uint8(ColonyDataTypes.ColonyRole.Architecture);
+  uint8 constant ARCHITECTURE_SUBDOMAIN_ROLE = uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain);
+  uint8 constant ROOT_ROLE = uint8(ColonyDataTypes.ColonyRole.Root);
 
   constructor(address colony) public CommonAuthority(colony) {
     // Add permissions for the Administration role
@@ -74,27 +72,27 @@ contract ColonyAuthority is ColonyRoles {
   }
 
   function setAdministrationCapability(address colony, bytes memory sig) private {
-    addRoleCapability(administrationRole, colony, sig);
+    addRoleCapability(ADMINISTRATION_ROLE, colony, sig);
   }
 
   function setFundingCapability(address colony, bytes memory sig) private {
-    addRoleCapability(fundingRole, colony, sig);
+    addRoleCapability(FUNDING_ROLE, colony, sig);
   }
 
   function setArbitrationCapability(address colony, bytes memory sig) private {
-    addRoleCapability(arbitrationRole, colony, sig);
+    addRoleCapability(ARBITRATION_ROLE, colony, sig);
   }
 
   function setArchitectureCapability(address colony, bytes memory sig) private {
-    addRoleCapability(architectureRole, colony, sig);
+    addRoleCapability(ARCHITECTURE_ROLE, colony, sig);
   }
 
   function setArchitectureSubdomainCapability(address colony, bytes memory sig) private {
-    addRoleCapability(architectureSubdomainRole, colony, sig);
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, colony, sig);
   }
 
   function setRootCapability(address colony, bytes memory sig) private {
-    addRoleCapability(rootRole, colony, sig);
+    addRoleCapability(ROOT_ROLE, colony, sig);
   }
 
   // Internal helper

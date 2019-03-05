@@ -98,7 +98,7 @@ contract ColonyTask is ColonyStorage {
     uint256 _dueDate
   ) public
   stoppable
-  auth2(_parentDomainId, _domainId, _domainProofIndex)
+  authDomain(_parentDomainId, _domainId, _domainProofIndex)
   domainExists(_domainId)
   {
     taskCount += 1;

@@ -34,7 +34,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
+  ) public stoppable authDomain(_parentDomainId, _domainId, _domainProofIndex)
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
 
@@ -47,7 +47,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
+  ) public stoppable authDomain(_parentDomainId, _domainId, _domainProofIndex)
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
 
@@ -60,7 +60,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable auth2(_parentDomainId, _domainId, _domainProofIndex)
+  ) public stoppable authDomain(_parentDomainId, _domainId, _domainProofIndex)
   {
     // Because this permission has some restrictions on domains of action, we transparently implement it as two roles
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
@@ -193,7 +193,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
   function addDomain(uint256 _permissionDomainId, uint256 _domainProofIndex, uint256 _parentDomainId) public
   stoppable
-  auth2(_permissionDomainId, _parentDomainId, _domainProofIndex)
+  authDomain(_permissionDomainId, _parentDomainId, _domainProofIndex)
   domainExists(_parentDomainId)
   {
     // Note: Remove when we want to allow more domain hierarchy levels

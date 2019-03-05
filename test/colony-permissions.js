@@ -17,12 +17,13 @@ contract("ColonyPermissions", accounts => {
   const USER1 = accounts[1];
   const USER2 = accounts[2];
 
-  const FUNDING_ROLE = 3;
-  const ADMINISTRATION_ROLE = 4;
-  // const ARBITRATION_ROLE = 5;
-  const ARCHITECTURE_ROLE = 6;
-  const ARCHITECTURE_SUBDOMAIN_ROLE = 7;
-  const ROOT_ROLE = 8;
+  // Role 0 is the recovery role
+  const FUNDING_ROLE = 1;
+  const ADMINISTRATION_ROLE = 2;
+  // const ARBITRATION_ROLE = 3;
+  const ARCHITECTURE_ROLE = 4;
+  const ARCHITECTURE_SUBDOMAIN_ROLE = 5;
+  const ROOT_ROLE = 6;
 
   let colonyNetwork;
   let colony;
@@ -45,7 +46,6 @@ contract("ColonyPermissions", accounts => {
 
   describe("when managing domain-level permissions", () => {
     it("should give colony creator all permissions in root domain", async () => {
-      // Roles 0-2 are the existing Founder, Admin, and Recovery roles
       const fundingRole = await colony.hasUserRole(FOUNDER, 1, FUNDING_ROLE);
       const administrationRole = await colony.hasUserRole(FOUNDER, 1, ADMINISTRATION_ROLE);
       // const arbitrationRole = await colony.hasUserRole(FOUNDER, 1, ARBITRATION_ROLE); Not implemented yet.

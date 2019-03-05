@@ -173,7 +173,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier auth2(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
+  modifier authDomain(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
     require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
     if (parentDomainId != childDomainId) {
       require(validateDomainProof(parentDomainId, childDomainId, childIndex), "ds-auth-invalid-domain-proof");

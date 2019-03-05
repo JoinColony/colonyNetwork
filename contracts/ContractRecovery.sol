@@ -82,7 +82,7 @@ contract ContractRecovery is CommonStorage {
     recoveryMode = false;
   }
 
-  // Can only be called by the founder role.
+  // Can only be called by the root role.
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
     if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
@@ -91,7 +91,7 @@ contract ContractRecovery is CommonStorage {
     }
   }
 
-  // Can only be called by the founder role.
+  // Can only be called by the root role.
   function removeRecoveryRole(address _user) public stoppable auth {
     if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
       CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false);

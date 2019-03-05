@@ -56,22 +56,22 @@ contract IColony is ColonyDataTypes, IRecovery {
   function getToken() public view returns (address tokenAddress);
 
   /// @notice Set new colony admin role.
-  /// Can be called by founder role or admin role.
+  /// Can be called by root role or architecture role.
   /// @param _user User we want to give an admin role to
   function setAdministrationRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Set new colony funding role.
-  /// Can be called by founder role or funding role.
+  /// Can be called by root role or architecture role.
   /// @param _user User we want to give an funding role to
   function setFundingRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Set new colony architecture role.
-  /// Can be called by founder role or architecture role.
+  /// Can be called by root role or architecture role.
   /// @param _user User we want to give an architecture role to
   function setArchitectureRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Set new colony root role.
-  /// Can be called by founder role or root role.
+  /// Can be called by root role only.
   /// @param _user User we want to give an root role to
   function setRootRole(address _user, bool _setTo) public;
 

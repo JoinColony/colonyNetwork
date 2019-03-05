@@ -104,7 +104,8 @@ contract("Colony contract upgrade", accounts => {
     });
 
     it("should return correct permissions", async function() {
-      const founder = await colony.hasUserRole(ACCOUNT_ONE, 0);
+      const ROOT_ROLE = 6;
+      const founder = await colony.hasUserRole(ACCOUNT_ONE, 1, ROOT_ROLE);
       assert.isTrue(founder);
     });
 

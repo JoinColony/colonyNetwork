@@ -38,17 +38,17 @@ contract IRecovery {
   function isInRecoveryMode() public view returns (bool inRecoveryMode);
 
   /// @notice Set new colony recovery role.
-  /// Can be called by founder.
+  /// Can be called by root.
   /// @param _user User we want to give a recovery role to
   function setRecoveryRole(address _user) public;
 
   /// @notice Remove colony recovery role.
-  /// Can only be called by founder role.
+  /// Can only be called by root role.
   /// @param _user User we want to remove recovery role from
   function removeRecoveryRole(address _user) public;
 
   /// @notice Return number of recovery roles.
-  /// @return numRoles Number of users with the recovery role (excluding founder)
+  /// @return numRoles Number of users with the recovery role.
   function numRecoveryRoles() public view returns(uint64 numRoles);
 
   /// @notice Update value of arbitrary storage variable.
