@@ -19,7 +19,7 @@ pragma solidity >=0.5.3;
 pragma experimental ABIEncoderV2;
 
 import "./ColonyStorage.sol";
-import "./EtherRouter.sol";
+import "./IEtherRouter.sol";
 
 
 contract Colony is ColonyStorage, PatriciaTreeProofs {
@@ -229,7 +229,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     // Requested version has to be registered
     address newResolver = IColonyNetwork(colonyNetworkAddress).getColonyVersionResolver(_newVersion);
     require(newResolver != address(0x0), "colony-version-must-be-registered");
-    EtherRouter currentColony = EtherRouter(address(uint160(address(this))));
+    IEtherRouter currentColony = IEtherRouter(address(this));
     currentColony.setResolver(newResolver);
 
     emit ColonyUpgraded(currentVersion, _newVersion);
