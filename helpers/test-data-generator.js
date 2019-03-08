@@ -37,7 +37,7 @@ const ColonyPayment = artifacts.require("ColonyPayment");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
-export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 1, dueDate = 0, manager }) {
+export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   // Only Colony admins are allowed to make Tasks, make the account an admin
@@ -121,13 +121,7 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
   });
 }
 
-export async function setupTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId = 0, manager }) {
-  // If the skill is not specified, default to the root global skill
-  if (skillId === 0) {
-    skillId = await colonyNetwork.getRootGlobalSkillId(); // eslint-disable-line no-param-reassign
-    if (skillId.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
-  }
-
+export async function setupTask({ colony, dueDate, domainId = 1, skillId = 0, manager }) {
   const taskId = await makeTask({ colony, dueDate, domainId, skillId, manager });
 
   return taskId;
@@ -355,6 +349,8 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
 
   const locked = await clnyToken.locked();
   assert.isTrue(locked);
+
+  await metaColony.addGlobalSkill();
 
   return { metaColony, clnyToken };
 }

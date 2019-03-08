@@ -129,21 +129,18 @@ contract("Colony Network", accounts => {
     it("when meta colony is created, should have the root global and local skills initialised, plus the local mining skill", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
-      const rootGlobalSkill = await colonyNetwork.getSkill(1);
-      expect(parseInt(rootGlobalSkill.nParents, 10)).to.be.zero;
-      expect(parseInt(rootGlobalSkill.nChildren, 10)).to.be.zero;
+      const globalSkill = await colonyNetwork.getSkill(3);
+      expect(parseInt(globalSkill.nParents, 10)).to.be.zero;
+      expect(parseInt(globalSkill.nChildren, 10)).to.be.zero;
 
-      const globalSkill1 = await colonyNetwork.getSkill(1);
-      expect(globalSkill1.globalSkill).to.be.true;
-
-      const globalSkill2 = await colonyNetwork.getSkill(2);
-      expect(globalSkill2.globalSkill).to.be.false;
-
-      const localSkill1 = await colonyNetwork.getSkill(3);
+      const localSkill1 = await colonyNetwork.getSkill(1);
       expect(localSkill1.globalSkill).to.be.false;
 
-      const rootGlobalSkillId = await colonyNetwork.getRootGlobalSkillId();
-      expect(rootGlobalSkillId).to.eq.BN(1);
+      const localSkill2 = await colonyNetwork.getSkill(2);
+      expect(localSkill2.globalSkill).to.be.false;
+
+      const globalSkill1 = await colonyNetwork.getSkill(3);
+      expect(globalSkill1.globalSkill).to.be.true;
     });
 
     it("should fail to create meta colony if it already exists", async () => {
@@ -158,7 +155,7 @@ contract("Colony Network", accounts => {
     it("when any colony is created, should have the root local skill initialised", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
 
-      const rootLocalSkill = await colonyNetwork.getSkill(1);
+      const rootLocalSkill = await colonyNetwork.getSkill(4);
       expect(parseInt(rootLocalSkill.nParents, 10)).to.be.zero;
       expect(parseInt(rootLocalSkill.nChildren, 10)).to.be.zero;
 
@@ -268,11 +265,11 @@ contract("Colony Network", accounts => {
 
   describe("when adding a skill", () => {
     it("should not be able to add a global skill, by an address that is not the meta colony ", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(1, true), "colony-must-be-meta-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(0), "colony-must-be-meta-colony");
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(1, false), "colony-caller-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(1), "colony-caller-must-be-colony");
     });
   });
 

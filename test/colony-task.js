@@ -171,11 +171,11 @@ contract("ColonyTask", accounts => {
     });
 
     it("should log TaskAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 1, 0), ["TaskAdded", "FundingPotAdded"]);
+      await expectAllEvents(colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 3, 0), ["TaskAdded", "FundingPotAdded"]);
     });
 
     it("should optionally set the skill and due date", async () => {
-      const skillId = 1;
+      const skillId = 3;
       const currTime = await currentBlockTime();
       const dueDate = currTime + SECONDS_PER_DAY * 10;
 
@@ -186,7 +186,7 @@ contract("ColonyTask", accounts => {
     });
 
     it("should set the due date to 90 days from now if unspecified", async () => {
-      const skillId = 1;
+      const skillId = 3;
       const dueDate = 0;
       const taskId = await makeTask({ colony, skillId, dueDate });
       const task = await colony.getTask(taskId);
@@ -291,7 +291,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskSkill",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 1] // skillId 1
+        args: [taskId, 3] // skillId 3
       });
 
       executeSignedRoleAssignment({
@@ -1110,7 +1110,7 @@ contract("ColonyTask", accounts => {
 
     it("should log a TaskSkillSet event, if the task skill gets changed", async () => {
       const taskId = await makeTask({ colony });
-      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill();
 
       const skillCount = await colonyNetwork.getSkillCount();
 

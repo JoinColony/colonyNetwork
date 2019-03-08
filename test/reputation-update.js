@@ -41,6 +41,8 @@ chai.use(bnChai(web3.utils.BN));
 
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const DSToken = artifacts.require("DSToken");
+const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
+const Resolver = artifacts.require("Resolver");
 
 contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -87,7 +89,7 @@ contract("Reputation Updates", accounts => {
       const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryManager.user).to.equal(MANAGER);
       expect(repLogEntryManager.amount).to.eq.BN(MANAGER_PAYOUT);
-      expect(repLogEntryManager.skillId).to.eq.BN(2);
+      expect(repLogEntryManager.skillId).to.eq.BN(1);
       expect(repLogEntryManager.colony).to.equal(metaColony.address);
       expect(repLogEntryManager.nUpdates).to.eq.BN(2);
       expect(repLogEntryManager.nPreviousUpdates).to.eq.BN(4); // There are 4 reputation miner updates
@@ -95,7 +97,7 @@ contract("Reputation Updates", accounts => {
       const repLogEntryEvaluator = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       expect(repLogEntryEvaluator.user).to.equal(EVALUATOR);
       expect(repLogEntryEvaluator.amount).to.eq.BN(EVALUATOR_PAYOUT);
-      expect(repLogEntryEvaluator.skillId).to.eq.BN(2);
+      expect(repLogEntryEvaluator.skillId).to.eq.BN(1);
       expect(repLogEntryEvaluator.colony).to.equal(metaColony.address);
       expect(repLogEntryEvaluator.nUpdates).to.eq.BN(2);
       expect(repLogEntryEvaluator.nPreviousUpdates).to.eq.BN(6);
@@ -103,7 +105,7 @@ contract("Reputation Updates", accounts => {
       const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
       expect(repLogEntryWorker.user).to.equal(WORKER);
       expect(repLogEntryWorker.amount).to.eq.BN(WORKER_PAYOUT);
-      expect(repLogEntryWorker.skillId).to.eq.BN(2);
+      expect(repLogEntryWorker.skillId).to.eq.BN(1);
       expect(repLogEntryWorker.colony).to.equal(metaColony.address);
       expect(repLogEntryWorker.nUpdates).to.eq.BN(2);
       expect(repLogEntryWorker.nPreviousUpdates).to.eq.BN(8);
@@ -142,7 +144,7 @@ contract("Reputation Updates", accounts => {
         const repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
         expect(repLogEntryManager.user).to.equal(MANAGER);
         expect(repLogEntryManager.amount).to.eq.BN(rating.reputationChangeManager);
-        expect(repLogEntryManager.skillId).to.eq.BN(2);
+        expect(repLogEntryManager.skillId).to.eq.BN(1);
         expect(repLogEntryManager.colony).to.equal(metaColony.address);
 
         // If the rating is less than 2, then we also subtract reputation from all child skills. In the case
@@ -159,7 +161,7 @@ contract("Reputation Updates", accounts => {
         const repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(3);
         expect(repLogEntryWorker.user).to.equal(WORKER);
         expect(repLogEntryWorker.amount).to.eq.BN(rating.reputationChangeWorker);
-        expect(repLogEntryWorker.skillId).to.eq.BN(2);
+        expect(repLogEntryWorker.skillId).to.eq.BN(1);
         expect(repLogEntryWorker.colony).to.equal(metaColony.address);
         if (rating.worker >= 2) {
           expect(repLogEntryWorker.nUpdates).to.eq.BN(2);
@@ -275,20 +277,26 @@ contract("Reputation Updates", accounts => {
     });
 
     it("should calculate nUpdates correctly when making a log", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
-      await metaColony.addGlobalSkill(5);
-      await metaColony.addGlobalSkill(6);
+      // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
+      const noLimitSubdomains = await NoLimitSubdomains.new();
+      const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
+      const resolver = await Resolver.at(resolverAddress);
+      await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
 
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 5 });
-      let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
-      expect(repLogEntryWorker.amount).to.eq.BN(WORKER_PAYOUT);
+      await metaColony.addDomain(1);
+      await metaColony.addDomain(2);
+      await metaColony.addDomain(3);
+      await metaColony.addDomain(4);
+
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony, domainId: 3 });
+      let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
+      expect(repLogEntryWorker.amount).to.eq.BN(MANAGER_PAYOUT);
       expect(repLogEntryWorker.nUpdates).to.eq.BN(6);
 
-      await setupFinalizedTask({ colonyNetwork, colony: metaColony, skillId: 6 });
-      repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(8);
-      expect(repLogEntryWorker.amount).to.eq.BN(WORKER_PAYOUT);
-      expect(repLogEntryWorker.nUpdates).to.eq.BN(8); // Negative reputation change means children change as well.
+      await setupFinalizedTask({ colonyNetwork, colony: metaColony, domainId: 4, managerRating: 1 });
+      repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(5);
+      expect(repLogEntryWorker.amount).to.eq.BN(MANAGER_PAYOUT.mul(new BN(-1)));
+      expect(repLogEntryWorker.nUpdates).to.eq.BN(10); // Negative reputation change means children change as well.
     });
 
     it("should correctly make large positive reputation updates", async () => {
