@@ -70,7 +70,7 @@ contract ColonyAuthority is CommonAuthority {
     //  Meta Colony functions
     addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
     addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
-    addRoleCapability(ROOT_ROLE, "addGlobalSkill(uint256)");
+    addRoleCapability(ROOT_ROLE, "addGlobalSkill()");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

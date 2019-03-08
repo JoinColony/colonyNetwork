@@ -31,9 +31,8 @@ contract IMetaColony is IColony {
 
   /// @notice Add a new global skill, under skill `_parentSkillId`
   /// @dev Calls `IColonyNetwork.addSkill`
-  /// @param _parentSkillId Id of the skill under which the new skill will be added
   /// @return skillId Id of the added skill
-  function addGlobalSkill(uint256 _parentSkillId) public returns (uint256 skillId);
+  function addGlobalSkill() public returns (uint256 skillId);
 
   /// @notice Set the Colony Network fee inverse amount
   /// @dev Calls `IColonyNetwork.setFeeInverse`

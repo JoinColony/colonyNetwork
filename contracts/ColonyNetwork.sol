@@ -38,7 +38,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   modifier skillExists(uint skillId) {
-    require(skillId > 0 && skillCount >= skillId, "colony-invalid-skill-id");
+    require(skillId == 0 || skillCount >= skillId, "colony-invalid-skill-id");
     _;
   }
 
@@ -119,17 +119,11 @@ contract ColonyNetwork is ColonyNetworkStorage {
   auth
   {
     require(metaColony == address(0x0), "colony-meta-colony-exists-already");
-    // Add the root global skill
-    skillCount += 1;
-    Skill memory rootGlobalSkill;
-    rootGlobalSkill.globalSkill = true;
-    skills[skillCount] = rootGlobalSkill;
-    rootGlobalSkillId = skillCount;
 
     metaColony = createColony(_tokenAddress);
 
     // Add the special mining skill
-    this.addSkill(skillCount, false);
+    this.addSkill(skillCount);
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }
@@ -205,52 +199,58 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return colonies[_id];
   }
 
-  function addSkill(uint _parentSkillId, bool _globalSkill) public stoppable
+  function addSkill(uint _parentSkillId) public stoppable
   skillExists(_parentSkillId)
-  allowedToAddSkill(_globalSkill)
+  allowedToAddSkill(_parentSkillId == 0)
   returns (uint256)
   {
     skillCount += 1;
 
     Skill storage parentSkill = skills[_parentSkillId];
-
     // Global and local skill trees are kept separate
-    require(parentSkill.globalSkill == _globalSkill, "colony-global-and-local-skill-trees-are-separate");
+    require(_parentSkillId == 0 || parentSkill.globalSkill == false, "colony-global-and-local-skill-trees-are-separate");
 
     Skill memory s;
-    s.nParents = parentSkill.nParents + 1;
-    s.globalSkill = _globalSkill;
-    skills[skillCount] = s;
+    if (_parentSkillId > 0) {
 
-    uint parentSkillId = _parentSkillId;
-    bool notAtRoot = true;
-    uint powerOfTwo = 1;
-    uint treeWalkingCounter = 1;
+      s.nParents = parentSkill.nParents + 1;
+      s.globalSkill = false;
+      skills[skillCount] = s;
 
-    // Walk through the tree parent skills up to the root
-    while (notAtRoot) {
-      // Add the new skill to each parent children
-      // TODO: skip this for the root skill as the children of that will always be all skills
-      parentSkill.children.push(skillCount);
-      parentSkill.nChildren += 1;
+      uint parentSkillId = _parentSkillId;
+      bool notAtRoot = true;
+      uint powerOfTwo = 1;
+      uint treeWalkingCounter = 1;
 
-      // When we are at an integer power of two steps away from the newly added skill node,
-      // add the current parent skill to the new skill's parents array
-      if (treeWalkingCounter == powerOfTwo) {
-        skills[skillCount].parents.push(parentSkillId);
-        powerOfTwo = powerOfTwo*2;
+      // Walk through the tree parent skills up to the root
+      while (notAtRoot) {
+        // Add the new skill to each parent children
+        // TODO: skip this for the root skill as the children of that will always be all skills
+        parentSkill.children.push(skillCount);
+        parentSkill.nChildren += 1;
+
+        // When we are at an integer power of two steps away from the newly added skill node,
+        // add the current parent skill to the new skill's parents array
+        if (treeWalkingCounter == powerOfTwo) {
+          skills[skillCount].parents.push(parentSkillId);
+          powerOfTwo = powerOfTwo*2;
+        }
+
+        // Check if we've reached the root of the tree yet (it has no parents)
+        // Otherwise get the next parent
+        if (parentSkill.nParents == 0) {
+          notAtRoot = false;
+        } else {
+          parentSkillId = parentSkill.parents[0];
+          parentSkill = skills[parentSkill.parents[0]];
+        }
+
+        treeWalkingCounter += 1;
       }
-
-      // Check if we've reached the root of the tree yet (it has no parents)
-      // Otherwise get the next parent
-      if (parentSkill.nParents == 0) {
-        notAtRoot = false;
-      } else {
-        parentSkillId = parentSkill.parents[0];
-        parentSkill = skills[parentSkill.parents[0]];
-      }
-
-      treeWalkingCounter += 1;
+    } else {
+      // Add a global skill
+      s.globalSkill = true;
+      skills[skillCount] = s;
     }
 
     emit SkillAdded(skillCount, _parentSkillId);

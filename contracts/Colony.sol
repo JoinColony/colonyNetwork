@@ -162,13 +162,13 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     IColonyNetwork(colonyNetworkAddress).registerColonyLabel(colonyName, orbitdb);
   }
 
-  function addGlobalSkill(uint _parentSkillId) public
+  function addGlobalSkill() public
   stoppable
   auth
   returns (uint256)
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.addSkill(_parentSkillId, true);
+    return colonyNetwork.addSkill(0);
   }
 
   function setNetworkFeeInverse(uint256 _feeInverse) public
@@ -198,7 +198,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     // Setup new local skill
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    uint256 newLocalSkill = colonyNetwork.addSkill(parentSkillId, false);
+    uint256 newLocalSkill = colonyNetwork.addSkill(parentSkillId);
 
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);
