@@ -289,14 +289,23 @@ contract("Colony Payment", accounts => {
       payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.true;
 
-      const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
-      const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
+      const recipientBalanceBefore1 = await token.balanceOf(RECIPIENT);
+      const networkBalanceBefore1 = await token.balanceOf(colonyNetwork.address);
       await colony.claimPayment(paymentId, token.address);
 
-      const recipientBalanceAfter = await token.balanceOf(RECIPIENT);
-      const networkBalanceAfter = await token.balanceOf(colonyNetwork.address);
-      expect(recipientBalanceAfter.sub(recipientBalanceBefore)).to.eq.BN(new BN("197"));
-      expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(new BN("2"));
+      const recipientBalanceAfter1 = await token.balanceOf(RECIPIENT);
+      const networkBalanceAfter1 = await token.balanceOf(colonyNetwork.address);
+      expect(recipientBalanceAfter1.sub(recipientBalanceBefore1)).to.eq.BN(new BN("197"));
+      expect(networkBalanceAfter1.sub(networkBalanceBefore1)).to.eq.BN(new BN("2"));
+
+      const recipientBalanceBefore2 = await otherToken.balanceOf(RECIPIENT);
+      const networkBalanceBefore2 = await otherToken.balanceOf(colonyNetwork.address);
+      await colony.claimPayment(paymentId, otherToken.address);
+
+      const recipientBalanceAfter2 = await otherToken.balanceOf(RECIPIENT);
+      const networkBalanceAfter2 = await otherToken.balanceOf(colonyNetwork.address);
+      expect(recipientBalanceAfter2.sub(recipientBalanceBefore2)).to.eq.BN(new BN("98"));
+      expect(networkBalanceAfter2.sub(networkBalanceBefore2)).to.eq.BN(new BN("2"));
     });
   });
 });

@@ -33,7 +33,6 @@ contract OneTxPayment {
   {
     IColony colony = IColony(_colony);
     // Check caller is able to call makePayment on the colony
-    // msg.sig is the same for this call as it is for the one we make below, so may as well use it here
     DSRoles authority = DSRoles(colony.authority());
     require(
       authority.canCall(

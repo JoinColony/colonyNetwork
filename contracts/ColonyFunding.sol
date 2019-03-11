@@ -85,7 +85,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     assert(task.roles[_role].user != address(0x0));
 
     uint payout = task.payouts[_role][_token];
-    fundingPot.payouts[_token] -= payout;
+    fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], payout);
     task.payouts[_role][_token] = 0;
 
     bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
