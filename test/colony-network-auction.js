@@ -5,7 +5,7 @@ import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../helpers/test-helper";
 import { ZERO_ADDRESS, WAD, SECONDS_PER_DAY } from "../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken } from "../helpers/test-data-generator";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -17,7 +17,6 @@ contract("Colony Network Auction", accounts => {
   const BIDDER_1 = accounts[1];
   const BIDDER_2 = accounts[2];
   const BIDDER_3 = accounts[3];
-  const PATRON = accounts[4];
 
   let metaColony;
   let colonyNetwork;
@@ -29,18 +28,13 @@ contract("Colony Network Auction", accounts => {
   let createAuctionTxReceipt;
 
   before(async () => {
-    quantity = new BN(10).pow(new BN(36)).muln(3);
-    clnyNeededForMaxPriceAuctionSellout = new BN(10).pow(new BN(54)).muln(3);
+    quantity = new BN(10).pow(new BN(18)).muln(3);
+    clnyNeededForMaxPriceAuctionSellout = new BN(10).pow(new BN(36)).muln(3); // eslint-disable-line prettier/prettier
   });
 
   beforeEach(async () => {
     colonyNetwork = await setupColonyNetwork();
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    // HACK: give some large amount (enough for the test) to this account before unlocking.
-    await clnyToken.mint(clnyNeededForMaxPriceAuctionSellout.muln(2), { from: accounts[11] });
-    await clnyToken.transfer(PATRON, clnyNeededForMaxPriceAuctionSellout.muln(2), { from: accounts[11] });
-
     await unlockCLNYToken(metaColony);
 
     await colonyNetwork.initialiseReputationMining();
@@ -55,11 +49,6 @@ contract("Colony Network Auction", accounts => {
     const auctionAddress = logs[0].args.auction;
     tokenAuction = await DutchAuction.at(auctionAddress);
   });
-
-  // HACK: transparently give out PATRON tokens instead of actually minting.
-  async function giveUserCLNYTokens(_, user, amount) {
-    await clnyToken.transfer(user, amount, { from: PATRON });
-  }
 
   describe("when initialising an auction", async () => {
     it("should initialise auction with correct given parameters", async () => {
@@ -77,6 +66,7 @@ contract("Colony Network Auction", accounts => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
       const supplyBefore = await clnyToken.totalSupply();
       const balanceBefore = await clnyToken.balanceOf(colonyNetwork.address);
+
       await colonyNetwork.startTokenAuction(clnyToken.address);
 
       const supplyAfter = await clnyToken.totalSupply();
@@ -89,6 +79,18 @@ contract("Colony Network Auction", accounts => {
       const args = getTokenArgs();
       const otherToken = await DSToken.new(args[1]);
       await checkErrorRevert(colonyNetwork.startTokenAuction(otherToken.address));
+    });
+
+    it("cannot bid if not started", async () => {
+      await token.mint(quantity);
+      await token.transfer(colonyNetwork.address, quantity);
+      tokenAuction = await DutchAuction.new(clnyToken.address, token.address, metaColony.address);
+
+      await checkErrorRevert(tokenAuction.bid(1000, { from: BIDDER_1 }), "colony-auction-not-started");
+    });
+
+    it("cannot initialise auction if not network owner", async () => {
+      await checkErrorRevert(colonyNetwork.startTokenAuction(token.address, { from: accounts[10] }), "ds-auth-unauthorized");
     });
   });
 
@@ -195,16 +197,17 @@ contract("Colony Network Auction", accounts => {
       it(`should correctly calculate price and remaining CLNY amount to end auction at duration ${auctionProp.duration}`, async () => {
         await forwardTime(auctionProp.duration, this);
         const currentPrice = await tokenAuction.price();
+
         // Expect up to 1% error margin because of forwarding block time inaccuracies
         const errorMarginPrice = auctionProp.price.divn(100);
         // Chai assert.closeTo does not work with Big Numbers so some manual comaring to error margin is required
         const differencePrices = auctionProp.price.sub(currentPrice);
         expect(differencePrices).to.be.lte.BN(errorMarginPrice);
 
-        const totalToEndAuction = await tokenAuction.totalToEndAuction();
+        const remainingToEndAuction = await tokenAuction.remainingToEndAuction();
         const amount = currentPrice.mul(quantity).div(WAD);
         const errorMarginQuantity = amount.divn(100);
-        const differenceQuantity = totalToEndAuction.sub(amount);
+        const differenceQuantity = new BN(remainingToEndAuction).sub(amount);
         expect(differenceQuantity).to.be.lte.BN(errorMarginQuantity);
       });
     });
@@ -224,7 +227,7 @@ contract("Colony Network Auction", accounts => {
     });
   });
 
-  describe("when bidding", async () => {
+  describe("when bidding in a high quantity auction (quantity >= 1e18)", async () => {
     it("can bid", async () => {
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, WAD);
       await clnyToken.approve(tokenAuction.address, WAD, { from: BIDDER_1 });
@@ -278,13 +281,13 @@ contract("Colony Network Auction", accounts => {
       const amount = clnyNeededForMaxPriceAuctionSellout.addn(20);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, amount);
       await clnyToken.approve(tokenAuction.address, amount, { from: BIDDER_1 });
-      const totalToEndAuction = await tokenAuction.totalToEndAuction();
+      const remainingToEndAuction = await tokenAuction.remainingToEndAuction();
       await tokenAuction.bid(amount, { from: BIDDER_1 });
       const receivedTotal = await tokenAuction.receivedTotal();
       const bid = await tokenAuction.bids(BIDDER_1);
-      expect(bid).to.be.lte.BN(totalToEndAuction);
-      expect(receivedTotal).to.be.lte.BN(totalToEndAuction);
-      expect(receivedTotal).to.eq.BN(bid.toString());
+      expect(bid).to.be.lte.BN(remainingToEndAuction);
+      expect(receivedTotal).to.be.lte.BN(remainingToEndAuction);
+      expect(receivedTotal).to.eq.BN(bid);
     });
 
     it("after target is sold, bid is rejected", async () => {
@@ -304,6 +307,455 @@ contract("Colony Network Auction", accounts => {
     it("cannot bid with 0 tokens", async () => {
       await checkErrorRevert(tokenAuction.bid(0), "colony-auction-invalid-bid");
     });
+
+    it("auction closes when the receivedTotal goes over the total amount to end the auction for quantity > 1e18", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
+      await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
+
+      let endTime = await tokenAuction.endTime();
+      const amount = new BN(10).pow(new BN(10));
+
+      while (endTime.isZero()) {
+        await forwardTime(SECONDS_PER_DAY * 3, this);
+
+        await tokenAuction.bid(amount, { from: BIDDER_1 });
+        endTime = await tokenAuction.endTime();
+      }
+
+      await tokenAuction.finalize();
+      const receivedTotal = await tokenAuction.receivedTotal();
+      const endPrice = WAD.mul(receivedTotal).div(quantity);
+      const finalPrice = await tokenAuction.finalPrice();
+      expect(endPrice).to.eq.BN(finalPrice);
+    });
+
+    it("functions correctly even when price has reached the minimum for quantity > 1e18", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, quantity);
+      await clnyToken.approve(tokenAuction.address, quantity, { from: BIDDER_1 });
+
+      await forwardTime(SECONDS_PER_DAY * 37, this);
+      let endTime = await tokenAuction.endTime();
+      const amount = new BN(10).pow(new BN(17));
+
+      while (endTime.isZero()) {
+        await forwardTime(SECONDS_PER_DAY, this);
+        await tokenAuction.bid(amount, { from: BIDDER_1 });
+        endTime = await tokenAuction.endTime();
+      }
+
+      await tokenAuction.finalize();
+      // Check the final price is the minimum price
+      const finalPrice = await tokenAuction.finalPrice();
+      expect(finalPrice).to.eq.BN(1);
+      await tokenAuction.claim(BIDDER_1);
+      const tokenBidderBalance = await token.balanceOf(BIDDER_1);
+      expect(tokenBidderBalance).to.eq.BN(quantity);
+    });
+  });
+
+  describe("when bidding in a low quantity auction (quantity < 1e18)", async () => {
+    let otherToken;
+    beforeEach(async () => {
+      const args = getTokenArgs();
+      otherToken = await DSToken.new(args[1]);
+    });
+
+    const auctionPropsLowQuantitiesLowPrice = [
+      // Day 34
+      {
+        scenario: 1,
+        daysOpen: 34,
+        quantity: new BN(10).pow(new BN(18)).subn(1),
+        remainingToEndAuction: 99
+      },
+      {
+        scenario: 2,
+        daysOpen: 34,
+        quantity: new BN(10).pow(new BN(18)).subn(10000),
+        remainingToEndAuction: 98
+      },
+      {
+        scenario: 3,
+        daysOpen: 34,
+        quantity: new BN(10).pow(new BN(17)).addn(1),
+        remainingToEndAuction: 10
+      },
+      {
+        scenario: 4,
+        daysOpen: 34,
+        quantity: new BN(10).pow(new BN(17)),
+        remainingToEndAuction: 10
+      },
+      {
+        scenario: 5,
+        daysOpen: 34,
+        quantity: new BN(10).pow(new BN(15)),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 6,
+        daysOpen: 34,
+        quantity: new BN(10).pow(new BN(9)).addn(58),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 7,
+        daysOpen: 34,
+        quantity: new BN(1000),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 8,
+        daysOpen: 34,
+        quantity: new BN(777),
+        remainingToEndAuction: 1
+      },
+      // Day 35
+      {
+        scenario: 9,
+        daysOpen: 35,
+        quantity: new BN(10).pow(new BN(18)).subn(1),
+        remainingToEndAuction: 8
+      },
+      {
+        scenario: 10,
+        daysOpen: 35,
+        quantity: new BN(10).pow(new BN(18)).subn(10000),
+        remainingToEndAuction: 9
+      },
+      {
+        scenario: 11,
+        daysOpen: 35,
+        quantity: new BN(10).pow(new BN(17)).addn(1),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 12,
+        daysOpen: 35,
+        quantity: new BN(10).pow(new BN(17)),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 13,
+        daysOpen: 35,
+        quantity: new BN(10).pow(new BN(15)),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 14,
+        daysOpen: 35,
+        quantity: new BN(10).pow(new BN(9)).addn(58),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 15,
+        daysOpen: 35,
+        quantity: new BN(1000),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 16,
+        daysOpen: 35,
+        quantity: new BN(777),
+        remainingToEndAuction: 1
+      },
+      // Day 36
+      {
+        scenario: 17,
+        daysOpen: 36,
+        quantity: new BN(10).pow(new BN(18)).subn(1),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 18,
+        daysOpen: 36,
+        quantity: new BN(10).pow(new BN(18)).subn(10000),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 19,
+        daysOpen: 36,
+        quantity: new BN(10).pow(new BN(17)).addn(1),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 20,
+        daysOpen: 36,
+        quantity: new BN(10).pow(new BN(17)),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 21,
+        daysOpen: 36,
+        quantity: new BN(10).pow(new BN(15)),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 22,
+        daysOpen: 36,
+        quantity: new BN(10).pow(new BN(9)).addn(58),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 23,
+        daysOpen: 36,
+        quantity: new BN(1000),
+        remainingToEndAuction: 1
+      },
+      {
+        scenario: 24,
+        daysOpen: 36,
+        quantity: new BN(777),
+        remainingToEndAuction: 1
+      }
+    ];
+
+    auctionPropsLowQuantitiesLowPrice.forEach(async auctionProp => {
+      it(`should correctly accept bids at low price and finalise auction for scenario ${auctionProp.scenario}`, async () => {
+        const bidAmount = new BN(100000);
+        await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount);
+
+        await otherToken.mint(auctionProp.quantity);
+        await otherToken.transfer(colonyNetwork.address, auctionProp.quantity);
+
+        const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+        const auctionAddress = logs[0].args.auction;
+        tokenAuction = await DutchAuction.at(auctionAddress);
+        await clnyToken.approve(tokenAuction.address, bidAmount, { from: BIDDER_1 });
+
+        const duration = auctionProp.daysOpen * SECONDS_PER_DAY;
+        await forwardTime(duration, this);
+        await tokenAuction.bid(bidAmount, { from: BIDDER_1 });
+
+        // Check only the amount required to end the auction was accepted
+        const bid = await tokenAuction.bids(BIDDER_1);
+        expect(bid.subn(auctionProp.remainingToEndAuction).toNumber()).to.be.closeTo(0, 1);
+
+        await tokenAuction.finalize();
+
+        await tokenAuction.claim(BIDDER_1);
+        const otherTokenBidderBalance = await otherToken.balanceOf(BIDDER_1);
+        expect(otherTokenBidderBalance).to.eq.BN(auctionProp.quantity);
+      });
+    });
+
+    const auctionPropsLowQuantitiesHighPrice = [
+      // Day 0
+      {
+        daysOpen: 0,
+        quantity: new BN(1),
+        remainingToEndAuction: WAD,
+        finalPrice: WAD.mul(WAD),
+        claimAmount: new BN(1)
+      },
+      {
+        daysOpen: 0,
+        quantity: new BN(2),
+        remainingToEndAuction: WAD,
+        finalPrice: WAD.mul(WAD),
+        claimAmount: new BN(2)
+      },
+      {
+        daysOpen: 0,
+        quantity: new BN(200),
+        remainingToEndAuction: WAD,
+        finalPrice: WAD.mul(WAD),
+        claimAmount: new BN(200)
+      },
+      {
+        daysOpen: 0,
+        quantity: new BN(20000000000),
+        remainingToEndAuction: WAD.muln(2),
+        finalPrice: WAD.mul(WAD),
+        claimAmount: new BN(20000000000)
+      }
+    ];
+
+    auctionPropsLowQuantitiesHighPrice.forEach(async auctionProp => {
+      it(`should correctly accept bids at high price and finalise auction for quantity ${auctionProp.quantity} at day open ${
+        auctionProp.daysOpen
+      }`, async () => {
+        await otherToken.mint(auctionProp.quantity);
+        await otherToken.transfer(colonyNetwork.address, auctionProp.quantity);
+        const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+        const auctionAddress = logs[0].args.auction;
+        tokenAuction = await DutchAuction.at(auctionAddress);
+        const duration = auctionProp.daysOpen * SECONDS_PER_DAY;
+        await forwardTime(duration, this);
+
+        const bidAmount = new BN(10).pow(new BN(30));
+        await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount);
+        await clnyToken.approve(tokenAuction.address, bidAmount, { from: BIDDER_1 });
+        await tokenAuction.bid(bidAmount, { from: BIDDER_1 });
+
+        const bid = await tokenAuction.bids(BIDDER_1);
+        // Expect up to 1% error margin because of forwarding block time inaccuracies
+        const errorMarginRemainingToEndAuction = auctionProp.remainingToEndAuction.divn(100);
+        // Chai assert.closeTo does not work with Big Numbers so some manual comaring to error margin is required
+        const differenceRemainingToEndAuction = auctionProp.remainingToEndAuction.sub(bid);
+        // Check only the amount required to end the auction was accepted
+        expect(differenceRemainingToEndAuction).to.be.lte.BN(errorMarginRemainingToEndAuction);
+
+        await tokenAuction.finalize();
+        const finalPrice = await tokenAuction.finalPrice();
+        // Expect up to 1% error margin because of forwarding block time inaccuracies
+        const errorMarginFinalPrice = auctionProp.finalPrice.divn(100);
+        const differenceFinalPrice = auctionProp.finalPrice.sub(finalPrice);
+        // Check only the amount required to end the auction was accepted
+        expect(differenceFinalPrice).to.be.lte.BN(errorMarginFinalPrice);
+
+        await tokenAuction.claim(BIDDER_1);
+        const otherTokenBidderBalance = await otherToken.balanceOf(BIDDER_1);
+        expect(otherTokenBidderBalance, "the one bidder didn't receive all tokens").to.eq.BN(auctionProp.claimAmount);
+      });
+    });
+
+    it("auction closes when the receivedTotal goes over the total amount to end the auction", async () => {
+      const totalAmount = new BN(10).pow(new BN(16));
+      await otherToken.mint(totalAmount);
+      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+      const auctionAddress = logs[0].args.auction;
+      tokenAuction = await DutchAuction.at(auctionAddress);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, new BN(10).pow(new BN(36)).muln(3));
+      await clnyToken.approve(tokenAuction.address, new BN(10).pow(new BN(36)).muln(3), { from: BIDDER_1 });
+
+      let endTime = await tokenAuction.endTime();
+      const amount = new BN(10).pow(new BN(20));
+
+      while (endTime.isZero()) {
+        await forwardTime(SECONDS_PER_DAY * 3, this);
+
+        await tokenAuction.bid(amount, { from: BIDDER_1 });
+        endTime = await tokenAuction.endTime();
+      }
+
+      await tokenAuction.finalize();
+      const finalPrice = await tokenAuction.finalPrice();
+      expect(finalPrice).to.eq.BN(new BN("40000000000000000000000"));
+    });
+
+    it("functions correctly even when price has reached the near minimum", async () => {
+      const totalAmount = new BN(10).pow(new BN(16));
+      await otherToken.mint(totalAmount);
+      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+      const auctionAddress = logs[0].args.auction;
+      tokenAuction = await DutchAuction.at(auctionAddress);
+
+      const bidAmount1 = new BN(300);
+      const bidAmount2 = new BN(20);
+      const bidAmount3 = new BN(900);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount1);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, bidAmount2);
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_3, bidAmount3);
+      await clnyToken.approve(tokenAuction.address, bidAmount1, { from: BIDDER_1 });
+      await clnyToken.approve(tokenAuction.address, bidAmount2, { from: BIDDER_2 });
+      await clnyToken.approve(tokenAuction.address, bidAmount3, { from: BIDDER_3 });
+
+      await forwardTime(SECONDS_PER_DAY * 31, this);
+
+      await tokenAuction.bid(bidAmount1, { from: BIDDER_1 });
+      await tokenAuction.bid(bidAmount2, { from: BIDDER_2 });
+      await tokenAuction.bid(bidAmount3, { from: BIDDER_3 });
+
+      await tokenAuction.finalize();
+
+      const receivedTotal = await tokenAuction.receivedTotal();
+
+      await tokenAuction.claim(BIDDER_1);
+      const tokenBidder1Balance = await otherToken.balanceOf(BIDDER_1);
+      expect(tokenBidder1Balance).to.eq.BN(bidAmount1.mul(totalAmount).div(receivedTotal));
+      expect(tokenBidder1Balance.toNumber()).to.be.closeTo(3000000000000000, 3003003003003);
+
+      await tokenAuction.claim(BIDDER_2);
+      const tokenBidder2Balance = await otherToken.balanceOf(BIDDER_2);
+      expect(tokenBidder2Balance).to.eq.BN(bidAmount2.mul(totalAmount).div(receivedTotal));
+      expect(tokenBidder2Balance.toNumber()).to.be.closeTo(200000000000000, 200200200200);
+
+      await tokenAuction.claim(BIDDER_3);
+      const tokenBidder3Balance = await otherToken.balanceOf(BIDDER_3);
+      expect(tokenBidder3Balance.toNumber()).to.be.closeTo(6700000000000000, 796796796796796);
+    });
+
+    // NOTE: Auction for 2 tokens where in the first day, when price is near maximum 1^36 someone bids 1 CLNY
+    // after 17 days another bid comes in for 20 CLNY (18 of which are accepted) which closes the auction.
+    // What's the fair distribution of these 2 tokens?
+    // Here the second bidder gets 1 token and the first none
+    // As the true distribution, if we had floats, should be 0.1 and 1.9
+    it("functions correctly when there are two bids at the far ends of the price spectrum and one can't go over the claim threshold", async () => {
+      const totalAmount = new BN(2);
+      await otherToken.mint(totalAmount);
+      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+      const auctionAddress = logs[0].args.auction;
+      tokenAuction = await DutchAuction.at(auctionAddress);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, new BN(1));
+      await clnyToken.approve(tokenAuction.address, new BN(1), { from: BIDDER_1 });
+      await tokenAuction.bid(new BN(1), { from: BIDDER_1 });
+
+      await forwardTime(SECONDS_PER_DAY * 17, this);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, 20);
+      await clnyToken.approve(tokenAuction.address, 20, { from: BIDDER_2 });
+      await tokenAuction.bid(20, { from: BIDDER_2 });
+
+      await tokenAuction.finalize();
+
+      await tokenAuction.claim(BIDDER_1);
+      await tokenAuction.claim(BIDDER_2);
+
+      const balanceBidder1 = await otherToken.balanceOf(BIDDER_1);
+      expect(balanceBidder1).to.be.zero;
+
+      const balanceBidder2 = await otherToken.balanceOf(BIDDER_2);
+      expect(balanceBidder2).to.eq.BN(1);
+    });
+
+    // NOTE: Auction for 2 tokens where in the first day, when price is near maximum 1^36 someone bids 9 CLNY
+    // after 17 days 1 bid for 9 CLNY and a third for 9 CLNY (1 of which is accepted) which closes the auction.
+    // What's the fair distribution of these 2 tokens?
+    // Here no bid gets any tokens
+    it("functions correctly when there are three bids in a low quantity auction, and none gets over the claim threshold", async () => {
+      const totalAmount = new BN(2);
+      await otherToken.mint(totalAmount);
+      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
+      const auctionAddress = logs[0].args.auction;
+      tokenAuction = await DutchAuction.at(auctionAddress);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 9);
+      await clnyToken.approve(tokenAuction.address, 9, { from: BIDDER_1 });
+      await tokenAuction.bid(9, { from: BIDDER_1 });
+
+      await forwardTime(SECONDS_PER_DAY * 17, this);
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_2, 9);
+      await clnyToken.approve(tokenAuction.address, 9, { from: BIDDER_2 });
+      await tokenAuction.bid(9, { from: BIDDER_2 });
+
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_3, 9);
+      await clnyToken.approve(tokenAuction.address, 9, { from: BIDDER_3 });
+      await tokenAuction.bid(9, { from: BIDDER_3 }); // Only 1 CLNY gets accepted in the bid
+
+      await tokenAuction.finalize();
+
+      await tokenAuction.claim(BIDDER_1);
+      await tokenAuction.claim(BIDDER_2);
+      await tokenAuction.claim(BIDDER_3);
+
+      const balanceBidder1 = await otherToken.balanceOf(BIDDER_1);
+      expect(balanceBidder1).to.be.zero;
+
+      const balanceBidder2 = await otherToken.balanceOf(BIDDER_2);
+      expect(balanceBidder2).to.be.zero;
+
+      const balanceBidder3 = await otherToken.balanceOf(BIDDER_3);
+      expect(balanceBidder3).to.be.zero;
+    });
   });
 
   describe("when finalizing auction", async () => {
@@ -316,7 +768,7 @@ contract("Colony Network Auction", accounts => {
     it("sets correct final token price", async () => {
       await tokenAuction.finalize();
       const receivedTotal = await tokenAuction.receivedTotal();
-      const endPrice = WAD.mul(receivedTotal).div(quantity).addn(1); // eslint-disable-line prettier/prettier
+      const endPrice = WAD.mul(receivedTotal).div(quantity); // eslint-disable-line prettier/prettier
       const finalPrice = await tokenAuction.finalPrice();
       expect(endPrice).to.eq.BN(finalPrice);
     });
@@ -353,15 +805,15 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("cannot claim if not finalized", async () => {
-      await checkErrorRevert(tokenAuction.claim({ from: BIDDER_1 }), "colony-auction-not-finalized");
+      await checkErrorRevert(tokenAuction.claim(BIDDER_1), "colony-auction-not-finalized");
     });
   });
 
   describe("when claiming tokens", async () => {
     it("should transfer to bidder correct number of tokens at finalPrice", async () => {
-      const bidAmount1 = new BN(10).pow(new BN(36));
-      const bidAmount2 = new BN(10).pow(new BN(38));
-      const bidAmount3 = new BN(10).pow(new BN(36)).muln(199);
+      const bidAmount1 = new BN(10).pow(new BN(18));
+      const bidAmount2 = new BN(10).pow(new BN(18));
+      const bidAmount3 = new BN(10).pow(new BN(18)).muln(199);
 
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount1);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_2, bidAmount2);
@@ -371,39 +823,38 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, bidAmount3, { from: BIDDER_3 });
 
       await tokenAuction.bid(bidAmount1, { from: BIDDER_1 }); // Bids at near max price of 1e36 CLNY per 1e18 Tokens
-      await forwardTime(SECONDS_PER_DAY * 16, this); // Gets us near price of 1e20 CLNY per 1e18 Tokens
+      await forwardTime(SECONDS_PER_DAY * 17, this); // Gets us near price of 1e20 CLNY per 1e18 Tokens
       await tokenAuction.bid(bidAmount2, { from: BIDDER_2 });
       await tokenAuction.bid(bidAmount3, { from: BIDDER_3 });
 
       await tokenAuction.finalize();
-      const finalPrice = await tokenAuction.finalPrice();
 
       let claimCount;
       let tokenBidderBalance;
       let tokensToClaim;
 
-      await tokenAuction.claim({ from: BIDDER_1 });
+      await tokenAuction.claim(BIDDER_1);
       claimCount = await tokenAuction.claimCount();
       expect(claimCount).to.eq.BN(1);
 
+      const finalPrice = await tokenAuction.finalPrice();
       tokenBidderBalance = await token.balanceOf(BIDDER_1);
-      tokensToClaim = WAD.mul(bidAmount1).div(finalPrice);
+      tokensToClaim = bidAmount1.mul(WAD).div(finalPrice);
       expect(tokenBidderBalance).to.eq.BN(tokensToClaim);
 
-      await tokenAuction.claim({ from: BIDDER_2 });
+      await tokenAuction.claim(BIDDER_2);
       claimCount = await tokenAuction.claimCount();
       expect(claimCount).to.eq.BN(2);
       tokenBidderBalance = await token.balanceOf(BIDDER_2);
-      tokensToClaim = WAD.mul(bidAmount2).div(finalPrice);
+      tokensToClaim = bidAmount2.mul(WAD).div(finalPrice);
       expect(tokenBidderBalance).to.eq.BN(tokensToClaim);
 
       const bid3 = await tokenAuction.bids(BIDDER_3);
-      await tokenAuction.claim({ from: BIDDER_3 });
+      await tokenAuction.claim(BIDDER_3);
       claimCount = await tokenAuction.claimCount();
       expect(claimCount).to.eq.BN(3);
       tokenBidderBalance = await token.balanceOf(BIDDER_3);
-      const bid3BN = new BN(bid3.toString(10));
-      tokensToClaim = WAD.mul(bid3BN).div(finalPrice);
+      tokensToClaim = bid3.mul(WAD).div(finalPrice);
       expect(tokenBidderBalance).to.eq.BN(tokensToClaim);
     });
 
@@ -412,9 +863,17 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
       await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
       await tokenAuction.finalize();
-      await tokenAuction.claim({ from: BIDDER_1 });
+      await tokenAuction.claim(BIDDER_1);
       const bid = await tokenAuction.bids(BIDDER_1);
       expect(bid).to.be.zero;
+    });
+
+    it("should fail if bidder amount is 0", async () => {
+      await giveUserCLNYTokens(colonyNetwork, BIDDER_1, clnyNeededForMaxPriceAuctionSellout);
+      await clnyToken.approve(tokenAuction.address, clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+      await tokenAuction.bid(clnyNeededForMaxPriceAuctionSellout, { from: BIDDER_1 });
+      await tokenAuction.finalize();
+      await checkErrorRevert(tokenAuction.claim(BIDDER_2), "colony-auction-zero-bid-total");
     });
   });
 
@@ -427,7 +886,7 @@ contract("Colony Network Auction", accounts => {
 
     it("should be able to destruct the auction and kill the auction contract", async () => {
       await tokenAuction.finalize();
-      await tokenAuction.claim({ from: BIDDER_1 });
+      await tokenAuction.claim(BIDDER_1);
       await tokenAuction.destruct();
       const code = await web3GetCode(tokenAuction.address);
       const emptyCode = process.env.SOLIDITY_COVERAGE ? "0x0" : "0x";
@@ -443,13 +902,17 @@ contract("Colony Network Auction", accounts => {
       await checkErrorRevert(tokenAuction.destruct(), "colony-auction-not-all-bids-claimed");
     });
 
-    it("should fail if there are CLNY tokens left owned by the auction", async () => {
+    it("should transfer any CLNY tokens left owned by the auction to the meta colony", async () => {
       await tokenAuction.finalize();
-      await tokenAuction.claim({ from: BIDDER_1 });
+      await tokenAuction.claim(BIDDER_1);
       await metaColony.mintTokens(100);
       await giveUserCLNYTokens(colonyNetwork, BIDDER_1, 100);
       await clnyToken.transfer(tokenAuction.address, 100, { from: BIDDER_1 });
-      await checkErrorRevert(tokenAuction.destruct());
+
+      const metaColonyBalanceBefore = await clnyToken.balanceOf(metaColony.address);
+      await tokenAuction.destruct();
+      const metaColonyBalanceAfter = await clnyToken.balanceOf(metaColony.address);
+      expect(metaColonyBalanceAfter.sub(metaColonyBalanceBefore)).to.eq.BN(100);
     });
   });
 });

@@ -283,11 +283,11 @@ export async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
-  const clny = await Token.at(clnyAddress);
+  const clnyToken = await Token.at(clnyAddress);
 
   const accounts = await web3GetAccounts();
-  await clny.mint(amount, { from: accounts[11] });
-  await clny.transfer(userAddress, amount, { from: accounts[11] });
+  await clnyToken.mint(amount, { from: accounts[11] });
+  await clnyToken.transfer(userAddress, amount, { from: accounts[11] });
 }
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
@@ -301,13 +301,13 @@ export async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
   const clnyAddress = await metaColony.getToken();
-  const clny = await Token.at(clnyAddress);
+  const clnyToken = await Token.at(clnyAddress);
 
   await giveUserCLNYTokens(colonyNetwork, user, amount);
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-  await clny.approve(tokenLocking.address, amount, { from: user });
-  await tokenLocking.deposit(clny.address, amount, { from: user });
+  await clnyToken.approve(tokenLocking.address, amount, { from: user });
+  await tokenLocking.deposit(clnyToken.address, amount, { from: user });
 }
 
 export async function fundColonyWithTokens(colony, token, tokenAmount = INITIAL_FUNDING) {
@@ -363,12 +363,15 @@ export async function unlockCLNYToken(metaColony) {
   const clnyAddress = await metaColony.getToken();
   const clny = await Token.at(clnyAddress);
 
-  // Unlock CLNY and Transfer ownership to MetaColony
+  // Unlock CLNY
   const accounts = await web3GetAccounts();
   await clny.unlock({ from: accounts[11] });
-  await clny.setOwner(metaColony.address, { from: accounts[11] });
+  const isLocked = await clny.locked();
+  assert.isFalse(isLocked);
 
-  // TODO: Shoult we clear the Authority as well?
+  // Note: In future when starting to work with an unlocked token, ownership can potentially be transferred to MetaColony
+  // await clny.setOwner(accounts[11], { from: accounts[11] });
+  // Authority could be cleared as well?
   // await clny.setAuthority(0x0, { from: accounts[11] });
 }
 

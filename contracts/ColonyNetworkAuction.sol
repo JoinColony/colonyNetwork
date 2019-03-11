@@ -22,7 +22,10 @@ import "./ColonyNetworkStorage.sol";
 
 contract ColonyNetworkAuction is ColonyNetworkStorage {
 
-  function startTokenAuction(address _token) public stoppable {
+  function startTokenAuction(address _token) public
+  stoppable
+  auth
+  {
     require(_token != address(0x0), "colony-auction-invalid-token");
 
     uint lastAuctionTimestamp = recentAuctions[_token];
@@ -68,7 +71,7 @@ contract DutchAuction is DSMath {
   uint public bidCount;
   uint public claimCount;
 
-  // Final price in CLNY per 10**18 Tokens (min 1, max 1e18)
+  // Final price in CLNY per 10**18 Tokens (min 1, max 1e36)
   uint public finalPrice;
   bool public finalized;
 
@@ -107,9 +110,10 @@ contract DutchAuction is DSMath {
     _;
   }
 
-  event AuctionBid(address indexed _sender, uint _amount, uint _missingFunds);
-  event AuctionClaim(address indexed _recipient, uint _sentAmount);
-  event AuctionFinalized(uint _finalPrice);
+  event AuctionStarted(address _token, uint256 _quantity, uint256 _minPrice);
+  event AuctionBid(address indexed _sender, uint256 _amount, uint256 _missingFunds);
+  event AuctionClaim(address indexed _recipient, uint256 _sentAmount);
+  event AuctionFinalized(uint256 _finalPrice);
 
   constructor(address _clnyToken, address _token, address _metaColony) public {
     colonyNetwork = msg.sender;
@@ -129,44 +133,67 @@ contract DutchAuction is DSMath {
 
     startTime = now;
     started = true;
+
+    emit AuctionStarted(address(token), quantity, minPrice);
   }
 
-  function totalToEndAuction() public view
+  function remainingToEndAuction() public view
   auctionStartedAndOpen
-  returns (uint)
+  returns (uint256)
   {
-    return mul(quantity, price()) / TOKEN_MULTIPLIER;
+    // Total amount to end the auction at the current price
+    uint totalToEndAuctionAtCurrentPrice;
+    // For low quantity auctions, there are cases where q * p < 1e18 once price has decreased sufficiently
+    if (quantity < TOKEN_MULTIPLIER && price() == minPrice) {
+      totalToEndAuctionAtCurrentPrice = 1;
+    } else {
+      totalToEndAuctionAtCurrentPrice = mul(quantity, price()) / TOKEN_MULTIPLIER;
+    }
+
+    uint _remainingToEndAuction = 0;
+    if (totalToEndAuctionAtCurrentPrice > receivedTotal) {
+      _remainingToEndAuction = sub(totalToEndAuctionAtCurrentPrice, receivedTotal);
+    }
+
+    return _remainingToEndAuction;
   }
 
   // Get the price in CLNY per 10**18 Tokens (min 1 max 1e36)
   // Starting price is 10**36, after 1 day price is 10**35, after 2 days price is 10**34 and so on
   function price() public view
   auctionStartedAndOpen
-  returns (uint)
+  returns (uint256)
   {
     uint duration = sub(now, startTime);
     uint daysOpen = duration / 86400;
+    if (daysOpen > 36) {
+      return minPrice;
+    }
     uint r = duration % 86400;
-    uint p = mul(10**sub(36, daysOpen), sub(864000, mul(9,r))) / 864000;
-    p = p < minPrice ? minPrice : p;
+
+    uint x = mul(10**sub(36, daysOpen), sub(864000, mul(9,r))) / 864000;
+    uint p = x < minPrice ? minPrice : x;
     return p;
   }
 
   function bid(uint256 _amount) public
   auctionStartedAndOpen
   {
-    require(_amount > 0, "colony-auction-invalid-bid");
-    uint _totalToEndAuction = totalToEndAuction();
-    uint remainingToEndAuction = sub(_totalToEndAuction, receivedTotal);
-
     // Adjust the amount for final bid in case that takes us over the offered quantity at current price
+    require(_amount > 0, "colony-auction-invalid-bid");
+    uint _remainingToEndAuction = remainingToEndAuction();
     // Also conditionally set the auction endTime
     uint amount;
-    if (remainingToEndAuction > _amount) {
+    if (_remainingToEndAuction > _amount) {
       amount = _amount;
-    } else {
-      amount = remainingToEndAuction;
+    } else if (_remainingToEndAuction != 0) {
+      // Required amount left to end the auction is less than the bid, so adjust bid amount down to the required quantity only and close the auction
+      amount = _remainingToEndAuction;
       endTime = now;
+    } else {
+      // We've received sufficient quantity to end the auction so just close the auction and return
+      endTime = now;
+      return;
     }
 
     if (bids[msg.sender] == 0) {
@@ -177,7 +204,7 @@ contract DutchAuction is DSMath {
     bids[msg.sender] = add(bids[msg.sender], amount);
     receivedTotal = add(receivedTotal, amount);
 
-    emit AuctionBid(msg.sender, amount, sub(remainingToEndAuction, amount));
+    emit AuctionBid(msg.sender, amount, sub(_remainingToEndAuction, amount));
   }
 
   // Finalize the auction and set the final Token price
@@ -187,29 +214,41 @@ contract DutchAuction is DSMath {
   {
     // Burn all CLNY received
     clnyToken.burn(receivedTotal);
-    finalPrice = add((mul(receivedTotal, TOKEN_MULTIPLIER) / quantity), 1);
+    finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity;
+    finalPrice = finalPrice <= minPrice ? minPrice : finalPrice;
+    assert(finalPrice != 0);
+
     finalized = true;
     emit AuctionFinalized(finalPrice);
   }
 
-  function claim() public
+  function claim(address recipient) public
   auctionFinalized
   returns (bool)
   {
-    uint amount = bids[msg.sender];
+    uint amount = bids[recipient];
     require(amount > 0, "colony-auction-zero-bid-total");
 
-    uint tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+    uint tokens;
+    if (mul(amount, quantity) < receivedTotal) {
+      tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+    } else {
+      // To avoid inaccuracies we substitute finalPrice = mul(receivedTotal, TOKEN_MULTIPLIER) / quantity
+      // in the above claim calculation tokens = mul(amount, TOKEN_MULTIPLIER) / finalPrice;
+      // deriving the calculation below instead, which avoids using finaPrice altogether.
+      tokens = mul(amount, quantity) / receivedTotal;
+    }
+
     claimCount += 1;
 
     // Set receiver bid to 0 before transferring the tokens
-    bids[msg.sender] = 0;
-    uint beforeClaimBalance = token.balanceOf(msg.sender);
-    require(token.transfer(msg.sender, tokens), "colony-auction-transfer-failed");
-    assert(token.balanceOf(msg.sender) == add(beforeClaimBalance, tokens));
-    assert(bids[msg.sender] == 0);
+    bids[recipient] = 0;
+    uint beforeClaimBalance = token.balanceOf(recipient);
+    require(token.transfer(recipient, tokens), "colony-auction-transfer-failed");
+    assert(token.balanceOf(recipient) == add(beforeClaimBalance, tokens));
+    assert(bids[recipient] == 0);
 
-    emit AuctionClaim(msg.sender, tokens);
+    emit AuctionClaim(recipient, tokens);
     return true;
   }
 
@@ -220,6 +259,9 @@ contract DutchAuction is DSMath {
     // Transfer token remainder to the network
     uint auctionTokenBalance = token.balanceOf(address(this));
     token.transfer(colonyNetwork, auctionTokenBalance);
+    // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
+    uint auctionClnyBalance = clnyToken.balanceOf(this);
+    clnyToken.transfer(metaColony, auctionClnyBalance);
     // Check this contract balances in the working tokens is 0 before we kill it
     assert(clnyToken.balanceOf(address(this)) == 0);
     assert(token.balanceOf(address(this)) == 0);
