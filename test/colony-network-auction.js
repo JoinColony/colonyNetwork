@@ -636,7 +636,7 @@ contract("Colony Network Auction", accounts => {
       expect(finalPrice).to.eq.BN(new BN("40000000000000000000000"));
     });
 
-    it("functions correctly even when price has reached the minimum", async () => {
+    it("functions correctly even when price has reached the near minimum", async () => {
       const totalAmount = new BN(10).pow(new BN(16));
       await otherToken.mint(totalAmount);
       await otherToken.transfer(colonyNetwork.address, totalAmount);
@@ -656,23 +656,28 @@ contract("Colony Network Auction", accounts => {
       await clnyToken.approve(tokenAuction.address, bidAmount3, { from: BIDDER_3 });
 
       await forwardTime(SECONDS_PER_DAY * 31, this);
+
       await tokenAuction.bid(bidAmount1, { from: BIDDER_1 });
       await tokenAuction.bid(bidAmount2, { from: BIDDER_2 });
       await tokenAuction.bid(bidAmount3, { from: BIDDER_3 });
 
       await tokenAuction.finalize();
 
+      const receivedTotal = await tokenAuction.receivedTotal();
+
       await tokenAuction.claim(BIDDER_1);
       const tokenBidder1Balance = await otherToken.balanceOf(BIDDER_1);
-      expect(tokenBidder1Balance).to.eq.BN(new BN("3003003003003003"));
+      expect(tokenBidder1Balance).to.eq.BN(bidAmount1.mul(totalAmount).div(receivedTotal));
+      expect(tokenBidder1Balance.toNumber()).to.be.closeTo(3000000000000000, 3003003003003);
 
       await tokenAuction.claim(BIDDER_2);
       const tokenBidder2Balance = await otherToken.balanceOf(BIDDER_2);
-      expect(tokenBidder2Balance).to.eq.BN(new BN("200200200200200"));
+      expect(tokenBidder2Balance).to.eq.BN(bidAmount2.mul(totalAmount).div(receivedTotal));
+      expect(tokenBidder2Balance.toNumber()).to.be.closeTo(200000000000000, 200200200200);
 
       await tokenAuction.claim(BIDDER_3);
       const tokenBidder3Balance = await otherToken.balanceOf(BIDDER_3);
-      expect(tokenBidder3Balance).to.eq.BN(new BN("6796796796796796"));
+      expect(tokenBidder3Balance.toNumber()).to.be.closeTo(6700000000000000, 796796796796796);
     });
 
     // NOTE: Auction for 2 tokens where in the first day, when price is near maximum 1^36 someone bids 1 CLNY
