@@ -168,5 +168,19 @@ contract("ColonyPermissions", accounts => {
       await colony.setAdministrationRole(1, 0, USER2, 1, true, { from: USER1 });
       await colony.setAdministrationRole(1, 1, USER2, 3, true, { from: USER1 });
     });
+
+    it("should allow permissions to propagate to subdomains", async () => {
+      // Create subdomain
+      const domain2 = await colony.getDomain(2);
+      const domain3 = await colony.getDomain(3);
+
+      // Give User 2 funding permissions in domain 1
+      await colony.setFundingRole(1, 0, USER2, 1, true);
+
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      // Test we can move funds between domain 1 and 2, and also 2 and 3
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, domain2.fundingPotId, WAD, token.address, { from: USER2 });
+      await colony.moveFundsBetweenPots(1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 });
+    });
   });
 });
