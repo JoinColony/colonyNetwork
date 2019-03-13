@@ -546,7 +546,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskManagerRole",
         signers: [MANAGER, COLONY_ADMIN],
         sigTypes: [0, 0],
-        args: [taskId, COLONY_ADMIN]
+        args: [taskId, COLONY_ADMIN, 1, 0]
       });
 
       const managerInfo = await colony.getTaskRole(taskId, MANAGER_ROLE);
@@ -582,7 +582,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, COLONY_ADMIN]
+          args: [taskId, COLONY_ADMIN, 1, 0]
         }),
         "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
@@ -601,7 +601,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, OTHER],
           sigTypes: [0, 0],
-          args: [taskId, OTHER]
+          args: [taskId, OTHER, 1, 0]
         }),
         "colony-task-role-assignment-execution-failed"
       );
@@ -620,7 +620,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, COLONY_ADMIN],
           sigTypes: [0, 0],
-          args: [taskId, ZERO_ADDRESS]
+          args: [taskId, ZERO_ADDRESS, 1, 0]
         }),
         "colony-task-role-assignment-not-signed-by-new-user-for-role"
       );
@@ -672,7 +672,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [newEvaluator, WORKER],
           sigTypes: [0, 0],
-          args: [taskId, WORKER]
+          args: [taskId, WORKER, 1, 0]
         }),
         "colony-task-role-assignment-not-signed-by-manager"
       );
@@ -1071,7 +1071,7 @@ contract("ColonyTask", accounts => {
           functionName: "setTaskManagerRole",
           signers: [MANAGER, COLONY_ADMIN],
           sigTypes: [0, 0],
-          args: [taskId, COLONY_ADMIN]
+          args: [taskId, COLONY_ADMIN, 1, 0]
         }),
         "colony-task-role-assignment-execution-failed"
       );

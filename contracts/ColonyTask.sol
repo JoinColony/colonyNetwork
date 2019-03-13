@@ -305,10 +305,10 @@ contract ColonyTask is ColonyStorage {
     return taskWorkRatings[_id].secret[_role];
   }
 
-  function setTaskManagerRole(uint256 _id, address payable _user) public
+  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _parentDomainId, uint256 _domainProofIndex) public
   stoppable
   self()
-  isAdmin(_user)
+  isAdmin(_parentDomainId, _domainProofIndex, _id, _user)
   {
     setTaskRoleUser(_id, TaskRole.Manager, _user);
   }

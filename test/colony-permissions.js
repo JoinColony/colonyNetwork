@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { WAD, INITIAL_FUNDING, SPECIFICATION_HASH } from "../helpers/constants";
-import { fundColonyWithTokens, makeTask, setupRandomColony } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, makeTask, setupRandomColony, executeSignedRoleAssignment } from "../helpers/test-data-generator";
 import { checkErrorRevert } from "../helpers/test-helper";
 
 const { expect } = chai;
@@ -91,7 +91,44 @@ contract("ColonyPermissions", accounts => {
 
       await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 0, 0, { from: USER1 }), "ds-auth-unauthorized");
 
-      await colony.makeTask(2, 0, SPECIFICATION_HASH, 2, 0, 0, { from: USER1 });
+      const { logs } = await colony.makeTask(2, 0, SPECIFICATION_HASH, 2, 0, 0, { from: USER1 });
+      const { taskId } = logs.filter(log => log.event === "TaskAdded")[0].args;
+
+      // User1 can transfer manager role to User2 only if User2 also has administration privileges.
+      hasRole = await colony.hasUserRole(USER2, 2, ADMINISTRATION_ROLE);
+      expect(hasRole).to.be.false;
+
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId,
+          functionName: "setTaskManagerRole",
+          signers: [USER1, USER2],
+          sigTypes: [0, 0],
+          args: [taskId, USER2, 2, 0]
+        }),
+        "colony-task-role-assignment-execution-failed"
+      );
+
+      await colony.setAdministrationRole(1, 0, USER2, 2, true);
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskManagerRole",
+        signers: [USER1, USER2],
+        sigTypes: [0, 0],
+        args: [taskId, USER2, 2, 0]
+      });
+
+      // And then User2 can transfer over to Founder (permission in parent domain)
+      await executeSignedRoleAssignment({
+        colony,
+        taskId,
+        functionName: "setTaskManagerRole",
+        signers: [USER2, FOUNDER],
+        sigTypes: [0, 0],
+        args: [taskId, FOUNDER, 1, 0]
+      });
     });
 
     it("should allow users with architecture permission manipulate the structure of their subdomains only", async () => {

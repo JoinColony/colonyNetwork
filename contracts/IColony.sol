@@ -297,10 +297,13 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Assigning manager role
   /// Current manager and user we want to assign role to both need to agree
   /// User we want to set here also needs to be an admin
+  /// Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking
   /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a manager role to
-  function setTaskManagerRole(uint256 _id, address payable _user) public;
+  /// @param _parentDomainId The domain ID in which _user has the Administration permission
+  /// @param _domainProofIndex The index that the _domainId is relative to _parentDomainId
+  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _parentDomainId, uint256 _domainProofIndex) public;
 
   /// @notice Assigning evaluator role
   /// Can only be set if there is no one currently assigned to be an evaluator

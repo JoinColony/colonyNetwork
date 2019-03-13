@@ -163,8 +163,9 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier isAdmin(address _user) {
-    require(ColonyAuthority(address(authority)).hasUserRole(_user, uint8(ColonyRole.Administration)), "colony-not-admin");
+  modifier isAdmin(uint256 _parentDomainId, uint256 _childIndex, uint256 _id, address _user) {
+    require(ColonyAuthority(authority).hasUserRole(_user, _parentDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
+    require(isValidDomainProof(_parentDomainId, tasks[_id].domainId, _childIndex), "colony-invalid-domain-proof");
     _;
   }
 
@@ -173,13 +174,11 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier authDomain(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) {
-    require(isAuthorized(msg.sender, parentDomainId, msg.sig), "ds-auth-unauthorized");
-    if (parentDomainId != childDomainId) {
-      require(validateDomainProof(parentDomainId, childDomainId, childIndex), "ds-auth-invalid-domain-proof");
-    }
-    if (canCallBecauseArchitect(msg.sender, parentDomainId, msg.sig)) {
-      require(parentDomainId != childDomainId, "ds-auth-only-authorized-in-child-domain");
+  modifier authDomain(uint256 _parentDomainId, uint256 _childDomainId, uint256 _childIndex) {
+    require(isAuthorized(msg.sender, _parentDomainId, msg.sig), "ds-auth-unauthorized");
+    require(isValidDomainProof(_parentDomainId, _childDomainId, _childIndex), "ds-auth-invalid-domain-proof");
+    if (canCallBecauseArchitect(msg.sender, _parentDomainId, msg.sig)) {
+      require(_parentDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
     }
     _;
   }
@@ -187,6 +186,10 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   modifier auth() {
     require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
     _;
+  }
+
+  function isValidDomainProof(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) internal view returns (bool) {
+    return (parentDomainId == childDomainId) || validateDomainProof(parentDomainId, childDomainId, childIndex);
   }
 
   function validateDomainProof(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) internal view returns (bool) {
