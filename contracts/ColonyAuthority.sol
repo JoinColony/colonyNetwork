@@ -29,74 +29,53 @@ contract ColonyAuthority is ColonyRoles {
   uint8 constant ARCHITECTURE_SUBDOMAIN_ROLE = uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain);
   uint8 constant ROOT_ROLE = uint8(ColonyDataTypes.ColonyRole.Root);
 
-  constructor(address colony) public CommonAuthority(colony) {
+  address colony;
+
+  constructor(address _colony) public CommonAuthority(_colony) {
+    colony = _colony;
+
     // Add permissions for the Administration role
-    setAdministrationCapability(colony, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)");
     // TODO: add domain auth
-    setAdministrationCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
-    setAdministrationCapability(colony, "setPaymentRecipient(uint256,address)");
-    setAdministrationCapability(colony, "setPaymentDomain(uint256,uint256)");
-    setAdministrationCapability(colony, "setPaymentSkill(uint256,uint256)");
-    setAdministrationCapability(colony, "setPaymentPayout(uint256,address,uint256)");
-    setAdministrationCapability(colony, "finalizePayment(uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "addPayment(address,address,uint256,uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentRecipient(uint256,address)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentDomain(uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,address,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256)");
     // Only for admins in root domain
-    setAdministrationCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
+    addRoleCapability(ADMINISTRATION_ROLE, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
 
     // Add permissions for the Funding role
-    setFundingCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
+    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
 
     // Add permissions for the Architecture role
-    setArchitectureCapability(colony, "addDomain(uint256,uint256,uint256)");
-    setArchitectureSubdomainCapability(colony, "setFundingRole(uint256,uint256,address,uint256,bool)");
-    setArchitectureSubdomainCapability(colony, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
-    setArchitectureSubdomainCapability(colony, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ARCHITECTURE_ROLE, "addDomain(uint256,uint256,uint256)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
 
     // Add permissions for the Root role
-    setRootCapability(colony, "setFundingRole(uint256,uint256,address,uint256,bool)");
-    setRootCapability(colony, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
-    setRootCapability(colony, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
-    setRootCapability(colony, "setRootRole(address,bool)");
-
-    setRootCapability(colony, "setRecoveryRole(address)");
-    setRootCapability(colony, "removeRecoveryRole(address)");
-
-    setRootCapability(colony, "bootstrapColony(address[],int256[])");
-    setRootCapability(colony, "registerColonyLabel(string,string)");
-    setRootCapability(colony, "addNetworkColonyVersion(uint256,address)");
-    setRootCapability(colony, "setNetworkFeeInverse(uint256)");
-    setRootCapability(colony, "setRewardInverse(uint256)");
-    setRootCapability(colony, "upgrade(uint256)");
-    setRootCapability(colony, "mintTokens(uint256)");
-    setRootCapability(colony, "addGlobalSkill(uint256)");
-    setRootCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
+    addRoleCapability(ROOT_ROLE, "setRootRole(address,bool)");
+    addRoleCapability(ROOT_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
+    // Managing recovery roles
+    addRoleCapability(ROOT_ROLE, "setRecoveryRole(address)");
+    addRoleCapability(ROOT_ROLE, "removeRecoveryRole(address)");
+    // Colony functions
+    addRoleCapability(ROOT_ROLE, "bootstrapColony(address[],int256[])");
+    addRoleCapability(ROOT_ROLE, "registerColonyLabel(string,string)");
+    addRoleCapability(ROOT_ROLE, "setRewardInverse(uint256)");
+    addRoleCapability(ROOT_ROLE, "mintTokens(uint256)");
+    addRoleCapability(ROOT_ROLE, "upgrade(uint256)");
+    //  Meta Colony functions
+    addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
+    addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
+    addRoleCapability(ROOT_ROLE, "addGlobalSkill(uint256)");
   }
 
-  function setAdministrationCapability(address colony, bytes memory sig) private {
-    addRoleCapability(ADMINISTRATION_ROLE, colony, sig);
-  }
-
-  function setFundingCapability(address colony, bytes memory sig) private {
-    addRoleCapability(FUNDING_ROLE, colony, sig);
-  }
-
-  function setArbitrationCapability(address colony, bytes memory sig) private {
-    addRoleCapability(ARBITRATION_ROLE, colony, sig);
-  }
-
-  function setArchitectureCapability(address colony, bytes memory sig) private {
-    addRoleCapability(ARCHITECTURE_ROLE, colony, sig);
-  }
-
-  function setArchitectureSubdomainCapability(address colony, bytes memory sig) private {
-    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, colony, sig);
-  }
-
-  function setRootCapability(address colony, bytes memory sig) private {
-    addRoleCapability(ROOT_ROLE, colony, sig);
-  }
-
-  // Internal helper
-  function addRoleCapability(uint8 role, address colony, bytes memory sig) private {
+  function addRoleCapability(uint8 role, bytes memory sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
     setRoleCapability(role, colony, functionSig, true);
   }

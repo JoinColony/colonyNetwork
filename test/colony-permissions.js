@@ -18,12 +18,12 @@ contract("ColonyPermissions", accounts => {
   const USER2 = accounts[2];
 
   // Role 0 is the recovery role
-  const FUNDING_ROLE = 1;
-  const ADMINISTRATION_ROLE = 2;
-  // const ARBITRATION_ROLE = 3;
-  const ARCHITECTURE_ROLE = 4;
-  const ARCHITECTURE_SUBDOMAIN_ROLE = 5;
-  const ROOT_ROLE = 6;
+  const ROOT_ROLE = 1;
+  // const ARBITRATION_ROLE = 2;
+  const ARCHITECTURE_ROLE = 3;
+  const ARCHITECTURE_SUBDOMAIN_ROLE = 4;
+  const FUNDING_ROLE = 5;
+  const ADMINISTRATION_ROLE = 6;
 
   let colonyNetwork;
   let colony;
