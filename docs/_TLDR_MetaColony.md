@@ -1,6 +1,6 @@
 ---
 title: The Meta Colony and CLNY
-section: Docs
+section: Whitepaper TL;DR
 order: 8
 ---
 
@@ -15,7 +15,7 @@ CLNY is the Token of “The Meta Colony”.
 
 Just like in a "normal" colony, accounts holding both CLNY and Reputation in the Meta Colony may claim a share of the revenue of the Meta Colony proportional to combined Reputation and CLNY holdings.
 
-CNLY is required as a stake to participate in [Reputation Mining](/colonynetwork/docs-reputation-mining/). Miners earn a reward in CLNY, as well as reputation within the Meta Colony tagged with a special 'mining' skill.
+CNLY is required as a stake to participate in [Reputation Mining](/colonynetwork/tldr-reputation-mining/). Miners earn a reward in CLNY, as well as reputation within the Meta Colony tagged with a special 'mining' skill.
 
 ## Revenue and Rewards
 The Meta Colony, as custodian of the Colony Network, collects a small fee every time a user claims a payout from a task. If the task payout is in a token other than whitelisted currencies such as ETH or DAI, the token is sent to an auction contract, and sold off for CLNY, which is burned.   

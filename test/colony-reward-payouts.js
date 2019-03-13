@@ -591,7 +591,7 @@ contract("Colony Reward Payouts", accounts => {
       await colony1.claimColonyFunds(newToken.address);
       await colony2.claimColonyFunds(newToken.address);
 
-      // Giving the user colony's native tokens and reputation so they can participate in reward payout
+      // Giving the user colony's internal tokens and reputation so they can participate in reward payout
       await colony1.bootstrapColony([userAddress1], [userReputation]);
       await colony2.bootstrapColony([userAddress1], [userReputation]);
 
@@ -711,7 +711,7 @@ contract("Colony Reward Payouts", accounts => {
       await colony1.claimColonyFunds(newToken.address);
       await colony2.claimColonyFunds(newToken.address);
 
-      // Giving the user colony's native tokens and reputation so they can participate in reward payout
+      // Giving the user colony's internal tokens and reputation so they can participate in reward payout
       await colony1.bootstrapColony([userAddress1], [userReputation]);
       await colony2.bootstrapColony([userAddress1], [userReputation]);
 
@@ -830,13 +830,13 @@ contract("Colony Reward Payouts", accounts => {
         const payoutTokenArgs = getTokenArgs();
         const payoutToken = await DSToken.new(payoutTokenArgs[0]);
         await fundColonyWithTokens(newColony, payoutToken, data.totalAmountOfPayoutTokens);
-        // Issuing colony's native tokens so they can be given to users in `bootstrapColony`
+        // Issuing colony's internal tokens so they can be given to users in `bootstrapColony`
         await newColony.mintTokens(data.totalReputation);
 
         // Every user has equal amount of reputation and tokens (totalReputationAndTokens / 3)
         const reputationPerUser = data.totalReputation.divn(3);
         const tokensPerUser = new BN(reputationPerUser);
-        // Giving colony's native tokens to 3 users.
+        // Giving colony's internal tokens to 3 users.
         // Reputation log is appended to inactive reputation mining cycle
         await newColony.claimColonyFunds(newToken.address);
         await newColony.bootstrapColony([userAddress1, userAddress2, userAddress3], [reputationPerUser, reputationPerUser, reputationPerUser]);

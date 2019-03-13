@@ -1,6 +1,6 @@
 ---
 title: Reputation
-section: Docs
+section: Whitepaper TL;DR
 order: 4
 ---
 
@@ -8,7 +8,7 @@ In an organization of any type, reputation is an essential heuristic for people 
 
 In the Colony Protocol, **reputation** is a number that quantifies a particular individual’s influence, calculated from the sum of work that has been completed within the colony.
 
-Every Colony has its own **native token** which complements reputation. Tokens, when earned as a task payout, create reputation for the recipient.
+Every Colony has its own **internal token** which complements reputation. Tokens, when earned as a task payout, create reputation for the recipient.
 
 The Reputation System in Colony is a tool for governance in a decentralized context: It allows for members of an organization to have different amounts of influence over the organization, without the use of a management hierarchy or frequent voting.
 
@@ -22,17 +22,17 @@ Reputation confers influence in a colony by mediating a member's ability to adju
 Unlike a token, reputation cannot be transacted between accounts. Reputation can only be gained or lost through interactions with other members of a colony.
 
 ### Completing Tasks
-The most straightforward way of gaining reputation is by completing tasks within the colony. Tasks funded with native tokens generate reputation for their recipient upon payout.
+The most straightforward way of gaining reputation is by completing tasks within the colony. Tasks funded with internal tokens generate reputation for their recipient upon payout.
 
 The amount of reputation gained or lost through a task is determined by the task's rating:
 
-* `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the native token payout.
-* `[2]` **Satisfactory**. The work done met the established expectations. Worker is awarded reputation equal to the native token payout.
-* `[3]` **Excellent**. The work done exceeded the expectations of the manager. Reputation is awarded at 1.5 times the native token payout.
+* `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the internal token payout.
+* `[2]` **Satisfactory**. The work done met the established expectations. Worker is awarded reputation equal to the internal token payout.
+* `[3]` **Excellent**. The work done exceeded the expectations of the manager. Reputation is awarded at 1.5 times the internal token payout.
 
 When a payout is received for the completion of a task, reputation is awarded within the task's domain, as well as all its parent domains. If the task is tagged with a skill, reputation is awarded in the skill, as well as all its parent skills.
 
-See [Tasks](/colonynetwork/docs-tasks/) for more information about the task workflow and ratings.
+See [Tasks](/colonynetwork/tldr-tasks/) for more information about the task workflow and ratings.
 
 See the colonyJS [task lifecycle](/colonyjs/topics-task-lifecycle/) for implementation examples.
 
@@ -45,12 +45,12 @@ If an objection to any action is raised by another member, the reputation stake 
 
 If an objection is escalated to a dispute, a reputation-weighted vote is called within the objection's domain, in which both sides must stake reputation. The amount of reputation gained/lost by each side is determined by the vote's outcome ('landslide' outcomes punish the losing side harshly, while more contentious decisions have only small penalties for the losing side).
 
-See [Objections and Disputes](/colonynetwork/docs-objections-and-disputes/) for more information about reputation-weighted voting and the dispute resolution process.
+See [Objections and Disputes](/colonynetwork/tldr-objections-and-disputes/) for more information about reputation-weighted voting and the dispute resolution process.
 
 ### Reputation Bootstrapping
 After a colony is created, reputation can only be gained and lost through normal interactions within a colony. But at the colony's beginning, we are presented with a bootstrapping problem: When a colony is new, no-one has yet completed any work in it and so nobody will have earned any reputation.
 
-During a colony's creation, the creator of the colony is granted the ability to designate an initial set of addresses to receive native tokens and an equivalent amount of reputation. Users receiving reputation are presumably the colony creator and their colleagues, and this starting reputation should be seen as a representation of the existing trust within the team.
+During a colony's creation, the creator of the colony is granted the ability to designate an initial set of addresses to receive internal tokens and an equivalent amount of reputation. Users receiving reputation are presumably the colony creator and their colleagues, and this starting reputation should be seen as a representation of the existing trust within the team.
 
 ## Reputation Decay
 One of the unique characteristics of reputation is that it decays over time. This is meant to incentivize frequent and consistent contributions to a colony, and to ensure that reputation represents _recent_ contributions.

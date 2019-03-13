@@ -1,6 +1,6 @@
 ---
 title: Reputation Mining
-section: Docs
+section: Whitepaper TL;DR
 order: 9
 ---
 
@@ -22,7 +22,7 @@ Reputation Mining resembles a proof-of-stake blockchain consensus protocol. Mine
 ### Reputation Updates
 One feature of reputation that distinguish it from a token or cryptographic asset is that reputation cannot be transferred between accounts through a voluntary transaction. Rather, it is a number associated with an address, calculated from a well-defined set of on-chain events.
 
-Reputation within a specific colony can only be earned and lost by completing tasks within the colony, through the [objections and disputes mechanism](/colonynetwork/docs-objections-and-disputes/), and in the case of the Meta Colony, through participation in the reputation mining process.
+Reputation within a specific colony can only be earned and lost by completing tasks within the colony, through the [objections and disputes mechanism](/colonynetwork/tldr-objections-and-disputes/), and in the case of the Meta Colony, through participation in the reputation mining process.
 
 ### Reputation Root Hashes
 Using a [Patricia Tree](https://github.com/ethereum/wiki/wiki/Patricia-Tree), all updates to the global state of reputation are maintained on-chain with a single "Reputation Root Hash".

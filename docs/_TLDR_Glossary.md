@@ -1,13 +1,13 @@
 ---
 title: Glossary of Terms
-section: Docs
+section: Whitepaper TL;DR
 order: 11
 ---
 
 ==TOC==
 
 ### CLNY
-The Native Token of the Meta Colony. CLNY is staked in the reputation mining process.
+The Internal Token of the Meta Colony. CLNY is staked in the reputation mining process.
 
 ### Dispute
 An objection to an objection triggers a dispute, which must be resolved through a reputation-weighted vote within the domain that the objection was initially raised.
@@ -21,11 +21,11 @@ All funding within a colony resides in pots. Pots can be thought of as 'earmarke
 ### Meta Colony
 The Meta Colony is “the Colony colony” — its remit is to develop, support, and grow the Colony Network. Every colony on the public network needs the Meta Colony, and everyone may be a member.
 
-### Native Token
-A token chosen by a colony which confers reputation when paid out as a task bounty. The Native token together with reputation is used for vote-weighting and calculating rewards payouts.
+### Internal Token
+A token chosen by a colony which confers reputation when paid out as a task bounty. The internal token together with reputation is used for vote-weighting and calculating rewards payouts.
 
 ### Objection
-A statement by a member of a colony that proposes some variable in the contracts of the colony should be changed to another state. To raise an objection, a colony member is required to put up a stake of native tokens. If another member opposes an objection, they may stake tokens to elevate the objection to become a dispute. Otherwise, the objection will pass automatically after a defined period of time.
+A statement by a member of a colony that proposes some variable in the contracts of the colony should be changed to another state. To raise an objection, a colony member is required to put up a stake of internal tokens. If another member opposes an objection, they may stake tokens to elevate the objection to become a dispute. Otherwise, the objection will pass automatically after a defined period of time.
 
 ### Reputation
 A number associated with an account which attempts to quantify the merit of a user’s recent contributions to a colony. Reputation is used to weight a user’s influence in decisions related to the expertise they have demonstrated, and to determine amounts owed to a colony’s members when rewards are disbursed.
@@ -53,7 +53,7 @@ The Meta Colony curates the hierarchy of global skill tags.
 A discrete unit of work which requires no further subdivision or delegation, and which can be evaluated as complete or incomplete based on some set of criteria.
 
 ### Token Issuance Rate
-The rate at which new native tokens are minted and made available to fund tasks. A higher rate could result in an inflated supply and perhaps diminishing value per-token.
+The rate at which new internal tokens are minted and made available to fund tasks. A higher rate could result in an inflated supply and perhaps diminishing value per-token.
 
 ### Token Supply Ceiling
 An upper bound on the total supply of a token.

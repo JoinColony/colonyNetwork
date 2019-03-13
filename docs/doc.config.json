@@ -1,6 +1,6 @@
 {
     "logo": "img/colonyNetwork_color.svg",
     "logoSmall": "img/colonyNetwork_color.svg",
-    "sectionOrder": ["Docs", "API"],
+    "sectionOrder": ["Intro", "Docs", "Bug Bounty Program", "Whitepaper TL;DR", "API"],
     "description": "The contracts that comprise the Colony Network provide a standard framework for the creation of decentralized organizations as described in the Colony Whitepaper."
 }

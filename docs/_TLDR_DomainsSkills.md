@@ -1,6 +1,6 @@
 ---
 title: Domains and Skills
-section: Docs
+section: Whitepaper TL;DR
 order: 5
 ---
 
@@ -19,16 +19,16 @@ Like a file system that contains files and sub-folders, any domain can contain t
 
 With the exception of the top-level colony domain, which contains all tasks and sub-domains, every domain in a colony belongs to a larger parent domain.
 
-Every domain has an associated [pot](/colonynetwork/docs-pots-and-funding/) which can receive funding (in most circumstances from the parent domain's pot).
+Every domain has an associated [pot](/colonynetwork/tldr-pots-and-funding/) which can receive funding (in most circumstances from the parent domain's pot).
 
-Tasks are tagged with a `DomainId` that specifies which domain they belong to. When a member of a colony earns native tokens as a result of a completed task (Managers, Workers, and Evaluators all earn reputation from task completion), they earn reputation in that domain as well as all parent domains, including the colony-wide domain. They do not earn any reputation in child domains.
+Tasks are tagged with a `DomainId` that specifies which domain they belong to. When a member of a colony earns internal tokens as a result of a completed task (Managers, Workers, and Evaluators all earn reputation from task completion), they earn reputation in that domain as well as all parent domains, including the colony-wide domain. They do not earn any reputation in child domains.
 
-A well-organized domain hierarchy is one way to isolate and compartmentalize work within a colony: In the Colony Protocol, reputation mediates the flow of funding from parent domains to their children (see [pots](/colonynetwork/docs-pots-and-funding/) for more about funding), which may in turn direct funding toward smaller and more specialized or specific child domains or tasks. In version 1 of the colonyNetwork, however, the flow of funds between domain pots is permissioned based on [authority roles](/colonyjs/topics-managing-permissions/).
+A well-organized domain hierarchy is one way to isolate and compartmentalize work within a colony: In the Colony Protocol, reputation mediates the flow of funding from parent domains to their children (see [pots](/colonynetwork/tldr-pots-and-funding/) for more about funding), which may in turn direct funding toward smaller and more specialized or specific child domains or tasks. In version 1 of the colonyNetwork, however, the flow of funds between domain pots is permissioned based on [authority roles](/colonyjs/topics-managing-permissions/).
 
 ## Skills
-Skills do not exist within a particular colony, but instead are a single structure available to all colonies on the network. The global skill hierarchy is maintained by [The Meta Colony](/colonynetwork/docs-the-meta-colony-and-clny/).
+Skills do not exist within a particular colony, but instead are a single structure available to all colonies on the network. The global skill hierarchy is maintained by [The Meta Colony](/colonynetwork/tldr-the-meta-colony-and-clny/).
 
-Tasks are tagged with a `SkillId` that specifies a skill from the global skill hierarchy. When a member of a colony earns native tokens for completing a task, they earn reputation in the skill, as well as all parent skills. They do not earn any reputation in child skills.
+Tasks are tagged with a `SkillId` that specifies a skill from the global skill hierarchy. When a member of a colony earns internal tokens for completing a task, they earn reputation in the skill, as well as all parent skills. They do not earn any reputation in child skills.
 
 Even though the global set of Skills is shared by all colonies, reputation earned in a particular skill only affects an individual's influence over the colony in which the reputation was earned.
 
@@ -45,4 +45,4 @@ When an objection is raised, the objector must specify at least one domain or sk
 
 Because of the recursively-awarded reputation in parent domains/skills, an individual will always have the same absolute voting power as a dispute is escalated, but of course will have diminishing proportional voting power as the dispute involves more and more participants.
 
-See [Objections and Disputes](/colonynetwork/docs-objections-and-disputes/) for more information about the complete dispute resolution process as described in the Colony whitepaper.
+See [Objections and Disputes](/colonynetwork/tldr-objections-and-disputes/) for more information about the complete dispute resolution process as described in the Colony whitepaper.
