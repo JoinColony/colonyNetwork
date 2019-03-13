@@ -48,6 +48,9 @@ contract EtherRouter is DSAuth {
 
     // Make the call
     assembly {
+      let size := extcodesize(destination)
+      if eq(size, 0) { revert(0,0) }
+	
       calldatacopy(mload(0x40), 0, calldatasize)
       let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0)
       returndatacopy(mload(0x40), 0, returndatasize)
