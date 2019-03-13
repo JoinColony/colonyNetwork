@@ -18,10 +18,10 @@
 pragma solidity >=0.5.3;
 
 import "./ColonyDataTypes.sol";
-import "./ColonyRoles.sol";
+import "./CommonAuthority.sol";
 
 
-contract ColonyAuthority is ColonyRoles {
+contract ColonyAuthority is CommonAuthority {
   uint8 constant FUNDING_ROLE = uint8(ColonyDataTypes.ColonyRole.Funding);
   uint8 constant ADMINISTRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Administration);
   uint8 constant ARBITRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Arbitration);

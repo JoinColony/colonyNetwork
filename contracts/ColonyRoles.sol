@@ -17,10 +17,10 @@
 
 pragma solidity >=0.4.23;
 
-import "./CommonAuthority.sol";
+import "../lib/dappsys/roles.sol";
 
 
-contract ColonyRoles is CommonAuthority {
+contract ColonyRoles is DSRoles {
   mapping(address=>mapping(uint256=>bytes32)) _user_roles;
 
   // New function signatures taking arbitrary domains
