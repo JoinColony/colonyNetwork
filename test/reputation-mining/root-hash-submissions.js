@@ -220,7 +220,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
       expect(repLogEntryMiner.user).to.equal(MINER1);
       expect(repLogEntryMiner.amount).to.be.zero; // Reward is 0 for now
-      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.skillId).to.eq.BN(2);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
@@ -228,7 +228,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryMiner.user).to.equal(MINER1);
       expect(repLogEntryMiner.amount).to.be.zero; // Reward is 0 for now
-      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.skillId).to.eq.BN(2);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);
@@ -608,7 +608,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       let repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(0);
       expect(repLogEntryMiner.user).to.equal(MINER1);
       expect(repLogEntryMiner.amount).to.eq.BN(balance1Updated);
-      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.skillId).to.eq.BN(2);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.be.zero;
@@ -616,7 +616,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       repLogEntryMiner = await inactiveRepCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryMiner.user).to.equal(MINER2);
       expect(repLogEntryMiner.amount).to.eq.BN(balance2Updated);
-      expect(repLogEntryMiner.skillId).to.eq.BN(3);
+      expect(repLogEntryMiner.skillId).to.eq.BN(2);
       expect(repLogEntryMiner.colony).to.equal(metaColony.address);
       expect(repLogEntryMiner.nUpdates).to.eq.BN(4);
       expect(repLogEntryMiner.nPreviousUpdates).to.eq.BN(4);

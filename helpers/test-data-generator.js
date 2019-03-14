@@ -121,9 +121,8 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
   });
 }
 
-export async function setupTask({ colony, dueDate, domainId = 1, skillId = 0, manager }) {
-  const taskId = await makeTask({ colony, dueDate, domainId, skillId, manager });
-
+export async function setupTask(args) {
+  const taskId = await makeTask(args);
   return taskId;
 }
 

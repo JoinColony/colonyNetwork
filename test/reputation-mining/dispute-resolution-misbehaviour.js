@@ -38,6 +38,8 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
+const Resolver = artifacts.require("Resolver");
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
@@ -55,12 +57,18 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-  // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
-  await metaColony.addGlobalSkill(1);
-  await metaColony.addGlobalSkill(4);
+  // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
+  const noLimitSubdomains = await NoLimitSubdomains.new();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
+  const resolver = await Resolver.at(resolverAddress);
+  await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
+
+  // Initialise global skills tree: 3, local skills tree 1 -> 4 -> 5
+  //                                                      \-> 2
+  await metaColony.addDomain(1);
+  await metaColony.addDomain(2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -495,7 +503,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 4,
+        domainId: 2,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
@@ -553,7 +561,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 4,
+        domainId: 2,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout: 5000000000000,
@@ -565,7 +573,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 4,
+        domainId: 2,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1,
@@ -583,7 +591,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nLogEntries).to.eq.BN(9);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 24, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 28, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 20, 123456);
