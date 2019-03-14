@@ -46,29 +46,21 @@ contract ColonyRoles is DSRoles {
   }
 
   function canCall(address caller, uint256 domainId, address code, bytes4 sig) public view returns (bool) {
-    if (isUserRoot(caller) || isCapabilityPublic(code, sig)) {
-      return true;
-    } else {
-      bytes32 has_roles = getUserRoles(caller, domainId);
-      bytes32 needs_one_of = getCapabilityRoles(code, sig);
-      return bytes32(0) != has_roles & needs_one_of;
-    }
+    bytes32 has_roles = getUserRoles(caller, domainId);
+    bytes32 needs_one_of = getCapabilityRoles(code, sig);
+    return bytes32(0) != has_roles & needs_one_of;
   }
 
   function canCallBecause(address caller, uint256 domainId, uint8 role, address code, bytes4 sig) public view returns (bool) {
-    bytes32 needs_one_of = getCapabilityRoles(code, sig);
     bytes32 has_roles = getUserRoles(caller, domainId);
+    bytes32 needs_one_of = getCapabilityRoles(code, sig);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
 
-    // See if the permission comes from a specific role
+    // See if the permission comes from a *specific* role
     return bytes32(0) == (needs_one_of & has_roles) ^ shifted;
   }
 
   // Support old function signatures for root domain
-
-  function getUserRoles(address who) public view returns (bytes32) {
-    return getUserRoles(who, 1);
-  }
 
   function setUserRole(address who, uint8 role, bool enabled) public auth {
     return setUserRole(who, 1, role, enabled);

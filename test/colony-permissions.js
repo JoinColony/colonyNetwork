@@ -2,7 +2,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { WAD, INITIAL_FUNDING, SPECIFICATION_HASH } from "../helpers/constants";
+import { UINT256_MAX, WAD, INITIAL_FUNDING, SPECIFICATION_HASH } from "../helpers/constants";
 import { fundColonyWithTokens, makeTask, setupRandomColony, executeSignedRoleAssignment } from "../helpers/test-data-generator";
 import { checkErrorRevert } from "../helpers/test-helper";
 
@@ -30,6 +30,10 @@ contract("ColonyPermissions", accounts => {
   let token;
   let hasRole;
 
+  let domain1;
+  let domain2;
+  let domain3;
+
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
@@ -42,6 +46,9 @@ contract("ColonyPermissions", accounts => {
     // Add subdomains 2 and 3
     await colony.addDomain(1, 0, 1);
     await colony.addDomain(1, 0, 1);
+    domain1 = await colony.getDomain(1);
+    domain2 = await colony.getDomain(2);
+    domain3 = await colony.getDomain(3);
   });
 
   describe("when managing domain-level permissions", () => {
@@ -64,18 +71,21 @@ contract("ColonyPermissions", accounts => {
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
 
       // Founder can move funds from domain 1 to domain 2.
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, WAD, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address);
 
       // User1 can only move funds from domain 2 into domain 2 task.
       await colony.setFundingRole(1, 0, USER1, 2, true);
       hasRole = await colony.hasUserRole(USER1, 2, FUNDING_ROLE);
       expect(hasRole).to.be.true;
 
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 0, 1, 2, WAD, token.address, { from: USER1 }), "ds-auth-unauthorized");
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, 0, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, { from: USER1 }),
+        "ds-auth-unauthorized"
+      );
 
       const taskId = await makeTask({ colony, domainId: 2 });
       const task = await colony.getTask(taskId);
-      await colony.moveFundsBetweenPots(2, 0, 0, 2, task.fundingPotId, WAD, token.address, { from: USER1 });
+      await colony.moveFundsBetweenPots(2, 0, 0, domain2.fundingPotId, task.fundingPotId, WAD, token.address, { from: USER1 });
     });
 
     it("should allow users with administration permission manipulate tasks/payments in their domains only", async () => {
@@ -121,6 +131,19 @@ contract("ColonyPermissions", accounts => {
       });
 
       // And then User2 can transfer over to Founder (permission in parent domain)
+      // But not with a bad proof!
+      await checkErrorRevert(
+        executeSignedRoleAssignment({
+          colony,
+          taskId,
+          functionName: "setTaskManagerRole",
+          signers: [USER2, FOUNDER],
+          sigTypes: [0, 0],
+          args: [taskId, FOUNDER, 1, 1]
+        }),
+        "colony-task-role-assignment-execution-failed"
+      );
+
       await executeSignedRoleAssignment({
         colony,
         taskId,
@@ -207,17 +230,36 @@ contract("ColonyPermissions", accounts => {
     });
 
     it("should allow permissions to propagate to subdomains", async () => {
-      // Create subdomain
-      const domain2 = await colony.getDomain(2);
-      const domain3 = await colony.getDomain(3);
-
       // Give User 2 funding permissions in domain 1
       await colony.setFundingRole(1, 0, USER2, 1, true);
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       // Test we can move funds between domain 1 and 2, and also 2 and 3
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, domain2.fundingPotId, WAD, token.address, { from: USER2 });
+      await colony.moveFundsBetweenPots(1, 0, 0, domain1.fundingPotId, domain2.fundingPotId, WAD, token.address, { from: USER2 });
       await colony.moveFundsBetweenPots(1, 0, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 });
+
+      // But only with valid proofs
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, 1, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        "ds-auth-invalid-domain-proof"
+      );
+      await checkErrorRevert(
+        colony.moveFundsBetweenPots(1, 0, 0, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
+        "ds-auth-invalid-domain-proof"
+      );
+    });
+
+    it("can get the child skill index, or UINT256_MAX if not found", async () => {
+      let childSkillIndex;
+
+      childSkillIndex = await colonyNetwork.getChildSkillIndex(domain1.skillId, domain2.skillId);
+      expect(childSkillIndex).to.be.zero;
+
+      childSkillIndex = await colonyNetwork.getChildSkillIndex(domain1.skillId, domain3.skillId);
+      expect(childSkillIndex).to.eq.BN(1);
+
+      childSkillIndex = await colonyNetwork.getChildSkillIndex(domain1.skillId, 100);
+      expect(childSkillIndex).to.eq.BN(UINT256_MAX);
     });
   });
 });
