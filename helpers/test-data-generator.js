@@ -126,7 +126,7 @@ export async function setupTask(args) {
   return taskId;
 }
 
-export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId = 0, manager, evaluator, worker }) {
+export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
