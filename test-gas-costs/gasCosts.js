@@ -101,10 +101,10 @@ contract("All", function(accounts) {
     });
 
     it("when working with the Meta Colony", async function() {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(6);
-      await metaColony.addGlobalSkill(7);
-      await metaColony.addGlobalSkill(8);
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
     });
 
     it("when working with a Colony", async function() {
