@@ -40,8 +40,8 @@ contract EtherRouter is DSAuth {
     // 1. Contracts that use 'send' or 'transfer' cannot send money to Colonies/ColonyNetwork
     // 2. We commit to never using a fallback function that does anything.
     //
-    // If we wish to have such a fallback function for a Colony, it could be in a separate
-    // contract.
+    // We have decided on option 2 here. In the future, if we wish to have such a fallback function 
+    // for a Colony, it could be in a separate extension contract. 
 
     // Get routing information for the called function
     address destination = resolver.lookup(msg.sig);

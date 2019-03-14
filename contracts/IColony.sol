@@ -236,7 +236,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a manager role to
-  function setTaskManagerRole(uint256 _id, address _user) public;
+  function setTaskManagerRole(uint256 _id, address payable _user) public;
 
   /// @notice Assigning evaluator role
   /// Can only be set if there is no one currently assigned to be an evaluator
@@ -245,7 +245,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a evaluator role to
-  function setTaskEvaluatorRole(uint256 _id, address _user) public;
+  function setTaskEvaluatorRole(uint256 _id, address payable _user) public;
 
   /// @notice Assigning worker role
   /// Can only be set if there is no one currently assigned to be a worker
@@ -253,7 +253,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a worker role to
-  function setTaskWorkerRole(uint256 _id, address _user) public;
+  function setTaskWorkerRole(uint256 _id, address payable _user) public;
 
   /// @notice Removing evaluator role
   /// Agreed between manager and currently assigned evaluator
