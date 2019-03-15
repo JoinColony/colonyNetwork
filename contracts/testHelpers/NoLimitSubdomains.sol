@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23 <0.5.0;
+pragma solidity >=0.5.3;
 pragma experimental ABIEncoderV2;
 
 import "./../ColonyStorage.sol";
