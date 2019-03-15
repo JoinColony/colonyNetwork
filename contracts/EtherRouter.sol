@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.3;
 
 import "./Resolver.sol";
 import "../lib/dappsys/auth.sol";
@@ -40,14 +40,17 @@ contract EtherRouter is DSAuth {
     // 1. Contracts that use 'send' or 'transfer' cannot send money to Colonies/ColonyNetwork
     // 2. We commit to never using a fallback function that does anything.
     //
-    // If we wish to have such a fallback function for a Colony, it could be in a separate
-    // contract.
+    // We have decided on option 2 here. In the future, if we wish to have such a fallback function 
+    // for a Colony, it could be in a separate extension contract. 
 
     // Get routing information for the called function
     address destination = resolver.lookup(msg.sig);
 
     // Make the call
     assembly {
+      let size := extcodesize(destination)
+      if eq(size, 0) { revert(0,0) }
+	
       calldatacopy(mload(0x40), 0, calldatasize)
       let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0)
       returndatacopy(mload(0x40), 0, returndatasize)

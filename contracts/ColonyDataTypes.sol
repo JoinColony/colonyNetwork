@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.3;
 
 
 contract ColonyDataTypes {
@@ -198,7 +198,7 @@ contract ColonyDataTypes {
 
   struct Role {
     // Address of the user for the given role
-    address user;
+    address payable user;
     // Whether the user failed to submit their rating
     bool rateFail;
     // Rating the user received

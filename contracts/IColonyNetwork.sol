@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23 <0.5.0;
+pragma solidity >=0.5.3;
 pragma experimental "ABIEncoderV2";
 
 import "./IRecovery.sol";
@@ -70,7 +70,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0
-  function getMetaColony() public view returns (address);
+  function getMetaColony() public view returns (address payable);
 
   /// @notice Get the number of colonies in the network
   /// @return count The colony count
@@ -98,7 +98,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function getSkill(uint256 _skillId) public view returns (Skill memory skill);
 
   /// @notice Get whether the skill with id _skillId is public or not.
-  /// @return isGlobalSkill bool 
+  /// @return isGlobalSkill bool
   /// @dev Returns false if skill does not exist
   function isGlobalSkill(uint256 _skillId) public view returns (bool isGlobalSkill);
 

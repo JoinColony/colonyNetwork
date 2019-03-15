@@ -53,6 +53,17 @@ contract("EtherRouter / Resolver", accounts => {
       expect(isConfirmed).to.be.false;
       expect(resolverUpdated).to.equal(resolver.address);
     });
+
+    it("should revert if destination contract does not exist", async () => {
+      // Let's pretend it's registered as a multisig and try to call something
+      const notAMultisig = await MultiSigWallet.at(etherRouter.address);
+      await checkErrorRevert(notAMultisig.submitTransaction(etherRouter.address, 0, "0x00000000"));
+      // I wanted this test to just be the following, but until https://github.com/trufflesuite/truffle/issues/1586 is fixed,
+      // if it's even being considered a bug, it's not possible.
+      // await checkErrorRevert(
+      //   etherRouter.sendTransaction({data: "0xdeadbeef"})
+      // );
+    });
   });
 
   describe("Resolver", () => {

@@ -23,7 +23,7 @@ step_setup_global_packages: &step_setup_global_packages
 step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
-      command: docker pull ethereum/solc:0.4.23
+      command: docker pull ethereum/solc:0.5.6
 step_pull_mythril_docker: &step_pull_mythril_docker
     run:
       name: "Pull mythril dev docker image"

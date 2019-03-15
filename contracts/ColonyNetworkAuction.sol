@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23 <0.5.0;
+pragma solidity >=0.5.3;
 
 import "./ColonyNetworkStorage.sol";
 
@@ -53,7 +53,7 @@ contract ColonyNetworkAuction is ColonyNetworkStorage {
 
 
 contract DutchAuction is DSMath {
-  address public colonyNetwork;
+  address payable public colonyNetwork;
   address public metaColony;
   ERC20Extended public clnyToken;
   ERC20Extended public token;
@@ -260,7 +260,7 @@ contract DutchAuction is DSMath {
     uint auctionTokenBalance = token.balanceOf(address(this));
     token.transfer(colonyNetwork, auctionTokenBalance);
     // Transfer CLNY remainder to the meta colony. There shouldn't be any left at this point but just in case..
-    uint auctionClnyBalance = clnyToken.balanceOf(this);
+    uint auctionClnyBalance = clnyToken.balanceOf(address(this));
     clnyToken.transfer(metaColony, auctionClnyBalance);
     // Check this contract balances in the working tokens is 0 before we kill it
     assert(clnyToken.balanceOf(address(this)) == 0);

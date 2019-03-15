@@ -49,6 +49,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/IColonyNetwork.sol",
       "contracts/IReputationMiningCycle.sol",
       "contracts/ITokenLocking.sol",
+      "contracts/IEtherRouter.sol",
       "contracts/Migrations.sol",
       "contracts/ReputationMiningCycle.sol",
       "contracts/ReputationMiningCycleRespond.sol",

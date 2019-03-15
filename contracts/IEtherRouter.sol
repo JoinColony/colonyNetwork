@@ -16,23 +16,14 @@
 */
 
 pragma solidity >=0.5.3;
+pragma experimental ABIEncoderV2;
+
+// Note that we have deliberately left the fallback function off here to accommodate
+// address / address payable conversion issues where we want to use this.
 
 
-contract TokenLockingDataTypes {
-
-  event ColonyNetworkSet(address colonyNetwork);
-  event TokenLocked(address token, uint256 lockCount);
-  event UserTokenUnlocked(address token, address user, uint256 lockId);
-  event UserTokenDeposited(address token, address user, uint256 amount, uint256 timestamp);
-  event UserTokenWithdrawn(address token, address user, uint256 amount);
-  event ReputationMinerPenalised(address miner, address beneficiary, uint256 tokensLost);
-
-  struct Lock {
-    // Users lock count
-    uint256 lockCount;
-    // Deposited balance
-    uint256 balance;
-    // Timestamp of last deposit
-    uint256 timestamp;
-  }
+contract IEtherRouter {
+  function setResolver(address _resolver) public;
+  function setOwner(address owner_) public;
+  function setAuthority(address authority_) public;
 }
