@@ -22,7 +22,7 @@ import "./ColonyStorage.sol";
 
 
 contract ColonyPayment is ColonyStorage {
-  function addPayment(address _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public
+  function addPayment(address payable _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public
   domainExists(_domainId)
   validPayoutAmount(_amount)
   stoppable
@@ -64,7 +64,7 @@ contract ColonyPayment is ColonyStorage {
     _;
   }
 
-  function setPaymentRecipient(uint256 _id, address _recipient) public 
+  function setPaymentRecipient(uint256 _id, address payable _recipient) public 
   paymentNotFinalized(_id)
   stoppable
   auth
