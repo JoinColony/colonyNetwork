@@ -59,6 +59,33 @@ contract ColonyPayment is ColonyStorage {
     return paymentCount;
   }
 
+  function finalizePayment(uint256 _id) public 
+  paymentFunded(_id)
+  paymentNotFinalized(_id)
+  stoppable
+  auth
+  {
+    Payment storage payment = payments[_id];
+    payment.finalized = true;
+
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+
+    IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+    // All payments in Colony's home token earn domain reputation and if skill was set, earn skill reputation
+    colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), domains[payment.domainId].skillId);
+    if (payment.skills[0] > 0) {
+      // Currently we support at most one skill per Payment, similarly to Task model.
+      // This may change in future to allow multiple skills to be set on both Tasks and Payments
+      colonyNetworkContract.appendReputationUpdateLog(payment.recipient, int(fundingPot.payouts[token]), payment.skills[0]);
+    }
+  }
+
+  modifier paymentFunded(uint256 _id) {
+    FundingPot storage fundingPot = fundingPots[payments[_id].fundingPotId];
+    require(fundingPot.payoutsWeCannotMake == 0, "colony-payment-not-funded");
+    _;
+  }
+
   modifier paymentNotFinalized(uint256 _id) {
     require(!payments[_id].finalized, "colony-payment-finalized");
     _;
@@ -92,7 +119,7 @@ contract ColonyPayment is ColonyStorage {
     payments[_id].skills[0] = _skillId;
   }
 
-  function getPayment(uint256 _id) public view returns(address, bool, uint256, uint256, uint256[] memory) {
+  function getPayment(uint256 _id) public view returns(address payable, bool, uint256, uint256, uint256[] memory) {
     Payment storage payment = payments[_id];
     return (payment.recipient, payment.finalized, payment.fundingPotId, payment.domainId, payment.skills);
   }

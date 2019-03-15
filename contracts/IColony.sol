@@ -137,17 +137,22 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _amount Payout amount
   /// @return paymentId Identifier of the newly created payment
   function addPayment(
-    address _recipient,
+    address payable _recipient,
     address _token,
     uint256 _amount,
     uint256 _domainId,
     uint256 _skillId) 
     public returns (uint256 paymentId);
 
+  /// @notice Finalizes the payment and logs the reputation log updates
+  /// Allowed to be called once after payment is fully funded. Secured function to authorised members
+  /// @param _id Payment identifier
+  function finalizePayment(uint256 _id) public;
+
   /// @notice Sets the recipient on an existing payment. Secured function to authorised members
   /// @param _id Payment identifier
   /// @param _recipient Address of the payment recipient
-  function setPaymentRecipient(uint256 _id, address _recipient) public;
+  function setPaymentRecipient(uint256 _id, address payable _recipient) public;
 
   /// @notice Sets the domain on an existing payment. Secured function to authorised members
   /// @param _id Payment identifier
@@ -173,7 +178,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return domainId The domain where the payment belongs
   /// @return skills Array of global skill ids assigned to task
   function getPayment(uint256 _id) public view returns (
-    address recipient,
+    address payable recipient,
     bool finalized,
     uint256 fundingPotId,
     uint256 domainId,

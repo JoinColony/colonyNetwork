@@ -66,6 +66,9 @@ contract ColonyAuthority is CommonAuthority {
     setAdminRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
     setFounderRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
     // Update payments
+    setAdminRoleCapability(colony, "finalizePayment(uint256)");
+    setFounderRoleCapability(colony, "finalizePayment(uint256)");
+
     setAdminRoleCapability(colony, "setPaymentRecipient(uint256,address)");
     setFounderRoleCapability(colony, "setPaymentRecipient(uint256,address)");
     

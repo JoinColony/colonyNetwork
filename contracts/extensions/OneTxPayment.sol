@@ -25,7 +25,7 @@ import "./../../lib/dappsys/roles.sol";
 contract OneTxPayment {
   function makePayment(
     address _colony,
-    address _worker,
+    address payable _worker,
     address _token,
     uint256 _amount,
     uint256 _domainId,

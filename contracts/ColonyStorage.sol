@@ -75,7 +75,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   mapping (uint256 => Payment) payments; // Storage slot 23
 
   modifier validPayoutAmount(uint256 _amount) {
-    require(_amount > 0, "colony-payout-invalid-amount");
     require(_amount <= MAX_PAYOUT, "colony-payout-too-large");
     _;
   }
