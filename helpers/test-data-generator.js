@@ -346,7 +346,8 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
     metaColonyAddress,
     tokenLockingAddress,
     ZERO_ADDRESS,
-    reputationMinerTestAccounts
+    reputationMinerTestAccounts,
+    ZERO_ADDRESS
   );
 
   await clnyToken.setAuthority(tokenAuthority.address);

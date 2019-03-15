@@ -36,7 +36,8 @@ module.exports = async function(deployer, network, accounts) {
     metaColonyAddress,
     tokenLockingAddress,
     ZERO_ADDRESS,
-    reputationMinerTestAccounts
+    reputationMinerTestAccounts,
+    ZERO_ADDRESS
   );
   await clnyToken.setAuthority(tokenAuthority.address);
   await clnyToken.setOwner(accounts[11]);
