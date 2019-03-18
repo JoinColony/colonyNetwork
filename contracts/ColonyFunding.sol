@@ -85,12 +85,13 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     assert(task.roles[_role].user != address(0x0));
 
     uint payout = task.payouts[_role][_token];
-    fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], payout);
     task.payouts[_role][_token] = 0;
 
     bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
     if (!unsatisfactory) {
       processPayout(task.fundingPotId, _token, payout, task.roles[_role].user);
+    } else {
+      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], payout);
     }
   }
 
@@ -440,6 +441,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       payoutToken.transfer(user, remainder);
       payoutToken.transfer(colonyNetworkAddress, fee);
     }
+
+    fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);
 
     emit PayoutClaimed(fundingPotId, _token, remainder);
   }

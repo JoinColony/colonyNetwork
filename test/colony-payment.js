@@ -279,6 +279,19 @@ contract("Colony Payment", accounts => {
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.eq.BN(new BN("10000000000000001"));
     });
 
+    it("after payment is claimed it should set the payout to 0", async () => {
+      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(paymentId);
+      await colony.claimPayment(paymentId, token.address);
+
+      const tokenPayout = await colony.getFundingPotPayout(payment.fundingPotId, token.address);
+      expect(tokenPayout).to.be.zero;
+    });
+
     it("should error when payment is not funded and finalized", async () => {
       await colony.addPayment(RECIPIENT, token.address, 10000, 1, 0);
       const paymentId = await colony.getPaymentCount();
