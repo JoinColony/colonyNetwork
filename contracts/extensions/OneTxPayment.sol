@@ -50,6 +50,7 @@ contract OneTxPayment {
     ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
     // Fund the payment
     colony.moveFundsBetweenPots(domain.fundingPotId, fundingPotId, _amount, _token);
+    colony.finalizePayment(paymentId);
     // Claim payout on behalf of the recipient
     colony.claimPayment(paymentId, _token);
   }
