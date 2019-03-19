@@ -24,6 +24,11 @@ import "./../ColonyStorage.sol";
 contract TaskSkillEditing is ColonyStorage {
   // No modifier guards, we're living on the edge. This is really only for testing until
   // tasks get multiple skills some time in the future.
+
+  // Things to remember when the proper implementation is being done
+  // * Can people add the same tag twice?
+  // * When deleting a tag, should shrink the array and copy the last element in to the empty slot
+  //   This makes the iteration done in updateReputation as cheap as possible.
   function addTaskSkill(uint256 _taskId, uint256 _skillId) 
   public
   {

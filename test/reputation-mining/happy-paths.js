@@ -471,7 +471,6 @@ contract("Reputation Mining - happy paths", accounts => {
         .add(new BN(1000000000));
       // .sub(new BN(1000000000000)); // Manage cannot lose skill they never had
       // .sub(new BN(5000000000000)); // Worker cannot lose skill they never had
-      console.log(goodClient.reputations);
       const reputationProps = [
         { id: 1, skill: META_ROOT_SKILL, account: undefined, value: META_ROOT_SKILL_TOTAL },
         { id: 2, skill: MINING_SKILL, account: undefined, value: REWARD },
