@@ -495,7 +495,20 @@ contract ColonyTask is ColonyStorage {
         // question, so recalculate it without the penalty.
         reputation = getReputation(payout, role.rating, false);
       }
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
+      int256 nSkills = 0;
+      for (uint i = 0; i < task.skills.length; i += 1) {
+        if (task.skills[i] > 0 ) {
+          nSkills += 1;
+        }
+      }
+
+      int256 reputationPerSkill = reputation / nSkills;
+
+      for (uint i = 0; i < task.skills.length; i += 1) {
+        if (task.skills[i] > 0) {
+          colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
+        }
+      }
     }
   }
 

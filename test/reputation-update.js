@@ -6,6 +6,7 @@ import bnChai from "bn-chai";
 
 import {
   fundColonyWithTokens,
+  setupRatedTask,
   setupFundedTask,
   setupFinalizedTask,
   setupColonyNetwork,
@@ -43,6 +44,7 @@ const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const DSToken = artifacts.require("DSToken");
 const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
 const Resolver = artifacts.require("Resolver");
+const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
 contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -381,6 +383,50 @@ contract("Reputation Updates", accounts => {
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
       expect(reputationUpdateLogLength).to.eq.BN(1); // Just the miner reward
+    });
+
+    it("should add the right log entries for tasks with multiple skills", async () => {
+      // Introduce our ability to add and remove skills from tasks
+      const taskSkillEditing = await TaskSkillEditing.new();
+      const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
+      const resolver = await Resolver.at(resolverAddress);
+      await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
+      await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
+      await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({ colonyNetwork, colony: metaColony, token: clnyToken });
+      const taskSkillEditingColony = await TaskSkillEditing.at(metaColony.address);
+      const skillCount = await colonyNetwork.getSkillCount();
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
+      await taskSkillEditingColony.addTaskSkill(taskId, skillCount);
+      await taskSkillEditingColony.addTaskSkill(taskId, skillCount.addn(1));
+      await taskSkillEditingColony.addTaskSkill(taskId, skillCount.addn(2));
+      await taskSkillEditingColony.removeTaskSkill(taskId, 1); // This removes the one with ID skillCount
+      await metaColony.finalizeTask(taskId);
+      const numUpdates = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
+      expect(numUpdates).to.eq.BN(7);
+      // Update 1 is the reputation miner reward.
+      // Updates 2, 3, and 4 are the domain-reputation rewards for the task.
+      // So update 5 is the update corresponding to the first skill in the task's array.
+      // (Remember we're zero indexed)
+      let logEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
+      expect(logEntry.user).to.equal(WORKER);
+      expect(logEntry.amount).to.eq.BN(WORKER_PAYOUT.divn(3));
+      expect(logEntry.skillId).to.eq.BN(3);
+      expect(logEntry.nUpdates).to.eq.BN(2);
+
+      logEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(5);
+      expect(logEntry.user).to.equal(WORKER);
+      expect(logEntry.amount).to.eq.BN(WORKER_PAYOUT.divn(3));
+      expect(logEntry.skillId).to.eq.BN(skillCount.addn(1));
+      expect(logEntry.nUpdates).to.eq.BN(2);
+
+      logEntry = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(6);
+      expect(logEntry.user).to.equal(WORKER);
+      expect(logEntry.amount).to.eq.BN(WORKER_PAYOUT.divn(3));
+      expect(logEntry.skillId).to.eq.BN(skillCount.addn(2));
+      expect(logEntry.nUpdates).to.eq.BN(2);
     });
   });
 });
