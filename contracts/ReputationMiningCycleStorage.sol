@@ -22,8 +22,11 @@ import "./ReputationMiningCycleDataTypes.sol";
 
 
 contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth {
+  // From DSAuth there is authority and owner at storage slots 0 and 1 respectively
+  // These are not used but are necessary for alignment when casting from EtherRouter
+
   // Address of the Resolver contract used by EtherRouter for lookups and routing
-  address resolver; // Storage slot 2 (from DSAuth there is authority and owner at storage slots 0 and 1 respectively)
+  address resolver; // Storage slot 2
 
   address payable colonyNetworkAddress; // Storage slot 3
   address tokenLockingAddress; // Storage slot 4
