@@ -73,7 +73,7 @@
     "eslint-plugin-import": "^2.16.0",
     "eslint-plugin-prettier": "^3.0.1",
     "eth-ens-namehash": "^2.0.8",
-    "eth-gas-reporter": "0.1.12",
+    "eth-gas-reporter": "0.1.10",
     "ethereumjs-util": "^6.1.0",
     "ethers": "^4.0.27",
     "ethlint": "^1.2.3",
