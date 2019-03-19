@@ -211,7 +211,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public stoppable
+  public stoppable auth
   {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(token);

@@ -64,6 +64,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "setRecoveryRole(address)");
     addRoleCapability(ROOT_ROLE, "removeRecoveryRole(address)");
     // Colony functions
+    addRoleCapability(ROOT_ROLE, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
     addRoleCapability(ROOT_ROLE, "bootstrapColony(address[],int256[])");
     addRoleCapability(ROOT_ROLE, "registerColonyLabel(string,string)");
     addRoleCapability(ROOT_ROLE, "setRewardInverse(uint256)");
