@@ -369,7 +369,7 @@ contract("Reputation Updates", accounts => {
       await metaColony.claimPayment(paymentId, otherToken.address);
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
-      expect(reputationUpdateLogLength).to.eq.BN(1);
+      expect(reputationUpdateLogLength).to.eq.BN(1); // Just the miner reward
     });
   });
 });

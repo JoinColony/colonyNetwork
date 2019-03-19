@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.3;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyStorage.sol";
@@ -23,10 +23,10 @@ import "./ColonyStorage.sol";
 
 contract ColonyPayment is ColonyStorage {
   function addPayment(address payable _recipient, address _token, uint256 _amount, uint256 _domainId, uint256 _skillId) public
-  domainExists(_domainId)
-  validPayoutAmount(_amount)
   stoppable
   auth
+  domainExists(_domainId)
+  validPayoutAmount(_amount)
   returns (uint256)
   {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
@@ -60,10 +60,10 @@ contract ColonyPayment is ColonyStorage {
   }
 
   function finalizePayment(uint256 _id) public 
-  paymentFunded(_id)
-  paymentNotFinalized(_id)
   stoppable
   auth
+  paymentFunded(_id)
+  paymentNotFinalized(_id)
   {
     Payment storage payment = payments[_id];
     payment.finalized = true;
@@ -80,41 +80,30 @@ contract ColonyPayment is ColonyStorage {
     }
   }
 
-  modifier paymentFunded(uint256 _id) {
-    FundingPot storage fundingPot = fundingPots[payments[_id].fundingPotId];
-    require(fundingPot.payoutsWeCannotMake == 0, "colony-payment-not-funded");
-    _;
-  }
-
-  modifier paymentNotFinalized(uint256 _id) {
-    require(!payments[_id].finalized, "colony-payment-finalized");
-    _;
-  }
-
   function setPaymentRecipient(uint256 _id, address payable _recipient) public 
-  paymentNotFinalized(_id)
   stoppable
   auth
+  paymentNotFinalized(_id)
   {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
     payments[_id].recipient = _recipient;
   }
 
   function setPaymentDomain(uint256 _id, uint256 _domainId) public
-  paymentNotFinalized(_id)
-  domainExists(_domainId)
   stoppable
   auth
+  paymentNotFinalized(_id)
+  domainExists(_domainId)
   {
     payments[_id].domainId = _domainId;
   }
 
   function setPaymentSkill(uint256 _id, uint256 _skillId) public
+  stoppable
+  auth
   paymentNotFinalized(_id)
   skillExists(_skillId)
   globalSkill(_skillId)
-  stoppable
-  auth
   {
     payments[_id].skills[0] = _skillId;
   }

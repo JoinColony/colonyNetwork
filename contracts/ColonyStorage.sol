@@ -79,6 +79,22 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
+  modifier paymentFunded(uint256 _id) {
+    FundingPot storage fundingPot = fundingPots[payments[_id].fundingPotId];
+    require(fundingPot.payoutsWeCannotMake == 0, "colony-payment-not-funded");
+    _;
+  }
+
+  modifier paymentNotFinalized(uint256 _id) {
+    require(!payments[_id].finalized, "colony-payment-finalized");
+    _;
+  }
+
+  modifier paymentFinalized(uint256 _id) {
+    require(payments[_id].finalized, "colony-payment-not-finalized");
+    _;
+  }
+
   modifier confirmTaskRoleIdentity(uint256 _id, TaskRole _role) {
     Role storage role = tasks[_id].roles[uint8(_role)];
     require(msg.sender == role.user, "colony-task-role-identity-mismatch");

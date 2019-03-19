@@ -233,12 +233,15 @@ contract("Colony Payment", accounts => {
 
     it("should not allow admins to update payment", async () => {
       await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPaymentPayout(paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-funding-payment-finalized");
+      await checkErrorRevert(colony.setPaymentPayout(paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-payment-finalized");
     });
 
     it("should not be able to set a payout above the limit", async () => {
       await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPaymentPayout(paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }), "colony-payout-too-large");
+      await checkErrorRevert(
+        colony.setPaymentPayout(paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }),
+        "colony-payout-too-large"
+      );
     });
   });
 

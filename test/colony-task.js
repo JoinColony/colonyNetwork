@@ -1680,7 +1680,7 @@ contract("ColonyTask", accounts => {
           sigTypes: [0],
           args: [taskId, ZERO_ADDRESS, MAX_PAYOUT.addn(1)]
         }),
-        "colony-task-change-execution-failed" // Should be "colony-funding-payout-too-large"
+        "colony-task-change-execution-failed" // Should be "colony-payout-too-large"
       );
     });
   });

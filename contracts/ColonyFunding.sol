@@ -97,10 +97,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   function claimPayment(uint256 _id, address _token) public
   stoppable
+  paymentFinalized(_id)
   {
     Payment storage payment = payments[_id];
-    require(payment.finalized, "colony-payment-not-finalized");
-
     FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
     assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
 
@@ -111,10 +110,10 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   auth
   stoppable
   validPayoutAmount(_amount)
+  paymentNotFinalized(_id)
   {
     FundingPot storage fundingPot = fundingPots[_id];
     require(fundingPot.associatedType == FundingPotAssociatedType.Payment, "colony-funding-pot-associated-with-non-payment");
-    require(!payments[fundingPot.associatedTypeId].finalized, "colony-funding-payment-finalized");
 
     uint currentTotalAmount = fundingPot.payouts[_token];
     fundingPot.payouts[_token] = _amount;
@@ -405,9 +404,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotComplete(_id)
+  validPayoutAmount(_amount)
   {
-    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
-
     Task storage task = tasks[_id];
     FundingPot storage fundingPot = fundingPots[task.fundingPotId];
     uint currentTotalAmount = fundingPot.payouts[_token];

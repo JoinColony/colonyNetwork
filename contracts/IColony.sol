@@ -131,10 +131,10 @@ contract IColony is ColonyDataTypes, IRecovery {
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members
   /// @param _recipient Address of the payment recipient
-  /// @param _domainId The domain where the payment belongs
-  /// @param _skillId The skill associated with the payment
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
+  /// @param _domainId The domain where the payment belongs
+  /// @param _skillId The skill associated with the payment
   /// @return paymentId Identifier of the newly created payment
   function addPayment(
     address payable _recipient,
