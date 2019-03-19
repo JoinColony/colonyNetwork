@@ -168,7 +168,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _id Payment identifier
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
-  function setPayout(uint256 _id, address _token, uint256 _amount) public;
+  function setPaymentPayout(uint256 _id, address _token, uint256 _amount) public;
 
   /// @notice Returns an exiting payment
   /// @param _id Payment identifier

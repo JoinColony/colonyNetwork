@@ -148,7 +148,7 @@ contract("Colony Payment", accounts => {
       await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
-      await colony.setPayout(payment.fundingPotId, otherToken.address, 100);
+      await colony.setPaymentPayout(payment.fundingPotId, otherToken.address, 100);
 
       const fundingPotPayoutForToken = await colony.getFundingPotPayout(payment.fundingPotId, token.address);
       const fundingPotPayoutForOtherToken = await colony.getFundingPotPayout(payment.fundingPotId, otherToken.address);
@@ -169,10 +169,10 @@ contract("Colony Payment", accounts => {
       expect(fundingPotBalanceForToken).to.eq.BN(40);
     });
 
-    it("should not allow task payouts to be set via setPayout", async () => {
+    it("should not allow task payouts to be set via setPaymentPayout", async () => {
       const taskId = await makeTask({ colony });
       const { fundingPotId } = await colony.getTask(taskId);
-      await checkErrorRevert(colony.setPayout(fundingPotId, token.address, 100), "colony-funding-pot-associated-with-non-payment");
+      await checkErrorRevert(colony.setPaymentPayout(fundingPotId, token.address, 100), "colony-funding-pot-associated-with-non-payment");
     });
 
     it("should allow admins to set token payment to zero", async () => {
@@ -182,7 +182,7 @@ contract("Colony Payment", accounts => {
       let fundingPotPayout = await colony.getFundingPotPayout(fundingPotId, token.address);
       expect(fundingPotPayout).to.eq.BN(WAD);
 
-      await colony.setPayout(fundingPotId, token.address, 0);
+      await colony.setPaymentPayout(fundingPotId, token.address, 0);
       fundingPotPayout = await colony.getFundingPotPayout(fundingPotId, token.address);
       expect(fundingPotPayout).to.be.zero;
     });
@@ -233,12 +233,12 @@ contract("Colony Payment", accounts => {
 
     it("should not allow admins to update payment", async () => {
       await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPayout(paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-funding-payment-finalized");
+      await checkErrorRevert(colony.setPaymentPayout(paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-funding-payment-finalized");
     });
 
     it("should not be able to set a payout above the limit", async () => {
       await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPayout(paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }), "colony-payout-too-large");
+      await checkErrorRevert(colony.setPaymentPayout(paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }), "colony-payout-too-large");
     });
   });
 
@@ -306,7 +306,7 @@ contract("Colony Payment", accounts => {
       const paymentId = await colony.getPaymentCount();
       let payment = await colony.getPayment(paymentId);
 
-      await colony.setPayout(payment.fundingPotId, otherToken.address, 100);
+      await colony.setPaymentPayout(payment.fundingPotId, otherToken.address, 100);
       await fundColonyWithTokens(colony, otherToken, 101);
       let fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(2);
@@ -319,7 +319,7 @@ contract("Colony Payment", accounts => {
       fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
-      await colony.setPayout(payment.fundingPotId, token.address, 199);
+      await colony.setPaymentPayout(payment.fundingPotId, token.address, 199);
       fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 

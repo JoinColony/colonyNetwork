@@ -107,7 +107,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
   }
 
-  function setPayout(uint256 _id, address _token, uint256 _amount) public
+  function setPaymentPayout(uint256 _id, address _token, uint256 _amount) public
   auth
   stoppable
   validPayoutAmount(_amount)
