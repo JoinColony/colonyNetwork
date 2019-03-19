@@ -20,7 +20,7 @@ pragma solidity >=0.4.23;
 import "../lib/dappsys/roles.sol";
 
 
-contract ColonyRoles is DSRoles {
+contract DomainRoles is DSRoles {
   mapping(address=>mapping(uint256=>bytes32)) _user_roles;
 
   // New function signatures taking arbitrary domains
