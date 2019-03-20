@@ -108,9 +108,8 @@ contract ColonyPayment is ColonyStorage {
     payments[_id].skills[0] = _skillId;
   }
 
-  function getPayment(uint256 _id) public view returns(address payable, bool, uint256, uint256, uint256[] memory) {
-    Payment storage payment = payments[_id];
-    return (payment.recipient, payment.finalized, payment.fundingPotId, payment.domainId, payment.skills);
+  function getPayment(uint256 _id) public view returns(Payment memory) {
+    return payments[_id];
   }
 
   function getPaymentCount() public view returns (uint256) {

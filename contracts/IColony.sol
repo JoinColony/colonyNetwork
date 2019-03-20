@@ -172,17 +172,8 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Returns an exiting payment
   /// @param _id Payment identifier
-  /// @return recipient Address of the payment recipient
-  /// @return finalized Boolean indicator turned on when the payment is fully funded
-  /// @return fundingPotId Id of the associated funding pot
-  /// @return domainId The domain where the payment belongs
-  /// @return skills Array of global skill ids assigned to task
-  function getPayment(uint256 _id) public view returns (
-    address payable recipient,
-    bool finalized,
-    uint256 fundingPotId,
-    uint256 domainId,
-    uint256[] memory skills);
+  /// @return payment The Payment data structure 
+  function getPayment(uint256 _id) public view returns (Payment memory payment);
   
   /// @notice Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout.
   /// Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.

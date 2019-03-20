@@ -19,6 +19,7 @@ pragma solidity >=0.5.3;
 pragma experimental ABIEncoderV2;
 
 import "./../IColony.sol";
+import "./../ColonyDataTypes.sol";
 import "./../../lib/dappsys/roles.sol";
 
 
@@ -46,10 +47,10 @@ contract OneTxPayment {
     // Add a new payment
     uint256 paymentId = colony.addPayment(_worker, _token, _amount, _domainId, _skillId);
     uint fundingPotId;
-    (,,fundingPotId,,) = colony.getPayment(paymentId);
+    ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
     ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
     // Fund the payment
-    colony.moveFundsBetweenPots(domain.fundingPotId, fundingPotId, _amount, _token);
+    colony.moveFundsBetweenPots(domain.fundingPotId, payment.fundingPotId, _amount, _token);
     colony.finalizePayment(paymentId);
     // Claim payout on behalf of the recipient
     colony.claimPayment(paymentId, _token);
