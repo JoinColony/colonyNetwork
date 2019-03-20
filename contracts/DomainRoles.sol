@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.4.23;
+pragma solidity >=0.5.3;
 
 import "../lib/dappsys/roles.sol";
 
@@ -45,14 +45,14 @@ contract DomainRoles is DSRoles {
     return bytes32(0) != roles & shifted;
   }
 
-  function canCall(address caller, uint256 domainId, address code, bytes4 sig) public view returns (bool) {
-    bytes32 has_roles = getUserRoles(caller, domainId);
+  function canCall(address caller, uint256 where, address code, bytes4 sig) public view returns (bool) {
+    bytes32 has_roles = getUserRoles(caller, where);
     bytes32 needs_one_of = getCapabilityRoles(code, sig);
     return bytes32(0) != has_roles & needs_one_of;
   }
 
-  function canCallBecause(address caller, uint256 domainId, uint8 role, address code, bytes4 sig) public view returns (bool) {
-    bytes32 has_roles = getUserRoles(caller, domainId);
+  function canCallBecause(address caller, uint256 where, uint8 role, address code, bytes4 sig) public view returns (bool) {
+    bytes32 has_roles = getUserRoles(caller, where);
     bytes32 needs_one_of = getCapabilityRoles(code, sig);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
 

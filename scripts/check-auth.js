@@ -29,25 +29,25 @@ function correctAuthModifier(functionDef) {
     return { valid, errors };
   }
 
-  // Check the first two arguments of the function are _parentDomainId, _domainProofIndex
-  if (functionDef.parameters.parameters.length > 0 && functionDef.parameters.parameters[0].name !== "_parentDomainId") {
+  // Check the first two arguments of the function are _permissionDomainId, _childSkillIndex
+  if (functionDef.parameters.parameters.length > 0 && functionDef.parameters.parameters[0].name !== "_permissionDomainId") {
     valid = false;
-    errors.push("First parameter of function is not _parentDomainId");
+    errors.push("First parameter of function is not _permissionDomainId");
   }
-  if (functionDef.parameters.parameters.length > 1 && functionDef.parameters.parameters[1].name !== "_domainProofIndex") {
+  if (functionDef.parameters.parameters.length > 1 && functionDef.parameters.parameters[1].name !== "_childSkillIndex") {
     valid = false;
-    errors.push("Second parameter of function is not _domainProofIndex");
+    errors.push("Second parameter of function is not _childSkillIndex");
   }
 
-  // Check that the first parameter to auth is _parentDomainId
-  if (authDec.arguments[0].name !== "_parentDomainId") {
+  // Check that the first parameter to auth is _permissionDomainId
+  if (authDec.arguments[0].name !== "_permissionDomainId") {
     valid = false;
-    errors.push("First parameter to auth is not _parentDomainId");
+    errors.push("First parameter to auth is not _permissionDomainId");
   }
-  // Check that the third is _domainProofIndex
-  if (authDec.arguments[2].name !== "_domainProofIndex") {
+  // Check that the third is _childSkillIndex
+  if (authDec.arguments[2].name !== "_childSkillIndex") {
     valid = false;
-    errors.push("Third parameter to auth is not _domainProofIndex");
+    errors.push("Third parameter to auth is not _childSkillIndex");
   }
   // Check that the second is either a lookup of a domainId, or _domainId
   const arg2 = authDec.arguments[1];

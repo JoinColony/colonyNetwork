@@ -163,9 +163,9 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier isAdmin(uint256 _parentDomainId, uint256 _childIndex, uint256 _id, address _user) {
-    require(ColonyAuthority(address(authority)).hasUserRole(_user, _parentDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
-    require(isValidDomainProof(_parentDomainId, tasks[_id].domainId, _childIndex), "colony-invalid-domain-proof");
+  modifier isAdmin(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _user) {
+    require(ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
+    require(validateDomainProof(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "colony-invalid-domain-proof");
     _;
   }
 
@@ -174,27 +174,27 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier authDomain(uint256 _parentDomainId, uint256 _childDomainId, uint256 _childIndex) {
-    require(isAuthorized(msg.sender, _parentDomainId, msg.sig), "ds-auth-unauthorized");
-    require(isValidDomainProof(_parentDomainId, _childDomainId, _childIndex), "ds-auth-invalid-domain-proof");
-    if (canCallBecauseArchitect(msg.sender, _parentDomainId, msg.sig)) {
-      require(_parentDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
+  modifier auth {
+    require(isAuthorized(msg.sender, 1, msg.sig), "ds-auth-unauthorized");
+    _;
+  }
+
+  modifier authDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _childDomainId) {
+    require(isAuthorized(msg.sender, _permissionDomainId, msg.sig), "ds-auth-unauthorized");
+    require(validateDomainProof(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-proof");
+    if (canCallBecauseArchitect(msg.sender, _permissionDomainId, msg.sig)) {
+      require(_permissionDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
     }
     _;
   }
 
-  modifier auth() {
-    require(isAuthorized(msg.sender, msg.sig), "ds-auth-unauthorized");
-    _;
+  // Evaluates a "domain proof" which checks that childDomainId is part of the subtree starting at permissionDomainId
+  function validateDomainProof(uint256 permissionDomainId, uint256 childSkillIndex, uint256 childDomainId) internal view returns (bool) {
+    return (permissionDomainId == childDomainId) || (getChildSkillId(permissionDomainId, childSkillIndex) == domains[childDomainId].skillId);
   }
 
-  function isValidDomainProof(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) internal view returns (bool) {
-    return (parentDomainId == childDomainId) || validateDomainProof(parentDomainId, childDomainId, childIndex);
-  }
-
-  function validateDomainProof(uint256 parentDomainId, uint256 childDomainId, uint256 childIndex) internal view returns (bool) {
-    uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[parentDomainId].skillId, childIndex);
-    return childSkillId == domains[childDomainId].skillId;
+  function getChildSkillId(uint256 permissionDomainId, uint256 childSkillIndex) internal view returns (uint256) {
+    return IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[permissionDomainId].skillId, childSkillIndex);
   }
 
   function canCallBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
@@ -203,10 +203,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
-  }
-
-  function isAuthorized(address src, bytes4 sig) internal view returns (bool) {
-    return isAuthorized(src, 1, sig);
   }
 
 }

@@ -90,15 +90,15 @@ contract ColonyTask is ColonyStorage {
   }
 
   function makeTask(
-    uint256 _parentDomainId,
-    uint256 _domainProofIndex,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     bytes32 _specificationHash,
     uint256 _domainId,
     uint256 _skillId,
     uint256 _dueDate
   ) public
   stoppable
-  authDomain(_parentDomainId, _domainId, _domainProofIndex)
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   domainExists(_domainId)
   {
     taskCount += 1;
@@ -305,10 +305,10 @@ contract ColonyTask is ColonyStorage {
     return taskWorkRatings[_id].secret[_role];
   }
 
-  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _parentDomainId, uint256 _domainProofIndex) public
+  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _permissionDomainId, uint256 _childSkillIndex) public
   stoppable
   self()
-  isAdmin(_parentDomainId, _domainProofIndex, _id, _user)
+  isAdmin(_permissionDomainId, _childSkillIndex, _id, _user)
   {
     setTaskRoleUser(_id, TaskRole.Manager, _user);
   }

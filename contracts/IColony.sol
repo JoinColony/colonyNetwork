@@ -57,22 +57,35 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Set new colony admin role.
   /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _user User we want to give an admin role to
-  function setAdministrationRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Set new colony funding role.
   /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _user User we want to give an funding role to
-  function setFundingRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setFundingRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Set new colony architecture role.
   /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _user User we want to give an architecture role to
-  function setArchitectureRole(uint256 _parentDomainId, uint256 _domainProofIndex, address _user, uint256 _domainId, bool _setTo) public;
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setArchitectureRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Set new colony root role.
   /// Can be called by root role only.
   /// @param _user User we want to give an root role to
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
   function setRootRole(address _user, bool _setTo) public;
 
   /// @notice Check whether a given user has a given role for the colony.
@@ -107,10 +120,10 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
   /// @param _permissionDomainId The domain ID I am leveraging my reputation in to take this action
-  /// @param _domainProofIndex The index that the _domainId is relative to _parentDomainId
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _parentDomainId Id of the domain under which the new one will be added
   /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1
-  function addDomain(uint256 _permissionDomainId, uint256 _domainProofIndex, uint256 _parentDomainId) public;
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public;
 
   /// @notice Get a domain by id
   /// @param _id Id of the domain which details to get
@@ -193,15 +206,15 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
-  /// @param _parentDomainId The domain ID I am leveraging my reputation in to take this action
-  /// @param _domainProofIndex The index that the _domainId is relative to _parentDomainId
+  /// @param _permissionDomainId The domain ID I am leveraging my reputation in to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
   /// @param _skillId The skill associated with the task, can set to 0 for no-op
   /// @param _dueDate The due date of the task, can set to 0 for no-op
   function makeTask(
-    uint256 _parentDomainId,
-    uint256 _domainProofIndex,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     bytes32 _specificationHash,
     uint256 _domainId,
     uint256 _skillId,
@@ -301,9 +314,9 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a manager role to
-  /// @param _parentDomainId The domain ID in which _user has the Administration permission
-  /// @param _domainProofIndex The index that the _domainId is relative to _parentDomainId
-  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _parentDomainId, uint256 _domainProofIndex) public;
+  /// @param _permissionDomainId The domain ID in which _user has the Administration permission
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
+  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _permissionDomainId, uint256 _childSkillIndex) public;
 
   /// @notice Assigning evaluator role
   /// Can only be set if there is no one currently assigned to be an evaluator
@@ -544,17 +557,17 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members
-  /// @param _parentDomainId The domain ID I am leveraging my reputation in to take this action
-  /// @param _fromDomainProofIndex The index that the _domainId is relative to the domain for _fromPotId
-  /// @param _toDomainProofIndex The index that the _domainId is relative to the domain for _toPotId
+  /// @param _permissionDomainId The domain ID I am leveraging my reputation in to take this action
+  /// @param _fromChildSkillIndex The index that the _domainId is relative to the domain for _fromPotId
+  /// @param _toChildSkillIndex The index that the _domainId is relative to the domain for _toPotId
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
   /// @param _amount Amount of funds
   /// @param _token Address of the token, `0x0` value indicates Ether
   function moveFundsBetweenPots(
-    uint256 _parentDomainId,
-    uint256 _fromDomainProofIndex,
-    uint256 _toDomainProofIndex,
+    uint256 _permissionDomainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
     uint256 _fromPot,
     uint256 _toPot,
     uint256 _amount,

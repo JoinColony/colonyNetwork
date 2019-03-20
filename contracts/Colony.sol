@@ -29,12 +29,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function version() public pure returns (uint256 colonyVersion) { return 1; }
 
   function setAdministrationRole(
-    uint256 _parentDomainId,
-    uint256 _domainProofIndex,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable authDomain(_parentDomainId, _domainId, _domainProofIndex)
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
 
@@ -42,12 +42,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function setFundingRole(
-    uint256 _parentDomainId,
-    uint256 _domainProofIndex,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable authDomain(_parentDomainId, _domainId, _domainProofIndex)
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
 
@@ -55,12 +55,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   }
 
   function setArchitectureRole(
-    uint256 _parentDomainId,
-    uint256 _domainProofIndex,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     address _user,
     uint256 _domainId,
     bool _setTo
-  ) public stoppable authDomain(_parentDomainId, _domainId, _domainProofIndex)
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
     // Because this permission has some restrictions on domains of action, we transparently implement it as two roles
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
@@ -191,9 +191,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
-  function addDomain(uint256 _permissionDomainId, uint256 _domainProofIndex, uint256 _parentDomainId) public
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
-  authDomain(_permissionDomainId, _parentDomainId, _domainProofIndex)
+  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   domainExists(_parentDomainId)
   {
     // Note: Remove when we want to allow more domain hierarchy levels
