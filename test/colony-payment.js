@@ -14,7 +14,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DSToken = artifacts.require("DSToken");
 
-contract.only("Colony Payment", accounts => {
+contract("Colony Payment", accounts => {
   const RECIPIENT = accounts[3];
   const COLONY_ADMIN = accounts[4];
 
