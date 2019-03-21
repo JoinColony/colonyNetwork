@@ -195,13 +195,18 @@ contract("Colony Payment", accounts => {
     });
 
     it("can finalize payment when it is fully funded", async () => {
-      let payment = await colony.getPayment(paymentId);
+      const payment = await colony.getPayment(paymentId);
+      await colony.moveFundsBetweenPots(payment.fundingPotId, 1, 1, token.address);
+      expect(payment.finalized).to.be.false;
+
+      await checkErrorRevert(colony.finalizePayment(paymentId), "colony-payment-not-funded");
+    });
+
+    it("cannnot finalize payment if it is NOT fully funded", async () => {
+      const payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.false;
 
       await colony.finalizePayment(paymentId);
-
-      payment = await colony.getPayment(paymentId);
-      expect(payment.finalized).to.be.true;
     });
 
     it("cannot finalize payment not authorised", async () => {
