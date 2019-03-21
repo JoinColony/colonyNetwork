@@ -150,7 +150,6 @@ contract("Colony Payment", accounts => {
 
       await colony.setPaymentPayout(paymentId, otherToken.address, 100);
       const payment = await colony.getPayment(paymentId);
-      console.log("payment.fundingPotId", payment.fundingPotId);
       const fundingPotPayoutForToken = await colony.getFundingPotPayout(payment.fundingPotId, token.address);
       const fundingPotPayoutForOtherToken = await colony.getFundingPotPayout(payment.fundingPotId, otherToken.address);
       expect(fundingPotPayoutForToken).to.eq.BN(WAD);

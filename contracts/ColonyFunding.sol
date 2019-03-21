@@ -114,7 +114,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   {
     Payment storage payment = payments[_id];
     FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
-    require(fundingPot.associatedType == FundingPotAssociatedType.Payment, "colony-funding-pot-associated-with-non-payment");
+    assert(fundingPot.associatedType == FundingPotAssociatedType.Payment);
 
     uint currentTotalAmount = fundingPot.payouts[_token];
     fundingPot.payouts[_token] = _amount;
@@ -409,6 +409,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   {
     Task storage task = tasks[_id];
     FundingPot storage fundingPot = fundingPots[task.fundingPotId];
+    assert(fundingPot.associatedType == FundingPotAssociatedType.Task);
+
     uint currentTotalAmount = fundingPot.payouts[_token];
     uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
     task.payouts[uint8(_role)][_token] = _amount;
