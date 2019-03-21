@@ -225,7 +225,7 @@ contract("ColonyPermissions", accounts => {
       await colony.setRootRole(USER2, true, { from: USER1 });
 
       // // And child domains!
-      await colony.setAdministrationRole(1, 0, USER2, 1, true, { from: USER1 });
+      await colony.setAdministrationRole(1, 0, USER2, 2, true, { from: USER1 });
       await colony.setAdministrationRole(1, 1, USER2, 3, true, { from: USER1 });
     });
 

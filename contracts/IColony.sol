@@ -119,7 +119,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
-  /// @param _permissionDomainId The domain ID I am leveraging my reputation in to take this action
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _parentDomainId Id of the domain under which the new one will be added
   /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1
@@ -206,7 +206,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
-  /// @param _permissionDomainId The domain ID I am leveraging my reputation in to take this action
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
   /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
@@ -556,10 +556,9 @@ contract IColony is ColonyDataTypes, IRecovery {
   function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256 payout);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
-  /// Secured function to authorised members
-  /// @param _permissionDomainId The domain ID I am leveraging my reputation in to take this action
-  /// @param _fromChildSkillIndex The index that the _domainId is relative to the domain for _fromPotId
-  /// @param _toChildSkillIndex The index that the _domainId is relative to the domain for _toPotId
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _fromChildSkillIndex The child index in _permissionDomainId where we can find the domain for _fromPotId
+  /// @param _toChildSkillIndex The child index in _permissionDomainId where we can find the domain for _toPotId
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
   /// @param _amount Amount of funds

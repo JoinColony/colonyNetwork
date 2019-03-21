@@ -2,7 +2,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
-import { checkErrorRevert, getChildDomainIndex } from "../helpers/test-helper";
+import { checkErrorRevert } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupFundedTask,
@@ -277,9 +277,9 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
       await metaColony.addDomain(1, 0, 1);
-      const childIdx = await getChildDomainIndex(colonyNetwork, metaColony, 1, 2);
 
-      await checkErrorRevert(metaColony.addDomain(1, childIdx, 2), "colony-parent-domain-not-root");
+      // In position 1 because the mining skill occupies position 0
+      await checkErrorRevert(metaColony.addDomain(1, 1, 2), "colony-parent-domain-not-root");
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);

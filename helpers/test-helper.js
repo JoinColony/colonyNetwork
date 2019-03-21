@@ -699,10 +699,3 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
     })
   );
 }
-
-export async function getChildDomainIndex(colonyNetwork, colony, permissionDomainId, childDomainId) {
-  const permissionDomain = await colony.getDomain(permissionDomainId);
-  const childDomain = await colony.getDomain(childDomainId);
-  const skillIdx = await colonyNetwork.getChildSkillIndex(permissionDomain.skillId, childDomain.skillId);
-  return skillIdx;
-}
