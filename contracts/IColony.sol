@@ -55,23 +55,11 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return tokenAddress Address of the token contract
   function getToken() public view returns (address tokenAddress);
 
-  /// @notice Set new colony admin role.
-  /// Can be called by root role or architecture role.
-  /// @param _permissionDomainId Domain in which the caller has root/architecture role
-  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
-  /// @param _user User we want to give an admin role to
-  /// @param _domainId Domain in which we are giving user the role
+  /// @notice Set new colony root role.
+  /// Can be called by root role only.
+  /// @param _user User we want to give an root role to
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
-  function setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
-
-  /// @notice Set new colony funding role.
-  /// Can be called by root role or architecture role.
-  /// @param _permissionDomainId Domain in which the caller has root/architecture role
-  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
-  /// @param _user User we want to give an funding role to
-  /// @param _domainId Domain in which we are giving user the role
-  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
-  function setFundingRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
+  function setRootRole(address _user, bool _setTo) public;
 
   /// @notice Set new colony architecture role.
   /// Can be called by root role or architecture role.
@@ -82,11 +70,23 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
   function setArchitectureRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
-  /// @notice Set new colony root role.
-  /// Can be called by root role only.
-  /// @param _user User we want to give an root role to
+  /// @notice Set new colony funding role.
+  /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
+  /// @param _user User we want to give an funding role to
+  /// @param _domainId Domain in which we are giving user the role
   /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
-  function setRootRole(address _user, bool _setTo) public;
+  function setFundingRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
+
+  /// @notice Set new colony admin role.
+  /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
+  /// @param _user User we want to give an admin role to
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Check whether a given user has a given role for the colony.
   /// Calls the function of the same name on the colony's authority contract.

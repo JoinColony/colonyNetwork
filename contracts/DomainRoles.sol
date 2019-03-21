@@ -55,7 +55,6 @@ contract DomainRoles is DSRoles {
     bytes32 has_roles = getUserRoles(caller, where);
     bytes32 needs_one_of = getCapabilityRoles(code, sig);
     bytes32 shifted = bytes32(uint256(uint256(2) ** uint256(role)));
-
     // See if the permission comes from a *specific* role
     return bytes32(0) == (needs_one_of & has_roles) ^ shifted;
   }

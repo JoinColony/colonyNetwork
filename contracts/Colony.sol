@@ -28,30 +28,10 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256 colonyVersion) { return 1; }
 
-  function setAdministrationRole(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
+  function setRootRole(address _user, bool _setTo) public stoppable auth {
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
 
-    emit ColonyAdministrationRoleSet(_user, _setTo);
-  }
-
-  function setFundingRole(
-    uint256 _permissionDomainId,
-    uint256 _childSkillIndex,
-    address _user,
-    uint256 _domainId,
-    bool _setTo
-  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  {
-    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
-
-    emit ColonyFundingRoleSet(_user, _setTo);
+    emit ColonyRootRoleSet(_user, _setTo);
   }
 
   function setArchitectureRole(
@@ -70,10 +50,30 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     emit ColonyArchitectureRoleSet(_user, _setTo);
   }
 
-  function setRootRole(address _user, bool _setTo) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
+  function setFundingRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
 
-    emit ColonyRootRoleSet(_user, _setTo);
+    emit ColonyFundingRoleSet(_user, _setTo);
+  }
+
+  function setAdministrationRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
+
+    emit ColonyAdministrationRoleSet(_user, _setTo);
   }
 
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {
