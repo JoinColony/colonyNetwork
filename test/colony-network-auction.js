@@ -42,8 +42,7 @@ contract("Colony Network Auction", accounts => {
 
     const args = getTokenArgs();
     token = await DSToken.new(args[1]);
-    await token.mint(quantity);
-    await token.transfer(colonyNetwork.address, quantity);
+    await token.mint(colonyNetwork.address, quantity);
     const { logs, receipt } = await colonyNetwork.startTokenAuction(token.address);
     createAuctionTxReceipt = receipt;
     const auctionAddress = logs[0].args.auction;
@@ -82,8 +81,7 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("cannot bid if not started", async () => {
-      await token.mint(quantity);
-      await token.transfer(colonyNetwork.address, quantity);
+      await token.mint(colonyNetwork.address, quantity);
       tokenAuction = await DutchAuction.new(clnyToken.address, token.address, metaColony.address);
 
       await checkErrorRevert(tokenAuction.bid(1000, { from: BIDDER_1 }), "colony-auction-not-started");
@@ -106,8 +104,7 @@ contract("Colony Network Auction", accounts => {
     it("should set the minimum price correctly for quantity < 1e18", async () => {
       const args = getTokenArgs();
       const otherToken = await DSToken.new(args[1]);
-      await otherToken.mint(WAD.divn(10));
-      await otherToken.transfer(colonyNetwork.address, WAD.divn(10));
+      await otherToken.mint(colonyNetwork.address, WAD.divn(10));
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
@@ -133,8 +130,7 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("should fail if the last auction for the same token started less than 30 days", async () => {
-      await token.mint(quantity);
-      await token.transfer(colonyNetwork.address, quantity);
+      await token.mint(colonyNetwork.address, quantity);
       await checkErrorRevert(colonyNetwork.startTokenAuction(token.address), "colony-auction-start-too-soon");
     });
 
@@ -216,8 +212,7 @@ contract("Colony Network Auction", accounts => {
       const previousAuctionStartTime = await tokenAuction.startTime();
       await forwardTime(SECONDS_PER_DAY * 30, this);
 
-      await token.mint(quantity);
-      await token.transfer(colonyNetwork.address, quantity);
+      await token.mint(colonyNetwork.address, quantity);
 
       const { logs } = await colonyNetwork.startTokenAuction(token.address);
       const auctionAddress = logs[0].args.auction;
@@ -515,8 +510,7 @@ contract("Colony Network Auction", accounts => {
         const bidAmount = new BN(100000);
         await giveUserCLNYTokens(colonyNetwork, BIDDER_1, bidAmount);
 
-        await otherToken.mint(auctionProp.quantity);
-        await otherToken.transfer(colonyNetwork.address, auctionProp.quantity);
+        await otherToken.mint(colonyNetwork.address, auctionProp.quantity);
 
         const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
         const auctionAddress = logs[0].args.auction;
@@ -575,8 +569,7 @@ contract("Colony Network Auction", accounts => {
       it(`should correctly accept bids at high price and finalise auction for quantity ${auctionProp.quantity} at day open ${
         auctionProp.daysOpen
       }`, async () => {
-        await otherToken.mint(auctionProp.quantity);
-        await otherToken.transfer(colonyNetwork.address, auctionProp.quantity);
+        await otherToken.mint(colonyNetwork.address, auctionProp.quantity);
         const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
         const auctionAddress = logs[0].args.auction;
         tokenAuction = await DutchAuction.at(auctionAddress);
@@ -612,8 +605,7 @@ contract("Colony Network Auction", accounts => {
 
     it("auction closes when the receivedTotal goes over the total amount to end the auction", async () => {
       const totalAmount = new BN(10).pow(new BN(16));
-      await otherToken.mint(totalAmount);
-      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      await otherToken.mint(colonyNetwork.address, totalAmount);
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
@@ -638,8 +630,7 @@ contract("Colony Network Auction", accounts => {
 
     it("functions correctly even when price has reached the near minimum", async () => {
       const totalAmount = new BN(10).pow(new BN(16));
-      await otherToken.mint(totalAmount);
-      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      await otherToken.mint(colonyNetwork.address, totalAmount);
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
@@ -687,8 +678,7 @@ contract("Colony Network Auction", accounts => {
     // As the true distribution, if we had floats, should be 0.1 and 1.9
     it("functions correctly when there are two bids at the far ends of the price spectrum and one can't go over the claim threshold", async () => {
       const totalAmount = new BN(2);
-      await otherToken.mint(totalAmount);
-      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      await otherToken.mint(colonyNetwork.address, totalAmount);
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);
@@ -721,8 +711,7 @@ contract("Colony Network Auction", accounts => {
     // Here no bid gets any tokens
     it("functions correctly when there are three bids in a low quantity auction, and none gets over the claim threshold", async () => {
       const totalAmount = new BN(2);
-      await otherToken.mint(totalAmount);
-      await otherToken.transfer(colonyNetwork.address, totalAmount);
+      await otherToken.mint(colonyNetwork.address, totalAmount);
       const { logs } = await colonyNetwork.startTokenAuction(otherToken.address);
       const auctionAddress = logs[0].args.auction;
       tokenAuction = await DutchAuction.at(auctionAddress);

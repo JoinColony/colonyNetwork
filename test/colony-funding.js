@@ -56,8 +56,7 @@ contract("Colony Funding", accounts => {
 
   describe("when receiving tokens", () => {
     it("should not put the tokens straight in to the pot", async () => {
-      await otherToken.mint(100);
-      await otherToken.transfer(colony.address, 100);
+      await otherToken.mint(colony.address, 100);
       let colonyRewardPotBalance = await colony.getFundingPotBalance(0, otherToken.address);
       let colonyPotBalance = await colony.getFundingPotBalance(1, otherToken.address);
       let colonyTokenBalance = await otherToken.balanceOf(colony.address);

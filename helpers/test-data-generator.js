@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { soliditySha3 } from "web3-utils";
+import { soliditySha3, asciiToHex } from "web3-utils";
 import { BN } from "bn.js";
 import { ethers } from "ethers";
 
@@ -288,8 +288,7 @@ export async function giveUserCLNYTokens(colonyNetwork, userAddress, amount) {
   const clnyToken = await Token.at(clnyAddress);
 
   const accounts = await web3GetAccounts();
-  await clnyToken.mint(amount, { from: accounts[11] });
-  await clnyToken.transfer(userAddress, amount, { from: accounts[11] });
+  await clnyToken.mint(userAddress, amount, { from: accounts[11] });
 }
 
 export async function giveUserCLNYTokensAndStake(colonyNetwork, user, _amount) {
@@ -325,15 +324,14 @@ export async function fundColonyWithTokens(colony, token, tokenAmount = INITIAL_
   if (colonyToken === token.address) {
     await colony.mintTokens(tokenAmountBN);
   } else {
-    await token.mint(tokenAmountBN);
-    await token.transfer(colony.address, tokenAmountBN);
+    await token.mint(colony.address, tokenAmountBN);
   }
   await colony.claimColonyFunds(token.address);
 }
 
 export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const accounts = await web3GetAccounts();
-  const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
+  const clnyToken = await Token.new(asciiToHex("Colony Network Token"), asciiToHex("CLNY"), 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);

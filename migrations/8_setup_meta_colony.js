@@ -44,8 +44,7 @@ module.exports = async function(deployer, network, accounts) {
 
   // These commands add MAIN_ACCOUNT as a reputation miner.
   // This is necessary because the first miner must have staked before the mining cycle begins.
-  await clnyToken.mint(DEFAULT_STAKE, { from: accounts[11] });
-  await clnyToken.transfer(MAIN_ACCOUNT, DEFAULT_STAKE, { from: accounts[11] });
+  await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: accounts[11] });
   await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
   const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
   assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
