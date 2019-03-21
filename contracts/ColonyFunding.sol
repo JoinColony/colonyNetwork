@@ -112,13 +112,14 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   validPayoutAmount(_amount)
   paymentNotFinalized(_id)
   {
-    FundingPot storage fundingPot = fundingPots[_id];
+    Payment storage payment = payments[_id];
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
     require(fundingPot.associatedType == FundingPotAssociatedType.Payment, "colony-funding-pot-associated-with-non-payment");
 
     uint currentTotalAmount = fundingPot.payouts[_token];
     fundingPot.payouts[_token] = _amount;
 
-    updatePayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
+    updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
   }
 
   function getFundingPotCount() public view returns (uint256 count) {

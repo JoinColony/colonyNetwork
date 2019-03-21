@@ -33,7 +33,7 @@ contract("One transaction payments", accounts => {
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-    // Give a use colony admin rights
+    // Give a user colony admin rights
     await colony.setAdminRole(COLONY_ADMIN);
     // Give oneTxExtension admin rights
     await colony.setAdminRole(oneTxExtension.address);

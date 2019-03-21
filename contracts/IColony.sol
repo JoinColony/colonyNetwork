@@ -164,7 +164,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId Id of the new skill to set
   function setPaymentSkill(uint256 _id, uint256 _skillId) public;
 
-  /// @notice Sets the payout for a given token on an existing payment's funding pot. Secured function to authorised members
+  /// @notice Sets the payout for a given token on an existing payment. Secured function to authorised members
   /// @param _id Payment identifier
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
