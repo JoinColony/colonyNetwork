@@ -38,10 +38,13 @@ jobs:
       - <<: *step_pull_solc_docker
       - <<: *step_setup_global_packages
       - run:
+          name: "Download parity"
+          command: wget https://releases.parity.io/ethereum/v2.3.8/x86_64-unknown-linux-gnu/parity
+      - run:
           name: "Setup parity"
           command: |
-            wget https://releases.parity.io/ethereum/v1.11.8/x86_64-unknown-debian-gnu/parity_1.11.8_debian_amd64.deb
-            sudo dpkg -i parity_1.11.8_debian_amd64.deb
+            sudo mv parity /usr/bin
+            chmod 755 /usr/bin/parity
             echo "password" > parityPassword
             cp ./parity-genesis.template.json ./parity-genesis.json
             sed -i "s/000000000000000000000000000000deadbeef01/$(parity account new --chain ./parity-genesis.json --keys-path ./keys --password ./parityPassword)/g" ./parity-genesis.json
