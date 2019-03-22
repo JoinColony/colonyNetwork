@@ -1,6 +1,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 
+import { asciiToHex } from "web3-utils";
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
 import { checkErrorRevert } from "../helpers/test-helper";
 import {
@@ -39,13 +40,13 @@ contract("Meta Colony", accounts => {
   describe("when working with ERC20 properties of Meta Colony token", () => {
     it("token properties are correct", async () => {
       const tokenSymbol = await clnyToken.symbol();
-      expect(tokenSymbol).to.equal("CLNY");
+      expect(tokenSymbol).to.equal(asciiToHex("CLNY"));
 
       const tokenDecimals = await clnyToken.decimals();
       expect(tokenDecimals).to.eq.BN(18);
 
       const tokenName = await clnyToken.name();
-      expect(tokenName).to.equal("Colony Network Token");
+      expect(tokenName).to.equal(asciiToHex("Colony Network Token"));
     });
   });
 
