@@ -17,7 +17,8 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH,
   SECONDS_PER_DAY,
-  DEFAULT_STAKE
+  DEFAULT_STAKE,
+  INITIAL_FUNDING
 } from "../helpers/constants";
 
 import {
@@ -50,6 +51,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const ITokenLocking = artifacts.require("ITokenLocking");
+const OneTxPayment = artifacts.require("OneTxPayment");
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
@@ -63,6 +65,7 @@ contract("All", function(accounts) {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
+  const COLONY_ADMIN = accounts[5];
 
   let colony;
   let token;
@@ -70,6 +73,7 @@ contract("All", function(accounts) {
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
+  let oneTxExtension;
 
   before(async function() {
     const etherRouter = await EtherRouter.deployed();
@@ -86,6 +90,13 @@ contract("All", function(accounts) {
 
     const otherTokenArgs = getTokenArgs();
     otherToken = await DSToken.new(otherTokenArgs[1]);
+
+    oneTxExtension = await OneTxPayment.new();
+    await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+    // Give a user colony admin rights
+    await colony.setAdminRole(COLONY_ADMIN);
+    // Give oneTxExtension admin rights
+    await colony.setAdminRole(oneTxExtension.address);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
@@ -202,6 +213,21 @@ contract("All", function(accounts) {
       await colony.finalizeTask(taskId);
     });
 
+    it("when working with a Payment", async function() {
+      // 4 transactions payment
+      await colony.addPayment(WORKER, token.address, WAD, 1, 0);
+      const paymentId = await colony.getPaymentCount();
+      const payment = await colony.getPayment(paymentId);
+
+      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(paymentId);
+      await colony.claimPayment(paymentId, token.address);
+
+      // 1 transaction payment
+      const globalSkillId = await colonyNetwork.getRootGlobalSkillId();
+      await oneTxExtension.makePayment(colony.address, WORKER, token.address, 10, 1, globalSkillId);
+    });
+
     it("when working with staking", async function() {
       const STAKER1 = accounts[6];
       const STAKER2 = accounts[7];
@@ -256,7 +282,6 @@ contract("All", function(accounts) {
       const totalReputation = WAD.muln(300);
       const workerReputation = WAD.muln(200);
       const managerReputation = WAD.muln(100);
-      const initialFunding = WAD.muln(360);
 
       const tokenArgs = getTokenArgs();
       const newToken = await DSToken.new(tokenArgs[1]);
@@ -265,7 +290,6 @@ contract("All", function(accounts) {
       const newColony = await IColony.at(colonyAddress);
       await newToken.setOwner(colonyAddress);
 
-      await fundColonyWithTokens(newColony, otherToken, initialFunding);
       await newColony.mintTokens(workerReputation.add(managerReputation));
       await newColony.claimColonyFunds(newToken.address);
       await newColony.bootstrapColony([WORKER, MANAGER], [workerReputation, managerReputation]);
@@ -329,7 +353,7 @@ contract("All", function(accounts) {
       await forwardTime(5184001);
       await newColony.finalizeRewardPayout(payoutId);
 
-      await fundColonyWithTokens(newColony, otherToken, initialFunding);
+      await fundColonyWithTokens(newColony, otherToken, INITIAL_FUNDING);
 
       const tx2 = await newColony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
       const payoutId2 = tx2.logs[0].args.rewardPayoutId;

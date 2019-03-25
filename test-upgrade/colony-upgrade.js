@@ -11,6 +11,7 @@ const Resolver = artifacts.require("Resolver");
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const ColonyTask = artifacts.require("ColonyTask");
+const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
@@ -23,6 +24,7 @@ contract("Colony contract upgrade", accounts => {
   let metaColony;
   let colony;
   let colonyTask;
+  let colonyPayment;
   let colonyFunding;
   let token;
   let colonyNetwork;
@@ -46,6 +48,7 @@ contract("Colony contract upgrade", accounts => {
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
     colonyTask = await ColonyTask.new();
+    colonyPayment = await ColonyPayment.new();
     colonyFunding = await ColonyFunding.new();
     contractRecovery = await ContractRecovery.new();
     const tokenAddress = await colony.getToken();
@@ -57,7 +60,7 @@ contract("Colony contract upgrade", accounts => {
     const updatedColonyContract = await UpdatedColony.new();
     const resolver = await Resolver.new();
     await resolver.register("isUpdated()", updatedColonyContract.address);
-    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyFunding, contractRecovery, resolver);
+    await setupColonyVersionResolver(updatedColonyContract, colonyTask, colonyPayment, colonyFunding, contractRecovery, resolver);
 
     updatedColonyVersion = await updatedColonyContract.version();
     await metaColony.addNetworkColonyVersion(updatedColonyVersion.toNumber(), resolver.address);
@@ -88,16 +91,16 @@ contract("Colony contract upgrade", accounts => {
 
     it("should return correct tasks after Task struct is extended", async function() {
       const task1 = await updatedColony.getTask(1);
-      assert.equal(task1[0], SPECIFICATION_HASH);
-      assert.equal(task1[2].toNumber(), 0);
-      assert.equal(task1[3].toNumber(), dueDate);
-      assert.equal(task1[4].toNumber(), 0);
+      assert.equal(task1.specificationHash, SPECIFICATION_HASH);
+      assert.equal(task1.status.toNumber(), 0);
+      assert.equal(task1.dueDate.toNumber(), dueDate);
+      assert.equal(task1.domainId.toNumber(), 1);
 
       const task2 = await updatedColony.getTask(2);
-      assert.equal(task2[0], SPECIFICATION_HASH_UPDATED);
-      assert.equal(task2[2].toNumber(), 0);
-      assert.equal(task2[3].toNumber(), dueDate + 1);
-      assert.equal(task2[4].toNumber(), 0);
+      assert.equal(task2.specificationHash, SPECIFICATION_HASH_UPDATED);
+      assert.equal(task2.status.toNumber(), 0);
+      assert.equal(task2.dueDate.toNumber(), dueDate + 1);
+      assert.equal(task2.domainId.toNumber(), 1);
     });
 
     it("should return correct permissions", async function() {

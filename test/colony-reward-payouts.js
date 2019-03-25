@@ -243,7 +243,7 @@ contract("Colony Reward Payouts", accounts => {
         domainId: domainCount
       });
 
-      await newColony.claimPayout(taskId, MANAGER_ROLE, newToken.address);
+      await newColony.claimTaskPayout(taskId, MANAGER_ROLE, newToken.address);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });

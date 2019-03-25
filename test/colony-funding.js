@@ -162,7 +162,7 @@ contract("Colony Funding", accounts => {
       // the pot changes (odd numbers), and when the payout changes (even numbers)
       //
       // NB We do not need to be this exhaustive when using ether, because this test is testing
-      // that updateTaskPayoutsWeCannotMakeAfterPotChange and updateTaskPayoutsWeCannotMakeAfterBudgetChange
+      // that updatePayoutsWeCannotMakeAfterPotChange and updatePayoutsWeCannotMakeAfterBudgetChange
       // are correct, which are used in both cases.
       //
       // NB Also that since we can no longer reduce the pot to below the budget,
@@ -187,14 +187,15 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 0]
       });
-      let task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      const task = await colony.getTask(taskId);
+      let fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 0, Payout 0
       // FundingPot was equal to payout, transition to pot being equal by changing pot (17)
       await colony.moveFundsBetweenPots(1, 2, 0, otherToken.address);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 0, Payout 0
       // FundingPot was equal to payout, transition to pot being lower by increasing payout (8)
@@ -206,22 +207,22 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.eq.BN(1);
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
-      // FundingPot 0, Payout 40
+      // FundingPot Balance: 0, Payout: 40
       // FundingPot was below payout, transition to being equal by increasing pot (1)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
-      // FundingPot 40, Payout 40
+      // FundingPot Balance: 40, Payout 40
       // FundingPot was equal to payout, transition to being above by increasing pot (5)
       await colony.moveFundsBetweenPots(1, 2, 40, otherToken.address);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
-      // FundingPot 80, Payout 40
+      // FundingPot Balance: 80, Payout 40
       // FundingPot was above payout, transition to being equal by increasing payout (12)
       await executeSignedTaskChange({
         colony,
@@ -231,8 +232,8 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 80]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 80, Payout 80
       // FundingPot was equal to payout, transition to being above by decreasing payout (6)
@@ -244,14 +245,14 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 80, Payout 40
       // FundingPot was above payout, transition to being equal by decreasing pot (11)
       await colony.moveFundsBetweenPots(2, 1, 40, otherToken.address);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 40, Payout 40
       // FundingPot was equal to payout, transition to pot being below payout by changing pot (7)
@@ -279,8 +280,8 @@ contract("Colony Funding", accounts => {
       // FundingPot 20, Payout 40
       // FundingPot was below payout, change to being above by changing pot (3)
       await colony.moveFundsBetweenPots(1, 2, 60, otherToken.address);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 80, Payout 40
       // FundingPot was above payout, change to being below by changing pot (9)
@@ -315,8 +316,8 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 10]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 20, Payout 10
       // FundingPot was above, change to being above by changing payout (16)
@@ -328,14 +329,14 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 5]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 20, Payout 5
       // FundingPot was above, change to being above by changing pot (15)
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 10, Payout 5
       // FundingPot was above payout, change to being below by changing payout (10)
@@ -347,8 +348,8 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 40]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.eq.BN(1);
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // FundingPot 10, Payout 40
       // FundingPot was below payout, change to being below by changing payout (14)
@@ -360,8 +361,8 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 30]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.eq.BN(1);
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // FundingPot 10, Payout 30
       // FundingPot was below payout, change to being below by changing pot (13)
@@ -396,8 +397,8 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, otherToken.address, 5]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // FundingPot 5, Payout 5
     });
@@ -461,9 +462,9 @@ contract("Colony Funding", accounts => {
       await fundColonyWithTokens(colony, otherToken, WAD.muln(363));
       const taskId = await setupFinalizedTask({ colonyNetwork, colony, token: otherToken });
       await colony.moveFundsBetweenPots(1, 2, 10, otherToken.address);
-      await colony.claimPayout(taskId, MANAGER_ROLE, otherToken.address);
-      await colony.claimPayout(taskId, WORKER_ROLE, otherToken.address);
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, otherToken.address);
+      await colony.claimTaskPayout(taskId, MANAGER_ROLE, otherToken.address);
+      await colony.claimTaskPayout(taskId, WORKER_ROLE, otherToken.address);
+      await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, otherToken.address);
       await colony.moveFundsBetweenPots(2, 1, 10, otherToken.address);
 
       const colonyPotBalance = await colony.getFundingPotBalance(2, otherToken.address);
@@ -479,18 +480,17 @@ contract("Colony Funding", accounts => {
         workerRating: 1
       });
 
-      await colony.claimPayout(taskId, MANAGER_ROLE, token.address);
-      await colony.claimPayout(taskId, EVALUATOR_ROLE, token.address);
-      await colony.claimPayout(taskId, WORKER_ROLE, token.address);
+      await colony.claimTaskPayout(taskId, MANAGER_ROLE, token.address);
+      await colony.claimTaskPayout(taskId, EVALUATOR_ROLE, token.address);
+      await colony.claimTaskPayout(taskId, WORKER_ROLE, token.address);
 
-      const taskInfo = await colony.getTask(taskId);
-      const taskPotId = taskInfo[5];
-      const remainingPotBalance = await colony.getFundingPotBalance(taskPotId, token.address);
+      const task = await colony.getTask(taskId);
+      const remainingPotBalance = await colony.getFundingPotBalance(task.fundingPotId, token.address);
       expect(remainingPotBalance).to.eq.BN(WORKER_PAYOUT);
 
-      await colony.moveFundsBetweenPots(taskPotId, 1, remainingPotBalance, token.address);
+      await colony.moveFundsBetweenPots(task.fundingPotId, 1, remainingPotBalance, token.address);
 
-      const potBalance = await colony.getFundingPotBalance(taskPotId, token.address);
+      const potBalance = await colony.getFundingPotBalance(task.fundingPotId, token.address);
       expect(potBalance).to.be.zero;
     });
   });
@@ -566,13 +566,15 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, ZERO_ADDRESS, 40]
       });
-      let task = await colony.getTask(taskId);
-      expect(task[4]).to.eq.BN(1);
+
+      const task = await colony.getTask(taskId);
+      let fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // Fund the pot equal to manager payout 40 = 40
       await colony.moveFundsBetweenPots(1, 2, 40, ZERO_ADDRESS);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // Cannot bring pot balance below current payout
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, ZERO_ADDRESS), "colony-funding-task-bad-state");
@@ -586,21 +588,21 @@ contract("Colony Funding", accounts => {
         sigTypes: [0],
         args: [taskId, ZERO_ADDRESS, 50]
       });
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.eq.BN(1);
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // Fund the pot equal to manager payout, plus 10, 50 < 60
       await colony.moveFundsBetweenPots(1, 2, 20, ZERO_ADDRESS);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // Cannot bring pot balance below current payout
       await checkErrorRevert(colony.moveFundsBetweenPots(2, 1, 30, ZERO_ADDRESS), "colony-funding-task-bad-state");
 
       // Can remove surplus 50 = 50
       await colony.moveFundsBetweenPots(2, 1, 10, ZERO_ADDRESS);
-      task = await colony.getTask(taskId);
-      expect(task[4]).to.be.zero;
+      fundingPot = await colony.getFundingPot(task.fundingPotId);
+      expect(fundingPot.payoutsWeCannotMake).to.be.zero;
     });
 
     it("should pay fees on revenue correctly", async () => {

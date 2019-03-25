@@ -76,52 +76,50 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return unsatisfactory ? 0 : task.payouts[_role][_token];
   }
 
-  function getTotalTaskPayout(uint256 _id, address _token) public view returns(uint256) {
-    uint totalPayouts;
-    for (uint8 roleId = 0; roleId <= 2; roleId++) {
-      totalPayouts = add(totalPayouts, getTaskPayout(_id, roleId, _token));
-    }
-    return totalPayouts;
-  }
-
-  function claimPayout(uint256 _id, uint8 _role, address _token) public
+  function claimTaskPayout(uint256 _id, uint8 _role, address _token) public
   stoppable
   taskFinalized(_id)
   {
     Task storage task = tasks[_id];
+    FundingPot storage fundingPot = fundingPots[task.fundingPotId];
     assert(task.roles[_role].user != address(0x0));
 
     uint payout = task.payouts[_role][_token];
-
-    if (task.roles[_role].rating == TaskRatings.Unsatisfactory || payout == 0) {
-      return;
-    }
-
     task.payouts[_role][_token] = 0;
 
-    fundingPots[task.fundingPotId].balance[_token] = sub(fundingPots[task.fundingPotId].balance[_token], payout);
-    nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
-
-    uint fee = calculateNetworkFeeForPayout(payout);
-    uint remainder = sub(payout, fee);
-
-    if (_token == address(0x0)) {
-      // Payout ether
-      task.roles[_role].user.transfer(remainder);
-      // Fee goes directly to Meta Colony
-      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-      address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
-      metaColonyAddress.transfer(fee);
+    bool unsatisfactory = task.roles[_role].rating == TaskRatings.Unsatisfactory;
+    if (!unsatisfactory) {
+      processPayout(task.fundingPotId, _token, payout, task.roles[_role].user);
     } else {
-      // Payout token
-      // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
-      // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
-      ERC20Extended payoutToken = ERC20Extended(_token);
-      payoutToken.transfer(task.roles[_role].user, remainder);
-      payoutToken.transfer(colonyNetworkAddress, fee);
+      fundingPot.payouts[_token] = sub(fundingPot.payouts[_token], payout);
     }
+  }
 
-    emit TaskPayoutClaimed(_id, _role, _token, remainder);
+  function claimPayment(uint256 _id, address _token) public
+  stoppable
+  paymentFinalized(_id)
+  {
+    Payment storage payment = payments[_id];
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+    assert(fundingPot.balance[_token] >= fundingPot.payouts[_token]);
+
+    processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
+  }
+
+  function setPaymentPayout(uint256 _id, address _token, uint256 _amount) public
+  auth
+  stoppable
+  validPayoutAmount(_amount)
+  paymentNotFinalized(_id)
+  {
+    Payment storage payment = payments[_id];
+    FundingPot storage fundingPot = fundingPots[payment.fundingPotId];
+    assert(fundingPot.associatedType == FundingPotAssociatedType.Payment);
+
+    uint currentTotalAmount = fundingPot.payouts[_token];
+    fundingPot.payouts[_token] = _amount;
+
+    updatePayoutsWeCannotMakeAfterBudgetChange(payment.fundingPotId, _token, currentTotalAmount);
   }
 
   function getFundingPotCount() public view returns (uint256 count) {
@@ -132,27 +130,22 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return fundingPots[_potId].balance[_token];
   }
 
-  function getFundingPot(uint256 _potId) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId) {
-    FundingPot storage pot = fundingPots[_potId];
-    return (pot.associatedType, pot.associatedTypeId);
+  function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256) {
+    return fundingPots[_potId].payouts[_token];
+  }
+
+  function getFundingPot(uint256 _potId) public view returns
+  (FundingPotAssociatedType associatedType, uint256 associatedTypeId, uint256 payoutsWeCannotMake)
+  {
+    FundingPot storage fundingPot = fundingPots[_potId];
+    return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
   }
 
   function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
   stoppable
   auth
+  validFundingTransfer(_fromPot, _toPot)
   {
-    // Prevent moving funds from between the same pot, which otherwise would cause the pot balance to
-    // increment by _amount.
-    require(_fromPot != _toPot, "colony-funding-cannot-move-funds-between-the-same-pot");
-
-    // Prevent people moving funds from the pot for paying out token holders
-    require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
-
-    // Preventing sending from non-existent funding pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
-    // prevent sending to nonexistent funding pots) but doing this check explicitly gives us the error message for clients.
-    require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
-    require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
-
     uint fromPotPreviousAmount = fundingPots[_fromPot].balance[_token];
     uint toPotPreviousAmount = fundingPots[_toPot].balance[_token];
 
@@ -162,22 +155,22 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     // If this pot is associated with a Task, prevent money being taken from the pot
     // if the remaining balance is less than the amount needed for payouts,
     // unless the task was cancelled.
-    FundingPotAssociatedType fromPotAssociatedType = fundingPots[_fromPot].associatedType;
-
-    if (fromPotAssociatedType == FundingPotAssociatedType.Task) {
-      uint fromTaskId = fundingPots[_fromPot].associatedTypeId;
-      Task storage task = tasks[fromTaskId];
-      uint totalPayout = getTotalTaskPayout(fromTaskId, _token);
-      uint surplus = (fromPotPreviousAmount > totalPayout) ? sub(fromPotPreviousAmount, totalPayout) : 0;
+    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task) {
+      uint fromPotPreviousPayoutAmount = fundingPots[_fromPot].payouts[_token];
+      uint surplus = (fromPotPreviousAmount > fromPotPreviousPayoutAmount) ? sub(fromPotPreviousAmount, fromPotPreviousPayoutAmount) : 0;
+ 
+      Task storage task = tasks[fundingPots[_fromPot].associatedTypeId];
       require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
-
-      updateTaskPayoutsWeCannotMakeAfterPotChange(fromTaskId, _token, fromPotPreviousAmount);
     }
 
-    FundingPotAssociatedType toPotAssociatedType = fundingPots[_toPot].associatedType;
-    if (toPotAssociatedType == FundingPotAssociatedType.Task) {
-      uint toTaskId = fundingPots[_toPot].associatedTypeId;
-      updateTaskPayoutsWeCannotMakeAfterPotChange(toTaskId, _token, toPotPreviousAmount);
+    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task || 
+    fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Payment) {
+      updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
+    }
+
+    if (fundingPots[_toPot].associatedType == FundingPotAssociatedType.Task || 
+    fundingPots[_toPot].associatedType == FundingPotAssociatedType.Payment) {
+      updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
 
     emit ColonyFundsMovedBetweenFundingPots(_fromPot, _toPot, _amount, _token);
@@ -381,54 +374,78 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return (payout.tokenAddress, reward);
   }
 
-  function updateTaskPayoutsWeCannotMakeAfterPotChange(uint256 _id, address _token, uint _prev) internal {
+  function updatePayoutsWeCannotMakeAfterPotChange(uint256 _fundingPotId, address _token, uint _prev) internal {
+    FundingPot storage tokenPot = fundingPots[_fundingPotId];
 
-    Task storage task = tasks[_id];
-    uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = fundingPots[task.fundingPotId].balance[_token];
-
-    if (_prev >= totalTokenPayout) {                  // If the old amount in the pot was enough to pay for the budget
-      if (tokenPot < totalTokenPayout) {              // And the new amount in the pot is not enough to pay for the budget...
-        task.payoutsWeCannotMake += 1;                // Then this is a set of payouts we cannot make that we could before.
+    if (_prev >= tokenPot.payouts[_token]) {                          // If the old amount in the pot was enough to pay for the budget
+      if (tokenPot.balance[_token] < tokenPot.payouts[_token]) {      // And the new amount in the pot is not enough to pay for the budget...
+        tokenPot.payoutsWeCannotMake += 1;                            // Then this is a set of payouts we cannot make that we could before.
       }
-    } else {                                          // If this 'else' is running, then the old amount in the pot could not pay for the budget
-      if (tokenPot >= totalTokenPayout) {             // And the new amount in the pot can pay for the budget
-        task.payoutsWeCannotMake -= 1;                // Then this is a set of payouts we can make that we could not before.
+    } else {                                                          // If this 'else' is running, then the old amount in the pot could not pay for the budget
+      if (tokenPot.balance[_token] >= tokenPot.payouts[_token]) {     // And the new amount in the pot can pay for the budget
+        tokenPot.payoutsWeCannotMake -= 1;                            // Then this is a set of payouts we can make that we could not before.
       }
     }
   }
 
-  function updateTaskPayoutsWeCannotMakeAfterBudgetChange(uint256 _id, address _token, uint _prev) internal {
-    Task storage task = tasks[_id];
-    uint totalTokenPayout = getTotalTaskPayout(_id, _token);
-    uint tokenPot = fundingPots[task.fundingPotId].balance[_token];
-    if (tokenPot >= _prev) {                                          // If the amount in the pot was enough to pay for the old budget...
-      if (tokenPot < totalTokenPayout) {                              // And the amount is not enough to pay for the new budget...
-        task.payoutsWeCannotMake += 1;                                // Then this is a set of payouts we cannot make that we could before.
+  function updatePayoutsWeCannotMakeAfterBudgetChange(uint256 _fundingPotId, address _token, uint _prev) internal {
+    FundingPot storage tokenPot = fundingPots[_fundingPotId];
+
+    if (tokenPot.balance[_token] >= _prev) {                          // If the amount in the pot was enough to pay for the old budget...
+      if (tokenPot.balance[_token] < tokenPot.payouts[_token]) {      // And the amount is not enough to pay for the new budget...
+        tokenPot.payoutsWeCannotMake += 1;                            // Then this is a set of payouts we cannot make that we could before.
       }
     } else {                                                          // If this 'else' is running, then the amount in the pot was not enough to pay for the old budget
-      if (tokenPot >= totalTokenPayout) {                             // And the amount is enough to pay for the new budget...
-        task.payoutsWeCannotMake -= 1;                                // Then this is a set of payouts we can make that we could not before.
+      if (tokenPot.balance[_token] >= tokenPot.payouts[_token]) {     // And the amount is enough to pay for the new budget...
+        tokenPot.payoutsWeCannotMake -= 1;                            // Then this is a set of payouts we can make that we could not before.
       }
     }
   }
-
-  uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
 
   function setTaskPayout(uint256 _id, TaskRole _role, address _token, uint256 _amount) private
   taskExists(_id)
   taskNotComplete(_id)
+  validPayoutAmount(_amount)
   {
-    require(_amount <= MAX_PAYOUT, "colony-funding-payout-too-large");
+    Task storage task = tasks[_id];
+    FundingPot storage fundingPot = fundingPots[task.fundingPotId];
+    assert(fundingPot.associatedType == FundingPotAssociatedType.Task);
 
-    uint currentTotalAmount = getTotalTaskPayout(_id, _token);
-    tasks[_id].payouts[uint8(_role)][_token] = _amount;
+    uint currentTotalAmount = fundingPot.payouts[_token];
+    uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
+    task.payouts[uint8(_role)][_token] = _amount;
+    
+    fundingPot.payouts[_token] = add(sub(currentTotalAmount, currentTaskRolePayout), _amount);
 
-    // This call functions as a guard to make sure the new total payout doesn't overflow
-    // If there is an overflow, the call will revert
-    getTotalTaskPayout(_id, _token);
+    updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
+  }
 
-    updateTaskPayoutsWeCannotMakeAfterBudgetChange(_id, _token, currentTotalAmount);
+  function processPayout(uint256 fundingPotId, address _token, uint256 payout, address payable user) private {
+    fundingPots[fundingPotId].balance[_token] = sub(fundingPots[fundingPotId].balance[_token], payout);
+    nonRewardPotsTotal[_token] = sub(nonRewardPotsTotal[_token], payout);
+
+    uint fee = calculateNetworkFeeForPayout(payout);
+    uint remainder = sub(payout, fee);
+
+    if (_token == address(0x0)) {
+      // Payout ether
+      user.transfer(remainder);
+      // Fee goes directly to Meta Colony
+      IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
+      address payable metaColonyAddress = colonyNetworkContract.getMetaColony();
+      metaColonyAddress.transfer(fee);
+    } else {
+      // Payout token
+      // TODO: (post CCv1) If it's a whitelisted token, it goes straight to the metaColony
+      // If it's any other token, goes to the colonyNetwork contract first to be auctioned.
+      ERC20Extended payoutToken = ERC20Extended(_token);
+      payoutToken.transfer(user, remainder);
+      payoutToken.transfer(colonyNetworkAddress, fee);
+    }
+
+    fundingPots[fundingPotId].payouts[_token] = sub(fundingPots[fundingPotId].payouts[_token], payout);
+
+    emit PayoutClaimed(fundingPotId, _token, remainder);
   }
 
   function calculateNetworkFeeForPayout(uint256 _payout) private view returns (uint256 fee) {

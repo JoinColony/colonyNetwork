@@ -111,13 +111,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return domain The domain
   function getDomain(uint256 _id) public view returns (Domain memory domain);
 
-  /// @notice Get the non-mapping properties of a pot by id
-  /// @param _id Id of the pot which details to get
-  /// @return FundingPotAssociatedType The associated type of the current funding pot, e.g. Domain, Task
-  /// @return uint256 Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
-  /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0)
-  function getFundingPot(uint256 _id) public view returns (FundingPotAssociatedType associatedType, uint256 associatedTypeId);
-
   /// @notice Get the number of domains in the colony
   /// @return count The domain count. Min 1 as the root domain is created at the same time as the colony
   function getDomainCount() public view returns (uint256 count);
@@ -134,6 +127,63 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// is not currently exposed on the Colony's EtherRouter.
   function verifyReputationProof(bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
     public view returns (bool isValid);
+
+  // Implemented in ColonyPayment.sol
+  /// @notice Add a new payment in the colony. Secured function to authorised members
+  /// @param _recipient Address of the payment recipient
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  /// @param _domainId The domain where the payment belongs
+  /// @param _skillId The skill associated with the payment
+  /// @return paymentId Identifier of the newly created payment
+  function addPayment(
+    address payable _recipient,
+    address _token,
+    uint256 _amount,
+    uint256 _domainId,
+    uint256 _skillId) 
+    public returns (uint256 paymentId);
+
+  /// @notice Finalizes the payment and logs the reputation log updates
+  /// Allowed to be called once after payment is fully funded. Secured function to authorised members
+  /// @param _id Payment identifier
+  function finalizePayment(uint256 _id) public;
+
+  /// @notice Sets the recipient on an existing payment. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _recipient Address of the payment recipient
+  function setPaymentRecipient(uint256 _id, address payable _recipient) public;
+
+  /// @notice Sets the domain on an existing payment. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _domainId Id of the new domain to set
+  function setPaymentDomain(uint256 _id, uint256 _domainId) public;
+
+  /// @notice Sets the skill on an existing payment. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _skillId Id of the new skill to set
+  function setPaymentSkill(uint256 _id, uint256 _skillId) public;
+
+  /// @notice Sets the payout for a given token on an existing payment. Secured function to authorised members
+  /// @param _id Payment identifier
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @param _amount Payout amount
+  function setPaymentPayout(uint256 _id, address _token, uint256 _amount) public;
+
+  /// @notice Returns an exiting payment
+  /// @param _id Payment identifier
+  /// @return payment The Payment data structure 
+  function getPayment(uint256 _id) public view returns (Payment memory payment);
+  
+  /// @notice Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout.
+  /// Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
+  /// @param _id Payment identifier
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  function claimPayment(uint256 _id, address _token) public;
+  
+  /// @notice Get the number of payments in the colony
+  /// @return count The payment count
+  function getPaymentCount() public view returns (uint256 count);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
@@ -326,7 +376,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return deliverableHash Task deliverable hash
   /// @return status TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
   /// @return dueDate Due date
-  /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current task funding
   /// @return fundingPotId Id of funding pot for task
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
@@ -336,7 +385,6 @@ contract IColony is ColonyDataTypes, IRecovery {
     bytes32 deliverableHash,
     TaskStatus status,
     uint256 dueDate,
-    uint256 payoutsWeCannotMake,
     uint256 fundingPotId,
     uint256 completionTimestamp,
     uint256 domainId,
@@ -363,12 +411,6 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @return amount Payout amount
   function getTaskPayout(uint256 _id, uint8 _role, address _token) public view returns (uint256 amount);
-
-  /// @notice Get total payout amount in `_token` denomination for task `_id`
-  /// @param _id Id of the task
-  /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return amount Payout amount
-  function getTotalTaskPayout(uint256 _id, address _token) public view returns (uint256 amount);
 
   /// @notice Set `_token` payout for manager in task `_id` to `_amount`
   /// @param _id Id of the task
@@ -398,12 +440,12 @@ contract IColony is ColonyDataTypes, IRecovery {
   function setAllTaskPayouts(uint256 _id, address _token, uint256 _managerAmount, uint256 _evaluatorAmount, uint256 _workerAmount) public;
 
   /// @notice Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
-  /// Allowed only by the contributors themselves after task is finalized. Here the network receives its fee from each payout.
+  /// Allowed only after task is finalized. Here the network receives its fee from each payout.
   /// Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
   /// @param _id Id of the task
   /// @param _role Id of the role, as defined in TaskRole enum
   /// @param _token Address of the token, `0x0` value indicates Ether
-  function claimPayout(uint256 _id, uint8 _role, address _token) public;
+  function claimTaskPayout(uint256 _id, uint8 _role, address _token) public;
 
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
@@ -456,6 +498,17 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _payoutId Id of the reward payout
   function finalizeRewardPayout(uint256 _payoutId) public;
 
+  /// @notice Get the non-mapping properties of a pot by id
+  /// @param _id Id of the pot which details to get
+  /// @return FundingPotAssociatedType The associated type of the current funding pot, e.g. Domain, Task, Payout
+  /// @return uint256 Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
+  /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current funding
+  /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0, 0)
+  function getFundingPot(uint256 _id) public view returns (
+    FundingPotAssociatedType associatedType,
+    uint256 associatedTypeId,
+    uint256 payoutsWeCannotMake);
+
   /// @notice Get the number of funding pots in the colony
   /// @return count The funding pots count
   function getFundingPotCount() public view returns (uint256 count);
@@ -463,8 +516,14 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Get the `_token` balance of pot with id `_potId`
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return balance Funding pot balance
+  /// @return balance Funding pot supply balance
   function getFundingPotBalance(uint256 _potId, address _token) public view returns (uint256 balance);
+
+  /// @notice Get the assigned `_token` payouts of pot with id `_potId`
+  /// @param _potId Id of the funding pot
+  /// @param _token Address of the token, `0x0` value indicates Ether
+  /// @return balance Funding pot payout amount
+  function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256 payout);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
   /// Secured function to authorised members

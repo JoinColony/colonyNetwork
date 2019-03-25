@@ -57,9 +57,30 @@ contract ColonyAuthority is CommonAuthority {
     // Add domain
     setAdminRoleCapability(colony, "addDomain(uint256)");
     setFounderRoleCapability(colony, "addDomain(uint256)");
+    
     // Add task
     setAdminRoleCapability(colony, "makeTask(bytes32,uint256,uint256,uint256)");
     setFounderRoleCapability(colony, "makeTask(bytes32,uint256,uint256,uint256)");
+
+    // Add payment
+    setAdminRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
+    setFounderRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
+    // Update payments
+    setAdminRoleCapability(colony, "finalizePayment(uint256)");
+    setFounderRoleCapability(colony, "finalizePayment(uint256)");
+
+    setAdminRoleCapability(colony, "setPaymentRecipient(uint256,address)");
+    setFounderRoleCapability(colony, "setPaymentRecipient(uint256,address)");
+    
+    setAdminRoleCapability(colony, "setPaymentDomain(uint256,uint256)");
+    setFounderRoleCapability(colony, "setPaymentDomain(uint256,uint256)");
+
+    setAdminRoleCapability(colony, "setPaymentSkill(uint256,uint256)");
+    setFounderRoleCapability(colony, "setPaymentSkill(uint256,uint256)");
+
+    setAdminRoleCapability(colony, "setPaymentPayout(uint256,address,uint256)");
+    setFounderRoleCapability(colony, "setPaymentPayout(uint256,address,uint256)");
+
     // Start next reward payout
     setAdminRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
     setFounderRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");

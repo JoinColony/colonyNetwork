@@ -81,6 +81,10 @@ contract ColonyDataTypes {
   /// @param rewardInverse The reward inverse value
   event ColonyRewardInverseSet(uint256 rewardInverse);
 
+  /// @notice Event logged when a new payment is added
+  /// @param paymentId The newly added payment id
+  event PaymentAdded(uint256 paymentId);
+
   /// @notice Event logged when a new task is added
   /// @param taskId The newly added task id
   event TaskAdded(uint256 taskId);
@@ -138,12 +142,11 @@ contract ColonyDataTypes {
   /// @param taskId Id of the finalized task
   event TaskFinalized(uint256 indexed taskId);
 
-  /// @notice Event logged when a task payout is claimed
-  /// @param taskId Id of the task
-  /// @param role Task role for which the payout is being claimed
+  /// @notice Event logged when a payout is claimed, either from a Task or Payment
+  /// @param fundingPotId Id of the funding pot where payout comes from
   /// @param token Token of the payout claim
-  /// @param amount Amount of the payout claim
-  event TaskPayoutClaimed(uint256 indexed taskId, uint256 role, address token, uint256 amount);
+  /// @param amount Amount of the payout claimed, after network fee was deducted
+  event PayoutClaimed(uint256 indexed fundingPotId, address token, uint256 amount);
 
   /// @notice Event logged when a task has been canceled
   /// @param taskId Id of the canceled task
@@ -172,12 +175,19 @@ contract ColonyDataTypes {
     uint256 blockTimestamp;
   }
 
+  struct Payment {
+    address payable recipient;
+    bool finalized;
+    uint256 fundingPotId;
+    uint256 domainId;
+    uint256[] skills;
+  }
+
   struct Task {
     bytes32 specificationHash;
     bytes32 deliverableHash;
     TaskStatus status;
     uint256 dueDate;
-    uint256 payoutsWeCannotMake;
     uint256 fundingPotId;
     uint256 completionTimestamp;
     uint256 domainId;
@@ -213,18 +223,23 @@ contract ColonyDataTypes {
 
   // We do have 1 "special" funding pot with id 0 for rewards which will carry the "Unassigned" type.
   // as they are unrelated to other entities in the Colony the same way the remaining funding pots are releated to domains, tasks and payouts.
-  enum FundingPotAssociatedType { Unassigned, Domain, Task }
+  enum FundingPotAssociatedType { Unassigned, Domain, Task, Payment }
 
   struct FundingPot {
     // Funding pots can store multiple token balances, for ETH use 0x0 address
     mapping (address => uint256) balance;
-    // Funding pots can be associated with different fundable entities, for now these are: tasks and domains.
+    // Funding pots can be associated with different fundable entities, for now these are: tasks, domains and payments.
     FundingPotAssociatedType associatedType;
     uint256 associatedTypeId;
+    // Map any assigned payouts from this pot, note that in Tasks these are broken down to a more granular level on a per role basis
+    mapping (address => uint256) payouts;
+    uint256 payoutsWeCannotMake;
   }
 
   struct Domain {
     uint256 skillId;
     uint256 fundingPotId;
   }
+
+  uint256 constant MAX_PAYOUT = 2**254 - 1; // Up to 254 bits to account for sign and payout modifiers.
 }
