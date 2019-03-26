@@ -483,6 +483,11 @@ contract ColonyTask is ColonyStorage {
 
     colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
     if (taskRole == TaskRole.Worker) {
+      if (role.rateFail) {
+        // If the worker failed to rate, we do not penalise the reputation being earned for the skill in 
+        // question, so recalculate it without the penalty.
+        reputation = getReputation(payout, role.rating, false);
+      }
       colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
     }
   }
