@@ -13,7 +13,5 @@ The current colonyNetwork release is [glider], which implements some, but not al
 * Single-level domains
 * Skill tags
 * Tasks and work ratings
-* Roles and domain-level permissions.
+* Roles and domain-level permissions
 * ENS
-
-## Roadmap
