@@ -414,6 +414,10 @@ contract ColonyTask is ColonyStorage {
   {
     if (!taskWorkRatingsAssigned(_id)) {
       assignWorkRating(_id);
+    } else {
+      // If worker has a rating, the evaluator did their job.
+      Role storage evaluatorRole = tasks[_id].roles[uint8(TaskRole.Evaluator)];
+      evaluatorRole.rating = TaskRatings.Satisfactory;
     }
 
     Task storage task = tasks[_id];
@@ -474,10 +478,6 @@ contract ColonyTask is ColonyStorage {
     uint8 roleId = uint8(taskRole);
     Role storage role = task.roles[roleId];
 
-    if (taskRole == TaskRole.Evaluator) { // They had one job!
-      role.rating = role.rateFail ? TaskRatings.Unsatisfactory : TaskRatings.Satisfactory;
-    }
-
     uint256 payout = task.payouts[roleId][token];
     int256 reputation = getReputation(payout, role.rating, role.rateFail);
 
@@ -493,7 +493,7 @@ contract ColonyTask is ColonyStorage {
   }
 
   function getReputation(uint256 payout, TaskRatings rating, bool rateFail) internal pure returns (int256) {
-    require(rating != TaskRatings.None, "colony-task-rating-invalid");
+    assert(rating != TaskRatings.None);
 
     bool negative = (rating == TaskRatings.Unsatisfactory);
     uint256 reputation = mul(payout, (rating == TaskRatings.Excellent) ? 3 : 2);
@@ -581,8 +581,12 @@ contract ColonyTask is ColonyStorage {
     Role storage evaluatorRole = tasks[_id].roles[uint8(TaskRole.Evaluator)];
 
     if (workerRole.rating == TaskRatings.None) {
-      evaluatorRole.rateFail = true;
       workerRole.rating = TaskRatings.Excellent;
+      // The evaluator had one job!
+      evaluatorRole.rateFail = true;
+      evaluatorRole.rating = TaskRatings.Unsatisfactory;
+    } else {
+      evaluatorRole.rating = TaskRatings.Satisfactory;
     }
 
     if (managerRole.rating == TaskRatings.None) {
