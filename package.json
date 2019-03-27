@@ -7,6 +7,7 @@
     "eslint-staged": "bash ./scripts/eslint.sh",
     "eslint": "eslint .",
     "solium": "solium --dir .",
+    "notify:osx": "osascript -e 'display notification \"Ding!\"'",
     "check:storagevars": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-storage.js",
     "check:recoverymods": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-recovery.js",
     "check:auth": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-auth.js",
