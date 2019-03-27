@@ -153,6 +153,14 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     authority.setOwner(address(etherRouter));
 
+    // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
+    skillCount += 1;
+    colonyCount += 1;
+    colonies[colonyCount] = address(colony);
+    _isColony[address(colony)] = true;
+
+    colony.initialiseColony(address(this), _tokenAddress);
+
     // Assign all permissions in root domain
     colony.setRecoveryRole(msg.sender);
     colony.setRootRole(msg.sender, true);
@@ -163,13 +171,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     // Colony will not have owner
     dsauth.setOwner(address(0x0));
 
-    // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
-    skillCount += 1;
-    colonyCount += 1;
-    colonies[colonyCount] = address(colony);
-    _isColony[address(colony)] = true;
-
-    colony.initialiseColony(address(this), _tokenAddress);
     emit ColonyAdded(colonyCount, address(etherRouter), _tokenAddress);
 
     return address(etherRouter);

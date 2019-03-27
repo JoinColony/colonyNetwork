@@ -334,12 +334,12 @@ contract("Reputation Updates", accounts => {
 
     it("should set the correct domain and skill reputation change amount in log for payments", async () => {
       const RECIPIENT = accounts[3];
-      await metaColony.addPayment(RECIPIENT, clnyToken.address, WAD, 1, 7);
+      await metaColony.addPayment(1, 0, RECIPIENT, clnyToken.address, WAD, 1, 7);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
       await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
-      await metaColony.finalizePayment(paymentId);
+      await metaColony.finalizePayment(1, 0, paymentId);
       await metaColony.claimPayment(paymentId, clnyToken.address);
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();
@@ -363,12 +363,12 @@ contract("Reputation Updates", accounts => {
       const otherToken = await DSToken.new(tokenArgs[1]);
       await fundColonyWithTokens(metaColony, otherToken, WAD.muln(2));
 
-      await metaColony.addPayment(RECIPIENT, otherToken.address, WAD, 1, 7);
+      await metaColony.addPayment(1, 0, RECIPIENT, otherToken.address, WAD, 1, 7);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
       await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), otherToken.address);
-      await metaColony.finalizePayment(paymentId);
+      await metaColony.finalizePayment(1, 0, paymentId);
       await metaColony.claimPayment(paymentId, otherToken.address);
 
       const reputationUpdateLogLength = await inactiveReputationMiningCycle.getReputationUpdateLogLength();

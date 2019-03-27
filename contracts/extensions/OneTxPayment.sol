@@ -24,32 +24,45 @@ import "./../ColonyAuthority.sol";
 
 
 contract OneTxPayment {
-  bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(address,address,uint256,uint256,uint256)"));
+  bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
+
+  IColony colony;
+
+  constructor(address _colony) public {
+    colony = IColony(_colony);
+  }
 
   function makePayment(
-    address _colony,
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     address payable _worker,
     address _token,
     uint256 _amount,
     uint256 _domainId,
     uint256 _skillId) public
   {
-    IColony colony = IColony(_colony);
-
     // Check caller is able to call makePayment on the colony
     require(
-      ColonyAuthority(colony.authority()).canCall(msg.sender, _domainId, _colony, ADD_PAYMENT_SIG),
+      ColonyAuthority(colony.authority()).canCall(msg.sender, _permissionDomainId, address(colony), ADD_PAYMENT_SIG),
       "colony-one-tx-payment-not-authorized"
     );
 
     // Add a new payment
-    uint256 paymentId = colony.addPayment(_worker, _token, _amount, _domainId, _skillId);
+    uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _worker, _token, _amount, _domainId, _skillId);
     ColonyDataTypes.Payment memory payment = colony.getPayment(paymentId);
     ColonyDataTypes.Domain memory domain = colony.getDomain(_domainId);
 
     // Fund the payment
-    colony.moveFundsBetweenPots(1, 0, 0, domain.fundingPotId, payment.fundingPotId, _amount, _token);
-    colony.finalizePayment(paymentId);
+    colony.moveFundsBetweenPots(
+      _permissionDomainId,
+      _childSkillIndex,
+      _childSkillIndex,
+      domain.fundingPotId,
+      payment.fundingPotId,
+      _amount,
+      _token
+    );
+    colony.finalizePayment(_permissionDomainId, _childSkillIndex, paymentId);
 
     // Claim payout on behalf of the recipient
     colony.claimPayment(paymentId, _token);

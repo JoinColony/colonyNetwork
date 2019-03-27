@@ -129,11 +129,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier domainExists(uint256 _domainId) {
-    require(_domainId > 0 && _domainId <= domainCount, "colony-domain-does-not-exist");
-    _;
-  }
-
   modifier taskComplete(uint256 _id) {
     require(tasks[_id].completionTimestamp > 0, "colony-task-not-complete");
     _;
@@ -180,6 +175,8 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   }
 
   modifier authDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _childDomainId) {
+    require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
+    require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
     require(isAuthorized(msg.sender, _permissionDomainId, msg.sig), "ds-auth-unauthorized");
     require(validateDomainProof(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-proof");
     if (canCallBecauseArchitect(msg.sender, _permissionDomainId, msg.sig)) {
@@ -203,6 +200,15 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
+  }
+
+  function domainExists(uint256 domainId) internal view returns (bool) {
+    return domainId > 0 && domainId <= domainCount;
+  }
+
+  function getDomainFromPayment(uint256 _id) internal view returns (uint256) {
+    require(_id <= paymentCount, "colony-funding-nonexistent-payment");
+    return payments[_id].domainId;
   }
 
 }

@@ -99,7 +99,6 @@ contract ColonyTask is ColonyStorage {
   ) public
   stoppable
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
-  domainExists(_domainId)
   {
     taskCount += 1;
 
@@ -339,10 +338,11 @@ contract ColonyTask is ColonyStorage {
   function setTaskDomain(uint256 _id, uint256 _domainId) public
   stoppable
   taskExists(_id)
-  domainExists(_domainId)
   taskNotComplete(_id)
   self()
   {
+    require(domainExists(_domainId), "colony-domain-does-not-exist");
+
     tasks[_id].domainId = _domainId;
 
     emit TaskDomainSet(_id, _domainId);

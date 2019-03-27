@@ -65,7 +65,6 @@ contract("All", function(accounts) {
   const MANAGER = accounts[0];
   const EVALUATOR = MANAGER;
   const WORKER = accounts[2];
-  const COLONY_ADMIN = accounts[5];
 
   let colony;
   let token;
@@ -73,7 +72,6 @@ contract("All", function(accounts) {
   let metaColony;
   let colonyNetwork;
   let tokenLocking;
-  let oneTxExtension;
 
   before(async function() {
     const etherRouter = await EtherRouter.deployed();
@@ -91,12 +89,7 @@ contract("All", function(accounts) {
     const otherTokenArgs = getTokenArgs();
     otherToken = await DSToken.new(otherTokenArgs[1]);
 
-    oneTxExtension = await OneTxPayment.new();
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-    // Give a user colony admin rights
-    await colony.setAdminRole(COLONY_ADMIN);
-    // Give oneTxExtension admin rights
-    await colony.setAdminRole(oneTxExtension.address);
   });
 
   // We currently only print out gas costs and no assertions are made about what these should be.
@@ -215,17 +208,21 @@ contract("All", function(accounts) {
 
     it("when working with a Payment", async function() {
       // 4 transactions payment
-      await colony.addPayment(WORKER, token.address, WAD, 1, 0);
+      await colony.addPayment(1, 0, WORKER, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
-      await colony.finalizePayment(paymentId);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(1, 0, paymentId);
       await colony.claimPayment(paymentId, token.address);
 
       // 1 transaction payment
+      const oneTxExtension = await OneTxPayment.new(colony.address);
+      await colony.setAdministrationRole(1, 0, oneTxExtension.address, 1, true);
+      await colony.setFundingRole(1, 0, oneTxExtension.address, 1, true);
+
       const globalSkillId = await colonyNetwork.getRootGlobalSkillId();
-      await oneTxExtension.makePayment(colony.address, WORKER, token.address, 10, 1, globalSkillId);
+      await oneTxExtension.makePayment(1, 0, WORKER, token.address, 10, 1, globalSkillId);
     });
 
     it("when working with staking", async function() {

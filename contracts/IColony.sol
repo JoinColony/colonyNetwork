@@ -149,6 +149,8 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _recipient Address of the payment recipient
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
@@ -156,50 +158,62 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId The skill associated with the payment
   /// @return paymentId Identifier of the newly created payment
   function addPayment(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     address payable _recipient,
     address _token,
     uint256 _amount,
     uint256 _domainId,
-    uint256 _skillId) 
+    uint256 _skillId)
     public returns (uint256 paymentId);
 
   /// @notice Finalizes the payment and logs the reputation log updates
   /// Allowed to be called once after payment is fully funded. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
-  function finalizePayment(uint256 _id) public;
+  function finalizePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id) public;
 
   /// @notice Sets the recipient on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _recipient Address of the payment recipient
-  function setPaymentRecipient(uint256 _id, address payable _recipient) public;
+  function setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address payable _recipient) public;
 
   /// @notice Sets the domain on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _domainId Id of the new domain to set
-  function setPaymentDomain(uint256 _id, uint256 _domainId) public;
+  function setPaymentDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _domainId) public;
 
   /// @notice Sets the skill on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _skillId Id of the new skill to set
-  function setPaymentSkill(uint256 _id, uint256 _skillId) public;
+  function setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId) public;
 
   /// @notice Sets the payout for a given token on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
-  function setPaymentPayout(uint256 _id, address _token, uint256 _amount) public;
+  function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public;
 
   /// @notice Returns an exiting payment
   /// @param _id Payment identifier
-  /// @return payment The Payment data structure 
+  /// @return payment The Payment data structure
   function getPayment(uint256 _id) public view returns (Payment memory payment);
-  
+
   /// @notice Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout.
   /// Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
   /// @param _id Payment identifier
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimPayment(uint256 _id, address _token) public;
-  
+
   /// @notice Get the number of payments in the colony
   /// @return count The payment count
   function getPaymentCount() public view returns (uint256 count);
