@@ -338,7 +338,7 @@ contract("Reputation Updates", accounts => {
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
-      await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
+      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), clnyToken.address);
       await metaColony.finalizePayment(paymentId);
       await metaColony.claimPayment(paymentId, clnyToken.address);
 
@@ -367,7 +367,7 @@ contract("Reputation Updates", accounts => {
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
-      await metaColony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), otherToken.address);
+      await metaColony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), otherToken.address);
       await metaColony.finalizePayment(paymentId);
       await metaColony.claimPayment(paymentId, otherToken.address);
 

@@ -20,10 +20,12 @@ pragma experimental ABIEncoderV2;
 
 import "./../IColony.sol";
 import "./../ColonyDataTypes.sol";
-import "./../../lib/dappsys/roles.sol";
+import "./../ColonyAuthority.sol";
 
 
 contract OneTxPayment {
+  bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(address,address,uint256,uint256,uint256)"));
+
   function makePayment(
     address _colony,
     address payable _worker,
@@ -36,11 +38,7 @@ contract OneTxPayment {
 
     // Check caller is able to call makePayment on the colony
     require(
-      DSRoles(colony.authority()).canCall(
-        msg.sender,
-        _colony,
-        bytes4(keccak256("addPayment(address,address,uint256,uint256,uint256)"))
-      ),
+      ColonyAuthority(colony.authority()).canCall(msg.sender, _domainId, _colony, ADD_PAYMENT_SIG),
       "colony-one-tx-payment-not-authorized"
     );
 

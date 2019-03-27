@@ -26,6 +26,7 @@ contract("One transaction payments", accounts => {
     await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
+
     oneTxExtension = await OneTxPayment.new();
     globalSkillId = await colonyNetwork.getRootGlobalSkillId();
   });
@@ -33,10 +34,13 @@ contract("One transaction payments", accounts => {
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-    // Give a user colony admin rights
-    await colony.setAdminRole(COLONY_ADMIN);
-    // Give oneTxExtension admin rights
-    await colony.setAdminRole(oneTxExtension.address);
+
+    // Give a user colony administration rights (needed for one-tx)
+    await colony.setAdministrationRole(1, 0, COLONY_ADMIN, 1, true);
+
+    // Give oneTxExtension administration and funding rights
+    await colony.setFundingRole(1, 0, oneTxExtension.address, 1, true);
+    await colony.setAdministrationRole(1, 0, oneTxExtension.address, 1, true);
   });
 
   describe("under normal conditions", () => {

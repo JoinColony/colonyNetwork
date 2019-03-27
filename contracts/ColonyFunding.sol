@@ -475,6 +475,8 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       domainId = fundingPot.associatedTypeId;
     } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
       domainId = tasks[fundingPot.associatedTypeId].domainId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
+      domainId = payments[fundingPot.associatedTypeId].domainId;
     } else {
       // If rewards pot, return root domain.
       require(_fundingPotId == 0, "colony-funding-bad-pot-associated-type");
