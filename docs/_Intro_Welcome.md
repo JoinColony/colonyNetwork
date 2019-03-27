@@ -20,7 +20,7 @@ The Colony whitepaper describes a complete protocol for organizations, with cryp
 * Work management and delegation
 * Financial management, including rewards and payments
 
-To learn more about the Colony Protocol, see the [colony protocol docs], or dig in to the [Colony Whitepaper]
+To learn more about the Colony Protocol, dig in to the [Colony Whitepaper](https://colony.io/whitepaper/) or read the [whitepaper TL;DR](/colonynetwork/whitepaper-tldr-colony/)
 
 ### The Colony Network
 The Colony Network is the infrastructure upon which all colonies run.
@@ -39,7 +39,7 @@ To learn more about Glider, see the [releases] page.
 
 The Colony Network is maintained and improved by the [Meta Colony] (which is, itself, a colony on the network with special permissions).
 
-Membership in the Meta Colony is open to all (and heartily encouraged!), but changes such as [network upgrades] require a minimum *reputation* within the Meta Colony to proceed.
+Membership in the Meta Colony is open to all (and heartily encouraged!), but changes such as [network upgrades](/colonynetwork/docs-the-delegate-proxy-pattern/) require a minimum *reputation* within the Meta Colony to proceed.
 
 ### ColonyJS (and colonyStarter?)
 ColonyJS is a javascript library designed to make interaction with the Colony Network as straightforward as possible for (d)app developers.

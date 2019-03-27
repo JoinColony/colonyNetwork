@@ -32,7 +32,7 @@ The amount of reputation gained or lost through a task is determined by the task
 
 When a payout is received for the completion of a task, reputation is awarded within the task's domain, as well as all its parent domains. If the task is tagged with a skill, reputation is awarded in the skill, as well as all its parent skills.
 
-See [Tasks](/colonynetwork/tldr-tasks/) for more information about the task workflow and ratings.
+See [Tasks](/colonynetwork/whitepaper-tldr-tasks/) for more information about the task workflow and ratings.
 
 See the colonyJS [task lifecycle](/colonyjs/topics-task-lifecycle/) for implementation examples.
 
@@ -45,7 +45,7 @@ If an objection to any action is raised by another member, the reputation stake 
 
 If an objection is escalated to a dispute, a reputation-weighted vote is called within the objection's domain, in which both sides must stake reputation. The amount of reputation gained/lost by each side is determined by the vote's outcome ('landslide' outcomes punish the losing side harshly, while more contentious decisions have only small penalties for the losing side).
 
-See [Objections and Disputes](/colonynetwork/tldr-objections-and-disputes/) for more information about reputation-weighted voting and the dispute resolution process.
+See [Objections and Disputes](/colonynetwork/whitepaper-tldr-objections-and-disputes/) for more information about reputation-weighted voting and the dispute resolution process.
 
 ### Reputation Bootstrapping
 After a colony is created, reputation can only be gained and lost through normal interactions within a colony. But at the colony's beginning, we are presented with a bootstrapping problem: When a colony is new, no-one has yet completed any work in it and so nobody will have earned any reputation.

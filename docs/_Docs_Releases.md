@@ -5,7 +5,7 @@ order: 3
 ---
 
 
-The current colonyNetwork release is [glider], which implements some, but not all, of the Colony Protocol:
+The current colonyNetwork release is `glider`, which implements some, but not all, of the Colony Protocol:
 
 * Tokens and Funding pots
 * Reputation
