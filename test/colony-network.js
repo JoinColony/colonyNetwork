@@ -211,7 +211,7 @@ contract("Colony Network", accounts => {
   });
 
   describe("when upgrading a colony", () => {
-    it("should be able to upgrade a colony, if a sender has founder role", async () => {
+    it("should be able to upgrade a colony, if a sender has root role", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const colonyEtherRouter = await EtherRouter.at(colony.address);
 
@@ -252,7 +252,7 @@ contract("Colony Network", accounts => {
       expect(version).to.eq.BN(currentColonyVersion);
     });
 
-    it("should NOT be able to upgrade a colony if sender don't have founder role", async () => {
+    it("should NOT be able to upgrade a colony if sender don't have root role", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const colonyEtherRouter = await EtherRouter.at(colony.address);
       const colonyResolver = await colonyEtherRouter.resolver();
@@ -340,20 +340,20 @@ contract("Colony Network", accounts => {
       await checkErrorRevert(colonyNetwork.registerUserLabel(username2, orbitDBAddress, { from: accounts[1] }), "colony-user-label-already-owned");
     });
 
-    it("should be able to register one unique label per colony, if founder", async () => {
+    it("should be able to register one unique label per colony, with root permission", async () => {
       const colonyName = "test";
       const colonyName2 = "test2";
       const hash = namehash.hash("test.colony.joincolony.eth");
 
       const { colony } = await setupRandomColony(colonyNetwork);
 
-      // Non-founder can't register label for colony
+      // Non-root can't register label for colony
       await checkErrorRevert(colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[1] }), "ds-auth-unauthorized");
 
-      // Founder cannot register blank label
+      // Root cannot register blank label
       await checkErrorRevert(colony.registerColonyLabel("", orbitDBAddress, { from: accounts[0] }), "colony-colony-label-invalid");
 
-      // Founder can register label for colony
+      // Root can register label for colony
       await colony.registerColonyLabel(colonyName, orbitDBAddress, { from: accounts[0] });
       const owner = await ensRegistry.owner(hash);
       expect(owner).to.equal(colonyNetwork.address);
@@ -385,7 +385,7 @@ contract("Colony Network", accounts => {
       const { colony } = await setupRandomColony(colonyNetwork);
 
       // Register colony
-      // Founder can register label for colony
+      // Root user can register label for colony
       await colony.registerColonyLabel("test", orbitDBAddress, { from: accounts[0] });
 
       // Check reverse lookup for colony

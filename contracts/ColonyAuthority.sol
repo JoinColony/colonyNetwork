@@ -36,7 +36,6 @@ contract ColonyAuthority is CommonAuthority {
 
     // Add permissions for the Administration role
     addRoleCapability(ADMINISTRATION_ROLE, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)");
-    // TODO: add domain auth
     addRoleCapability(ADMINISTRATION_ROLE, "addPayment(uint256,uint256,address,address,uint256,uint256,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentRecipient(uint256,uint256,uint256,address)");
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentDomain(uint256,uint256,uint256,uint256)");

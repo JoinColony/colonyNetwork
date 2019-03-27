@@ -75,10 +75,7 @@ contract("One transaction payments", accounts => {
     });
 
     it("should not allow an admin to specify a non-global skill", async () => {
-      await checkErrorRevert(
-        oneTxExtension.makePayment(1, 0, RECIPIENT, token.address, 10, 1, 3, { from: COLONY_ADMIN }),
-        "colony-not-global-skill"
-      );
+      await checkErrorRevert(oneTxExtension.makePayment(1, 0, RECIPIENT, token.address, 10, 1, 3, { from: COLONY_ADMIN }), "colony-not-global-skill");
     });
 
     it("should not allow an admin to specify a non-existent domain", async () => {

@@ -69,7 +69,7 @@ contract("Meta Colony", accounts => {
       expect(rootSkillChild).to.eq.BN(4);
     });
 
-    it("should not allow a non-founder role in the metacolony to add a global skill", async () => {
+    it("should not allow a non-root role in the metacolony to add a global skill", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill(1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
@@ -293,7 +293,7 @@ contract("Meta Colony", accounts => {
       ({ colony, token } = await setupRandomColony(colonyNetwork));
     });
 
-    it("someone who does not have founder role should not be able to add domains", async () => {
+    it("someone who does not have root role should not be able to add domains", async () => {
       await checkErrorRevert(colony.addDomain(1, 0, 1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
@@ -515,13 +515,13 @@ contract("Meta Colony", accounts => {
   });
 
   describe("when setting the network fee", () => {
-    it("should allow the meta colony founder to set the fee", async () => {
+    it("should allow a meta colony root user to set the fee", async () => {
       await metaColony.setNetworkFeeInverse(234);
       const fee = await colonyNetwork.getFeeInverse();
       expect(fee).to.eq.BN(234);
     });
 
-    it("should not allow anyone else but the meta colony founder to set the fee", async () => {
+    it("should not allow anyone else but a meta colony root user to set the fee", async () => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
       const fee = await colonyNetwork.getFeeInverse();
       expect(fee).to.eq.BN(100);

@@ -267,16 +267,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skill.children[_childSkillIndex];
   }
 
-  function getChildSkillIndex(uint _skillId, uint _childSkillId) public view returns (uint256) {
-    Skill storage skill = skills[_skillId];
-    for (uint256 i; i < skill.children.length; i++) {
-      if (skill.children[i] == _childSkillId) {
-        return i;
-      }
-    }
-    return uint256(-1);
-  }
-
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
   stoppable
   calledByColony

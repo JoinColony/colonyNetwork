@@ -2,7 +2,17 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { UINT256_MAX, WAD, INITIAL_FUNDING, SPECIFICATION_HASH } from "../helpers/constants";
+import {
+  WAD,
+  ROOT_ROLE,
+  ARCHITECTURE_ROLE,
+  ARCHITECTURE_SUBDOMAIN_ROLE,
+  FUNDING_ROLE,
+  ADMINISTRATION_ROLE,
+  INITIAL_FUNDING,
+  SPECIFICATION_HASH
+} from "../helpers/constants";
+
 import { fundColonyWithTokens, makeTask, setupRandomColony, executeSignedRoleAssignment } from "../helpers/test-data-generator";
 import { checkErrorRevert } from "../helpers/test-helper";
 
@@ -16,14 +26,6 @@ contract("ColonyPermissions", accounts => {
   const FOUNDER = accounts[0];
   const USER1 = accounts[1];
   const USER2 = accounts[2];
-
-  // Role 0 is the recovery role
-  const ROOT_ROLE = 1;
-  // const ARBITRATION_ROLE = 2;
-  const ARCHITECTURE_ROLE = 3;
-  const ARCHITECTURE_SUBDOMAIN_ROLE = 4;
-  const FUNDING_ROLE = 5;
-  const ADMINISTRATION_ROLE = 6;
 
   let colonyNetwork;
   let colony;
@@ -241,25 +243,23 @@ contract("ColonyPermissions", accounts => {
       // But only with valid proofs
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, 1, 1, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
-        "ds-auth-invalid-domain-proof"
+        "ds-auth-invalid-domain-inheritence"
       );
       await checkErrorRevert(
         colony.moveFundsBetweenPots(1, 0, 0, domain2.fundingPotId, domain3.fundingPotId, WAD, token.address, { from: USER2 }),
-        "ds-auth-invalid-domain-proof"
+        "ds-auth-invalid-domain-inheritence"
       );
     });
 
-    it("can get the child skill index, or UINT256_MAX if not found", async () => {
-      let childSkillIndex;
+    it("should not allow operations on nonexistent domains", async () => {
+      // Can make a task in an existing domain
+      await colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 0, 0);
 
-      childSkillIndex = await colonyNetwork.getChildSkillIndex(domain1.skillId, domain2.skillId);
-      expect(childSkillIndex).to.be.zero;
+      // But can't give a bad permission domain
+      await checkErrorRevert(colony.makeTask(10, 0, SPECIFICATION_HASH, 1, 0, 0), "ds-auth-permission-domain-does-not-exist");
 
-      childSkillIndex = await colonyNetwork.getChildSkillIndex(domain1.skillId, domain3.skillId);
-      expect(childSkillIndex).to.eq.BN(1);
-
-      childSkillIndex = await colonyNetwork.getChildSkillIndex(domain1.skillId, 100);
-      expect(childSkillIndex).to.eq.BN(UINT256_MAX);
+      // Nor a bad child domain
+      await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 10, 0, 0), "ds-auth-child-domain-does-not-exist");
     });
   });
 });

@@ -223,13 +223,13 @@ contract("Colony", accounts => {
       expect(defaultRewardInverse).to.eq.BN(UINT256_MAX);
     });
 
-    it("should allow the colony founder to set it", async () => {
+    it("should allow root user to set it", async () => {
       await colony.setRewardInverse(234);
       const defaultRewardInverse = await colony.getRewardInverse();
       expect(defaultRewardInverse).to.eq.BN(234);
     });
 
-    it("should not allow anyone else but the colony founder to set it", async () => {
+    it("should not allow anyone else but a root user to set it", async () => {
       await colony.setRewardInverse(100);
       await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
       const defaultRewardInverse = await colony.getRewardInverse();

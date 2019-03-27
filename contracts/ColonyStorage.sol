@@ -158,9 +158,12 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
+  // Note that these require messages currently cannot propogate up because of the `executeTaskRoleAssignment` logic
   modifier isAdmin(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _user) {
     require(ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
-    require(validateDomainProof(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "colony-invalid-domain-proof");
+    if (_permissionDomainId != tasks[_id].domainId) {
+      require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritence");
+    }
     _;
   }
 
@@ -178,24 +181,24 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
     require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
     require(isAuthorized(msg.sender, _permissionDomainId, msg.sig), "ds-auth-unauthorized");
-    require(validateDomainProof(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-proof");
-    if (canCallBecauseArchitect(msg.sender, _permissionDomainId, msg.sig)) {
+    if (_permissionDomainId != _childDomainId) {
+      require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritence");
+    }
+    if (canCallOnlyBecauseArchitect(msg.sender, _permissionDomainId, msg.sig)) {
       require(_permissionDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
     }
     _;
   }
 
   // Evaluates a "domain proof" which checks that childDomainId is part of the subtree starting at permissionDomainId
-  function validateDomainProof(uint256 permissionDomainId, uint256 childSkillIndex, uint256 childDomainId) internal view returns (bool) {
-    return (permissionDomainId == childDomainId) || (getChildSkillId(permissionDomainId, childSkillIndex) == domains[childDomainId].skillId);
+  function validateDomainInheritance(uint256 permissionDomainId, uint256 childSkillIndex, uint256 childDomainId) internal view returns (bool) {
+    uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[permissionDomainId].skillId, childSkillIndex);
+    return childSkillId == domains[childDomainId].skillId;
   }
 
-  function getChildSkillId(uint256 permissionDomainId, uint256 childSkillIndex) internal view returns (uint256) {
-    return IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[permissionDomainId].skillId, childSkillIndex);
-  }
-
-  function canCallBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
-    return DomainRoles(address(authority)).canCallBecause(src, domainId, uint8(ColonyRole.ArchitectureSubdomain), address(this), sig);
+  // Checks to see if the permission comes ONLY from the ArchitectureSubdomain role
+  function canCallOnlyBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
+    return DomainRoles(address(authority)).canCallOnlyBecause(src, domainId, uint8(ColonyRole.ArchitectureSubdomain), address(this), sig);
   }
 
   function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {

@@ -61,11 +61,17 @@ contract("Colony Payment", accounts => {
     });
 
     it("should not allow admins to add payment with no domain set", async () => {
-      await checkErrorRevert(colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 0, 0, { from: COLONY_ADMIN }), "ds-auth-child-domain-does-not-exist");
+      await checkErrorRevert(
+        colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 0, 0, { from: COLONY_ADMIN }),
+        "ds-auth-child-domain-does-not-exist"
+      );
     });
 
     it("should not allow admins to add payment with no recipient set", async () => {
-      await checkErrorRevert(colony.addPayment(1, 0, ZERO_ADDRESS, token.address, WAD, 1, 0, { from: COLONY_ADMIN }), "colony-payment-invalid-recipient");
+      await checkErrorRevert(
+        colony.addPayment(1, 0, ZERO_ADDRESS, token.address, WAD, 1, 0, { from: COLONY_ADMIN }),
+        "colony-payment-invalid-recipient"
+      );
     });
 
     it("should allow admins to add payment with zero token amount", async () => {
