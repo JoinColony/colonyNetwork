@@ -196,7 +196,7 @@ contract("Reputation Updates", accounts => {
 
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
       expect(repLogEntryWorker2.user).to.equal(WORKER);
-      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.muln(3).divn(2));
     });
 
     it("should set the correct reputation change amount in log when evaluator has failed to rate", async function() {
@@ -245,9 +245,12 @@ contract("Reputation Updates", accounts => {
       expect(repLogEntryWorker1.user).to.equal(WORKER);
       expect(repLogEntryWorker1.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
 
+      // The entry for the worker's skill shouldn't have the penalty applied - their ability to perform a
+      // task is unrelated to their ability to rate the manager. So they only have their domain reward penalised
+      // (i.e. the one tested above) but not the skill reward.
       const repLogEntryWorker2 = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(4);
       expect(repLogEntryWorker2.user).to.equal(WORKER);
-      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT.divn(2));
+      expect(repLogEntryWorker2.amount).to.eq.BN(WORKER_PAYOUT);
     });
 
     it("should not be able to be appended by an account that is not a colony", async () => {
