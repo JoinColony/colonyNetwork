@@ -88,12 +88,28 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY = 3;
   uint constant B_CHILD_ADJACENT_REPUTATION_KEY = 4;
 
+  uint constant B_REPUTATION_KEY_COLONY = 0;
+  uint constant B_REPUTATION_KEY_SKILLID = 1;
+  uint constant B_REPUTATION_KEY_USER = 2;
+  uint constant B_PREVIOUS_NEW_REPUTATION_KEY_COLONY = 3;
+  uint constant B_PREVIOUS_NEW_REPUTATION_KEY_SKILLID = 4;
+  uint constant B_PREVIOUS_NEW_REPUTATION_KEY_USER = 5;
+  uint constant B_ADJACENT_REPUTATION_KEY_COLONY = 6;
+  uint constant B_ADJACENT_REPUTATION_KEY_SKILLID = 7;
+  uint constant B_ADJACENT_REPUTATION_KEY_USER = 8;
+  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_COLONY = 9;
+  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_SKILLID = 10;
+  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_USER = 11;
+  uint constant B_CHILD_ADJACENT_KEY_COLONY = 12;
+  uint constant B_CHILD_ADJACENT_KEY_SKILLID = 13;
+  uint constant B_CHILD_ADJACENT_KEY_USER = 14;
+
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function respondToChallenge(
     uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
-    bytes[5] memory b, // An array of 5 bytes params, ordered as given above
+    bytes32[15] memory b32, // An array of 15 bytes params, ordered as given above
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
@@ -107,6 +123,29 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     u[U_DECAY_TRANSITION] = 0;
     u[U_GLOBAL_CHILD_UPDATE] = 0;
     u[U_NEW_REPUTATION] = 0;
+    // Temporary transition array.
+    bytes[5] memory b;
+    b[0] = buildReputationKey(b32[B_REPUTATION_KEY_COLONY], b32[B_REPUTATION_KEY_SKILLID], b32[B_REPUTATION_KEY_USER]);
+    b[1] = buildReputationKey(
+      b32[B_PREVIOUS_NEW_REPUTATION_KEY_COLONY],
+      b32[B_PREVIOUS_NEW_REPUTATION_KEY_SKILLID],
+      b32[B_PREVIOUS_NEW_REPUTATION_KEY_USER]
+    );
+    b[2] = buildReputationKey(
+      b32[B_ADJACENT_REPUTATION_KEY_COLONY], 
+      b32[B_ADJACENT_REPUTATION_KEY_SKILLID], 
+      b32[B_ADJACENT_REPUTATION_KEY_USER]
+    );
+    b[3] = buildReputationKey(
+      b32[B_ORIGIN_ADJACENT_REPUTATION_KEY_COLONY],
+      b32[B_ORIGIN_ADJACENT_REPUTATION_KEY_SKILLID],
+      b32[B_ORIGIN_ADJACENT_REPUTATION_KEY_USER]
+    );
+    b[4] = buildReputationKey(
+      b32[B_CHILD_ADJACENT_KEY_COLONY],
+      b32[B_CHILD_ADJACENT_KEY_SKILLID],
+      b32[B_CHILD_ADJACENT_KEY_USER]
+    );
     // Require disagree state nnodes - agree state nnodes is either 0 or 1. Its a uint, so we can simplify this to < 2.
     require(u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] < 2, "colony-network-mining-more-than-one-node-added");
     // TODO: More checks that this is an appropriate time to respondToChallenge (maybe in modifier);
@@ -773,6 +812,19 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(delta == u[U_DISAGREE_STATE_NNODES]-u[U_AGREE_STATE_NNODES], "colony-reputation-mining-proved-uid-inconsistent");
     // Save the index for tiebreak scenarios later.
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
+  }
+
+  function buildReputationKey(bytes32 colony, bytes32 skill, bytes32 user) internal returns (bytes memory) {
+    bytes memory reputationKey = new bytes(72);
+    bytes32 rcolony = colony;
+    bytes32 rskill = skill;
+    bytes32 ruser = user;
+    assembly {
+        mstore(add(reputationKey, 32), shl(96, rcolony))
+        mstore(add(reputationKey, 72), ruser)
+        mstore(add(reputationKey, 52), rskill)
+    }
+    return reputationKey;
   }
 
 }

@@ -942,11 +942,11 @@ class ReputationMiner {
         lastAgreeJustifications.childAdjacentReputationProof.reputation
       ],
       [
-        reputationKey,
-        lastAgreeJustifications.newestReputationProof.key,
-        lastAgreeJustifications.adjacentReputationProof.key,
-        lastAgreeJustifications.originAdjacentReputationProof.key,
-        lastAgreeJustifications.childAdjacentReputationProof.key
+        ...ReputationMiner.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
+        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.newestReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
+        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.adjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
+        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.originAdjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
+        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.childAdjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
       ],
       firstDisagreeJustifications.justUpdatedProof.siblings,
       agreeStateSiblings,
