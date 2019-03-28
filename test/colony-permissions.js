@@ -261,5 +261,9 @@ contract("ColonyPermissions", accounts => {
       // Nor a bad child domain
       await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 10, 0, 0), "ds-auth-child-domain-does-not-exist");
     });
+
+    it("should not allow users to pass a too-large child skill index", async () => {
+      await checkErrorRevert(colony.makeTask(1, 100, SPECIFICATION_HASH, 2, 0, 0), "colony-network-out-of-range-child-skill-index");
+    });
   });
 });

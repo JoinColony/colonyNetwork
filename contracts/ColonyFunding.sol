@@ -108,7 +108,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
 
   function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public
   stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, getDomainFromPayment(_id))
+  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   validPayoutAmount(_amount)
   paymentNotFinalized(_id)
   {
@@ -479,7 +479,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       domainId = payments[fundingPot.associatedTypeId].domainId;
     } else {
       // If rewards pot, return root domain.
-      require(_fundingPotId == 0, "colony-funding-bad-pot-associated-type");
+      assert(_fundingPotId == 0);
       domainId = 1;
     }
   }

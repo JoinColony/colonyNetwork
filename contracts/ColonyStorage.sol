@@ -145,11 +145,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
 
     // Prevent people moving funds from the pot designated to paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
-
-    // Preventing sending from non-existent funding pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
-    // prevent sending to nonexistent funding pots) but doing this check explicitly gives us the error message for clients.
-    require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
-    require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
     _;
   }
 
@@ -196,7 +191,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     return childSkillId == domains[childDomainId].skillId;
   }
 
-  // Checks to see if the permission comes ONLY from the ArchitectureSubdomain role
+  // Checks to see if the permission comes ONLY from the ArchitectureSubdomain role (i.e. user does not have root, etc.)
   function canCallOnlyBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
     return DomainRoles(address(authority)).canCallOnlyBecause(src, domainId, uint8(ColonyRole.ArchitectureSubdomain), address(this), sig);
   }
@@ -208,10 +203,4 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
   function domainExists(uint256 domainId) internal view returns (bool) {
     return domainId > 0 && domainId <= domainCount;
   }
-
-  function getDomainFromPayment(uint256 _id) internal view returns (uint256) {
-    require(_id <= paymentCount, "colony-funding-nonexistent-payment");
-    return payments[_id].domainId;
-  }
-
 }

@@ -69,7 +69,7 @@ contract ColonyPayment is ColonyStorage {
 
   function finalizePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id) public
   stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, getDomainFromPayment(_id))
+  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   paymentFunded(_id)
   paymentNotFinalized(_id)
   {
@@ -90,7 +90,7 @@ contract ColonyPayment is ColonyStorage {
 
   function setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address payable _recipient) public
   stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, getDomainFromPayment(_id))
+  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   paymentNotFinalized(_id)
   {
     require(_recipient != address(0x0), "colony-payment-invalid-recipient");
@@ -99,7 +99,7 @@ contract ColonyPayment is ColonyStorage {
 
   function setPaymentDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _domainId) public
   stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, getDomainFromPayment(_id))
+  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   paymentNotFinalized(_id)
   {
@@ -108,7 +108,7 @@ contract ColonyPayment is ColonyStorage {
 
   function setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId) public
   stoppable
-  authDomain(_permissionDomainId, _childSkillIndex, getDomainFromPayment(_id))
+  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   paymentNotFinalized(_id)
   skillExists(_skillId)
   globalSkill(_skillId)
