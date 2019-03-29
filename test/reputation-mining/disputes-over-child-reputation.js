@@ -3,6 +3,7 @@ import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
+import { ethers } from "ethers";
 
 import {
   forwardTime,
@@ -402,11 +403,19 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
             lastAgreeJustifications.childAdjacentReputationProof.reputation
           ],
           [
-            reputationKey,
-            lastAgreeJustifications.newestReputationProof.key,
-            lastAgreeJustifications.adjacentReputationProof.key,
-            lastAgreeJustifications.originAdjacentReputationProof.key,
-            lastAgreeJustifications.childAdjacentReputationProof.key
+            ...ReputationMinerTestWrapper.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.newestReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            ),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.adjacentReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            ),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.originAdjacentReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            ),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.childAdjacentReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            )
           ],
           firstDisagreeJustifications.justUpdatedProof.siblings,
           agreeStateSiblings,
@@ -542,11 +551,19 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
             lastAgreeJustifications.childAdjacentReputationProof.reputation
           ],
           [
-            reputationKey,
-            lastAgreeJustifications.newestReputationProof.key,
-            lastAgreeJustifications.adjacentReputationProof.key,
-            lastAgreeJustifications.originAdjacentReputationProof.key,
-            lastAgreeJustifications.childAdjacentReputationProof.key
+            ...ReputationMinerTestWrapper.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.newestReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            ),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.adjacentReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            ),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.originAdjacentReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            ),
+            ...ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.childAdjacentReputationProof.key).map(x =>
+              ethers.utils.hexZeroPad(x, 32)
+            )
           ],
           firstDisagreeJustifications.justUpdatedProof.siblings,
           agreeStateSiblings,

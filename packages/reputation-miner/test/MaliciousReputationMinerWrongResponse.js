@@ -84,19 +84,59 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
         this.responseToFalsify === 28 ? this.responseValue : lastAgreeJustifications.childAdjacentReputationProof.reputation
       ],
       [
-        this.responseToFalsify === 29 ? this.responseValue : reputationKey,
-        this.responseToFalsify === 30 ? this.responseValue : lastAgreeJustifications.newestReputationProof.key,
-        this.responseToFalsify === 31 ? this.responseValue : lastAgreeJustifications.adjacentReputationProof.key,
-        this.responseToFalsify === 32 ? this.responseValue : lastAgreeJustifications.originAdjacentReputationProof.key,
-        this.responseToFalsify === 33 ? this.responseValue : lastAgreeJustifications.childAdjacentReputationProof.key
+        this.responseToFalsify === 29 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[0], 32),
+        this.responseToFalsify === 30 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[1], 32),
+        this.responseToFalsify === 31 ?
+          this.responseValue :
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[2], 32),
+        this.responseToFalsify === 32 ? 
+          this.responseValue : 
+            ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.newestReputationProof.key)[0], 32),
+        this.responseToFalsify === 33 ? 
+          this.responseValue : 
+            ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.newestReputationProof.key)[1], 32),
+        this.responseToFalsify === 34 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.newestReputationProof.key)[2], 32),
+        this.responseToFalsify === 35 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.adjacentReputationProof.key)[0], 32),
+        this.responseToFalsify === 36 ? 
+          this.responseValue :
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.adjacentReputationProof.key)[1], 32),
+        this.responseToFalsify === 37 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.adjacentReputationProof.key)[2], 32),
+        this.responseToFalsify === 38 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.originAdjacentReputationProof.key)[0], 32),
+        this.responseToFalsify === 39 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.originAdjacentReputationProof.key)[1], 32),
+        this.responseToFalsify === 40 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.originAdjacentReputationProof.key)[2], 32),
+        this.responseToFalsify === 41 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.childAdjacentReputationProof.key)[0], 32),
+        this.responseToFalsify === 42 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.childAdjacentReputationProof.key)[1], 32),
+        this.responseToFalsify === 43 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(lastAgreeJustifications.childAdjacentReputationProof.key)[2], 32),
       ],
-      this.responseToFalsify === 34 ? this.responseValue : firstDisagreeJustifications.justUpdatedProof.siblings,
-      this.responseToFalsify === 35 ? this.responseValue : agreeStateSiblings,
-      this.responseToFalsify === 36 ? this.responseValue : disagreeStateSiblings,
-      this.responseToFalsify === 37 ? this.responseValue : lastAgreeJustifications.newestReputationProof.siblings,
-      this.responseToFalsify === 38 ? this.responseValue : lastAgreeJustifications.originReputationProof.siblings,
-      this.responseToFalsify === 39 ? this.responseValue : lastAgreeJustifications.childReputationProof.siblings,
-      this.responseToFalsify === 40 ? this.responseValue : lastAgreeJustifications.adjacentReputationProof.siblings,
+      this.responseToFalsify === 44 ? this.responseValue : firstDisagreeJustifications.justUpdatedProof.siblings,
+      this.responseToFalsify === 45 ? this.responseValue : agreeStateSiblings,
+      this.responseToFalsify === 46 ? this.responseValue : disagreeStateSiblings,
+      this.responseToFalsify === 47 ? this.responseValue : lastAgreeJustifications.newestReputationProof.siblings,
+      this.responseToFalsify === 48 ? this.responseValue : lastAgreeJustifications.originReputationProof.siblings,
+      this.responseToFalsify === 49 ? this.responseValue : lastAgreeJustifications.childReputationProof.siblings,
+      this.responseToFalsify === 50 ? this.responseValue : lastAgreeJustifications.adjacentReputationProof.siblings,
       { gasLimit: 4000000 }
     );
     return tx.wait();

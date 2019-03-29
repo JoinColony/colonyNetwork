@@ -61,11 +61,19 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
         this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.reputation
       ],
       [
-        reputationKey,
-        this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-        this.justificationHashes[lastAgreeKey].adjacentReputationProof.key,
-        this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key,
-        this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key
+        ...ReputationMinerTestWrapper.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
+        ...ReputationMinerTestWrapper.breakKeyInToElements(
+          this.justificationHashes[lastAgreeKey].newestReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)
+        ),
+        ...ReputationMinerTestWrapper.breakKeyInToElements(
+          this.justificationHashes[lastAgreeKey].adjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)
+        ),
+        ...ReputationMinerTestWrapper.breakKeyInToElements(
+          this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)
+        ),
+        ...ReputationMinerTestWrapper.breakKeyInToElements(
+          this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)
+        ),
       ],
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
       agreeStateSiblings,
