@@ -357,7 +357,8 @@ contract ColonyTask is ColonyStorage {
   self()
   {
     tasks[_id].skills[0] = _skillId;
-
+    // We only allow setting of the first skill here. If we allow more in the future, make sure to have a hard limit that comfortably limits
+    // respondToChallenge's gas.
     emit TaskSkillSet(_id, _skillId);
   }
 

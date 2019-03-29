@@ -1,10 +1,8 @@
-/* globals artifacts */
-
 import chai from "chai";
 import bnChai from "bn-chai";
 
 import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
-import { checkErrorRevert } from "../helpers/test-helper";
+import { checkErrorRevert, removeSubdomainLimit } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupFundedTask,
@@ -18,9 +16,6 @@ import {
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
-
-const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
-const Resolver = artifacts.require("Resolver");
 
 contract("Meta Colony", accounts => {
   const MANAGER = accounts[0];
@@ -56,11 +51,7 @@ contract("Meta Colony", accounts => {
 
   describe("when adding skills to the tree by adding domains", () => {
     beforeEach(async () => {
-      // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
-      const noLimitSubdomains = await NoLimitSubdomains.new();
-      const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
-      const resolver = await Resolver.at(resolverAddress);
-      await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
+      await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
     });
 
     it("should be able to add a new skill as a child of a domain", async () => {
@@ -88,7 +79,7 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
-    it("should be able to add multiple child skills to the root global skill", async () => {
+    it("should be able to add multiple child skills to the skill corresponding to the root domain by adding child domains", async () => {
       await metaColony.addDomain(1);
       await metaColony.addDomain(1);
       await metaColony.addDomain(1);

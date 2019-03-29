@@ -14,6 +14,8 @@ const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
+const Resolver = artifacts.require("Resolver");
 
 const { expect } = chai;
 
@@ -701,4 +703,13 @@ export async function withdrawAllMinerStakes(colonyNetwork) {
       }
     })
   );
+}
+
+export async function removeSubdomainLimit(colonyNetwork) {
+  // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
+  const noLimitSubdomains = await NoLimitSubdomains.new();
+  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+  const resolver = await Resolver.at(resolverAddress);
+  await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
 }

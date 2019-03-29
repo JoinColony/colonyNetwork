@@ -1,5 +1,3 @@
-/* globals artifacts */
-
 import path from "path";
 import BN from "bn.js";
 import chai from "chai";
@@ -9,7 +7,7 @@ import { ethers } from "ethers";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
-import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle } from "../../helpers/test-helper";
+import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle, removeSubdomainLimit } from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 import {
@@ -19,9 +17,6 @@ import {
   setupFinalizedTask,
   fundColonyWithTokens
 } from "../../helpers/test-data-generator";
-
-const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
-const Resolver = artifacts.require("Resolver");
 
 const useJsTree = true;
 
@@ -42,11 +37,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-  // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
-  const noLimitSubdomains = await NoLimitSubdomains.new();
-  const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
-  const resolver = await Resolver.at(resolverAddress);
-  await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
+  await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
   // Initialise global skill: 3. Set up local skills tree 1 -> 4 -> 5
   //                                                       \-> 2
@@ -54,6 +45,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await metaColony.addDomain(2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -101,7 +93,7 @@ process.env.SOLIDITY_COVERAGE
 
       afterEach(async () => {
         const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
-        if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
+        if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2);
       });
 
       describe("core functionality", () => {

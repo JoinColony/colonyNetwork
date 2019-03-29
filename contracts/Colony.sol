@@ -280,7 +280,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     roleAssignmentSigs[_sig] = true;
   }
 
-  function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {
+  function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
     domainCount += 1;
     // Create a new funding pot
     fundingPotCount += 1;

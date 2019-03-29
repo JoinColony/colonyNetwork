@@ -62,10 +62,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skillCount;
   }
 
-  function getRootGlobalSkillId() public view returns (uint256) {
-    return rootGlobalSkillId;
-  }
-
   function getColonyVersionResolver(uint256 _version) public view returns (address) {
     return colonyVersionResolver[_version];
   }

@@ -35,16 +35,15 @@ import {
   RATING_2_SECRET
 } from "../helpers/constants";
 
-import { checkErrorRevert, forwardTime, advanceMiningCycleNoContest, getTokenArgs } from "../helpers/test-helper";
+import { checkErrorRevert, forwardTime, advanceMiningCycleNoContest, getTokenArgs, removeSubdomainLimit } from "../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const DSToken = artifacts.require("DSToken");
-const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
-const Resolver = artifacts.require("Resolver");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
+const Resolver = artifacts.require("Resolver");
 
 contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -279,11 +278,7 @@ contract("Reputation Updates", accounts => {
     });
 
     it("should calculate nUpdates correctly when making a log", async () => {
-      // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
-      const noLimitSubdomains = await NoLimitSubdomains.new();
-      const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
-      const resolver = await Resolver.at(resolverAddress);
-      await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
+      await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
       await metaColony.addDomain(1);
       await metaColony.addDomain(2);

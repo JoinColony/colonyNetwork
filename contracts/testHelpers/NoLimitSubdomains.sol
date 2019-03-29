@@ -18,9 +18,9 @@
 pragma solidity >=0.5.3;
 pragma experimental ABIEncoderV2;
 
-import "./../ColonyStorage.sol";
+import "./../Colony.sol";
 
-contract NoLimitSubdomains is ColonyStorage {
+contract NoLimitSubdomains is Colony {
   function addDomain(uint256 _parentDomainId) public
   stoppable
   auth
@@ -35,25 +35,4 @@ contract NoLimitSubdomains is ColonyStorage {
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);
   }
-
-  // We copy this function from Colony.sol to here because it's private, not internal, so we can't access it even if we inherit
-  function initialiseDomain(uint256 _skillId) private skillExists(_skillId) {
-    domainCount += 1;
-    // Create a new funding pot
-    fundingPotCount += 1;
-    fundingPots[fundingPotCount] = FundingPot({
-      associatedType: FundingPotAssociatedType.Domain,
-      associatedTypeId: domainCount
-    });
-
-    // Create a new domain with the given skill and new funding pot
-    domains[domainCount] = Domain({
-      skillId: _skillId,
-      fundingPotId: fundingPotCount
-    });
-
-    emit DomainAdded(domainCount);
-    emit FundingPotAdded(fundingPotCount);
-  }
-
 }

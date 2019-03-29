@@ -16,7 +16,8 @@ import {
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycle,
   makeReputationKey,
-  makeReputationValue
+  makeReputationValue,
+  removeSubdomainLimit
 } from "../../helpers/test-helper";
 
 import {
@@ -46,8 +47,6 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
-const Resolver = artifacts.require("Resolver");
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
@@ -65,11 +64,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-  // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
-  const noLimitSubdomains = await NoLimitSubdomains.new();
-  const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
-  const resolver = await Resolver.at(resolverAddress);
-  await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
+  await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
 
   // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
   // We're not resetting the global skills tree as the Network is not reset
@@ -469,7 +464,7 @@ contract("Reputation Mining - happy paths", accounts => {
       const META_ROOT_SKILL_TOTAL = REWARD // eslint-disable-line prettier/prettier
         .add(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT).muln(3)) // eslint-disable-line prettier/prettier
         .add(new BN(1000000000));
-      // .sub(new BN(1000000000000)); // Manage cannot lose skill they never had
+      // .sub(new BN(1000000000000)); // Manager cannot lose skill they never had
       // .sub(new BN(5000000000000)); // Worker cannot lose skill they never had
       const reputationProps = [
         { id: 1, skill: META_ROOT_SKILL, account: undefined, value: META_ROOT_SKILL_TOTAL },
