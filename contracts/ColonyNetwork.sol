@@ -38,7 +38,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   modifier skillExists(uint skillId) {
-    require(skillId == 0 || skillCount >= skillId, "colony-invalid-skill-id");
+    require(skillCount >= skillId, "colony-invalid-skill-id");
     _;
   }
 
@@ -225,7 +225,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
       // Walk through the tree parent skills up to the root
       while (notAtRoot) {
         // Add the new skill to each parent children
-        // TODO: skip this for the root skill as the children of that will always be all skills
         parentSkill.children.push(skillCount);
         parentSkill.nChildren += 1;
 

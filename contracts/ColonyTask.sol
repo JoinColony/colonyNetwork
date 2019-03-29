@@ -502,6 +502,8 @@ contract ColonyTask is ColonyStorage {
         }
       }
 
+      assert(nSkills > 0);
+
       int256 reputationPerSkill = reputation / nSkills;
 
       for (uint i = 0; i < task.skills.length; i += 1) {
