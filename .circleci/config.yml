@@ -74,6 +74,9 @@ jobs:
           name: "Checking contract recovery modifiers"
           command: yarn run check:recoverymods
       - run:
+          name: "Checking contract authDomain modifiers"
+          command: yarn run check:auth
+      - run:
           name: "Running unit tests"
           command: yarn run test:contracts
       - run:

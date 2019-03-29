@@ -15,7 +15,12 @@ function correctAuthModifier(functionDef) {
   let valid = true;
   const errors = [];
 
-  const auths = functionDef.modifiers.filter(mod => ["auth"].indexOf(mod.name) > -1);
+  // Special cases which need two invocations of `authDomain`
+  if (["moveFundsBetweenPots", "setPaymentDomain"].indexOf(functionDef.name) > -1) {
+    return { valid, errors };
+  }
+
+  const auths = functionDef.modifiers.filter(mod => ["auth", "authDomain"].indexOf(mod.name) > -1);
   if (auths.length === 0) {
     return { valid, errors };
   }
@@ -23,7 +28,7 @@ function correctAuthModifier(functionDef) {
     return { valid: false, errors: ["Auth declared more than once"] };
   }
 
-  const authDec = functionDef.modifiers.filter(mod => ["auth"].indexOf(mod.name) > -1)[0];
+  const authDec = functionDef.modifiers.filter(mod => ["auth", "authDomain"].indexOf(mod.name) > -1)[0];
   // Check if it's the 'normal' auth
   if (authDec.arguments.length === 0) {
     return { valid, errors };
@@ -44,13 +49,13 @@ function correctAuthModifier(functionDef) {
     valid = false;
     errors.push("First parameter to auth is not _permissionDomainId");
   }
-  // Check that the third is _childSkillIndex
-  if (authDec.arguments[2].name !== "_childSkillIndex") {
+  // Check that the second is _childSkillIndex
+  if (authDec.arguments[1].name !== "_childSkillIndex") {
     valid = false;
-    errors.push("Third parameter to auth is not _childSkillIndex");
+    errors.push("Second parameter to auth is not _childSkillIndex");
   }
   // Check that the second is either a lookup of a domainId, or _domainId
-  const arg2 = authDec.arguments[1];
+  const arg2 = authDec.arguments[2];
   if (arg2.name !== "_domainId" && (arg2.type === "MemberAccess" && arg2.memberName !== "domainId")) {
     valid = false;
     errors.push("Second parameter to auth is not _domainId or a lookup thereof");
