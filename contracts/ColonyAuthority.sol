@@ -42,8 +42,6 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256,uint256,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,uint256,uint256,address,uint256)");
     addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)");
-    // Only for admins in root domain
-    addRoleCapability(ADMINISTRATION_ROLE, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
 
     // Add permissions for the Funding role
     addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");

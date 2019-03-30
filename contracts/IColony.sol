@@ -492,6 +492,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   function claimTaskPayout(uint256 _id, uint8 _role, address _token) public;
 
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
+  /// @notice Add a new payment in the colony. Can only be called by users with root permission.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
   /// @param _token Address of the token used for reward payout
   /// @param key Some Reputation hash tree key
