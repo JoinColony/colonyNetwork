@@ -26,6 +26,7 @@
     "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 99 --branches 94 --functions 99 --lines 99",
     "test:contracts:watch": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle watch --network development",
     "test:contracts:e2e": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-system/end-to-end.js --network development",
+    "test:contracts:security": "truffle run verify",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade:ganache": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
@@ -93,7 +94,7 @@
     "solidity-coverage": "0.6.0-beta.5",
     "solidity-parser-antlr": "^0.4.2",
     "truffle": "^5.0.8",
-    "truffle-security": "^1.3.1",
+    "truffle-security": "^1.3.2",
     "web3-utils": "^1.0.0-beta.48"
   },
   "private": true,

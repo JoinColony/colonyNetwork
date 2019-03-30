@@ -118,7 +118,7 @@ jobs:
       - <<: *step_setup_global_packages
       - run:
           name: "MythX security analysis"
-          command: yarn run truffle run verify
+          command: yarn run test:contracts:security
   end-to-end-tests:
     <<: *job_common
     steps:

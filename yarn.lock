@@ -8449,10 +8449,10 @@ truffle-resolver@^5.0.10:
     truffle-expect "^0.0.7"
     truffle-provisioner "^0.1.4"
 
-truffle-security@^1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/truffle-security/-/truffle-security-1.3.1.tgz#147084488185c66470434abedf049e78a663f86d"
-  integrity sha512-SAfJDyE+eMZO/J3hEWmEIoD60p8CNPzQYbPfInNbZtPx6g9gEimLVNi9FlkNz22zRDsDUazsNyFCz8TBfSqtIQ==
+truffle-security@^1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/truffle-security/-/truffle-security-1.3.2.tgz#839022c1a44ae1b87bc391eb524048a3dbd783af"
+  integrity sha512-jIIleLXH4HUnUJIPoRWse2JGaLHykY7D5auIJulyUfx+lLfOBRogqaDVxofqc7Xb4kybtKQK9aLpme1W7OcbAA==
   dependencies:
     armlet "^2.3.0"
     configstore "^4.0.0"
