@@ -222,7 +222,7 @@ contract("All", function(accounts) {
       await colony.setFundingRole(1, 0, oneTxExtension.address, 1, true);
 
       const globalSkillId = await colonyNetwork.getRootGlobalSkillId();
-      await oneTxExtension.makePayment(1, 0, WORKER, token.address, 10, 1, globalSkillId);
+      await oneTxExtension.makePayment(1, 0, 1, 0, WORKER, token.address, 10, 1, globalSkillId);
     });
 
     it("when working with staking", async function() {

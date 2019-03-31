@@ -18,34 +18,39 @@
 pragma solidity >=0.5.3;
 pragma experimental ABIEncoderV2;
 
-import "./../IColony.sol";
-import "./../ColonyDataTypes.sol";
 import "./../ColonyAuthority.sol";
+import "./../ColonyDataTypes.sol";
+import "./../IColony.sol";
+import "./../IColonyNetwork.sol";
 
 
 contract OneTxPayment {
   bytes4 constant ADD_PAYMENT_SIG = bytes4(keccak256("addPayment(uint256,uint256,address,address,uint256,uint256,uint256)"));
+  bytes4 constant MOVE_FUNDS_SIG = bytes4(keccak256("moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)"));
 
   IColony colony;
+  IColonyNetwork colonyNetwork;
 
   constructor(address _colony) public {
     colony = IColony(_colony);
+    colonyNetwork = IColonyNetwork(colony.getColonyNetwork());
   }
 
+  // Note: assumes that each entity holds administration and funding roles in the same domain,
+  // although contract and caller can have the permissions in different domains.
   function makePayment(
     uint256 _permissionDomainId,
     uint256 _childSkillIndex,
+    uint256 _callerPermissionDomainId,
+    uint256 _callerChildSkillIndex,
     address payable _worker,
     address _token,
     uint256 _amount,
     uint256 _domainId,
     uint256 _skillId) public
   {
-    // Check caller is able to call makePayment on the colony
-    require(
-      ColonyAuthority(colony.authority()).canCall(msg.sender, _permissionDomainId, address(colony), ADD_PAYMENT_SIG),
-      "colony-one-tx-payment-not-authorized"
-    );
+    // Check caller is able to call {add,finalize}Payment and moveFundsBetweenPots on the colony
+    validateCallerPermissions(_callerPermissionDomainId, _callerChildSkillIndex, _domainId);
 
     // Add a new payment
     uint256 paymentId = colony.addPayment(_permissionDomainId, _childSkillIndex, _worker, _token, _amount, _domainId, _skillId);
@@ -66,5 +71,29 @@ contract OneTxPayment {
 
     // Claim payout on behalf of the recipient
     colony.claimPayment(paymentId, _token);
+  }
+
+  function validateCallerPermissions(
+    uint256 _callerPermissionDomainId,
+    uint256 _callerChildSkillIndex,
+    uint256 _domainId) internal view
+  {
+    require(
+      ColonyAuthority(colony.authority()).canCall(msg.sender, _callerPermissionDomainId, address(colony), ADD_PAYMENT_SIG),
+      "colony-one-tx-payment-administration-not-authorized"
+    );
+    require(
+      ColonyAuthority(colony.authority()).canCall(msg.sender, _callerPermissionDomainId, address(colony), MOVE_FUNDS_SIG),
+      "colony-one-tx-payment-funding-not-authorized"
+    );
+
+    if (_callerPermissionDomainId != _domainId) {
+      uint256 permissionSkillId = colony.getDomain(_callerPermissionDomainId).skillId;
+      uint256 domainSkillId = colony.getDomain(_domainId).skillId;
+      require(domainSkillId > 0, "ds-auth-child-domain-does-not-exist");
+
+      uint256 childSkillId = colonyNetwork.getChildSkillId(permissionSkillId, _callerChildSkillIndex);
+      require(childSkillId == domainSkillId, "colony-one-tx-payment-bad-child-skill");
+    }
   }
 }
