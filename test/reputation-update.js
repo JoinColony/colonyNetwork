@@ -339,7 +339,7 @@ contract("Reputation Updates", accounts => {
 
     it("should set the correct domain and skill reputation change amount in log for payments", async () => {
       const RECIPIENT = accounts[3];
-      await metaColony.addPayment(1, 0, RECIPIENT, clnyToken.address, WAD, 1, 7);
+      await metaColony.addPayment(1, 0, RECIPIENT, clnyToken.address, WAD, 1, 3);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
@@ -359,7 +359,7 @@ contract("Reputation Updates", accounts => {
       repLogEntryManager = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(2);
       expect(repLogEntryManager.user).to.equal(RECIPIENT);
       expect(repLogEntryManager.amount).to.eq.BN(WAD);
-      expect(repLogEntryManager.skillId).to.eq.BN(7);
+      expect(repLogEntryManager.skillId).to.eq.BN(3);
     });
 
     it("should not add entries to the reputation log for payments that are not in the colony home token", async () => {
@@ -368,7 +368,7 @@ contract("Reputation Updates", accounts => {
       const otherToken = await DSToken.new(tokenArgs[1]);
       await fundColonyWithTokens(metaColony, otherToken, WAD.muln(2));
 
-      await metaColony.addPayment(1, 0, RECIPIENT, otherToken.address, WAD, 1, 7);
+      await metaColony.addPayment(1, 0, RECIPIENT, otherToken.address, WAD, 1, 3);
       const paymentId = await metaColony.getPaymentCount();
 
       const payment = await metaColony.getPayment(paymentId);
