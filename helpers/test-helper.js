@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 import shortid from "shortid";
 import chai from "chai";
-import { asciiToHex, sha3, soliditySha3, padLeft } from "web3-utils";
+import { sha3, soliditySha3, padLeft } from "web3-utils";
 import { hashPersonalMessage, ecsign } from "ethereumjs-util";
 import BN from "bn.js";
 import fs from "fs";
@@ -209,8 +209,8 @@ export function getRandomString(_length) {
 }
 
 export function getTokenArgs() {
-  const name = asciiToHex(getRandomString(5));
-  const symbol = asciiToHex(getRandomString(3));
+  const name = getRandomString(5);
+  const symbol = getRandomString(3);
   return [name, symbol];
 }
 

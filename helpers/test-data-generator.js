@@ -1,5 +1,5 @@
 /* globals artifacts */
-import { soliditySha3, asciiToHex } from "web3-utils";
+import { soliditySha3 } from "web3-utils";
 import { BN } from "bn.js";
 import { ethers } from "ethers";
 
@@ -331,7 +331,7 @@ export async function fundColonyWithTokens(colony, token, tokenAmount = INITIAL_
 
 export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const accounts = await web3GetAccounts();
-  const clnyToken = await Token.new(asciiToHex("Colony Network Token"), asciiToHex("CLNY"), 18);
+  const clnyToken = await Token.new("Colony Network Token", "CLNY", 18);
   await colonyNetwork.createMetaColony(clnyToken.address);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
   const metaColony = await IMetaColony.at(metaColonyAddress);
