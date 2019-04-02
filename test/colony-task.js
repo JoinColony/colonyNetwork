@@ -1362,8 +1362,7 @@ contract("ColonyTask", accounts => {
       await colony.moveFundsBetweenPots(1, 0, 0, 1, taskPotId, 100, ZERO_ADDRESS);
 
       // And another token
-      await otherToken.mint(101);
-      await otherToken.transfer(colony.address, 101);
+      await otherToken.mint(colony.address, 101);
       await colony.claimColonyFunds(otherToken.address);
       await colony.moveFundsBetweenPots(1, 0, 0, 1, taskPotId, 100, otherToken.address);
 

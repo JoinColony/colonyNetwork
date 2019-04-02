@@ -317,8 +317,7 @@ contract("Colony Reward Payouts", accounts => {
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
       await newColony.setRewardInverse(100);
-      await newToken.mint(10);
-      await newToken.transfer(userAddress1, 10);
+      await newToken.mint(userAddress1, 10);
 
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;

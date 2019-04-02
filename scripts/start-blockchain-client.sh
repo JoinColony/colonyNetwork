@@ -40,11 +40,9 @@ start_parity() {
     echo "No parity addresses found. Did you initialise it correctly?"
     exit 1;
   else
-    parity --chain ./parity-genesis.json \
-    --author ${addresses[0]} \
+    parity --chain ./parity-genesis.json --author ${addresses[0]} \
     --unlock ${addresses[0]},${addresses[1]},${addresses[2]},${addresses[3]},${addresses[4]},${addresses[5]},${addresses[6]},${addresses[7]},${addresses[8]},${addresses[9]},${addresses[10]},${addresses[11]} \
-    --keys-path ./keys --geth --no-dapps \
-    --tx-gas-limit 0x6691B7 --gasprice 0x0 --gas-floor-target 0x6691B7 \
+    --keys-path ./keys --geth --tx-gas-limit 0x6691B7 --gas-floor-target 0x6691B7 \
     --reseal-on-txs all --reseal-min-period 0 \
     --jsonrpc-interface all --jsonrpc-hosts all --jsonrpc-cors="http://localhost:3000" \
     --password ./parityPassword >/dev/null 2>&1

@@ -146,11 +146,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   stoppable
   auth
   {
-    if (address(this) == IColonyNetwork(colonyNetworkAddress).getMetaColony()) {
-      ERC20Extended(token).mint(_wad);
-    } else {
-      ERC20Extended(token).mint(address(this), _wad);
-    }
+    ERC20Extended(token).mint(address(this), _wad);
   }
 
   function mintTokensForColonyNetwork(uint _wad) public stoppable {
