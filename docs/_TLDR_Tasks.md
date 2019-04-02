@@ -1,6 +1,6 @@
 ---
 title: Tasks
-section: Docs
+section: Whitepaper TL;DR
 order: 3
 ---
 The smallest conceptual unit within a Colony is a **task**. A task is a discrete unit of work which requires no further subdivision or delegation, and which can be evaluated as complete or incomplete based on some set of criteria.
@@ -68,9 +68,9 @@ _* If no work is submitted by the task's due date, `completeTask()` must be call
 One large determiner of reputation within a colony is the rating that one has earned for completing tasks within the colony. In addition to serving as a quick reference for one's ability and commitment to the shared values of the organization, reputation (combined with token holdings) grant one a portion of the colony's revenue, paid out in rewards.
 
 Reputation changes are determined by work rating, which is rated on the basis of 3 possible outcomes:
-* `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the native token payout.
-* `[2]` **Satisfactory**. The work done met the established expectations. Worker is awarded reputation equal to the native token payout.
-* `[3]` **Excellent**. The work done exceeded the expectations of the manager. Reputation is awarded at 1.5 times the native token payout.
+* `[1]` **Unsatisfactory**. The work done did not meet the expectations established by the manager. The worker is *penalized* reputation equal to the internal token payout.
+* `[2]` **Satisfactory**. The work done met the established expectations. Worker is awarded reputation equal to the internal token payout.
+* `[3]` **Excellent**. The work done exceeded the expectations of the manager. Reputation is awarded at 1.5 times the internal token payout.
 
 In consideration of the descriptions above, during the rating period:
 * The Evaluator reviews the work done and submits a rating for the Worker.
@@ -81,7 +81,7 @@ Because work ratings are on-chain, they follow a _*Commit* and *Reveal*_ pattern
 * During the *Commit* period, hidden ratings are submitted to the blockchain. The commit period lasts at most 5 days, but completes earlier if all parties commit.
 * During the *Reveal* period, users submit a transaction to reveal their rating. The reveal period also lasts at most 5 days, but completes earlier if all parties reveal.
 
-During the rating period, if either party fails to commit or reveal their rating, their counterpart is given the highest possible rating, and their own rating is penalized at -0.5 times the native token payout.
+During the rating period, if either party fails to commit or reveal their rating, their counterpart is given the highest possible rating, and their own rating is penalized at -0.5 times the internal token payout.
 
 ### Finalize
 ![task_payout](img/taskPayout_1.png)

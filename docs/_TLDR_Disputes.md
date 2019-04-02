@@ -1,11 +1,11 @@
 ---
 title: Objections and Disputes
-section: Docs
+section: Whitepaper TL;DR
 order: 7
 ---
 The solution to collective decision making is usually voting, but Colony is designed for day to day operation of an organisation. Voting on every decision is wholly impractical.
 
-Colony is designed to be permissive. The [reputation system](/colonynetwork/docs-reputation/) mediates the extent to which members may influence a colony, but beyond that constraint, members are free to take executive action with most colony matters without any aproval from a management authority.
+Colony is designed to be permissive. The [reputation system](/colonynetwork/whitepaper-tldr-reputation/) mediates the extent to which members may influence a colony, but beyond that constraint, members are free to take executive action with most colony matters without any aproval from a management authority.
 
 In the event of disagreement, the Dispute system allows colony members to signal disapproval and potentially force a vote on decisions and actions that would otherwise have proceeded unimpeded.
 
@@ -23,7 +23,7 @@ Objections pass *automatically* after three days if they are not opposed by othe
 
 A dispute is settled by vote to "Change" or "Keep", within the domain and/or skill that was specified when the objection was raised.
 
-During the vote, any member with reputation in the named domain or skill may stake the "Change" or the "Keep" side with the colony's native token.
+During the vote, any member with reputation in the named domain or skill may stake the "Change" or the "Keep" side with the colony's internal token.
 
 At the conclusion of the poll, losing stakers receive some of their staked tokens back and they lose the complementary percentage of the reputation that was required to stake. The exact amount of tokens they receive back (and therefore reputation they lose) is based on:
 * The fraction of the reputation in the colony that voted.
