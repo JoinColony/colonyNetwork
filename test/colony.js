@@ -14,20 +14,18 @@ import {
   ZERO_ADDRESS,
   WAD
 } from "../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents, getFunctionSignature } from "../helpers/test-helper";
+import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../helpers/test-helper";
 import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const DSToken = artifacts.require("DSToken");
-const ColonyAuthority = artifacts.require("ColonyAuthority");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 contract("Colony", accounts => {
   let colony;
   let token;
-  let authority;
   let colonyNetwork;
 
   before(async () => {
@@ -39,9 +37,6 @@ contract("Colony", accounts => {
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
-
-    const authorityAddress = await colony.authority();
-    authority = await ColonyAuthority.at(authorityAddress);
   });
 
   describe("when initialised", () => {
@@ -133,114 +128,9 @@ contract("Colony", accounts => {
     });
   });
 
-  describe("when working with permissions", () => {
-    it("should allow current founder to transfer role to another address", async () => {
-      const founderRole = 0;
-      const currentFounder = accounts[0];
-      const newFounder = accounts[2];
-
-      let hasRole = await colony.hasUserRole(currentFounder, founderRole);
-      expect(hasRole, `${currentFounder} does not have founder role`).to.be.true;
-
-      await colony.setFounderRole(newFounder);
-
-      hasRole = await colony.hasUserRole(newFounder, founderRole);
-      expect(hasRole, `Founder role not transfered to ${newFounder}`).to.be.true;
-    });
-
-    it("should allow admin to assign colony admin role", async () => {
-      const adminRole = 1;
-
-      const user1 = accounts[1];
-      const user5 = accounts[5];
-
-      await colony.setAdminRole(user1);
-
-      const functionSig = getFunctionSignature("setAdminRole(address)");
-      const canCall = await authority.canCall(user1, colony.address, functionSig);
-      expect(canCall, `Address ${user1} can't call 'setAdminRole' function`).to.be.true;
-
-      await colony.setAdminRole(user5, { from: user1 });
-
-      const hasRole = await colony.hasUserRole(user5, adminRole);
-      expect(hasRole, `Admin role not assigned to ${user5}`).to.be.true;
-    });
-
-    it("should allow founder to remove colony admin role", async () => {
-      const adminRole = 1;
-
-      const user1 = accounts[1];
-
-      await colony.setAdminRole(user1);
-
-      let hasRole = await colony.hasUserRole(user1, adminRole);
-      expect(hasRole, `Admin role not assigned to ${user1}`).to.be.true;
-
-      await colony.removeAdminRole(user1);
-
-      hasRole = await colony.hasUserRole(user1, adminRole);
-      expect(!hasRole, `Admin role not removed from ${user1}`).to.be.true;
-    });
-
-    it("should not allow admin to remove admin role", async () => {
-      const adminRole = 1;
-
-      const user1 = accounts[1];
-      const user2 = accounts[2];
-
-      await colony.setAdminRole(user1);
-      await colony.setAdminRole(user2);
-
-      let hasRole = await colony.hasUserRole(user1, adminRole);
-      expect(hasRole, `Admin role not assigned to ${user1}`).to.be.true;
-      hasRole = await colony.hasUserRole(user2, adminRole);
-      expect(hasRole, `Admin role not assigned to ${user2}`).to.be.true;
-
-      await checkErrorRevert(colony.removeAdminRole(user1, { from: user2 }), "ds-auth-unauthorized");
-
-      hasRole = await colony.hasUserRole(user1, adminRole);
-      expect(hasRole, `${user1} is removed from admin role from another admin`).to.be.true;
-    });
-
-    it("should allow admin to call predetermined functions", async () => {
-      const founder = accounts[0];
-      const user3 = accounts[3];
-
-      await colony.setAdminRole(user3);
-
-      let functionSig = getFunctionSignature("moveFundsBetweenPots(uint256,uint256,uint256,address)");
-      let canCall = await authority.canCall(user3, colony.address, functionSig);
-      expect(canCall).to.be.true;
-
-      functionSig = getFunctionSignature("addDomain(uint256)");
-      canCall = await authority.canCall(user3, colony.address, functionSig);
-      expect(canCall).to.be.true;
-
-      functionSig = getFunctionSignature("makeTask(bytes32,uint256,uint256,uint256)");
-      canCall = await authority.canCall(user3, colony.address, functionSig);
-      expect(canCall).to.be.true;
-
-      functionSig = getFunctionSignature("startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
-      canCall = await authority.canCall(user3, colony.address, functionSig);
-      expect(canCall).to.be.true;
-
-      functionSig = getFunctionSignature("bootstrapColony(address[],int256[])");
-      canCall = await authority.canCall(founder, colony.address, functionSig);
-      expect(canCall).to.be.true;
-      canCall = await authority.canCall(user3, colony.address, functionSig);
-      expect(canCall).to.be.false;
-
-      functionSig = getFunctionSignature("mintTokens(uint256)");
-      canCall = await authority.canCall(founder, colony.address, functionSig);
-      expect(canCall).to.be.true;
-      canCall = await authority.canCall(user3, colony.address, functionSig);
-      expect(canCall).to.be.false;
-    });
-  });
-
   describe("when adding domains", () => {
     it("should log DomainAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.addDomain(1), ["DomainAdded", "FundingPotAdded"]);
+      await expectAllEvents(colony.addDomain(1, 0, 1), ["DomainAdded", "FundingPotAdded"]);
     });
   });
 
@@ -333,13 +223,13 @@ contract("Colony", accounts => {
       expect(defaultRewardInverse).to.eq.BN(UINT256_MAX);
     });
 
-    it("should allow the colony founder to set it", async () => {
+    it("should allow root user to set it", async () => {
       await colony.setRewardInverse(234);
       const defaultRewardInverse = await colony.getRewardInverse();
       expect(defaultRewardInverse).to.eq.BN(234);
     });
 
-    it("should not allow anyone else but the colony founder to set it", async () => {
+    it("should not allow anyone else but a root user to set it", async () => {
       await colony.setRewardInverse(100);
       await checkErrorRevert(colony.setRewardInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
       const defaultRewardInverse = await colony.getRewardInverse();

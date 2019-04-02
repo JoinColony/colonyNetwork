@@ -89,7 +89,7 @@ contract("Colony Network Recovery", accounts => {
 
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();
       expect(numRecoveryRoles).to.be.zero;
-      colonyNetwork.setRecoveryRole(founder);
+      await colonyNetwork.setRecoveryRole(founder);
       await colonyNetwork.setRecoveryRole(accounts[1]);
       await colonyNetwork.setRecoveryRole(accounts[2]);
       numRecoveryRoles = await colonyNetwork.numRecoveryRoles();

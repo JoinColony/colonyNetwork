@@ -89,10 +89,16 @@ contract ColonyTask is ColonyStorage {
     _;
   }
 
-  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public
+  function makeTask(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    bytes32 _specificationHash,
+    uint256 _domainId,
+    uint256 _skillId,
+    uint256 _dueDate
+  ) public
   stoppable
-  auth
-  domainExists(_domainId)
+  authDomain(_permissionDomainId, _childSkillIndex, _domainId)
   {
     taskCount += 1;
 
@@ -298,10 +304,10 @@ contract ColonyTask is ColonyStorage {
     return taskWorkRatings[_id].secret[_role];
   }
 
-  function setTaskManagerRole(uint256 _id, address payable _user) public
+  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _permissionDomainId, uint256 _childSkillIndex) public
   stoppable
   self()
-  isAdmin(_user)
+  isAdmin(_permissionDomainId, _childSkillIndex, _id, _user)
   {
     setTaskRoleUser(_id, TaskRole.Manager, _user);
   }
@@ -332,10 +338,11 @@ contract ColonyTask is ColonyStorage {
   function setTaskDomain(uint256 _id, uint256 _domainId) public
   stoppable
   taskExists(_id)
-  domainExists(_domainId)
   taskNotComplete(_id)
   self()
   {
+    require(domainExists(_domainId), "colony-domain-does-not-exist");
+
     tasks[_id].domainId = _domainId;
 
     emit TaskDomainSet(_id, _domainId);
@@ -484,7 +491,7 @@ contract ColonyTask is ColonyStorage {
     colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, domains[task.domainId].skillId);
     if (taskRole == TaskRole.Worker) {
       if (role.rateFail) {
-        // If the worker failed to rate, we do not penalise the reputation being earned for the skill in 
+        // If the worker failed to rate, we do not penalise the reputation being earned for the skill in
         // question, so recalculate it without the penalty.
         reputation = getReputation(payout, role.rating, false);
       }

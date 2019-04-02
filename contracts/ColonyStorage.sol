@@ -129,11 +129,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier domainExists(uint256 _domainId) {
-    require(_domainId > 0 && _domainId <= domainCount, "colony-domain-does-not-exist");
-    _;
-  }
-
   modifier taskComplete(uint256 _id) {
     require(tasks[_id].completionTimestamp > 0, "colony-task-not-complete");
     _;
@@ -150,11 +145,6 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
 
     // Prevent people moving funds from the pot designated to paying out token holders
     require(_fromPot > 0, "colony-funding-cannot-move-funds-from-rewards-pot");
-
-    // Preventing sending from non-existent funding pots is not strictly necessary (if a pot doesn't exist, it can't have any funds if we
-    // prevent sending to nonexistent funding pots) but doing this check explicitly gives us the error message for clients.
-    require(_fromPot <= fundingPotCount, "colony-funding-from-nonexistent-pot"); // Only allow sending from created pots
-    require(_toPot <= fundingPotCount, "colony-funding-nonexistent-pot"); // Only allow sending to created funding pots
     _;
   }
 
@@ -163,13 +153,54 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier isAdmin(address _user) {
-    require(ColonyAuthority(address(authority)).hasUserRole(_user, uint8(ColonyRole.Admin)), "colony-not-admin");
+  // Note that these require messages currently cannot propogate up because of the `executeTaskRoleAssignment` logic
+  modifier isAdmin(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _user) {
+    require(ColonyAuthority(address(authority)).hasUserRole(_user, _permissionDomainId, uint8(ColonyRole.Administration)), "colony-not-admin");
+    if (_permissionDomainId != tasks[_id].domainId) {
+      require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, tasks[_id].domainId), "ds-auth-invalid-domain-inheritence");
+    }
     _;
   }
 
   modifier self() {
     require(address(this) == msg.sender, "colony-not-self");
     _;
+  }
+
+  modifier auth {
+    require(isAuthorized(msg.sender, 1, msg.sig), "ds-auth-unauthorized");
+    _;
+  }
+
+  modifier authDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _childDomainId) {
+    require(domainExists(_permissionDomainId), "ds-auth-permission-domain-does-not-exist");
+    require(domainExists(_childDomainId), "ds-auth-child-domain-does-not-exist");
+    require(isAuthorized(msg.sender, _permissionDomainId, msg.sig), "ds-auth-unauthorized");
+    if (_permissionDomainId != _childDomainId) {
+      require(validateDomainInheritance(_permissionDomainId, _childSkillIndex, _childDomainId), "ds-auth-invalid-domain-inheritence");
+    }
+    if (canCallOnlyBecauseArchitect(msg.sender, _permissionDomainId, msg.sig)) {
+      require(_permissionDomainId != _childDomainId, "ds-auth-only-authorized-in-child-domain");
+    }
+    _;
+  }
+
+  // Evaluates a "domain proof" which checks that childDomainId is part of the subtree starting at permissionDomainId
+  function validateDomainInheritance(uint256 permissionDomainId, uint256 childSkillIndex, uint256 childDomainId) internal view returns (bool) {
+    uint256 childSkillId = IColonyNetwork(colonyNetworkAddress).getChildSkillId(domains[permissionDomainId].skillId, childSkillIndex);
+    return childSkillId == domains[childDomainId].skillId;
+  }
+
+  // Checks to see if the permission comes ONLY from the ArchitectureSubdomain role (i.e. user does not have root, etc.)
+  function canCallOnlyBecauseArchitect(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
+    return DomainRoles(address(authority)).canCallOnlyBecause(src, domainId, uint8(ColonyRole.ArchitectureSubdomain), address(this), sig);
+  }
+
+  function isAuthorized(address src, uint256 domainId, bytes4 sig) internal view returns (bool) {
+    return (src == owner) || DomainRoles(address(authority)).canCall(src, domainId, address(this), sig);
+  }
+
+  function domainExists(uint256 domainId) internal view returns (bool) {
+    return domainId > 0 && domainId <= domainCount;
   }
 }

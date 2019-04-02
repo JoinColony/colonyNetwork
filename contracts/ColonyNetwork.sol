@@ -152,11 +152,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     dsauth.setAuthority(authority);
 
     authority.setOwner(address(etherRouter));
-    colony.setFounderRole(msg.sender);
-    colony.setRecoveryRole(msg.sender);
-
-    // Colony will not have owner
-    dsauth.setOwner(address(0x0));
 
     // Initialise the root (domain) local skill with defaults by just incrementing the skillCount
     skillCount += 1;
@@ -165,6 +160,17 @@ contract ColonyNetwork is ColonyNetworkStorage {
     _isColony[address(colony)] = true;
 
     colony.initialiseColony(address(this), _tokenAddress);
+
+    // Assign all permissions in root domain
+    colony.setRecoveryRole(msg.sender);
+    colony.setRootRole(msg.sender, true);
+    colony.setArchitectureRole(1, 0, msg.sender, 1, true);
+    colony.setFundingRole(1, 0, msg.sender, 1, true);
+    colony.setAdministrationRole(1, 0, msg.sender, 1, true);
+
+    // Colony will not have owner
+    dsauth.setOwner(address(0x0));
+
     emit ColonyAdded(colonyCount, address(etherRouter), _tokenAddress);
 
     return address(etherRouter);
@@ -185,8 +191,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function initialise(address _resolver) public
-  auth
   stoppable
+  auth
   {
     require(currentColonyVersion == 0, "colony-network-already-initialised");
     colonyVersionResolver[1] = _resolver;

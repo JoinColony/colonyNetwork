@@ -69,7 +69,7 @@ contract("Meta Colony", accounts => {
       expect(rootSkillChild).to.eq.BN(4);
     });
 
-    it("should not allow a non-founder role in the metacolony to add a global skill", async () => {
+    it("should not allow a non-root role in the metacolony to add a global skill", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill(1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
@@ -253,7 +253,7 @@ contract("Meta Colony", accounts => {
 
   describe("when adding domains in the meta colony", () => {
     it("should be able to add new domains as children to the root domain", async () => {
-      await metaColony.addDomain(1);
+      await metaColony.addDomain(1, 0, 1);
       const newDomainId = await metaColony.getDomainCount();
 
       const skillCount = await colonyNetwork.getSkillCount();
@@ -276,8 +276,10 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a child domain more than one level away from the root domain", async () => {
-      await metaColony.addDomain(1);
-      await checkErrorRevert(metaColony.addDomain(2), "colony-parent-domain-not-root");
+      await metaColony.addDomain(1, 0, 1);
+
+      // In position 1 because the mining skill occupies position 0
+      await checkErrorRevert(metaColony.addDomain(1, 1, 2), "colony-parent-domain-not-root");
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
@@ -291,14 +293,14 @@ contract("Meta Colony", accounts => {
       ({ colony, token } = await setupRandomColony(colonyNetwork));
     });
 
-    it("someone who does not have founder role should not be able to add domains", async () => {
-      await checkErrorRevert(colony.addDomain(1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+    it("someone who does not have root role should not be able to add domains", async () => {
+      await checkErrorRevert(colony.addDomain(1, 0, 1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
     it("should be able to add new domains as children to the root domain", async () => {
-      await colony.addDomain(1);
-      await colony.addDomain(1);
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, 0, 1);
+      await colony.addDomain(1, 0, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(7);
@@ -355,7 +357,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should be able to set domain on task", async () => {
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
       const taskId = await makeTask({ colony });
 
       await executeSignedTaskChange({
@@ -372,7 +374,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT allow a non-manager to set domain on task", async () => {
-      await colony.addDomain(1);
+      await colony.addDomain(1, 0, 1);
       const taskId = await makeTask({ colony });
       await checkErrorRevert(
         executeSignedTaskChange({
@@ -513,13 +515,13 @@ contract("Meta Colony", accounts => {
   });
 
   describe("when setting the network fee", () => {
-    it("should allow the meta colony founder to set the fee", async () => {
+    it("should allow a meta colony root user to set the fee", async () => {
       await metaColony.setNetworkFeeInverse(234);
       const fee = await colonyNetwork.getFeeInverse();
       expect(fee).to.eq.BN(234);
     });
 
-    it("should not allow anyone else but the meta colony founder to set the fee", async () => {
+    it("should not allow anyone else but a meta colony root user to set the fee", async () => {
       await checkErrorRevert(metaColony.setNetworkFeeInverse(234, { from: accounts[1] }), "ds-auth-unauthorized");
       const fee = await colonyNetwork.getFeeInverse();
       expect(fee).to.eq.BN(100);

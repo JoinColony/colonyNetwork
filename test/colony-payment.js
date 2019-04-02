@@ -29,7 +29,7 @@ contract("Colony Payment", accounts => {
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
-    await colony.setAdminRole(COLONY_ADMIN);
+    await colony.setAdministrationRole(1, 0, COLONY_ADMIN, 1, true);
     await fundColonyWithTokens(colony, token, WAD.muln(20));
 
     const tokenArgs = getTokenArgs();
@@ -39,7 +39,7 @@ contract("Colony Payment", accounts => {
   describe("when adding payments", () => {
     it("should allow admins to add payment", async () => {
       const paymentsCountBefore = await colony.getPaymentCount();
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
 
       const paymentsCountAfter = await colony.getPaymentCount();
       expect(paymentsCountAfter.sub(paymentsCountBefore)).to.eq.BN(1);
@@ -61,15 +61,21 @@ contract("Colony Payment", accounts => {
     });
 
     it("should not allow admins to add payment with no domain set", async () => {
-      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, WAD, 0, 0, { from: COLONY_ADMIN }), "colony-domain-does-not-exist");
+      await checkErrorRevert(
+        colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 0, 0, { from: COLONY_ADMIN }),
+        "ds-auth-child-domain-does-not-exist"
+      );
     });
 
     it("should not allow admins to add payment with no recipient set", async () => {
-      await checkErrorRevert(colony.addPayment(ZERO_ADDRESS, token.address, WAD, 1, 0, { from: COLONY_ADMIN }), "colony-payment-invalid-recipient");
+      await checkErrorRevert(
+        colony.addPayment(1, 0, ZERO_ADDRESS, token.address, WAD, 1, 0, { from: COLONY_ADMIN }),
+        "colony-payment-invalid-recipient"
+      );
     });
 
     it("should allow admins to add payment with zero token amount", async () => {
-      await colony.addPayment(RECIPIENT, token.address, 0, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, 0, 1, 0, { from: COLONY_ADMIN });
 
       const fundingPotId = await colony.getFundingPotCount();
       const fundingPotBalance = await colony.getFundingPotBalance(fundingPotId, token.address);
@@ -77,12 +83,12 @@ contract("Colony Payment", accounts => {
     });
 
     it("should not allow non-admins to add payment", async () => {
-      await checkErrorRevert(colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: accounts[10] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: accounts[10] }), "ds-auth-unauthorized");
     });
 
     it("should not be able to set a payout above the limit", async () => {
       await checkErrorRevert(
-        colony.addPayment(RECIPIENT, token.address, MAX_PAYOUT.addn(1), 1, 0, { from: COLONY_ADMIN }),
+        colony.addPayment(1, 0, RECIPIENT, token.address, MAX_PAYOUT.addn(1), 1, 0, { from: COLONY_ADMIN }),
         "colony-payout-too-large"
       );
     });
@@ -90,65 +96,65 @@ contract("Colony Payment", accounts => {
 
   describe("when updating payments", () => {
     it("should allow admins to update recipient", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
-      await colony.setPaymentRecipient(paymentId, accounts[10], { from: COLONY_ADMIN });
+      await colony.setPaymentRecipient(1, 0, paymentId, accounts[10], { from: COLONY_ADMIN });
       const payment = await colony.getPayment(paymentId);
       expect(payment.recipient).to.equal(accounts[10]);
     });
 
     it("should not allow admins to update to empty recipient", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
-      await checkErrorRevert(colony.setPaymentRecipient(paymentId, ZERO_ADDRESS, { from: COLONY_ADMIN }), "colony-payment-invalid-recipient");
+      await checkErrorRevert(colony.setPaymentRecipient(1, 0, paymentId, ZERO_ADDRESS, { from: COLONY_ADMIN }), "colony-payment-invalid-recipient");
     });
 
     it("should allow admins to update domain", async () => {
-      await colony.addDomain(1);
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addDomain(1, 0, 1);
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
       let payment = await colony.getPayment(paymentId);
       expect(payment.domainId).to.eq.BN(1);
-      await colony.setPaymentDomain(paymentId, 2, { from: COLONY_ADMIN });
+      await colony.setPaymentDomain(1, 0, paymentId, 2, { from: COLONY_ADMIN });
       payment = await colony.getPayment(paymentId);
       expect(payment.domainId).to.eq.BN(2);
     });
 
     it("should not allow admins to update to empty domain", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
       const { domainId } = await colony.getPayment(paymentId);
       expect(domainId).to.eq.BN(1);
-      await checkErrorRevert(colony.setPaymentDomain(paymentId, 10, { from: COLONY_ADMIN }), "colony-domain-does-not-exist");
+      await checkErrorRevert(colony.setPaymentDomain(1, 0, paymentId, 10, { from: COLONY_ADMIN }), "ds-auth-child-domain-does-not-exist");
     });
 
     it("should allow admins to update skill", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
       let payment = await colony.getPayment(paymentId);
       expect(payment.skills[0]).to.eq.BN(0);
-      await colony.setPaymentSkill(paymentId, 1, { from: COLONY_ADMIN });
+      await colony.setPaymentSkill(1, 0, paymentId, 1, { from: COLONY_ADMIN });
       payment = await colony.getPayment(paymentId);
       expect(payment.skills[0]).to.eq.BN(1);
     });
 
     it("should not allow non-admins to update recipient", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
-      await checkErrorRevert(colony.setPaymentRecipient(paymentId, accounts[7], { from: accounts[10] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.setPaymentRecipient(1, 0, paymentId, accounts[7], { from: accounts[10] }), "ds-auth-unauthorized");
     });
 
     it("should be able to add multiple payouts", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
-      await colony.setPaymentPayout(paymentId, otherToken.address, 100);
+      await colony.setPaymentPayout(1, 0, paymentId, otherToken.address, 100);
       const payment = await colony.getPayment(paymentId);
       const fundingPotPayoutForToken = await colony.getFundingPotPayout(payment.fundingPotId, token.address);
       const fundingPotPayoutForOtherToken = await colony.getFundingPotPayout(payment.fundingPotId, otherToken.address);
@@ -157,27 +163,27 @@ contract("Colony Payment", accounts => {
     });
 
     it("should allow admins to fund a payment", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
       const fundingPotPayoutForToken = await colony.getFundingPotPayout(payment.fundingPotId, token.address);
       expect(fundingPotPayoutForToken).to.eq.BN(WAD);
 
       await fundColonyWithTokens(colony, token, 40);
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 40, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, 40, token.address);
       const fundingPotBalanceForToken = await colony.getFundingPotBalance(payment.fundingPotId, token.address);
       expect(fundingPotBalanceForToken).to.eq.BN(40);
     });
 
     it("should allow admins to set token payment to zero", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
       const fundingPotId = await colony.getFundingPotCount();
       let fundingPotPayout = await colony.getFundingPotPayout(paymentId, token.address);
       expect(fundingPotPayout).to.eq.BN(WAD);
 
-      await colony.setPaymentPayout(paymentId, token.address, 0);
+      await colony.setPaymentPayout(1, 0, paymentId, token.address, 0);
       fundingPotPayout = await colony.getFundingPotPayout(fundingPotId, token.address);
       expect(fundingPotPayout).to.be.zero;
     });
@@ -187,18 +193,18 @@ contract("Colony Payment", accounts => {
     let paymentId;
 
     beforeEach(async () => {
-      await colony.addPayment(RECIPIENT, token.address, 40, 1, 0);
+      await colony.addPayment(1, 0, RECIPIENT, token.address, 40, 1, 0);
       paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
       await fundColonyWithTokens(colony, token, 40);
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 40, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, 40, token.address);
     });
 
     it("can finalize payment when it is fully funded", async () => {
       let payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.false;
 
-      await colony.finalizePayment(paymentId);
+      await colony.finalizePayment(1, 0, paymentId);
 
       payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.true;
@@ -206,43 +212,43 @@ contract("Colony Payment", accounts => {
 
     it("cannnot finalize payment if it is NOT fully funded", async () => {
       const payment = await colony.getPayment(paymentId);
-      await colony.moveFundsBetweenPots(payment.fundingPotId, 1, 1, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, payment.fundingPotId, 1, 1, token.address);
       expect(payment.finalized).to.be.false;
 
-      await checkErrorRevert(colony.finalizePayment(paymentId), "colony-payment-not-funded");
+      await checkErrorRevert(colony.finalizePayment(1, 0, paymentId), "colony-payment-not-funded");
     });
 
     it("cannot finalize payment not authorised", async () => {
       const payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.false;
 
-      await checkErrorRevert(colony.finalizePayment(paymentId, { from: accounts[10] }), "ds-auth-unauthorized");
+      await checkErrorRevert(colony.finalizePayment(1, 0, paymentId, { from: accounts[10] }), "ds-auth-unauthorized");
     });
 
     it("should not allow admins to update recipient", async () => {
-      await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPaymentRecipient(paymentId, accounts[6], { from: COLONY_ADMIN }), "colony-payment-finalized");
+      await colony.finalizePayment(1, 0, paymentId);
+      await checkErrorRevert(colony.setPaymentRecipient(1, 0, paymentId, accounts[6], { from: COLONY_ADMIN }), "colony-payment-finalized");
     });
 
     it("should not allow admins to update to empty domain", async () => {
-      await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPaymentDomain(paymentId, 2, { from: COLONY_ADMIN }), "colony-payment-finalized");
+      await colony.finalizePayment(1, 0, paymentId);
+      await checkErrorRevert(colony.setPaymentDomain(1, 0, paymentId, 2, { from: COLONY_ADMIN }), "colony-payment-finalized");
     });
 
     it("should not allow admins to update skill", async () => {
-      await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPaymentSkill(paymentId, 1, { from: COLONY_ADMIN }), "colony-payment-finalized");
+      await colony.finalizePayment(1, 0, paymentId);
+      await checkErrorRevert(colony.setPaymentSkill(1, 0, paymentId, 1, { from: COLONY_ADMIN }), "colony-payment-finalized");
     });
 
     it("should not allow admins to update payment", async () => {
-      await colony.finalizePayment(paymentId);
-      await checkErrorRevert(colony.setPaymentPayout(paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-payment-finalized");
+      await colony.finalizePayment(1, 0, paymentId);
+      await checkErrorRevert(colony.setPaymentPayout(1, 0, paymentId, token.address, 1, { from: COLONY_ADMIN }), "colony-payment-finalized");
     });
 
     it("should not be able to set a payout above the limit", async () => {
-      await colony.finalizePayment(paymentId);
+      await colony.finalizePayment(1, 0, paymentId);
       await checkErrorRevert(
-        colony.setPaymentPayout(paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }),
+        colony.setPaymentPayout(1, 0, paymentId, token.address, MAX_PAYOUT.addn(1), { from: COLONY_ADMIN }),
         "colony-payout-too-large"
       );
     });
@@ -250,12 +256,12 @@ contract("Colony Payment", accounts => {
 
   describe("when claiming payments", () => {
     it("should allow recipient to claim their payment and network fee is deducated", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
-      await colony.finalizePayment(paymentId);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(1, 0, paymentId);
 
       const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
@@ -268,12 +274,12 @@ contract("Colony Payment", accounts => {
     });
 
     it("should allow anyone to claim on behalf of the recipient", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
-      await colony.finalizePayment(paymentId);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(1, 0, paymentId);
 
       const recipientBalanceBefore = await token.balanceOf(RECIPIENT);
       const networkBalanceBefore = await token.balanceOf(colonyNetwork.address);
@@ -286,12 +292,12 @@ contract("Colony Payment", accounts => {
     });
 
     it("after payment is claimed it should set the payout to 0", async () => {
-      await colony.addPayment(RECIPIENT, token.address, WAD, 1, 0);
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
-      await colony.finalizePayment(paymentId);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, WAD.add(WAD.divn(10)), token.address);
+      await colony.finalizePayment(1, 0, paymentId);
       await colony.claimPayment(paymentId, token.address);
 
       const tokenPayout = await colony.getFundingPotPayout(payment.fundingPotId, token.address);
@@ -299,37 +305,37 @@ contract("Colony Payment", accounts => {
     });
 
     it("should error when payment is not funded and finalized", async () => {
-      await colony.addPayment(RECIPIENT, token.address, 10000, 1, 0);
+      await colony.addPayment(1, 0, RECIPIENT, token.address, 10000, 1, 0);
       const paymentId = await colony.getPaymentCount();
       const payment = await colony.getPayment(paymentId);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 9999, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, 9999, token.address);
       await checkErrorRevert(colony.claimPayment(paymentId, token.address), "colony-payment-not-finalized");
     });
 
     it("should allow multiple payouts to be claimed", async () => {
-      await colony.addPayment(RECIPIENT, token.address, 200, 1, 0, { from: COLONY_ADMIN });
+      await colony.addPayment(1, 0, RECIPIENT, token.address, 200, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
       let payment = await colony.getPayment(paymentId);
 
-      await colony.setPaymentPayout(paymentId, otherToken.address, 100);
+      await colony.setPaymentPayout(1, 0, paymentId, otherToken.address, 100);
       await fundColonyWithTokens(colony, otherToken, 101);
       let fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(2);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 199, token.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, 199, token.address);
       fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(2);
 
-      await colony.moveFundsBetweenPots(1, payment.fundingPotId, 100, otherToken.address);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, payment.fundingPotId, 100, otherToken.address);
       fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
-      await colony.setPaymentPayout(paymentId, token.address, 199);
+      await colony.setPaymentPayout(1, 0, paymentId, token.address, 199);
       fundingPot = await colony.getFundingPot(payment.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
-      await colony.finalizePayment(paymentId);
+      await colony.finalizePayment(1, 0, paymentId);
       payment = await colony.getPayment(paymentId);
       expect(payment.finalized).to.be.true;
 

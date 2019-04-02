@@ -106,9 +106,9 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     processPayout(payment.fundingPotId, _token, fundingPot.payouts[_token], payment.recipient);
   }
 
-  function setPaymentPayout(uint256 _id, address _token, uint256 _amount) public
-  auth
+  function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public
   stoppable
+  authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   validPayoutAmount(_amount)
   paymentNotFinalized(_id)
   {
@@ -141,35 +141,43 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     return (fundingPot.associatedType, fundingPot.associatedTypeId, fundingPot.payoutsWeCannotMake);
   }
 
-  function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public
+  function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+  )
+  public
   stoppable
-  auth
+  authDomain(_permissionDomainId, _fromChildSkillIndex, getDomainFromFundingPot(_fromPot))
+  authDomain(_permissionDomainId, _toChildSkillIndex, getDomainFromFundingPot(_toPot))
   validFundingTransfer(_fromPot, _toPot)
   {
-    uint fromPotPreviousAmount = fundingPots[_fromPot].balance[_token];
-    uint toPotPreviousAmount = fundingPots[_toPot].balance[_token];
+    FundingPot storage fromPot = fundingPots[_fromPot];
+    FundingPot storage toPot = fundingPots[_toPot];
 
-    fundingPots[_fromPot].balance[_token] = sub(fromPotPreviousAmount, _amount);
-    fundingPots[_toPot].balance[_token] = add(toPotPreviousAmount, _amount);
+    fromPot.balance[_token] = sub(fromPot.balance[_token], _amount);
+    toPot.balance[_token] = add(toPot.balance[_token], _amount);
 
-    // If this pot is associated with a Task, prevent money being taken from the pot
-    // if the remaining balance is less than the amount needed for payouts,
-    // unless the task was cancelled.
-    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task) {
-      uint fromPotPreviousPayoutAmount = fundingPots[_fromPot].payouts[_token];
-      uint surplus = (fromPotPreviousAmount > fromPotPreviousPayoutAmount) ? sub(fromPotPreviousAmount, fromPotPreviousPayoutAmount) : 0;
- 
-      Task storage task = tasks[fundingPots[_fromPot].associatedTypeId];
-      require(task.status == TaskStatus.Cancelled || surplus >= _amount, "colony-funding-task-bad-state");
+    // If this pot is associated with a Task, prevent money being taken from the pot if the
+    // remaining balance is less than the amount needed for payouts, unless the task was cancelled.
+    if (fromPot.associatedType == FundingPotAssociatedType.Task) {
+      require(
+        tasks[fromPot.associatedTypeId].status == TaskStatus.Cancelled || fromPot.balance[_token] >= fromPot.payouts[_token],
+        "colony-funding-task-bad-state"
+      );
     }
 
-    if (fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Task || 
-    fundingPots[_fromPot].associatedType == FundingPotAssociatedType.Payment) {
+    if (fromPot.associatedType == FundingPotAssociatedType.Task || fromPot.associatedType == FundingPotAssociatedType.Payment) {
+      uint256 fromPotPreviousAmount = add(fromPot.balance[_token], _amount);
       updatePayoutsWeCannotMakeAfterPotChange(_fromPot, _token, fromPotPreviousAmount);
     }
 
-    if (fundingPots[_toPot].associatedType == FundingPotAssociatedType.Task || 
-    fundingPots[_toPot].associatedType == FundingPotAssociatedType.Payment) {
+    if (toPot.associatedType == FundingPotAssociatedType.Task || toPot.associatedType == FundingPotAssociatedType.Payment) {
+      uint256 toPotPreviousAmount = sub(toPot.balance[_token], _amount);
       updatePayoutsWeCannotMakeAfterPotChange(_toPot, _token, toPotPreviousAmount);
     }
 
@@ -203,7 +211,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
   }
 
   function startNextRewardPayout(address _token, bytes memory key, bytes memory value, uint256 branchMask, bytes32[] memory siblings)
-  public auth stoppable
+  public stoppable auth
   {
     ITokenLocking tokenLocking = ITokenLocking(IColonyNetwork(colonyNetworkAddress).getTokenLocking());
     uint256 totalLockCount = tokenLocking.lockToken(token);
@@ -414,7 +422,7 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
     uint currentTotalAmount = fundingPot.payouts[_token];
     uint currentTaskRolePayout = task.payouts[uint8(_role)][_token];
     task.payouts[uint8(_role)][_token] = _amount;
-    
+
     fundingPot.payouts[_token] = add(sub(currentTotalAmount, currentTaskRolePayout), _amount);
 
     updatePayoutsWeCannotMakeAfterBudgetChange(task.fundingPotId, _token, currentTotalAmount);
@@ -456,6 +464,23 @@ contract ColonyFunding is ColonyStorage, PatriciaTreeProofs {
       fee = _payout;
     } else {
       fee = _payout/feeInverse + 1;
+    }
+  }
+
+  function getDomainFromFundingPot(uint256 _fundingPotId) private view returns (uint256 domainId) {
+    require(_fundingPotId <= fundingPotCount, "colony-funding-nonexistent-pot");
+    FundingPot storage fundingPot = fundingPots[_fundingPotId];
+
+    if (fundingPot.associatedType == FundingPotAssociatedType.Domain) {
+      domainId = fundingPot.associatedTypeId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Task) {
+      domainId = tasks[fundingPot.associatedTypeId].domainId;
+    } else if (fundingPot.associatedType == FundingPotAssociatedType.Payment) {
+      domainId = payments[fundingPot.associatedTypeId].domainId;
+    } else {
+      // If rewards pot, return root domain.
+      assert(_fundingPotId == 0);
+      domainId = 1;
     }
   }
 }

@@ -26,6 +26,8 @@ walkSync("./contracts/").forEach(contractName => {
     [
       "contracts/ens/ENS.sol",
       "contracts/ens/ENSRegistry.sol",
+      "contracts/extensions/OldRoles.sol",
+      "contracts/extensions/OneTxPayment.sol",
       "contracts/gnosis/MultiSigWallet.sol",
       "contracts/PatriciaTree/Bits.sol",
       "contracts/PatriciaTree/Data.sol",
@@ -41,6 +43,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/ColonyNetworkStorage.sol",
       "contracts/ColonyStorage.sol",
       "contracts/ContractEditing.sol",
+      "contracts/DomainRoles.sol",
       "contracts/ERC20Extended.sol",
       "contracts/EtherRouter.sol",
       "contracts/IRecovery.sol",
@@ -57,8 +60,7 @@ walkSync("./contracts/").forEach(contractName => {
       "contracts/TokenLocking.sol",
       "contracts/TokenLockingStorage.sol",
       "contracts/Token.sol", // Imported from colonyToken repo
-      "contracts/TokenAuthority.sol", // Imported from colonyToken repo
-      "contracts/extensions/OneTxPayment.sol"
+      "contracts/TokenAuthority.sol" // Imported from colonyToken repo
     ].indexOf(contractName) > -1
   ) {
     return;

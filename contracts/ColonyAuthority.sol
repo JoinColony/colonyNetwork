@@ -17,85 +17,64 @@
 
 pragma solidity >=0.5.3;
 
-import "./CommonAuthority.sol";
 import "./ColonyDataTypes.sol";
+import "./CommonAuthority.sol";
 
 
 contract ColonyAuthority is CommonAuthority {
-  uint8 founderRole = uint8(ColonyDataTypes.ColonyRole.Founder);
-  uint8 adminRole = uint8(ColonyDataTypes.ColonyRole.Admin);
+  uint8 constant FUNDING_ROLE = uint8(ColonyDataTypes.ColonyRole.Funding);
+  uint8 constant ADMINISTRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Administration);
+  uint8 constant ARBITRATION_ROLE = uint8(ColonyDataTypes.ColonyRole.Arbitration);
+  uint8 constant ARCHITECTURE_ROLE = uint8(ColonyDataTypes.ColonyRole.Architecture);
+  uint8 constant ARCHITECTURE_SUBDOMAIN_ROLE = uint8(ColonyDataTypes.ColonyRole.ArchitectureSubdomain);
+  uint8 constant ROOT_ROLE = uint8(ColonyDataTypes.ColonyRole.Root);
 
-  constructor(address colony) public CommonAuthority(colony) {
-    // Bootstrap colony
-    setFounderRoleCapability(colony, "bootstrapColony(address[],int256[])");
-    // Mint tokens
-    setFounderRoleCapability(colony, "mintTokens(uint256)");
-    // Add global skill
-    setFounderRoleCapability(colony, "addGlobalSkill(uint256)");
-    // Transfer founder role
-    setFounderRoleCapability(colony, "setFounderRole(address)");
-    // Remove admin role
-    setFounderRoleCapability(colony, "removeAdminRole(address)");
-    // Set recovery role
-    setFounderRoleCapability(colony, "setRecoveryRole(address)");
-    // Remove recovery role
-    setFounderRoleCapability(colony, "removeRecoveryRole(address)");
-    // Upgrade colony
-    setFounderRoleCapability(colony, "upgrade(uint256)");
-    // Claim colony ENS label
-    setFounderRoleCapability(colony, "registerColonyLabel(string,string)");
-    // Set Network fee inverse
-    setFounderRoleCapability(colony, "setNetworkFeeInverse(uint256)");
-    // Set Reward fee inverse
-    setFounderRoleCapability(colony, "setRewardInverse(uint256)");
-    // Add colony version to the network
-    setFounderRoleCapability(colony, "addNetworkColonyVersion(uint256,address)");
+  address colony;
 
-    // Allocate funds
-    setAdminRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");
-    setFounderRoleCapability(colony, "moveFundsBetweenPots(uint256,uint256,uint256,address)");
-    // Add domain
-    setAdminRoleCapability(colony, "addDomain(uint256)");
-    setFounderRoleCapability(colony, "addDomain(uint256)");
-    
-    // Add task
-    setAdminRoleCapability(colony, "makeTask(bytes32,uint256,uint256,uint256)");
-    setFounderRoleCapability(colony, "makeTask(bytes32,uint256,uint256,uint256)");
+  constructor(address _colony) public CommonAuthority(_colony) {
+    colony = _colony;
 
-    // Add payment
-    setAdminRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
-    setFounderRoleCapability(colony, "addPayment(address,address,uint256,uint256,uint256)");
-    // Update payments
-    setAdminRoleCapability(colony, "finalizePayment(uint256)");
-    setFounderRoleCapability(colony, "finalizePayment(uint256)");
+    // Add permissions for the Administration role
+    addRoleCapability(ADMINISTRATION_ROLE, "makeTask(uint256,uint256,bytes32,uint256,uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "addPayment(uint256,uint256,address,address,uint256,uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentRecipient(uint256,uint256,uint256,address)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentDomain(uint256,uint256,uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentSkill(uint256,uint256,uint256,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "setPaymentPayout(uint256,uint256,uint256,address,uint256)");
+    addRoleCapability(ADMINISTRATION_ROLE, "finalizePayment(uint256,uint256,uint256)");
 
-    setAdminRoleCapability(colony, "setPaymentRecipient(uint256,address)");
-    setFounderRoleCapability(colony, "setPaymentRecipient(uint256,address)");
-    
-    setAdminRoleCapability(colony, "setPaymentDomain(uint256,uint256)");
-    setFounderRoleCapability(colony, "setPaymentDomain(uint256,uint256)");
+    // Add permissions for the Funding role
+    addRoleCapability(FUNDING_ROLE, "moveFundsBetweenPots(uint256,uint256,uint256,uint256,uint256,uint256,address)");
 
-    setAdminRoleCapability(colony, "setPaymentSkill(uint256,uint256)");
-    setFounderRoleCapability(colony, "setPaymentSkill(uint256,uint256)");
+    // Add permissions for the Architecture role
+    addRoleCapability(ARCHITECTURE_ROLE, "addDomain(uint256,uint256,uint256)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ARCHITECTURE_SUBDOMAIN_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
 
-    setAdminRoleCapability(colony, "setPaymentPayout(uint256,address,uint256)");
-    setFounderRoleCapability(colony, "setPaymentPayout(uint256,address,uint256)");
-
-    // Start next reward payout
-    setAdminRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
-    setFounderRoleCapability(colony, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
-    // Set admin
-    setAdminRoleCapability(colony, "setAdminRole(address)");
-    setFounderRoleCapability(colony, "setAdminRole(address)");
+    // Add permissions for the Root role
+    addRoleCapability(ROOT_ROLE, "setRootRole(address,bool)");
+    addRoleCapability(ROOT_ROLE, "setArchitectureRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "setFundingRole(uint256,uint256,address,uint256,bool)");
+    addRoleCapability(ROOT_ROLE, "setAdministrationRole(uint256,uint256,address,uint256,bool)");
+    // Managing recovery roles
+    addRoleCapability(ROOT_ROLE, "setRecoveryRole(address)");
+    addRoleCapability(ROOT_ROLE, "removeRecoveryRole(address)");
+    // Colony functions
+    addRoleCapability(ROOT_ROLE, "startNextRewardPayout(address,bytes,bytes,uint256,bytes32[])");
+    addRoleCapability(ROOT_ROLE, "bootstrapColony(address[],int256[])");
+    addRoleCapability(ROOT_ROLE, "registerColonyLabel(string,string)");
+    addRoleCapability(ROOT_ROLE, "setRewardInverse(uint256)");
+    addRoleCapability(ROOT_ROLE, "mintTokens(uint256)");
+    addRoleCapability(ROOT_ROLE, "upgrade(uint256)");
+    //  Meta Colony functions
+    addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
+    addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
+    addRoleCapability(ROOT_ROLE, "addGlobalSkill(uint256)");
   }
 
-  function setFounderRoleCapability(address colony, bytes memory sig) private {
+  function addRoleCapability(uint8 role, bytes memory sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(founderRole, colony, functionSig, true);
-  }
-
-  function setAdminRoleCapability(address colony, bytes memory sig) private {
-    bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(adminRole, colony, functionSig, true);
+    setRoleCapability(role, colony, functionSig, true);
   }
 }

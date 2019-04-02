@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
-import { MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
+import { UINT256_MAX, MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
@@ -92,6 +92,17 @@ contract("Token Locking", addresses => {
 
       const tokenLockingContractBalance = await token.balanceOf(tokenLocking.address);
       expect(tokenLockingContractBalance).to.eq.BN(usersTokens);
+    });
+
+    it("should correctly deposit large amounts of tokens", async () => {
+      await otherToken.mint(userAddress, UINT256_MAX);
+      await otherToken.approve(tokenLocking.address, UINT256_MAX, { from: userAddress });
+      await tokenLocking.deposit(otherToken.address, UINT256_MAX, { from: userAddress });
+      const info = await tokenLocking.getUserLock(otherToken.address, userAddress);
+      expect(info.balance).to.eq.BN(UINT256_MAX);
+
+      const tokenLockingContractBalance = await otherToken.balanceOf(tokenLocking.address);
+      expect(tokenLockingContractBalance).to.eq.BN(UINT256_MAX);
     });
 
     it("should correctly set deposit timestamp", async () => {

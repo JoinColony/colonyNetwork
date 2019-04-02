@@ -17,6 +17,7 @@
 
 pragma solidity >=0.5.3;
 
+import "./ColonyDataTypes.sol";
 import "./CommonStorage.sol";
 import "./CommonAuthority.sol";
 import "./IRecovery.sol";
@@ -25,6 +26,7 @@ import "./IRecovery.sol";
 /// @title Used for recovery in both ColonyNetwork and Colony instances
 /// @notice Implements functions defined in IRecovery interface
 contract ContractRecovery is CommonStorage {
+  uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 
   function setStorageSlotRecovery(uint256 _slot, bytes32 _value) public recovery auth {
     require(_slot != AUTHORITY_SLOT, "colony-common-protected-variable");
@@ -72,15 +74,15 @@ contract ContractRecovery is CommonStorage {
   function exitRecoveryMode() public recovery auth {
     uint totalAuthorized = recoveryRolesCount;
     // Don't double count the owner (if set);
-    if (owner != address(0x0) && !CommonAuthority(address(authority)).hasUserRole(owner, RECOVERY_ROLE)) { 
-      totalAuthorized += 1; 
+    if (owner != address(0x0) && !CommonAuthority(address(authority)).hasUserRole(owner, RECOVERY_ROLE)) {
+      totalAuthorized += 1;
     }
     uint numRequired = totalAuthorized / 2 + 1;
     require(recoveryApprovalCount >= numRequired, "colony-recovery-exit-insufficient-approvals");
     recoveryMode = false;
   }
 
-  // Can only be called by the founder role.
+  // Can only be called by the root role.
   function setRecoveryRole(address _user) public stoppable auth {
     require(recoveryRolesCount < ~uint64(0), "colony-maximum-num-recovery-roles");
     if (!CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
@@ -89,7 +91,7 @@ contract ContractRecovery is CommonStorage {
     }
   }
 
-  // Can only be called by the founder role.
+  // Can only be called by the root role.
   function removeRecoveryRole(address _user) public stoppable auth {
     if (CommonAuthority(address(authority)).hasUserRole(_user, RECOVERY_ROLE)) {
       CommonAuthority(address(authority)).setUserRole(_user, RECOVERY_ROLE, false);

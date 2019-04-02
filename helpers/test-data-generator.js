@@ -42,9 +42,8 @@ export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   // Only Colony admins are allowed to make Tasks, make the account an admin
-  await colony.setAdminRole(manager);
-  const { logs } = await colony.makeTask(hash, domainId, skillId, dueDate, { from: manager });
-
+  await colony.setAdministrationRole(1, 0, manager, domainId, true);
+  const { logs } = await colony.makeTask(domainId, 0, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }
@@ -179,7 +178,9 @@ export async function setupFundedTask({
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
-  await colony.moveFundsBetweenPots(1, fundingPotId, totalPayouts, tokenAddress);
+  await colony.setFundingRole(1, 0, manager, 1, true);
+  // TODO: extend this to allow funding pots beyond the first child of root domain... :(
+  await colony.moveFundsBetweenPots(1, 0, 0, 1, fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 

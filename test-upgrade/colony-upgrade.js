@@ -2,7 +2,7 @@
 /* eslint-disable prefer-arrow-callback */
 import { currentBlockTime, getTokenArgs } from "../helpers/test-helper";
 import { setupColonyVersionResolver } from "../helpers/upgradable-contracts";
-import { SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
+import { ROOT_ROLE, SPECIFICATION_HASH, SPECIFICATION_HASH_UPDATED } from "../helpers/constants";
 import { makeTask } from "../helpers/test-data-generator";
 
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -104,7 +104,7 @@ contract("Colony contract upgrade", accounts => {
     });
 
     it("should return correct permissions", async function() {
-      const founder = await colony.hasUserRole(ACCOUNT_ONE, 0);
+      const founder = await colony.hasUserRole(ACCOUNT_ONE, 1, ROOT_ROLE);
       assert.isTrue(founder);
     });
 

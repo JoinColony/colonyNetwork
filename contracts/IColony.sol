@@ -55,28 +55,45 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return tokenAddress Address of the token contract
   function getToken() public view returns (address tokenAddress);
 
-  /// @notice Set new colony founder role.
-  /// @dev There can only be one address assigned to founder role at a time.
-  /// Whoever calls this function will lose their founder role
-  /// Can be called by founder role.
-  /// @param _user User we want to give an founder role to
-  function setFounderRole(address _user) public;
+  /// @notice Set new colony root role.
+  /// Can be called by root role only.
+  /// @param _user User we want to give an root role to
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setRootRole(address _user, bool _setTo) public;
+
+  /// @notice Set new colony architecture role.
+  /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
+  /// @param _user User we want to give an architecture role to
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setArchitectureRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
+
+  /// @notice Set new colony funding role.
+  /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
+  /// @param _user User we want to give an funding role to
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setFundingRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Set new colony admin role.
-  /// Can be called by founder role or admin role.
+  /// Can be called by root role or architecture role.
+  /// @param _permissionDomainId Domain in which the caller has root/architecture role
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _user User we want to give an admin role to
-  function setAdminRole(address _user) public;
-
-  /// @notice Remove colony admin.
-  /// Can only be called by founder role.
-  /// @param _user User we want to remove admin role from
-  function removeAdminRole(address _user) public;
+  /// @param _domainId Domain in which we are giving user the role
+  /// @param _setTo The state of the role permission (true assign the permission, false revokes it)
+  function setAdministrationRole(uint256 _permissionDomainId, uint256 _childSkillIndex, address _user, uint256 _domainId, bool _setTo) public;
 
   /// @notice Check whether a given user has a given role for the colony.
   /// Calls the function of the same name on the colony's authority contract.
   /// @param _user The user whose role we want to check
+  /// @param _domainId The domain where we want to check for the role
   /// @param _role The role we want to check for
-  function hasUserRole(address _user, ColonyRole _role) public view returns (bool hasRole);
+  function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool hasRole);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
   /// @dev Sets the reward inverse to the uint max 2**256 - 1
@@ -102,9 +119,11 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
   /// New funding pot is created and associated with the domain here
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _parentDomainId Id of the domain under which the new one will be added
   /// @dev Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1
-  function addDomain(uint256 _parentDomainId) public;
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public;
 
   /// @notice Get a domain by id
   /// @param _id Id of the domain which details to get
@@ -130,6 +149,8 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _recipient Address of the payment recipient
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
@@ -137,61 +158,81 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _skillId The skill associated with the payment
   /// @return paymentId Identifier of the newly created payment
   function addPayment(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
     address payable _recipient,
     address _token,
     uint256 _amount,
     uint256 _domainId,
-    uint256 _skillId) 
+    uint256 _skillId)
     public returns (uint256 paymentId);
 
   /// @notice Finalizes the payment and logs the reputation log updates
   /// Allowed to be called once after payment is fully funded. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
-  function finalizePayment(uint256 _id) public;
+  function finalizePayment(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id) public;
 
   /// @notice Sets the recipient on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _recipient Address of the payment recipient
-  function setPaymentRecipient(uint256 _id, address payable _recipient) public;
+  function setPaymentRecipient(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address payable _recipient) public;
 
   /// @notice Sets the domain on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _domainId Id of the new domain to set
-  function setPaymentDomain(uint256 _id, uint256 _domainId) public;
+  function setPaymentDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _domainId) public;
 
   /// @notice Sets the skill on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _skillId Id of the new skill to set
-  function setPaymentSkill(uint256 _id, uint256 _skillId) public;
+  function setPaymentSkill(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, uint256 _skillId) public;
 
   /// @notice Sets the payout for a given token on an existing payment. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _id Payment identifier
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
-  function setPaymentPayout(uint256 _id, address _token, uint256 _amount) public;
+  function setPaymentPayout(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _id, address _token, uint256 _amount) public;
 
   /// @notice Returns an exiting payment
   /// @param _id Payment identifier
-  /// @return payment The Payment data structure 
+  /// @return payment The Payment data structure
   function getPayment(uint256 _id) public view returns (Payment memory payment);
-  
+
   /// @notice Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout.
   /// Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
   /// @param _id Payment identifier
   /// @param _token Address of the token, `0x0` value indicates Ether
   function claimPayment(uint256 _id, address _token) public;
-  
+
   /// @notice Get the number of payments in the colony
   /// @return count The payment count
   function getPaymentCount() public view returns (uint256 count);
 
   // Implemented in ColonyTask.sol
   /// @notice Make a new task in the colony. Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
   /// @param _specificationHash Database identifier where the task specification is stored
   /// @param _domainId The domain where the task belongs
   /// @param _skillId The skill associated with the task, can set to 0 for no-op
   /// @param _dueDate The due date of the task, can set to 0 for no-op
-  function makeTask(bytes32 _specificationHash, uint256 _domainId, uint256 _skillId, uint256 _dueDate) public;
+  function makeTask(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    bytes32 _specificationHash,
+    uint256 _domainId,
+    uint256 _skillId,
+    uint256 _dueDate) public;
 
   /// @notice Get the number of tasks in the colony
   /// @return count The task count
@@ -283,10 +324,13 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Assigning manager role
   /// Current manager and user we want to assign role to both need to agree
   /// User we want to set here also needs to be an admin
+  /// Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking
   /// @dev This function can only be called through `executeTaskRoleAssignment`
   /// @param _id Id of the task
   /// @param _user Address of the user we want to give a manager role to
-  function setTaskManagerRole(uint256 _id, address payable _user) public;
+  /// @param _permissionDomainId The domain ID in which _user has the Administration permission
+  /// @param _childSkillIndex The index that the _domainId is relative to _permissionDomainId
+  function setTaskManagerRole(uint256 _id, address payable _user, uint256 _permissionDomainId, uint256 _childSkillIndex) public;
 
   /// @notice Assigning evaluator role
   /// Can only be set if there is no one currently assigned to be an evaluator
@@ -380,7 +424,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return completionTimestamp Task completion timestamp
   /// @return domainId Task domain id, default is root colony domain with id 1
   /// @return skillIds Array of global skill ids assigned to task
-  function getTask(uint256 _id) public view returns ( 
+  function getTask(uint256 _id) public view returns (
     bytes32 specificationHash,
     bytes32 deliverableHash,
     TaskStatus status,
@@ -448,6 +492,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   function claimTaskPayout(uint256 _id, uint8 _role, address _token) public;
 
   /// @notice Start next reward payout for `_token`. All funds in the reward pot for `_token` will become unavailable.
+  /// @notice Add a new payment in the colony. Can only be called by users with root permission.
   /// All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
   /// @param _token Address of the token used for reward payout
   /// @param key Some Reputation hash tree key
@@ -526,12 +571,22 @@ contract IColony is ColonyDataTypes, IRecovery {
   function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256 payout);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.
-  /// Secured function to authorised members
+  /// @param _permissionDomainId The domainId in which I have the permission to take this action
+  /// @param _fromChildSkillIndex The child index in _permissionDomainId where we can find the domain for _fromPotId
+  /// @param _toChildSkillIndex The child index in _permissionDomainId where we can find the domain for _toPotId
   /// @param _fromPot Funding pot id providing the funds
   /// @param _toPot Funding pot id receiving the funds
   /// @param _amount Amount of funds
   /// @param _token Address of the token, `0x0` value indicates Ether
-  function moveFundsBetweenPots(uint256 _fromPot, uint256 _toPot, uint256 _amount, address _token) public;
+  function moveFundsBetweenPots(
+    uint256 _permissionDomainId,
+    uint256 _fromChildSkillIndex,
+    uint256 _toChildSkillIndex,
+    uint256 _fromPot,
+    uint256 _toPot,
+    uint256 _amount,
+    address _token
+    ) public;
 
   /// @notice Move any funds received by the colony in `_token` denomination to the top-level domain pot,
   /// siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken

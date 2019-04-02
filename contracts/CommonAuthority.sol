@@ -17,11 +17,12 @@
 
 pragma solidity >=0.5.3;
 
-import "../lib/dappsys/roles.sol";
+import "./ColonyDataTypes.sol";
+import "./DomainRoles.sol";
 
 
-contract CommonAuthority is DSRoles {
-  uint8 recoveryRole = 2;
+contract CommonAuthority is DomainRoles {
+  uint8 constant RECOVERY_ROLE = uint8(ColonyDataTypes.ColonyRole.Recovery);
 
   constructor(address contractAddress) public {
     setRecoveryRoleCapability(contractAddress, "enterRecoveryMode()");
@@ -32,6 +33,6 @@ contract CommonAuthority is DSRoles {
 
   function setRecoveryRoleCapability(address contractAddress, bytes memory sig) private {
     bytes4 functionSig = bytes4(keccak256(sig));
-    setRoleCapability(recoveryRole, contractAddress, functionSig, true);
+    setRoleCapability(RECOVERY_ROLE, contractAddress, functionSig, true);
   }
 }

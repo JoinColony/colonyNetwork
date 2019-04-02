@@ -28,30 +28,56 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   // Version number should be upped with every change in Colony or its dependency contracts or libraries.
   function version() public pure returns (uint256 colonyVersion) { return 1; }
 
-  function setFounderRole(address _user) public stoppable auth {
-    // To allow only one address to have founder role at a time, we have to remove current founder from their role
+  function setRootRole(address _user, bool _setTo) public stoppable auth {
+    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
+
+    emit ColonyRootRoleSet(_user, _setTo);
+  }
+
+  function setArchitectureRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    // Because this permission has some restrictions on domains of action, we transparently implement it as two roles
     ColonyAuthority colonyAuthority = ColonyAuthority(address(authority));
-    colonyAuthority.setUserRole(msg.sender, uint8(ColonyRole.Founder), false);
-    colonyAuthority.setUserRole(_user, uint8(ColonyRole.Founder), true);
+    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
+    colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.ArchitectureSubdomain), _setTo);
 
-    emit ColonyFounderRoleSet(msg.sender, _user);
+    emit ColonyArchitectureRoleSet(_user, _setTo);
   }
 
-  function setAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), true);
+  function setFundingRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
 
-    emit ColonyAdminRoleSet(_user);
+    emit ColonyFundingRoleSet(_user, _setTo);
   }
 
-  // Can only be called by the founder role.
-  function removeAdminRole(address _user) public stoppable auth {
-    ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Admin), false);
+  function setAdministrationRole(
+    uint256 _permissionDomainId,
+    uint256 _childSkillIndex,
+    address _user,
+    uint256 _domainId,
+    bool _setTo
+  ) public stoppable authDomain(_permissionDomainId, _childSkillIndex, _domainId)
+  {
+    ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
 
-    emit ColonyAdminRoleRemoved(_user);
+    emit ColonyAdministrationRoleSet(_user, _setTo);
   }
 
-  function hasUserRole(address _user, ColonyRole _role) public view returns (bool) {
-    return ColonyAuthority(address(authority)).hasUserRole(_user, uint8(_role));
+  function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {
+    return ColonyAuthority(address(authority)).hasUserRole(_user, _domainId, uint8(_role));
   }
 
   function getColonyNetwork() public view returns (address) {
@@ -81,7 +107,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     setFunctionReviewers(bytes4(keccak256("removeTaskWorkerRole(uint256)")), TaskRole.Manager, TaskRole.Worker);
     setFunctionReviewers(bytes4(keccak256("cancelTask(uint256)")), TaskRole.Manager, TaskRole.Worker);
 
-    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address)")));
+    setRoleAssignmentFunction(bytes4(keccak256("setTaskManagerRole(uint256,address,uint256,uint256)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskEvaluatorRole(uint256,address)")));
     setRoleAssignmentFunction(bytes4(keccak256("setTaskWorkerRole(uint256,address)")));
 
@@ -165,10 +191,9 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addColonyVersion(_version, _resolver);
   }
 
-  function addDomain(uint256 _parentDomainId) public
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
-  auth
-  domainExists(_parentDomainId)
+  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
     // Note: Remove when we want to allow more domain hierarchy levels
     require(_parentDomainId == 1, "colony-parent-domain-not-root");
