@@ -18,7 +18,8 @@ import {
   DELIVERABLE_HASH,
   SECONDS_PER_DAY,
   DEFAULT_STAKE,
-  INITIAL_FUNDING
+  INITIAL_FUNDING,
+  GLOBAL_SKILL_ID
 } from "../helpers/constants";
 
 import {
@@ -222,7 +223,7 @@ contract("All", function(accounts) {
       await colony.setFundingRole(1, 0, oneTxExtension.address, 1, true);
 
       const globalSkillId = await colonyNetwork.getRootGlobalSkillId();
-      await oneTxExtension.makePayment(1, 0, 1, 0, WORKER, token.address, 10, 1, globalSkillId);
+      await oneTxExtension.makePayment(1, 0, 1, 0, WORKER, token.address, 10, 1, GLOBAL_SKILL_ID);
     });
 
     it("when working with staking", async function() {

@@ -58,6 +58,8 @@ const DECAY_RATE = {
   DENOMINATOR: new BN("1000000000000000")
 };
 
+const GLOBAL_SKILL_ID = new BN("3"); // Not a root global skill ID or anything, just the first global skill's ID
+
 module.exports = {
   UINT256_MAX,
   INT256_MAX,
@@ -97,5 +99,6 @@ module.exports = {
   FINALIZED_TASK_STATE,
   SECONDS_PER_DAY,
   MINING_CYCLE_DURATION,
-  DECAY_RATE
+  DECAY_RATE,
+  GLOBAL_SKILL_ID
 };
