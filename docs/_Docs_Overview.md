@@ -64,8 +64,7 @@ Broadly speaking, the Colony Network contracts can be divided into a few categor
 ## Inheritance Architecture
 The Colony Network contracts are separated out into functional layers, and named according to their context.
 
-![Interface, Logic, Data](img/architecture_colonyNetwork_r7.png)
-
+![Interface, Logic, Data](img/colonyNetwork_diagram_r10.png)
 Starting from the lowest level, all data types are declared in a DataTypes contract.
 
 All storage variables are declared and stored in a storage contract, which inherits a DataTypes contract.
