@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Colony Mining Cycle Visualizer</title>
+  </head>
+  <body>
+
+    <!-- Load Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.ethers.io/scripts/ethers-v4.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <!-- Page HTML -->
+    <div id="app">
+      <h2>Welome to RepMinCycViz!</h2>
+      <h3>Mining Cycle Address:</h3>
+      <input placeholder="Mining Cycle Address" v-model="cycleAddress">
+      <h3>Reputation Updates</h3>
+      <p>Num Log Entries: {{ numEntries }}</p>
+      <ol>
+        <li class="logEntry" v-for="logEntry in logEntries">{{ parseLogEntry(logEntry) }}</li>
+      </ol>
+      <h3>Mining Disputes</h3>
+      <p>Num Submitted Hashes: {{ numSubmittedHashes }} | Num Invalidated Hashes: {{ numInvalidatedHashes }}</p>
+    </div>
+
+    <!-- Vue App -->
+    <script type="text/javascript">
+      const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+
+      new Vue({
+        el: '#app',
+        data: {
+          cycleJSON: '',
+          cycleAddress: '',
+          miningCycle: {},
+          numEntries: 0,
+          logEntries: [],
+          numSubmittedHashes: 0,
+          numInvalidatedHashes: 0,
+        },
+        methods: {
+          updateMiningCycle: function () {
+            this.miningCycle = new ethers.Contract(this.cycleAddress, cycleJSON.data.abi, provider);
+
+            this.miningCycle.getReputationUpdateLogLength()
+              .then((numEntries) => { this.updateReputationLogEntries(numEntries.toNumber()) })
+
+            this.miningCycle.getNSubmittedHashes()
+              .then((numSubmittedHashes) => { this.numSubmittedHashes = numSubmittedHashes })
+
+            this.miningCycle.getNInvalidatedHashes()
+              .then((numInvalidateHashes) => { this.numInvalidateHashes = numInvalidateHashes })
+          },
+          updateReputationLogEntries: function (numEntries) {
+            this.numEntries = numEntries;
+            Promise.all([...Array(numEntries).keys()].map(i => this.miningCycle.getReputationUpdateLogEntry(i)))
+              .then((logEntries) => { this.logEntries = logEntries })
+
+          },
+          parseLogEntry: function (logEntry) {
+            return {
+              user: logEntry.user.slice(0, 8),
+              amount: ethers.utils.formatEther(logEntry.amount._hex),
+              skillId: parseInt(logEntry.skillId._hex),
+              colony: logEntry.colony.slice(0, 8),
+              nUpdates: parseInt(logEntry.nUpdates._hex),
+              nPreviousUpdates: parseInt(logEntry.nPreviousUpdates._hex),
+            }
+          },
+        },
+        watch: {
+          cycleAddress: function () { this.updateMiningCycle() }
+        },
+        created () {
+          axios.get('http://localhost:3030/contracts?name=ReputationMiningCycle')
+            .then(function (cycleJSON) { this.cycleJSON = cycleJSON })
+        }
+      })
+
+    </script>
+
+    <style type="text/css">
+      html * {
+        font-family: Comic Sans MS, sans-serif;
+      }
+
+      .logEntry {
+        font-family: monospace;
+      }
+    </style>
+
+  </body>
+</html>
