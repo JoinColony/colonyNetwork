@@ -3,8 +3,6 @@ import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
-import { ethers } from "ethers";
-import { soliditySha3 } from "web3-utils";
 
 import {
   forwardTime,
@@ -61,8 +59,8 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   // Initialise global skills tree: 3, local skills tree 1 -> 4 -> 5
   //                                                      \-> 2
-  await metaColony.addDomain(1);
-  await metaColony.addDomain(2);
+  await metaColony.addDomain(1, 0, 1);
+  await metaColony.addDomain(1, 1, 2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -1246,7 +1244,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         "0xfffffffff"
       );
 
-      await metaColony.addDomain(3);
+      await metaColony.addDomain(1, 2, 3);
 
       // Moving the state to the bad client
       await badClient.initialise(colonyNetwork.address);
@@ -1256,7 +1254,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
       await badClient2.loadState(currentGoodClientState);
 
       await submitAndForwardTimeToDispute([goodClient, badClient, badClient2], this);
-      await metaColony.addDomain(4);
+      await metaColony.addDomain(1, 3, 4);
 
       await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
         client2: { respondToChallenge: "colony-reputation-mining-decreased-reputation-value-incorrect" }

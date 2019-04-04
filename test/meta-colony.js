@@ -55,7 +55,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should be able to add a new skill as a child of a domain", async () => {
-      await metaColony.addDomain(1);
+      await metaColony.addDomain(1, 0, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
@@ -80,9 +80,9 @@ contract("Meta Colony", accounts => {
     });
 
     it("should be able to add multiple child skills to the skill corresponding to the root domain by adding child domains", async () => {
-      await metaColony.addDomain(1);
-      await metaColony.addDomain(1);
-      await metaColony.addDomain(1);
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 0, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(6);
@@ -114,10 +114,10 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to add a domain that has a non existent parent", async () => {
       // Add 2 skill nodes to skill corresponding to root domain
-      await metaColony.addDomain(1);
-      await metaColony.addDomain(1);
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 0, 1);
 
-      await checkErrorRevert(metaColony.addDomain(6), "colony-domain-does-not-exist");
+      await checkErrorRevert(metaColony.addDomain(1, 0, 6), "ds-auth-child-domain-does-not-exist");
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(5);
     });
@@ -132,12 +132,12 @@ contract("Meta Colony", accounts => {
       // Why this random addGlobalSkill in the middle? It means we can use effectively the same tests
       // below, but with skill ID 7 replaced with skill ID 2. While porting everything to the tag cloud
       // arrangement, I was very interested in changing tests as little as possible.
-      await metaColony.addDomain(1); // Domain ID 2, skill id 4
-      await metaColony.addDomain(1); // Domain ID 3, skill id 5
-      await metaColony.addDomain(3); // Domain ID 4, skill id 6
+      await metaColony.addDomain(1, 0, 1); // Domain ID 2, skill id 4
+      await metaColony.addDomain(1, 0, 1); // Domain ID 3, skill id 5
+      await metaColony.addDomain(1, 2, 3); // Domain ID 4, skill id 6
       await metaColony.addGlobalSkill(); // Skill id 7
-      await metaColony.addDomain(2); // Domain ID 5, skill id 8
-      await metaColony.addDomain(3); // Domain ID 6, skill id 9
+      await metaColony.addDomain(1, 1, 2); // Domain ID 5, skill id 8
+      await metaColony.addDomain(1, 2, 3); // Domain ID 6, skill id 9
 
       const rootSkill = await colonyNetwork.getSkill(1);
       expect(rootSkill.nParents).to.be.zero;
@@ -205,15 +205,15 @@ contract("Meta Colony", accounts => {
     });
 
     it("should correctly ascend the skills tree to find parents", async () => {
-      await metaColony.addDomain(1);
-      await metaColony.addDomain(2);
-      await metaColony.addDomain(3);
-      await metaColony.addDomain(4);
-      await metaColony.addDomain(5);
-      await metaColony.addDomain(6);
-      await metaColony.addDomain(7);
-      await metaColony.addDomain(8);
-      await metaColony.addDomain(9);
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 1, 2);
+      await metaColony.addDomain(1, 2, 3);
+      await metaColony.addDomain(1, 3, 4);
+      await metaColony.addDomain(1, 4, 5);
+      await metaColony.addDomain(1, 5, 6);
+      await metaColony.addDomain(1, 6, 7);
+      await metaColony.addDomain(1, 7, 8);
+      await metaColony.addDomain(1, 8, 9);
 
       // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 

@@ -17,7 +17,7 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH
 } from "./constants";
-import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
+import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts, getChildSkillIndex } from "./test-helper";
 
 const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 
@@ -37,12 +37,14 @@ const ColonyPayment = artifacts.require("ColonyPayment");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
-export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
+export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   // Only Colony admins are allowed to make Tasks, make the account an admin
-  await colony.setAdministrationRole(1, 0, manager, domainId, true);
-  const { logs } = await colony.makeTask(domainId, 0, hash, domainId, skillId, dueDate, { from: manager });
+  const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, domainId);
+
+  await colony.setAdministrationRole(1, childSkillIndex, manager, domainId, true);
+  const { logs } = await colony.makeTask(1, childSkillIndex, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }
@@ -165,9 +167,14 @@ export async function setupFundedTask({
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
+
   await colony.setFundingRole(1, 0, manager, 1, true);
-  // TODO: extend this to allow funding pots beyond the first child of root domain... :(
-  await colony.moveFundsBetweenPots(1, 0, 0, 1, fundingPotId, totalPayouts, tokenAddress, { from: manager });
+  let toSkillIndex = 0;
+  if (task.domainId !== 1) {
+    // Then we need to figure out the correct skill indices.
+    toSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, task.domainId);
+  }
+  await colony.moveFundsBetweenPots(1, 0, toSkillIndex, 1, fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 

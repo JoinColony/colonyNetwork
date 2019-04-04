@@ -279,12 +279,10 @@ contract("Reputation Updates", accounts => {
 
     it("should calculate nUpdates correctly when making a log", async () => {
       await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
-
-      await metaColony.addDomain(1);
-      await metaColony.addDomain(2);
-      await metaColony.addDomain(3);
-      await metaColony.addDomain(4);
-
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 1, 2);
+      await metaColony.addDomain(1, 2, 3);
+      await metaColony.addDomain(1, 3, 4);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, domainId: 3 });
       let repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(1);
       expect(repLogEntryWorker.amount).to.eq.BN(MANAGER_PAYOUT);

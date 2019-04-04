@@ -167,7 +167,7 @@ contract("ColonyTask", accounts => {
 
     it("should set the task domain correctly", async () => {
       await colony.addDomain(1, 0, 1);
-      const taskId = await makeTask({ colony, domainId: 2 });
+      const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
       expect(task.domainId).to.eq.BN(2);
     });

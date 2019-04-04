@@ -68,13 +68,13 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
   // We're not resetting the global skills tree as the Network is not reset
-  await metaColony.addDomain(1);
-  await metaColony.addDomain(2);
-  await metaColony.addDomain(3);
-  await metaColony.addDomain(4);
-  await metaColony.addDomain(5);
-  await metaColony.addDomain(6);
-  await metaColony.addDomain(7);
+  await metaColony.addDomain(1, 0, 1);
+  await metaColony.addDomain(1, 1, 2);
+  await metaColony.addDomain(1, 2, 3);
+  await metaColony.addDomain(1, 3, 4);
+  await metaColony.addDomain(1, 4, 5);
+  await metaColony.addDomain(1, 5, 6);
+  await metaColony.addDomain(1, 6, 7);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);

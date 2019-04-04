@@ -41,11 +41,11 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   // Initialise global skill: 3. Set up local skills tree 1 -> 4 -> 5
   //                                                       \-> 2
-  await metaColony.addDomain(1);
-  await metaColony.addDomain(2);
+  await metaColony.addDomain(1, 0, 1);
+  await metaColony.addDomain(1, 1, 2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -63,7 +63,7 @@ async function customSetupFinalizedTask(args) {
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract("Reputation mining - client reputation calculations", accounts => {
+  : contract.skip("Reputation mining - client reputation calculations", accounts => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
       const WORKER = accounts[2];

@@ -21,10 +21,9 @@ pragma experimental ABIEncoderV2;
 import "./../Colony.sol";
 
 contract NoLimitSubdomains is Colony {
-  function addDomain(uint256 _parentDomainId) public
+  function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
-  auth
-  domainExists(_parentDomainId)
+  authDomain(_permissionDomainId, _childSkillIndex, _parentDomainId)
   {
     uint256 parentSkillId = domains[_parentDomainId].skillId;
 
@@ -35,4 +34,5 @@ contract NoLimitSubdomains is Colony {
     // Add domain to local mapping
     initialiseDomain(newLocalSkill);
   }
+
 }

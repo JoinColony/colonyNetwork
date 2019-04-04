@@ -85,7 +85,7 @@ contract("ColonyPermissions", accounts => {
         "ds-auth-unauthorized"
       );
 
-      const taskId = await makeTask({ colony, domainId: 2 });
+      const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
       await colony.moveFundsBetweenPots(2, 0, 0, domain2.fundingPotId, task.fundingPotId, WAD, token.address, { from: USER1 });
     });

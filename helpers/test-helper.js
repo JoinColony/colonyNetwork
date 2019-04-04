@@ -711,5 +711,26 @@ export async function removeSubdomainLimit(colonyNetwork) {
   const latestVersion = await colonyNetwork.getCurrentColonyVersion();
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
-  await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
+  await resolver.register("addDomain(uint256,uint256,uint256)", noLimitSubdomains.address);
+}
+
+export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {
+  console.log(_parentDomainId, _childDomainId);
+  const parentDomainId = new BN(_parentDomainId);
+  const childDomainId = new BN(_childDomainId);
+
+  if (parentDomainId.eq(childDomainId)) {
+    return 0;
+  }
+
+  const parentDomain = await colony.getDomain(parentDomainId);
+  const childDomain = await colony.getDomain(childDomainId);
+
+  const parentDomainSkill = await colonyNetwork.getSkill(parentDomain.skillId);
+  for (let i = 0; i < parentDomainSkill.children.length; i += 1) {
+    if (parentDomainSkill.children[i] === childDomain.skillId) {
+      return i;
+    }
+  }
+  throw Error("Supplied child domain is not a child of the supplied parent domain");
 }
