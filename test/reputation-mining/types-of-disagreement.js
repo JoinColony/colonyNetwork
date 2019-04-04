@@ -16,7 +16,9 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes
+  finishReputationMiningCycleAndWithdrawAllMinerStakes,
+  takeSnapshot,
+  revertToSnapshot
 } from "../../helpers/test-helper";
 
 import {
@@ -61,6 +63,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
   let tokenLocking;
   let clnyToken;
   let goodClient;
+  let latestSnapShotId;
   const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
   before(async () => {
@@ -98,10 +101,12 @@ contract("Reputation Mining - types of disagreement", accounts => {
     // Burn MINER1S accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
     await clnyToken.burn(userBalance, { from: MINER1 });
+    latestSnapShotId = await takeSnapshot();
   });
 
   afterEach(async () => {
-    await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    const isStateGotReset = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    if (!isStateGotReset) await revertToSnapshot(latestSnapShotId);
   });
 
   describe("when there is a dispute over reputation root hash", () => {

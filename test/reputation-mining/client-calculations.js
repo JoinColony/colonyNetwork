@@ -6,7 +6,13 @@ import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { DEFAULT_STAKE, INITIAL_FUNDING, ZERO_ADDRESS } from "../../helpers/constants";
-import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycleAndWithdrawAllMinerStakes } from "../../helpers/test-helper";
+import {
+  advanceMiningCycleNoContest,
+  getActiveRepCycle,
+  finishReputationMiningCycleAndWithdrawAllMinerStakes,
+  takeSnapshot,
+  revertToSnapshot
+} from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 import {
@@ -38,6 +44,7 @@ process.env.SOLIDITY_COVERAGE
       let metaColony;
       let clnyToken;
       let goodClient;
+      let latestSnapShotId;
 
       before(async () => {
         // Setup a new network instance as we'll be modifying the global skills tree
@@ -76,10 +83,12 @@ process.env.SOLIDITY_COVERAGE
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
         await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
+        latestSnapShotId = await takeSnapshot();
       });
 
       afterEach(async () => {
-        await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+        const isStateGotReset = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+        if (!isStateGotReset) await revertToSnapshot(latestSnapShotId);
       });
 
       describe("core functionality", () => {

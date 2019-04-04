@@ -17,7 +17,9 @@ import {
   submitAndForwardTimeToDispute,
   accommodateChallengeAndInvalidateHash,
   getValidEntryNumber,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes
+  finishReputationMiningCycleAndWithdrawAllMinerStakes,
+  takeSnapshot,
+  revertToSnapshot
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -48,6 +50,7 @@ contract("Reputation mining - root hash submissions", accounts => {
   let goodClient;
   let badClient;
   let badClient2;
+  let latestSnapShotId;
 
   before(async () => {
     // Setup a new network instance as we'll be modifying the global skills tree
@@ -92,10 +95,12 @@ contract("Reputation mining - root hash submissions", accounts => {
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
     await clnyToken.burn(userBalance, { from: MINER1 });
+    latestSnapShotId = await takeSnapshot();
   });
 
   afterEach(async () => {
-    await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    const isStateGotReset = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    if (!isStateGotReset) await revertToSnapshot(latestSnapShotId);
   });
 
   describe("when determining submission eligibility", () => {

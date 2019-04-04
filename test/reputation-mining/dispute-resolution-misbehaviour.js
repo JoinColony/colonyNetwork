@@ -15,7 +15,9 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes
+  finishReputationMiningCycleAndWithdrawAllMinerStakes,
+  takeSnapshot,
+  revertToSnapshot
 } from "../../helpers/test-helper";
 
 import {
@@ -53,6 +55,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
   let colonyNetwork;
   let clnyToken;
   let goodClient;
+  let latestSnapShotId;
   const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
   before(async () => {
@@ -92,10 +95,12 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
     await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
+    latestSnapShotId = await takeSnapshot();
   });
 
   afterEach(async () => {
-    await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    const isStateGotReset = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    if (!isStateGotReset) await revertToSnapshot(latestSnapShotId);
   });
 
   // The dispute resolution flow is as follows:

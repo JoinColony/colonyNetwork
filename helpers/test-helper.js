@@ -114,6 +114,46 @@ export function web3GetRawCall(params) {
   });
 }
 
+export function takeSnapshot() {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_snapshot",
+        params: [],
+        id: new Date().getTime()
+      },
+      (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve(result.result);
+      }
+    );
+  });
+}
+
+export function revertToSnapshot(snapShotId) {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_revert",
+        params: [snapShotId],
+        id: new Date().getTime()
+      },
+      err => {
+        if (err) {
+          return reject(err);
+        }
+
+        return resolve();
+      }
+    );
+  });
+}
+
 // Borrowed from `truffle` https://github.com/trufflesuite/truffle/blob/next/packages/truffle-contract/lib/reason.js
 export function extractReasonString(res) {
   if (!res || (!res.error && !res.result)) return "";
