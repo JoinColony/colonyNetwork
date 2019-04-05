@@ -1616,7 +1616,10 @@ contract("ColonyTask", accounts => {
         args: [taskId, accounts[4]]
       });
 
-      await checkErrorRevert(colony.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000), "colony-funding-evaluator-already-set");
+      await checkErrorRevert(
+        colony.setAllTaskPayouts(taskId, ethers.constants.AddressZero, 5000, 1000, 98000),
+        "colony-funding-evaluator-already-set"
+      );
     });
 
     it("should log a TaskWorkerPayoutSet event, if the task's worker's payout changed", async () => {

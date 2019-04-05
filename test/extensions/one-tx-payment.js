@@ -2,7 +2,7 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
-import ethers from "ethers";
+import { ethers } from "ethers";
 
 import { WAD, INITIAL_FUNDING } from "../../helpers/constants";
 import { checkErrorRevert } from "../../helpers/test-helper";

@@ -2,7 +2,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import BN from "bn.js";
-import ethers from "ethers";
+import { ethers } from "ethers";
 
 import { WAD, MAX_PAYOUT } from "../helpers/constants";
 import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
@@ -109,7 +109,10 @@ contract("Colony Payment", accounts => {
       await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
-      await checkErrorRevert(colony.setPaymentRecipient(1, 0, paymentId, ethers.constants.AddressZero, { from: COLONY_ADMIN }), "colony-payment-invalid-recipient");
+      await checkErrorRevert(
+        colony.setPaymentRecipient(1, 0, paymentId, ethers.constants.AddressZero, { from: COLONY_ADMIN }),
+        "colony-payment-invalid-recipient"
+      );
     });
 
     it("should allow admins to update domain", async () => {

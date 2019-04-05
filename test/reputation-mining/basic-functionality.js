@@ -3,7 +3,7 @@
 import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
-import ethers from "ethers";
+import { ethers } from "ethers";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 import { MINING_CYCLE_DURATION } from "../../helpers/constants";

@@ -1,5 +1,6 @@
 /* globals artifacts */
 import { BN } from "bn.js";
+import { ethers } from "ethers";
 import { sha3 } from "web3-utils";
 import chai from "chai";
 import bnChai from "bn-chai";

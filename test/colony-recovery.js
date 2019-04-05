@@ -1,6 +1,6 @@
 import chai from "chai";
 import bnChai from "bn-chai";
-import ethers from "ethers";
+import { ethers } from "ethers";
 
 import { SPECIFICATION_HASH } from "../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";

@@ -2,6 +2,7 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import {
   UINT256_MAX,
@@ -80,7 +81,10 @@ contract("Colony", accounts => {
     });
 
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-already-initialised-network");
+      await checkErrorRevert(
+        colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero),
+        "colony-already-initialised-network"
+      );
     });
 
     it("should correctly generate a rating secret", async () => {

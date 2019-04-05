@@ -1,6 +1,6 @@
 /* globals artifacts */
 import BN from "bn.js";
-import ethers from "ethers";
+import { ethers } from "ethers";
 import path from "path";
 import chai from "chai";
 import bnChai from "bn-chai";

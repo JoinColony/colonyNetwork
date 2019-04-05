@@ -1,7 +1,7 @@
 /* globals artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
-import ethers from "ethers";
+import { ethers } from "ethers";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
