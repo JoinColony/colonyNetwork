@@ -391,11 +391,11 @@ class ReputationMiner {
       value = this.reputations[key];
     } else {
       // Doesn't exist yet.
-      branchMask = 0x0;
+      branchMask = 0x00;
       siblings = [];
       value = this.getValueAsBytes(0, 0);
       if (!key) {
-        key = ReputationMiner.getHexString(0);
+        key = ReputationMiner.getHexString(0, 32);
       }
     }
     const reputation = `0x${value.slice(2,66)}`;
@@ -908,7 +908,6 @@ class ReputationMiner {
       lastAgreeJustifications.childReputationProof.branchMask = lastAgreeJustifications.childAdjacentReputationProof.branchMask;
       lastAgreeJustifications.childReputationProof.siblings = lastAgreeJustifications.childAdjacentReputationProof.siblings;
     }
-
     return repCycle.respondToChallenge(
       [
         round,
@@ -943,10 +942,11 @@ class ReputationMiner {
       ],
       [
         ...ReputationMiner.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
-        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.newestReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
-        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.adjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
-        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.originAdjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
-        ...ReputationMiner.breakKeyInToElements(lastAgreeJustifications.childAdjacentReputationProof.key).map(x => ethers.utils.hexZeroPad(x, 32)),
+        soliditySha3(reputationKey),
+        soliditySha3(lastAgreeJustifications.newestReputationProof.key),
+        soliditySha3(lastAgreeJustifications.adjacentReputationProof.key),
+        soliditySha3(lastAgreeJustifications.originAdjacentReputationProof.key),
+        soliditySha3(lastAgreeJustifications.childAdjacentReputationProof.key),
       ],
       firstDisagreeJustifications.justUpdatedProof.siblings,
       agreeStateSiblings,

@@ -153,7 +153,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// that this is the case, however, otherwise you risk being found incorrect. Zeroed arguments will result in a cheaper call to this function.
   function respondToChallenge(
     uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
-    bytes32[15] memory b32,
+    bytes32[8] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
