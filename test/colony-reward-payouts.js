@@ -7,7 +7,7 @@ import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, ZERO_ADDRESS, SECONDS_PER_DAY } from "../helpers/constants";
+import { INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } from "../helpers/constants";
 
 import {
   getTokenArgs,
@@ -151,7 +151,7 @@ contract("Colony Reward Payouts", accounts => {
 
       const result = await colony.getDomain(1);
       const rootDomainSkill = result.skillId;
-      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
+      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.constants.AddressZero);
       await client.insert(globalKey, new BN(10), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
@@ -322,7 +322,7 @@ contract("Colony Reward Payouts", accounts => {
       const result = await newColony.getDomain(1);
       const rootDomainSkill = result.skillId;
 
-      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ZERO_ADDRESS);
+      const globalKey = ReputationMinerTestWrapper.getKey(newColony.address, rootDomainSkill, ethers.constants.AddressZero);
       await client.insert(globalKey, new BN(0), 0);
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });

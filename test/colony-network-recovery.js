@@ -1,8 +1,8 @@
 /* globals artifacts */
 
-import { ethers } from "ethers";
 import { padLeft, soliditySha3, numberToHex } from "web3-utils";
 import BN from "bn.js";
+import ethers from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
 import path from "path";

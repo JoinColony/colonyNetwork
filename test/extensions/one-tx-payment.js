@@ -2,8 +2,9 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
+import ethers from "ethers";
 
-import { WAD, INITIAL_FUNDING, ZERO_ADDRESS } from "../../helpers/constants";
+import { WAD, INITIAL_FUNDING } from "../../helpers/constants";
 import { checkErrorRevert } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 
@@ -59,9 +60,9 @@ contract("One transaction payments", accounts => {
     it("should allow a single-transaction payment of ETH to occur", async () => {
       const balanceBefore = await web3.eth.getBalance(RECIPIENT);
       await colony.send(10); // NB 10 wei, not ten ether!
-      await colony.claimColonyFunds(ZERO_ADDRESS);
+      await colony.claimColonyFunds(ethers.constants.AddressZero);
       // This is the one transactions. Those ones above don't count...
-      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, ZERO_ADDRESS, 10, 1, globalSkillId, { from: COLONY_ADMIN });
+      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, ethers.constants.AddressZero, 10, 1, globalSkillId, { from: COLONY_ADMIN });
       // Check it completed
       const balanceAfter = await web3.eth.getBalance(RECIPIENT);
       // So only 9 here, because of the same rounding errors as applied to the token

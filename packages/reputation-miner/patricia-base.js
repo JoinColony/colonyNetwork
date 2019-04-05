@@ -1,6 +1,6 @@
-import { BN } from "bn.js";
-import { soliditySha3 } from "web3-utils";
+import BN from "bn.js";
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 
 // //////
 // Patricia Tree

@@ -1,6 +1,6 @@
 /* globals artifacts */
-import { ethers } from "ethers";
 import BN from "bn.js";
+import ethers from "ethers";
 import path from "path";
 import chai from "chai";
 import bnChai from "bn-chai";
@@ -8,7 +8,7 @@ import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 
-import { ZERO_ADDRESS, MINING_CYCLE_DURATION, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE } from "../../helpers/constants";
+import { MINING_CYCLE_DURATION, DEFAULT_STAKE, REWARD, UINT256_MAX, MIN_STAKE } from "../../helpers/constants";
 
 import {
   forwardTime,
@@ -315,8 +315,8 @@ contract("Reputation mining - root hash submissions", accounts => {
       await advanceMiningCycleNoContest({ colonyNetwork, test: this }); // Defaults to (0x00, 0)
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
-      expect(newRepCycle.address).to.not.equal(ZERO_ADDRESS);
-      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newRepCycle.address).to.not.equal(ethers.constants.AddressZero);
+      expect(repCycle.address).to.not.equal(ethers.constants.AddressZero);
       expect(newRepCycle.address).to.not.equal(repCycle.address);
 
       const rootHash = await colonyNetwork.getReputationRootHash();
@@ -339,8 +339,8 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       await repCycle.confirmNewHash(1);
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
-      expect(newRepCycle.address).to.not.equal(ZERO_ADDRESS);
-      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newRepCycle.address).to.not.equal(ethers.constants.AddressZero);
+      expect(repCycle.address).to.not.equal(ethers.constants.AddressZero);
       expect(newRepCycle.address).to.not.equal(repCycle.address);
 
       const rootHash = await colonyNetwork.getReputationRootHash();
@@ -366,8 +366,8 @@ contract("Reputation mining - root hash submissions", accounts => {
       await repCycle.confirmNewHash(2);
 
       const newRepCycle = await getActiveRepCycle(colonyNetwork);
-      expect(newRepCycle.address).to.not.equal(ZERO_ADDRESS);
-      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newRepCycle.address).to.not.equal(ethers.constants.AddressZero);
+      expect(repCycle.address).to.not.equal(ethers.constants.AddressZero);
       expect(newRepCycle.address).to.not.equal(repCycle.address);
 
       const rootHash = await colonyNetwork.getReputationRootHash();
@@ -386,8 +386,8 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       await checkErrorRevert(repCycle.confirmNewHash(0), "colony-reputation-mining-final-round-not-complete");
       const newAddr = await colonyNetwork.getReputationMiningCycle(true);
-      expect(newAddr).to.not.equal(ZERO_ADDRESS);
-      expect(repCycle.address).to.not.equal(ZERO_ADDRESS);
+      expect(newAddr).to.not.equal(ethers.constants.AddressZero);
+      expect(repCycle.address).to.not.equal(ethers.constants.AddressZero);
       expect(newAddr).to.equal(repCycle.address);
 
       // Eliminate one so that the afterAll works.

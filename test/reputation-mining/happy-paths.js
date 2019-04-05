@@ -2,6 +2,7 @@
 
 import path from "path";
 import BN from "bn.js";
+import ethers from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
@@ -30,7 +31,6 @@ import {
   DEFAULT_STAKE,
   INITIAL_FUNDING,
   MINING_CYCLE_DURATION,
-  ZERO_ADDRESS,
   REWARD,
   INT128_MAX,
   DECAY_RATE,
@@ -325,7 +325,7 @@ contract("Reputation Mining - happy paths", accounts => {
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ethers.constants.AddressZero);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
@@ -366,7 +366,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ethers.constants.AddressZero);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       await goodClient.insert(globalKey, INT128_MAX.subn(1), 0);
@@ -753,7 +753,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       const rootGlobalSkill = await colonyNetwork.getRootGlobalSkillId();
-      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ZERO_ADDRESS);
+      const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, ethers.constants.AddressZero);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, rootGlobalSkill, MINER1);
 
       await goodClient.insert(globalKey, new BN("1"), 0);

@@ -1,9 +1,9 @@
 /* globals artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
+import ethers from "ethers";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
-import { ZERO_ADDRESS } from "../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
 const namehash = require("eth-ens-namehash");
@@ -51,7 +51,7 @@ contract("Colony Network", accounts => {
 
     it("should have the Resolver for current Colony version set", async () => {
       const currentResolver = await colonyNetwork.getColonyVersionResolver(version);
-      expect(currentResolver).to.not.equal(ZERO_ADDRESS);
+      expect(currentResolver).to.not.equal(ethers.constants.AddressZero);
     });
 
     it("should be able to register a higher Colony contract version", async () => {
@@ -74,7 +74,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not be able to set the token locking contract twice", async () => {
-      await checkErrorRevert(colonyNetwork.setTokenLocking(ZERO_ADDRESS), "colony-token-locking-address-already-set");
+      await checkErrorRevert(colonyNetwork.setTokenLocking(ethers.constants.AddressZero), "colony-token-locking-address-already-set");
     });
 
     it("should not be able to initialise network twice", async () => {
@@ -109,7 +109,7 @@ contract("Colony Network", accounts => {
     it("should allow users to create new colonies", async () => {
       const { colony } = await setupRandomColony(colonyNetwork);
       const colonyCount = await colonyNetwork.getColonyCount();
-      expect(colony.address).to.not.equal(ZERO_ADDRESS);
+      expect(colony.address).to.not.equal(ethers.constants.AddressZero);
       expect(colonyCount).to.eq.BN(2);
     });
 
@@ -152,7 +152,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should not allow users to create a colony with empty token", async () => {
-      await checkErrorRevert(colonyNetwork.createColony(ZERO_ADDRESS), "colony-token-invalid-address");
+      await checkErrorRevert(colonyNetwork.createColony(ethers.constants.AddressZero), "colony-token-invalid-address");
     });
 
     it("when any colony is created, should have the root local skill initialised", async () => {
@@ -195,12 +195,12 @@ contract("Colony Network", accounts => {
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       const colonyAddress = await colonyNetwork.getColony(3);
-      expect(colonyAddress).to.not.equal(ZERO_ADDRESS);
+      expect(colonyAddress).to.not.equal(ethers.constants.AddressZero);
     });
 
     it("should return an empty address if there is no colony for the index provided", async () => {
       const colonyAddress = await colonyNetwork.getColony(15);
-      expect(colonyAddress).to.equal(ZERO_ADDRESS);
+      expect(colonyAddress).to.equal(ethers.constants.AddressZero);
     });
 
     it("should be able to get the Colony version", async () => {

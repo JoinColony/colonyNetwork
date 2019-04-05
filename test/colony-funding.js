@@ -1,6 +1,7 @@
 /* globals artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import {
   WAD,
@@ -10,8 +11,7 @@ import {
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
-  INITIAL_FUNDING,
-  ZERO_ADDRESS
+  INITIAL_FUNDING
 } from "../helpers/constants";
 
 import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../helpers/test-helper";
@@ -503,16 +503,16 @@ contract("Colony Funding", accounts => {
   describe("when receiving ether", () => {
     it("should not put the ether straight in to the pot", async () => {
       await colony.send(100);
-      let colonyPotBalance = await colony.getFundingPotBalance(1, ZERO_ADDRESS);
+      let colonyPotBalance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);
       let colonyEtherBalance = await web3GetBalance(colony.address);
-      let colonyRewardBalance = await colony.getFundingPotBalance(0, ZERO_ADDRESS);
+      let colonyRewardBalance = await colony.getFundingPotBalance(0, ethers.constants.AddressZero);
       expect(colonyEtherBalance).to.eq.BN(100);
       expect(colonyPotBalance).to.be.zero;
 
-      await colony.claimColonyFunds(ZERO_ADDRESS);
-      colonyPotBalance = await colony.getFundingPotBalance(1, ZERO_ADDRESS);
+      await colony.claimColonyFunds(ethers.constants.AddressZero);
+      colonyPotBalance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);
       colonyEtherBalance = await web3GetBalance(colony.address);
-      colonyRewardBalance = await colony.getFundingPotBalance(0, ZERO_ADDRESS);
+      colonyRewardBalance = await colony.getFundingPotBalance(0, ethers.constants.AddressZero);
       expect(colonyEtherBalance).to.eq.BN(100);
       expect(colonyRewardBalance).to.eq.BN(1);
       expect(colonyPotBalance).to.eq.BN(99);
@@ -520,12 +520,12 @@ contract("Colony Funding", accounts => {
 
     it("should let ether be moved between funding pots", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(ZERO_ADDRESS);
+      await colony.claimColonyFunds(ethers.constants.AddressZero);
       await makeTask({ colony });
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 51, ZERO_ADDRESS);
-      const colonyPotBalance = await colony.getFundingPotBalance(1, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 51, ethers.constants.AddressZero);
+      const colonyPotBalance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const pot2Balance = await colony.getFundingPotBalance(2, ZERO_ADDRESS);
+      const pot2Balance = await colony.getFundingPotBalance(2, ethers.constants.AddressZero);
       expect(colonyEtherBalance).to.eq.BN(100);
       expect(colonyPotBalance).to.eq.BN(48);
       expect(pot2Balance).to.eq.BN(51);
@@ -533,17 +533,17 @@ contract("Colony Funding", accounts => {
 
     it("should not allow more ether to leave a pot than the pot has (even if the colony has that many)", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(ZERO_ADDRESS);
+      await colony.claimColonyFunds(ethers.constants.AddressZero);
       await colony.addDomain(1, 0, 1);
       await colony.addDomain(1, 0, 1);
 
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 40, ZERO_ADDRESS);
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, ZERO_ADDRESS), "ds-math-sub-underflow");
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 40, ethers.constants.AddressZero);
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 1, 2, 3, 50, ethers.constants.AddressZero), "ds-math-sub-underflow");
 
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const pot1Balance = await colony.getFundingPotBalance(1, ZERO_ADDRESS);
-      const pot2Balance = await colony.getFundingPotBalance(2, ZERO_ADDRESS);
-      const pot3Balance = await colony.getFundingPotBalance(3, ZERO_ADDRESS);
+      const pot1Balance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);
+      const pot2Balance = await colony.getFundingPotBalance(2, ethers.constants.AddressZero);
+      const pot3Balance = await colony.getFundingPotBalance(3, ethers.constants.AddressZero);
       expect(colonyEtherBalance).to.eq.BN(100);
       expect(pot1Balance).to.eq.BN(59);
       expect(pot2Balance).to.eq.BN(40);
@@ -552,7 +552,7 @@ contract("Colony Funding", accounts => {
 
     it("should correctly track if we are able to make ether payouts", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(ZERO_ADDRESS);
+      await colony.claimColonyFunds(ethers.constants.AddressZero);
       const taskId = await makeTask({ colony });
       await executeSignedRoleAssignment({
         colony,
@@ -570,7 +570,7 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ZERO_ADDRESS, 40]
+        args: [taskId, ethers.constants.AddressZero, 40]
       });
 
       const task = await colony.getTask(taskId);
@@ -578,12 +578,12 @@ contract("Colony Funding", accounts => {
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // Fund the pot equal to manager payout 40 = 40
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 40, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 40, ethers.constants.AddressZero);
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // Cannot bring pot balance below current payout
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 30, ZERO_ADDRESS), "colony-funding-task-bad-state");
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 30, ethers.constants.AddressZero), "colony-funding-task-bad-state");
 
       // Set manager payout above pot value 50 > 40
       await executeSignedTaskChange({
@@ -592,34 +592,34 @@ contract("Colony Funding", accounts => {
         functionName: "setTaskManagerPayout",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, ZERO_ADDRESS, 50]
+        args: [taskId, ethers.constants.AddressZero, 50]
       });
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.eq.BN(1);
 
       // Fund the pot equal to manager payout, plus 10, 50 < 60
-      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 20, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(1, 0, 0, 1, 2, 20, ethers.constants.AddressZero);
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
 
       // Cannot bring pot balance below current payout
-      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 30, ZERO_ADDRESS), "colony-funding-task-bad-state");
+      await checkErrorRevert(colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 30, ethers.constants.AddressZero), "colony-funding-task-bad-state");
 
       // Can remove surplus 50 = 50
-      await colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 10, ZERO_ADDRESS);
+      await colony.moveFundsBetweenPots(1, 0, 0, 2, 1, 10, ethers.constants.AddressZero);
       fundingPot = await colony.getFundingPot(task.fundingPotId);
       expect(fundingPot.payoutsWeCannotMake).to.be.zero;
     });
 
     it("should pay fees on revenue correctly", async () => {
       await colony.send(100);
-      await colony.claimColonyFunds(ZERO_ADDRESS);
+      await colony.claimColonyFunds(ethers.constants.AddressZero);
       await colony.send(200);
-      await colony.claimColonyFunds(ZERO_ADDRESS);
-      const colonyPotBalance = await colony.getFundingPotBalance(1, ZERO_ADDRESS);
-      const colonyRewardPotBalance = await colony.getFundingPotBalance(0, ZERO_ADDRESS);
+      await colony.claimColonyFunds(ethers.constants.AddressZero);
+      const colonyPotBalance = await colony.getFundingPotBalance(1, ethers.constants.AddressZero);
+      const colonyRewardPotBalance = await colony.getFundingPotBalance(0, ethers.constants.AddressZero);
       const colonyEtherBalance = await web3GetBalance(colony.address);
-      const nonRewardPotsTotal = await colony.getNonRewardPotsTotal(ZERO_ADDRESS);
+      const nonRewardPotsTotal = await colony.getNonRewardPotsTotal(ethers.constants.AddressZero);
       expect(colonyEtherBalance).to.eq.BN(300);
       expect(colonyPotBalance).to.eq.BN(297);
       expect(colonyRewardPotBalance).to.eq.BN(3);
