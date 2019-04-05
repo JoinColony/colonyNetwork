@@ -130,7 +130,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       const nSubmittedHashes = await repCycle.getNSubmittedHashes();
       expect(nSubmittedHashes).to.eq.BN(2);
 
-      const submission = await repCycle.getDisputeRounds(0, 0);
+      const submission = await repCycle.getDisputeRoundSubmission(0, 0);
 
       expect(submission.jrhNNodes).to.be.zero;
       await forwardTime(10, this); // This is just to ensure that the timestamps checked below will be different if JRH was submitted.
@@ -140,7 +140,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // Check that we can't re-submit a JRH
       await checkErrorRevertEthers(goodClient.confirmJustificationRootHash(), "colony-reputation-jrh-hash-already-verified");
 
-      const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
+      const submissionAfterJRHConfirmed = await repCycle.getDisputeRoundSubmission(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
       expect(submissionAfterJRHConfirmed.jrh).to.eq.BN(jrh);
 
@@ -197,17 +197,17 @@ contract("Reputation Mining - types of disagreement", accounts => {
       expect(nSubmittedHashes).to.eq.BN(2);
 
       await goodClient.confirmJustificationRootHash();
-      const submissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 0);
+      const submissionAfterJRHConfirmed = await repCycle.getDisputeRoundSubmission(0, 0);
       const jrh = await goodClient.justificationTree.getRootHash();
       expect(submissionAfterJRHConfirmed.jrh).to.eq.BN(jrh);
 
       await badClient.confirmJustificationRootHash();
-      const badSubmissionAfterJRHConfirmed = await repCycle.getDisputeRounds(0, 1);
+      const badSubmissionAfterJRHConfirmed = await repCycle.getDisputeRoundSubmission(0, 1);
       const badJrh = await badClient.justificationTree.getRootHash();
       expect(badSubmissionAfterJRHConfirmed.jrh).to.eq.BN(badJrh);
 
-      let goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      let badSubmission = await repCycle.getDisputeRounds(0, 1);
+      let goodSubmission = await repCycle.getDisputeRoundSubmission(0, 0);
+      let badSubmission = await repCycle.getDisputeRoundSubmission(0, 1);
       expect(goodSubmission.challengeStepCompleted).to.eq.BN(1); // Challenge steps completed
       expect(goodSubmission.lowerBound).to.be.zero; // Lower bound for binary search
       expect(goodSubmission.upperBound).to.eq.BN(28); // Upper bound for binary search
@@ -216,8 +216,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       expect(badSubmission.upperBound).to.eq.BN(28);
 
       await goodClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      goodSubmission = await repCycle.getDisputeRoundSubmission(0, 0);
+      badSubmission = await repCycle.getDisputeRoundSubmission(0, 1);
       expect(goodSubmission.challengeStepCompleted).to.eq.BN(2);
       expect(goodSubmission.lowerBound).to.be.zero;
       expect(goodSubmission.upperBound).to.eq.BN(28);
@@ -226,8 +226,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       expect(badSubmission.upperBound).to.eq.BN(28);
 
       await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      goodSubmission = await repCycle.getDisputeRoundSubmission(0, 0);
+      badSubmission = await repCycle.getDisputeRoundSubmission(0, 1);
       expect(goodSubmission.lowerBound).to.be.zero;
       expect(goodSubmission.upperBound).to.eq.BN(15);
       expect(badSubmission.lowerBound).to.be.zero;
@@ -235,8 +235,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      goodSubmission = await repCycle.getDisputeRoundSubmission(0, 0);
+      badSubmission = await repCycle.getDisputeRoundSubmission(0, 1);
       expect(goodSubmission.lowerBound).to.eq.BN(8);
       expect(goodSubmission.upperBound).to.eq.BN(15);
       expect(badSubmission.lowerBound).to.eq.BN(8);
@@ -244,8 +244,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      goodSubmission = await repCycle.getDisputeRoundSubmission(0, 0);
+      badSubmission = await repCycle.getDisputeRoundSubmission(0, 1);
 
       expect(goodSubmission.lowerBound).to.eq.BN(12);
       expect(goodSubmission.upperBound).to.eq.BN(15);
@@ -254,8 +254,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      goodSubmission = await repCycle.getDisputeRoundSubmission(0, 0);
+      badSubmission = await repCycle.getDisputeRoundSubmission(0, 1);
       expect(goodSubmission.lowerBound).to.eq.BN(12);
       expect(goodSubmission.upperBound).to.eq.BN(13);
       expect(badSubmission.lowerBound).to.eq.BN(12);
@@ -263,8 +263,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodSubmission = await repCycle.getDisputeRounds(0, 0);
-      badSubmission = await repCycle.getDisputeRounds(0, 1);
+      goodSubmission = await repCycle.getDisputeRoundSubmission(0, 0);
+      badSubmission = await repCycle.getDisputeRoundSubmission(0, 1);
       expect(goodSubmission.lowerBound).to.eq.BN(13);
       expect(goodSubmission.upperBound).to.eq.BN(13);
       expect(badSubmission.lowerBound).to.eq.BN(13);
@@ -278,8 +278,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-increased-reputation-value-incorrect");
 
       // Check
-      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
-      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
+      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
+      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
       const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.eq.BN(1);
       // checks that challengeStepCompleted is one more for the good submission than the bad one.
@@ -522,8 +522,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-uid-changed-for-existing-reputation");
 
       // Check
-      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
-      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
+      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
+      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
       const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.eq.BN(1);
 
@@ -575,8 +575,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.respondToChallenge();
 
       // Check
-      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
-      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
+      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
+      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
       const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.be.zero;
       // Both sides have completed the same amount of challenges, but one has proved that a large number already exists
@@ -679,8 +679,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-proved-uid-inconsistent");
 
       // Check badClient respondToChallenge failed
-      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 0);
-      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRounds(0, 1);
+      const goodSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
+      const badSubmissionAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
       const delta = goodSubmissionAfterResponseToChallenge.challengeStepCompleted - badSubmissionAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.eq.BN(2);
 
