@@ -124,22 +124,15 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 28. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 29. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
 
-  /// @param b32 A `bytes32[15]` array. The elements of this array, in order are:
+  /// @param b32 A `bytes32[8]` array. The elements of this array, in order are:
   /// * 1. The colony address in the key of the reputation being changed that the disagreement is over.
   /// * 2. The skillid in the key of the reputation being changed that the disagreement is over.
   /// * 3. The user address in the key of the reputation being changed that the disagreement is over.
-  /// * 4. The colony address in the key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// * 5. The skillid in the key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// * 6. The user address in the key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
-  /// * 7. The colony address in the key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
-  /// * 8. The skillid in the key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
-  /// * 9. The user address in the key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
-  /// * 10. The colony address in the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
-  /// * 11. The skillid in the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
-  /// * 12. The user address in the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
-  /// * 13. The colony address in the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-  /// * 14. The skillid in the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-  /// * 15. The user address in the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
+  /// * 4. The keccak256 hash of the key of the reputation being changed that the disagreement is over.
+  /// * 5. The keccak256 hash of the key of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+  /// * 6. The keccak256 hash of the key for a reputation already in the tree adjacent to the new reputation being inserted, if required.
+  /// * 7. The keccak256 hash of the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
+  /// * 8. The keccak256 hash of the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
   /// @dev note that these are all bytes32; the address should be left padded from 20 bytes to 32 bytes. Strictly, I do not believe the padding matters, but you should use 0s for your own sanity!
 
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement

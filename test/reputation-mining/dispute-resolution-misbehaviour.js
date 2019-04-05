@@ -669,7 +669,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
-    it("should fail to respondToChallenge if any part of the key is wrong", async () => {
+    it("should fail to respondToChallenge if any part of the key or hashedKey is wrong", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
@@ -735,6 +735,21 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
           []
         ),
         "colony-reputation-mining-user-address-mismatch"
+      );
+
+      await checkErrorRevert(
+        repCycle.respondToChallenge(
+          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          [colonyAddress, skillId, userAddress, "0x00", "0x00", "0x00", "0x00", "0x00"],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ),
+        "colony-reputation-mining-reputation-key-and-hash-mismatch"
       );
 
       await forwardTime(MINING_CYCLE_DURATION / 6, this);

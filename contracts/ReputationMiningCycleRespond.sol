@@ -82,12 +82,6 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_USER_ORIGIN_ADJACENT_REPUTATION_VALUE = 27;
   uint constant U_CHILD_ADJACENT_REPUTATION_VALUE = 28;
 
-  uint constant B_REPUTATION_KEY = 0;
-  uint constant B_PREVIOUS_NEW_REPUTATION_KEY = 1;
-  uint constant B_ADJACENT_REPUTATION_KEY = 2;
-  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY = 3;
-  uint constant B_CHILD_ADJACENT_REPUTATION_KEY = 4;
-
   uint constant B_REPUTATION_KEY_COLONY = 0;
   uint constant B_REPUTATION_KEY_SKILLID = 1;
   uint constant B_REPUTATION_KEY_USER = 2;
