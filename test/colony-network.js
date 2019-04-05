@@ -4,6 +4,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { getTokenArgs, web3GetNetwork, web3GetBalance, checkErrorRevert, expectEvent } from "../helpers/test-helper";
+import { GLOBAL_SKILL_ID } from "../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
 const namehash = require("eth-ens-namehash");
@@ -129,18 +130,16 @@ contract("Colony Network", accounts => {
     it("when meta colony is created, should have the root global and local skills initialised, plus the local mining skill", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
-      const globalSkill = await colonyNetwork.getSkill(3);
+      const globalSkill = await colonyNetwork.getSkill(GLOBAL_SKILL_ID);
       expect(parseInt(globalSkill.nParents, 10)).to.be.zero;
       expect(parseInt(globalSkill.nChildren, 10)).to.be.zero;
+      expect(globalSkill.globalSkill).to.be.true;
 
       const localSkill1 = await colonyNetwork.getSkill(1);
       expect(localSkill1.globalSkill).to.be.false;
 
       const localSkill2 = await colonyNetwork.getSkill(2);
       expect(localSkill2.globalSkill).to.be.false;
-
-      const globalSkill1 = await colonyNetwork.getSkill(3);
-      expect(globalSkill1.globalSkill).to.be.true;
     });
 
     it("should fail to create meta colony if it already exists", async () => {

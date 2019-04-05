@@ -247,7 +247,6 @@ contract("End to end Colony network and Reputation mining testing", function(acc
             colonyNetwork,
             colony,
             domainId: taskProp.domainId,
-            skillId: taskProp.skillId,
             manager: MANAGER,
             evaluator: EVALUATOR,
             worker: WORKER,

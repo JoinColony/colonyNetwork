@@ -1,7 +1,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
+import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../helpers/constants";
 import { checkErrorRevert, removeSubdomainLimit } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
@@ -497,7 +497,7 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(taskId, 5), "colony-task-complete");
 
       const task = await colony.getTask(taskId);
-      expect(task.skillIds[0]).to.eq.BN(3);
+      expect(task.skillIds[0]).to.eq.BN(GLOBAL_SKILL_ID);
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {

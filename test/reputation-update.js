@@ -290,7 +290,7 @@ contract("Reputation Updates", accounts => {
 
       await setupFinalizedTask({ colonyNetwork, colony: metaColony, domainId: 4, managerRating: 1 });
       repLogEntryWorker = await inactiveReputationMiningCycle.getReputationUpdateLogEntry(5);
-      expect(repLogEntryWorker.amount).to.eq.BN(MANAGER_PAYOUT.mul(new BN(-1)));
+      expect(repLogEntryWorker.amount).to.eq.BN(MANAGER_PAYOUT.neg());
       expect(repLogEntryWorker.nUpdates).to.eq.BN(10); // Negative reputation change means children change as well.
     });
 

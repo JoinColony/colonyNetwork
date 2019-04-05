@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
+import { DEFAULT_STAKE, INITIAL_FUNDING, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle, removeSubdomainLimit } from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
@@ -54,7 +54,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
 async function customSetupFinalizedTask(args) {
   const newArgs = Object.assign(args, {
-    skillId: 3,
+    skillId: GLOBAL_SKILL_ID,
     evaluatorPayout: 0,
     managerPayout: 0
   });

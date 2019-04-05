@@ -29,16 +29,16 @@ contract TaskSkillEditing is ColonyStorage {
   // * Can people add the same tag twice?
   // * When deleting a tag, should shrink the array and copy the last element in to the empty slot
   //   This makes the iteration done in updateReputation as cheap as possible.
-  function addTaskSkill(uint256 _taskId, uint256 _skillId) 
+  function addTaskSkill(uint256 _taskId, uint256 _skillId)
   public
   {
     tasks[_taskId].skills.push(_skillId);
   }
 
-  function removeTaskSkill(uint256 _taskId, uint256 _skillId) 
+  function removeTaskSkill(uint256 _taskId, uint256 _skillIndex) 
   public
   {
-    tasks[_taskId].skills[_skillId] = 0;
+    tasks[_taskId].skills[_skillIndex] = 0;
   }
 
 }
