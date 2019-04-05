@@ -114,46 +114,6 @@ export function web3GetRawCall(params) {
   });
 }
 
-export function takeSnapshot() {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send(
-      {
-        jsonrpc: "2.0",
-        method: "evm_snapshot",
-        params: [],
-        id: new Date().getTime()
-      },
-      (err, result) => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve(result.result);
-      }
-    );
-  });
-}
-
-export function revertToSnapshot(snapShotId) {
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send(
-      {
-        jsonrpc: "2.0",
-        method: "evm_revert",
-        params: [snapShotId],
-        id: new Date().getTime()
-      },
-      err => {
-        if (err) {
-          return reject(err);
-        }
-
-        return resolve();
-      }
-    );
-  });
-}
-
 // Borrowed from `truffle` https://github.com/trufflesuite/truffle/blob/next/packages/truffle-contract/lib/reason.js
 export function extractReasonString(res) {
   if (!res || (!res.error && !res.result)) return "";
@@ -703,7 +663,7 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
       console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
       // process.exit(1);
-      return;
+      return false;
     }
   }
 
@@ -738,4 +698,5 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
       }
     })
   );
+  return true;
 }

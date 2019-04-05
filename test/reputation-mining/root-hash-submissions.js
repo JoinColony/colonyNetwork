@@ -17,9 +17,7 @@ import {
   submitAndForwardTimeToDispute,
   accommodateChallengeAndInvalidateHash,
   getValidEntryNumber,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes,
-  takeSnapshot,
-  revertToSnapshot
+  finishReputationMiningCycleAndWithdrawAllMinerStakes
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -38,36 +36,39 @@ const loader = new TruffleLoader({
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 const useJsTree = true;
 
+let colonyNetwork;
+let tokenLocking;
+let metaColony;
+let clnyToken;
+let goodClient;
+let badClient;
+let badClient2;
+
+const setupNewNetworkInstance = async (MINER1, MINER2, MINER3) => {
+  colonyNetwork = await setupColonyNetwork();
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+  tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+  ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await colonyNetwork.initialiseReputationMining();
+  await colonyNetwork.startNextCycle();
+
+  goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
+  // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
+  badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 1, 0xfffffffff);
+  // Mess up the second calculation in a different way
+  badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, 0xeeeeeeeee);
+};
+
 contract("Reputation mining - root hash submissions", accounts => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
 
-  let colonyNetwork;
-  let tokenLocking;
-  let metaColony;
-  let clnyToken;
-  let goodClient;
-  let badClient;
-  let badClient2;
-  let latestSnapShotId;
-
   before(async () => {
     // Setup a new network instance as we'll be modifying the global skills tree
-    colonyNetwork = await setupColonyNetwork();
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
-
-    goodClient = new ReputationMinerTestWrapper({ loader, minerAddress: MINER1, realProviderPort, useJsTree });
-    // Mess up the second calculation. There will always be one if giveUserCLNYTokens has been called.
-    badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 1, 0xfffffffff);
-    // Mess up the second calculation in a different way
-    badClient2 = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER3, realProviderPort, useJsTree }, 1, 0xeeeeeeeee);
+    await setupNewNetworkInstance(MINER1, MINER2, MINER3);
   });
 
   beforeEach(async () => {
@@ -95,12 +96,11 @@ contract("Reputation mining - root hash submissions", accounts => {
     // Burn MAIN_ACCOUNTS accumulated mining rewards.
     const userBalance = await clnyToken.balanceOf(MINER1);
     await clnyToken.burn(userBalance, { from: MINER1 });
-    latestSnapShotId = await takeSnapshot();
   });
 
   afterEach(async () => {
-    const isStateGotReset = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
-    if (!isStateGotReset) await revertToSnapshot(latestSnapShotId);
+    const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2, MINER3);
   });
 
   describe("when determining submission eligibility", () => {

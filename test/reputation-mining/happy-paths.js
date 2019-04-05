@@ -14,8 +14,6 @@ import {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   finishReputationMiningCycleAndWithdrawAllMinerStakes,
-  takeSnapshot,
-  revertToSnapshot,
   makeReputationKey,
   makeReputationValue
 } from "../../helpers/test-helper";
@@ -55,6 +53,33 @@ const loader = new TruffleLoader({
 
 const useJsTree = true;
 
+let metaColony;
+let colonyNetwork;
+let clnyToken;
+let goodClient;
+const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+
+const setupNewNetworkInstance = async MINER1 => {
+  colonyNetwork = await setupColonyNetwork();
+  ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
+  // We're not resetting the global skills tree as the Network is not reset
+  await metaColony.addGlobalSkill(1);
+  await metaColony.addGlobalSkill(4);
+  await metaColony.addGlobalSkill(5);
+  await metaColony.addGlobalSkill(6);
+  await metaColony.addGlobalSkill(7);
+  await metaColony.addGlobalSkill(8);
+  await metaColony.addGlobalSkill(9);
+
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await colonyNetwork.initialiseReputationMining();
+  await colonyNetwork.startNextCycle();
+
+  goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+};
+
 contract("Reputation Mining - happy paths", accounts => {
   const MANAGER = accounts[0];
   const EVALUATOR = accounts[1];
@@ -63,33 +88,9 @@ contract("Reputation Mining - happy paths", accounts => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
 
-  let metaColony;
-  let colonyNetwork;
-  let clnyToken;
-  let goodClient;
-  let latestSnapShotId;
-  const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-
   before(async () => {
     // Setup a new network instance as we'll be modifying the global skills tree
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    // Initialise global skills tree: 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
-    // We're not resetting the global skills tree as the Network is not reset
-    await metaColony.addGlobalSkill(1);
-    await metaColony.addGlobalSkill(4);
-    await metaColony.addGlobalSkill(5);
-    await metaColony.addGlobalSkill(6);
-    await metaColony.addGlobalSkill(7);
-    await metaColony.addGlobalSkill(8);
-    await metaColony.addGlobalSkill(9);
-
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
-
-    goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+    await setupNewNetworkInstance(MINER1);
   });
 
   beforeEach(async () => {
@@ -113,12 +114,11 @@ contract("Reputation Mining - happy paths", accounts => {
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
     await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
-    latestSnapShotId = await takeSnapshot();
   });
 
   afterEach(async () => {
-    const isStateGotReset = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
-    if (!isStateGotReset) await revertToSnapshot(latestSnapShotId);
+    const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
   });
 
   describe("when executing intended behaviours", () => {

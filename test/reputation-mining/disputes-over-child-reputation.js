@@ -13,9 +13,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes,
-  takeSnapshot,
-  revertToSnapshot
+  finishReputationMiningCycleAndWithdrawAllMinerStakes
 } from "../../helpers/test-helper";
 
 import {
@@ -46,33 +44,36 @@ const loader = new TruffleLoader({
 
 const useJsTree = true;
 
+let metaColony;
+let colonyNetwork;
+let clnyToken;
+let goodClient;
+const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+
+const setupNewNetworkInstance = async MINER1 => {
+  colonyNetwork = await setupColonyNetwork();
+  ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
+  await metaColony.addGlobalSkill(1);
+  await metaColony.addGlobalSkill(4);
+
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await colonyNetwork.initialiseReputationMining();
+  await colonyNetwork.startNextCycle();
+
+  goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+};
+
 contract("Reputation Mining - disputes over child reputation", accounts => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
   const MINER3 = accounts[7];
   const MINER4 = accounts[8];
 
-  let metaColony;
-  let colonyNetwork;
-  let clnyToken;
-  let goodClient;
-  let latestSnapShotId;
-  const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-
   before(async () => {
     // Setup a new network instance as we'll be modifying the global skills tree
-    colonyNetwork = await setupColonyNetwork();
-    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
-    await metaColony.addGlobalSkill(1);
-    await metaColony.addGlobalSkill(4);
-
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
-
-    goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+    await setupNewNetworkInstance(MINER1);
   });
 
   beforeEach(async () => {
@@ -96,12 +97,11 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
     await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
-    latestSnapShotId = await takeSnapshot();
   });
 
   afterEach(async () => {
-    const isStateGotReset = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
-    if (!isStateGotReset) await revertToSnapshot(latestSnapShotId);
+    const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
   });
 
   describe("should correctly resolve a dispute over origin skill", () => {
