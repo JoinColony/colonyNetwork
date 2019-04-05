@@ -153,10 +153,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       // Check we can't respond to challenge before we've confirmed the binary search result
       await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
 
-      // Cleanup
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      // Check we can't confirm binary search once it's already finished
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-result-already-confirmed");
+
+      // Cleanup
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);

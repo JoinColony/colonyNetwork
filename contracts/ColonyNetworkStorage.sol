@@ -37,8 +37,8 @@ contract ColonyNetworkStorage is CommonStorage, ColonyNetworkDataTypes, DSMath {
   uint256 feeInverse; // Storage slot 10
   // Number of skills in the network, including both global and local skills
   uint256 skillCount; // Storage slot 11
-  // skillId of the root global skills tree
-  uint256 unusued; // Storage slot 12
+  // skillId of the mining skill
+  uint256 reputationMiningSkillId; // Storage slot 12
 
   // The reputation root hash of the reputation state tree accepted at the end of the last completed update cycle
   bytes32 reputationRootHash; // Storage slot 13

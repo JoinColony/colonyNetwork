@@ -140,6 +140,9 @@ contract("Colony Network", accounts => {
 
       const localSkill2 = await colonyNetwork.getSkill(2);
       expect(localSkill2.globalSkill).to.be.false;
+
+      const miningSkillId = await colonyNetwork.getReputationMiningSkillId();
+      expect(miningSkillId).to.eq.BN(2);
     });
 
     it("should fail to create meta colony if it already exists", async () => {

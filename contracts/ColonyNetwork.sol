@@ -62,6 +62,10 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skillCount;
   }
 
+  function getReputationMiningSkillId() public view returns (uint256) {
+    return reputationMiningSkillId;
+  }
+
   function getColonyVersionResolver(uint256 _version) public view returns (address) {
     return colonyVersionResolver[_version];
   }
@@ -120,6 +124,8 @@ contract ColonyNetwork is ColonyNetworkStorage {
 
     // Add the special mining skill
     this.addSkill(skillCount);
+    // NB skillCount is incremented by the above call
+    reputationMiningSkillId = skillCount;
 
     emit MetaColonyCreated(metaColony, _tokenAddress, skillCount);
   }

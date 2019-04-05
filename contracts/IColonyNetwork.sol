@@ -111,6 +111,10 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return count The skill count
   function getSkillCount() public view returns (uint256 count);
 
+  /// @notice Get the skillId of the reputation mining skill. Only set once the metacolony is set up
+  /// @return skillId The skillId of the reputation mining skill.
+  function getReputationMiningSkillId() public view returns (uint256);
+
   /// @notice Sets the token locking address
   /// This is only set once, and can't be changed afterwards
   /// @param _tokenLockingAddress Address of the locking contract

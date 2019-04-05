@@ -177,7 +177,7 @@ contract ColonyNetworkMining is ColonyNetworkStorage {
       minerWeights,
       metaColony,
       realReward,
-      2 // Mining skill
+      reputationMiningSkillId
     );
   }
 }

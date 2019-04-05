@@ -715,7 +715,6 @@ export async function removeSubdomainLimit(colonyNetwork) {
 }
 
 export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {
-  console.log(_parentDomainId, _childDomainId);
   const parentDomainId = new BN(_parentDomainId);
   const childDomainId = new BN(_childDomainId);
 
