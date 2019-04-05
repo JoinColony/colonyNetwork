@@ -1,4 +1,5 @@
 /* globals artifacts */
+import { ethers } from "ethers";
 import BN from "bn.js";
 import path from "path";
 import chai from "chai";
@@ -319,7 +320,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       expect(newRepCycle.address).to.not.equal(repCycle.address);
 
       const rootHash = await colonyNetwork.getReputationRootHash();
-      expect(rootHash).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(rootHash).to.equal(ethers.constants.HashZero);
 
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
       expect(rootHashNNodes).to.be.zero;

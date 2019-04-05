@@ -1,5 +1,6 @@
 /* globals artifacts */
 
+import { ethers } from "ethers";
 import { padLeft, soliditySha3, numberToHex } from "web3-utils";
 import BN from "bn.js";
 import chai from "chai";
@@ -203,7 +204,7 @@ contract("Colony Network Recovery", accounts => {
 
       let rootHash = await colonyNetwork.getReputationRootHash();
       let nNodes = await colonyNetwork.getReputationRootHashNNodes();
-      expect(rootHash).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(rootHash).to.equal(ethers.constants.HashZero);
       expect(nNodes).to.be.zero;
 
       await colonyNetwork.enterRecoveryMode();

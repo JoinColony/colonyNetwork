@@ -97,7 +97,7 @@ contract("ColonyTask", accounts => {
       const taskId = await makeTask({ colony, dueDate });
       const task = await colony.getTask(taskId);
       expect(task.specificationHash).to.equal(SPECIFICATION_HASH);
-      expect(task.deliverableHash).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(task.deliverableHash).to.equal(ethers.constants.HashZero);
       expect(task.status).to.eq.BN(ACTIVE_TASK_STATE);
       expect(task.dueDate).to.eq.BN(dueDate);
       expect(task.domainId).to.eq.BN(1);
@@ -1213,7 +1213,7 @@ contract("ColonyTask", accounts => {
       const taskId = await setupAssignedTask({ colonyNetwork, colony, dueDate });
 
       let task = await colony.getTask(taskId);
-      expect(task.deliverableHash).to.equal("0x0000000000000000000000000000000000000000000000000000000000000000");
+      expect(task.deliverableHash).to.equal(ethers.constants.HashZero);
 
       await colony.submitTaskDeliverable(taskId, DELIVERABLE_HASH, { from: WORKER });
       const currentTime = await currentBlockTime();
