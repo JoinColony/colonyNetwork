@@ -15,7 +15,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes
+  finishReputationMiningCycle
 } from "../../helpers/test-helper";
 
 import {
@@ -102,7 +102,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
   });
 
   afterEach(async () => {
-    const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
     if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
   });
 

@@ -13,7 +13,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes,
+  finishReputationMiningCycle,
   makeReputationKey,
   makeReputationValue
 } from "../../helpers/test-helper";
@@ -117,7 +117,7 @@ contract("Reputation Mining - happy paths", accounts => {
   });
 
   afterEach(async () => {
-    const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
     if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
   });
 

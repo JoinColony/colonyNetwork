@@ -1,5 +1,3 @@
-/* globals artifacts */
-
 import path from "path";
 import BN from "bn.js";
 import { toBN } from "web3-utils";
@@ -16,7 +14,7 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycleAndWithdrawAllMinerStakes
+  finishReputationMiningCycle
 } from "../../helpers/test-helper";
 
 import {
@@ -44,8 +42,6 @@ import MaliciousReputationMinerAddNewReputation from "../../packages/reputation-
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const ITokenLocking = artifacts.require("ITokenLocking");
-
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
 });
@@ -54,18 +50,16 @@ const useJsTree = true;
 
 let metaColony;
 let colonyNetwork;
-let tokenLocking;
 let clnyToken;
 let goodClient;
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 const setupNewNetworkInstance = async MINER1 => {
   colonyNetwork = await setupColonyNetwork();
-  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-  tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -84,10 +78,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     await goodClient.resetDB();
     await goodClient.initialise(colonyNetwork.address);
 
-    // Kick off reputation mining.
-    const lock = await tokenLocking.getUserLock(clnyToken.address, MINER1);
-    expect(lock.balance).to.eq.BN(DEFAULT_STAKE);
-
     // Advance two cycles to clear active and inactive state.
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
     await advanceMiningCycleNoContest({ colonyNetwork, test: this });
@@ -97,21 +87,15 @@ contract("Reputation Mining - types of disagreement", accounts => {
     const repCycle = await getActiveRepCycle(colonyNetwork);
     const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
     expect(nInactiveLogEntries).to.eq.BN(1);
-
-    // Burn MINER1S accumulated mining rewards.
-    const userBalance = await clnyToken.balanceOf(MINER1);
-    await clnyToken.burn(userBalance, { from: MINER1 });
   });
 
   afterEach(async () => {
-    const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
     if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
   });
 
   describe("when there is a dispute over reputation root hash", () => {
     it("should cope when a new reputation is correctly added and an extra reputation is added elsewhere at the same time", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await fundColonyWithTokens(metaColony, clnyToken);
       const badClient = new MaliciousReputationMinerAddNewReputation({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 3);
       await badClient.initialise(colonyNetwork.address);
@@ -130,8 +114,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     it("should allow a user to confirm a submitted JRH with proofs for a submission", async () => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
       await badClient.initialise(colonyNetwork.address);
-
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -173,7 +155,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("should cope if the wrong reputation transition is the first transition", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
 
@@ -195,8 +176,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("should allow a binary search between opponents to take place to find their first disagreement", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -310,8 +289,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("if respondToChallenge is attempted to be called multiple times, it should fail", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -354,8 +331,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("if someone tries to insert a second copy of an existing reputation as a new one, it should fail", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -383,8 +358,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
   describe("should correctly resolve dispute over nNodes", () => {
     it("where the submitted nNodes is lied about", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -408,7 +381,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("where the number of nodes has been incremented incorrectly when adding a new reputation", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       const badClient = new MaliciousReputationMinerWrongNNodes2({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 3, 1);
@@ -425,8 +397,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("where the number of nodes has been incremented during an update of an existing reputation", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -451,8 +421,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
   describe("should correctly resolve dispute over JRH", () => {
     it("because a leaf in the JT is wrong", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -476,8 +444,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("with an extra leaf causing proof 1 to be too long", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
 
@@ -502,8 +468,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("with an extra leaf causing proof 2 to be too long", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -530,8 +494,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
   describe("should correctly resolve dispute over reputation UID", () => {
     it("if an existing reputation's uniqueID is changed", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -583,8 +545,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // This doesn't quite hold if the two submissions are both malicious, and agreed on an invliad state for the lastAgreeState.
       // However, only one will still be able to be 'right', and so the dispute resoultion will continue as intended with at least
       // one of those submissions being eliminated.
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -635,8 +595,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("if a new reputation's uniqueID is not proved right because a too-old previous ID is proved", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -690,7 +648,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
       // is added or not.
       // So skipping this test, and leaving in the require for now in case I am wrong. This seems like a _very_ good candidate for an experimentation
       // with formal proofs, though....
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(3));
       await setupFinalizedTask({ colonyNetwork, colony: metaColony });
@@ -737,7 +694,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("if a reputation decay calculation is wrong", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
       await advanceMiningCycleNoContest({ colonyNetwork, test: this });
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
@@ -773,8 +729,6 @@ contract("Reputation Mining - types of disagreement", accounts => {
     });
 
     it("if an update makes reputation amount go over the max, in a dispute, it should be limited to the max value", async () => {
-      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
-
       const fundsRequired = INT128_MAX.add(new BN(1000000000000).muln(2)).add(new BN(1000000000).muln(2));
       await fundColonyWithTokens(metaColony, clnyToken, fundsRequired);
 

@@ -649,7 +649,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   }
 }
 
-export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, test) {
+export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -666,8 +666,9 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
       return false;
     }
   }
+}
 
-  // Actually do the withdrawal.
+export async function withdrawAllMinerStakes(colonyNetwork) {
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   const metaColonyAddress = await colonyNetwork.getMetaColony();

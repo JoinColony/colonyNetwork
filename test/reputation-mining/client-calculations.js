@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { DEFAULT_STAKE, INITIAL_FUNDING, ZERO_ADDRESS } from "../../helpers/constants";
-import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycleAndWithdrawAllMinerStakes } from "../../helpers/test-helper";
+import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle } from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 import {
@@ -41,6 +41,7 @@ const setupNewNetworkInstance = async MINER1 => {
   await metaColony.addGlobalSkill(4);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -72,17 +73,11 @@ process.env.SOLIDITY_COVERAGE
         const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
         expect(nInactiveLogEntries).to.eq.BN(1);
 
-        // Burn MAIN_ACCOUNTS accumulated mining rewards.
-        const userBalance = await clnyToken.balanceOf(MINER1);
-        await clnyToken.burn(userBalance, { from: MINER1 });
-
-        await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-        await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
         await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
       });
 
       afterEach(async () => {
-        const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+        const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
         if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
       });
 
