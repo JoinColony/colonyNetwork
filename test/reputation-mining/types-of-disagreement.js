@@ -52,29 +52,32 @@ const loader = new TruffleLoader({
 
 const useJsTree = true;
 
+let metaColony;
+let colonyNetwork;
+let tokenLocking;
+let clnyToken;
+let goodClient;
+const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
+
+const setupNewNetworkInstance = async MINER1 => {
+  colonyNetwork = await setupColonyNetwork();
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+  tokenLocking = await ITokenLocking.at(tokenLockingAddress);
+  ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await colonyNetwork.initialiseReputationMining();
+  await colonyNetwork.startNextCycle();
+
+  goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+};
 contract("Reputation Mining - types of disagreement", accounts => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
 
-  let metaColony;
-  let colonyNetwork;
-  let tokenLocking;
-  let clnyToken;
-  let goodClient;
-  const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
-
   before(async () => {
     // Setup a new network instance as we'll be modifying the global skills tree
-    colonyNetwork = await setupColonyNetwork();
-    const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-    tokenLocking = await ITokenLocking.at(tokenLockingAddress);
-    ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
-
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await colonyNetwork.initialiseReputationMining();
-    await colonyNetwork.startNextCycle();
-
-    goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
+    await setupNewNetworkInstance(MINER1);
   });
 
   beforeEach(async () => {
@@ -101,7 +104,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
   });
 
   afterEach(async () => {
-    await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
   });
 
   describe("when there is a dispute over reputation root hash", () => {

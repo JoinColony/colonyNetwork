@@ -663,7 +663,7 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
       console.log("We're mid dispute process, and can't untangle from here"); // eslint-disable-line no-console
       // process.exit(1);
-      return;
+      return false;
     }
   }
 
@@ -698,4 +698,5 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
       }
     })
   );
+  return true;
 }
