@@ -666,6 +666,8 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
       return false;
     }
   }
+
+  return true;
 }
 
 export async function withdrawAllMinerStakes(colonyNetwork) {
@@ -699,5 +701,4 @@ export async function withdrawAllMinerStakes(colonyNetwork) {
       }
     })
   );
-  return true;
 }

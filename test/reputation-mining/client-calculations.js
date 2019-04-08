@@ -33,7 +33,7 @@ let clnyToken;
 let goodClient;
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-const setupNewNetworkInstance = async MINER1 => {
+const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
@@ -57,7 +57,7 @@ process.env.SOLIDITY_COVERAGE
 
       before(async () => {
         // Setup a new network instance as we'll be modifying the global skills tree
-        await setupNewNetworkInstance(MINER1);
+        await setupNewNetworkInstance(MINER1, MINER2);
       });
 
       beforeEach(async () => {
