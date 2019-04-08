@@ -82,18 +82,21 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant U_USER_ORIGIN_ADJACENT_REPUTATION_VALUE = 27;
   uint constant U_CHILD_ADJACENT_REPUTATION_VALUE = 28;
 
-  uint constant B_REPUTATION_KEY = 0;
-  uint constant B_PREVIOUS_NEW_REPUTATION_KEY = 1;
-  uint constant B_ADJACENT_REPUTATION_KEY = 2;
-  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY = 3;
-  uint constant B_CHILD_ADJACENT_REPUTATION_KEY = 4;
+  uint constant B_REPUTATION_KEY_COLONY = 0;
+  uint constant B_REPUTATION_KEY_SKILLID = 1;
+  uint constant B_REPUTATION_KEY_USER = 2;
+  uint constant B_REPUTATION_KEY_HASH = 3;
+  uint constant B_PREVIOUS_NEW_REPUTATION_KEY_HASH = 4;
+  uint constant B_ADJACENT_REPUTATION_KEY_HASH = 5;
+  uint constant B_ORIGIN_ADJACENT_REPUTATION_KEY_HASH = 6;
+  uint constant B_CHILD_ADJACENT_REPUTATION_KEY_HASH = 7;
 
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
   function respondToChallenge(
     uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
-    bytes[5] memory b, // An array of 5 bytes params, ordered as given above
+    bytes32[8] memory b32, // An array of 8 bytes32 params, ordered as given above
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
@@ -124,35 +127,35 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     //    that it's a decay calculation - not yet implemented.)
 
     // Check the supplied key is appropriate.
-    checkKey(u, b);
+    checkKey(u, b32);
 
     // Prove the reputation's starting value is in some state, and that state is in the appropriate index in our JRH
-    proveBeforeReputationValue(u, b, reputationSiblings, agreeStateSiblings);
+    proveBeforeReputationValue(u, b32, reputationSiblings, agreeStateSiblings);
 
     // Prove the reputation's final value is in a particular state, and that state is in our JRH in the appropriate index (corresponding to the first disagreement between these miners)
     // By using the same branchMask and siblings, we know that no other changes to the reputation state tree have been slipped in.
-    proveAfterReputationValue(u, b, reputationSiblings, disagreeStateSiblings);
+    proveAfterReputationValue(u, b32, reputationSiblings, disagreeStateSiblings);
 
     // Perform the reputation calculation ourselves.
     performReputationCalculation(u);
 
     if (u[U_DECAY_TRANSITION] == 0) {
-      checkUserOriginReputation(u, b, agreeStateSiblings, userOriginReputationSiblings);
+      checkUserOriginReputation(u, b32, agreeStateSiblings, userOriginReputationSiblings);
     }
 
     if (u[U_GLOBAL_CHILD_UPDATE] == 1) {
-      checkChildReputation(u, b, agreeStateSiblings, childReputationSiblings);
+      checkChildReputation(u, b32, agreeStateSiblings, childReputationSiblings);
     }
 
     if (u[U_NEW_REPUTATION] == 1) {
-      checkAdjacentReputation(u, b, adjacentReputationSiblings, agreeStateSiblings, disagreeStateSiblings);
+      checkAdjacentReputation(u, b32, adjacentReputationSiblings, agreeStateSiblings, disagreeStateSiblings);
     }
 
     // If necessary, check the supplied previousNewRepuation is, in fact, in the same reputation state as the 'agree' state.
     // i.e. the reputation they supplied is in the 'agree' state.
     checkPreviousReputationInState(
       u,
-      b,
+      b32,
       agreeStateSiblings,
       previousNewReputationSiblings);
 
@@ -173,11 +176,11 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function checkAdjacentReputation(
     uint256[29] memory u,
-    bytes[5] memory b,
+    bytes32[8] memory b32,
     bytes32[] memory adjacentReputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings
-    ) internal
+    ) internal view
   {
     // Check this proof is valid for the agree state
     // We binary searched to the first disagreement, so the last agreement is the one before
@@ -185,8 +188,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     bytes memory adjacentReputationValue = abi.encodePacked(u[U_ADJACENT_REPUTATION_VALUE], u[U_ADJACENT_REPUTATION_UID]);
 
-    bytes32 reputationRootHash = getImpliedRootHashKey(
-      b[B_ADJACENT_REPUTATION_KEY],
+    bytes32 reputationRootHash = getImpliedRootNoHashKey(
+      b32[B_ADJACENT_REPUTATION_KEY_HASH],
       adjacentReputationValue,
       u[U_ADJACENT_REPUTATION_BRANCH_MASK],
       adjacentReputationSiblings
@@ -197,17 +200,19 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-adjacent-agree-state-disagreement");
 
     // The bit added to the branchmask is based on where the (hashes of the) two keys first differ.
-    uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(keccak256(b[B_ADJACENT_REPUTATION_KEY]) ^ keccak256(b[B_REPUTATION_KEY]))));
+    uint256 firstDifferenceBit = uint256(
+      Bits.highestBitSet(uint256(b32[B_ADJACENT_REPUTATION_KEY_HASH] ^ b32[B_REPUTATION_KEY_HASH]))
+    );
     uint256 afterInsertionBranchMask = u[U_ADJACENT_REPUTATION_BRANCH_MASK] | uint256(2**firstDifferenceBit);
     // If a key that exists in the lastAgreeState has been passed in as the reputationKey, the adjacent key will already have a branch at the
     // first difference bit, and this check will fail.
     require(afterInsertionBranchMask != u[U_ADJACENT_REPUTATION_BRANCH_MASK], "colony-reputation-mining-adjacent-branchmask-incorrect");
 
     bytes32[] memory afterInsertionAdjacentReputationSiblings = new bytes32[](adjacentReputationSiblings.length + 1);
-    afterInsertionAdjacentReputationSiblings = buildNewSiblingsArray(u, b, firstDifferenceBit, adjacentReputationSiblings);
+    afterInsertionAdjacentReputationSiblings = buildNewSiblingsArray(u, b32, firstDifferenceBit, adjacentReputationSiblings);
 
-    reputationRootHash = getImpliedRootHashKey(
-      b[B_ADJACENT_REPUTATION_KEY],
+    reputationRootHash = getImpliedRootNoHashKey(
+      b32[B_ADJACENT_REPUTATION_KEY_HASH],
       adjacentReputationValue,
       afterInsertionBranchMask,
       afterInsertionAdjacentReputationSiblings
@@ -221,10 +226,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function buildNewSiblingsArray(
     uint256[29] memory u,
-    bytes[5] memory b,
+    bytes32[8] memory b32,
     uint256 firstDifferenceBit,
     bytes32[] memory adjacentReputationSiblings
-    ) internal returns (bytes32[] memory)
+    ) internal pure returns (bytes32[] memory)
   {
     bytes32 newSibling = keccak256(
       abi.encodePacked(
@@ -235,7 +240,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
           )
         ),
         firstDifferenceBit,
-        keccak256(b[B_REPUTATION_KEY]) << (256 - firstDifferenceBit)
+        b32[B_REPUTATION_KEY_HASH] << (256 - firstDifferenceBit)
       )
     );
 
@@ -271,36 +276,31 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function checkUserOriginReputation(
     uint256[29] memory u,
-    bytes[5] memory b,
+    bytes32[8] memory b32,
     bytes32[] memory agreeStateSiblings,
-    bytes32[] memory userOriginReputationSiblings) internal
+    bytes32[] memory userOriginReputationSiblings) internal view
   {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
     if (logEntry.amount >= 0) {
       return;
     }
 
-    bytes memory reputationKey = b[B_REPUTATION_KEY];
-    uint256 relativeUpdateNumber = getRelativeUpdateNumber(u, logEntry);
-    uint256 nChildUpdates;
-    (nChildUpdates, ) = getChildAndParentNUpdatesForLogEntry(u);
-
     // Check the user origin reputation key matches the colony, user address and skill id of the log
-    bytes memory userOriginReputationKeyBytes = abi.encodePacked(logEntry.colony, logEntry.skillId, logEntry.user);
+    bytes32 userOriginReputationKeyBytesHash = keccak256(abi.encodePacked(logEntry.colony, logEntry.skillId, logEntry.user));
 
     checkUserOriginReputationInState(
       u,
+      b32,
       agreeStateSiblings,
-      userOriginReputationKeyBytes,
-      userOriginReputationSiblings,
-      b[B_ORIGIN_ADJACENT_REPUTATION_KEY]);
+      userOriginReputationKeyBytesHash,
+      userOriginReputationSiblings);
   }
 
   function checkChildReputation(
     uint256[29] memory u,
-    bytes[5] memory b,
+    bytes32[8] memory b32,
     bytes32[] memory agreeStateSiblings,
-    bytes32[] memory childReputationSiblings) internal
+    bytes32[] memory childReputationSiblings) internal view
   {
     // If we think we need to check the child reputation because of the update number, but the origin reputation value is
     // zero, we don't need check the child reputation because it isn't actually used in the calculation.
@@ -317,7 +317,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       agreeStateSiblings,
       childReputationKey,
       childReputationSiblings,
-      b[B_CHILD_ADJACENT_REPUTATION_KEY]);
+      b32[B_CHILD_ADJACENT_REPUTATION_KEY_HASH]);
   }
 
   function confirmChallengeCompleted(uint256[29] memory u) internal {
@@ -326,7 +326,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
   }
 
-  function checkKey(uint256[29] memory u, bytes[5] memory b) internal view {
+  function checkKey(uint256[29] memory u, bytes32[8] memory b32) internal view {
     // If the state transition we're checking is less than the number of nodes in the currently accepted state, it's a decay transition
     // Otherwise, look up the corresponding entry in the reputation log.
     uint256 updateNumber = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -334,7 +334,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
       checkKeyDecay(u, updateNumber);
       u[U_DECAY_TRANSITION] = 1;
     } else {
-      checkKeyLogEntry(u, b);
+      checkKeyLogEntry(u, b32);
     }
   }
 
@@ -345,29 +345,23 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(u[U_AGREE_STATE_REPUTATION_UID]-1 == _updateNumber, "colony-reputation-mining-uid-not-decay");
   }
 
-  function checkKeyLogEntry(uint256[29] memory u, bytes[5] memory b) internal view {
+  function checkKeyLogEntry(uint256[29] memory u, bytes32[8] memory b32) internal view {
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 
     uint256 expectedSkillId;
     address expectedAddress;
     (expectedSkillId, expectedAddress) = getExpectedSkillIdAndAddress(u, logEntry);
 
-    bytes memory reputationKey = new bytes(20+32+20);
-    reputationKey = b[B_REPUTATION_KEY];
-    address colonyAddress;
-    address userAddress;
-    uint256 skillId;
-    assembly {
-        colonyAddress := mload(add(reputationKey,20)) // 20, not 32, because we're copying in to a slot that will be interpreted as an address.
-                                              // which will truncate the leftmost 12 bytes
-        skillId := mload(add(reputationKey, 52))
-        userAddress := mload(add(reputationKey,72))   // 72, not 84, for the same reason as above. Is this being too clever? I don't think there are
-                                              // any unintended side effects here, but I'm not quite confortable enough with EVM's stack to be sure.
-                                              // Not sure what the alternative would be anyway.
-    }
-    require(expectedAddress == userAddress, "colony-reputation-mining-user-address-mismatch");
-    require(logEntry.colony == colonyAddress, "colony-reputation-mining-colony-address-mismatch");
-    require(expectedSkillId == skillId, "colony-reputation-mining-skill-id-mismatch");
+    require(expectedAddress == address(uint256(b32[B_REPUTATION_KEY_USER])), "colony-reputation-mining-user-address-mismatch");
+    require(logEntry.colony == address(uint256(b32[B_REPUTATION_KEY_COLONY])), "colony-reputation-mining-colony-address-mismatch");
+    require(expectedSkillId == uint256(b32[B_REPUTATION_KEY_SKILLID]), "colony-reputation-mining-skill-id-mismatch");
+
+    require(
+      keccak256(
+        buildReputationKey(b32[B_REPUTATION_KEY_COLONY], b32[B_REPUTATION_KEY_SKILLID], b32[B_REPUTATION_KEY_USER])
+      ) == b32[B_REPUTATION_KEY_HASH], 
+      "colony-reputation-mining-reputation-key-and-hash-mismatch"
+    );
   }
 
   function getExpectedSkillIdAndAddress(uint256[29] memory u, ReputationLogEntry storage logEntry) internal view
@@ -402,10 +396,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function proveBeforeReputationValue(
     uint256[29] memory u,
-    bytes[5] memory b,
+    bytes32[8] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings
-  ) internal
+  ) internal view
   {
     if (u[U_DISAGREE_STATE_NNODES] - u[U_AGREE_STATE_NNODES] == 1) {
       // This implies they are claiming that this is a new hash.
@@ -421,8 +415,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     bytes memory agreeStateReputationValue = abi.encodePacked(u[U_AGREE_STATE_REPUTATION_VALUE], u[U_AGREE_STATE_REPUTATION_UID]);
 
-    bytes32 reputationRootHash = getImpliedRootHashKey(
-      b[B_REPUTATION_KEY],
+    bytes32 reputationRootHash = getImpliedRootNoHashKey(
+      b32[B_REPUTATION_KEY_HASH],
       agreeStateReputationValue,
       u[U_REPUTATION_BRANCH_MASK],
       reputationSiblings);
@@ -445,7 +439,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function proveAfterReputationValue(
     uint256[29] memory u,
-    bytes[5] memory b,
+    bytes32[8] memory b32,
     bytes32[] memory reputationSiblings,
     bytes32[] memory disagreeStateSiblings
   ) internal view
@@ -455,8 +449,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
     bytes memory disagreeStateReputationValue = abi.encodePacked(u[U_DISAGREE_STATE_REPUTATION_VALUE], u[U_DISAGREE_STATE_REPUTATION_UID]);
 
-    bytes32 reputationRootHash = getImpliedRootHashKey(
-      b[B_REPUTATION_KEY],
+    bytes32 reputationRootHash = getImpliedRootNoHashKey(
+      b32[B_REPUTATION_KEY_HASH],
       disagreeStateReputationValue,
       u[U_REPUTATION_BRANCH_MASK],
       reputationSiblings
@@ -616,7 +610,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function checkPreviousReputationInState(
     uint256[29] memory u,
-    bytes[5] memory b,
+    bytes32[8] memory b32,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory previousNewReputationSiblings
     ) internal view
@@ -624,11 +618,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
-    bytes memory previousNewReputationKey = b[B_PREVIOUS_NEW_REPUTATION_KEY];
     bytes memory previousNewReputationValue = abi.encodePacked(u[U_PREVIOUS_NEW_REPUTATION_VALUE], u[U_PREVIOUS_NEW_REPUTATION_UID]);
 
-    bytes32 reputationRootHash = getImpliedRootHashKey(
-      previousNewReputationKey,
+    bytes32 reputationRootHash = getImpliedRootNoHashKey(
+      b32[B_PREVIOUS_NEW_REPUTATION_KEY_HASH],
       previousNewReputationValue,
       u[U_PREVIOUS_NEW_REPUTATION_BRANCH_MASK],
       previousNewReputationSiblings
@@ -639,9 +632,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(impliedRoot == disputeRounds[u[U_ROUND]][u[U_IDX]].jrh, "colony-reputation-mining-last-state-disagreement");
   }
 
-  function checkKeysAdjacent(bytes memory key1, bytes memory key2, uint256 branchMask) internal returns (bool) {
+  function checkKeyHashesAdjacent(bytes32 hash1, bytes32 hash2, uint256 branchMask) internal pure returns (bool) {
     // The bit that would be added to the branchmask is based on where the (hashes of the) two keys first differ.
-    uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(keccak256(key1) ^ keccak256(key2))));
+    uint256 firstDifferenceBit = uint256(Bits.highestBitSet(uint256(hash1 ^ hash2)));
     uint256 afterInsertionBranchMask = branchMask | uint256(2**firstDifferenceBit);
     // If key1 and key2 both exist in a tree, there will already be a branch at the first difference bit,
     // and so the branchmask will be unchanged.
@@ -650,19 +643,19 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function checkUserOriginReputationInState(
     uint256[29] memory u,
+    bytes32[8] memory b32,
     bytes32[] memory agreeStateSiblings,
-    bytes memory userOriginReputationKeyBytes,
-    bytes32[] memory userOriginReputationStateSiblings,
-    bytes memory userOriginAdjacentReputationKeyBytes
-    ) internal
+    bytes32 userOriginReputationKeyHash,
+    bytes32[] memory userOriginReputationStateSiblings
+    ) internal view 
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
 
     bytes memory userOriginReputationValueBytes = abi.encodePacked(u[U_USER_ORIGIN_REPUTATION_VALUE], u[U_USER_ORIGIN_REPUTATION_UID]);
 
-    bytes32 reputationRootHash = getImpliedRootHashKey(
-      userOriginReputationKeyBytes,
+    bytes32 reputationRootHash = getImpliedRootNoHashKey(
+      userOriginReputationKeyHash,
       userOriginReputationValueBytes,
       u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       userOriginReputationStateSiblings
@@ -683,7 +676,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Otherwise, maybe the user's origin skill doesn't exist. If that's true, they can prove it.
     // In which case, the proof they supplied should be for a reputation that proves the origin reputation doesn't exist in the tree
     require(
-      checkKeysAdjacent(userOriginReputationKeyBytes, userOriginAdjacentReputationKeyBytes, u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK]),
+      checkKeyHashesAdjacent(userOriginReputationKeyHash, b32[B_ORIGIN_ADJACENT_REPUTATION_KEY_HASH], u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK]),
       "colony-reputation-mining-adjacent-origin-not-adjacent-or-already-exists"
     );
     // We assume that the proof they supplied is for the origin-adjacent reputation, not the origin reputation.
@@ -694,8 +687,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     );
 
     // Check that the key supplied actually exists in the tree
-    reputationRootHash = getImpliedRootHashKey(
-      userOriginAdjacentReputationKeyBytes,
+    reputationRootHash = getImpliedRootNoHashKey(
+      b32[B_ORIGIN_ADJACENT_REPUTATION_KEY_HASH],
       userOriginAdjacentReputationValueBytes,
       u[U_USER_ORIGIN_SKILL_REPUTATION_BRANCH_MASK],
       userOriginReputationStateSiblings
@@ -712,8 +705,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory agreeStateSiblings,
     bytes memory childReputationKey,
     bytes32[] memory childReputationStateSiblings,
-    bytes memory childAdjacentReputationKey
-    ) internal
+    bytes32 childAdjacentReputationKeyHash
+    ) internal view
   {
     // We binary searched to the first disagreement, so the last agreement is the one before
     uint256 lastAgreeIdx = disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1;
@@ -743,7 +736,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // Otherwise, maybe the child skill doesn't exist. If that's true, they can prove it.
     // In which case, the proof they supplied should be for a reputation that proves the child reputation doesn't exist in the tree
     require(
-      checkKeysAdjacent(childReputationKey, childAdjacentReputationKey, u[U_CHILD_REPUTATION_BRANCH_MASK]),
+      checkKeyHashesAdjacent(keccak256(childReputationKey), childAdjacentReputationKeyHash, u[U_CHILD_REPUTATION_BRANCH_MASK]),
       "colony-reputation-mining-adjacent-child-not-adjacent-or-already-exists"
     );
     // We assume that the proof they supplied is for the child-adjacent reputation, not the child reputation.
@@ -751,8 +744,8 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes memory childAdjacentReputationValueBytes = abi.encodePacked(u[U_CHILD_ADJACENT_REPUTATION_VALUE], u[U_CHILD_REPUTATION_UID]);
 
     // Check that the key supplied actually exists in the tree
-    reputationRootHash = getImpliedRootHashKey(
-      childAdjacentReputationKey,
+    reputationRootHash = getImpliedRootNoHashKey(
+      childAdjacentReputationKeyHash,
       childAdjacentReputationValueBytes,
       u[U_CHILD_REPUTATION_BRANCH_MASK],
       childReputationStateSiblings
@@ -773,6 +766,16 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     require(delta == u[U_DISAGREE_STATE_NNODES]-u[U_AGREE_STATE_NNODES], "colony-reputation-mining-proved-uid-inconsistent");
     // Save the index for tiebreak scenarios later.
     disputeRounds[u[U_ROUND]][u[U_IDX]].provedPreviousReputationUID = u[U_PREVIOUS_NEW_REPUTATION_UID];
+  }
+
+  function buildReputationKey(bytes32 colony, bytes32 skill, bytes32 user) internal pure returns (bytes memory) {
+    bytes memory reputationKey = new bytes(72);
+    assembly {
+        mstore(add(reputationKey, 32), shl(96, colony))
+        mstore(add(reputationKey, 72), user)
+        mstore(add(reputationKey, 52), skill)
+    }
+    return reputationKey;
   }
 
 }

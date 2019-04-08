@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import { soliditySha3 } from "web3-utils";
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
@@ -84,19 +85,38 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
         this.responseToFalsify === 28 ? this.responseValue : lastAgreeJustifications.childAdjacentReputationProof.reputation
       ],
       [
-        this.responseToFalsify === 29 ? this.responseValue : reputationKey,
-        this.responseToFalsify === 30 ? this.responseValue : lastAgreeJustifications.newestReputationProof.key,
-        this.responseToFalsify === 31 ? this.responseValue : lastAgreeJustifications.adjacentReputationProof.key,
-        this.responseToFalsify === 32 ? this.responseValue : lastAgreeJustifications.originAdjacentReputationProof.key,
-        this.responseToFalsify === 33 ? this.responseValue : lastAgreeJustifications.childAdjacentReputationProof.key
+        this.responseToFalsify === 29 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[0], 32),
+        this.responseToFalsify === 30 ? 
+          this.responseValue : 
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[1], 32),
+        this.responseToFalsify === 31 ?
+          this.responseValue :
+          ethers.utils.hexZeroPad(ReputationMinerTestWrapper.breakKeyInToElements(reputationKey)[2], 32),
+        this.responseToFalsify === 32 ? 
+          this.responseValue : 
+            soliditySha3(reputationKey),
+        this.responseToFalsify === 33 ? 
+          this.responseValue : 
+            soliditySha3(lastAgreeJustifications.newestReputationProof.key),
+        this.responseToFalsify === 34 ? 
+          this.responseValue : 
+            soliditySha3(lastAgreeJustifications.adjacentReputationProof.key),
+        this.responseToFalsify === 35 ? 
+          this.responseValue : 
+          soliditySha3(lastAgreeJustifications.originAdjacentReputationProof.key),
+        this.responseToFalsify === 36 ? 
+          this.responseValue : 
+          soliditySha3(lastAgreeJustifications.childAdjacentReputationProof.key)
       ],
-      this.responseToFalsify === 34 ? this.responseValue : firstDisagreeJustifications.justUpdatedProof.siblings,
-      this.responseToFalsify === 35 ? this.responseValue : agreeStateSiblings,
-      this.responseToFalsify === 36 ? this.responseValue : disagreeStateSiblings,
-      this.responseToFalsify === 37 ? this.responseValue : lastAgreeJustifications.newestReputationProof.siblings,
-      this.responseToFalsify === 38 ? this.responseValue : lastAgreeJustifications.originReputationProof.siblings,
-      this.responseToFalsify === 39 ? this.responseValue : lastAgreeJustifications.childReputationProof.siblings,
-      this.responseToFalsify === 40 ? this.responseValue : lastAgreeJustifications.adjacentReputationProof.siblings,
+      this.responseToFalsify === 37 ? this.responseValue : firstDisagreeJustifications.justUpdatedProof.siblings,
+      this.responseToFalsify === 38 ? this.responseValue : agreeStateSiblings,
+      this.responseToFalsify === 39 ? this.responseValue : disagreeStateSiblings,
+      this.responseToFalsify === 40 ? this.responseValue : lastAgreeJustifications.newestReputationProof.siblings,
+      this.responseToFalsify === 41 ? this.responseValue : lastAgreeJustifications.originReputationProof.siblings,
+      this.responseToFalsify === 42 ? this.responseValue : lastAgreeJustifications.childReputationProof.siblings,
+      this.responseToFalsify === 43 ? this.responseValue : lastAgreeJustifications.adjacentReputationProof.siblings,
       { gasLimit: 4000000 }
     );
     return tx.wait();

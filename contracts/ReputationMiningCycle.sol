@@ -322,7 +322,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     require(impliedRoot == targetHashDuringSearch, "colony-reputation-mining-invalid-binary-search-response");
     // If require hasn't thrown, proof is correct.
     // Process the consequences
-    processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, targetNode, lastSiblings);
+    processBinaryChallengeSearchResponse(round, idx, jhIntermediateValue, lastSiblings);
   }
 
   function confirmBinarySearchResult(
@@ -502,7 +502,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     uint256 round,
     uint256 idx,
     bytes memory jhIntermediateValue,
-    uint256 targetNode,
     bytes32[2] memory lastSiblings
   ) internal
   {
@@ -525,11 +524,11 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     if (disputeRounds[round][opponentIdx].challengeStepCompleted == disputeRounds[round][idx].challengeStepCompleted ) {
       // Our opponent answered this challenge already.
       // Compare our intermediateReputationHash to theirs to establish how to move the bounds.
-      processBinaryChallengeSearchStep(round, idx, targetNode);
+      processBinaryChallengeSearchStep(round, idx);
     }
   }
 
-  function processBinaryChallengeSearchStep(uint256 round, uint256 idx, uint256 targetNode) internal {
+  function processBinaryChallengeSearchStep(uint256 round, uint256 idx) internal {
     uint256 opponentIdx = (idx % 2 == 1 ? idx-1 : idx + 1);
     uint256 searchWidth = (disputeRounds[round][idx].upperBound - disputeRounds[round][idx].lowerBound) + 1;
     uint256 searchWidthNextPowerOfTwo = nextPowerOfTwoInclusive(searchWidth);

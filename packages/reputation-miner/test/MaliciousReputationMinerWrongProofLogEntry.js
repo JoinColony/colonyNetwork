@@ -1,3 +1,4 @@
+import { soliditySha3 } from "web3-utils";
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
@@ -61,11 +62,12 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
         this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.reputation
       ],
       [
-        reputationKey,
-        this.justificationHashes[lastAgreeKey].newestReputationProof.key,
-        this.justificationHashes[lastAgreeKey].adjacentReputationProof.key,
-        this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key,
-        this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key
+        ...ReputationMinerTestWrapper.breakKeyInToElements(reputationKey).map(x => ethers.utils.hexZeroPad(x, 32)),
+        soliditySha3(reputationKey),
+        soliditySha3(this.justificationHashes[lastAgreeKey].newestReputationProof.key),
+        soliditySha3(this.justificationHashes[lastAgreeKey].adjacentReputationProof.key),
+        soliditySha3(this.justificationHashes[lastAgreeKey].originAdjacentReputationProof.key),
+        soliditySha3(this.justificationHashes[lastAgreeKey].childAdjacentReputationProof.key),
       ],
       this.justificationHashes[firstDisagreeKey].justUpdatedProof.siblings,
       agreeStateSiblings,
