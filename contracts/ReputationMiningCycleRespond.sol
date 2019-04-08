@@ -96,7 +96,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
 
   function respondToChallenge(
     uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
-    bytes32[8] memory b32, // An array of 8 bytes params, ordered as given above
+    bytes32[8] memory b32, // An array of 8 bytes32 params, ordered as given above
     bytes32[] memory reputationSiblings,
     bytes32[] memory agreeStateSiblings,
     bytes32[] memory disagreeStateSiblings,
