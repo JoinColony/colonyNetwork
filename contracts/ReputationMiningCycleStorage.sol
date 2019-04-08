@@ -33,10 +33,10 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
   address clnyTokenAddress; // Storage slot 5
 
   ReputationLogEntry[] reputationUpdateLog; // Storage slot 6
-  mapping (bytes32 => mapping( uint256 => mapping( bytes32 => address[]))) submittedHashes; // Storage slot 7
+  mapping (bytes32 => mapping(uint256 => mapping(bytes32 => address[]))) submittedHashes; // Storage slot 7
   mapping (address => Submission) reputationHashSubmissions; // Storage slot 8
   uint256 reputationMiningWindowOpenTimestamp; // Storage slot 9
-  mapping (uint256 => Submission[]) disputeRounds; // Storage slot 10
+  mapping (uint256 => DisputedEntry[]) disputeRounds; // Storage slot 10
 
   // Tracks the number of submissions in each round that have completed their challenge, one way or the other.
   // This might be that they passed the challenge, it might be that their opponent passed (and therefore by implication,

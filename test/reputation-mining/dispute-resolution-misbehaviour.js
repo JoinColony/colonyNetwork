@@ -426,8 +426,8 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await runBinarySearch(goodClient, badClient);
 
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.getDisputeRoundSubmission(round, index);
-      const targetNode = submission.lowerBound;
+      const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+      const targetNode = disputedEntry.lowerBound;
       const targetNodeKey = ReputationMinerTestWrapper.getHexString(targetNode, 64);
       const [branchMask, siblings] = await goodClient.justificationTree.getProof(targetNodeKey);
 

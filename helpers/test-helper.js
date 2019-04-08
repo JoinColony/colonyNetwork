@@ -531,10 +531,10 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
     await navigateChallenge(colonyNetwork, client1, client2, errors);
 
     // Work out which submission is to be invalidated.
-    const submission1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
-    const submission2 = await repCycle.getDisputeRoundSubmission(round2, idx2);
+    const disputedEntry1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
+    const disputedEntry2 = await repCycle.getDisputeRoundSubmission(round2, idx2);
 
-    if (new BN(submission1.challengeStepCompleted).gt(new BN(submission2.challengeStepCompleted))) {
+    if (new BN(disputedEntry1.challengeStepCompleted).gt(new BN(disputedEntry2.challengeStepCompleted))) {
       toInvalidateIdx = idx2;
     } else {
       // Note that if they're equal, they're both going to be invalidated, so we can call
@@ -555,7 +555,7 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
 async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
-  const submission1before = await repCycle.getDisputeRoundSubmission(round1, idx1);
+  const submission1before = await repCycle.getReputationHashSubmission(client1.minerAddress);
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
@@ -569,7 +569,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
 
   const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
   expect(round1.eq(round2), "Clients do not have submissions in the same round").to.be.true;
-  const submission2before = await repCycle.getDisputeRoundSubmission(round2, idx2);
+  const submission2before = await repCycle.getReputationHashSubmission(client2.minerAddress);
   expect(
     idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
     "Clients are not facing each other in this round"

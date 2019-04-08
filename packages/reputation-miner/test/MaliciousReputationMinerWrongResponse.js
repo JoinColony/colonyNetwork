@@ -14,10 +14,10 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const submission = await repCycle.getDisputeRoundSubmission(round, index);
+    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
 
-    // console.log(submission);
-    let firstDisagreeIdx = ethers.utils.bigNumberify(submission.lowerBound);
+    // console.log(disputedEntry);
+    let firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);
     let lastAgreeIdx = firstDisagreeIdx.sub(1);
     // If this is called before the binary search has finished, these would be -1 and 0, respectively, which will throw errors
     // when we try and pass -ve hex values. Instead, set them to values that will allow us to send a tx that will fail.

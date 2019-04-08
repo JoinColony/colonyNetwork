@@ -26,8 +26,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice The getter for the disputeRounds mapping of array of dispute rounds.
   /// @param _round The dispute round to query
   /// @param _index The index in the dispute round to query
-  /// @return The elements of the Submission struct for the submission requested. See ReputationMiningCycleDataTypes for the full description
-  function getDisputeRoundSubmission(uint256 _round, uint256 _index) public view returns (Submission memory submission);
+  /// @return The elements of the DisputedEntry struct for the submission requested. See ReputationMiningCycleDataTypes for the full description
+  function getDisputeRoundSubmission(uint256 _round, uint256 _index) public view returns (DisputedEntry memory submission);
 
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.
   /// @param _user Address of the user
@@ -233,5 +233,5 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param nNodes The number of nodes that was submitted
   /// @param jrh The JRH of that was submitted
   /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
-  function getSubmittedHashes(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address user);
+  function getSubmissionUser(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address user);
 }

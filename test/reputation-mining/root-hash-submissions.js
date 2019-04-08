@@ -106,7 +106,7 @@ contract("Reputation mining - root hash submissions", accounts => {
       await forwardTime(MINING_CYCLE_DURATION, this);
       await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 });
 
-      const submitterAddress = await repCycle.getSubmittedHashes("0x12345678", 10, "0x00", 0);
+      const submitterAddress = await repCycle.getSubmissionUser("0x12345678", 10, "0x00", 0);
       expect(submitterAddress).to.equal(MINER1);
     });
 
@@ -283,7 +283,7 @@ contract("Reputation mining - root hash submissions", accounts => {
         "colony-reputation-mining-cycle-submissions-closed"
       );
 
-      const submitterAddress = await repCycle.getSubmittedHashes("0x12345678", 10, "0x00", 0);
+      const submitterAddress = await repCycle.getSubmissionUser("0x12345678", 10, "0x00", 0);
       expect(submitterAddress).to.equal(MINER1);
     });
 

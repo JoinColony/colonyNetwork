@@ -357,8 +357,8 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.getDisputeRoundSubmission(round.toString(), index.toString());
-      const firstDisagreeIdx = new BN(submission[8].toString());
+      const disputedEntry = await repCycle.getDisputeRoundSubmission(round.toString(), index.toString());
+      const firstDisagreeIdx = new BN(disputedEntry.lowerBound.toString());
       const lastAgreeIdx = firstDisagreeIdx.subn(1);
       const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
       const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
@@ -498,8 +498,8 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
       // Now get all the information needed to fire off a respondToChallenge call
       const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-      const submission = await repCycle.getDisputeRoundSubmission(round.toString(), index.toString());
-      const firstDisagreeIdx = new BN(submission[8].toString());
+      const disputedEntry = await repCycle.getDisputeRoundSubmission(round.toString(), index.toString());
+      const firstDisagreeIdx = new BN(disputedEntry.lowerBound.toString());
       const lastAgreeIdx = firstDisagreeIdx.subn(1);
       const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
       const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
@@ -1470,8 +1470,8 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
     // Now get all the information needed to fire off a respondToChallenge call
     const [round, index] = await goodClient.getMySubmissionRoundAndIndex();
-    const submission = await repCycle.getDisputeRoundSubmission(round.toString(), index.toString());
-    const firstDisagreeIdx = new BN(submission[8].toString());
+    const disputedEntry = await repCycle.getDisputeRoundSubmission(round.toString(), index.toString());
+    const firstDisagreeIdx = new BN(disputedEntry.lowerBound.toString());
     const lastAgreeIdx = firstDisagreeIdx.subn(1);
     const reputationKey = await goodClient.getKeyForUpdateNumber(lastAgreeIdx.toString());
     const [agreeStateBranchMask, agreeStateSiblings] = await goodClient.justificationTree.getProof(`0x${lastAgreeIdx.toString(16, 64)}`);
