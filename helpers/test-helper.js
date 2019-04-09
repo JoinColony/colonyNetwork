@@ -531,8 +531,8 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
     await navigateChallenge(colonyNetwork, client1, client2, errors);
 
     // Work out which submission is to be invalidated.
-    const submission1 = await repCycle.getDisputeRounds(round1, idx1);
-    const submission2 = await repCycle.getDisputeRounds(round2, idx2);
+    const submission1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
+    const submission2 = await repCycle.getDisputeRoundSubmission(round2, idx2);
 
     if (new BN(submission1.challengeStepCompleted).gt(new BN(submission2.challengeStepCompleted))) {
       toInvalidateIdx = idx2;
@@ -555,7 +555,7 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
 async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const [round1, idx1] = await client1.getMySubmissionRoundAndIndex();
-  const submission1before = await repCycle.getDisputeRounds(round1, idx1);
+  const submission1before = await repCycle.getDisputeRoundSubmission(round1, idx1);
 
   // Submit JRH for submission 1 if needed
   // We only do this if client2 is defined so that we test JRH submission in rounds other than round 0.
@@ -569,7 +569,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
 
   const [round2, idx2] = await client2.getMySubmissionRoundAndIndex();
   expect(round1.eq(round2), "Clients do not have submissions in the same round").to.be.true;
-  const submission2before = await repCycle.getDisputeRounds(round2, idx2);
+  const submission2before = await repCycle.getDisputeRoundSubmission(round2, idx2);
   expect(
     idx1.sub(idx2).pow(2).eq(1), // eslint-disable-line prettier/prettier
     "Clients are not facing each other in this round"
@@ -589,7 +589,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
     return;
   }
 
-  let submission1 = await repCycle.getDisputeRounds(round1, idx1);
+  let submission1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
   let binarySearchStep = -1;
   let binarySearchError = false;
   while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
@@ -612,7 +612,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
         `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
       );
     }
-    submission1 = await repCycle.getDisputeRounds(round1, idx1);
+    submission1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
   }
 
   if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep] || errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
@@ -649,7 +649,7 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   }
 }
 
-export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, test) {
+export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
@@ -667,7 +667,10 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
     }
   }
 
-  // Actually do the withdrawal.
+  return true;
+}
+
+export async function withdrawAllMinerStakes(colonyNetwork) {
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   const metaColonyAddress = await colonyNetwork.getMetaColony();
@@ -698,5 +701,4 @@ export async function finishReputationMiningCycleAndWithdrawAllMinerStakes(colon
       }
     })
   );
-  return true;
 }

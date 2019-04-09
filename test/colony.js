@@ -2,6 +2,7 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import {
   UINT256_MAX,
@@ -11,7 +12,6 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET,
-  ZERO_ADDRESS,
   WAD
 } from "../helpers/constants";
 import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../helpers/test-helper";
@@ -56,7 +56,7 @@ contract("Colony", accounts => {
 
     it("should not have owner", async () => {
       const owner = await colony.owner();
-      expect(owner).to.be.equal(ZERO_ADDRESS);
+      expect(owner).to.be.equal(ethers.constants.AddressZero);
     });
 
     it("should return zero task count", async () => {
@@ -81,7 +81,10 @@ contract("Colony", accounts => {
     });
 
     it("should not allow reinitialisation", async () => {
-      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS, ZERO_ADDRESS), "colony-already-initialised-network");
+      await checkErrorRevert(
+        colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero),
+        "colony-already-initialised-network"
+      );
     });
 
     it("should correctly generate a rating secret", async () => {

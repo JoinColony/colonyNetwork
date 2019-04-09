@@ -296,7 +296,7 @@ contract ColonyTask is ColonyStorage {
     return keccak256(abi.encodePacked(_salt, _value));
   }
 
-  function getTaskWorkRatings(uint256 _id) public view returns (uint256, uint256) {
+  function getTaskWorkRatingSecretsInfo(uint256 _id) public view returns (uint256, uint256) {
     return (taskWorkRatings[_id].count, taskWorkRatings[_id].timestamp);
   }
 

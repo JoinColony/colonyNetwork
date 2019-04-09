@@ -1,10 +1,11 @@
 /* globals artifacts */
-import { BN } from "bn.js";
+import BN from "bn.js";
+import { ethers } from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
 
 import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../helpers/test-helper";
-import { ZERO_ADDRESS, WAD, SECONDS_PER_DAY } from "../helpers/constants";
+import { WAD, SECONDS_PER_DAY } from "../helpers/constants";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../helpers/test-data-generator";
 
 const { expect } = chai;
@@ -58,7 +59,7 @@ contract("Colony Network Auction", accounts => {
     });
 
     it("should fail with a zero address token", async () => {
-      await checkErrorRevert(colonyNetwork.startTokenAuction(ZERO_ADDRESS), "colony-auction-invalid-token");
+      await checkErrorRevert(colonyNetwork.startTokenAuction(ethers.constants.AddressZero), "colony-auction-invalid-token");
     });
 
     it("should burn tokens if auction is initialised for the CLNY token", async () => {

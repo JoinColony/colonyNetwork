@@ -2,11 +2,12 @@ import path from "path";
 import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { DEFAULT_STAKE, INITIAL_FUNDING, ZERO_ADDRESS } from "../../helpers/constants";
-import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycleAndWithdrawAllMinerStakes } from "../../helpers/test-helper";
+import { DEFAULT_STAKE, INITIAL_FUNDING } from "../../helpers/constants";
+import { advanceMiningCycleNoContest, getActiveRepCycle, finishReputationMiningCycle } from "../../helpers/test-helper";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 import {
@@ -32,7 +33,7 @@ let clnyToken;
 let goodClient;
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-const setupNewNetworkInstance = async MINER1 => {
+const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
@@ -41,6 +42,7 @@ const setupNewNetworkInstance = async MINER1 => {
   await metaColony.addGlobalSkill(4);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -55,7 +57,7 @@ process.env.SOLIDITY_COVERAGE
 
       before(async () => {
         // Setup a new network instance as we'll be modifying the global skills tree
-        await setupNewNetworkInstance(MINER1);
+        await setupNewNetworkInstance(MINER1, MINER2);
       });
 
       beforeEach(async () => {
@@ -72,17 +74,11 @@ process.env.SOLIDITY_COVERAGE
         const nInactiveLogEntries = await repCycle.getReputationUpdateLogLength();
         expect(nInactiveLogEntries).to.eq.BN(1);
 
-        // Burn MAIN_ACCOUNTS accumulated mining rewards.
-        const userBalance = await clnyToken.balanceOf(MINER1);
-        await clnyToken.burn(userBalance, { from: MINER1 });
-
-        await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-        await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
         await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
       });
 
       afterEach(async () => {
-        const reputationMiningGotClean = await finishReputationMiningCycleAndWithdrawAllMinerStakes(colonyNetwork, this);
+        const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
         if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
       });
 
@@ -151,15 +147,15 @@ process.env.SOLIDITY_COVERAGE
           expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, MINER2)].slice(2, 66), 16)).to.eq.BN(900);
           expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, MINER2)].slice(2, 66), 16)).to.eq.BN(1900);
 
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            100
-          );
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            1000
-          );
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            2000
-          );
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(100);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(1000);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(2000);
         });
 
         it("should correctly calculate decrements in child reputations", async () => {
@@ -216,15 +212,15 @@ process.env.SOLIDITY_COVERAGE
           expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, MINER2)].slice(2, 66), 16)).to.eq.BN(800);
           expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, MINER2)].slice(2, 66), 16)).to.eq.BN(800);
 
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            180
-          );
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            900
-          );
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            900
-          );
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(180);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(900);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(900);
         });
 
         it("should correctly calculate decrements in child reputations if the user loses all reputation", async () => {
@@ -291,15 +287,15 @@ process.env.SOLIDITY_COVERAGE
           expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, MINER2)].slice(2, 66), 16)).to.eq.BN(0);
           expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, MINER2)].slice(2, 66), 16)).to.eq.BN(500);
 
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            100
-          );
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            100
-          );
-          expect(new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ZERO_ADDRESS)].slice(2, 66), 16)).to.eq.BN(
-            600
-          );
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 5, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(100);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 4, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(100);
+          expect(
+            new BN(goodClient.reputations[ReputationMinerTestWrapper.getKey(metaColony.address, 1, ethers.constants.AddressZero)].slice(2, 66), 16)
+          ).to.eq.BN(600);
         });
       });
     });

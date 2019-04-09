@@ -3,9 +3,10 @@
 import BN from "bn.js";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
-import { MINING_CYCLE_DURATION, ZERO_ADDRESS } from "../../helpers/constants";
+import { MINING_CYCLE_DURATION } from "../../helpers/constants";
 import { forwardTime, checkErrorRevert, getActiveRepCycle } from "../../helpers/test-helper";
 
 const { expect } = chai;
@@ -153,7 +154,7 @@ contract("Reputation mining - basic functionality", accounts => {
       const repCycle = await getActiveRepCycle(colonyNetwork);
 
       await checkErrorRevert(
-        repCycle.rewardStakersWithReputation([MINER1], [1], ZERO_ADDRESS, 10000, 3),
+        repCycle.rewardStakersWithReputation([MINER1], [1], ethers.constants.AddressZero, 10000, 3),
         "colony-reputation-mining-sender-not-network"
       );
     });

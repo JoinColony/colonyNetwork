@@ -1,9 +1,9 @@
 /* globals artifacts */
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import { checkErrorRevert } from "../helpers/test-helper";
-import { ZERO_ADDRESS } from "../helpers/constants";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -76,7 +76,7 @@ contract("EtherRouter / Resolver", accounts => {
 
     it("when checking destination for a function that doesn't exist, should return 0", async () => {
       const destination = await resolver.lookup("0xdeadbeef");
-      expect(destination).to.equal(ZERO_ADDRESS);
+      expect(destination).to.equal(ethers.constants.AddressZero);
     });
 
     it("should return correctly encoded function signature", async () => {

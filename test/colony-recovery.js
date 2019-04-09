@@ -1,7 +1,8 @@
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
-import { SPECIFICATION_HASH, ZERO_ADDRESS } from "../helpers/constants";
+import { SPECIFICATION_HASH } from "../helpers/constants";
 import { web3GetStorageAt, checkErrorRevert } from "../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
 
@@ -92,7 +93,7 @@ contract("Colony Recovery", accounts => {
       await colony.enterRecoveryMode();
       await metaColony.enterRecoveryMode();
 
-      await checkErrorRevert(colony.initialiseColony(ZERO_ADDRESS, ZERO_ADDRESS), "colony-in-recovery-mode");
+      await checkErrorRevert(colony.initialiseColony(ethers.constants.AddressZero, ethers.constants.AddressZero), "colony-in-recovery-mode");
       await checkErrorRevert(colony.mintTokens(1000), "colony-in-recovery-mode");
       await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-in-recovery-mode");
       await checkErrorRevert(colony.makeTask(1, 0, SPECIFICATION_HASH, 0, 0, 0), "colony-in-recovery-mode");

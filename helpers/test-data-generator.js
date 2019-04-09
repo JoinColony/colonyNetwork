@@ -1,6 +1,6 @@
 /* globals artifacts */
 import { soliditySha3 } from "web3-utils";
-import { BN } from "bn.js";
+import BN from "bn.js";
 import { ethers } from "ethers";
 
 import {
@@ -15,8 +15,7 @@ import {
   MANAGER_ROLE,
   WORKER_ROLE,
   SPECIFICATION_HASH,
-  DELIVERABLE_HASH,
-  ZERO_ADDRESS
+  DELIVERABLE_HASH
 } from "./constants";
 import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
 
@@ -168,7 +167,7 @@ export async function setupFundedTask({
   if (token === undefined) {
     tokenAddress = await colony.getToken();
   } else {
-    tokenAddress = token === ZERO_ADDRESS ? ZERO_ADDRESS : token.address;
+    tokenAddress = token === ethers.constants.AddressZero ? ethers.constants.AddressZero : token.address;
   }
 
   const taskId = await setupTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
@@ -345,9 +344,9 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
     colonyNetwork.address,
     metaColonyAddress,
     tokenLockingAddress,
-    ZERO_ADDRESS,
+    ethers.constants.AddressZero,
     reputationMinerTestAccounts,
-    ZERO_ADDRESS
+    ethers.constants.AddressZero
   );
 
   await clnyToken.setAuthority(tokenAuthority.address);

@@ -3,10 +3,11 @@ import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
 import { giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
-import { UINT256_MAX, MIN_STAKE, DEFAULT_STAKE, ZERO_ADDRESS } from "../helpers/constants";
+import { UINT256_MAX, MIN_STAKE, DEFAULT_STAKE } from "../helpers/constants";
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
@@ -75,9 +76,9 @@ contract("Token Locking", addresses => {
 
   describe("when locking tokens", async () => {
     it("should correctly set colony network address", async () => {
-      await tokenLocking.setColonyNetwork(ZERO_ADDRESS);
+      await tokenLocking.setColonyNetwork(ethers.constants.AddressZero);
       let colonyNetworkAddress = await tokenLocking.getColonyNetwork();
-      expect(colonyNetworkAddress).to.equal(ZERO_ADDRESS);
+      expect(colonyNetworkAddress).to.equal(ethers.constants.AddressZero);
 
       await tokenLocking.setColonyNetwork(colonyNetwork.address);
       colonyNetworkAddress = await tokenLocking.getColonyNetwork();
@@ -273,7 +274,7 @@ contract("Token Locking", addresses => {
 
     it('should not allow "punishStakers" to be called from an account that is not not reputationMiningCycle', async () => {
       await checkErrorRevert(
-        tokenLocking.punishStakers([addresses[0], addresses[1]], ZERO_ADDRESS, MIN_STAKE),
+        tokenLocking.punishStakers([addresses[0], addresses[1]], ethers.constants.AddressZero, MIN_STAKE),
         "colony-token-locking-sender-not-reputation-mining-cycle"
       );
     });

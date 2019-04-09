@@ -309,11 +309,11 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @return secret `keccak256` hash of joint _salt and _value
   function generateSecret(bytes32 _salt, uint256 _value) public pure returns (bytes32 secret);
 
-  /// @notice Get the `ColonyStorage.RatingSecrets` for task `_id`
+  /// @notice Get the `ColonyStorage.RatingSecrets` information for task `_id`
   /// @param _id Id of the task
   /// @return nSecrets Number of secrets
   /// @return lastSubmittedAt Timestamp of the last submitted rating secret
-  function getTaskWorkRatings(uint256 _id) public view returns (uint256 nSecrets, uint256 lastSubmittedAt);
+  function getTaskWorkRatingSecretsInfo(uint256 _id) public view returns (uint256 nSecrets, uint256 lastSubmittedAt);
 
   /// @notice Get the rating secret submitted for role `_role` in task `_id`
   /// @param _id Id of the task
