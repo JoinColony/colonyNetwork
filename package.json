@@ -26,18 +26,21 @@
     "test:contracts:coverage": "SOLIDITY_COVERAGE=1 solidity-coverage && istanbul check-coverage --statements 99 --branches 94 --functions 99 --lines 99",
     "test:contracts:watch": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle watch --network development",
     "test:contracts:e2e": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-system/end-to-end.js --network development",
+    "test:contracts:security": "truffle run verify --limit 1 --mode quick --swc-blacklist 124",
     "pretest:contracts": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade:parity": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:upgrade:ganache": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:gasCosts": "sed -ie \"s/mocha-circleci-reporter/eth-gas-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:watch": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
+    "pretest:contracts:security": "sed -ie \"s/docker: true/docker: false/g\" ./truffle.js && rimraf ./truffle.jse",
     "posttest:contracts": "npm run stop:blockchain:client",
     "posttest:contracts:upgrade:parity": "npm run clean:test:contracts | npm run stop:blockchain:client",
     "posttest:contracts:upgrade:ganache": "npm run clean:test:contracts | npm run stop:blockchain:client",
     "posttest:contracts:gasCosts": "npm run stop:blockchain:client",
     "posttest:contracts:patricia": "npm run stop:blockchain:client",
-    "posttest:contracts:watch": "npm run stop:blockchain:client"
+    "posttest:contracts:watch": "npm run stop:blockchain:client",
+    "posttest:contracts:security": "sed -ie \"s/docker: false/docker: true/g\" ./truffle.js && rimraf ./truffle.jse"
   },
   "husky": {
     "hooks": {
@@ -93,6 +96,7 @@
     "solidity-coverage": "0.6.0-beta.5",
     "solidity-parser-antlr": "^0.4.2",
     "truffle": "^5.0.8",
+    "truffle-security": "1.3.1",
     "web3-utils": "^1.0.0-beta.48"
   },
   "private": true,

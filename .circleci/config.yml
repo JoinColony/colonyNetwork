@@ -24,10 +24,7 @@ step_pull_solc_docker: &step_pull_solc_docker
     run:
       name: "Pull solc docker image"
       command: docker pull ethereum/solc:0.5.6
-step_pull_mythril_docker: &step_pull_mythril_docker
-    run:
-      name: "Pull mythril dev docker image"
-      command: docker pull mythril/myth
+
 jobs:
   lint-and-unit-test:
     <<: *job_common
@@ -118,14 +115,10 @@ jobs:
       - <<: *step_restore_cache
       - setup_remote_docker
       - <<: *step_pull_solc_docker
-      - <<: *step_pull_mythril_docker
       - <<: *step_setup_global_packages
       - run:
-          name: "Mythril security analysis"
-          command: |
-            docker create -v "$pwd"/build --name colonynetwork alpine:3.4 /bin/true
-            docker cp build/* colonynetwork:/build
-            docker run --volumes-from colonynetwork mythril/myth myth --truffle --execution-timeout 40 -v 3
+          name: "MythX security analysis"
+          command: yarn run test:contracts:security
   end-to-end-tests:
     <<: *job_common
     steps:
@@ -153,5 +146,6 @@ workflows:
               only:
                 - develop
     jobs:
-      - security-analysis
+      - security-analysis:
+          context: colony-network-context
       - end-to-end-tests

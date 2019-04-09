@@ -47,5 +47,6 @@ module.exports = {
         evmVersion: "petersburg"
       }
     }
-  }
+  },
+  plugins: ["truffle-security"]
 };
