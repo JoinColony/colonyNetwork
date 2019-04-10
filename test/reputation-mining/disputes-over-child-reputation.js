@@ -127,7 +127,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
         worker: MINER2
       });
 
-      // Task two payouts are less so that the reputation should bee nonzero afterwards
+      // Task two payouts are less so that the reputation should be nonzero afterwards
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,

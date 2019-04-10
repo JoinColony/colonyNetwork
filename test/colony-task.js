@@ -26,7 +26,8 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET,
-  MAX_PAYOUT
+  MAX_PAYOUT,
+  GLOBAL_SKILL_ID
 } from "../helpers/constants";
 
 import {
@@ -37,7 +38,8 @@ import {
   expectAllEvents,
   forwardTime,
   currentBlockTime,
-  createSignatures
+  createSignatures,
+  addTaskSkillEditingFunctions
 } from "../helpers/test-helper";
 
 import {
@@ -61,7 +63,6 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DSToken = artifacts.require("DSToken");
-const Resolver = artifacts.require("Resolver");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
 contract("ColonyTask", accounts => {
@@ -177,7 +178,7 @@ contract("ColonyTask", accounts => {
     });
 
     it("should optionally set the skill and due date", async () => {
-      const skillId = 3;
+      const skillId = GLOBAL_SKILL_ID;
       const currTime = await currentBlockTime();
       const dueDate = currTime + SECONDS_PER_DAY * 10;
 
@@ -188,7 +189,7 @@ contract("ColonyTask", accounts => {
     });
 
     it("should set the due date to 90 days from now if unspecified", async () => {
-      const skillId = 3;
+      const skillId = GLOBAL_SKILL_ID;
       const dueDate = 0;
       const taskId = await makeTask({ colony, skillId, dueDate });
       const task = await colony.getTask(taskId);
@@ -1905,22 +1906,8 @@ contract("ColonyTask", accounts => {
   describe("when a task has multiple skills", () => {
     before(async () => {
       // Introduce our ability to add and remove skills from tasks, just for these tests until
-      // more than one task is supported.
-      const taskSkillEditing = await TaskSkillEditing.new();
-      const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
-      const resolver = await Resolver.at(resolverAddress);
-      await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
-      await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
-    });
-
-    it("should allow a task with 30 skills to finalise", async () => {
-      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
-      const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
-      for (let i = 0; i < 30; i += 1) {
-        await taskSkillEditingColony.addTaskSkill(taskId, 3);
-      }
-      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
+      // more than one skill per task is supported.
+      await addTaskSkillEditingFunctions(colonyNetwork);
     });
 
     it("should allow a task with 45 skills to finalise", async () => {
@@ -1929,7 +1916,7 @@ contract("ColonyTask", accounts => {
       const taskId = await setupRatedTask({ colonyNetwork, colony, token });
       const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
       for (let i = 0; i < 45; i += 1) {
-        await taskSkillEditingColony.addTaskSkill(taskId, 3);
+        await taskSkillEditingColony.addTaskSkill(taskId, GLOBAL_SKILL_ID);
       }
       await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
     });

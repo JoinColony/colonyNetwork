@@ -35,7 +35,14 @@ import {
   RATING_2_SECRET
 } from "../helpers/constants";
 
-import { checkErrorRevert, forwardTime, advanceMiningCycleNoContest, getTokenArgs, removeSubdomainLimit } from "../helpers/test-helper";
+import {
+  checkErrorRevert,
+  forwardTime,
+  advanceMiningCycleNoContest,
+  getTokenArgs,
+  removeSubdomainLimit,
+  addTaskSkillEditingFunctions
+} from "../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -43,7 +50,6 @@ chai.use(bnChai(web3.utils.BN));
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const DSToken = artifacts.require("DSToken");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
-const Resolver = artifacts.require("Resolver");
 
 contract("Reputation Updates", accounts => {
   const MANAGER = accounts[0];
@@ -380,11 +386,8 @@ contract("Reputation Updates", accounts => {
 
     it("should add the right log entries for tasks with multiple skills", async () => {
       // Introduce our ability to add and remove skills from tasks
-      const taskSkillEditing = await TaskSkillEditing.new();
-      const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
-      const resolver = await Resolver.at(resolverAddress);
-      await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
-      await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
+      await addTaskSkillEditingFunctions(colonyNetwork);
+
       await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING);
       const taskId = await setupRatedTask({ colonyNetwork, colony: metaColony, token: clnyToken });
       const taskSkillEditingColony = await TaskSkillEditing.at(metaColony.address);

@@ -45,7 +45,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   await metaColony.addDomain(1, 1, 2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-  await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -63,7 +63,7 @@ async function customSetupFinalizedTask(args) {
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract.skip("Reputation mining - client reputation calculations", accounts => {
+  : contract("Reputation mining - client reputation calculations", accounts => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
       const WORKER = accounts[2];
@@ -106,7 +106,7 @@ process.env.SOLIDITY_COVERAGE
             domainId: 3
           });
           // Skills in 1 / 4 / 5
-          // Miner 2: (100 / 100 / 100)
+          // OTHER: (100 / 100 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -115,8 +115,8 @@ process.env.SOLIDITY_COVERAGE
             worker: WORKER,
             domainId: 3
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (100 / 100 / 100)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (100 / 100 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -125,8 +125,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 2
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (1000 / 1000 / 100)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (1000 / 1000 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -135,8 +135,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 1
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (2000 / 1000 / 100)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (2000 / 1000 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -146,8 +146,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 3
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (1900 / 900 / 0)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (1900 / 900 / 0)
 
           await goodClient.resetDB();
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -181,7 +181,7 @@ process.env.SOLIDITY_COVERAGE
             domainId: 3
           });
           // Skills in 1 / 4 / 5
-          // Miner 2: (100 / 100 / 100)
+          // OTHER: (100 / 100 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -190,8 +190,8 @@ process.env.SOLIDITY_COVERAGE
             worker: WORKER,
             domainId: 3
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (100 / 100 / 100)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (100 / 100 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -200,8 +200,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 2
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (1000 / 1000 / 100)
+          // WORKER: (100 / 100 / 100)
+          // THER: (1000 / 1000 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -211,8 +211,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 2
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (800 / 800 / 80)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (800 / 800 / 80)
 
           await goodClient.resetDB();
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
@@ -246,7 +246,7 @@ process.env.SOLIDITY_COVERAGE
             domainId: 3
           });
           // Skills in 1 / 4 / 5
-          // Miner 2: (100 / 100 / 100)
+          // OTHER: (100 / 100 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -255,8 +255,8 @@ process.env.SOLIDITY_COVERAGE
             worker: WORKER,
             domainId: 3
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (100 / 100 / 100)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (100 / 100 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -265,8 +265,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 2
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (1000 / 1000 / 100)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (1000 / 1000 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -275,8 +275,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 1
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (1500 / 1000 / 100)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (1500 / 1000 / 100)
 
           await customSetupFinalizedTask({
             colonyNetwork,
@@ -286,8 +286,8 @@ process.env.SOLIDITY_COVERAGE
             worker: OTHER,
             domainId: 2
           });
-          // Miner 1: (100 / 100 / 100)
-          // Miner 2: (500 / 0 / 0)
+          // WORKER: (100 / 100 / 100)
+          // OTHER: (500 / 0 / 0)
 
           await goodClient.resetDB();
           await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });

@@ -1,6 +1,7 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 
+import { soliditySha3 } from "web3-utils";
 import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../helpers/constants";
 import { checkErrorRevert, removeSubdomainLimit } from "../helpers/test-helper";
 import {
@@ -122,8 +123,21 @@ contract("Meta Colony", accounts => {
       expect(skillCount).to.eq.BN(5);
     });
 
-    it.skip("should NOT be able to add a child skill to a local skill parent", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(2), "colony-global-and-local-skill-trees-are-separate");
+    it("should NOT be able to add a child skill to a local skill parent", async () => {
+      // Put colony in to recovery mode
+      await metaColony.enterRecoveryMode();
+      // work out the storage slot
+      // Domain mapping is storage slot 20
+      // So domain 1 struct starts at slot given by
+      const domain1Slot = soliditySha3(1, 20);
+      // Which means the skill is in that slot (it's the first entry in the struct)
+      // Edit that slot
+      await metaColony.setStorageSlotRecovery(domain1Slot, "0x0000000000000000000000000000000000000000000000000000000000000003");
+      // Leave recovery mode
+      await metaColony.approveExitRecovery();
+      await metaColony.exitRecoveryMode();
+      // Try to add a child
+      await checkErrorRevert(metaColony.addDomain(1, 0, 1), "colony-global-and-local-skill-trees-are-separate");
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
     });
@@ -252,11 +266,21 @@ contract("Meta Colony", accounts => {
       expect(parentId).to.be.zero;
     });
 
-    it.skip("should NOT be able to add a new root global skill", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(), "colony-invalid-skill-id");
-
-      const skillCount = await colonyNetwork.getSkillCount();
-      expect(skillCount).to.eq.BN(3);
+    it("should prevent a child skill being added to a skill that doesn't exist", async () => {
+      // Put colony in to recovery mode
+      await metaColony.enterRecoveryMode();
+      // work out the storage slot
+      // Domain mapping is storage slot 20
+      // So domain 1 struct starts at slot given by
+      const domain1Slot = soliditySha3(1, 20);
+      // Which means the skill is in that slot (it's the first entry in the struct)
+      // Edit that slot
+      await metaColony.setStorageSlotRecovery(domain1Slot, "0xdeadbeef");
+      // Leave recovery mode
+      await metaColony.approveExitRecovery();
+      await metaColony.exitRecoveryMode();
+      // Try to add a child
+      await checkErrorRevert(metaColony.addDomain(1, 0, 1), "colony-invalid-skill-id");
     });
   });
 
@@ -475,7 +499,6 @@ contract("Meta Colony", accounts => {
     });
 
     it("should not allow anyone but the colony to set global skill on task", async () => {
-      await metaColony.addGlobalSkill();
       await metaColony.addGlobalSkill();
 
       const taskId = await makeTask({ colony, skillId: 0 });

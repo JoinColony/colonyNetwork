@@ -3,9 +3,8 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
-import BN from "bn.js";
 
-import { WAD, INITIAL_FUNDING } from "../../helpers/constants";
+import { WAD, INITIAL_FUNDING, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { checkErrorRevert } from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony, fundColonyWithTokens } from "../../helpers/test-data-generator";
 
@@ -19,7 +18,6 @@ contract("One transaction payments", accounts => {
   let token;
   let colonyNetwork;
   let oneTxExtension;
-  let globalSkillId;
   const RECIPIENT = accounts[3];
   const COLONY_ADMIN = accounts[5];
 
@@ -28,8 +26,6 @@ contract("One transaction payments", accounts => {
     await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
-
-    globalSkillId = new BN(3);
   });
 
   beforeEach(async () => {
@@ -52,7 +48,7 @@ contract("One transaction payments", accounts => {
       const balanceBefore = await token.balanceOf(RECIPIENT);
       expect(balanceBefore).to.eq.BN(0);
       // This is the one transactions. Those ones above don't count...
-      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, globalSkillId, { from: COLONY_ADMIN });
+      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, GLOBAL_SKILL_ID, { from: COLONY_ADMIN });
       // Check it completed
       const balanceAfter = await token.balanceOf(RECIPIENT);
       expect(balanceAfter).to.eq.BN(9);
@@ -63,7 +59,7 @@ contract("One transaction payments", accounts => {
       await colony.send(10); // NB 10 wei, not ten ether!
       await colony.claimColonyFunds(ethers.constants.AddressZero);
       // This is the one transactions. Those ones above don't count...
-      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, ethers.constants.AddressZero, 10, 1, globalSkillId, { from: COLONY_ADMIN });
+      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, ethers.constants.AddressZero, 10, 1, GLOBAL_SKILL_ID, { from: COLONY_ADMIN });
       // Check it completed
       const balanceAfter = await web3.eth.getBalance(RECIPIENT);
       // So only 9 here, because of the same rounding errors as applied to the token
@@ -77,7 +73,7 @@ contract("One transaction payments", accounts => {
 
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       await colony.moveFundsBetweenPots(1, 0, 0, d1.fundingPotId, d2.fundingPotId, WAD, token.address);
-      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 2, globalSkillId, { from: COLONY_ADMIN });
+      await oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 2, GLOBAL_SKILL_ID, { from: COLONY_ADMIN });
     });
 
     it("should allow a single-transaction to occur when user has different permissions than contract", async () => {
@@ -91,12 +87,12 @@ contract("One transaction payments", accounts => {
       const USER = accounts[6];
       await colony.setAdministrationRole(1, 0, USER, 2, true);
       await colony.setFundingRole(1, 0, USER, 2, true);
-      await oneTxExtension.makePayment(1, 0, 2, 0, RECIPIENT, token.address, 10, 2, globalSkillId, { from: USER });
+      await oneTxExtension.makePayment(1, 0, 2, 0, RECIPIENT, token.address, 10, 2, GLOBAL_SKILL_ID, { from: USER });
     });
 
     it("should not allow a non-admin to make a single-transaction payment", async () => {
       await checkErrorRevert(
-        oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, globalSkillId, { from: accounts[10] }),
+        oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, GLOBAL_SKILL_ID, { from: accounts[10] }),
         "colony-one-tx-payment-administration-not-authorized"
       );
     });
@@ -104,7 +100,7 @@ contract("One transaction payments", accounts => {
     it("should not allow a non-funder to make a single-transaction payment", async () => {
       await colony.setAdministrationRole(1, 0, accounts[10], 1, true);
       await checkErrorRevert(
-        oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, globalSkillId, { from: accounts[10] }),
+        oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, GLOBAL_SKILL_ID, { from: accounts[10] }),
         "colony-one-tx-payment-funding-not-authorized"
       );
     });
@@ -118,7 +114,7 @@ contract("One transaction payments", accounts => {
 
     it("should not allow an admin to specify a non-existent domain", async () => {
       await checkErrorRevert(
-        oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 99, globalSkillId, { from: COLONY_ADMIN }),
+        oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 99, GLOBAL_SKILL_ID, { from: COLONY_ADMIN }),
         "ds-auth-child-domain-does-not-exist"
       );
     });

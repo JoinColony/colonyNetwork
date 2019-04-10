@@ -37,7 +37,8 @@ import {
   DECAY_RATE,
   MANAGER_PAYOUT,
   EVALUATOR_PAYOUT,
-  WORKER_PAYOUT
+  WORKER_PAYOUT,
+  GLOBAL_SKILL_ID
 } from "../../helpers/constants";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -326,7 +327,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.initialise(colonyNetwork.address);
 
       let repCycle = await getActiveRepCycle(colonyNetwork);
-      const skillId = new BN(3);
+      const skillId = GLOBAL_SKILL_ID;
       const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
 
@@ -367,7 +368,7 @@ contract("Reputation Mining - happy paths", accounts => {
       const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, new BN("10"));
       await badClient.initialise(colonyNetwork.address);
 
-      const skillId = new BN(3);
+      const skillId = GLOBAL_SKILL_ID;
       const globalKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, ethers.constants.AddressZero);
       const userKey = ReputationMinerTestWrapper.getKey(metaColony.address, skillId, MINER1);
 
@@ -459,7 +460,6 @@ contract("Reputation Mining - happy paths", accounts => {
 
       const META_ROOT_SKILL = new BN(1);
       const MINING_SKILL = new BN(2);
-      const GLOBAL_SKILL = new BN(3);
 
       const META_ROOT_SKILL_TOTAL = REWARD // eslint-disable-line prettier/prettier
         .add(MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT).muln(3)) // eslint-disable-line prettier/prettier
@@ -479,8 +479,8 @@ contract("Reputation Mining - happy paths", accounts => {
           value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).muln(3) // eslint-disable-line prettier/prettier
         },
         { id: 6, skill: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT.muln(3) },
-        { id: 7, skill: GLOBAL_SKILL, account: undefined, value: WORKER_PAYOUT.muln(3) },
-        { id: 8, skill: GLOBAL_SKILL, account: WORKER, value: WORKER_PAYOUT.muln(3) },
+        { id: 7, skill: GLOBAL_SKILL_ID, account: undefined, value: WORKER_PAYOUT.muln(3) },
+        { id: 8, skill: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT.muln(3) },
         // Completing a task in global skill 3 and  domain 2 (which has corresponding skill 4)
         { id: 9, skill: new BN(5), account: undefined, value: new BN(0) },
         { id: 10, skill: new BN(6), account: undefined, value: new BN(0) },
@@ -563,7 +563,6 @@ contract("Reputation Mining - happy paths", accounts => {
 
       const META_ROOT_SKILL = new BN(1);
       const MINING_SKILL = new BN(2);
-      const GLOBAL_SKILL = new BN(3);
 
       // = 1550000005802000000000
       const META_ROOT_SKILL_TOTAL = REWARD.add(MANAGER_PAYOUT)
@@ -582,8 +581,8 @@ contract("Reputation Mining - happy paths", accounts => {
         { id: 4, skill: MINING_SKILL, account: MINER1, value: REWARD },
         { id: 5, skill: META_ROOT_SKILL, account: MANAGER, value: MANAGER_PAYOUT.add(EVALUATOR_PAYOUT).add(new BN(2500000000000)) },
         { id: 6, skill: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
-        { id: 7, skill: GLOBAL_SKILL, account: undefined, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
-        { id: 8, skill: GLOBAL_SKILL, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
+        { id: 7, skill: GLOBAL_SKILL_ID, account: undefined, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
+        { id: 8, skill: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT.add(new BN(3300000000000)) },
         {
           id: 9,
           skill: new BN(9),
@@ -717,7 +716,6 @@ contract("Reputation Mining - happy paths", accounts => {
 
       const META_ROOT_SKILL = 1;
       const MINING_SKILL = 2;
-      const GLOBAL_SKILL = new BN(3);
 
       const reputationProps = [
         { id: 1, skillId: META_ROOT_SKILL, account: undefined, value: REWARD.add(MANAGER_PAYOUT).add(EVALUATOR_PAYOUT).add(WORKER_PAYOUT) }, // eslint-disable-line prettier/prettier
@@ -755,8 +753,8 @@ contract("Reputation Mining - happy paths", accounts => {
         { id: 33, skillId: 4, account: WORKER, value: WORKER_PAYOUT },
         { id: 34, skillId: META_ROOT_SKILL, account: WORKER, value: WORKER_PAYOUT },
         { id: 35, skillId: 10, account: WORKER, value: WORKER_PAYOUT },
-        { id: 36, skillId: GLOBAL_SKILL, account: undefined, value: WORKER_PAYOUT },
-        { id: 37, skillId: GLOBAL_SKILL, account: WORKER, value: WORKER_PAYOUT }
+        { id: 36, skillId: GLOBAL_SKILL_ID, account: undefined, value: WORKER_PAYOUT },
+        { id: 37, skillId: GLOBAL_SKILL_ID, account: WORKER, value: WORKER_PAYOUT }
       ];
 
       expect(Object.keys(goodClient.reputations).length).to.equal(reputationProps.length);

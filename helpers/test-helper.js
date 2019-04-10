@@ -15,6 +15,7 @@ const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
+const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 const Resolver = artifacts.require("Resolver");
 
 const { expect } = chai;
@@ -712,6 +713,15 @@ export async function removeSubdomainLimit(colonyNetwork) {
   const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
   const resolver = await Resolver.at(resolverAddress);
   await resolver.register("addDomain(uint256,uint256,uint256)", noLimitSubdomains.address);
+}
+
+export async function addTaskSkillEditingFunctions(colonyNetwork) {
+  const taskSkillEditing = await TaskSkillEditing.new();
+  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+  const resolver = await Resolver.at(resolverAddress);
+  await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
+  await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
 }
 
 export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {

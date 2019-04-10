@@ -12,7 +12,8 @@ import {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   makeReputationKey,
-  makeReputationValue
+  makeReputationValue,
+  removeSubdomainLimit
 } from "../helpers/test-helper";
 
 import {
@@ -33,8 +34,6 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const ITokenLocking = artifacts.require("ITokenLocking");
-const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
-const Resolver = artifacts.require("Resolver");
 
 const loader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -65,10 +64,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
     // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
-    const noLimitSubdomains = await NoLimitSubdomains.new();
-    const resolverAddress = await colonyNetwork.getColonyVersionResolver(1);
-    const resolver = await Resolver.at(resolverAddress);
-    await resolver.register("addDomain(uint256)", noLimitSubdomains.address);
+    await removeSubdomainLimit(colonyNetwork);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
     await colonyNetwork.initialiseReputationMining();
