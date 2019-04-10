@@ -91,7 +91,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
   afterEach(async () => {
     const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
-    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
+    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2);
   });
 
   describe("when there is a dispute over reputation root hash", () => {

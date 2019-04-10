@@ -52,7 +52,7 @@ let clnyToken;
 let goodClient;
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
-const setupNewNetworkInstance = async MINER1 => {
+const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
@@ -61,6 +61,7 @@ const setupNewNetworkInstance = async MINER1 => {
   await metaColony.addGlobalSkill(4);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
+  await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 
@@ -75,7 +76,7 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
 
   before(async () => {
     // Setup a new network instance as we'll be modifying the global skills tree
-    await setupNewNetworkInstance(MINER1);
+    await setupNewNetworkInstance(MINER1, MINER2);
   });
 
   beforeEach(async () => {
@@ -96,14 +97,12 @@ contract("Reputation Mining - disputes over child reputation", accounts => {
     const userBalance = await clnyToken.balanceOf(MINER1);
     await clnyToken.burn(userBalance, { from: MINER1 });
 
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
-    await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
     await fundColonyWithTokens(metaColony, clnyToken, INITIAL_FUNDING.muln(4));
   });
 
   afterEach(async () => {
     const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
-    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
+    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2);
   });
 
   describe("should correctly resolve a dispute over origin skill", () => {

@@ -96,7 +96,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
 
   afterEach(async () => {
     const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
-    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1);
+    if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2);
   });
 
   // The dispute resolution flow is as follows:
