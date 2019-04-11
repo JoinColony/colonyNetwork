@@ -18,7 +18,8 @@ import {
   submitAndForwardTimeToDispute,
   accommodateChallengeAndInvalidateHash,
   getValidEntryNumber,
-  finishReputationMiningCycle
+  finishReputationMiningCycle,
+  runBinarySearch
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -500,6 +501,40 @@ contract("Reputation mining - root hash submissions", accounts => {
         client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
       });
 
+      await repCycle.confirmNewHash(1);
+    });
+
+    it("should allow submitted hashes with multiple backers to go through multiple responses to a challenge", async () => {
+      await badClient.initialise(colonyNetwork.address);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+      const goodClient2 = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER3 });
+      await goodClient2.initialise(colonyNetwork.address);
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await goodClient2.addLogContentsToReputationTree();
+      await goodClient2.submitRootHash();
+      await badClient.addLogContentsToReputationTree();
+      await badClient.submitRootHash();
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
+      await goodClient2.confirmJustificationRootHash();
+      await badClient.confirmJustificationRootHash();
+
+      await runBinarySearch(goodClient2, badClient);
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await goodClient2.respondToChallenge();
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+
+      await repCycle.invalidateHash(0, 1);
       await repCycle.confirmNewHash(1);
     });
   });
