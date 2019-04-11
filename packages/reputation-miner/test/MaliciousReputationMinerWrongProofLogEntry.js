@@ -14,8 +14,8 @@ class MaliciousReputationMinerWrongProofLogEntry extends ReputationMinerTestWrap
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const addr = await this.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
-    const submission = await repCycle.getDisputeRoundSubmission(round, index);
-    const firstDisagreeIdx = ethers.utils.bigNumberify(submission.lowerBound);
+    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+    const firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);
     const lastAgreeIdx = firstDisagreeIdx.sub(1);
     const reputationKey = await this.getKeyForUpdateNumber(lastAgreeIdx);
     const lastAgreeKey = MaliciousReputationMinerWrongProofLogEntry.getHexString(lastAgreeIdx, 64);

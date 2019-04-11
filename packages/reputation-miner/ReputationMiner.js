@@ -779,7 +779,7 @@ class ReputationMiner {
   }
 
   /**
-   * Returns the round and index that our submission is currently at in the dispute cycle.
+   * Returns the round and index that our disputedEntry is currently at in the dispute cycle.
    * @return {Promise} Resolves to [round, index] which are `BigNumber`.
    */
   async getMySubmissionRoundAndIndex() {
@@ -791,10 +791,13 @@ class ReputationMiner {
     let index = ethers.constants.NegativeOne;
     let round = ethers.constants.Zero;
     let submission = [];
-    while (submission[0] !== submittedHash || submission[1].toString() !== submittedNNodes.toString() || submission[4] !== jrh) {
+    while (submission.proposedNewRootHash !== submittedHash ||
+      submission.nNodes.toString() !== submittedNNodes.toString() ||
+      submission.jrh !== jrh) {
       try {
         index = index.add(1);
-        submission = await repCycle.getDisputeRoundSubmission(round, index);
+        const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+        submission = await repCycle.getReputationHashSubmission(disputedEntry.firstSubmitter);
       } catch (err) {
         round = round.add(1);
         index = ethers.constants.NegativeOne;
@@ -811,9 +814,9 @@ class ReputationMiner {
   async respondToBinarySearchForChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const submission = await repCycle.getDisputeRoundSubmission(round, index);
+    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
 
-    const targetNode = submission.lowerBound;
+    const targetNode = disputedEntry.lowerBound;
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
@@ -828,7 +831,7 @@ class ReputationMiner {
       siblings
     );
 
-    while (siblings.length > 1 && submission.targetHashDuringSearch !== proofEndingHash) {
+    while (siblings.length > 1 && disputedEntry.targetHashDuringSearch !== proofEndingHash) {
       // Remove the first sibling
       siblings = siblings.slice(1);
       // Recalulate ending hash
@@ -852,8 +855,8 @@ class ReputationMiner {
   async confirmBinarySearchResult() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const submission = await repCycle.getDisputeRoundSubmission(round, index);
-    const targetNode = ethers.utils.bigNumberify(submission.lowerBound);
+    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+    const targetNode = ethers.utils.bigNumberify(disputedEntry.lowerBound);
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
@@ -871,10 +874,10 @@ class ReputationMiner {
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const submission = await repCycle.getDisputeRoundSubmission(round, index);
+    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
 
-    // console.log(submission);
-    let firstDisagreeIdx = ethers.utils.bigNumberify(submission.lowerBound);
+    // console.log(disputedEntry);
+    let firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);
     let lastAgreeIdx = firstDisagreeIdx.sub(1);
     // If this is called before the binary search has finished, these would be -1 and 0, respectively, which will throw errors
     // when we try and pass -ve hex values. Instead, set them to values that will allow us to send a tx that will fail.
