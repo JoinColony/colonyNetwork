@@ -104,7 +104,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
 
     it("can create 5 domains in each of the 100 colonies", async function() {
       const b = Array.from(Array(4).keys());
-      const domainsSetupPromise = b.map(() => Promise.all(colonies.map(({ colony }) => colony.addDomain(1))));
+      const domainsSetupPromise = b.map(() => Promise.all(colonies.map(({ colony }) => colony.addDomain(1, 0, 1))));
       await Promise.all(domainsSetupPromise);
 
       const domainsCheckPromise = colonies.map(async ({ colony }) => {
