@@ -183,6 +183,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes32[] memory disagreeStateSiblings
     ) internal view
   {
+    DisputedEntry storage disputedEntry = disputeRounds[u[U_ROUND]][u[U_IDX]];
     // Check this proof is valid for the agree state
     // We binary searched to the first disagreement, so the last agreement is the one before
     bytes memory adjacentReputationValue = abi.encodePacked(u[U_ADJACENT_REPUTATION_VALUE], u[U_ADJACENT_REPUTATION_UID]);
@@ -196,13 +197,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     bytes memory jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_AGREE_STATE_NNODES]);
     // Prove that state is in our JRH, in the index corresponding to the last state that the two submissions agree on
     bytes32 impliedRoot = getImpliedRootNoHashKey(
-      bytes32(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound - 1),
+      bytes32(disputedEntry.lowerBound - 1),
       jhLeafValue,
       u[U_AGREE_STATE_BRANCH_MASK],
       agreeStateSiblings);
 
     require(
-      impliedRoot == reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter].jrh,
+      impliedRoot == reputationHashSubmissions[disputedEntry.firstSubmitter].jrh,
       "colony-reputation-mining-adjacent-agree-state-disagreement");
 
     // The bit added to the branchmask is based on where the (hashes of the) two keys first differ.
@@ -227,13 +228,13 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     jhLeafValue = abi.encodePacked(uint256(reputationRootHash), u[U_DISAGREE_STATE_NNODES]);
     // Prove that state is in our JRH, in the index corresponding to the first state that the two submissions disagree on
     impliedRoot = getImpliedRootNoHashKey(
-      bytes32(disputeRounds[u[U_ROUND]][u[U_IDX]].lowerBound),
+      bytes32(disputedEntry.lowerBound),
       jhLeafValue,
       u[U_DISAGREE_STATE_BRANCH_MASK],
       disagreeStateSiblings);
 
     require(
-      impliedRoot == reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter].jrh,
+      impliedRoot == reputationHashSubmissions[disputedEntry.firstSubmitter].jrh,
       "colony-reputation-mining-adjacent-disagree-state-disagreement");
   }
 

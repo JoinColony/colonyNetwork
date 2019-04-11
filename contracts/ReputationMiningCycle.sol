@@ -591,7 +591,6 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
 
     Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].firstSubmitter];
-    bytes32 jrh = submission.jrh;
     uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
       reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
     submission.jrhNNodes = nUpdates + 1;
@@ -603,7 +602,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       mstore(add(jhLeafValue, 0x40), submittedHashNNodes)
     }
     bytes32 impliedRoot = getImpliedRootNoHashKey(bytes32(nUpdates), jhLeafValue, branchMask2, siblings2);
-    require(jrh==impliedRoot, "colony-reputation-mining-invalid-jrh-proof-2");
+    require(submission.jrh == impliedRoot, "colony-reputation-mining-invalid-jrh-proof-2");
   }
 
   function startMemberOfPair(uint256 roundNumber, uint256 index) internal {
