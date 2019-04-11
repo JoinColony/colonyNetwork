@@ -34,8 +34,12 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
 
   ReputationLogEntry[] reputationUpdateLog; // Storage slot 6
   mapping (bytes32 => mapping(uint256 => mapping(bytes32 => address[]))) submittedHashes; // Storage slot 7
+  // Maps a submission with the first miner address who submitted it
+  // This address is used as a lookup key from DisputedEntry struct
   mapping (address => Submission) reputationHashSubmissions; // Storage slot 8
   uint256 reputationMiningWindowOpenTimestamp; // Storage slot 9
+  // Maps dispute rounds onto individual submissions indexed in an array
+  // Each DisputeEntry corresponds to a Submission in reputationHashSubmissions
   mapping (uint256 => DisputedEntry[]) disputeRounds; // Storage slot 10
 
   // Tracks the number of submissions in each round that have completed their challenge, one way or the other.

@@ -37,7 +37,7 @@ contract ReputationMiningCycleDataTypes {
   }
 
   struct DisputedEntry {
-    address miner;
+    address firstSubmitter;               // Address of the first miner who proposed the referenced Submission
     uint256 lastResponseTimestamp;        // If nonzero, the last time that a valid response was received corresponding to this
                                           // submission during the challenge process - either binary searching for the challenge,
                                           // responding to the challenge itself or submitting the JRH

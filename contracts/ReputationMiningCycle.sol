@@ -146,7 +146,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       // And add it to the first disputeRound
       // NB if no other hash is submitted, no dispute resolution will be required.
       disputeRounds[0].push(DisputedEntry({
-        miner: msg.sender,
+        firstSubmitter: msg.sender,
         lastResponseTimestamp: 0,
         challengeStepCompleted: 0,
         lowerBound: 0,
@@ -185,7 +185,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
 
     DisputedEntry storage winningDisputeEntry = disputeRounds[roundNumber][0];
-    Submission storage submission = reputationHashSubmissions[winningDisputeEntry.miner];
+    Submission storage submission = reputationHashSubmissions[winningDisputeEntry.firstSubmitter];
     IColonyNetwork(colonyNetworkAddress).setReputationRootHash(
       submission.proposedNewRootHash,
       submission.nNodes,
@@ -228,10 +228,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     } else {
       require(disputeRounds[round].length > opponentIdx, "colony-reputation-mining-dispute-id-not-in-range");
       // If we are invalidating hash for idx then opponentIdx hash has to exist, so it is passed onto the next round
-      Submission storage opponentSubmission = reputationHashSubmissions[disputeRounds[round][opponentIdx].miner];
+      Submission storage opponentSubmission = reputationHashSubmissions[disputeRounds[round][opponentIdx].firstSubmitter];
       require(opponentSubmission.proposedNewRootHash != "", "colony-reputation-mining-proposed-hash-empty");
 
-      Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].miner];
+      Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].firstSubmitter];
       require(submission.proposedNewRootHash != "", "colony-reputation-mining-hash-already-progressed");
 
       // Require that this is not better than its opponent.
@@ -299,7 +299,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32 impliedRoot;
     bytes32[2] memory lastSiblings;
 
-    Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].miner];
+    Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].firstSubmitter];
     // Check proof is the right length
     uint256 expectedLength = expectedProofLength(submission.jrhNNodes, disputeRounds[round][idx].lowerBound) -
       (disputeRounds[round][idx].challengeStepCompleted - 1); // We expect shorter proofs the more chanllenge rounds we've done so far
@@ -325,7 +325,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] memory siblings
   ) public
   {
-    Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].miner];
+    Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].firstSubmitter];
     require(submission.jrhNNodes != 0, "colony-reputation-jrh-hash-not-verified");
     require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
     require(
@@ -360,7 +360,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] memory siblings2
   ) public
   {
-    Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].miner];
+    Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].firstSubmitter];
     // Require we've not submitted already.
     require(submission.jrhNNodes == 0, "colony-reputation-jrh-hash-already-verified");
 
@@ -549,7 +549,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // If complete, mark that the binary search is completed (but the intermediate hashes may or may not be correct) by setting
     // challengeStepCompleted to the maximum it could be for the number of nodes we had to search through, plus one to indicate
     // they've submitted their jrh
-    Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].miner];
+    Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].firstSubmitter];
     if (disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound) {
       if (2**(disputeRounds[round][idx].challengeStepCompleted-1) < submission.jrhNNodes) {
         disputeRounds[round][idx].challengeStepCompleted += 1;
@@ -590,7 +590,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // The total number of updates we expect is the nPreviousUpdates in the last entry of the log plus the number
     // of updates that log entry implies by itself, plus the number of decays (the number of nodes in current state)
 
-    Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].miner];
+    Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].firstSubmitter];
     bytes32 jrh = submission.jrh;
     uint256 nUpdates = reputationUpdateLog[nLogEntries-1].nUpdates +
       reputationUpdateLog[nLogEntries-1].nPreviousUpdates + reputationRootHashNNodes;
@@ -607,7 +607,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function startMemberOfPair(uint256 roundNumber, uint256 index) internal {
-    Submission storage submission = reputationHashSubmissions[disputeRounds[roundNumber][index].miner];
+    Submission storage submission = reputationHashSubmissions[disputeRounds[roundNumber][index].firstSubmitter];
     disputeRounds[roundNumber][index].lastResponseTimestamp = now;
     disputeRounds[roundNumber][index].upperBound = submission.jrhNNodes - 1;
     disputeRounds[roundNumber][index].lowerBound = 0;

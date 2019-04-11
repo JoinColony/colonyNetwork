@@ -797,7 +797,7 @@ class ReputationMiner {
       try {
         index = index.add(1);
         const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
-        submission = await repCycle.getReputationHashSubmission(disputedEntry.miner);
+        submission = await repCycle.getReputationHashSubmission(disputedEntry.firstSubmitter);
       } catch (err) {
         round = round.add(1);
         index = ethers.constants.NegativeOne;
