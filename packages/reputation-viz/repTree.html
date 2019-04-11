@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Colony Reputation Tree Visualizer</title>
+  </head>
+  <body>
+
+    <!-- Load Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+    <!-- Page HTML -->
+    <div id="app">
+      <h2>Welome to RepTreeViz!</h2>
+      <h3>Reputation Miner URI:</h3>
+      <input placeholder="Reputation Miner URI" v-model="minerURI">
+    </div>
+
+    <!-- Vue App -->
+    <script type="text/javascript">
+
+      new Vue({
+        el: '#app',
+        data: {
+          minerURI: '',
+          tree: ''
+        },
+        methods: {
+          getTree: function () {
+            axios.get(this.minerURI).then(function (tree) { this.tree = tree; });
+          }
+        },
+        watch: {
+          minerURI: function () {
+            this.getTree();
+          }
+        },
+      })
+
+    </script>
+
+    <style type="text/css">
+      html * {
+        font-family: Comic Sans MS, sans-serif;
+      }
+    </style>
+
+  </body>
+</html>
