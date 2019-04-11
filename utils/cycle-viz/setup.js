@@ -45,8 +45,9 @@ module.exports = async function(callback) {
     const numUpdates = await repCycle.getReputationUpdateLogLength();
 
     console.log("*".repeat(20));
-    console.log(addr)
-    console.log(numUpdates.toString());
+    console.log("CYCLE ADDRESS:", repCycle.address)
+    console.log("COLONY NETWORK:", colonyNetwork.address)
+    console.log("COINBASE ACCOUNT:", accounts[0])
 
     callback();
   } catch (err) {

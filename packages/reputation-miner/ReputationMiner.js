@@ -700,6 +700,14 @@ class ReputationMiner {
     return true;
   }
 
+   /**
+   * Get the mining cycle duration.
+   * @return {Integer}      Duration in seconds
+   */
+  getMiningCycleDuration() {
+    return miningCycleDuration;
+  }
+
   /**
    * Get what the client believes should be the next reputation state root hash.
    * @return {Promise}      Resolves to the root hash

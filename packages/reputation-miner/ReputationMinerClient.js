@@ -88,7 +88,7 @@ class ReputationMinerClient {
 
     const block = await this._miner.realProvider.getBlock("latest");
     const now = block.timestamp;
-    if (now - windowOpened > 86400) {
+    if (now - windowOpened > this._miner.getMiningCycleDuration()) {
       console.log("⏰ Looks like it's time to submit an update");
       // If so, process the log
       await this._miner.addLogContentsToReputationTree();
