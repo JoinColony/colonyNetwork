@@ -16,7 +16,8 @@ import {
   getActiveRepCycle,
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
-  finishReputationMiningCycle
+  finishReputationMiningCycle,
+  removeSubdomainLimit
 } from "../../helpers/test-helper";
 
 import {
@@ -55,9 +56,12 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
   colonyNetwork = await setupColonyNetwork();
   ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
 
-  // Initialise global skills tree: 1 -> 4 -> 5, local skills tree 2 -> 3
-  await metaColony.addGlobalSkill(1);
-  await metaColony.addGlobalSkill(4);
+  await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
+
+  // Initialise global skills tree: 3, local skills tree 1 -> 4 -> 5
+  //                                                      \-> 2
+  await metaColony.addDomain(1, 0, 1);
+  await metaColony.addDomain(1, 1, 2);
 
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
   await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -149,10 +153,13 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       // Check we can't respond to challenge before we've confirmed the binary search result
       await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
 
-      // Cleanup
       await goodClient.confirmBinarySearchResult();
       await badClient.confirmBinarySearchResult();
 
+      // Check we can't confirm binary search once it's already finished
+      await checkErrorRevertEthers(goodClient.confirmBinarySearchResult(), "colony-reputation-binary-search-result-already-confirmed");
+
+      // Cleanup
       await goodClient.respondToChallenge();
       await forwardTime(MINING_CYCLE_DURATION / 6, this);
       await repCycle.invalidateHash(0, 1);
@@ -495,7 +502,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 4,
+        domainId: 2,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1000000000000,
@@ -553,7 +560,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 4,
+        domainId: 2,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout: 5000000000000,
@@ -565,7 +572,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 4,
+        domainId: 2,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000000,
         workerPayout: 1,
@@ -583,7 +590,7 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       const nLogEntries = await repCycle.getReputationUpdateLogLength();
       expect(nLogEntries).to.eq.BN(9);
 
-      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 24, 0xffffffffffff);
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, minerAddress: MINER2, realProviderPort, useJsTree }, 28, 0xffffffffffff);
       await badClient.initialise(colonyNetwork.address);
 
       const badClient2 = new MaliciousReputationMinerWrongResponse({ loader, minerAddress: MINER1, realProviderPort, useJsTree }, 20, 123456);

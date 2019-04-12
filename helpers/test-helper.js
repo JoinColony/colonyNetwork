@@ -14,6 +14,9 @@ const IMetaColony = artifacts.require("IMetaColony");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
+const NoLimitSubdomains = artifacts.require("NoLimitSubdomains");
+const TaskSkillEditing = artifacts.require("TaskSkillEditing");
+const Resolver = artifacts.require("Resolver");
 
 const { expect } = chai;
 
@@ -701,4 +704,42 @@ export async function withdrawAllMinerStakes(colonyNetwork) {
       }
     })
   );
+}
+
+export async function removeSubdomainLimit(colonyNetwork) {
+  // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
+  const noLimitSubdomains = await NoLimitSubdomains.new();
+  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+  const resolver = await Resolver.at(resolverAddress);
+  await resolver.register("addDomain(uint256,uint256,uint256)", noLimitSubdomains.address);
+}
+
+export async function addTaskSkillEditingFunctions(colonyNetwork) {
+  const taskSkillEditing = await TaskSkillEditing.new();
+  const latestVersion = await colonyNetwork.getCurrentColonyVersion();
+  const resolverAddress = await colonyNetwork.getColonyVersionResolver(latestVersion);
+  const resolver = await Resolver.at(resolverAddress);
+  await resolver.register("addTaskSkill(uint256,uint256)", taskSkillEditing.address);
+  await resolver.register("removeTaskSkill(uint256,uint256)", taskSkillEditing.address);
+}
+
+export async function getChildSkillIndex(colonyNetwork, colony, _parentDomainId, _childDomainId) {
+  const parentDomainId = new BN(_parentDomainId);
+  const childDomainId = new BN(_childDomainId);
+
+  if (parentDomainId.eq(childDomainId)) {
+    return 0;
+  }
+
+  const parentDomain = await colony.getDomain(parentDomainId);
+  const childDomain = await colony.getDomain(childDomainId);
+
+  const parentDomainSkill = await colonyNetwork.getSkill(parentDomain.skillId);
+  for (let i = 0; i < parentDomainSkill.children.length; i += 1) {
+    if (parentDomainSkill.children[i] === childDomain.skillId) {
+      return i;
+    }
+  }
+  throw Error("Supplied child domain is not a child of the supplied parent domain");
 }

@@ -357,7 +357,8 @@ contract ColonyTask is ColonyStorage {
   self()
   {
     tasks[_id].skills[0] = _skillId;
-
+    // We only allow setting of the first skill here. If we allow more in the future, make sure to have a hard limit that comfortably limits
+    // respondToChallenge's gas.
     emit TaskSkillSet(_id, _skillId);
   }
 
@@ -495,7 +496,22 @@ contract ColonyTask is ColonyStorage {
         // question, so recalculate it without the penalty.
         reputation = getReputation(payout, role.rating, false);
       }
-      colonyNetworkContract.appendReputationUpdateLog(role.user, reputation, task.skills[0]);
+      int256 nSkills = 0;
+      for (uint i = 0; i < task.skills.length; i += 1) {
+        if (task.skills[i] > 0 ) {
+          nSkills += 1;
+        }
+      }
+
+      assert(nSkills > 0);
+
+      int256 reputationPerSkill = reputation / nSkills;
+
+      for (uint i = 0; i < task.skills.length; i += 1) {
+        if (task.skills[i] > 0) {
+          colonyNetworkContract.appendReputationUpdateLog(role.user, reputationPerSkill, task.skills[i]);
+        }
+      }
     }
   }
 

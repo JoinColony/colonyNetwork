@@ -85,10 +85,9 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill`
   /// Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`
   /// @dev Errors if the parent skill does not exist or if this is called by an unauthorised sender
-  /// @param _parentSkillId Id of the skill under which the new skill will be added
-  /// @param _globalSkill true if the new skill is global, false if it is local
+  /// @param _parentSkillId Id of the skill under which the new skill will be added. If 0, a global skill is added with no parent
   /// @return skillId Id of the added skill
-  function addSkill(uint256 _parentSkillId, bool _globalSkill) public returns (uint256 skillId);
+  function addSkill(uint256 _parentSkillId) public returns (uint256 skillId);
 
   /// @notice Get the `nParents` and `nChildren` of skill with id `_skillId`
   /// @param _skillId Id of the skill
@@ -112,10 +111,9 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return count The skill count
   function getSkillCount() public view returns (uint256 count);
 
-  /// @notice Get the id of the root global skill
-  /// @dev This is set once when the Meta Colony is created
-  /// @return skillId, The root global skill id
-  function getRootGlobalSkillId() public view returns (uint256 skillId);
+  /// @notice Get the skillId of the reputation mining skill. Only set once the metacolony is set up
+  /// @return skillId The skillId of the reputation mining skill.
+  function getReputationMiningSkillId() public view returns (uint256);
 
   /// @notice Sets the token locking address
   /// This is only set once, and can't be changed afterwards

@@ -28,7 +28,6 @@ class MaliciousReputationMinerClaimNoOriginReputation extends ReputationMinerTes
       const originAdjacentKey = await this.getAdjacentKey(originReputationKey);
       this.justificationHashes[ReputationMinerTestWrapper.getHexString(updateNumber, 64)].originAdjacentReputationProof =
         await this.getReputationProofObject(originAdjacentKey);
-      console.log(originAdjacentKey, originReputationKey);
 
       // Set the child skill key
       const relativeUpdateNumber = updateNumber.sub(this.nReputationsBeforeLatestLog).sub(logEntry.nPreviousUpdates);

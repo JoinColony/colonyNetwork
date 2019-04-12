@@ -17,7 +17,7 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH
 } from "./constants";
-import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts } from "./test-helper";
+import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts, getChildSkillIndex } from "./test-helper";
 
 const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 
@@ -37,12 +37,14 @@ const ColonyPayment = artifacts.require("ColonyPayment");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
-export async function makeTask({ colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 1, dueDate = 0, manager }) {
+export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   // Only Colony admins are allowed to make Tasks, make the account an admin
-  await colony.setAdministrationRole(1, 0, manager, domainId, true);
-  const { logs } = await colony.makeTask(domainId, 0, hash, domainId, skillId, dueDate, { from: manager });
+  const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, domainId);
+
+  await colony.setAdministrationRole(1, childSkillIndex, manager, domainId, true);
+  const { logs } = await colony.makeTask(1, childSkillIndex, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
 }
@@ -121,25 +123,13 @@ export async function assignRoles({ colony, taskId, manager, evaluator, worker }
   });
 }
 
-export async function setupTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId = 0, manager }) {
-  // If the skill is not specified, default to the root global skill
-  if (skillId === 0) {
-    skillId = await colonyNetwork.getRootGlobalSkillId(); // eslint-disable-line no-param-reassign
-    if (skillId.toNumber() === 0) throw new Error("Meta Colony is not setup and therefore the root global skill does not exist");
-  }
-
-  const taskId = await makeTask({ colony, dueDate, domainId, skillId, manager });
-
-  return taskId;
-}
-
-export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId = 0, manager, evaluator, worker }) {
+export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domainId = 1, skillId, manager, evaluator, worker }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
   evaluator = evaluator || manager; // eslint-disable-line no-param-reassign
   worker = worker || accounts[2]; // eslint-disable-line no-param-reassign
 
-  const taskId = await setupTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
+  const taskId = await makeTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 
   return taskId;
@@ -170,16 +160,21 @@ export async function setupFundedTask({
     tokenAddress = token === ethers.constants.AddressZero ? ethers.constants.AddressZero : token.address;
   }
 
-  const taskId = await setupTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
+  const taskId = await makeTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
   const task = await colony.getTask(taskId);
   const { fundingPotId } = task;
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
+
   await colony.setFundingRole(1, 0, manager, 1, true);
-  // TODO: extend this to allow funding pots beyond the first child of root domain... :(
-  await colony.moveFundsBetweenPots(1, 0, 0, 1, fundingPotId, totalPayouts, tokenAddress, { from: manager });
+  let toSkillIndex = 0;
+  if (task.domainId !== 1) {
+    // Then we need to figure out the correct skill indices.
+    toSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, task.domainId);
+  }
+  await colony.moveFundsBetweenPots(1, 0, toSkillIndex, 1, fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 
@@ -355,6 +350,8 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
 
   const locked = await clnyToken.locked();
   assert.isTrue(locked);
+
+  await metaColony.addGlobalSkill();
 
   return { metaColony, clnyToken };
 }

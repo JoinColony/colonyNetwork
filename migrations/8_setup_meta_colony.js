@@ -51,6 +51,8 @@ module.exports = async function(deployer, network, accounts) {
   const tokenLocking = await ITokenLocking.at(tokenLockingAddress);
   await tokenLocking.deposit(clnyToken.address, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
 
+  await metaColony.addGlobalSkill();
+
   await colonyNetwork.initialiseReputationMining();
   await colonyNetwork.startNextCycle();
 

@@ -173,8 +173,8 @@ contract("Colony Reward Payouts", accounts => {
       const metaColonyAddress = await colonyNetwork.getMetaColony();
       const metaColony = await IMetaColony.at(metaColonyAddress);
 
-      await metaColony.addGlobalSkill(1);
-      const id = await colonyNetwork.getChildSkillId(1, 0);
+      await metaColony.addGlobalSkill();
+      const id = await colonyNetwork.getSkillCount();
       await setupFinalizedTask({
         colonyNetwork,
         colony,

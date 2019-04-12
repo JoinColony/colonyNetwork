@@ -142,9 +142,9 @@ contract("Colony Payment", accounts => {
 
       let payment = await colony.getPayment(paymentId);
       expect(payment.skills[0]).to.eq.BN(0);
-      await colony.setPaymentSkill(1, 0, paymentId, 1, { from: COLONY_ADMIN });
+      await colony.setPaymentSkill(1, 0, paymentId, 3, { from: COLONY_ADMIN });
       payment = await colony.getPayment(paymentId);
-      expect(payment.skills[0]).to.eq.BN(1);
+      expect(payment.skills[0]).to.eq.BN(3);
     });
 
     it("should not allow non-admins to update recipient", async () => {

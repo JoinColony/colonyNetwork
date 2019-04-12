@@ -12,7 +12,8 @@ import {
   advanceMiningCycleNoContest,
   accommodateChallengeAndInvalidateHash,
   makeReputationKey,
-  makeReputationValue
+  makeReputationValue,
+  removeSubdomainLimit
 } from "../helpers/test-helper";
 
 import {
@@ -61,6 +62,9 @@ contract("End to end Colony network and Reputation mining testing", function(acc
     const tokenLockingAddress = await colonyNetwork.getTokenLocking();
     tokenLocking = await ITokenLocking.at(tokenLockingAddress);
     ({ metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
+
+    // Replace addDomain with the addDomain implementation with no restrictions on depth of subdomains
+    await removeSubdomainLimit(colonyNetwork);
 
     await giveUserCLNYTokensAndStake(colonyNetwork, MINER1, DEFAULT_STAKE);
     await colonyNetwork.initialiseReputationMining();
@@ -115,34 +119,44 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       expect(skillCount).to.eq.BN(503); // Ensure we're starting from the intended skill
       // Build a better balanced skills tree hierarchy we're going to use in reputation
       // Current skills tree is:
-      // 1 -> 2 -> 3                                  // Local colonyId 1 (meta colony) skills
-      // 1 -> 4? -> [5, 6, 7, 8]                       // Local colonyId 2 skills
-      // 1 -> 9 -> [10, 11, 12, 13]                   // Local colonyId 3 skills
-      // 1 -> 14 -> [15, 16, 17, 18]                  // Local colonyId 4 skills
-      // 1 -> 19 -> [20, 21, 22, 23]                  // Local colonyId 5 skills
-      // 1 -> [...]                                   // Remaining colonies local (domain) skills
-      // 1 -> 504 -> [505, 506, 507]
+      // 1 -> 2                                  // Local colonyId 1 (meta colony) skills
+      // 3                                       // Global skill
+      // 4? -> [5, 6, 7, 8]                      // Local colonyId 2 skills
+      // 9 -> [10, 11, 12, 13]                   // Local colonyId 3 skills
+      // 14 -> [15, 16, 17, 18]                  // Local colonyId 4 skills
+      // 19 -> [20, 21, 22, 23]                  // Local colonyId 5 skills
+      // [...]                                   // Remaining colonies local (domain) skills
+      // 504 -> [505, 506, 507]
       //                   506 -> 508 -> [509, 510]
       //              505 -> 511
-      await metaColony.addGlobalSkill(1); // Add skill 504
-      await metaColony.addGlobalSkill(504); // Adds skillId 505
-      await metaColony.addGlobalSkill(504); // Adds skillId 506
-      await metaColony.addGlobalSkill(504); // Adds skillId 507
-      await metaColony.addGlobalSkill(506); // Adds skillId 508
-      await metaColony.addGlobalSkill(508); // Adds skillId 509
-      await metaColony.addGlobalSkill(508); // Adds skillId 510
-      await metaColony.addGlobalSkill(505); // Adds skillId 511
+      // 512 -> [513, 514, 515]
+      //                   514 -> 516 -> [517, 518]
+      //              513 -> 519
+      // 520 -> [521, 522, 523]
+      //                   522 -> 524 -> [525, 526]
+      //              521 -> 527
+      for (let i = 0; i < 3; i += 1) {
+        const { colony, token } = await setupRandomColony(colonyNetwork); // This creates skill 504/512/520 as the top-level domain skill
+        colonies.push({ colony, token });
+        await colony.addDomain(1); // Add skill 505/513/521, domain 2
+        await colony.addDomain(1); // Add skill 506/514/522, domain 3
+        await colony.addDomain(1); // Add skill 507/515/523, domain 4
+        await colony.addDomain(3); // Adds skillId 508/516/524, domain 5
+        await colony.addDomain(5); // Adds skillId 509/517/525, domain 6
+        await colony.addDomain(5); // Adds skillId 510/518/526, domain 7
+        await colony.addDomain(2); // Adds skillId 511/519/527, domain 8
+      }
       skillCount = await colonyNetwork.getSkillCount();
-      expect(skillCount).to.eq.BN(511);
+      expect(skillCount).to.eq.BN(527);
 
       // Add 500 more skills which won't be used in reputation
       const s = Array.from(Array(500).keys());
-      const skillsSetupPromise = s.map(() => metaColony.addGlobalSkill(1));
+      const skillsSetupPromise = s.map(() => metaColony.addGlobalSkill());
       await Promise.all(skillsSetupPromise);
 
       skillCount = await colonyNetwork.getSkillCount();
-      // 500 for the domain in each new colony + global skill + metaColony's 2 domain skills + 8 new ones we created
-      expect(skillCount).to.eq.BN(1011);
+      // 500 for the domain in each new colony + global skill + metaColony's 2 domain skills + 24 new ones we created
+      expect(skillCount).to.eq.BN(1027);
     });
 
     it("can fund all colonies with own tokens", async function() {
@@ -154,41 +168,36 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       const colonyTaskProps = [
         {
           // Index in the colonies[] array (note that this excludes the meta colony)
-          colonyIdx: 1,
-          domainId: 1,
-          skillId: 508,
+          colonyIdx: 100,
+          domainId: 5,
           managerPayout: 200,
           evaluatorPayout: 100,
           workerPayout: 700
         },
         {
-          colonyIdx: 1,
-          domainId: 2,
-          skillId: 506,
+          colonyIdx: 100,
+          domainId: 3,
           managerPayout: 20,
           evaluatorPayout: 10,
           workerPayout: 70
         },
         {
-          colonyIdx: 1,
-          domainId: 3,
-          skillId: 505,
+          colonyIdx: 100,
+          domainId: 2,
           managerPayout: 40,
           evaluatorPayout: 5,
           workerPayout: 800
         },
         {
-          colonyIdx: 1,
-          domainId: 4,
-          skillId: 509,
+          colonyIdx: 100,
+          domainId: 6,
           managerPayout: 20,
           evaluatorPayout: 10,
           workerPayout: 70
         },
         {
-          colonyIdx: 1,
-          domainId: 5,
-          skillId: 504,
+          colonyIdx: 100,
+          domainId: 1,
           managerPayout: 2,
           evaluatorPayout: 1,
           workerPayout: 7,
@@ -196,33 +205,29 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           workerRating: 1
         },
         {
-          colonyIdx: 2,
+          colonyIdx: 101,
+          domainId: 5,
+          managerPayout: 200,
+          evaluatorPayout: 100,
+          workerPayout: 700
+        },
+        {
+          colonyIdx: 102,
+          domainId: 7,
+          managerPayout: 200,
+          evaluatorPayout: 100,
+          workerPayout: 700
+        },
+        {
+          colonyIdx: 102,
           domainId: 1,
-          skillId: 508,
-          managerPayout: 200,
-          evaluatorPayout: 100,
-          workerPayout: 700
-        },
-        {
-          colonyIdx: 25,
-          domainId: 5,
-          skillId: 510,
-          managerPayout: 200,
-          evaluatorPayout: 100,
-          workerPayout: 700
-        },
-        {
-          colonyIdx: 25,
-          domainId: 5,
-          skillId: 504,
           managerPayout: 200,
           evaluatorPayout: 100,
           workerPayout: 300
         },
         {
-          colonyIdx: 25,
-          domainId: 5,
-          skillId: 504,
+          colonyIdx: 102,
+          domainId: 1,
           managerPayout: 200,
           evaluatorPayout: 100,
           workerPayout: 100,
@@ -231,62 +236,101 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         }
       ];
 
-      colonyTaskProps.forEach(async taskProp => {
-        const { colony } = colonies[taskProp.colonyIdx];
-        await setupFinalizedTask({
-          colonyNetwork,
-          colony,
-          domainId: taskProp.domainId,
-          skillId: taskProp.skillId,
-          manager: MANAGER,
-          evaluator: EVALUATOR,
-          worker: WORKER,
-          managerPayout: taskProp.managerPayout,
-          evaluatorPayout: taskProp.evaluatorPayout,
-          workerPayout: taskProp.workerPayout,
-          managerRating: taskProp.managerRating,
-          workerRating: taskProp.workerRating
-        });
-      });
+      await Promise.all(
+        colonyTaskProps.map(async taskProp => {
+          const { colony } = colonies[taskProp.colonyIdx];
+          await setupFinalizedTask({
+            colonyNetwork,
+            colony,
+            domainId: taskProp.domainId,
+            manager: MANAGER,
+            evaluator: EVALUATOR,
+            worker: WORKER,
+            managerPayout: taskProp.managerPayout,
+            evaluatorPayout: taskProp.evaluatorPayout,
+            workerPayout: taskProp.workerPayout,
+            managerRating: taskProp.managerRating,
+            workerRating: taskProp.workerRating
+          });
+        })
+      );
     });
 
     it("can mine reputation for all tasks", async function() {
       await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, minerAddress: MINER1, test: this });
       await goodClient.addLogContentsToReputationTree();
-
-      // For simplicity we are only validating the global reputation
       const globalReputations = [
-        // ColonyIdx 1
-        { id: 1, colonyIdx: 1, skillId: 1, account: undefined, value: 1633 },
-        { id: 2, colonyIdx: 1, skillId: 504, account: undefined, value: 1633 },
-        { id: 3, colonyIdx: 1, skillId: 505, account: undefined, value: 797 },
-        { id: 4, colonyIdx: 1, skillId: 506, account: undefined, value: 837 },
-        { id: 5, colonyIdx: 1, skillId: 507, account: undefined, value: 0 },
-        { id: 6, colonyIdx: 1, skillId: 508, account: undefined, value: 767 },
-        { id: 7, colonyIdx: 1, skillId: 509, account: undefined, value: 70 },
-        { id: 8, colonyIdx: 1, skillId: 510, account: undefined, value: 0 },
-        { id: 9, colonyIdx: 1, skillId: 511, account: undefined, value: 0 },
-        { id: 10, colonyIdx: 1, skillId: 1, account: WORKER, value: 1633 },
-        { id: 11, colonyIdx: 1, skillId: 504, account: WORKER, value: 1633 },
-        { id: 12, colonyIdx: 1, skillId: 505, account: WORKER, value: 797 },
-        { id: 13, colonyIdx: 1, skillId: 506, account: WORKER, value: 837 },
-        { id: 14, colonyIdx: 1, skillId: 507, account: WORKER, value: 0 },
-        { id: 15, colonyIdx: 1, skillId: 508, account: WORKER, value: 767 },
-        { id: 16, colonyIdx: 1, skillId: 509, account: WORKER, value: 70 },
-        { id: 17, colonyIdx: 1, skillId: 510, account: WORKER, value: 0 },
-        { id: 18, colonyIdx: 1, skillId: 511, account: WORKER, value: 0 },
-        // ColonyIdx 2
-        { id: 19, colonyIdx: 2, skillId: 1, account: WORKER, value: 700 },
-        { id: 20, colonyIdx: 2, skillId: 504, account: WORKER, value: 700 },
-        { id: 21, colonyIdx: 2, skillId: 506, account: WORKER, value: 700 },
-        { id: 22, colonyIdx: 2, skillId: 508, account: WORKER, value: 700 },
-        // ColonyIdx 25
-        { id: 23, colonyIdx: 25, skillId: 1, account: WORKER, value: 900 },
-        { id: 24, colonyIdx: 25, skillId: 504, account: WORKER, value: 900 },
-        { id: 25, colonyIdx: 25, skillId: 506, account: WORKER, value: 630 },
-        { id: 26, colonyIdx: 25, skillId: 508, account: WORKER, value: 630 },
-        { id: 27, colonyIdx: 25, skillId: 509, account: WORKER, value: 0 },
-        { id: 28, colonyIdx: 25, skillId: 510, account: WORKER, value: 630 }
+        // ColonyIdx 100
+        { id: 4, colonyIdx: 100, skillId: 506, account: undefined, value: 1197 },
+        { id: 5, colonyIdx: 100, skillId: 504, account: undefined, value: 2041 },
+        { id: 6, colonyIdx: 100, skillId: 508, account: undefined, value: 1097 },
+        { id: 7, colonyIdx: 100, skillId: 506, account: MANAGER, value: 240 },
+        { id: 8, colonyIdx: 100, skillId: 504, account: MANAGER, value: 282 },
+        { id: 9, colonyIdx: 100, skillId: 508, account: MANAGER, value: 220 },
+        { id: 10, colonyIdx: 100, skillId: 506, account: EVALUATOR, value: 120 },
+        { id: 11, colonyIdx: 100, skillId: 504, account: EVALUATOR, value: 126 },
+        { id: 12, colonyIdx: 100, skillId: 508, account: EVALUATOR, value: 110 },
+        { id: 13, colonyIdx: 100, skillId: 506, account: WORKER, value: 837 },
+        { id: 14, colonyIdx: 100, skillId: 504, account: WORKER, value: 1633 },
+        { id: 15, colonyIdx: 100, skillId: 508, account: WORKER, value: 767 },
+        { id: 16, colonyIdx: 100, skillId: 3, account: undefined, value: 1633 },
+        { id: 17, colonyIdx: 100, skillId: 3, account: WORKER, value: 1633 },
+        { id: 18, colonyIdx: 100, skillId: 505, account: undefined, value: 842 },
+        { id: 19, colonyIdx: 100, skillId: 505, account: MANAGER, value: 40 },
+        { id: 20, colonyIdx: 100, skillId: 505, account: EVALUATOR, value: 5 },
+        { id: 21, colonyIdx: 100, skillId: 505, account: WORKER, value: 797 },
+        { id: 22, colonyIdx: 100, skillId: 509, account: undefined, value: 100 },
+        { id: 23, colonyIdx: 100, skillId: 509, account: MANAGER, value: 20 },
+        { id: 24, colonyIdx: 100, skillId: 509, account: EVALUATOR, value: 10 },
+        { id: 25, colonyIdx: 100, skillId: 509, account: WORKER, value: 70 },
+        { id: 26, colonyIdx: 100, skillId: 507, account: undefined, value: 0 },
+        { id: 27, colonyIdx: 100, skillId: 510, account: undefined, value: 0 },
+        { id: 28, colonyIdx: 100, skillId: 511, account: undefined, value: 0 },
+        { id: 29, colonyIdx: 100, skillId: 507, account: WORKER, value: 0 },
+        { id: 30, colonyIdx: 100, skillId: 510, account: WORKER, value: 0 },
+        { id: 31, colonyIdx: 100, skillId: 511, account: WORKER, value: 0 },
+        // ColonyIdx 101
+        { id: 32, colonyIdx: 101, skillId: 514, account: undefined, value: 1000 },
+        { id: 33, colonyIdx: 101, skillId: 512, account: undefined, value: 1000 },
+        { id: 34, colonyIdx: 101, skillId: 516, account: undefined, value: 1000 },
+        { id: 35, colonyIdx: 101, skillId: 514, account: MANAGER, value: 200 },
+        { id: 36, colonyIdx: 101, skillId: 512, account: MANAGER, value: 200 },
+        { id: 37, colonyIdx: 101, skillId: 516, account: MANAGER, value: 200 },
+        { id: 38, colonyIdx: 101, skillId: 514, account: EVALUATOR, value: 100 },
+        { id: 39, colonyIdx: 101, skillId: 512, account: EVALUATOR, value: 100 },
+        { id: 40, colonyIdx: 101, skillId: 516, account: EVALUATOR, value: 100 },
+        { id: 41, colonyIdx: 101, skillId: 514, account: WORKER, value: 700 },
+        { id: 42, colonyIdx: 101, skillId: 512, account: WORKER, value: 700 },
+        { id: 43, colonyIdx: 101, skillId: 516, account: WORKER, value: 700 },
+        { id: 44, colonyIdx: 101, skillId: 3, account: undefined, value: 700 },
+        { id: 45, colonyIdx: 101, skillId: 3, account: WORKER, value: 700 },
+        // ColonyIdx 102
+        { id: 46, colonyIdx: 102, skillId: 524, account: undefined, value: 930 },
+        { id: 47, colonyIdx: 102, skillId: 522, account: undefined, value: 930 },
+        { id: 48, colonyIdx: 102, skillId: 520, account: undefined, value: 1800 },
+        { id: 49, colonyIdx: 102, skillId: 526, account: undefined, value: 930 },
+        { id: 50, colonyIdx: 102, skillId: 524, account: MANAGER, value: 200 },
+        { id: 51, colonyIdx: 102, skillId: 522, account: MANAGER, value: 200 },
+        { id: 52, colonyIdx: 102, skillId: 520, account: MANAGER, value: 600 },
+        { id: 53, colonyIdx: 102, skillId: 526, account: MANAGER, value: 200 },
+        { id: 54, colonyIdx: 102, skillId: 524, account: EVALUATOR, value: 100 },
+        { id: 55, colonyIdx: 102, skillId: 522, account: EVALUATOR, value: 100 },
+        { id: 56, colonyIdx: 102, skillId: 520, account: EVALUATOR, value: 300 },
+        { id: 57, colonyIdx: 102, skillId: 526, account: EVALUATOR, value: 100 },
+        { id: 58, colonyIdx: 102, skillId: 524, account: WORKER, value: 630 },
+        { id: 59, colonyIdx: 102, skillId: 522, account: WORKER, value: 630 },
+        { id: 60, colonyIdx: 102, skillId: 520, account: WORKER, value: 900 },
+        { id: 61, colonyIdx: 102, skillId: 526, account: WORKER, value: 630 },
+        { id: 62, colonyIdx: 102, skillId: 3, account: undefined, value: 900 },
+        { id: 63, colonyIdx: 102, skillId: 3, account: WORKER, value: 900 },
+        { id: 64, colonyIdx: 102, skillId: 521, account: undefined, value: 0 },
+        { id: 65, colonyIdx: 102, skillId: 523, account: undefined, value: 0 },
+        { id: 66, colonyIdx: 102, skillId: 525, account: undefined, value: 0 },
+        { id: 67, colonyIdx: 102, skillId: 527, account: undefined, value: 0 },
+        { id: 68, colonyIdx: 102, skillId: 521, account: WORKER, value: 0 },
+        { id: 69, colonyIdx: 102, skillId: 523, account: WORKER, value: 0 },
+        { id: 70, colonyIdx: 102, skillId: 525, account: WORKER, value: 0 },
+        { id: 71, colonyIdx: 102, skillId: 527, account: WORKER, value: 0 }
       ];
 
       globalReputations.forEach(globalRep => {
@@ -304,7 +348,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
   describe("when there is a dispute over reputation root hash", function() {
     // These tests are useful for checking that every type of parent / child / user / colony-wide-sum skills are accounted for
     // correctly. Unsure if I should force them to be run every time.
-    const updates = Array.from(Array(83).keys());
+    const updates = Array.from(Array(75).keys());
     updates.forEach(async badIndex => {
       it(`should cope if wrong reputation transition is transition ${badIndex}`, async function advancingTest() {
         await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
@@ -327,7 +371,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         const repCycle = await getActiveRepCycle(colonyNetwork);
 
         let error;
-        if (badIndex < 80) {
+        if (badIndex < 72) {
           error = "colony-reputation-mining-decay-incorrect";
         } else {
           error = "colony-reputation-mining-increased-reputation-value-incorrect";

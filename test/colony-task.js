@@ -26,7 +26,8 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET,
-  MAX_PAYOUT
+  MAX_PAYOUT,
+  GLOBAL_SKILL_ID
 } from "../helpers/constants";
 
 import {
@@ -37,7 +38,8 @@ import {
   expectAllEvents,
   forwardTime,
   currentBlockTime,
-  createSignatures
+  createSignatures,
+  addTaskSkillEditingFunctions
 } from "../helpers/test-helper";
 
 import {
@@ -61,6 +63,7 @@ const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const DSToken = artifacts.require("DSToken");
+const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
 contract("ColonyTask", accounts => {
   const MANAGER = accounts[0];
@@ -165,17 +168,17 @@ contract("ColonyTask", accounts => {
 
     it("should set the task domain correctly", async () => {
       await colony.addDomain(1, 0, 1);
-      const taskId = await makeTask({ colony, domainId: 2 });
+      const taskId = await makeTask({ colonyNetwork, colony, domainId: 2 });
       const task = await colony.getTask(taskId);
       expect(task.domainId).to.eq.BN(2);
     });
 
     it("should log TaskAdded and FundingPotAdded events", async () => {
-      await expectAllEvents(colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 1, 0), ["TaskAdded", "FundingPotAdded"]);
+      await expectAllEvents(colony.makeTask(1, 0, SPECIFICATION_HASH, 1, 3, 0), ["TaskAdded", "FundingPotAdded"]);
     });
 
     it("should optionally set the skill and due date", async () => {
-      const skillId = 1;
+      const skillId = GLOBAL_SKILL_ID;
       const currTime = await currentBlockTime();
       const dueDate = currTime + SECONDS_PER_DAY * 10;
 
@@ -186,7 +189,7 @@ contract("ColonyTask", accounts => {
     });
 
     it("should set the due date to 90 days from now if unspecified", async () => {
-      const skillId = 1;
+      const skillId = GLOBAL_SKILL_ID;
       const dueDate = 0;
       const taskId = await makeTask({ colony, skillId, dueDate });
       const task = await colony.getTask(taskId);
@@ -291,7 +294,7 @@ contract("ColonyTask", accounts => {
         functionName: "setTaskSkill",
         signers: [MANAGER],
         sigTypes: [0],
-        args: [taskId, 1] // skillId 1
+        args: [taskId, 3] // skillId 3
       });
 
       executeSignedRoleAssignment({
@@ -1110,7 +1113,7 @@ contract("ColonyTask", accounts => {
 
     it("should log a TaskSkillSet event, if the task skill gets changed", async () => {
       const taskId = await makeTask({ colony });
-      await metaColony.addGlobalSkill(1);
+      await metaColony.addGlobalSkill();
 
       const skillCount = await colonyNetwork.getSkillCount();
 
@@ -1897,6 +1900,36 @@ contract("ColonyTask", accounts => {
       const workerBalanceAfter = await token.balanceOf(WORKER);
       expect(networkBalanceAfter.sub(networkBalanceBefore)).to.be.zero;
       expect(workerBalanceAfter.sub(workerBalanceBefore)).to.be.zero;
+    });
+  });
+
+  describe("when a task has multiple skills", () => {
+    before(async () => {
+      // Introduce our ability to add and remove skills from tasks, just for these tests until
+      // more than one skill per task is supported.
+      await addTaskSkillEditingFunctions(colonyNetwork);
+    });
+
+    it("should allow a task with 45 skills to finalise", async () => {
+      // 60 was an overestimate, it seems - I can't go much higher than this.
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+      const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
+      for (let i = 0; i < 45; i += 1) {
+        await taskSkillEditingColony.addTaskSkill(taskId, GLOBAL_SKILL_ID);
+      }
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
+    });
+
+    it("an empty element shouldn't affect finalization of the task", async () => {
+      await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
+      const taskId = await setupRatedTask({ colonyNetwork, colony, token });
+      const taskSkillEditingColony = await TaskSkillEditing.at(colony.address);
+      await taskSkillEditingColony.addTaskSkill(taskId, 3);
+      await taskSkillEditingColony.addTaskSkill(taskId, 3);
+      await taskSkillEditingColony.addTaskSkill(taskId, 3);
+      await taskSkillEditingColony.removeTaskSkill(taskId, 2);
+      await expectEvent(colony.finalizeTask(taskId), "TaskFinalized");
     });
   });
 });

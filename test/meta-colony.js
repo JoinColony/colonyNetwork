@@ -1,8 +1,9 @@
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { INITIAL_FUNDING, DELIVERABLE_HASH } from "../helpers/constants";
-import { checkErrorRevert } from "../helpers/test-helper";
+import { soliditySha3 } from "web3-utils";
+import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../helpers/constants";
+import { checkErrorRevert, removeSubdomainLimit } from "../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupFundedTask,
@@ -49,9 +50,13 @@ contract("Meta Colony", accounts => {
     });
   });
 
-  describe("when adding a new global skill", () => {
-    it("should be able to add a new skill as a child to the root skill", async () => {
-      await metaColony.addGlobalSkill(1);
+  describe("when adding skills to the tree by adding domains", () => {
+    beforeEach(async () => {
+      await removeSubdomainLimit(colonyNetwork); // Temporary for tests until we allow subdomain depth > 1
+    });
+
+    it("should be able to add a new skill as a child of a domain", async () => {
+      await metaColony.addDomain(1, 0, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
@@ -60,23 +65,25 @@ contract("Meta Colony", accounts => {
       expect(newSkill.nParents).to.eq.BN(1);
       expect(newSkill.nChildren).to.be.zero;
 
-      // Check rootSkill.nChildren is now 1
+      // Check nChildren of the skill corresponding to the root domain in the metacolony is now 2
       const rootSkill = await colonyNetwork.getSkill(1);
-      expect(rootSkill.nChildren).to.eq.BN(1);
+      expect(rootSkill.nChildren).to.eq.BN(2);
 
       // Check rootSkill.children first element is the id of the new skill
       const rootSkillChild = await colonyNetwork.getChildSkillId(1, 0);
-      expect(rootSkillChild).to.eq.BN(4);
+      const rootSkillChild2 = await colonyNetwork.getChildSkillId(1, 1);
+      expect(rootSkillChild).to.eq.BN(2);
+      expect(rootSkillChild2).to.eq.BN(4);
     });
 
     it("should not allow a non-root role in the metacolony to add a global skill", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(1, { from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+      await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
-    it("should be able to add multiple child skills to the root global skill", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(1);
+    it("should be able to add multiple child skills to the skill corresponding to the root domain by adding child domains", async () => {
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 0, 1);
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(6);
@@ -93,54 +100,70 @@ contract("Meta Colony", accounts => {
       expect(newSkill3.nParents).to.eq.BN(1);
       expect(newSkill3.nChildren).to.be.zero;
 
-      // Check rootSkill.nChildren is now 3
+      // Check rootSkill.nChildren is now 4
       const rootSkill = await colonyNetwork.getSkill(1);
-      expect(rootSkill.nChildren).to.eq.BN(3);
+      expect(rootSkill.nChildren).to.eq.BN(4);
 
       // Check rootSkill.children contains the ids of the new skills
-      const rootSkillChild1 = await colonyNetwork.getChildSkillId(1, 0);
+      const rootSkillChild1 = await colonyNetwork.getChildSkillId(1, 1);
       expect(rootSkillChild1).to.eq.BN(4);
-      const rootSkillChild2 = await colonyNetwork.getChildSkillId(1, 1);
+      const rootSkillChild2 = await colonyNetwork.getChildSkillId(1, 2);
       expect(rootSkillChild2).to.eq.BN(5);
-      const rootSkillChild3 = await colonyNetwork.getChildSkillId(1, 2);
+      const rootSkillChild3 = await colonyNetwork.getChildSkillId(1, 3);
       expect(rootSkillChild3).to.eq.BN(6);
     });
 
-    it("should NOT be able to add a child skill for a non existent parent", async () => {
-      // Add 2 skill nodes to root skill
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(1);
+    it("should NOT be able to add a domain that has a non existent parent", async () => {
+      // Add 2 skill nodes to skill corresponding to root domain
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 0, 1);
 
-      await checkErrorRevert(metaColony.addGlobalSkill(6), "colony-invalid-skill-id");
+      await checkErrorRevert(metaColony.addDomain(1, 0, 6), "ds-auth-child-domain-does-not-exist");
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(5);
     });
 
     it("should NOT be able to add a child skill to a local skill parent", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(2), "colony-global-and-local-skill-trees-are-separate");
+      // Put colony in to recovery mode
+      await metaColony.enterRecoveryMode();
+      // work out the storage slot
+      // Domain mapping is storage slot 20
+      // So domain 1 struct starts at slot given by
+      const domain1Slot = soliditySha3(1, 20);
+      // Which means the skill is in that slot (it's the first entry in the struct)
+      // Edit that slot
+      await metaColony.setStorageSlotRecovery(domain1Slot, "0x0000000000000000000000000000000000000000000000000000000000000003");
+      // Leave recovery mode
+      await metaColony.approveExitRecovery();
+      await metaColony.exitRecoveryMode();
+      // Try to add a child
+      await checkErrorRevert(metaColony.addDomain(1, 0, 1), "colony-global-and-local-skill-trees-are-separate");
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(3);
     });
 
     it("should be able to add skills in the middle of the skills tree", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(5);
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
-      await metaColony.addGlobalSkill(5);
+      // Why this random addGlobalSkill in the middle? It means we can use effectively the same tests
+      // below, but with skill ID 7 replaced with skill ID 2. While porting everything to the tag cloud
+      // arrangement, I was very interested in changing tests as little as possible.
+      await metaColony.addDomain(1, 0, 1); // Domain ID 2, skill id 4
+      await metaColony.addDomain(1, 0, 1); // Domain ID 3, skill id 5
+      await metaColony.addDomain(1, 2, 3); // Domain ID 4, skill id 6
+      await metaColony.addGlobalSkill(); // Skill id 7
+      await metaColony.addDomain(1, 1, 2); // Domain ID 5, skill id 8
+      await metaColony.addDomain(1, 2, 3); // Domain ID 6, skill id 9
 
       const rootSkill = await colonyNetwork.getSkill(1);
       expect(rootSkill.nParents).to.be.zero;
       expect(rootSkill.nChildren).to.eq.BN(6);
       const rootSkillChildSkillId1 = await colonyNetwork.getChildSkillId(1, 0);
-      expect(rootSkillChildSkillId1).to.eq.BN(4);
+      expect(rootSkillChildSkillId1).to.eq.BN(2);
       const rootSkillChildSkillId2 = await colonyNetwork.getChildSkillId(1, 1);
-      expect(rootSkillChildSkillId2).to.eq.BN(5);
+      expect(rootSkillChildSkillId2).to.eq.BN(4);
       const rootSkillChildSkillId3 = await colonyNetwork.getChildSkillId(1, 2);
-      expect(rootSkillChildSkillId3).to.eq.BN(6);
+      expect(rootSkillChildSkillId3).to.eq.BN(5);
       const rootSkillChildSkillId4 = await colonyNetwork.getChildSkillId(1, 3);
-      expect(rootSkillChildSkillId4).to.eq.BN(7);
+      expect(rootSkillChildSkillId4).to.eq.BN(6);
       const rootSkillChildSkillId5 = await colonyNetwork.getChildSkillId(1, 4);
       expect(rootSkillChildSkillId5).to.eq.BN(8);
       const rootSkillChildSkillId6 = await colonyNetwork.getChildSkillId(1, 5);
@@ -172,10 +195,10 @@ contract("Meta Colony", accounts => {
       const skill3ParentSkillId2 = await colonyNetwork.getParentSkillId(6, 1);
       expect(skill3ParentSkillId2).to.eq.BN(1);
 
-      const skill4 = await colonyNetwork.getSkill(7);
+      const skill4 = await colonyNetwork.getSkill(2);
       expect(skill4.nParents).to.eq.BN(1);
       expect(skill4.nChildren).to.be.zero;
-      const skill4ParentSkillId1 = await colonyNetwork.getParentSkillId(7, 0);
+      const skill4ParentSkillId1 = await colonyNetwork.getParentSkillId(2, 0);
       expect(skill4ParentSkillId1).to.eq.BN(1);
 
       const skill5 = await colonyNetwork.getSkill(8);
@@ -196,15 +219,15 @@ contract("Meta Colony", accounts => {
     });
 
     it("should correctly ascend the skills tree to find parents", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(4);
-      await metaColony.addGlobalSkill(5);
-      await metaColony.addGlobalSkill(6);
-      await metaColony.addGlobalSkill(7);
-      await metaColony.addGlobalSkill(8);
-      await metaColony.addGlobalSkill(9);
-      await metaColony.addGlobalSkill(10);
-      await metaColony.addGlobalSkill(11);
+      await metaColony.addDomain(1, 0, 1);
+      await metaColony.addDomain(1, 1, 2);
+      await metaColony.addDomain(1, 2, 3);
+      await metaColony.addDomain(1, 3, 4);
+      await metaColony.addDomain(1, 4, 5);
+      await metaColony.addDomain(1, 5, 6);
+      await metaColony.addDomain(1, 6, 7);
+      await metaColony.addDomain(1, 7, 8);
+      await metaColony.addDomain(1, 8, 9);
 
       // 1 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12
 
@@ -243,11 +266,21 @@ contract("Meta Colony", accounts => {
       expect(parentId).to.be.zero;
     });
 
-    it("should NOT be able to add a new root global skill", async () => {
-      await checkErrorRevert(metaColony.addGlobalSkill(0), "colony-invalid-skill-id");
-
-      const skillCount = await colonyNetwork.getSkillCount();
-      expect(skillCount).to.eq.BN(3);
+    it("should prevent a child skill being added to a skill that doesn't exist", async () => {
+      // Put colony in to recovery mode
+      await metaColony.enterRecoveryMode();
+      // work out the storage slot
+      // Domain mapping is storage slot 20
+      // So domain 1 struct starts at slot given by
+      const domain1Slot = soliditySha3(1, 20);
+      // Which means the skill is in that slot (it's the first entry in the struct)
+      // Edit that slot
+      await metaColony.setStorageSlotRecovery(domain1Slot, "0xdeadbeef");
+      // Leave recovery mode
+      await metaColony.approveExitRecovery();
+      await metaColony.exitRecoveryMode();
+      // Try to add a child
+      await checkErrorRevert(metaColony.addDomain(1, 0, 1), "colony-invalid-skill-id");
     });
   });
 
@@ -267,11 +300,11 @@ contract("Meta Colony", accounts => {
 
       // Check root local skill.nChildren is now 2
       // One special mining skill, and the skill associated with the domain we just added
-      const rootLocalSkill = await colonyNetwork.getSkill(2);
+      const rootLocalSkill = await colonyNetwork.getSkill(1);
       expect(rootLocalSkill.nChildren).to.eq.BN(2);
 
       // Check root local skill.children second element is the id of the new skill
-      const rootSkillChild = await colonyNetwork.getChildSkillId(2, 1);
+      const rootSkillChild = await colonyNetwork.getChildSkillId(1, 1);
       expect(rootSkillChild).to.eq.BN(4);
     });
 
@@ -333,7 +366,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to add a new local skill by anyone but a Colony", async () => {
-      await checkErrorRevert(colonyNetwork.addSkill(2, false), "colony-caller-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(2), "colony-caller-must-be-colony");
 
       const skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(4);
@@ -344,7 +377,7 @@ contract("Meta Colony", accounts => {
       const rootDomain = await colony.getDomain(1);
       const rootLocalSkillId = rootDomain.skillId;
 
-      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId, false), "colony-caller-must-be-colony");
+      await checkErrorRevert(colonyNetwork.addSkill(rootLocalSkillId), "colony-caller-must-be-colony");
 
       const skillCountAfter = await colonyNetwork.getSkillCount();
       expect(skillCountBefore).to.eq.BN(skillCountAfter);
@@ -447,8 +480,8 @@ contract("Meta Colony", accounts => {
     });
 
     it("should be able to set global skill on task", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
 
       const taskId = await makeTask({ colony });
 
@@ -466,8 +499,7 @@ contract("Meta Colony", accounts => {
     });
 
     it("should not allow anyone but the colony to set global skill on task", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill();
 
       const taskId = await makeTask({ colony, skillId: 0 });
       await checkErrorRevert(colony.setTaskSkill(taskId, 5, { from: OTHER_ACCOUNT }), "colony-not-self");
@@ -481,14 +513,14 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to set global skill on completed task", async () => {
-      await metaColony.addGlobalSkill(1);
-      await metaColony.addGlobalSkill(5);
+      await metaColony.addGlobalSkill();
+      await metaColony.addGlobalSkill();
       await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
       const taskId = await setupFinalizedTask({ colonyNetwork, colony });
-      await checkErrorRevert(colony.setTaskSkill(taskId, 6), "colony-task-complete");
+      await checkErrorRevert(colony.setTaskSkill(taskId, 5), "colony-task-complete");
 
       const task = await colony.getTask(taskId);
-      expect(task.skillIds[0]).to.eq.BN(1);
+      expect(task.skillIds[0]).to.eq.BN(GLOBAL_SKILL_ID);
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {
@@ -498,13 +530,13 @@ contract("Meta Colony", accounts => {
 
     it("should NOT be able to set local skill on task", async () => {
       await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 3), "colony-not-global-skill");
+      await checkErrorRevert(colony.setTaskSkill(1, 1), "colony-not-global-skill");
     });
   });
 
   describe("when getting a skill", () => {
     it("should return a true flag if the skill is global", async () => {
-      const globalSkill = await colonyNetwork.getSkill(1);
+      const globalSkill = await colonyNetwork.getSkill(3);
       expect(globalSkill.globalSkill).to.be.true;
     });
 

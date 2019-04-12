@@ -741,7 +741,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 1,
+        skillId: 3,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout: 1000000000000,
@@ -756,7 +756,7 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await setupFinalizedTask({
         colonyNetwork,
         colony: metaColony,
-        skillId: 1,
+        skillId: 3,
         managerPayout: 1000000000000,
         evaluatorPayout: 1000000000,
         workerPayout,
