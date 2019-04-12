@@ -30,10 +30,10 @@ module.exports = async function(callback) {
 
     // eslint-disable no-plusplus
     for (let i = 1; i <= 10; i += 1) {
-      let user = accounts[i % 10];
-      let amount = WAD.muln(i % 5 + 1);
-      let paymentId = i
-      let potId = i + 1
+      const user = accounts[i % 10];
+      const amount = WAD.muln((i % 5) + 1);
+      const paymentId = i;
+      const potId = i + 1;
 
       await metaColony.addPayment(1, 0, user, clnyToken.address, amount, 1, 0);
       await metaColony.moveFundsBetweenPots(1, 0, 0, 1, potId, amount, clnyToken.address);
@@ -42,12 +42,11 @@ module.exports = async function(callback) {
 
     const addr = await colonyNetwork.getReputationMiningCycle(false);
     const repCycle = await IReputationMiningCycle.at(addr);
-    const numUpdates = await repCycle.getReputationUpdateLogLength();
 
     console.log("*".repeat(20));
-    console.log("CYCLE ADDRESS:", repCycle.address)
-    console.log("COLONY NETWORK:", colonyNetwork.address)
-    console.log("COINBASE ACCOUNT:", accounts[0])
+    console.log("CYCLE ADDRESS:", repCycle.address);
+    console.log("COLONY NETWORK:", colonyNetwork.address);
+    console.log("COINBASE ACCOUNT:", accounts[0]);
 
     callback();
   } catch (err) {

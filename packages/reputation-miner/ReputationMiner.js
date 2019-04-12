@@ -705,7 +705,7 @@ class ReputationMiner {
    * @return {Integer}      Duration in seconds
    */
   getMiningCycleDuration() {
-    return miningCycleDuration;
+    return this.miningCycleDuration;
   }
 
   /**
