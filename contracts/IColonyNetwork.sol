@@ -94,6 +94,10 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @return skill The Skill struct
   function getSkill(uint256 _skillId) public view returns (Skill memory skill);
 
+  /// @notice Mark a global skill as depreciated which stops new tasks and payments from using it.
+  /// @param _skillId Id of the skill
+  function depreciateSkill(uint256 _skillId) public;
+
   /// @notice Get whether the skill with id _skillId is public or not.
   /// @param _skillId Id of the skill
   /// @return result bool

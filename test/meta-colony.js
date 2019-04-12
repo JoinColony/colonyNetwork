@@ -534,6 +534,35 @@ contract("Meta Colony", accounts => {
     });
   });
 
+  describe("when managing global skills", () => {
+    it("can create global skills", async () => {
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      const skill = await colonyNetwork.getSkill(skillId);
+      expect(skill.nChildren).to.be.zero;
+      expect(skill.nParents).to.be.zero;
+      expect(skill.globalSkill).to.be.true;
+      expect(skill.depreciated).to.be.false;
+    });
+
+    it("cannot create global skills if not a root user in meta colony", async () => {
+      await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+    });
+
+    it("can depreciate global skills", async () => {
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+
+      let skill = await colonyNetwork.getSkill(skillId);
+      expect(skill.depreciated).to.be.false;
+
+      await metaColony.depreciateGlobalSkill(skillId);
+
+      skill = await colonyNetwork.getSkill(skillId);
+      expect(skill.depreciated).to.be.true;
+    });
+  });
+
   describe("when getting a skill", () => {
     it("should return a true flag if the skill is global", async () => {
       const globalSkill = await colonyNetwork.getSkill(3);

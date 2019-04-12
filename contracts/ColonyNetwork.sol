@@ -267,6 +267,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
     return skill.children[_childSkillIndex];
   }
 
+  function depreciateSkill(uint256 _skillId) public stoppable 
+  allowedToAddSkill(true)
+  {
+    skills[_skillId].depreciated = true;
+  }
+
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public
   stoppable
   calledByColony

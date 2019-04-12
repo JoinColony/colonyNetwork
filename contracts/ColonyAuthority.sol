@@ -71,6 +71,7 @@ contract ColonyAuthority is CommonAuthority {
     addRoleCapability(ROOT_ROLE, "addNetworkColonyVersion(uint256,address)");
     addRoleCapability(ROOT_ROLE, "setNetworkFeeInverse(uint256)");
     addRoleCapability(ROOT_ROLE, "addGlobalSkill()");
+    addRoleCapability(ROOT_ROLE, "depreciateGlobalSkill(uint256)");
   }
 
   function addRoleCapability(uint8 role, bytes memory sig) private {

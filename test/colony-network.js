@@ -265,9 +265,14 @@ contract("Colony Network", accounts => {
     });
   });
 
-  describe("when adding a skill", () => {
+  describe("when working with skills", () => {
     it("should not be able to add a global skill, by an address that is not the meta colony ", async () => {
       await checkErrorRevert(colonyNetwork.addSkill(0), "colony-must-be-meta-colony");
+    });
+
+    it("should not be able to depreciate a global skill, by an address that is not the meta colony ", async () => {
+      const skillCount = await colonyNetwork.getSkillCount();
+      await checkErrorRevert(colonyNetwork.depreciateSkill(skillCount), "colony-must-be-meta-colony");
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {
