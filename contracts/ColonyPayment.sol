@@ -111,7 +111,7 @@ contract ColonyPayment is ColonyStorage {
   authDomain(_permissionDomainId, _childSkillIndex, payments[_id].domainId)
   paymentNotFinalized(_id)
   skillExists(_skillId)
-  globalSkill(_skillId)
+  validGlobalSkill(_skillId)
   {
     payments[_id].skills[0] = _skillId;
   }

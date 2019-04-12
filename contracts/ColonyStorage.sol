@@ -26,7 +26,7 @@ import "./CommonStorage.sol";
 import "./ColonyDataTypes.sol";
 
 
-contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
+contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes, DSMath {
   // When adding variables, do not make them public, otherwise all contracts that inherit from
   // this one will have the getters. Make custom getters in the contract that seems most appropriate,
   // and add it to IColony.sol
@@ -116,10 +116,11 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, DSMath {
     _;
   }
 
-  modifier globalSkill(uint256 _skillId) {
+  modifier validGlobalSkill(uint256 _skillId) {
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
-    bool isGlobalSkill = colonyNetworkContract.isGlobalSkill(_skillId);
-    require(isGlobalSkill, "colony-not-global-skill");
+    Skill memory skill = colonyNetworkContract.getSkill(_skillId);
+    require(skill.globalSkill, "colony-not-global-skill");
+    require(!skill.depreciated, "colony-depreciated-global-skill");
     _;
   }
 

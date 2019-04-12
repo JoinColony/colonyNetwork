@@ -17,13 +17,14 @@ contract("One transaction payments", accounts => {
   let colony;
   let token;
   let colonyNetwork;
+  let metaColony;
   let oneTxExtension;
   const RECIPIENT = accounts[3];
   const COLONY_ADMIN = accounts[5];
 
   before(async () => {
     colonyNetwork = await setupColonyNetwork();
-    await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
+    ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
   });
@@ -109,6 +110,17 @@ contract("One transaction payments", accounts => {
       await checkErrorRevert(
         oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, 2, { from: COLONY_ADMIN }),
         "colony-not-global-skill"
+      );
+    });
+
+    it("should not allow an admin to specify a depreciated global skill", async () => {
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await metaColony.depreciateGlobalSkill(skillId);
+
+      await checkErrorRevert(
+        oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, skillId, { from: COLONY_ADMIN }),
+        "colony-depreciated-global-skill"
       );
     });
 

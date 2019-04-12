@@ -98,12 +98,6 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @param _skillId Id of the skill
   function depreciateSkill(uint256 _skillId) public;
 
-  /// @notice Get whether the skill with id _skillId is public or not.
-  /// @param _skillId Id of the skill
-  /// @return result bool
-  /// @dev Returns false if skill does not exist
-  function isGlobalSkill(uint256 _skillId) public view returns (bool result);
-
   /// @notice Adds a reputation update entry to log
   /// @dev Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or
   /// @param _user The address of the user for the reputation update

@@ -74,10 +74,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     skill = skills[_skillId];
   }
 
-  function isGlobalSkill(uint256 _skillId) public view returns (bool) {
-    return skills[_skillId].globalSkill;
-  }
-
   function getReputationRootHash() public view returns (bytes32) {
     return reputationRootHash;
   }

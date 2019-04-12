@@ -524,13 +524,22 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 5), "colony-skill-does-not-exist");
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(colony.setTaskSkill(taskId, 5), "colony-skill-does-not-exist");
     });
 
     it("should NOT be able to set local skill on task", async () => {
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 1), "colony-not-global-skill");
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-global-skill");
+    });
+
+    it("should NOT be able to set a depreciated skill on task", async () => {
+      const taskId = await makeTask({ colony });
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await metaColony.depreciateGlobalSkill(skillId);
+
+      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-depreciated-global-skill");
     });
   });
 
