@@ -121,30 +121,34 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       // Current skills tree is:
       // 1 -> 2                                  // Local colonyId 1 (meta colony) skills
       // 3                                       // Global skill
-      // 4? -> [5, 6, 7, 8]                      // Local colonyId 2 skills
+      // 4 -> [5, 6, 7, 8]                       // Local colonyId 2 skills
       // 9 -> [10, 11, 12, 13]                   // Local colonyId 3 skills
       // 14 -> [15, 16, 17, 18]                  // Local colonyId 4 skills
       // 19 -> [20, 21, 22, 23]                  // Local colonyId 5 skills
       // [...]                                   // Remaining colonies local (domain) skills
+      // Below update adds the following local (domain) skills in 3 new colonies
       // 504 -> [505, 506, 507]
-      //                   506 -> 508 -> [509, 510]
-      //              505 -> 511
+      //              506 -> 508 -> [509, 510]
+      //         505 -> 511
       // 512 -> [513, 514, 515]
-      //                   514 -> 516 -> [517, 518]
-      //              513 -> 519
+      //              514 -> 516 -> [517, 518]
+      //         513 -> 519
       // 520 -> [521, 522, 523]
-      //                   522 -> 524 -> [525, 526]
-      //              521 -> 527
+      //              522 -> 524 -> [525, 526]
+      //         521 -> 527
       for (let i = 0; i < 3; i += 1) {
         const { colony, token } = await setupRandomColony(colonyNetwork); // This creates skill 504/512/520 as the top-level domain skill
         colonies.push({ colony, token });
-        await colony.addDomain(1); // Add skill 505/513/521, domain 2
-        await colony.addDomain(1); // Add skill 506/514/522, domain 3
-        await colony.addDomain(1); // Add skill 507/515/523, domain 4
-        await colony.addDomain(3); // Adds skillId 508/516/524, domain 5
-        await colony.addDomain(5); // Adds skillId 509/517/525, domain 6
-        await colony.addDomain(5); // Adds skillId 510/518/526, domain 7
-        await colony.addDomain(2); // Adds skillId 511/519/527, domain 8
+        await colony.addDomain(1, 0, 1); // Add skillId 505,513 and 521, domain 2
+        await colony.addDomain(1, 0, 1); // Add skillId 506,514 and 522, domain 3
+        await colony.addDomain(1, 0, 1); // Add skillId 507,515 and 523, domain 4
+
+        await colony.addDomain(1, 1, 3); // Add skillId 508,516 and 524, domain 5
+
+        await colony.addDomain(1, 3, 5); // Add skillId 509,517 and 525, domain 6
+        await colony.addDomain(1, 3, 5); // Add skillId 510,518 and 526, domain 7
+
+        await colony.addDomain(1, 0, 2); // Add skillId 511,519 and 527, domain 8
       }
       skillCount = await colonyNetwork.getSkillCount();
       expect(skillCount).to.eq.BN(527);
@@ -239,6 +243,10 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       await Promise.all(
         colonyTaskProps.map(async taskProp => {
           const { colony } = colonies[taskProp.colonyIdx];
+
+          await colony.setAdministrationRole(1, 0, MANAGER, 1, true);
+          await colony.setFundingRole(1, 0, MANAGER, 1, true);
+
           await setupFinalizedTask({
             colonyNetwork,
             colony,
