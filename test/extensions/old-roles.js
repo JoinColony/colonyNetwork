@@ -19,6 +19,7 @@ import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColo
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const OldRolesFactory = artifacts.require("OldRolesFactory");
 const OldRoles = artifacts.require("OldRoles");
 
 contract("Old Roles", accounts => {
@@ -27,6 +28,7 @@ contract("Old Roles", accounts => {
   let colonyNetwork;
   let oldRolesExtension;
   let hasRole;
+  let oldRolesFactory;
 
   const FOUNDER = accounts[0];
   const USER1 = accounts[1];
@@ -37,17 +39,23 @@ contract("Old Roles", accounts => {
     await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
+    oldRolesFactory = await OldRolesFactory.new();
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-
-    oldRolesExtension = await OldRoles.new(colony.address);
+    await oldRolesFactory.deployExtension(colony.address);
+    const oldRolesExtensionAddress = await oldRolesFactory.deployedExtensions(colony.address);
+    oldRolesExtension = await OldRoles.at(oldRolesExtensionAddress);
     await colony.setRootRole(oldRolesExtension.address, true);
   });
 
   describe("old roles", async () => {
+    it("does not allow an extension to be redeployed", async () => {
+      await checkErrorRevert(oldRolesFactory.deployExtension(colony.address), "colony-extension-already-deployed");
+    });
+
     it("should be able to transfer the 'founder' role", async () => {
       await oldRolesExtension.setFounderRole(USER1);
 

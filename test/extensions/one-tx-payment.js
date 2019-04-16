@@ -11,6 +11,7 @@ import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColo
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const OneTxPaymentFactory = artifacts.require("OneTxPaymentFactory");
 const OneTxPayment = artifacts.require("OneTxPayment");
 
 contract("One transaction payments", accounts => {
@@ -19,6 +20,8 @@ contract("One transaction payments", accounts => {
   let colonyNetwork;
   let metaColony;
   let oneTxExtension;
+  let oneTxExtensionFactory;
+
   const RECIPIENT = accounts[3];
   const COLONY_ADMIN = accounts[5];
 
@@ -27,6 +30,7 @@ contract("One transaction payments", accounts => {
     ({ metaColony } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork));
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
+    oneTxExtensionFactory = await OneTxPaymentFactory.new();
   });
 
   beforeEach(async () => {
@@ -37,7 +41,9 @@ contract("One transaction payments", accounts => {
     await colony.setAdministrationRole(1, 0, COLONY_ADMIN, 1, true);
     await colony.setFundingRole(1, 0, COLONY_ADMIN, 1, true);
 
-    oneTxExtension = await OneTxPayment.new(colony.address);
+    await oneTxExtensionFactory.deployExtension(colony.address);
+    const oneTxExtensionAddress = await oneTxExtensionFactory.deployedExtensions(colony.address);
+    oneTxExtension = await OneTxPayment.at(oneTxExtensionAddress);
 
     // Give oneTxExtension administration and funding rights
     await colony.setAdministrationRole(1, 0, oneTxExtension.address, 1, true);
@@ -45,6 +51,10 @@ contract("One transaction payments", accounts => {
   });
 
   describe("under normal conditions", () => {
+    it("does not allow an extension to be redeployed", async () => {
+      await checkErrorRevert(oneTxExtensionFactory.deployExtension(colony.address), "colony-extension-already-deployed");
+    });
+
     it("should allow a single-transaction payment of tokens to occur", async () => {
       const balanceBefore = await token.balanceOf(RECIPIENT);
       expect(balanceBefore).to.eq.BN(0);
