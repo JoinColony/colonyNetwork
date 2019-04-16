@@ -26,7 +26,6 @@ const IMetaColony = artifacts.require("IMetaColony");
 const TokenLocking = artifacts.require("TokenLocking");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const DSToken = artifacts.require("DSToken");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -403,11 +402,14 @@ export async function setupColonyNetwork() {
 
 export async function setupRandomColony(colonyNetwork) {
   const tokenArgs = getTokenArgs();
-  const token = await DSToken.new(tokenArgs[1]);
+  const token = await Token.new(...tokenArgs);
+
   const { logs } = await colonyNetwork.createColony(token.address);
   const { colonyAddress } = logs[0].args;
   const colony = await IColony.at(colonyAddress);
-  await token.setOwner(colonyAddress);
+
+  const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
+  await token.setAuthority(tokenAuthority.address);
 
   return { colony, token };
 }
