@@ -113,14 +113,14 @@ contract("One transaction payments", accounts => {
       );
     });
 
-    it("should not allow an admin to specify a depreciated global skill", async () => {
+    it("should not allow an admin to specify a deprecated global skill", async () => {
       await metaColony.addGlobalSkill();
       const skillId = await colonyNetwork.getSkillCount();
-      await metaColony.depreciateGlobalSkill(skillId);
+      await metaColony.deprecateGlobalSkill(skillId);
 
       await checkErrorRevert(
         oneTxExtension.makePayment(1, 0, 1, 0, RECIPIENT, token.address, 10, 1, skillId, { from: COLONY_ADMIN }),
-        "colony-depreciated-global-skill"
+        "colony-deprecated-global-skill"
       );
     });
 

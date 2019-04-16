@@ -533,13 +533,13 @@ contract("Meta Colony", accounts => {
       await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-global-skill");
     });
 
-    it("should NOT be able to set a depreciated skill on task", async () => {
+    it("should NOT be able to set a deprecated skill on task", async () => {
       const taskId = await makeTask({ colony });
       await metaColony.addGlobalSkill();
       const skillId = await colonyNetwork.getSkillCount();
-      await metaColony.depreciateGlobalSkill(skillId);
+      await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-depreciated-global-skill");
+      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-deprecated-global-skill");
     });
   });
 
@@ -551,24 +551,24 @@ contract("Meta Colony", accounts => {
       expect(skill.nChildren).to.be.zero;
       expect(skill.nParents).to.be.zero;
       expect(skill.globalSkill).to.be.true;
-      expect(skill.depreciated).to.be.false;
+      expect(skill.deprecated).to.be.false;
     });
 
     it("cannot create global skills if not a root user in meta colony", async () => {
       await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
     });
 
-    it("can depreciate global skills", async () => {
+    it("can deprecate global skills", async () => {
       await metaColony.addGlobalSkill();
       const skillId = await colonyNetwork.getSkillCount();
 
       let skill = await colonyNetwork.getSkill(skillId);
-      expect(skill.depreciated).to.be.false;
+      expect(skill.deprecated).to.be.false;
 
-      await metaColony.depreciateGlobalSkill(skillId);
+      await metaColony.deprecateGlobalSkill(skillId);
 
       skill = await colonyNetwork.getSkill(skillId);
-      expect(skill.depreciated).to.be.true;
+      expect(skill.deprecated).to.be.true;
     });
   });
 

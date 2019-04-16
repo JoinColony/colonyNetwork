@@ -270,9 +270,9 @@ contract("Colony Network", accounts => {
       await checkErrorRevert(colonyNetwork.addSkill(0), "colony-must-be-meta-colony");
     });
 
-    it("should not be able to depreciate a global skill, by an address that is not the meta colony ", async () => {
+    it("should not be able to deprecate a global skill, by an address that is not the meta colony ", async () => {
       const skillCount = await colonyNetwork.getSkillCount();
-      await checkErrorRevert(colonyNetwork.depreciateSkill(skillCount), "colony-must-be-meta-colony");
+      await checkErrorRevert(colonyNetwork.deprecateSkill(skillCount), "colony-must-be-meta-colony");
     });
 
     it("should NOT be able to add a local skill, by an address that is not a Colony", async () => {

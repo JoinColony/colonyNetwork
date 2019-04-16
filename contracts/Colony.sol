@@ -171,12 +171,12 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addSkill(0);
   }
 
-  function depreciateGlobalSkill(uint256 _skillId) public
+  function deprecateGlobalSkill(uint256 _skillId) public
   stoppable
   auth
   {
     IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
-    return colonyNetwork.depreciateSkill(_skillId);
+    return colonyNetwork.deprecateSkill(_skillId);
   }
 
   function setNetworkFeeInverse(uint256 _feeInverse) public

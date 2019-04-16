@@ -34,10 +34,10 @@ contract IMetaColony is IColony {
   /// @return skillId Id of the added skill
   function addGlobalSkill() public returns (uint256 skillId);
 
-  /// @notice Mark a global skill as depreciated which stops new tasks and payments from using it
-  /// @dev Calls `IColonyNetwork.depreciateSkill`
+  /// @notice Mark a global skill as deprecated which stops new tasks and payments from using it
+  /// @dev Calls `IColonyNetwork.deprecateSkill`
   /// @param _skillId Id of the added skill
-  function depreciateGlobalSkill(uint256 _skillId) public;
+  function deprecateGlobalSkill(uint256 _skillId) public;
 
   /// @notice Set the Colony Network fee inverse amount
   /// @dev Calls `IColonyNetwork.setFeeInverse`

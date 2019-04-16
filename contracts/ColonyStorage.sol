@@ -120,7 +120,7 @@ contract ColonyStorage is CommonStorage, ColonyDataTypes, ColonyNetworkDataTypes
     IColonyNetwork colonyNetworkContract = IColonyNetwork(colonyNetworkAddress);
     Skill memory skill = colonyNetworkContract.getSkill(_skillId);
     require(skill.globalSkill, "colony-not-global-skill");
-    require(!skill.depreciated, "colony-depreciated-global-skill");
+    require(!skill.deprecated, "colony-deprecated-global-skill");
     _;
   }
 

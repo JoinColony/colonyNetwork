@@ -87,14 +87,14 @@ contract("Colony Payment", accounts => {
       expect(fundingPotBalance).to.be.zero;
     });
 
-    it("should not allow admins to add payment with depreciated global skill", async () => {
+    it("should not allow admins to add payment with deprecated global skill", async () => {
       await metaColony.addGlobalSkill();
       const skillId = await colonyNetwork.getSkillCount();
-      await metaColony.depreciateGlobalSkill(skillId);
+      await metaColony.deprecateGlobalSkill(skillId);
 
       await checkErrorRevert(
         colony.addPayment(1, 0, RECIPIENT, token.address, 0, 1, skillId, { from: COLONY_ADMIN }),
-        "colony-depreciated-global-skill"
+        "colony-deprecated-global-skill"
       );
     });
 
@@ -162,15 +162,15 @@ contract("Colony Payment", accounts => {
       expect(payment.skills[0]).to.eq.BN(3);
     });
 
-    it("should not allow admins to update payment with depreciated global skill", async () => {
+    it("should not allow admins to update payment with deprecated global skill", async () => {
       await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
       const paymentId = await colony.getPaymentCount();
 
       await metaColony.addGlobalSkill();
       const skillId = await colonyNetwork.getSkillCount();
-      await metaColony.depreciateGlobalSkill(skillId);
+      await metaColony.deprecateGlobalSkill(skillId);
 
-      await checkErrorRevert(colony.setPaymentSkill(1, 0, paymentId, skillId, { from: COLONY_ADMIN }), "colony-depreciated-global-skill");
+      await checkErrorRevert(colony.setPaymentSkill(1, 0, paymentId, skillId, { from: COLONY_ADMIN }), "colony-deprecated-global-skill");
     });
 
     it("should not allow non-admins to update recipient", async () => {
