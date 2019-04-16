@@ -72,6 +72,7 @@ contract("Colony Reward Payouts", accounts => {
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
+    await token.unlock();
     await colony.setRewardInverse(100);
 
     const otherTokenArgs = getTokenArgs();

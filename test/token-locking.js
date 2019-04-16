@@ -45,6 +45,7 @@ contract("Token Locking", addresses => {
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
+    await token.unlock();
     await colony.mintTokens(Math.ceil(((usersTokens + otherUserTokens) * 100) / 99));
     await colony.claimColonyFunds(token.address);
     await colony.bootstrapColony([userAddress], [usersTokens]);
