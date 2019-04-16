@@ -2,6 +2,7 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import {
   WAD,
@@ -54,6 +55,20 @@ contract("Old Roles", accounts => {
   describe("old roles", async () => {
     it("does not allow an extension to be redeployed", async () => {
       await checkErrorRevert(oldRolesFactory.deployExtension(colony.address), "colony-extension-already-deployed");
+    });
+
+    it("does not allow a user without root permission to deploy the extension", async () => {
+      await checkErrorRevert(oldRolesFactory.deployExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
+    });
+
+    it("does not allow a user without root permission to remove the extension", async () => {
+      await checkErrorRevert(oldRolesFactory.removeExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
+    });
+
+    it("does allow a user with root permission to remove the extension", async () => {
+      await oldRolesFactory.removeExtension(colony.address);
+      const extensionAddress = await oldRolesFactory.deployedExtensions(colony.address);
+      assert.equal(extensionAddress, ethers.constants.AddressZero);
     });
 
     it("should be able to transfer the 'founder' role", async () => {

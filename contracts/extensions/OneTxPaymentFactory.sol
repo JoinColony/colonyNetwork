@@ -20,16 +20,29 @@ pragma experimental ABIEncoderV2;
 
 import "./../ColonyDataTypes.sol";
 import "./../IColony.sol";
+import "./../ColonyAuthority.sol";
 import "./OneTxPayment.sol";
 
 
-contract OneTxPaymentFactory {
+contract OneTxPaymentFactory is ColonyDataTypes {
   mapping (address => OneTxPayment) public deployedExtensions;	
 
   function deployExtension(address _colony) public {
+    require(
+      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, 
+      "colony-extension-user-not-root"
+    );
     require(deployedExtensions[_colony] == OneTxPayment(0x00), "colony-extension-already-deployed");
     OneTxPayment newExtensionAddress = new OneTxPayment(_colony);
     deployedExtensions[_colony] = newExtensionAddress;
+  }
+
+  function removeExtension(address _colony) public {
+    require(
+      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true,
+      "colony-extension-user-not-root"
+    );
+    deployedExtensions[_colony] = OneTxPayment(0x00);
   }
 
 }

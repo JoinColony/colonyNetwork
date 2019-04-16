@@ -55,6 +55,20 @@ contract("One transaction payments", accounts => {
       await checkErrorRevert(oneTxExtensionFactory.deployExtension(colony.address), "colony-extension-already-deployed");
     });
 
+    it("does not allow a user without root permission to deploy the extension", async () => {
+      await checkErrorRevert(oneTxExtensionFactory.deployExtension(colony.address, { from: COLONY_ADMIN }), "colony-extension-user-not-root");
+    });
+
+    it("does not allow a user without root permission to remove the extension", async () => {
+      await checkErrorRevert(oneTxExtensionFactory.removeExtension(colony.address, { from: COLONY_ADMIN }), "colony-extension-user-not-root");
+    });
+
+    it("does allow a user with root permission to remove the extension", async () => {
+      await oneTxExtensionFactory.removeExtension(colony.address);
+      const extensionAddress = await oneTxExtensionFactory.deployedExtensions(colony.address);
+      assert.equal(extensionAddress, ethers.constants.AddressZero);
+    });
+
     it("should allow a single-transaction payment of tokens to occur", async () => {
       const balanceBefore = await token.balanceOf(RECIPIENT);
       expect(balanceBefore).to.eq.BN(0);
