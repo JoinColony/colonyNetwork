@@ -334,7 +334,11 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const reputationMinerTestAccounts = accounts.slice(3, 11);
-  // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
+
+  // The following are the needed `transfer` function permissions on the locked CLNY that we setup via the TokenAuthority here
+  // IColonyNetworkMining: rewardStakers
+  // IColony: bootstrapColony, mintTokensForColonyNetwork, claimPayout and claimRewardPayout
+  // ITokenLocking: withdraw, deposit
   const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [
     colonyNetwork.address,
     tokenLockingAddress,
