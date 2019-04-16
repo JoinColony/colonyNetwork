@@ -74,10 +74,6 @@ contract ColonyNetwork is ColonyNetworkStorage {
     skill = skills[_skillId];
   }
 
-  function isGlobalSkill(uint256 _skillId) public view returns (bool) {
-    return skills[_skillId].globalSkill;
-  }
-
   function getReputationRootHash() public view returns (bytes32) {
     return reputationRootHash;
   }
@@ -265,6 +261,12 @@ contract ColonyNetwork is ColonyNetworkStorage {
     Skill storage skill = skills[_skillId];
     require(_childSkillIndex < skill.children.length, "colony-network-out-of-range-child-skill-index");
     return skill.children[_childSkillIndex];
+  }
+
+  function deprecateSkill(uint256 _skillId) public stoppable 
+  allowedToAddSkill(true)
+  {
+    skills[_skillId].deprecated = true;
   }
 
   function appendReputationUpdateLog(address _user, int _amount, uint _skillId) public

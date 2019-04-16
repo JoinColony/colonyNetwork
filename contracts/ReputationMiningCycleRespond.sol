@@ -318,7 +318,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   {
     // If we think we need to check the child reputation because of the update number, but the origin reputation value is
     // zero, we don't need check the child reputation because it isn't actually used in the calculation.
-    if (u[U_USER_ORIGIN_REPUTATION_VALUE] == 0) { return; }
+    if (u[U_USER_ORIGIN_REPUTATION_VALUE] == 0) {return;}
     // This function is only called if the dispute is over a child reputation update of a colony-wide reputation total
     ReputationLogEntry storage logEntry = reputationUpdateLog[u[U_LOG_ENTRY_NUMBER]];
 

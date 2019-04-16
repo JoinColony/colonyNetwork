@@ -13,6 +13,7 @@ chai.use(bnChai(web3.utils.BN));
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
+const IMetaColony = artifacts.require("IMetaColony");
 const DSToken = artifacts.require("DSToken");
 
 contract("Colony Payment", accounts => {
@@ -23,10 +24,13 @@ contract("Colony Payment", accounts => {
   let token;
   let otherToken;
   let colonyNetwork;
+  let metaColony;
 
   before(async () => {
     const etherRouter = await EtherRouter.deployed();
     colonyNetwork = await IColonyNetwork.at(etherRouter.address);
+    const metaColonyAddress = await colonyNetwork.getMetaColony();
+    metaColony = await IMetaColony.at(metaColonyAddress);
 
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await colony.setRewardInverse(100);
@@ -81,6 +85,17 @@ contract("Colony Payment", accounts => {
       const fundingPotId = await colony.getFundingPotCount();
       const fundingPotBalance = await colony.getFundingPotBalance(fundingPotId, token.address);
       expect(fundingPotBalance).to.be.zero;
+    });
+
+    it("should not allow admins to add payment with deprecated global skill", async () => {
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await metaColony.deprecateGlobalSkill(skillId);
+
+      await checkErrorRevert(
+        colony.addPayment(1, 0, RECIPIENT, token.address, 0, 1, skillId, { from: COLONY_ADMIN }),
+        "colony-deprecated-global-skill"
+      );
     });
 
     it("should not allow non-admins to add payment", async () => {
@@ -145,6 +160,17 @@ contract("Colony Payment", accounts => {
       await colony.setPaymentSkill(1, 0, paymentId, 3, { from: COLONY_ADMIN });
       payment = await colony.getPayment(paymentId);
       expect(payment.skills[0]).to.eq.BN(3);
+    });
+
+    it("should not allow admins to update payment with deprecated global skill", async () => {
+      await colony.addPayment(1, 0, RECIPIENT, token.address, WAD, 1, 0, { from: COLONY_ADMIN });
+      const paymentId = await colony.getPaymentCount();
+
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await metaColony.deprecateGlobalSkill(skillId);
+
+      await checkErrorRevert(colony.setPaymentSkill(1, 0, paymentId, skillId, { from: COLONY_ADMIN }), "colony-deprecated-global-skill");
     });
 
     it("should not allow non-admins to update recipient", async () => {

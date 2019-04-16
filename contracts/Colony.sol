@@ -171,6 +171,14 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     return colonyNetwork.addSkill(0);
   }
 
+  function deprecateGlobalSkill(uint256 _skillId) public
+  stoppable
+  auth
+  {
+    IColonyNetwork colonyNetwork = IColonyNetwork(colonyNetworkAddress);
+    return colonyNetwork.deprecateSkill(_skillId);
+  }
+
   function setNetworkFeeInverse(uint256 _feeInverse) public
   stoppable
   auth
@@ -270,16 +278,6 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     require(!protected, "colony-protected-variable");
   }
 
-  function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
-  private
-  {
-    reviewers[_sig] = [_firstReviewer, _secondReviewer];
-  }
-
-  function setRoleAssignmentFunction(bytes4 _sig) private {
-    roleAssignmentSigs[_sig] = true;
-  }
-
   function initialiseDomain(uint256 _skillId) internal skillExists(_skillId) {
     domainCount += 1;
     // Create a new funding pot
@@ -298,5 +296,15 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
 
     emit DomainAdded(domainCount);
     emit FundingPotAdded(fundingPotCount);
+  }
+
+  function setFunctionReviewers(bytes4 _sig, TaskRole _firstReviewer, TaskRole _secondReviewer)
+  private
+  {
+    reviewers[_sig] = [_firstReviewer, _secondReviewer];
+  }
+
+  function setRoleAssignmentFunction(bytes4 _sig) private {
+    roleAssignmentSigs[_sig] = true;
   }
 }

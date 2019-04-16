@@ -55,7 +55,6 @@ contract ColonyNetworkDataTypes {
   /// @param token Address of the associated colony token
   event ColonyAdded(uint256 indexed colonyId, address indexed colonyAddress, address token);
 
-
   /// @notice Event logged when a new skill is added
   /// @dev Emitted from `IColonyNetwork.addSkill` function
   /// @param skillId The skill id
@@ -106,6 +105,8 @@ contract ColonyNetworkDataTypes {
     uint256[] children;
     // `true` for a global skill reused across colonies or `false` for a skill mapped to a single colony's domain
     bool globalSkill;
+    // `true` for a global skill that is deprecated  
+    bool deprecated;
   }
 
   struct ENSRecord {

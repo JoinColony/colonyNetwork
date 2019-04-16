@@ -524,13 +524,51 @@ contract("Meta Colony", accounts => {
     });
 
     it("should NOT be able to set nonexistent skill on task", async () => {
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 5), "colony-skill-does-not-exist");
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(colony.setTaskSkill(taskId, 5), "colony-skill-does-not-exist");
     });
 
     it("should NOT be able to set local skill on task", async () => {
-      await makeTask({ colony });
-      await checkErrorRevert(colony.setTaskSkill(1, 1), "colony-not-global-skill");
+      const taskId = await makeTask({ colony });
+      await checkErrorRevert(colony.setTaskSkill(taskId, 1), "colony-not-global-skill");
+    });
+
+    it("should NOT be able to set a deprecated skill on task", async () => {
+      const taskId = await makeTask({ colony });
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      await metaColony.deprecateGlobalSkill(skillId);
+
+      await checkErrorRevert(colony.setTaskSkill(taskId, skillId), "colony-deprecated-global-skill");
+    });
+  });
+
+  describe("when managing global skills", () => {
+    it("can create global skills", async () => {
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+      const skill = await colonyNetwork.getSkill(skillId);
+      expect(skill.nChildren).to.be.zero;
+      expect(skill.nParents).to.be.zero;
+      expect(skill.globalSkill).to.be.true;
+      expect(skill.deprecated).to.be.false;
+    });
+
+    it("cannot create global skills if not a root user in meta colony", async () => {
+      await checkErrorRevert(metaColony.addGlobalSkill({ from: OTHER_ACCOUNT }), "ds-auth-unauthorized");
+    });
+
+    it("can deprecate global skills", async () => {
+      await metaColony.addGlobalSkill();
+      const skillId = await colonyNetwork.getSkillCount();
+
+      let skill = await colonyNetwork.getSkill(skillId);
+      expect(skill.deprecated).to.be.false;
+
+      await metaColony.deprecateGlobalSkill(skillId);
+
+      skill = await colonyNetwork.getSkill(skillId);
+      expect(skill.deprecated).to.be.true;
     });
   });
 
