@@ -169,7 +169,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
     });
 
     it("can create a range of tasks accross colonies", async function() {
-      const colonyTaskProps = [
+      const colonyTaskPositiveReputation = [
         {
           // Index in the colonies[] array (note that this excludes the meta colony)
           colonyIdx: 100,
@@ -200,14 +200,6 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           workerPayout: 70
         },
         {
-          colonyIdx: 100,
-          domainId: 1,
-          managerPayout: 2,
-          evaluatorPayout: 1,
-          workerPayout: 7,
-          workerRating: 1
-        },
-        {
           colonyIdx: 101,
           domainId: 5,
           managerPayout: 200,
@@ -227,6 +219,20 @@ contract("End to end Colony network and Reputation mining testing", function(acc
           managerPayout: 200,
           evaluatorPayout: 100,
           workerPayout: 300
+        }
+      ];
+
+      // Do the negative updates explicitely after the positive so they are guaranteed to appear later in the miner updates
+      // Because of the async PromiseAll which triggers and completes task creation in a non-order specific
+      // way we have to ensure reputation is deducted correctly
+      const colonyTaskNegativeReputation = [
+        {
+          colonyIdx: 100,
+          domainId: 1,
+          managerPayout: 2,
+          evaluatorPayout: 1,
+          workerPayout: 7,
+          workerRating: 1
         },
         {
           colonyIdx: 102,
@@ -239,11 +245,31 @@ contract("End to end Colony network and Reputation mining testing", function(acc
       ];
 
       await Promise.all(
-        colonyTaskProps.map(async taskProp => {
+        colonyTaskPositiveReputation.map(async taskProp => {
           const { colony } = colonies[taskProp.colonyIdx];
 
           await colony.setAdministrationRole(1, 0, MANAGER, 1, true);
           await colony.setFundingRole(1, 0, MANAGER, 1, true);
+
+          await setupFinalizedTask({
+            colonyNetwork,
+            colony,
+            domainId: taskProp.domainId,
+            manager: MANAGER,
+            evaluator: EVALUATOR,
+            worker: WORKER,
+            managerPayout: taskProp.managerPayout,
+            evaluatorPayout: taskProp.evaluatorPayout,
+            workerPayout: taskProp.workerPayout,
+            managerRating: taskProp.managerRating,
+            workerRating: taskProp.workerRating
+          });
+        })
+      );
+
+      await Promise.all(
+        colonyTaskNegativeReputation.map(async taskProp => {
+          const { colony } = colonies[taskProp.colonyIdx];
 
           await setupFinalizedTask({
             colonyNetwork,
@@ -268,12 +294,12 @@ contract("End to end Colony network and Reputation mining testing", function(acc
 
       const globalReputations = [
         // ColonyIdx 100
-        { id: 1, colonyIdx: 100, skillId: 3, account: undefined, value: 1640 },
-        { id: 2, colonyIdx: 100, skillId: 504, account: undefined, value: 2048 },
-        { id: 3, colonyIdx: 100, skillId: 505, account: undefined, value: 845 },
-        { id: 4, colonyIdx: 100, skillId: 506, account: undefined, value: 1200 },
+        { id: 1, colonyIdx: 100, skillId: 3, account: undefined, value: 1633 },
+        { id: 2, colonyIdx: 100, skillId: 504, account: undefined, value: 2041 },
+        { id: 3, colonyIdx: 100, skillId: 505, account: undefined, value: 842 },
+        { id: 4, colonyIdx: 100, skillId: 506, account: undefined, value: 1197 },
         { id: 5, colonyIdx: 100, skillId: 507, account: undefined, value: 0 },
-        { id: 6, colonyIdx: 100, skillId: 508, account: undefined, value: 1100 },
+        { id: 6, colonyIdx: 100, skillId: 508, account: undefined, value: 1097 },
         { id: 7, colonyIdx: 100, skillId: 509, account: undefined, value: 100 },
         { id: 8, colonyIdx: 100, skillId: 510, account: undefined, value: 0 },
         { id: 9, colonyIdx: 100, skillId: 511, account: undefined, value: 0 },
@@ -290,12 +316,12 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         { id: 18, colonyIdx: 100, skillId: 508, account: EVALUATOR, value: 110 },
         { id: 15, colonyIdx: 100, skillId: 509, account: EVALUATOR, value: 10 },
 
-        { id: 20, colonyIdx: 100, skillId: 3, account: WORKER, value: 1640 },
-        { id: 21, colonyIdx: 100, skillId: 504, account: WORKER, value: 1640 },
-        { id: 22, colonyIdx: 100, skillId: 505, account: WORKER, value: 800 },
-        { id: 23, colonyIdx: 100, skillId: 506, account: WORKER, value: 840 },
+        { id: 20, colonyIdx: 100, skillId: 3, account: WORKER, value: 1633 },
+        { id: 21, colonyIdx: 100, skillId: 504, account: WORKER, value: 1633 },
+        { id: 22, colonyIdx: 100, skillId: 505, account: WORKER, value: 797 },
+        { id: 23, colonyIdx: 100, skillId: 506, account: WORKER, value: 837 },
         { id: 24, colonyIdx: 100, skillId: 507, account: WORKER, value: 0 },
-        { id: 25, colonyIdx: 100, skillId: 508, account: WORKER, value: 770 },
+        { id: 25, colonyIdx: 100, skillId: 508, account: WORKER, value: 767 },
         { id: 26, colonyIdx: 100, skillId: 509, account: WORKER, value: 70 },
         { id: 27, colonyIdx: 100, skillId: 510, account: WORKER, value: 0 },
         { id: 28, colonyIdx: 100, skillId: 511, account: WORKER, value: 0 },
@@ -320,11 +346,11 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         { id: 43, colonyIdx: 102, skillId: 3, account: undefined, value: 900 },
         { id: 44, colonyIdx: 102, skillId: 520, account: undefined, value: 1800 },
         { id: 45, colonyIdx: 102, skillId: 521, account: undefined, value: 0 },
-        { id: 46, colonyIdx: 102, skillId: 522, account: undefined, value: 1000 },
+        { id: 46, colonyIdx: 102, skillId: 522, account: undefined, value: 930 },
         { id: 47, colonyIdx: 102, skillId: 523, account: undefined, value: 0 },
-        { id: 48, colonyIdx: 102, skillId: 524, account: undefined, value: 1000 },
+        { id: 48, colonyIdx: 102, skillId: 524, account: undefined, value: 930 },
         { id: 49, colonyIdx: 102, skillId: 525, account: undefined, value: 0 },
-        { id: 50, colonyIdx: 102, skillId: 526, account: undefined, value: 1000 },
+        { id: 50, colonyIdx: 102, skillId: 526, account: undefined, value: 930 },
         { id: 51, colonyIdx: 102, skillId: 527, account: undefined, value: 0 },
 
         { id: 52, colonyIdx: 102, skillId: 520, account: MANAGER, value: 600 },
@@ -340,11 +366,11 @@ contract("End to end Colony network and Reputation mining testing", function(acc
         { id: 60, colonyIdx: 102, skillId: 3, account: WORKER, value: 900 },
         { id: 61, colonyIdx: 102, skillId: 520, account: WORKER, value: 900 },
         { id: 62, colonyIdx: 102, skillId: 521, account: WORKER, value: 0 },
-        { id: 63, colonyIdx: 102, skillId: 522, account: WORKER, value: 700 },
+        { id: 63, colonyIdx: 102, skillId: 522, account: WORKER, value: 630 },
         { id: 64, colonyIdx: 102, skillId: 523, account: WORKER, value: 0 },
-        { id: 65, colonyIdx: 102, skillId: 524, account: WORKER, value: 700 },
+        { id: 65, colonyIdx: 102, skillId: 524, account: WORKER, value: 630 },
         { id: 66, colonyIdx: 102, skillId: 525, account: WORKER, value: 0 },
-        { id: 67, colonyIdx: 102, skillId: 526, account: WORKER, value: 700 },
+        { id: 67, colonyIdx: 102, skillId: 526, account: WORKER, value: 630 },
         { id: 68, colonyIdx: 102, skillId: 527, account: WORKER, value: 0 }
       ];
 
