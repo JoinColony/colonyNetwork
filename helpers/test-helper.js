@@ -214,7 +214,7 @@ export function getRandomString(_length) {
 export function getTokenArgs() {
   const name = asciiToHex(getRandomString(5));
   const symbol = asciiToHex(getRandomString(3));
-  return [name, symbol];
+  return [name, symbol, 18];
 }
 
 export async function currentBlockTime() {

@@ -336,15 +336,11 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
   const reputationMinerTestAccounts = accounts.slice(3, 11);
   // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
-  const tokenAuthority = await TokenAuthority.new(
-    clnyToken.address,
+  const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [
     colonyNetwork.address,
-    metaColonyAddress,
     tokenLockingAddress,
-    ethers.constants.AddressZero,
-    reputationMinerTestAccounts,
-    ethers.constants.AddressZero
-  );
+    ...reputationMinerTestAccounts
+  ]);
 
   await clnyToken.setAuthority(tokenAuthority.address);
   // Set the CLNY token owner to a dedicated account representing the Colony Multisig
