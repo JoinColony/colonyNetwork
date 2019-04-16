@@ -257,7 +257,7 @@ contract("End to end Colony network and Reputation mining testing", function(acc
     });
 
     it("can mine reputation for all tasks", async function() {
-      await advanceMiningCycleNoContest({ colonyNetwork, client: goodClient, minerAddress: MINER1, test: this });
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this, client: goodClient });
       await goodClient.addLogContentsToReputationTree();
       const globalReputations = [
         // ColonyIdx 100
