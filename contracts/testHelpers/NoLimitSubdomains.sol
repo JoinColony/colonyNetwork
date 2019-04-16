@@ -20,6 +20,7 @@ pragma experimental ABIEncoderV2;
 
 import "./../Colony.sol";
 
+
 contract NoLimitSubdomains is Colony {
   function addDomain(uint256 _permissionDomainId, uint256 _childSkillIndex, uint256 _parentDomainId) public
   stoppable
