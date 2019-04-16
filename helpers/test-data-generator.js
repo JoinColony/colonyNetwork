@@ -40,6 +40,13 @@ const ContractRecovery = artifacts.require("ContractRecovery");
 export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HASH, domainId = 1, skillId = 3, dueDate = 0, manager }) {
   const accounts = await web3GetAccounts();
   manager = manager || accounts[0]; // eslint-disable-line no-param-reassign
+
+  let networkAddress;
+  if (colonyNetwork === undefined) {
+    networkAddress = await colony.getColonyNetwork();
+    colonyNetwork = await IColonyNetwork.at(networkAddress); // eslint-disable-line no-param-reassign
+  }
+
   // Only Colony admins are allowed to make Tasks, make the account an admin
   const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, domainId);
 
@@ -162,19 +169,14 @@ export async function setupFundedTask({
 
   const taskId = await makeTask({ colonyNetwork, colony, dueDate, domainId, skillId, manager });
   const task = await colony.getTask(taskId);
-  const { fundingPotId } = task;
   const managerPayoutBN = new BN(managerPayout);
   const evaluatorPayoutBN = new BN(evaluatorPayout);
   const workerPayoutBN = new BN(workerPayout);
   const totalPayouts = managerPayoutBN.add(workerPayoutBN).add(evaluatorPayoutBN);
 
+  const childSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, task.domainId);
   await colony.setFundingRole(1, 0, manager, 1, true);
-  let toSkillIndex = 0;
-  if (task.domainId !== 1) {
-    // Then we need to figure out the correct skill indices.
-    toSkillIndex = await getChildSkillIndex(colonyNetwork, colony, 1, task.domainId);
-  }
-  await colony.moveFundsBetweenPots(1, 0, toSkillIndex, 1, fundingPotId, totalPayouts, tokenAddress, { from: manager });
+  await colony.moveFundsBetweenPots(1, 0, childSkillIndex, 1, task.fundingPotId, totalPayouts, tokenAddress, { from: manager });
   await colony.setAllTaskPayouts(taskId, tokenAddress, managerPayout, evaluatorPayout, workerPayout, { from: manager });
   await assignRoles({ colony, taskId, manager, evaluator, worker });
 
