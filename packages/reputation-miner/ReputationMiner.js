@@ -1067,6 +1067,22 @@ class ReputationMiner {
     }
   }
 
+  async printCurrentState() {
+    for (let i = 0; i < Object.keys(this.reputations).length; i += 1) {
+      const key = Object.keys(this.reputations)[i];
+      const decimalValue = new BN(this.reputations[key].slice(2, 66), 16);
+      const keyElements = ReputationMiner.breakKeyInToElements(key);
+      const [colonyAddress, , userAddress] = keyElements;
+      const skillId = parseInt(keyElements[1], 16);
+
+      console.log("colonyAddress", colonyAddress);
+      console.log("userAddress", userAddress);
+      console.log("skillId", skillId);
+      console.log("value", decimalValue.toString());
+      console.log("---------");
+    }
+  }
+
   async saveCurrentState() {
     const db = await sqlite.open(this.dbPath, { Promise });
 
