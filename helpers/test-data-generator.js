@@ -333,17 +333,12 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   await metaColony.setNetworkFeeInverse(100);
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-  const reputationMinerTestAccounts = accounts.slice(3, 11);
 
   // The following are the needed `transfer` function permissions on the locked CLNY that we setup via the TokenAuthority here
   // IColonyNetworkMining: rewardStakers
   // IColony: bootstrapColony, mintTokensForColonyNetwork, claimPayout and claimRewardPayout
   // ITokenLocking: withdraw, deposit
-  const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [
-    colonyNetwork.address,
-    tokenLockingAddress,
-    ...reputationMinerTestAccounts
-  ]);
+  const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [colonyNetwork.address, tokenLockingAddress]);
 
   await clnyToken.setAuthority(tokenAuthority.address);
   // Set the CLNY token owner to a dedicated account representing the Colony Multisig
