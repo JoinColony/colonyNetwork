@@ -11,7 +11,6 @@ const EtherRouter = artifacts.require("./EtherRouter");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 
 const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 // eslint-disable-next-line no-unused-vars
 module.exports = async function(deployer, network, accounts) {
@@ -30,15 +29,11 @@ module.exports = async function(deployer, network, accounts) {
   const reputationMinerTestAccounts = accounts.slice(3, 11);
 
   // Penultimate parameter is the vesting contract which is not the subject of this integration testing so passing in ZERO_ADDRESS
-  const tokenAuthority = await TokenAuthority.new(
-    clnyToken.address,
+  const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [
     colonyNetwork.address,
-    metaColonyAddress,
     tokenLockingAddress,
-    ZERO_ADDRESS,
-    reputationMinerTestAccounts,
-    ZERO_ADDRESS
-  );
+    ...reputationMinerTestAccounts
+  ]);
   await clnyToken.setAuthority(tokenAuthority.address);
   await clnyToken.setOwner(accounts[11]);
 

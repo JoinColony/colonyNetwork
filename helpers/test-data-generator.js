@@ -26,7 +26,6 @@ const IMetaColony = artifacts.require("IMetaColony");
 const TokenLocking = artifacts.require("TokenLocking");
 const ITokenLocking = artifacts.require("ITokenLocking");
 const Token = artifacts.require("Token");
-const DSToken = artifacts.require("DSToken");
 const TokenAuthority = artifacts.require("./TokenAuthority");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -334,17 +333,12 @@ export async function setupMetaColonyWithLockedCLNYToken(colonyNetwork) {
   await metaColony.setNetworkFeeInverse(100);
 
   const tokenLockingAddress = await colonyNetwork.getTokenLocking();
-  const reputationMinerTestAccounts = accounts.slice(3, 11);
-  // Second parameter is the vesting contract which is not the subject of this integration testing so passing in 0x0
-  const tokenAuthority = await TokenAuthority.new(
-    clnyToken.address,
-    colonyNetwork.address,
-    metaColonyAddress,
-    tokenLockingAddress,
-    ethers.constants.AddressZero,
-    reputationMinerTestAccounts,
-    ethers.constants.AddressZero
-  );
+
+  // The following are the needed `transfer` function permissions on the locked CLNY that we setup via the TokenAuthority here
+  // IColonyNetworkMining: rewardStakers
+  // IColony: bootstrapColony, mintTokensForColonyNetwork, claimPayout and claimRewardPayout
+  // ITokenLocking: withdraw, deposit
+  const tokenAuthority = await TokenAuthority.new(clnyToken.address, metaColonyAddress, [colonyNetwork.address, tokenLockingAddress]);
 
   await clnyToken.setAuthority(tokenAuthority.address);
   // Set the CLNY token owner to a dedicated account representing the Colony Multisig
@@ -407,11 +401,15 @@ export async function setupColonyNetwork() {
 
 export async function setupRandomColony(colonyNetwork) {
   const tokenArgs = getTokenArgs();
-  const token = await DSToken.new(tokenArgs[1]);
+  const token = await Token.new(...tokenArgs);
+
   const { logs } = await colonyNetwork.createColony(token.address);
   const { colonyAddress } = logs[0].args;
   const colony = await IColony.at(colonyAddress);
-  await token.setOwner(colonyAddress);
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
+
+  const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
+  await token.setAuthority(tokenAuthority.address);
 
   return { colony, token };
 }

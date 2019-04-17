@@ -341,7 +341,7 @@ contract("Colony Reward Payouts", accounts => {
     it("should not be able to claim tokens if user does not have any tokens", async () => {
       const userReputation3 = WAD.muln(10);
       await colony.bootstrapColony([userAddress3], [userReputation3]);
-      await token.transfer(colony.address, userReputation3, { from: userAddress3 });
+      await token.burn(userReputation3, { from: userAddress3 });
 
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
       await advanceMiningCycleNoContest({ colonyNetwork, client, test: this });
