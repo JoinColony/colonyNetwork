@@ -411,8 +411,9 @@ export async function setupRandomColony(colonyNetwork) {
   const { logs } = await colonyNetwork.createColony(token.address);
   const { colonyAddress } = logs[0].args;
   const colony = await IColony.at(colonyAddress);
+  const tokenLockingAddress = await colonyNetwork.getTokenLocking();
 
-  const tokenAuthority = await TokenAuthority.new(token.address, colony.address, []);
+  const tokenAuthority = await TokenAuthority.new(token.address, colony.address, [tokenLockingAddress]);
   await token.setAuthority(tokenAuthority.address);
 
   return { colony, token };
