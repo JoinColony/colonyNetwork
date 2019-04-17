@@ -16,7 +16,9 @@ walkSync("./contracts/").forEach(contractName => {
   if (
     [
       "contracts/extensions/OldRoles.sol",
+      "contracts/extensions/OldRolesFactory.sol",
       "contracts/extensions/OneTxPayment.sol",
+      "contracts/extensions/OneTxPaymentFactory.sol",
       "contracts/CommonAuthority.sol",
       "contracts/ColonyAuthority.sol",
       "contracts/ColonyNetworkAuthority.sol",
