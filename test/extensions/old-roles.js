@@ -66,9 +66,22 @@ contract("Old Roles", accounts => {
     });
 
     it("does allow a user with root permission to remove the extension", async () => {
-      await oldRolesFactory.removeExtension(colony.address);
+      const tx = await oldRolesFactory.removeExtension(colony.address);
       const extensionAddress = await oldRolesFactory.deployedExtensions(colony.address);
       assert.equal(extensionAddress, ethers.constants.AddressZero);
+      const event = tx.logs[0];
+      assert.equal(event.args[0], "OldRoles");
+      assert.equal(event.args[1], colony.address);
+    });
+
+    it("emits the expected event when extension added", async () => {
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
+      const tx = await oldRolesFactory.deployExtension(colony.address);
+      const event = tx.logs[0];
+      assert.equal(event.args[0], "OldRoles");
+      assert.equal(event.args[1], colony.address);
+      const oldRolesExtensionAddress = await oldRolesFactory.deployedExtensions(colony.address);
+      assert.equal(event.args[2], oldRolesExtensionAddress);
     });
 
     it("should be able to transfer the 'founder' role", async () => {

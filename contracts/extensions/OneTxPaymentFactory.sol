@@ -36,6 +36,7 @@ contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes {
     require(deployedExtensions[_colony] == OneTxPayment(0x00), "colony-extension-already-deployed");
     OneTxPayment newExtensionAddress = new OneTxPayment(_colony);
     deployedExtensions[_colony] = newExtensionAddress;
+    emit ExtensionDeployed("OneTxPayment", _colony, address(newExtensionAddress));
   }
 
   function removeExtension(address _colony) external {
@@ -44,6 +45,7 @@ contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes {
       "colony-extension-user-not-root"
     );
     deployedExtensions[_colony] = OneTxPayment(0x00);
+    emit ExtensionRemoved("OneTxPayment", _colony);
   }
 
 }

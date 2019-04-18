@@ -36,6 +36,7 @@ contract OldRolesFactory is ExtensionFactory, ColonyDataTypes {
     require(deployedExtensions[_colony] == OldRoles(0x00), "colony-extension-already-deployed");
     OldRoles newExtensionAddress = new OldRoles(_colony);
     deployedExtensions[_colony] = newExtensionAddress;
+    emit ExtensionDeployed("OldRoles", _colony, address(newExtensionAddress));
   }
 
   function removeExtension(address _colony) external {
@@ -44,6 +45,7 @@ contract OldRolesFactory is ExtensionFactory, ColonyDataTypes {
       "colony-extension-user-not-root"
     );
     deployedExtensions[_colony] = OldRoles(0x00);
+    emit ExtensionRemoved("OldRoles", _colony);
   }
 
 }

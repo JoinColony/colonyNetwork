@@ -22,4 +22,6 @@ pragma experimental ABIEncoderV2;
 interface ExtensionFactory {
   function deployExtension(address _colony) external;
   function removeExtension(address _colony) external;
+  event ExtensionDeployed(string _name, address _colony, address _extension);
+  event ExtensionRemoved(string _name, address _colony);
 }

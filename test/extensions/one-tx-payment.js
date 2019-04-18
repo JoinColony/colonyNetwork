@@ -64,9 +64,22 @@ contract("One transaction payments", accounts => {
     });
 
     it("does allow a user with root permission to remove the extension", async () => {
-      await oneTxExtensionFactory.removeExtension(colony.address);
+      const tx = await oneTxExtensionFactory.removeExtension(colony.address);
       const extensionAddress = await oneTxExtensionFactory.deployedExtensions(colony.address);
       assert.equal(extensionAddress, ethers.constants.AddressZero);
+      const event = tx.logs[0];
+      assert.equal(event.args[0], "OneTxPayment");
+      assert.equal(event.args[1], colony.address);
+    });
+
+    it("emits the expected event when extension added", async () => {
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
+      const tx = await oneTxExtensionFactory.deployExtension(colony.address);
+      const event = tx.logs[0];
+      assert.equal(event.args[0], "OneTxPayment");
+      assert.equal(event.args[1], colony.address);
+      const oneTxExtensionAddress = await oneTxExtensionFactory.deployedExtensions(colony.address);
+      assert.equal(event.args[2], oneTxExtensionAddress);
     });
 
     it("should allow a single-transaction payment of tokens to occur", async () => {
