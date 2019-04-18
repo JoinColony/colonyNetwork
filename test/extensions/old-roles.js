@@ -2,6 +2,7 @@
 
 import chai from "chai";
 import bnChai from "bn-chai";
+import { ethers } from "ethers";
 
 import {
   WAD,
@@ -19,6 +20,7 @@ import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColo
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
+const OldRolesFactory = artifacts.require("OldRolesFactory");
 const OldRoles = artifacts.require("OldRoles");
 
 contract("Old Roles", accounts => {
@@ -27,6 +29,7 @@ contract("Old Roles", accounts => {
   let colonyNetwork;
   let oldRolesExtension;
   let hasRole;
+  let oldRolesFactory;
 
   const FOUNDER = accounts[0];
   const USER1 = accounts[1];
@@ -37,17 +40,50 @@ contract("Old Roles", accounts => {
     await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
     await colonyNetwork.initialiseReputationMining();
     await colonyNetwork.startNextCycle();
+    oldRolesFactory = await OldRolesFactory.new();
   });
 
   beforeEach(async () => {
     ({ colony, token } = await setupRandomColony(colonyNetwork));
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
-
-    oldRolesExtension = await OldRoles.new(colony.address);
+    await oldRolesFactory.deployExtension(colony.address);
+    const oldRolesExtensionAddress = await oldRolesFactory.deployedExtensions(colony.address);
+    oldRolesExtension = await OldRoles.at(oldRolesExtensionAddress);
     await colony.setRootRole(oldRolesExtension.address, true);
   });
 
   describe("old roles", async () => {
+    it("does not allow an extension to be redeployed", async () => {
+      await checkErrorRevert(oldRolesFactory.deployExtension(colony.address), "colony-extension-already-deployed");
+    });
+
+    it("does not allow a user without root permission to deploy the extension", async () => {
+      await checkErrorRevert(oldRolesFactory.deployExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
+    });
+
+    it("does not allow a user without root permission to remove the extension", async () => {
+      await checkErrorRevert(oldRolesFactory.removeExtension(colony.address, { from: USER1 }), "colony-extension-user-not-root");
+    });
+
+    it("does allow a user with root permission to remove the extension", async () => {
+      const tx = await oldRolesFactory.removeExtension(colony.address);
+      const extensionAddress = await oldRolesFactory.deployedExtensions(colony.address);
+      assert.equal(extensionAddress, ethers.constants.AddressZero);
+      const event = tx.logs[0];
+      assert.equal(event.args[0], "OldRoles");
+      assert.equal(event.args[1], colony.address);
+    });
+
+    it("emits the expected event when extension added", async () => {
+      ({ colony, token } = await setupRandomColony(colonyNetwork));
+      const tx = await oldRolesFactory.deployExtension(colony.address);
+      const event = tx.logs[0];
+      assert.equal(event.args[0], "OldRoles");
+      assert.equal(event.args[1], colony.address);
+      const oldRolesExtensionAddress = await oldRolesFactory.deployedExtensions(colony.address);
+      assert.equal(event.args[2], oldRolesExtensionAddress);
+    });
+
     it("should be able to transfer the 'founder' role", async () => {
       await oldRolesExtension.setFounderRole(USER1);
 

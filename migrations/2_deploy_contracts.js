@@ -9,6 +9,9 @@ const ColonyNetworkENS = artifacts.require("./ColonyNetworkENS");
 const ReputationMiningCycle = artifacts.require("./ReputationMiningCycle");
 const ReputationMiningCycleRespond = artifacts.require("./ReputationMiningCycleRespond");
 const ENSRegistry = artifacts.require("./ENSRegistry");
+const OneTxPaymentFactory = artifacts.require("./extensions/OneTxPaymentFactory");
+const OldRolesFactory = artifacts.require("./extensions/OldRolesFactory");
+
 const EtherRouter = artifacts.require("./EtherRouter");
 const Resolver = artifacts.require("./Resolver");
 
@@ -30,4 +33,6 @@ module.exports = (deployer, network) => {
   deployer.deploy(EtherRouter);
   deployer.deploy(Resolver);
   deployer.deploy(ContractRecovery);
+  deployer.deploy(OneTxPaymentFactory);
+  deployer.deploy(OldRolesFactory);
 };
