@@ -35,7 +35,7 @@ yarn run provision:token:contracts
 ```
 
 ## Contracts
-The contract upgradability is using the EtherRouter pattern, see [Upgrades to the Colony Network](https://joincolony.github.io/colonynetwork/docs-upgrades-to-the-colony-network/) in the documentation for implementation details.
+The contract upgradability is using the EtherRouter pattern, see [the delegate proxy pattern](https://docs.colony.io/colonynetwork/docs-the-delegate-proxy-pattern/) in the documentation for implementation details.
 
 The `math`, `erc20`, `auth`, `roles` and a significant part of the `token` contract have been reused from the [Dappsys library](https://github.com/dapphub/dappsys-monolithic).
 
