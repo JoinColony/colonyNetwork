@@ -37,9 +37,11 @@ Broadly speaking, the Colony Network contracts can be divided into a few categor
 * Colony contracts that define the state of an individual colony, such as funding pots, tasks, domains, and skills.
    * `Colony.sol`
    * `ColonyFunding.sol`
+   * `ColonyPayment.sol`
    * `ColonyTask.sol`
    * `ColonyStorage.sol`
    * `ColonyDataTypes.sol`
+   * `DomainRoles.sol`
 
 * Network contracts that define a global state shared by all colonies, such as reputation, token auctions and ENS.
     * `ColonyNetwork.sol`
@@ -59,6 +61,17 @@ Broadly speaking, the Colony Network contracts can be divided into a few categor
     * `TokenLocking.sol`
     * `TokenLockingStorage.sol`
     * `TokenLockingDataTypes.sol`
+
+* Extension contracts that allow for custom, legacy, or modified extention contracts to be added to a colony
+    * `ExtensionFactory.sol`
+    * `OldRoles.sol`
+    * `OldRolesFactory.sol`
+    * `OneTxPayment.sol`
+    * `OneTxPaymentFactory.sol`
+
+* ENS contracts that define a custom ENS registry for use with colonies and the Colony Network
+    * `ENS.sol`
+    * `ENSRegistry.sol`
 
 
 ## Inheritance Architecture
