@@ -167,12 +167,15 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       }
     }
 
-    reputationHashSubmissions[msg.sender] = Submission({
-      proposedNewRootHash: newHash,
-      nNodes: nNodes,
-      jrh: jrh,
-      jrhNNodes: 0
-    });
+    if (reputationHashSubmissions[msg.sender].proposedNewRootHash == bytes32(0)) {
+      reputationHashSubmissions[msg.sender] = Submission({
+        proposedNewRootHash: newHash,
+        nNodes: nNodes,
+        jrh: jrh,
+        jrhNNodes: 0
+      });
+    }
+    
     // And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes][jrh].push(msg.sender);
     // Note that they submitted it.

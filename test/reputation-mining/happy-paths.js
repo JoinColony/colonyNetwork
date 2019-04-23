@@ -244,6 +244,39 @@ contract("Reputation Mining - happy paths", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should allow hashes in a dispute to have more people back them during the dispute if window still open", async () => {
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      await badClient.initialise(colonyNetwork.address);
+
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await goodClient.addLogContentsToReputationTree();
+      await badClient.addLogContentsToReputationTree();
+
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+
+      await goodClient.submitRootHash();
+      await badClient.submitRootHash();
+
+      await goodClient.confirmJustificationRootHash();
+      await badClient.confirmJustificationRootHash();
+      await goodClient.submitRootHash();
+      await runBinarySearch(goodClient, badClient);
+
+      await goodClient.submitRootHash();
+      await goodClient.confirmBinarySearchResult();
+      await goodClient.submitRootHash();
+      await badClient.confirmBinarySearchResult();
+
+      await goodClient.submitRootHash();
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await goodClient.respondToChallenge();
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should cope if someone's existing reputation would go negative, setting it to zero instead", async () => {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
