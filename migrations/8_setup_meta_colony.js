@@ -15,6 +15,7 @@ const DEFAULT_STAKE = "2000000000000000000000000"; // 1000 * MIN_STAKE
 // eslint-disable-next-line no-unused-vars
 module.exports = async function(deployer, network, accounts) {
   const MAIN_ACCOUNT = accounts[5];
+  const TOKEN_OWNER = accounts[11];
 
   const etherRouterDeployed = await EtherRouter.deployed();
   const colonyNetwork = await IColonyNetwork.at(etherRouterDeployed.address);
@@ -35,11 +36,11 @@ module.exports = async function(deployer, network, accounts) {
     ...reputationMinerTestAccounts
   ]);
   await clnyToken.setAuthority(tokenAuthority.address);
-  await clnyToken.setOwner(accounts[11]);
+  await clnyToken.setOwner(TOKEN_OWNER);
 
   // These commands add MAIN_ACCOUNT as a reputation miner.
   // This is necessary because the first miner must have staked before the mining cycle begins.
-  await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: accounts[11] });
+  await clnyToken.mint(MAIN_ACCOUNT, DEFAULT_STAKE, { from: TOKEN_OWNER });
   await clnyToken.approve(tokenLockingAddress, DEFAULT_STAKE, { from: MAIN_ACCOUNT });
   const mainAccountBalance = await clnyToken.balanceOf(MAIN_ACCOUNT);
   assert.equal(mainAccountBalance.toString(), DEFAULT_STAKE.toString());
