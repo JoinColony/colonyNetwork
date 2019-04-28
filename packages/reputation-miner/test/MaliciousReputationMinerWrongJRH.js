@@ -1,3 +1,4 @@
+import { MIN_STAKE, MINING_CYCLE_DURATION } from "../constants";
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
@@ -22,18 +23,10 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
     let entryIndex;
     const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
-    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
+    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(MIN_STAKE)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
       const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
-
-      const miningCycleDuration = 60 * 60 * 24;
-      const constant = ethers.utils
-        .bigNumberify(2)
-        .pow(256)
-        .sub(1)
-        .div(miningCycleDuration);
-
+      const constant = ethers.constants.MaxUint256.div(MINING_CYCLE_DURATION);
       const block = await this.realProvider.getBlock("latest");
       const { timestamp } = block;
 

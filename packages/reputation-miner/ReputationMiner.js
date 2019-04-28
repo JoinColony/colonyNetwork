@@ -2,6 +2,8 @@
 import { BN } from "bn.js";
 import { soliditySha3, isAddress } from "web3-utils";
 import { ethers } from "ethers";
+
+import { MIN_STAKE, MINING_CYCLE_DURATION } from "./constants";
 import PatriciaTreeNoHash from "./patriciaNoHashKey";
 import PatriciaTree from "./patricia";
 
@@ -145,7 +147,7 @@ class ReputationMiner {
       .add(this.nReputationsBeforeLatestLog);
     const nReplacementLogEntries = await this.colonyNetwork.getReplacementReputationUpdateLogsExist(repCycle.address);
     const replacementLogEntriesExist = nReplacementLogEntries > 0;
-    for (let i = ethers.utils.bigNumberify("0"); i.lt(totalnUpdates); i = i.add(1)) {
+    for (let i = ethers.constants.Zero; i.lt(totalnUpdates); i = i.add(1)) {
       await this.addSingleReputationUpdate(i, repCycle, blockNumber, replacementLogEntriesExist);
     }
     const prevKey = await this.getKeyForUpdateNumber(totalnUpdates.sub(1), blockNumber);
@@ -280,7 +282,7 @@ class ReputationMiner {
           const originReputationValueBytes = this.reputations[originSkillKey];
           originReputation = ethers.utils.bigNumberify(`0x${originReputationValueBytes.slice(2, 66)}`);
         } else {
-          originReputation = ethers.utils.bigNumberify("0");
+          originReputation = ethers.constants.Zero;
           // Get the proof for the reputation that exists in the tree that would be the adjacent reputation.
           // We use this to prove that the origin reputation doesn't exist
           const originAdjacentKey = await this.getAdjacentKey(originSkillKey);
@@ -302,9 +304,9 @@ class ReputationMiner {
           childReputationProof = await this.getReputationProofObject(keyUsedInCalculations);
 
           if (originReputation.eq(0)) {
-            amount = ethers.utils.bigNumberify("0");
+            amount = ethers.constants.Zero;
           } else {
-            let reputation = ethers.utils.bigNumberify("0");
+            let reputation = ethers.constants.Zero;
             const keyExists = this.reputations[keyUsedInCalculations] !== undefined;
             if (keyExists) {
               reputation = ethers.utils.bigNumberify(`0x${this.reputations[keyUsedInCalculations].slice(2, 66)}`);
@@ -464,7 +466,7 @@ class ReputationMiner {
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockTag: blockNumber });
-    let lower = ethers.utils.bigNumberify("0");
+    let lower = ethers.constants.Zero;
     let upper = nLogEntries.sub(1);
 
     while (!upper.eq(lower)) {
@@ -661,7 +663,7 @@ class ReputationMiner {
     const repCycle = await this.getActiveRepCycle();
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     const block = await this.realProvider.getBlock("latest");
-    
+
     // Check the window has not closed or it has closed but no-one has submitted and so the current cycle is open to submissions
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const elapsedTime = ethers.utils.bigNumberify(block.timestamp).sub(reputationMiningWindowOpenTimestamp);
@@ -698,14 +700,6 @@ class ReputationMiner {
     }
 
     return true;
-  }
-
-   /**
-   * Get the mining cycle duration.
-   * @return {Integer}      Duration in seconds
-   */
-  getMiningCycleDuration() {
-    return this.miningCycleDuration;
   }
 
   /**
