@@ -80,7 +80,7 @@ class ReputationMinerClient {
     // TODO: Check how much of this does actually belong into the Miner itself
     // One could introduce lifecycle hooks in the miner to avoid code duplication
 
-    // Check if it's been an hour since the window opened
+    // Check if the mining cycle has elapsed
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
 
@@ -89,7 +89,7 @@ class ReputationMinerClient {
 
     const block = await this._miner.realProvider.getBlock("latest");
     const now = block.timestamp;
-    if (now - windowOpened > MINING_CYCLE_DURATION) {
+    if (now - windowOpened >= MINING_CYCLE_DURATION) {
       console.log("⏰ Looks like it's time to submit an update");
       // If so, process the log
       await this._miner.addLogContentsToReputationTree();

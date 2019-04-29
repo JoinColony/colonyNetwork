@@ -1,5 +1,5 @@
 /* globals artifacts */
-const { WAD } = require("../../helpers/constants");
+const { WAD, MINING_CYCLE_DURATION } = require("../../helpers/constants");
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -7,9 +7,43 @@ const IMetaColony = artifacts.require("IMetaColony");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 const Token = artifacts.require("Token");
 
+async function forwardTime(seconds) {
+  const p = new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_increaseTime",
+        params: [seconds],
+        id: 0
+      },
+      err => {
+        if (err) {
+          return reject(err);
+        }
+        return web3.currentProvider.send(
+          {
+            jsonrpc: "2.0",
+            method: "evm_mine",
+            params: [],
+            id: 0
+          },
+          (err2, res) => {
+            if (err2) {
+              return reject(err2);
+            }
+            return resolve(res);
+          }
+        );
+      }
+    );
+  });
+  return p;
+}
+
 module.exports = async function(callback) {
   try {
     const accounts = await web3.eth.getAccounts();
+    const MINER = accounts[5];
 
     console.log("*".repeat(20));
     console.log("SETTING UP NETWORK");
@@ -40,13 +74,23 @@ module.exports = async function(callback) {
       await metaColony.finalizePayment(1, 0, paymentId);
     }
 
-    const addr = await colonyNetwork.getReputationMiningCycle(false);
-    const repCycle = await IReputationMiningCycle.at(addr);
+    // Advance mining cycle.
+    // Recall that the miner account is staked during the migrations.
+    let addr = await colonyNetwork.getReputationMiningCycle(true);
+    let repCycle = await IReputationMiningCycle.at(addr);
+
+    await forwardTime(MINING_CYCLE_DURATION);
+    await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER });
+    await repCycle.confirmNewHash(0);
+
+    await forwardTime(MINING_CYCLE_DURATION);
+    addr = await colonyNetwork.getReputationMiningCycle(true);
+    repCycle = await IReputationMiningCycle.at(addr);
 
     console.log("*".repeat(20));
     console.log("CYCLE ADDRESS:", repCycle.address);
     console.log("COLONY NETWORK:", colonyNetwork.address);
-    console.log("COINBASE ACCOUNT:", accounts[0]);
+    console.log("MINER ACCOUNT:", MINER);
 
     callback();
   } catch (err) {
