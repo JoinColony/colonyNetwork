@@ -8605,10 +8605,10 @@ truffle-workflow-compile@>=2.0.2:
     truffle-external-compile "^1.0.7"
     truffle-resolver "^5.0.10"
 
-truffle@^5.0.8:
-  version "5.0.8"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.8.tgz#b841b4d9a94dec474b0ece77b1e0644f91cd51d5"
-  integrity sha512-8Sf9GKD6Y99fcHDYQCE9hRxYWm+rpptye4Ez08G8OsaCSsbEqRzyCZf18FdLLL3iWYJZ9S+tA1P0YZVxGDQ2nw==
+truffle@^5.0.14:
+  version "5.0.14"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.14.tgz#589e301f64aac1b22481c5e41b31aa08bbcd8fea"
+  integrity sha512-Mlf4S58NMyR8YZFvQLAzA+7eCaDZw6ZSa92NWXDQjy1RbUfpl08/VPa06KLT+LosQuOPZr/NSH9f0u2qxfo/Qw==
   dependencies:
     app-module-path "^2.2.0"
     mocha "^4.1.0"
