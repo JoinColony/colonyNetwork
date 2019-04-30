@@ -211,8 +211,14 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       // this is the slot after the last entry, and so our opponentIdx will be the last entry
       // We just move the opponent on, and nothing else happens.
 
-      // Ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
-      require(nHashesCompletedChallengeRound[round-1] == disputeRounds[round-1].length, "colony-reputation-mining-previous-dispute-round-not-complete");
+      if (round == 0) {
+        // If we're in round zero, require that no more submissions can be made
+        require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
+      } else {
+        // Otherwise, ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
+        require(nHashesCompletedChallengeRound[round-1] == disputeRounds[round-1].length, "colony-reputation-mining-previous-dispute-round-not-complete");
+      }
+
 
       // Prevent us invalidating the final hash
       require(disputeRounds[round].length > 1, "colony-reputation-mining-cannot-invalidate-final-hash");

@@ -166,6 +166,50 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should prevent a hash from claiming a bye if it might still get an opponent in round 1", async function advancingTest() {
+      await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
+      await repCycle.confirmNewHash(0);
+
+      await goodClient.saveCurrentState();
+      const savedHash = await goodClient.reputationTree.getRootHash();
+
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      await badClient.initialise(colonyNetwork.address);
+      const badClient2 = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER3 }, 1, 0xffffffffff);
+      await badClient2.initialise(colonyNetwork.address);
+
+      await badClient.loadState(savedHash);
+      await badClient2.loadState(savedHash);
+
+      repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await goodClient.addLogContentsToReputationTree();
+      await goodClient.submitRootHash();
+      await badClient.addLogContentsToReputationTree();
+      await badClient.submitRootHash();
+      await badClient2.addLogContentsToReputationTree();
+      await badClient2.submitRootHash();
+
+      await checkErrorRevert(repCycle.invalidateHash(0, 3), "colony-reputation-mining-submission-window-still-open");
+      // Cleanup
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient, {
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+      });
+      await forwardTime(MINING_CYCLE_DURATION / 2, this);
+      await repCycle.invalidateHash(0, 3);
+      await accommodateChallengeAndInvalidateHash(colonyNetwork, this, goodClient, badClient2, {
+        client2: { respondToChallenge: "colony-reputation-mining-increased-reputation-value-incorrect" }
+      });
+      await repCycle.confirmNewHash(2);
+    });
+
     it("should prevent a hash from advancing if it might still get an opponent", async function advancingTest() {
       this.timeout(10000000);
 
