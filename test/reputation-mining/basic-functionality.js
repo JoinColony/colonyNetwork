@@ -115,8 +115,8 @@ contract("Reputation mining - basic functionality", accounts => {
 
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, "0x00", 0), "colony-reputation-mining-zero-entry-index-passed");
 
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      expect(nSubmittedHashes).to.be.zero;
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.be.zero;
     });
   });
 

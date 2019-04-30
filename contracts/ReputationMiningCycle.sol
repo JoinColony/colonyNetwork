@@ -35,7 +35,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// @notice A modifier that checks that the supplied `roundNumber` is the final round
   /// @param roundNumber The `roundNumber` to check if it is the final round
   modifier finalDisputeRoundCompleted(uint256 roundNumber) {
-    require(nSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-complete");
+    require(nUniqueSubmittedHashes - nInvalidatedHashes == 1, "colony-reputation-mining-final-round-not-complete");
     require(disputeRounds[roundNumber].length == 1, "colony-reputation-mining-not-final-round"); //i.e. this is the final round
     // Note that even if we are passed the penultimate round, which had a length of two, and had one eliminated,
     // and therefore 'delete' called in `invalidateHash`, the array still has a length of '2' - it's just that one
@@ -95,7 +95,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // A submission is possible if this has become the active cycle (i.e. window opened) and...
     require(reputationMiningWindowOpenTimestamp > 0, "colony-reputation-mining-cycle-not-open");
     // the window has not closed or no-one has submitted
-    require(!submissionWindowClosed() || nSubmittedHashes == 0, "colony-reputation-mining-cycle-submissions-closed");
+    require(!submissionWindowClosed() || nUniqueSubmittedHashes == 0, "colony-reputation-mining-cycle-submissions-closed");
     _;
   }
 
@@ -114,8 +114,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   /// @notice Get the number of hashes that have been submitted this mining cycle
-  function getNSubmittedHashes() public view returns (uint256) {
-    return nSubmittedHashes;
+  function getNUniqueSubmittedHashes() public view returns (uint256) {
+    return nUniqueSubmittedHashes;
   }
 
   /// @notice Get the number of hashes that have been invalidated this mining cycle
@@ -140,9 +140,9 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     // Limit the total number of miners allowed to submit a specific hash to 12
     require(submittedHashes[newHash][nNodes][jrh].length < 12, "colony-reputation-mining-max-number-miners-reached");
 
-    // If this is a new hash, increment nSubmittedHashes as such.
+    // If this is a new hash, increment nUniqueSubmittedHashes as such.
     if (submittedHashes[newHash][nNodes][jrh].length == 0) {
-      nSubmittedHashes += 1;
+      nUniqueSubmittedHashes += 1;
       // And add it to the first disputeRound
       // NB if no other hash is submitted, no dispute resolution will be required.
       disputeRounds[0].push(DisputedEntry({
@@ -159,11 +159,11 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         hash2: 0x00
       }));
       // If we've got a pair of submissions to face off, may as well start now.
-      if (nSubmittedHashes % 2 == 0) {
-        disputeRounds[0][nSubmittedHashes-1].lastResponseTimestamp = now;
-        disputeRounds[0][nSubmittedHashes-2].lastResponseTimestamp = now;
-        /* disputeRounds[0][nSubmittedHashes-1].upperBound = disputeRounds[0][nSubmittedHashes-1].jrhNNodes; */
-        /* disputeRounds[0][nSubmittedHashes-2].upperBound = disputeRounds[0][nSubmittedHashes-2].jrhNNodes; */
+      if (nUniqueSubmittedHashes % 2 == 0) {
+        disputeRounds[0][nUniqueSubmittedHashes-1].lastResponseTimestamp = now;
+        disputeRounds[0][nUniqueSubmittedHashes-2].lastResponseTimestamp = now;
+        /* disputeRounds[0][nUniqueSubmittedHashes-1].upperBound = disputeRounds[0][nUniqueSubmittedHashes-1].jrhNNodes; */
+        /* disputeRounds[0][nUniqueSubmittedHashes-2].upperBound = disputeRounds[0][nUniqueSubmittedHashes-2].jrhNNodes; */
       }
     }
 

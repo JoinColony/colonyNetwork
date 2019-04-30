@@ -222,8 +222,8 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract
   function initialise(address tokenLocking, address clnyToken) public;
 
-  /// @notice Get the number of hashes that have been submitted this mining cycle
-  function getNSubmittedHashes() public view returns (uint256 nSubmittedHashes);
+  /// @notice Get the number of unique hashes that have been submitted this mining cycle
+  function getNUniqueSubmittedHashes() public view returns (uint256 nUniqueSubmittedHashes);
 
   /// @notice Get the number of hashes that have been invalidated this mining cycle
   function getNInvalidatedHashes() public view returns (uint256 nInvalidatedHashes);

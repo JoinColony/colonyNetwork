@@ -656,11 +656,11 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
-  const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-  if (nSubmittedHashes.gtn(0)) {
+  const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+  if (nUniqueSubmittedHashes.gtn(0)) {
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
-    if (nSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
-      await repCycle.confirmNewHash(nSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
+    if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
+      await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.

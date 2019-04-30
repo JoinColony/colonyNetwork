@@ -50,7 +50,7 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
   // that's okay...?
 
   // Number of unique hashes submitted
-  uint256 nSubmittedHashes = 0; // Storage slot 12
+  uint256 nUniqueSubmittedHashes = 0; // Storage slot 12
   uint256 nInvalidatedHashes = 0; // Storage slot 13
 
   // Records for which hashes, for which addresses, for which JRHs, for which entries have been accepted

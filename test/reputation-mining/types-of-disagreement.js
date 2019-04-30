@@ -127,8 +127,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      expect(nSubmittedHashes).to.eq.BN(2);
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.eq.BN(2);
 
       const [round1, index1] = await goodClient.getMySubmissionRoundAndIndex();
       const disputedEntry = await repCycle.getDisputeRoundSubmission(round1, index1);
@@ -196,8 +196,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await submitAndForwardTimeToDispute([goodClient, badClient], this);
 
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      expect(nSubmittedHashes).to.eq.BN(2);
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.eq.BN(2);
 
       await goodClient.confirmJustificationRootHash();
       const submissionAfterJRHConfirmed = await repCycle.getReputationHashSubmission(goodClient.minerAddress);
