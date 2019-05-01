@@ -109,6 +109,14 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     clnyTokenAddress = _clnyTokenAddress;
   }
 
+  function getMinStake() public pure returns (uint256) {
+    return MIN_STAKE;
+  }
+
+  function getMiningWindowDuration() public pure returns (uint256) {
+    return MINING_WINDOW_SIZE;
+  }
+
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32) {
     return keccak256(abi.encodePacked(submitter, entryIndex, newHash));
   }

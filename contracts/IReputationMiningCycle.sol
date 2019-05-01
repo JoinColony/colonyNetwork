@@ -236,6 +236,15 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @notice Get the number of hashes that have been invalidated this mining cycle
   function getNInvalidatedHashes() public view returns (uint256 nInvalidatedHashes);
 
+  /// @notice Get the minimum stake of CLNY required to mine
+  function getMinStake() public pure returns (uint256 minStake);
+
+  /// @notice Get the length of the mining window in seconds
+  function getMiningWindowDuration() public pure returns (uint256 miningWindowDuration);
+
+  /// @notice Get the reputation decay constant.
+  function getDecayConstant() public pure returns (uint256 numerator, uint256 denominator);
+
   /// @notice Get the address that made a particular submission
   /// @param hash The hash that was submitted
   /// @param nNodes The number of nodes that was submitted
