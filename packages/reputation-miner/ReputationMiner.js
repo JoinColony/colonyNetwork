@@ -694,9 +694,10 @@ class ReputationMiner {
       if (ethers.utils.bigNumberify(entryHash).lt(target)) {
         return true;
       }
+      return false
     }
 
-    return false;
+    return true;
   }
 
   /**
