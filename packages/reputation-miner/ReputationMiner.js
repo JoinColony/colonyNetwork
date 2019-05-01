@@ -681,8 +681,7 @@ class ReputationMiner {
     }
 
     const hash = await this.getRootHash();
-    const jrh = await this.justificationTree.getRootHash();
-    const entryIndexAlreadySubmitted = await repCycle.minerSubmittedEntryIndex(hash, this.minerAddress, jrh, entryIndex);
+    const entryIndexAlreadySubmitted = await repCycle.minerSubmittedEntryIndex(this.minerAddress, entryIndex);
     if (entryIndexAlreadySubmitted) {
       return false;
     }

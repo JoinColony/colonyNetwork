@@ -70,7 +70,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       // ...require that they are submitting the same jrh for that hash ...
       require(jrh == reputationHashSubmissions[msg.sender].jrh, "colony-reputation-mining-submitting-different-jrh");
        // ... but not this exact entry
-      require(submittedEntries[newHash][msg.sender][jrh][entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
+      require(submittedEntries[msg.sender][entryIndex] == false, "colony-reputation-mining-submitting-same-entry-index");
     }
     _;
   }
@@ -183,11 +183,11 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         jrhNNodes: 0
       });
     }
-    
+
     // And add the miner to the array list of submissions here
     submittedHashes[newHash][nNodes][jrh].push(msg.sender);
     // Note that they submitted it.
-    submittedEntries[newHash][msg.sender][jrh][entryIndex] = true;
+    submittedEntries[msg.sender][entryIndex] = true;
   }
 
   function confirmNewHash(uint256 roundNumber) public
@@ -463,8 +463,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return disputeRounds[_round][_index];
   }
 
-  function minerSubmittedEntryIndex(bytes32 _hash, address _miner, bytes32 _jrh, uint256 _index) public view returns (bool result) {
-    return submittedEntries[_hash][_miner][_jrh][_index];
+  function minerSubmittedEntryIndex(address _miner, uint256 _index) public view returns (bool result) {
+    return submittedEntries[_miner][_index];
   }
 
   function rewardStakersWithReputation(

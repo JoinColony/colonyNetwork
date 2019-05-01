@@ -53,9 +53,9 @@ contract ReputationMiningCycleStorage is ReputationMiningCycleDataTypes, DSAuth 
   uint256 nUniqueSubmittedHashes = 0; // Storage slot 12
   uint256 nInvalidatedHashes = 0; // Storage slot 13
 
-  // Records for which hashes, for which addresses, for which JRHs, for which entries have been accepted
+  // Records for which addresses, for which entries have been accepted
   // Otherwise, people could keep submitting the same entry.
-  mapping (bytes32 => mapping(address => mapping(bytes32 => mapping(uint256 => bool)))) submittedEntries; // Storage slot 14
+  mapping (address => mapping(uint256 => bool)) submittedEntries; // Storage slot 14
 
   int256 constant MAX_INT128 = 2**127 - 1;
   int256 constant MIN_INT128 = (2**127)*(-1);
