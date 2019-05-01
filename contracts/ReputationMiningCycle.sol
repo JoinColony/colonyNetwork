@@ -118,6 +118,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     return nUniqueSubmittedHashes;
   }
 
+  function getNSubmissionsForHash(bytes32 hash, uint256 nNodes, bytes32 jrh) public view returns (uint256) {
+    return submittedHashes[hash][nNodes][jrh].length;
+  }
+
   /// @notice Get the number of hashes that have been invalidated this mining cycle
   function getNInvalidatedHashes() public view returns (uint256) {
     return nInvalidatedHashes;

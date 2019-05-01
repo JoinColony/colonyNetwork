@@ -258,11 +258,21 @@ contract("Reputation Mining - happy paths", accounts => {
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
 
       await goodClient.submitRootHash();
+
+      const hash = await goodClient.getRootHash();
+      const nNodes = await goodClient.getRootHashNNodes();
+      const jrh = await goodClient.justificationTree.getRootHash();
+      let nSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+      expect(nSubmissions).to.eq.BN(1);
+
       await badClient.submitRootHash();
 
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
       await goodClient.submitRootHash();
+      nSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+      expect(nSubmissions).to.eq.BN(2);
+
       await runBinarySearch(goodClient, badClient);
 
       await goodClient.submitRootHash();
@@ -271,6 +281,9 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.confirmBinarySearchResult();
 
       await goodClient.submitRootHash();
+      nSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+      expect(nSubmissions).to.eq.BN(5);
+
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await goodClient.respondToChallenge();
       await repCycle.invalidateHash(0, 1);

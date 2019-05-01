@@ -234,4 +234,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param jrh The JRH of that was submitted
   /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
   function getSubmissionUser(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address user);
+
+  /// @notice Get the number of submissions miners made of a particular hash / nNodes / jrh combination
+  /// @param hash The hash that was submitted
+  /// @param nNodes The number of nodes that was submitted
+  /// @param jrh The JRH of that was submitted
+  /// @return count The number of submissions - should be 0-12, as up to twelve submissions can be made
+  function getNSubmissionsForHash(bytes32 hash, uint256 nNodes, bytes32 jrh) public view returns (uint256 count);
 }
