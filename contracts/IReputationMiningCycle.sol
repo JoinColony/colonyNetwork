@@ -41,6 +41,14 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @return entryHash The hash for the corresponding entry
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32 entryHash);
 
+  /// @notice Returns a boolean result of whether the miner has already submitted at this entry index
+  /// @param _hash The hash that they submitted
+  /// @param _miner The address that submitted the hash
+  /// @param _jrh The JRH that they submitted
+  /// @param _index The index of the entry that they used to submit the hash
+  /// @return result Boolean whether the entryIndex was already submitted
+  function minerSubmittedEntryIndex(bytes32 _hash, address _miner, bytes32 _jrh, uint256 _index) public view returns (bool result);
+
   /// @notice Resets the timestamp that the submission window opens to `now`
   /// @dev only allowed to be called by ColonyNetwork
   function resetWindow() public;

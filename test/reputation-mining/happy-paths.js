@@ -17,7 +17,8 @@ import {
   finishReputationMiningCycle,
   makeReputationKey,
   makeReputationValue,
-  removeSubdomainLimit
+  removeSubdomainLimit,
+  checkSuccessEthers
 } from "../../helpers/test-helper";
 
 import {
@@ -256,8 +257,7 @@ contract("Reputation Mining - happy paths", accounts => {
       await badClient.addLogContentsToReputationTree();
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
-
-      await goodClient.submitRootHash();
+      await checkSuccessEthers(goodClient.submitRootHash());
 
       const hash = await goodClient.getRootHash();
       const nNodes = await goodClient.getRootHashNNodes();
@@ -266,15 +266,14 @@ contract("Reputation Mining - happy paths", accounts => {
       expect(nSubmissions).to.eq.BN(1);
 
       await badClient.submitRootHash();
-
       await goodClient.confirmJustificationRootHash();
       await badClient.confirmJustificationRootHash();
-      await goodClient.submitRootHash();
+
+      await checkSuccessEthers(goodClient.submitRootHash());
       nSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
       expect(nSubmissions).to.eq.BN(2);
 
       await runBinarySearch(goodClient, badClient);
-
       await goodClient.submitRootHash();
       await goodClient.confirmBinarySearchResult();
       await goodClient.submitRootHash();

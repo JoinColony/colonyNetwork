@@ -11,7 +11,9 @@ const sqlite = require("sqlite");
 // do in the future.
 // const accountAddress = "0xbb46703786c2049d4d6dd43f5b4edf52a20fefe4";
 const secretKey = "0xe5c050bb6bfdd9c29397b8fe6ed59ad2f7df83d6fd213b473f84b489205d9fc7";
-const miningCycleDuration = 60 * 60 * 24; // 24 hours
+const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
+const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000);
+const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
 
 class ReputationMiner {
   /**
@@ -629,50 +631,73 @@ class ReputationMiner {
   async submitRootHash(startIndex = 1) {
     const hash = await this.getRootHash();
     const nNodes = await this.getRootHashNNodes();
+    const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
     // Get how much we've staked, and thefore how many entries we have
-    let entryIndex;
     const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
-    const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
 
-    // Get the JRH
-    const jrh = await this.justificationTree.getRootHash();
-    let gas;
-
-    const constant = ethers.utils
-      .bigNumberify(2)
-      .pow(256)
-      .sub(1)
-      .div(miningCycleDuration);
-
+    let entryIndex;
     for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
-      // Iterate over entries until we find one that passes
-      const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
-      const block = await this.realProvider.getBlock("latest");
-      const { timestamp } = block;
-      const target = ethers.utils
-        .bigNumberify(timestamp)
-        .sub(reputationMiningWindowOpenTimestamp)
-        .mul(constant);
-
-      if (ethers.utils.bigNumberify(entryHash).lt(target)) {
-        // Check we haven't submitted this already
-        try {
-          gas = await repCycle.estimate.submitRootHash(hash, nNodes, jrh, i);
-          // If that didn't error, then we can submit this
-          entryIndex = i;
-          break;
-        } catch (err) {
-          // We've submitted already (probably);
-        }
+      const submissionPossible = await this.submissionPossible(i);
+      if (submissionPossible) {
+        entryIndex = i;
+        break;
       }
     }
+
     if (!entryIndex) {
       throw new Error("No valid entry for submission found.");
     }
     // Submit that entry
-    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: `0x${gas.toString(16)}` });
+    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: 1000000 });
+  }
+
+  // Function equivalent of submissionPossible, entryQualifies and withinTarget modifiers in ReputationMiningCycle
+  async submissionPossible(entryIndex) {
+    if (entryIndex.eq(0)) {
+      throw new Error();
+    }
+
+    const repCycle = await this.getActiveRepCycle();
+    const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
+    const block = await this.realProvider.getBlock("latest");
+    
+    // Check the window has not closed or it has closed but no-one has submitted and so the current cycle is open to submissions
+    const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+    const elapsedTime = ethers.utils.bigNumberify(block.timestamp).sub(reputationMiningWindowOpenTimestamp);
+
+    if (elapsedTime.gte(miningCycleDuration) && !nUniqueSubmittedHashes.eq(0)) {
+      return false;
+    }
+
+    // Check the proposed entry is eligible (emulates entryQualifies modifier behaviour)
+    const lock = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
+    if (ethers.utils.bigNumberify(entryIndex).gt(lock.balance.div(minStake))) {
+      return false;
+    }
+
+    if(reputationMiningWindowOpenTimestamp.lt(lock.timestamp)) {
+      return false;
+    }
+
+    const hash = await this.getRootHash();
+    const jrh = await this.justificationTree.getRootHash();
+    const entryIndexAlreadySubmitted = await repCycle.minerSubmittedEntryIndex(hash, this.minerAddress, jrh, entryIndex);
+    if (entryIndexAlreadySubmitted) {
+      return false;
+    }
+
+    // Check the proposed entry is within the current allowable submission window (emulates withinTarget modifier behaviour)
+    if (elapsedTime.lt(miningCycleDuration)) {
+      const target = ethers.utils.bigNumberify(block.timestamp).sub(reputationMiningWindowOpenTimestamp).mul(constant);
+      const entryHash = await repCycle.getEntryHash(this.minerAddress, entryIndex, hash);
+
+      if (ethers.utils.bigNumberify(entryHash).lt(target)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
