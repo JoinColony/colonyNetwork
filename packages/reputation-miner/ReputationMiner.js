@@ -812,22 +812,22 @@ class ReputationMiner {
     const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
 
-    let index = ethers.constants.NegativeOne;
     let round = ethers.constants.Zero;
-    let submission = [];
-    while (submission.proposedNewRootHash !== submittedHash ||
-      submission.nNodes.toString() !== submittedNNodes.toString() ||
-      submission.jrh !== jrh) {
-      try {
-        index = index.add(1);
-        const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
-        submission = await repCycle.getReputationHashSubmission(disputedEntry.firstSubmitter);
-      } catch (err) {
-        round = round.add(1);
-        index = ethers.constants.NegativeOne;
+    let disputeRound = await repCycle.getDisputeRound(round);
+    while (disputeRound.length > 0) {
+      for (let index = ethers.constants.Zero; index.lt(disputeRound.length); index = index.add(1) ) {
+        const submission = await repCycle.getReputationHashSubmission(disputeRound[index].firstSubmitter);
+        if (
+          submission.proposedNewRootHash === submittedHash &&
+          submission.nNodes.toString() === submittedNNodes.toString() &&
+          submission.jrh === jrh
+        ) {
+          return [round, index ] }
       }
+      round = round.add(1);
+      disputeRound = await repCycle.getDisputeRound(round);
     }
-    return [round, index];
+    return [ethers.constants.negativeOne, ethers.constants.negativeOne];
   }
 
   /**
