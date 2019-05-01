@@ -23,12 +23,9 @@ import "./ReputationMiningCycleDataTypes.sol";
 
 contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
 
-  /// @notice The getter for the disputeRounds mapping of array of dispute rounds.
+  /// @notice The getter for the disputeRounds mapping
   /// @param _round The dispute round to query
-  /// @param _index The index in the dispute round to query
-  /// @return The elements of the DisputedEntry struct for the submission requested. See ReputationMiningCycleDataTypes for the full description
-  function getDisputeRoundSubmission(uint256 _round, uint256 _index) public view returns (DisputedEntry memory submission);
-
+  /// @return An array of DisputedEntrys struct for the round. See ReputationMiningCycleDataTypes for the full description of the properties.
   function getDisputeRound(uint256 _round) public view returns (DisputedEntry[] memory submissions);
 
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.

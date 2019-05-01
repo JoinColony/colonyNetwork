@@ -839,7 +839,8 @@ class ReputationMiner {
   async respondToBinarySearchForChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+    const disputeRound = await repCycle.getDisputeRound(round);
+    const disputedEntry = disputeRound[index];
 
     const targetNode = disputedEntry.lowerBound;
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
@@ -880,7 +881,8 @@ class ReputationMiner {
   async confirmBinarySearchResult() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+    const disputeRound = await repCycle.getDisputeRound(round);
+    const disputedEntry = disputeRound[index];
     const targetNode = ethers.utils.bigNumberify(disputedEntry.lowerBound);
     const targetNodeKey = ReputationMiner.getHexString(targetNode, 64);
 
@@ -899,7 +901,8 @@ class ReputationMiner {
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+    const disputeRound = await repCycle.getDisputeRound(round);
+    const disputedEntry = disputeRound[index];
 
     // console.log(disputedEntry);
     let firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);

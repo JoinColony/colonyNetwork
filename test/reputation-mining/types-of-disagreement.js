@@ -65,6 +65,7 @@ const setupNewNetworkInstance = async (MINER1, MINER2) => {
 
   goodClient = new ReputationMinerTestWrapper({ loader, realProviderPort, useJsTree, minerAddress: MINER1 });
 };
+
 contract("Reputation Mining - types of disagreement", accounts => {
   const MINER1 = accounts[5];
   const MINER2 = accounts[6];
@@ -131,7 +132,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       expect(nUniqueSubmittedHashes).to.eq.BN(2);
 
       const [round1, index1] = await goodClient.getMySubmissionRoundAndIndex();
-      const disputedEntry = await repCycle.getDisputeRoundSubmission(round1, index1);
+      const disputedRound = await repCycle.getDisputeRound(round1);
+      const disputedEntry = disputedRound[index1];
       const submission = await repCycle.getReputationHashSubmission(goodClient.minerAddress);
       expect(submission.jrhNNodes).to.be.zero;
       await forwardTime(10, this); // This is just to ensure that the timestamps checked below will be different if JRH was submitted.
@@ -147,7 +149,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       // Check 'last response' was updated.
       const [round2, index2] = await goodClient.getMySubmissionRoundAndIndex();
-      const disputedEntryAfter = await repCycle.getDisputeRoundSubmission(round2, index2);
+      const disputeRoundAfter = await repCycle.getDisputeRound(round2);
+      const disputedEntryAfter = await disputeRoundAfter[index2];
       expect(disputedEntry.lastResponseTimestamp).to.not.eq.BN(disputedEntryAfter.lastResponseTimestamp);
 
       // Cleanup
@@ -209,8 +212,9 @@ contract("Reputation Mining - types of disagreement", accounts => {
       const badJrh = await badClient.justificationTree.getRootHash();
       expect(badSubmissionAfterJRHConfirmed.jrh).to.eq.BN(badJrh);
 
-      let goodDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 0);
-      let badDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 1);
+      let round0 = await repCycle.getDisputeRound(0);
+      let goodDisputedEntry = round0[0];
+      let badDisputedEntry = round0[1];
       expect(goodDisputedEntry.challengeStepCompleted).to.eq.BN(1); // Challenge steps completed
       expect(goodDisputedEntry.lowerBound).to.be.zero; // Lower bound for binary search
       expect(goodDisputedEntry.upperBound).to.eq.BN(28); // Upper bound for binary search
@@ -219,8 +223,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       expect(badDisputedEntry.upperBound).to.eq.BN(28);
 
       await goodClient.respondToBinarySearchForChallenge();
-      goodDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 0);
-      badDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 1);
+      round0 = await repCycle.getDisputeRound(0);
+      [goodDisputedEntry, badDisputedEntry] = round0;
       expect(goodDisputedEntry.challengeStepCompleted).to.eq.BN(2);
       expect(goodDisputedEntry.lowerBound).to.be.zero;
       expect(goodDisputedEntry.upperBound).to.eq.BN(28);
@@ -229,8 +233,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       expect(badDisputedEntry.upperBound).to.eq.BN(28);
 
       await badClient.respondToBinarySearchForChallenge();
-      goodDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 0);
-      badDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 1);
+      round0 = await repCycle.getDisputeRound(0);
+      [goodDisputedEntry, badDisputedEntry] = round0;
       expect(goodDisputedEntry.lowerBound).to.be.zero;
       expect(goodDisputedEntry.upperBound).to.eq.BN(15);
       expect(badDisputedEntry.lowerBound).to.be.zero;
@@ -238,8 +242,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 0);
-      badDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 1);
+      round0 = await repCycle.getDisputeRound(0);
+      [goodDisputedEntry, badDisputedEntry] = round0;
       expect(goodDisputedEntry.lowerBound).to.eq.BN(8);
       expect(goodDisputedEntry.upperBound).to.eq.BN(15);
       expect(badDisputedEntry.lowerBound).to.eq.BN(8);
@@ -247,9 +251,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 0);
-      badDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 1);
-
+      round0 = await repCycle.getDisputeRound(0);
+      [goodDisputedEntry, badDisputedEntry] = round0;
       expect(goodDisputedEntry.lowerBound).to.eq.BN(12);
       expect(goodDisputedEntry.upperBound).to.eq.BN(15);
       expect(badDisputedEntry.lowerBound).to.eq.BN(12);
@@ -257,8 +260,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 0);
-      badDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 1);
+      round0 = await repCycle.getDisputeRound(0);
+      [goodDisputedEntry, badDisputedEntry] = round0;
       expect(goodDisputedEntry.lowerBound).to.eq.BN(12);
       expect(goodDisputedEntry.upperBound).to.eq.BN(13);
       expect(badDisputedEntry.lowerBound).to.eq.BN(12);
@@ -266,8 +269,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
 
       await goodClient.respondToBinarySearchForChallenge();
       await badClient.respondToBinarySearchForChallenge();
-      goodDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 0);
-      badDisputedEntry = await repCycle.getDisputeRoundSubmission(0, 1);
+      round0 = await repCycle.getDisputeRound(0);
+      [goodDisputedEntry, badDisputedEntry] = round0;
       expect(goodDisputedEntry.lowerBound).to.eq.BN(13);
       expect(goodDisputedEntry.upperBound).to.eq.BN(13);
       expect(badDisputedEntry.lowerBound).to.eq.BN(13);
@@ -281,8 +284,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-increased-reputation-value-incorrect");
 
       // Check
-      const goodDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
-      const badDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
+      round0 = await repCycle.getDisputeRound(0);
+      const [goodDisputedEntryAfterResponseToChallenge, badDisputedEntryAfterResponseToChallenge] = round0;
       const delta =
         goodDisputedEntryAfterResponseToChallenge.challengeStepCompleted - badDisputedEntryAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.eq.BN(1);
@@ -526,8 +529,9 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-uid-changed-for-existing-reputation");
 
       // Check
-      const goodDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
-      const badDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
+      const disputeRound = await repCycle.getDisputeRound(0);
+      const goodDisputedEntryAfterResponseToChallenge = disputeRound[0];
+      const badDisputedEntryAfterResponseToChallenge = disputeRound[1];
       const delta =
         goodDisputedEntryAfterResponseToChallenge.challengeStepCompleted - badDisputedEntryAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.eq.BN(1);
@@ -580,8 +584,9 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await badClient.respondToChallenge();
 
       // Check
-      const goodDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
-      const badDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
+      const disputeRoundAfter = await repCycle.getDisputeRound(0);
+      const goodDisputedEntryAfterResponseToChallenge = disputeRoundAfter[0];
+      const badDisputedEntryAfterResponseToChallenge = disputeRoundAfter[1];
       const delta =
         goodDisputedEntryAfterResponseToChallenge.challengeStepCompleted - badDisputedEntryAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.be.zero;
@@ -684,8 +689,8 @@ contract("Reputation Mining - types of disagreement", accounts => {
       await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-proved-uid-inconsistent");
 
       // Check badClient respondToChallenge failed
-      const goodDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 0);
-      const badDisputedEntryAfterResponseToChallenge = await repCycle.getDisputeRoundSubmission(0, 1);
+      const disputeRoundAfter = await repCycle.getDisputeRound(0);
+      const [goodDisputedEntryAfterResponseToChallenge, badDisputedEntryAfterResponseToChallenge] = disputeRoundAfter;
       const delta =
         goodDisputedEntryAfterResponseToChallenge.challengeStepCompleted - badDisputedEntryAfterResponseToChallenge.challengeStepCompleted;
       expect(delta).to.eq.BN(2);
