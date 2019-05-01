@@ -52,6 +52,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param entryIndex The entry number for the given `newHash` and `nNodes`
   function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public;
 
+  /// @notice Get whether a challenge round is complete
+  function challengeRoundComplete(uint256 round) public view returns (bool complete);
+
   /// @notice Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
   /// or the last one standing after all others have been proved wrong.
   /// @param roundNumber The round number that the hash being confirmed is in as the only contendender. If only one hash was submitted, then this is zero.

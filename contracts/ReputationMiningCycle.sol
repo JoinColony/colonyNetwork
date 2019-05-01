@@ -136,6 +136,10 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     reputationMiningWindowOpenTimestamp = now;
   }
 
+  function challengeRoundComplete(uint256 round) public view returns (bool) {
+    return nHashesCompletedChallengeRound[round] == disputeRounds[round-1].length;
+  }
+
   function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public
   submissionPossible()
   entryQualifies(newHash, nNodes, jrh, entryIndex)
