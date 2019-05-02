@@ -75,7 +75,7 @@
         },
         created () {
           axios.get('http://localhost:3030/contracts?name=ReputationMiningCycle')
-            .then(function (cycleJSON) { this.cycleJSON = cycleJSON })
+            .then((cycleJSON) => { this.cycleJSON = cycleJSON })
         }
       })
 

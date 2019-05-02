@@ -19,6 +19,23 @@ class ReputationMinerClient {
     }
 
     this._app = express();
+
+    this._app.use(function(req, res, next) {
+      res.header("Access-Control-Allow-Origin", "*");
+      next();
+    });
+
+    this._app.get("/reputations", async (req, res) => {
+      const reputations = Object.keys(this._miner.reputations).map(key => {
+        const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
+        const keyElements = ReputationMiner.breakKeyInToElements(key);
+        const [colonyAddress, , userAddress] = keyElements;
+        const skillId = parseInt(keyElements[1], 16);
+        return { colonyAddress, userAddress, skillId, decimalValue }
+      })
+      return res.status(200).send(reputations);
+    });
+
     this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
       const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
       const currentHash = await this._miner.getRootHash();
