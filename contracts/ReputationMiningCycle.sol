@@ -62,7 +62,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     require(reputationMiningWindowOpenTimestamp >= lockTimestamp, "colony-reputation-mining-stake-too-recent");
 
     // If this user has submitted before during this round...
-    if (reputationHashSubmissions[msg.sender].proposedNewRootHash != 0x0) {
+    if (reputationHashSubmissions[msg.sender].proposedNewRootHash != bytes32(0)) {
       // ...require that they are submitting the same hash ...
       require(newHash == reputationHashSubmissions[msg.sender].proposedNewRootHash, "colony-reputation-mining-submitting-different-hash");
       // ...require that they are submitting the same number of nodes for that hash ...
@@ -136,6 +136,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function getSubmissionUser(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address) {
+    require(submittedHashes[hash][nNodes][jrh].length > index, "colony-reputation-mining-submission-index-out-of-range");
     return submittedHashes[hash][nNodes][jrh][index];
   }
 
