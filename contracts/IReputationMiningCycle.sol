@@ -23,11 +23,10 @@ import "./ReputationMiningCycleDataTypes.sol";
 
 contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
 
-  /// @notice The getter for the disputeRounds mapping of array of dispute rounds.
+  /// @notice The getter for the disputeRounds mapping
   /// @param _round The dispute round to query
-  /// @param _index The index in the dispute round to query
-  /// @return The elements of the DisputedEntry struct for the submission requested. See ReputationMiningCycleDataTypes for the full description
-  function getDisputeRoundSubmission(uint256 _round, uint256 _index) public view returns (DisputedEntry memory submission);
+  /// @return An array of DisputedEntrys struct for the round. See ReputationMiningCycleDataTypes for the full description of the properties.
+  function getDisputeRound(uint256 _round) public view returns (DisputedEntry[] memory submissions);
 
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.
   /// @param _user Address of the user
@@ -41,6 +40,12 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @return entryHash The hash for the corresponding entry
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32 entryHash);
 
+  /// @notice Returns a boolean result of whether the miner has already submitted at this entry index
+  /// @param _miner The address that submitted the hash
+  /// @param _index The index of the entry that they used to submit the hash
+  /// @return result Boolean whether the entryIndex was already submitted
+  function minerSubmittedEntryIndex(address _miner, uint256 _index) public view returns (bool result);
+
   /// @notice Resets the timestamp that the submission window opens to `now`
   /// @dev only allowed to be called by ColonyNetwork
   function resetWindow() public;
@@ -51,6 +56,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param jrh The justifcation root hash for this submission
   /// @param entryIndex The entry number for the given `newHash` and `nNodes`
   function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public;
+
+  /// @notice Get whether a challenge round is complete
+  function challengeRoundComplete(uint256 round) public view returns (bool complete);
 
   /// @notice Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
   /// or the last one standing after all others have been proved wrong.
@@ -222,11 +230,20 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract
   function initialise(address tokenLocking, address clnyToken) public;
 
-  /// @notice Get the number of hashes that have been submitted this mining cycle
-  function getNSubmittedHashes() public view returns (uint256 nSubmittedHashes);
+  /// @notice Get the number of unique hashes that have been submitted this mining cycle
+  function getNUniqueSubmittedHashes() public view returns (uint256 nUniqueSubmittedHashes);
 
   /// @notice Get the number of hashes that have been invalidated this mining cycle
   function getNInvalidatedHashes() public view returns (uint256 nInvalidatedHashes);
+
+  /// @notice Get the minimum stake of CLNY required to mine
+  function getMinStake() public pure returns (uint256 minStake);
+
+  /// @notice Get the length of the mining window in seconds
+  function getMiningWindowDuration() public pure returns (uint256 miningWindowDuration);
+
+  /// @notice Get the reputation decay constant.
+  function getDecayConstant() public pure returns (uint256 numerator, uint256 denominator);
 
   /// @notice Get the address that made a particular submission
   /// @param hash The hash that was submitted
@@ -234,4 +251,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param jrh The JRH of that was submitted
   /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
   function getSubmissionUser(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address user);
+
+  /// @notice Get the number of submissions miners made of a particular hash / nNodes / jrh combination
+  /// @param hash The hash that was submitted
+  /// @param nNodes The number of nodes that was submitted
+  /// @param jrh The JRH of that was submitted
+  /// @return count The number of submissions - should be 0-12, as up to twelve submissions can be made
+  function getNSubmissionsForHash(bytes32 hash, uint256 nNodes, bytes32 jrh) public view returns (uint256 count);
 }

@@ -14,7 +14,8 @@ class MaliciousReputationMinerWrongResponse extends ReputationMinerTestWrapper {
   async respondToChallenge() {
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const repCycle = await this.getActiveRepCycle();
-    const disputedEntry = await repCycle.getDisputeRoundSubmission(round, index);
+    const disputeRound = await repCycle.getDisputeRound(round);
+    const disputedEntry = disputeRound[index];
 
     // console.log(disputedEntry);
     let firstDisagreeIdx = ethers.utils.bigNumberify(disputedEntry.lowerBound);

@@ -6,7 +6,7 @@ import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
 import { giveUserCLNYTokens, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
-import { MINING_CYCLE_DURATION } from "../../helpers/constants";
+import { MIN_STAKE, MINING_CYCLE_DURATION, DECAY_RATE } from "../../helpers/constants";
 import { forwardTime, checkErrorRevert, getActiveRepCycle } from "../../helpers/test-helper";
 
 const { expect } = chai;
@@ -115,8 +115,8 @@ contract("Reputation mining - basic functionality", accounts => {
 
       await checkErrorRevert(repCycle.submitRootHash("0x12345678", 10, "0x00", 0), "colony-reputation-mining-zero-entry-index-passed");
 
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      expect(nSubmittedHashes).to.be.zero;
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.be.zero;
     });
   });
 
@@ -167,6 +167,27 @@ contract("Reputation mining - basic functionality", accounts => {
       const inactiveRepCycle = await IReputationMiningCycle.at(addr);
 
       await checkErrorRevert(inactiveRepCycle.initialise(MINER1, MINER2), "colony-reputation-mining-cycle-already-initialised");
+    });
+  });
+
+  describe("when reading reputation mining constant properties", async () => {
+    it("can get the minimum stake value", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const minStake = await repCycle.getMinStake();
+      expect(minStake).to.eq.BN(MIN_STAKE);
+    });
+
+    it("can get the mining window duration", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const miningCycleDuration = await repCycle.getMiningWindowDuration();
+      expect(miningCycleDuration).to.eq.BN(MINING_CYCLE_DURATION);
+    });
+
+    it("can get the decay constant value", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      const decay = await repCycle.getDecayConstant();
+      expect(decay.numerator).to.eq.BN(DECAY_RATE.NUMERATOR);
+      expect(decay.denominator).to.eq.BN(DECAY_RATE.DENOMINATOR);
     });
   });
 });

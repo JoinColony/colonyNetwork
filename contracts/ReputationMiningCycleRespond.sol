@@ -95,6 +95,10 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   uint constant DECAY_NUMERATOR =    992327946262944; // 24-hr mining cycles
   uint constant DECAY_DENOMINATOR = 1000000000000000;
 
+  function getDecayConstant() public pure returns (uint256, uint256) {
+    return (DECAY_NUMERATOR, DECAY_DENOMINATOR);
+  }
+
   function respondToChallenge(
     uint256[29] memory u, //An array of 29 UINT Params, ordered as given above.
     bytes32[8] memory b32, // An array of 8 bytes32 params, ordered as given above

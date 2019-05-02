@@ -19,7 +19,8 @@ import {
   accommodateChallengeAndInvalidateHash,
   getValidEntryNumber,
   finishReputationMiningCycle,
-  runBinarySearch
+  runBinarySearch,
+  checkErrorRevertEthers
 } from "../../helpers/test-helper";
 
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
@@ -175,8 +176,8 @@ contract("Reputation mining - root hash submissions", accounts => {
         repCycle.submitRootHash("0x12345678", 10, "0x01", entryNumber, { from: MINER1 }),
         "colony-reputation-mining-submitting-different-jrh"
       );
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      expect(nSubmittedHashes).to.eq.BN(1);
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.eq.BN(1);
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
     });
 
@@ -203,8 +204,8 @@ contract("Reputation mining - root hash submissions", accounts => {
       await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber, { from: MINER1 });
       await repCycle.submitRootHash("0x12345678", 10, "0x00", entryNumber2, { from: MINER1 });
 
-      const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-      expect(nSubmittedHashes).to.eq.BN(1);
+      const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+      expect(nUniqueSubmittedHashes).to.eq.BN(1);
 
       await forwardTime(MINING_CYCLE_DURATION / 2, this);
       await repCycle.confirmNewHash(0);
@@ -325,6 +326,16 @@ contract("Reputation mining - root hash submissions", accounts => {
 
       const rootHashNNodes = await colonyNetwork.getReputationRootHashNNodes();
       expect(rootHashNNodes).to.be.zero;
+    });
+
+    it("should error if a non existent root hash submission is gotten", async () => {
+      const repCycle = await getActiveRepCycle(colonyNetwork);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x12345678", 10, "0x00", 10, { from: MINER1 });
+      await checkErrorRevertEthers(
+        repCycle.getSubmissionUser("0x12345678", 10, "0x00", 10),
+        "colony-reputation-mining-submission-index-out-of-range"
+      );
     });
   });
 

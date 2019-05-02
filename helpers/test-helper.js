@@ -534,8 +534,10 @@ export async function accommodateChallengeAndInvalidateHash(colonyNetwork, test,
     await navigateChallenge(colonyNetwork, client1, client2, errors);
 
     // Work out which submission is to be invalidated.
-    const disputedEntry1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
-    const disputedEntry2 = await repCycle.getDisputeRoundSubmission(round2, idx2);
+    const disputeRound1 = await repCycle.getDisputeRound(round1);
+    const disputeRound2 = await repCycle.getDisputeRound(round2);
+    const disputedEntry1 = disputeRound1[idx1];
+    const disputedEntry2 = disputeRound2[idx2];
 
     if (new BN(disputedEntry1.challengeStepCompleted).gt(new BN(disputedEntry2.challengeStepCompleted))) {
       toInvalidateIdx = idx2;
@@ -591,8 +593,8 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
   if (errors.client1.confirmJustificationRootHash || errors.client2.confirmJustificationRootHash) {
     return;
   }
-
-  let submission1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
+  let disputeRound = await repCycle.getDisputeRound(round1);
+  let submission1 = disputeRound[idx1];
   let binarySearchStep = -1;
   let binarySearchError = false;
   while (submission1.lowerBound !== submission1.upperBound && binarySearchError === false) {
@@ -615,7 +617,8 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
         `Client2 failed unexpectedly on respondToBinarySearchForChallenge${binarySearchStep}`
       );
     }
-    submission1 = await repCycle.getDisputeRoundSubmission(round1, idx1);
+    disputeRound = await repCycle.getDisputeRound(round1);
+    submission1 = disputeRound[idx1];
   }
 
   if (errors.client1.respondToBinarySearchForChallenge[binarySearchStep] || errors.client2.respondToBinarySearchForChallenge[binarySearchStep]) {
@@ -656,11 +659,11 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
-  const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-  if (nSubmittedHashes.gtn(0)) {
+  const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+  if (nUniqueSubmittedHashes.gtn(0)) {
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
-    if (nSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
-      await repCycle.confirmNewHash(nSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
+    if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
+      await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.
