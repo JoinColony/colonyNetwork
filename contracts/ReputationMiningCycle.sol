@@ -145,7 +145,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function challengeRoundComplete(uint256 round) public view returns (bool) {
-    return nHashesCompletedChallengeRound[round] == disputeRounds[round-1].length;
+    return nHashesCompletedChallengeRound[round] == disputeRounds[round].length;
   }
 
   function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public
@@ -232,7 +232,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         require(submissionWindowClosed(), "colony-reputation-mining-submission-window-still-open");
       } else {
         // Otherwise, ensure that the previous round is complete, and this entry wouldn't possibly get an opponent later on.
-        require(nHashesCompletedChallengeRound[round-1] == disputeRounds[round-1].length, "colony-reputation-mining-previous-dispute-round-not-complete");
+        require(challengeRoundComplete(round - 1), "colony-reputation-mining-previous-dispute-round-not-complete");
       }
 
 
