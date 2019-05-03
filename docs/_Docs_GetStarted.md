@@ -1,7 +1,7 @@
 ---
 title: Get Started
 section: Docs
-order: 4
+order: 5
 ---
 
 The [glider](https://github.com/JoinColony/colonyNetwork) release is currently live on `rinkeby` and will soon be deployed on `mainnet`.
@@ -12,7 +12,7 @@ See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/do
 
 If you want to build a dapp or other integration that doesn't directly extend the Colony Network contracts, it's recommended that you use colonyJS. Analogous instructions for colonyJS can be found in [Local Setup](/colonyjs/intro-local-setup/) for colonyJS.
 
-An even more 'complete' starting point is the [colonyStarter kit](/colonystarter/docs-overview/), which contains boilerplate examples for dapp development, including frontend frameworks like react. 
+An even more 'complete' starting point is the [colonyStarter kit](/colonystarter/docs-overview/), which contains boilerplate examples for dapp development, including frontend frameworks like react.
 
 ## Prerequisites
 
