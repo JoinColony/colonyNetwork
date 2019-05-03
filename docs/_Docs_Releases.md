@@ -4,6 +4,7 @@ section: Docs
 order: 3
 ---
 
+![glider](/docs/img/glider_fullColor.svg)
 
 The current colonyNetwork release is `glider`, which implements some, but not all, of the Colony Protocol:
 
