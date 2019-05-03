@@ -1,11 +1,16 @@
 ---
-title: Tasks
+title: Tasks and Payments
 section: Whitepaper TL;DR
 order: 3
 ---
-The smallest conceptual unit within a Colony is a **task**. A task is a discrete unit of work which requires no further subdivision or delegation, and which can be evaluated as complete or incomplete based on some set of criteria.
 
-There is intentionally no further prescription for how a task is meant to be used within a colony. Depending on context and criteria, a task could be called a "bounty", a "salary", a "reimbursement", or an "incentive".
+Funds controlled by a colony can be transferred to an external account either through a `task` or a `payment`.
+
+A task is a discrete unit of work which requires no further subdivision or delegation, and which can be evaluated as complete or incomplete based on some set of criteria. In the task workflow most information relevant to the work is recorded on-chain. This includes a specification for the work to be done, a submission of the work, and ratings for the quality of work.
+
+A payment is similar to a task, without the requirement of "on-chain" management. Payments simply transfer tokens to external accounts directly from a domain pot to an external account. (and confer reputation if made in the colony's internal token).  
+
+There is intentionally no further prescription for how tasks or payments are meant to be used within a colony. Depending on context and criteria, they could be called "bounties", "salaries", "reimbursements", or "incentives".
 
 
 ==TOC==

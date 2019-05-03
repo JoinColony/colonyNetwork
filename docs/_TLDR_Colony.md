@@ -26,7 +26,7 @@ There is intentionally no further prescription for how a task is meant to be use
 
 At a minimum, a newly created task must be assigned a `domainId` and reference a specification for the task's completion, i.e. a description of the work to be done and how that work will be evaluated.
 
-[More about Tasks](/colonynetwork/whitepaper-tldr-tasks/)
+[More about Tasks](/colonynetwork/whitepaper-tldr-tasks-and-payments/)
 
 
 ## Reputation and Tokens
