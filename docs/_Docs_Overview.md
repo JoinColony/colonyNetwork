@@ -8,7 +8,7 @@ order: 1
 
 The Colony Network is a large set of contracts that together define how all colonies operate and interact with people and other smart contracts on the Ethereum blockchain.
 
-Colony is designed to be modular, upgradable, and eternally backwards-compatible. This is achieved through a sophisticated contract architecture that requires a bit of exposition. It is recommended that any developer seeking to understand the Colony Network solidity implementation first read the [Colony Whitepaper](https://colony.io/whitepaper/), or at the very least, the [whitepaper Whitepaper TL;DR](/colonynetwork/whitepaper-tldr-colony/).
+Colony is designed to be modular, upgradable, and eternally backwards-compatible. This is achieved through a sophisticated contract architecture that requires a bit of exposition. It is recommended that any developer seeking to understand the Colony Network solidity implementation first read the [Colony White Paper](https://colony.io/whitepaper/), or at the very least, the [White Paper TL;DR](/colonynetwork/whitepaper-tldr-colony/).
 
 ==TOC==
 
@@ -65,6 +65,8 @@ Broadly speaking, the Colony Network contracts can be divided into a few categor
 The Colony Network contracts are separated out into functional layers, and named according to their context.
 
 ![Interface, Logic, Data](img/colonyNetwork_diagram_r10.png)
+
+
 Starting from the lowest level, all data types are declared in a DataTypes contract.
 
 All storage variables are declared and stored in a storage contract, which inherits a DataTypes contract.
