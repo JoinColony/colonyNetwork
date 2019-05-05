@@ -135,6 +135,7 @@ class ReputationMinerClient {
     // TODO: Optimise this to call getTwelveBestSubmissions only once per cycle
     // to reuse that return object and not make this call on every block
     const best12Submissions = await this.getTwelveBestSubmissions();
+
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
     const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
@@ -165,7 +166,7 @@ class ReputationMinerClient {
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
-        
+
     if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration) && lastHashStanding) {
       console.log("⏰ Looks like it's time to confirm the new hash");
       // Confirm hash
@@ -173,7 +174,8 @@ class ReputationMinerClient {
       // querying a node that hasn't had the above transaction propagate to it yet.
       // TODO: not sure we need this still: nonce: confirmNewHashTx.nonce + 1 in the tx below
       // This won't be valid anyway if we're not confirming immediately in the next transaction
-      const confirmNewHashTx = await repCycle.confirmNewHash(0, { gasLimit: 3500000 });
+      const [round] = await this._miner.getMySubmissionRoundAndIndex();
+      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: 4000000 });
       console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
       await confirmNewHashTx.wait();
 
@@ -196,15 +198,13 @@ class ReputationMinerClient {
   async getTwelveBestSubmissions() {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
-
     const [, balance] = await this._miner.tokenLocking.getUserLock(this._miner.clnyAddress, this._miner.minerAddress);
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-
     const rootHash = await this._miner.getRootHash();
 
     const timeAbleToSubmitEntries = [];
     for (let i = ethers.utils.bigNumberify(1); i.lte(balance.div(minStake)); i = i.add(1)) {
-      const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);      
+      const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);  
       const timeAbleToSubmitEntry = ethers.utils.bigNumberify(entryHash).div(constant).add(reputationMiningWindowOpenTimestamp);
 
       const validEntry = {
