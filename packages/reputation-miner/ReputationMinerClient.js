@@ -1,8 +1,15 @@
+import { checkSuccessEthers } from "../../helpers/test-helper";
+
 const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
 
 const ReputationMiner = require("./ReputationMiner");
+
+const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disable-line prettier/prettier
+const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
+const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
+let submissionIndex = 0;
 
 class ReputationMinerClient {
   /**
@@ -111,67 +118,125 @@ class ReputationMinerClient {
 
     console.log("🏁 Initialised");
     if (this._auto) {
-      this.timeout = setTimeout(() => this.checkSubmissionWindow(), 0);
+      await this.processReputationLog();
+      
+      this._miner.realProvider.polling = true;
+      this._miner.realProvider.pollingInterval = 1000;
+      const newBlockChecks = new Promise((resolve) => {
+        this._miner.realProvider.on('block', this.doWork.bind(this));
+        resolve();
+      });
+
+      await newBlockChecks;
+    }
+  }
+
+  async doWork(blockNumber) {
+    // TODO: Optimise this to call getTwelveBestSubmissions only once per cycle
+    // to reuse that return object and not make this call on every block
+    const best12Submissions = await this.getTwelveBestSubmissions();
+    const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
+    const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
+
+    const hash = await this._miner.getRootHash();
+    const nNodes = await this._miner.getRootHashNNodes();
+    const jrh = await this._miner.justificationTree.getRootHash();
+
+    const block = await this._miner.realProvider.getBlock(blockNumber);
+    if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {
+      const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+
+      // If less than 12 submissions have been made, submit at our next best possible time
+      if (nHashSubmissions.lt(12)) {
+        const {entryIndex} = best12Submissions[submissionIndex];
+        const canSubmit = await this._miner.submissionPossible(entryIndex);
+        if (canSubmit) {
+          console.log("⏰ Looks like it's time to submit an entry to the current cycle");
+          await this.submitEntry(entryIndex);
+          submissionIndex += 1;
+        }
+      } else {
+        // TODO remove listener maybe via:
+        // this._miner.realProvider.removeListener('block', callback);
+      }
+    }
+
+    const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
+    const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
+    const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
+        
+    if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration) && lastHashStanding) {
+      console.log("⏰ Looks like it's time to confirm the new hash");
+      // Confirm hash
+      // We explicitly use the previous nonce +1, in case we're using Infura and we end up
+      // querying a node that hasn't had the above transaction propagate to it yet.
+      // TODO: not sure we need this still: nonce: confirmNewHashTx.nonce + 1 in the tx below
+      // This won't be valid anyway if we're not confirming immediately in the next transaction
+      const confirmNewHashTx = await repCycle.confirmNewHash(0, { gasLimit: 3500000 });
+      console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
+      await confirmNewHashTx.wait();
+
+      console.log("✅ New reputation hash confirmed");
     }
   }
 
   close() {
-    clearTimeout(this.timeout);
+    this._miner.realProvider.polling = false;
     this.server.close();
   }
 
-  async checkSubmissionWindow() {
-    // TODO: Check how much of this does actually belong into the Miner itself
-    // One could introduce lifecycle hooks in the miner to avoid code duplication
+  async processReputationLog() {
+    console.log("📁 Processing reputation update log");
+    await this._miner.addLogContentsToReputationTree();
+    console.log("💾 Writing new reputation state to database");
+    await this._miner.saveCurrentState();
+  }
 
-    // Check if the mining cycle has elapsed
+  async getTwelveBestSubmissions() {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
 
-    let windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
-    windowOpened = windowOpened.toNumber();
+    const [, balance] = await this._miner.tokenLocking.getUserLock(this._miner.clnyAddress, this._miner.minerAddress);
+    const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
 
-    const block = await this._miner.realProvider.getBlock("latest");
-    const now = block.timestamp;
-    if (now - windowOpened >= this._miner.getMiningCycleDuration()) {
-      console.log("⏰ Looks like it's time to submit an update");
-      // If so, process the log
-      await this._miner.addLogContentsToReputationTree();
+    const rootHash = await this._miner.getRootHash();
 
-      console.log("💾 Writing new reputation state to database");
-      await this._miner.saveCurrentState();
+    const timeAbleToSubmitEntries = [];
+    for (let i = ethers.utils.bigNumberify(1); i.lte(balance.div(minStake)); i = i.add(1)) {
+      const entryHash = await repCycle.getEntryHash(this._miner.minerAddress, i, rootHash);      
+      const timeAbleToSubmitEntry = ethers.utils.bigNumberify(entryHash).div(constant).add(reputationMiningWindowOpenTimestamp);
 
-      const rootHash = await this._miner.getRootHash();
-      console.log("#️⃣ Submitting new reputation hash: ", rootHash);
-
-      // Submit hash
-      let tx = await this._miner.submitRootHash();
-      if (!tx.nonce) {
-        // Assume we've been given back the tx hash.
-        tx = await this._miner.realProvider.getTransaction(tx);
+      const validEntry = {
+        timestamp: timeAbleToSubmitEntry,
+        entryIndex: i
       }
-      console.log("⛏️ Transaction waiting to be mined", tx);
-      await tx.wait();
-
-      console.log("🆗 Confirming new reputation hash");
-      // Confirm hash
-      // We explicitly use the previous nonce +1, in case we're using Infura and we end up
-      // querying a node that hasn't had the above transaction propagate to it yet.
-      tx = await repCycle.confirmNewHash(0, { gasLimit: 3500000, nonce: tx.nonce + 1 });
-      console.log("⛏️ Transaction waiting to be mined", tx);
-      await tx.wait();
-
-      console.log("✅ New reputation hash confirmed");
-      // this.timeout = setTimeout(() => this.checkSubmissionWindow(), 86400000);
-      // console.log("⌛️ will next check in one hour and one minute");
-      this.timeout = setTimeout(() => this.checkSubmissionWindow(), 10000);
-    } else {
-      // Set a timeout for 86410 - (now - windowOpened)
-      this.timeout = setTimeout(() => this.checkSubmissionWindow(), 10000);
-      // const timeout = Math.max(86410 - (now - windowOpened), 10);
-      // console.log("⌛️ will next check in ", timeout, "seconds");
-      // this.timeout = setTimeout(() => this.checkSubmissionWindow(), timeout * 1000);
+      timeAbleToSubmitEntries.push(validEntry);
     }
+
+    timeAbleToSubmitEntries.sort(function (a, b) {
+      return a.timestamp.sub(b.timestamp).toNumber();
+    });
+
+    const best12Submissions = timeAbleToSubmitEntries.slice(0, 12);
+    return best12Submissions;
+  }
+
+  async submitEntry(entryIndex) {
+    const rootHash = await this._miner.getRootHash();
+    console.log("#️⃣ Submitting new reputation hash", rootHash, "at entry index", entryIndex.toNumber());
+
+    // Submit hash
+    let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
+    if (!submitRootHashTx.nonce) {
+      // Assume we've been given back the submitRootHashTx hash.
+      submitRootHashTx = await this._miner.realProvider.getTransaction(submitRootHashTx);
+    }
+    console.log("⛏️ Transaction waiting to be mined", submitRootHashTx.hash);
+    
+    // TODO: Think of a better way to do error handling here
+    await checkSuccessEthers(submitRootHashTx.wait());
+    console.log("🆗 New reputation hash submitted successfully");
   }
 }
 

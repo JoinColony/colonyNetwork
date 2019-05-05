@@ -83,7 +83,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1.
   modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
     // Check the ticket is a winning one.
-    // All entries are acceptable if the hour-long window is closed, so skip this check if that's the case
+    // All entries are acceptable if the 24 hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
       uint256 target = (now - reputationMiningWindowOpenTimestamp) * X;
       require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");

@@ -629,31 +629,39 @@ class ReputationMiner {
    * @param startIndex What index to start searching at when looking for a valid submission
    * @return {Promise}
    */
-  async submitRootHash(startIndex = 1) {
+  async submitRootHash(entryIndex) {
     const hash = await this.getRootHash();
     const nNodes = await this.getRootHashNNodes();
     const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
-    // Get how much we've staked, and thefore how many entries we have
-    const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
-
-    let entryIndex;
-    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
-      const submissionPossible = await this.submissionPossible(i);
-      if (submissionPossible) {
-        entryIndex = i;
-        break;
-      }
-    }
 
     if (!entryIndex) {
-      throw new Error("No valid entry for submission found.");
+      entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
+
     // Submit that entry
     return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: 1000000 });
   }
 
-  // Function equivalent of submissionPossible, entryQualifies and withinTarget modifiers in ReputationMiningCycle
+  async getEntryIndex(startIndex = 1) {
+    // Get how much we've staked, and thefore how many entries we have
+    const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
+
+    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
+      const submissionPossible = await this.submissionPossible(i);
+      if (submissionPossible) {
+        return i;
+      }
+    }
+
+    throw new Error("No valid entry for submission found.");
+  }
+
+  /**
+   * Check whether a hash submission is possible at the given entryIndex
+   * The logic is equivalent to submissionPossible, entryQualifies and withinTarget modifiers in ReputationMiningCycle
+   * @return {Promise} Resolves to a boolean result
+   */
   async submissionPossible(entryIndex) {
     if (entryIndex.eq(0)) {
       throw new Error();
