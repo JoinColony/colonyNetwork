@@ -459,7 +459,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       nPreviousUpdates));
   }
 
-  function getReputationUpdateLogLength() public view returns (uint) {
+  function getReputationUpdateLogLength() public view returns (uint256) {
     return reputationUpdateLog.length;
   }
 
