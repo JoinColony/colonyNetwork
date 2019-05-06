@@ -83,6 +83,7 @@ class ReputationMiner {
     const metaColonyAddress = await this.colonyNetwork.getMetaColony();
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
+
     if (this.useJsTree) {
       this.reputationTree = new PatriciaTree();
     } else {

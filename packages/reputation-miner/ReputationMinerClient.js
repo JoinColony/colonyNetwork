@@ -10,6 +10,7 @@ const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000); // eslint-disa
 const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
 const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
 let submissionIndex = 0;
+let best12Submissions = [];
 
 class ReputationMinerClient {
   /**
@@ -105,6 +106,7 @@ class ReputationMinerClient {
    */
   async initialise(colonyNetworkAddress) {
     await this._miner.initialise(colonyNetworkAddress);
+    // TODO: Use this._miner.repCycleContractDef which is already initialised
     this.repCycleContractDef = await this._loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
 
     // TODO: Get latest state from database, then sync to current state on-chain.
@@ -118,38 +120,54 @@ class ReputationMinerClient {
 
     console.log("🏁 Initialised");
     if (this._auto) {
+      // Initial call to process the existing log from the cycle we're currently in
       await this.processReputationLog();
-      
+      best12Submissions = await this.getTwelveBestSubmissions();
+
+      // Add a listener to process log for when a new cycle starts
+      const ReputationMiningCycleComplete = ethers.utils.id("ReputationMiningCycleComplete(bytes32,uint256)");
+
+      const filter = {
+          address: this._miner.colonyNetwork.address,
+          topics: [ ReputationMiningCycleComplete ]
+      }
+
       this._miner.realProvider.polling = true;
       this._miner.realProvider.pollingInterval = 1000;
-      const newBlockChecks = new Promise((resolve) => {
-        this._miner.realProvider.on('block', this.doWork.bind(this));
+
+      // If a new mining cycle starts, process the new reputation update log
+      const newCycleChecks = new Promise((resolve) => {
+        this._miner.realProvider.on(filter, async () => {
+          await this.processReputationLog();
+          best12Submissions = await this.getTwelveBestSubmissions();
+        });
         resolve();
       });
 
-      await newBlockChecks;
+      // Do the other checks for whether we can submit or confirm a hash
+      const newBlockChecks = new Promise((resolve) => {
+        this._miner.realProvider.on('block', async (b) => {
+          await this.doWork(b);
+        });
+        resolve();
+      });
+
+      await Promise.all([newCycleChecks, newBlockChecks]);
     }
   }
 
   async doWork(blockNumber) {
-    // TODO: Optimise this to call getTwelveBestSubmissions only once per cycle
-    // to reuse that return object and not make this call on every block
-    const best12Submissions = await this.getTwelveBestSubmissions();
-
+    const block = await this._miner.realProvider.getBlock(blockNumber);
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
-    const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
 
     const hash = await this._miner.getRootHash();
     const nNodes = await this._miner.getRootHashNNodes();
     const jrh = await this._miner.justificationTree.getRootHash();
-
-    const block = await this._miner.realProvider.getBlock(blockNumber);
-    if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {
-      const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
-
-      // If less than 12 submissions have been made, submit at our next best possible time
-      if (nHashSubmissions.lt(12)) {
+    const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+    // If less than 12 submissions have been made, submit at our next best possible time
+    if (nHashSubmissions.lt(12) && best12Submissions[submissionIndex]) {
+      if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {    
         const {entryIndex} = best12Submissions[submissionIndex];
         const canSubmit = await this._miner.submissionPossible(entryIndex);
         if (canSubmit) {
@@ -163,11 +181,15 @@ class ReputationMinerClient {
       }
     }
 
+    const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
+
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
 
     if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration) && lastHashStanding) {
+      // Clear the submissions
+      best12Submissions = [];
       console.log("⏰ Looks like it's time to confirm the new hash");
       // Confirm hash
       // We explicitly use the previous nonce +1, in case we're using Infura and we end up
@@ -218,8 +240,7 @@ class ReputationMinerClient {
       return a.timestamp.sub(b.timestamp).toNumber();
     });
 
-    const best12Submissions = timeAbleToSubmitEntries.slice(0, 12);
-    return best12Submissions;
+    return timeAbleToSubmitEntries.slice(0, 12);
   }
 
   async submitEntry(entryIndex) {
