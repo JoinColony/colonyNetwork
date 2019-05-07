@@ -28,10 +28,7 @@ class ReputationMinerClient {
     this._app.get("/reputations", async (req, res) => {
       const reputations = Object.keys(this._miner.reputations).map(key => {
         const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
-        const keyElements = ReputationMiner.breakKeyInToElements(key);
-        const [colonyAddress, , userAddress] = keyElements;
-        const skillId = parseInt(keyElements[1], 16);
-        return { colonyAddress, userAddress, skillId, decimalValue }
+        return { key, decimalValue }
       })
       return res.status(200).send(reputations);
     });
