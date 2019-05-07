@@ -126,40 +126,30 @@ class ReputationMinerClient {
 
       // Add a listener to process log for when a new cycle starts
       const ReputationMiningCycleComplete = ethers.utils.id("ReputationMiningCycleComplete(bytes32,uint256)");
-
       const filter = {
-          address: this._miner.colonyNetwork.address,
-          topics: [ ReputationMiningCycleComplete ]
+        address: this._miner.colonyNetwork.address,
+        topics: [ ReputationMiningCycleComplete ]
       }
+
+      // If a new mining cycle starts, process the new reputation update log
+      await this._miner.realProvider.on(filter, async () => {
+        console.log("new mining cycle started, processing log and refreshing 12 best submissions");
+        await this.processReputationLog();
+        best12Submissions = await this.getTwelveBestSubmissions();
+      });
+      
+      // Do the other checks for whether we can submit or confirm a hash
+      this._miner.realProvider.on('block', async (b) => {
+        await this.doBlockChecks(b);
+        await this.checkForDispute(b);
+      });
 
       this._miner.realProvider.polling = true;
       this._miner.realProvider.pollingInterval = 1000;
-
-      // If a new mining cycle starts, process the new reputation update log
-      const newCycleChecks = new Promise((resolve) => {
-        this._miner.realProvider.on(filter, async () => {
-          await this.processReputationLog();
-          best12Submissions = await this.getTwelveBestSubmissions();
-        });
-        resolve();
-      });
-
-      // Do the other checks for whether we can submit or confirm a hash
-      const newBlockChecks = new Promise((resolve) => {
-        this._miner.realProvider.on('block', async (b) => {
-          await this.doWork(b);
-        });
-        this._miner.realProvider.on('block', async (b) => {
-          await this.checkForDispute(b);
-        });
-        resolve();
-      });
-
-      await Promise.all([newCycleChecks, newBlockChecks]);
     }
   }
 
-  async doWork(blockNumber) {
+  async doBlockChecks(blockNumber) {
     const block = await this._miner.realProvider.getBlock(blockNumber);
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
@@ -168,6 +158,7 @@ class ReputationMinerClient {
     const nNodes = await this._miner.getRootHashNNodes();
     const jrh = await this._miner.justificationTree.getRootHash();
     const nHashSubmissions = await repCycle.getNSubmissionsForHash(hash, nNodes, jrh);
+
     // If less than 12 submissions have been made, submit at our next best possible time
     if (nHashSubmissions.lt(12) && best12Submissions[submissionIndex]) {
       if (block.timestamp >= best12Submissions[submissionIndex].timestamp) {    
@@ -178,14 +169,10 @@ class ReputationMinerClient {
           await this.submitEntry(entryIndex);
           submissionIndex += 1;
         }
-      } else {
-        // TODO remove listener maybe via:
-        // this._miner.realProvider.removeListener('block', callback);
       }
     }
 
     const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
-
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
@@ -203,7 +190,6 @@ class ReputationMinerClient {
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: 4000000 });
       console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
       await confirmNewHashTx.wait();
-
       console.log("✅ New reputation hash confirmed");
     }
   }
@@ -296,6 +282,7 @@ class ReputationMinerClient {
   }
 
   close() {
+    this._miner.realProvider.removeListener('block', this.doBlockChecks());
     this._miner.realProvider.polling = false;
     this.server.close();
   }

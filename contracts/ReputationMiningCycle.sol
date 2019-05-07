@@ -197,6 +197,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     submittedHashes[newHash][nNodes][jrh].push(msg.sender);
     // Note that they submitted it.
     submittedEntries[msg.sender][entryIndex] = true;
+
+    emit ReputationRootHashSubmitted(msg.sender, newHash, nNodes, jrh, entryIndex);
   }
 
   function confirmNewHash(uint256 roundNumber) public
