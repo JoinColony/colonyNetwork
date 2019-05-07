@@ -149,6 +149,9 @@ class ReputationMinerClient {
         this._miner.realProvider.on('block', async (b) => {
           await this.doWork(b);
         });
+        this._miner.realProvider.on('block', async (b) => {
+          await this.checkForDispute(b);
+        });
         resolve();
       });
 
@@ -202,6 +205,93 @@ class ReputationMinerClient {
       await confirmNewHashTx.wait();
 
       console.log("✅ New reputation hash confirmed");
+    }
+  }
+
+  async checkForDispute(blockNumber) {
+    // Are we in a dispute at all?
+    const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
+
+    const nSubmittedHashes = await repCycle.getNSubmittedHashes();
+    const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
+    const lastHashStanding = nSubmittedHashes.sub(nInvalidatedHashes).eq(1);
+    if (lastHashStanding){
+      // There's only one hash that's not been invalidated, so... no.
+      return;
+    }
+
+    const block = await this._miner.realProvider.getBlock(blockNumber);
+
+    // Is what we believe to be the right submission being disputed?
+    const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+    const entry = await repCycle.getDisputeRoundSubmission(round, index);
+    const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
+
+    // Do we have an opponent?
+    const oppIndex = index % 2 === 0 ? index + 1 : index - 1;
+    const oppEntry = await repCycle.getDisputeRoundSubmission(round, oppIndex);
+    const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
+
+    if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
+      // Then we don't have an opponent
+      if (round.eq(0)) {
+        // We can only advance if the window is closed
+        const windowOpened = repCycle.getReputationMiningWindowOpenTimestamp();
+        if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).lt(miningCycleDuration)) return;
+      } else {
+        // We can only advance if the previous round is complete
+        const previousRoundComplete = await repCycle.challengeRoundComplete(round - 1);
+        if (!previousRoundComplete) return;
+      }
+      await repCycle.invalidateHash(round, oppIndex);
+      return;
+    }
+
+    // If we're here, we do have an opponent.
+    // Has our opponent timed out?
+    const opponentTimeout = block.timestamp.sub(oppEntry.lastResponseTimestamp) >= 600;
+    if (opponentTimeout){
+      // If so, invalidate them.
+      await repCycle.invalidateHash(round, oppIndex);
+      return;
+    }
+
+    // Our opponent hasn't timed out yet. We should check if we can respond to something though
+
+    // 1. Do we still need to confirm JRH?
+    if (submission.jrhNNodes.eq(0)){
+      await this._miner.confirmJustificationRootHash();
+    // 2. Are we in the middle of a binary search?
+    // Check our opponent has confirmed their JRH, and the binary search is ongoing.
+    } else if (oppSubmission.jrhNNodes.neq(0) && entry.upperBound.neq(entry.lowerBound)){
+      // Yes. Are we able to respond?
+      // We can respond if neither of us have responded to this stage yet (i.e. our upper and lower bounds are the same) or
+      // if they have responded already (and so their lower bound is larger or their upper bound is smaller than ours)
+      if (
+        (oppEntry.upperBound.eq(entry.upperBound) && oppEntry.upperBound.eq(entry.upperBound)) ||
+        (oppEntry.upperBound.lt(entry.upperBound) || oppEntry.lowerBound.gt(entry.lowerBound))
+      ) {
+        await this._miner.respondToBinarySearchForChallenge();
+      }
+    // 3. Are we at the end of a binary search and need to confirm?
+    // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
+    } else if (
+      oppEntry.upperBound.eq(oppEntry.lowerBound) && 
+      entry.upperBound.eq(entry.lowerBound) && 
+      ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes) 
+    )
+    {
+      await this._miner.confirmBinarySearchResult();
+    // 4. Is the binary search confirmed, and we need to respond to challenge?
+    // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
+    } else if (
+        ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) && 
+        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNNodes) &&
+        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
+      )
+    {
+      await this._miner.respondToChallenge();
     }
   }
 
