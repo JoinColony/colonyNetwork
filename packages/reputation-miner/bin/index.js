@@ -10,7 +10,7 @@ const ethers = require("ethers");
 
 const ReputationMinerClient = require("../ReputationMinerClient");
 
-const supportedInfuraNetworks = ["rinkeby", "ropsten", "kovan", "mainnet"];
+const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
 const { minerAddress, privateKey, colonyNetworkAddress, dbPath, network } = argv;
 
 if ((!minerAddress && !privateKey) || !colonyNetworkAddress) {
