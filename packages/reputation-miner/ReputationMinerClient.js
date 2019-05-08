@@ -186,17 +186,17 @@ class ReputationMinerClient {
     if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
       // Is what we believe to be the right submission being disputed?
       const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
-      console.log("round", round.toString());
-      console.log("index", index.toString())
+      // console.log("round", round.toString());
+      // console.log("index", index.toString())
       const disputeRound = await repCycle.getDisputeRound(round);
       const entry = disputeRound[index];
       const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
 
       // Do we have an opponent?
       const oppIndex = index.mod(2).isZero() ? index.add(1) : index.sub(1);
-      console.log("oppIndex", oppIndex);
+      // console.log("oppIndex", oppIndex);
       const oppEntry = disputeRound[oppIndex];
-      console.log("oppEntry", oppEntry);
+      // console.log("oppEntry", oppEntry);
       const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
 
       if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
