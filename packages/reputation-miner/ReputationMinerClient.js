@@ -2,7 +2,6 @@ const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
 
-const { MINING_CYCLE_DURATION } = require("./constants");
 const ReputationMiner = require("./ReputationMiner");
 
 class ReputationMinerClient {
@@ -123,7 +122,7 @@ class ReputationMinerClient {
 
     const block = await this._miner.realProvider.getBlock("latest");
     const now = block.timestamp;
-    if (now - windowOpened >= MINING_CYCLE_DURATION) {
+    if (now - windowOpened >= this._miner.getMiningCycleDuration()) {
       console.log("⏰ Looks like it's time to submit an update");
       // If so, process the log
       await this._miner.addLogContentsToReputationTree();

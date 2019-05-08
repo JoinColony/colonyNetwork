@@ -3,7 +3,6 @@ import { BN } from "bn.js";
 import { soliditySha3, isAddress } from "web3-utils";
 import { ethers } from "ethers";
 
-import { MIN_STAKE, MINING_CYCLE_DURATION } from "./constants";
 import PatriciaTreeNoHash from "./patriciaNoHashKey";
 import PatriciaTree from "./patricia";
 
@@ -700,6 +699,14 @@ class ReputationMiner {
     }
 
     return true;
+  }
+
+  /**
+   * Get the mining cycle duration.
+   * @return {integer}      Mining cycle duration
+   */
+  getMiningCycleDuration() {  // eslint-disable-line class-methods-use-this
+    return miningCycleDuration;
   }
 
   /**

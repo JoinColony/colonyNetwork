@@ -1,4 +1,4 @@
-import { MIN_STAKE, MINING_CYCLE_DURATION } from "../constants";
+import { MIN_STAKE, MINING_CYCLE_DURATION } from "../../../helpers/constants";
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");

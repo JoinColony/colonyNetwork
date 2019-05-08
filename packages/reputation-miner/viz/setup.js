@@ -1,5 +1,5 @@
 /* globals artifacts */
-const { WAD, MINING_CYCLE_DURATION } = require("../../helpers/constants");
+const { WAD, MINING_CYCLE_DURATION } = require("../../../helpers/constants");
 
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
