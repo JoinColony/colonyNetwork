@@ -27,17 +27,19 @@ class ReputationMinerClient {
     });
 
     this._app.get("/", async (req, res) => {
-      return res.status(200).send("Welcome to the Colony Reputation Miner!");
+      return res.status(200).send("⛏️ Welcome to the Colony Reputation Miner!");
     });
 
+    // Serve visualizers
     this._app.get("/repTree", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname + '/../reputation-viz/repTree.html'));
+      return res.status(200).sendFile(path.join(__dirname, 'viz/repTree.html'));
     });
 
     this._app.get("/repCycle", async (req, res) => {
-      return res.status(200).sendFile(path.join(__dirname + '/../reputation-viz/repCycle.html'));
+      return res.status(200).sendFile(path.join(__dirname, 'viz/repCycle.html'));
     });
 
+    // Serve data for visualizers
     this._app.get("/reputations", async (req, res) => {
       const reputations = Object.keys(this._miner.reputations).map(key => {
         const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
@@ -50,6 +52,7 @@ class ReputationMinerClient {
       return res.status(200).send(this._miner.repCycleContractDef);
     });
 
+    // Query specific reputation values
     this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
       const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
       const currentHash = await this._miner.getRootHash();

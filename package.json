@@ -42,7 +42,7 @@
     "posttest:contracts:patricia": "npm run stop:blockchain:client",
     "posttest:contracts:watch": "npm run stop:blockchain:client",
     "posttest:contracts:security": "sed -ie \"s/docker: false/docker: true/g\" ./truffle.js && rimraf ./truffle.jse",
-    "viz:setup": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development packages/reputation-viz/setup.js"
+    "viz:setup": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development packages/reputation-miner/viz/setup.js"
   },
   "husky": {
     "hooks": {
