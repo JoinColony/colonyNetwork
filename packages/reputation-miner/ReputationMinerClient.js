@@ -18,7 +18,7 @@ class ReputationMinerClient {
    * @param {string} minerAddress            The address that is staking CLNY that will allow the miner to submit reputation hashes
    * @param {Number} [realProviderPort=8545] The port that the RPC node with the ability to sign transactions from `minerAddress` is responding on. The address is assumed to be `localhost`.
    */
-  constructor({ minerAddress, loader, realProviderPort, privateKey, provider, useJsTree, dbPath, auto }) {
+  constructor({ minerAddress, loader, realProviderPort, minerPort = 3000, privateKey, provider, useJsTree, dbPath, auto }) {
     this._loader = loader;
     this._miner = new ReputationMiner({ minerAddress, loader, provider, privateKey, realProviderPort, useJsTree, dbPath });
     this._auto = auto;
@@ -94,7 +94,7 @@ class ReputationMinerClient {
       }
     });
 
-    this.server = this._app.listen(3000, () => {
+    this.server = this._app.listen(minerPort, () => {
       console.log("⭐️ Reputation oracle running on port ", this.server.address().port);
     });
   }
@@ -131,9 +131,8 @@ class ReputationMinerClient {
         topics: [ ReputationMiningCycleComplete ]
       }
 
-      // If a new mining cycle starts, process the new reputation update log
+      // If a new mining cycle starts, process the new reputation update log and rehydrate the 12 best submissions
       await this._miner.realProvider.on(filter, async () => {
-        console.log("new mining cycle started, processing log and refreshing 12 best submissions");
         await this.processReputationLog();
         best12Submissions = await this.getTwelveBestSubmissions();
       });
@@ -141,7 +140,6 @@ class ReputationMinerClient {
       // Do the other checks for whether we can submit or confirm a hash
       this._miner.realProvider.on('block', async (b) => {
         await this.doBlockChecks(b);
-        await this.checkForDispute(b);
       });
 
       this._miner.realProvider.polling = true;
@@ -149,6 +147,13 @@ class ReputationMinerClient {
     }
   }
 
+  /**
+   * Navigate through the mining process logic used when the client is in auto mode.
+   * Up to 12 submissions of our current proposed Hash/nNodes/JRH are made at the earliest block possible
+   * Once any disputes are resolved and mining window has closed, we confirm the last remaining hash
+   * @param  {Number}  blockNumber The block number we are currently acting on
+   * @return {Promise}
+   */
   async doBlockChecks(blockNumber) {
     const block = await this._miner.realProvider.getBlock(blockNumber);
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
@@ -177,107 +182,86 @@ class ReputationMinerClient {
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
 
-    if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration) && lastHashStanding) {
-      // Clear the submissions
-      best12Submissions = [];
-      console.log("⏰ Looks like it's time to confirm the new hash");
-      // Confirm hash
-      // We explicitly use the previous nonce +1, in case we're using Infura and we end up
-      // querying a node that hasn't had the above transaction propagate to it yet.
-      // TODO: not sure we need this still: nonce: confirmNewHashTx.nonce + 1 in the tx below
-      // This won't be valid anyway if we're not confirming immediately in the next transaction
-      const [round] = await this._miner.getMySubmissionRoundAndIndex();
-      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: 4000000 });
-      console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
-      await confirmNewHashTx.wait();
-      console.log("✅ New reputation hash confirmed");
-    }
-  }
+    // We are in a state of dispute! Run through the process.
+    if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
+      // Is what we believe to be the right submission being disputed?
+      const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
+      console.log("round", round.toString());
+      console.log("index", index.toString())
+      const disputeRound = await repCycle.getDisputeRound(round);
+      const entry = disputeRound[index];
+      const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
 
-  async checkForDispute(blockNumber) {
-    // Are we in a dispute at all?
-    const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
+      // Do we have an opponent?
+      const oppIndex = index.mod(2).isZero() ? index.add(1) : index.sub(1);
+      console.log("oppIndex", oppIndex);
+      const oppEntry = disputeRound[oppIndex];
+      console.log("oppEntry", oppEntry);
+      const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
 
-    const nSubmittedHashes = await repCycle.getNSubmittedHashes();
-    const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
-    const lastHashStanding = nSubmittedHashes.sub(nInvalidatedHashes).eq(1);
-    if (lastHashStanding){
-      // There's only one hash that's not been invalidated, so... no.
-      return;
-    }
-
-    const block = await this._miner.realProvider.getBlock(blockNumber);
-
-    // Is what we believe to be the right submission being disputed?
-    const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
-    const entry = await repCycle.getDisputeRoundSubmission(round, index);
-    const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
-
-    // Do we have an opponent?
-    const oppIndex = index % 2 === 0 ? index + 1 : index - 1;
-    const oppEntry = await repCycle.getDisputeRoundSubmission(round, oppIndex);
-    const oppSubmission = await repCycle.getReputationHashSubmission(oppEntry.firstSubmitter);
-
-    if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
-      // Then we don't have an opponent
-      if (round.eq(0)) {
-        // We can only advance if the window is closed
-        const windowOpened = repCycle.getReputationMiningWindowOpenTimestamp();
-        if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).lt(miningCycleDuration)) return;
-      } else {
-        // We can only advance if the previous round is complete
-        const previousRoundComplete = await repCycle.challengeRoundComplete(round - 1);
-        if (!previousRoundComplete) return;
+      if (oppSubmission.proposedNewRootHash === ethers.constants.AddressZero){
+        // Then we don't have an opponent
+        if (round.eq(0)) {
+          // We can only advance if the window is closed
+          if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).lt(miningCycleDuration)) return;
+        } else {
+          // We can only advance if the previous round is complete
+          const previousRoundComplete = await repCycle.challengeRoundComplete(round - 1);
+          if (!previousRoundComplete) return;
+        }
+        await repCycle.invalidateHash(round, oppIndex);
+        return;
       }
-      await repCycle.invalidateHash(round, oppIndex);
-      return;
-    }
 
-    // If we're here, we do have an opponent.
-    // Has our opponent timed out?
-    const opponentTimeout = block.timestamp.sub(oppEntry.lastResponseTimestamp) >= 600;
-    if (opponentTimeout){
-      // If so, invalidate them.
-      await repCycle.invalidateHash(round, oppIndex);
-      return;
-    }
-
-    // Our opponent hasn't timed out yet. We should check if we can respond to something though
-
-    // 1. Do we still need to confirm JRH?
-    if (submission.jrhNNodes.eq(0)){
-      await this._miner.confirmJustificationRootHash();
-    // 2. Are we in the middle of a binary search?
-    // Check our opponent has confirmed their JRH, and the binary search is ongoing.
-    } else if (oppSubmission.jrhNNodes.neq(0) && entry.upperBound.neq(entry.lowerBound)){
-      // Yes. Are we able to respond?
-      // We can respond if neither of us have responded to this stage yet (i.e. our upper and lower bounds are the same) or
-      // if they have responded already (and so their lower bound is larger or their upper bound is smaller than ours)
-      if (
-        (oppEntry.upperBound.eq(entry.upperBound) && oppEntry.upperBound.eq(entry.upperBound)) ||
-        (oppEntry.upperBound.lt(entry.upperBound) || oppEntry.lowerBound.gt(entry.lowerBound))
-      ) {
-        await this._miner.respondToBinarySearchForChallenge();
+      // If we're here, we do have an opponent.
+      // Has our opponent timed out?
+      const opponentTimeout = ethers.utils.bigNumberify(block.timestamp).sub(oppEntry.lastResponseTimestamp).gte(600);
+      if (opponentTimeout){
+        // If so, invalidate them.
+        await repCycle.invalidateHash(round, oppIndex);
+        return;
       }
-    // 3. Are we at the end of a binary search and need to confirm?
-    // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
-    } else if (
-      oppEntry.upperBound.eq(oppEntry.lowerBound) && 
-      entry.upperBound.eq(entry.lowerBound) && 
-      ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes) 
-    )
-    {
-      await this._miner.confirmBinarySearchResult();
-    // 4. Is the binary search confirmed, and we need to respond to challenge?
-    // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
-    } else if (
-        ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) && 
-        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNNodes) &&
-        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
+
+      // Our opponent hasn't timed out yet. We should check if we can respond to something though
+
+      // 1. Do we still need to confirm JRH?
+      if (submission.jrhNNodes.eq(0)) {
+        await this._miner.confirmJustificationRootHash();
+      // 2. Are we in the middle of a binary search?
+      // Check our opponent has confirmed their JRH, and the binary search is ongoing.
+      } else if (oppSubmission.jrhNNodes.neq(0) && entry.upperBound.neq(entry.lowerBound)){
+        // Yes. Are we able to respond?
+        // We can respond if neither of us have responded to this stage yet (i.e. our upper and lower bounds are the same) or
+        // if they have responded already (and so their lower bound is larger or their upper bound is smaller than ours)
+        if (
+          (oppEntry.upperBound.eq(entry.upperBound) && oppEntry.upperBound.eq(entry.upperBound)) ||
+          (oppEntry.upperBound.lt(entry.upperBound) || oppEntry.lowerBound.gt(entry.lowerBound))
+        ) {
+          await this._miner.respondToBinarySearchForChallenge();
+        }
+      // 3. Are we at the end of a binary search and need to confirm?
+      // Check that our opponent has finished the binary search, check that we have, and check we've not confirmed yet
+      } else if (
+        oppEntry.upperBound.eq(oppEntry.lowerBound) && 
+        entry.upperBound.eq(entry.lowerBound) && 
+        ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).lte(submission.jrhNNodes) 
       )
-    {
-      await this._miner.respondToChallenge();
+      {
+        await this._miner.confirmBinarySearchResult();
+      // 4. Is the binary search confirmed, and we need to respond to challenge?
+      // Check our opponent has confirmed their binary search result, check that we have too, and that we've not responded to this challenge yet
+      } else if (
+          ethers.utils.bigNumberify(2).pow(oppEntry.challengeStepCompleted.sub(2)).gt(oppSubmission.jrhNNodes) && 
+          ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(2)).gt(submission.jrhNNodes) &&
+          ethers.utils.bigNumberify(2).pow(entry.challengeStepCompleted.sub(3)).lte(submission.jrhNNodes)
+        )
+      {
+        await this._miner.respondToChallenge();
+      }
+    } else if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
+      // If the submission window is closed and we are the last hash, confirm it
+      best12Submissions = []; // Clear the submissions
+      await this.confirmEntry();
     }
   }
 
@@ -322,7 +306,7 @@ class ReputationMinerClient {
 
   async submitEntry(entryIndex) {
     const rootHash = await this._miner.getRootHash();
-    console.log("#️⃣ Submitting new reputation hash", rootHash, "at entry index", entryIndex.toNumber());
+    console.log("#️⃣ Miner", this._miner.minerAddress ,"submitting new reputation hash", rootHash, "at entry index", entryIndex.toNumber());
 
     // Submit hash
     let submitRootHashTx = await this._miner.submitRootHash(entryIndex);
@@ -335,6 +319,23 @@ class ReputationMinerClient {
     // TODO: Think of a better way to do error handling here
     await checkSuccessEthers(submitRootHashTx.wait());
     console.log("🆗 New reputation hash submitted successfully");
+  }
+
+  async confirmEntry() {
+    const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
+
+    console.log("⏰ Looks like it's time to confirm the new hash");
+    // Confirm hash
+    // We explicitly use the previous nonce +1, in case we're using Infura and we end up
+    // querying a node that hasn't had the above transaction propagate to it yet.
+    // TODO: not sure we need this still: nonce: confirmNewHashTx.nonce + 1 in the tx below
+    // This won't be valid anyway if we're not confirming immediately in the next transaction
+    const [round] = await this._miner.getMySubmissionRoundAndIndex();
+    const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: 4000000 });
+    console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
+    await confirmNewHashTx.wait();
+    console.log("✅ New reputation hash confirmed");
   }
 }
 
