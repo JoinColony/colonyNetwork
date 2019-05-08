@@ -1,5 +1,6 @@
 const ethers = require("ethers");
 const express = require("express");
+const path = require('path');
 
 const { MINING_CYCLE_DURATION } = require("./constants");
 const ReputationMiner = require("./ReputationMiner");
@@ -25,12 +26,28 @@ class ReputationMinerClient {
       next();
     });
 
+    this._app.get("/", async (req, res) => {
+      return res.status(200).send("Welcome to the Colony Reputation Miner!");
+    });
+
+    this._app.get("/repTree", async (req, res) => {
+      return res.status(200).sendFile(path.join(__dirname + '/../reputation-viz/repTree.html'));
+    });
+
+    this._app.get("/repCycle", async (req, res) => {
+      return res.status(200).sendFile(path.join(__dirname + '/../reputation-viz/repCycle.html'));
+    });
+
     this._app.get("/reputations", async (req, res) => {
       const reputations = Object.keys(this._miner.reputations).map(key => {
         const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
         return { key, decimalValue }
       })
       return res.status(200).send(reputations);
+    });
+
+    this._app.get("/repCycleContractDef", async (req, res) => {
+      return res.status(200).send(this._miner.repCycleContractDef);
     });
 
     this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {

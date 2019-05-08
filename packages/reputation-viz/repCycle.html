@@ -32,7 +32,7 @@
       new Vue({
         el: '#app',
         data: {
-          cycleJSON: '',
+          cycleContractAbi: '',
           cycleAddress: '',
           miningCycle: {},
           numEntries: 0,
@@ -42,7 +42,7 @@
         },
         methods: {
           updateMiningCycle: function () {
-            this.miningCycle = new ethers.Contract(this.cycleAddress, cycleJSON.data.abi, provider);
+            this.miningCycle = new ethers.Contract(this.cycleAddress, this.cycleContractAbi, provider);
 
             this.miningCycle.getReputationUpdateLogLength()
               .then((numEntries) => { this.updateReputationLogEntries(numEntries.toNumber()) })
@@ -74,8 +74,8 @@
           cycleAddress: function () { this.updateMiningCycle() }
         },
         created () {
-          axios.get('http://localhost:3030/contracts?name=ReputationMiningCycle')
-            .then((cycleJSON) => { this.cycleJSON = cycleJSON })
+          axios.get('http://localhost:3000/repCycleContractDef')
+            .then((res) => { this.cycleContractAbi = res.data.abi });
         }
       })
 
