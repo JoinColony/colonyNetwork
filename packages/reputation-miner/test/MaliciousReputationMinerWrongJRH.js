@@ -1,7 +1,10 @@
-import { MIN_STAKE, MINING_CYCLE_DURATION } from "../../../helpers/constants";
 import ReputationMinerTestWrapper from "./ReputationMinerTestWrapper";
 
 const ethers = require("ethers");
+
+const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24 hours
+const minStake = ethers.utils.bigNumberify(10).pow(18).mul(2000);
+const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
 
 class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
   // Only difference between this and the 'real' client should be that it submits a bad JRH
@@ -23,10 +26,9 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
     let entryIndex;
     const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
-    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(MIN_STAKE)); i = i.add(1)) {
+    for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
       // Iterate over entries until we find one that passes
       const entryHash = await repCycle.getEntryHash(this.minerAddress, i, hash);
-      const constant = ethers.constants.MaxUint256.div(MINING_CYCLE_DURATION);
       const block = await this.realProvider.getBlock("latest");
       const { timestamp } = block;
 
@@ -34,6 +36,7 @@ class MaliciousReputationMinerWrongJRH extends ReputationMinerTestWrapper {
         .bigNumberify(timestamp)
         .sub(reputationMiningWindowOpenTimestamp)
         .mul(constant);
+
       if (ethers.utils.bigNumberify(entryHash).lt(target)) {
         entryIndex = i;
         break;
