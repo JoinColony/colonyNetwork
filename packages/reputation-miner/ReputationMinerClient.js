@@ -173,6 +173,7 @@ class ReputationMinerClient {
           console.log("⏰ Looks like it's time to submit an entry to the current cycle");
           await this.submitEntry(entryIndex);
           submissionIndex += 1;
+          await this.submitEntry(entryIndex);
         }
       }
     }
@@ -186,8 +187,6 @@ class ReputationMinerClient {
     if (!lastHashStanding && !nUniqueSubmittedHashes.isZero()) {
       // Is what we believe to be the right submission being disputed?
       const [round, index] = await this._miner.getMySubmissionRoundAndIndex();
-      // console.log("round", round.toString());
-      // console.log("index", index.toString())
       const disputeRound = await repCycle.getDisputeRound(round);
       const entry = disputeRound[index];
       const submission = await repCycle.getReputationHashSubmission(entry.firstSubmitter);
@@ -258,15 +257,18 @@ class ReputationMinerClient {
       {
         await this._miner.respondToChallenge();
       }
-    } else if (ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
+    } 
+
+    if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
       // If the submission window is closed and we are the last hash, confirm it
       best12Submissions = []; // Clear the submissions
+      submissionIndex = 0;
       await this.confirmEntry();
     }
   }
 
   close() {
-    this._miner.realProvider.removeListener('block', this.doBlockChecks());
+    this._miner.realProvider.removeAllListeners("block");
     this._miner.realProvider.polling = false;
     this.server.close();
   }
@@ -332,10 +334,12 @@ class ReputationMinerClient {
     // TODO: not sure we need this still: nonce: confirmNewHashTx.nonce + 1 in the tx below
     // This won't be valid anyway if we're not confirming immediately in the next transaction
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
-    const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: 4000000 });
-    console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
-    await confirmNewHashTx.wait();
-    console.log("✅ New reputation hash confirmed");
+    if (round && round.gte(0)) {
+      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: 4000000 });
+      console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
+      await confirmNewHashTx.wait();
+      console.log("✅ New reputation hash confirmed");
+    }
   }
 }
 

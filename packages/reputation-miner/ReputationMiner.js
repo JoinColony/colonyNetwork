@@ -639,7 +639,6 @@ class ReputationMiner {
     if (!entryIndex) {
       entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
-
     // Submit that entry
     return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: 1000000 });
   }
