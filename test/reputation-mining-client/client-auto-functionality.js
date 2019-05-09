@@ -7,10 +7,18 @@ import bnChai from "bn-chai";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
 import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../../helpers/constants";
-import { getActiveRepCycle, forwardTime, advanceMiningCycleNoContest, checkSuccessEthers } from "../../helpers/test-helper";
+import {
+  getActiveRepCycle,
+  forwardTime,
+  finishReputationMiningCycle,
+  advanceMiningCycleNoContest,
+  checkSuccessEthers,
+  checkErrorRevertEthers
+} from "../../helpers/test-helper";
 import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake } from "../../helpers/test-data-generator";
 import ReputationMinerClient from "../../packages/reputation-miner/ReputationMinerClient";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
@@ -134,6 +142,7 @@ process.env.SOLIDITY_COVERAGE
           const receive12Submissions = new Promise(function(resolve, reject) {
             repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
               const nSubmissions = await repCycle.getNSubmissionsForHash(rootHash, nNodes, jrh);
+
               if (nSubmissions.toNumber() === 12) {
                 // Check the reputation cycle submission matches our miners
                 for (let i = 0; i < 12; i += 1) {
@@ -187,6 +196,135 @@ process.env.SOLIDITY_COVERAGE
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
           await forwardTime(MINING_CYCLE_DURATION * 0.1, this);
           await miningCycleComplete;
+        });
+
+        it("should successfully complete a dispute resolution", async function() {
+          const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER2 }, 1, 0xfffffffff);
+          await badClient.initialise(colonyNetwork.address);
+
+          await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
+
+          await badClient.addLogContentsToReputationTree();
+
+          const rootHash = await reputationMinerClient._miner.getRootHash();
+          const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
+          const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
+
+          const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
+
+          const goodClientSubmitted = new Promise(function(resolve, reject) {
+            repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
+              if (_miner === MINER1 && _hash === rootHash && _nNodes.eq(nNodes) && jrh === _jrh) {
+                event.removeListener();
+                resolve();
+              }
+            });
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("timeout while waiting for good client to submit a root hash"));
+            }, 30000);
+          });
+
+          const goodClientConfirmedJRH = new Promise(function(resolve, reject) {
+            repCycleEthers.on("JustificationRootHashConfirmed", async (_hash, _nNodes, _jrh, event) => {
+              if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
+                event.removeListener();
+                resolve();
+              }
+            });
+
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("timeout while waiting for good client to confirm JRH"));
+            }, 30000);
+          });
+
+          const goodClientConfirmedBinarySearch = new Promise(function(resolve, reject) {
+            repCycleEthers.on("BinarySearchConfirmed", async (_hash, _nNodes, _jrh, _firstDisagree, event) => {
+              if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
+                event.removeListener();
+                resolve();
+              }
+            });
+
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("timeout while waiting for good client to confirm binary search result"));
+            }, 30000);
+          });
+
+          // Wait for good client to respond to Challenge.
+          const goodClientCompleteChallenge = new Promise(function(resolve, reject) {
+            repCycleEthers.on("ChallengeCompleted", async (_hash, _nNodes, _jrh, event) => {
+              if (_hash === rootHash && _nNodes.eq(nNodes) && _jrh === jrh) {
+                event.removeListener();
+                resolve();
+              }
+            });
+
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("timeout while waiting for goodClientToCompleteChallenge"));
+            }, 30000);
+          });
+
+          // Forward through most of the cycle duration
+          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+          await badClient.submitRootHash();
+          await goodClientSubmitted;
+          await goodClientConfirmedJRH;
+          await badClient.confirmJustificationRootHash();
+
+          const [, badIndex] = await badClient.getMySubmissionRoundAndIndex();
+          const goodIndex = badIndex.add(1).mod(2);
+          console.log(goodIndex, badIndex);
+          let disputeRound = await repCycle.getDisputeRound(0);
+          let badEntry = disputeRound[badIndex];
+          let goodEntry = disputeRound[goodIndex];
+
+          while (badEntry.upperBound !== badEntry.lowerBound) {
+            if (parseInt(badEntry.challengeStepCompleted, 10) <= parseInt(goodEntry.challengeStepCompleted, 10)) {
+              await badClient.respondToBinarySearchForChallenge();
+            }
+            disputeRound = await repCycle.getDisputeRound(0);
+            badEntry = disputeRound[badIndex];
+            goodEntry = disputeRound[goodIndex];
+          }
+
+          await badClient.confirmBinarySearchResult();
+
+          await goodClientConfirmedBinarySearch;
+          // Bad client can't respond
+          await checkErrorRevertEthers(badClient.respondToChallenge(), "colony-reputation-mining-increased-reputation-value-incorrect");
+
+          await goodClientCompleteChallenge;
+
+          // Forward time
+          await forwardTime(600, this);
+          // Good client should now realise it can timeout bad submission
+
+          // Add a listener to process log for when a new cycle starts, which won't happen yet because the submission window is still open
+
+          const newCycleStart = new Promise(function(resolve, reject) {
+            reputationMinerClient._miner.colonyNetwork.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
+              event.removeListener();
+              resolve();
+            });
+
+            // After 30s, we throw a timeout error
+            setTimeout(() => {
+              reject(new Error("timeout while waiting for new cycle to happen"));
+            }, 30000);
+          });
+
+          // Forward time again, so the submission window is closed
+          await forwardTime(MINING_CYCLE_DURATION * 0.5, this);
+          // Good client should realise it can confirm new hash. So we wait for that event.
+          await newCycleStart;
+
+          // And finally, check the root hash was accepted as expected.
+          const acceptedRootHash = await colonyNetwork.getReputationRootHash();
+          assert.equal(acceptedRootHash, rootHash);
         });
       });
     });

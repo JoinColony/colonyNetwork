@@ -379,6 +379,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       disputeRounds[round][idx].challengeStepCompleted += 1;
     }
 
+    emit BinarySearchConfirmed(submission.proposedNewRootHash, submission.nNodes, submission.jrh, disputeRounds[round][idx].lowerBound);
   }
 
   function confirmJustificationRootHash(
@@ -422,6 +423,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
     // Set bounds for first binary search if it's going to be needed
     disputeRounds[round][index].upperBound = submission.jrhNNodes - 1;
+
+    emit JustificationRootHashConfirmed(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
   }
 
   function appendReputationUpdateLog(

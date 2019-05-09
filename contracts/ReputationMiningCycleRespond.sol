@@ -343,6 +343,9 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
     // If everthing checked out, note that we've responded to the challenge.
     disputeRounds[u[U_ROUND]][u[U_IDX]].challengeStepCompleted += 1;
     disputeRounds[u[U_ROUND]][u[U_IDX]].lastResponseTimestamp = now;
+    Submission storage submission = reputationHashSubmissions[disputeRounds[u[U_ROUND]][u[U_IDX]].firstSubmitter];
+
+    emit ChallengeCompleted(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
   }
 
   function checkKey(uint256[29] memory u, bytes32[8] memory b32) internal view {

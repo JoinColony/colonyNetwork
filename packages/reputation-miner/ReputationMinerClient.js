@@ -11,6 +11,7 @@ const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24
 const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
 let submissionIndex = 0;
 let best12Submissions = [];
+let boundAndWrappedBlockChecks;
 
 class ReputationMinerClient {
   /**
@@ -138,10 +139,13 @@ class ReputationMinerClient {
       });
       
       // Do the other checks for whether we can submit or confirm a hash
-      this._miner.realProvider.on('block', async (b) => {
-        await this.doBlockChecks(b);
-      });
-
+      const boundBlockChecks = this.doBlockChecks.bind(this);
+      const gatedBlockChecks = async function (b) {
+        await boundBlockChecks(b);
+        this._miner.realProvider.once('block', boundAndWrappedBlockChecks);
+      }
+      boundAndWrappedBlockChecks = gatedBlockChecks.bind(this);
+      this._miner.realProvider.once('block', boundAndWrappedBlockChecks);
       this._miner.realProvider.polling = true;
       this._miner.realProvider.pollingInterval = 1000;
     }
@@ -220,22 +224,19 @@ class ReputationMinerClient {
         await repCycle.invalidateHash(round, oppIndex);
         return;
       }
+      console.log(oppSubmission);
 
       // Our opponent hasn't timed out yet. We should check if we can respond to something though
-
       // 1. Do we still need to confirm JRH?
       if (submission.jrhNNodes.eq(0)) {
         await this._miner.confirmJustificationRootHash();
       // 2. Are we in the middle of a binary search?
       // Check our opponent has confirmed their JRH, and the binary search is ongoing.
-      } else if (oppSubmission.jrhNNodes.neq(0) && entry.upperBound.neq(entry.lowerBound)){
+      } else if (!oppSubmission.jrhNNodes.eq(0) && !entry.upperBound.eq(entry.lowerBound)){
         // Yes. Are we able to respond?
-        // We can respond if neither of us have responded to this stage yet (i.e. our upper and lower bounds are the same) or
-        // if they have responded already (and so their lower bound is larger or their upper bound is smaller than ours)
-        if (
-          (oppEntry.upperBound.eq(entry.upperBound) && oppEntry.upperBound.eq(entry.upperBound)) ||
-          (oppEntry.upperBound.lt(entry.upperBound) || oppEntry.lowerBound.gt(entry.lowerBound))
-        ) {
+        // We can respond if neither of us have responded to this stage yet or
+        // if they have responded already
+        if (oppEntry.challengeStepCompleted.gte(entry.challengeStepCompleted)) {
           await this._miner.respondToBinarySearchForChallenge();
         }
       // 3. Are we at the end of a binary search and need to confirm?
@@ -268,7 +269,7 @@ class ReputationMinerClient {
   }
 
   close() {
-    this._miner.realProvider.removeAllListeners("block");
+    this._miner.realProvider.removeListener('block', boundAndWrappedBlockChecks);
     this._miner.realProvider.polling = false;
     this.server.close();
   }
