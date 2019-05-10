@@ -16,7 +16,7 @@ Inside each domain, the possible roles are:
 * Funding
 * Architecture
 * Arbitration
-* Root
+* Root (only exists in the top-level domain)
 
 On a domain-by-domain basis, an address given one or more roles will be able to call the functions assigned to the role (see below for a list of each role and its authorized functions).
 
