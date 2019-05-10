@@ -26,7 +26,7 @@ class ReputationMinerClient {
     });
 
     this._app.get("/", async (req, res) => {
-      return res.status(200).send("⛏️ Welcome to the Colony Reputation Miner!");
+      return res.status(200).sendFile(path.join(__dirname, 'viz/index.html'));
     });
 
     // Serve visualizers
