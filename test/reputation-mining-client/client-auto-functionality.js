@@ -65,13 +65,14 @@ process.env.SOLIDITY_COVERAGE
         await goodClient.resetDB();
         await goodClient.initialise(colonyNetwork.address);
 
+        await reputationMinerClient._miner.resetDB();
         await reputationMinerClient.initialise(colonyNetwork.address);
       });
 
-      after(async function() {
-        // const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
-        // if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2);
-        reputationMinerClient.close();
+      afterEach(async function() {
+        const reputationMiningGotClean = await finishReputationMiningCycle(colonyNetwork, this);
+        if (!reputationMiningGotClean) await setupNewNetworkInstance(MINER1, MINER2);
+        await reputationMinerClient.close();
       });
 
       describe("core functionality", function() {

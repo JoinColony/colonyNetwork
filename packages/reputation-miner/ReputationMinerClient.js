@@ -106,6 +106,7 @@ class ReputationMinerClient {
    * @return {Promise}
    */
   async initialise(colonyNetworkAddress) {
+    this.closing = false;
     await this._miner.initialise(colonyNetworkAddress);
     // TODO: Use this._miner.repCycleContractDef which is already initialised
     this.repCycleContractDef = await this._loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
@@ -141,11 +142,17 @@ class ReputationMinerClient {
       // Do the other checks for whether we can submit or confirm a hash
       const boundBlockChecks = this.doBlockChecks.bind(this);
       const gatedBlockChecks = async function (b) {
-        await boundBlockChecks(b);
-        this._miner.realProvider.once('block', boundAndWrappedBlockChecks);
+        this.closed = new Promise( async (resolve) => {
+          await boundBlockChecks(b);
+          if (!this.closing) {
+            this._miner.realProvider.once('block', boundAndWrappedBlockChecks);
+          } else {
+            resolve();
+          }
+        });
       }
       boundAndWrappedBlockChecks = gatedBlockChecks.bind(this);
-      this._miner.realProvider.once('block', boundAndWrappedBlockChecks);
+      this._miner.realProvider.once('block', boundBlockChecks);
       this._miner.realProvider.polling = true;
       this._miner.realProvider.pollingInterval = 1000;
     }
@@ -268,8 +275,11 @@ class ReputationMinerClient {
     }
   }
 
-  close() {
-    this._miner.realProvider.removeListener('block', boundAndWrappedBlockChecks);
+  async close() {
+    this.closing = true;
+    await this.closed;
+    // this._miner.realProvider.removeListener('block', boundAndWrappedBlockChecks);
+    this._miner.realProvider.removeAllListeners('block');
     this._miner.realProvider.polling = false;
     this.server.close();
   }
