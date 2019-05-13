@@ -11,7 +11,9 @@ const miningCycleDuration = ethers.utils.bigNumberify(60).mul(60).mul(24); // 24
 const constant = ethers.utils.bigNumberify(2).pow(256).sub(1).div(miningCycleDuration);
 let submissionIndex = 0;
 let best12Submissions = [];
-let boundAndWrappedBlockChecks;
+let filterReputationMiningCycleComplete;
+let lockedForBlockProcessing;
+let name;
 
 class ReputationMinerClient {
   /**
@@ -105,8 +107,9 @@ class ReputationMinerClient {
    * @param  {string}  colonyNetworkAddress The address of the current `ColonyNetwork` contract
    * @return {Promise}
    */
-  async initialise(colonyNetworkAddress) {
-    this.closing = false;
+  async initialise(colonyNetworkAddress, _name) {
+    console.log("listenerCount before initialise", this._miner.realProvider.listenerCount('block'));
+    name = _name;
     await this._miner.initialise(colonyNetworkAddress);
     // TODO: Use this._miner.repCycleContractDef which is already initialised
     this.repCycleContractDef = await this._loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
@@ -128,34 +131,26 @@ class ReputationMinerClient {
 
       // Add a listener to process log for when a new cycle starts
       const ReputationMiningCycleComplete = ethers.utils.id("ReputationMiningCycleComplete(bytes32,uint256)");
-      const filter = {
+      filterReputationMiningCycleComplete = {
         address: this._miner.colonyNetwork.address,
         topics: [ ReputationMiningCycleComplete ]
       }
 
       // If a new mining cycle starts, process the new reputation update log and rehydrate the 12 best submissions
-      await this._miner.realProvider.on(filter, async () => {
+      await this._miner.realProvider.on(filterReputationMiningCycleComplete, async () => {
         await this.processReputationLog();
         best12Submissions = await this.getTwelveBestSubmissions();
       });
       
-      // Do the other checks for whether we can submit or confirm a hash
-      const boundBlockChecks = this.doBlockChecks.bind(this);
-      const gatedBlockChecks = async function (b) {
-        this.closed = new Promise( async (resolve) => {
-          await boundBlockChecks(b);
-          if (!this.closing) {
-            this._miner.realProvider.once('block', boundAndWrappedBlockChecks);
-          } else {
-            resolve();
-          }
-        });
-      }
-      boundAndWrappedBlockChecks = gatedBlockChecks.bind(this);
-      this._miner.realProvider.once('block', boundBlockChecks);
       this._miner.realProvider.polling = true;
       this._miner.realProvider.pollingInterval = 1000;
+
+      // Do the other checks for whether we can submit or confirm a hash
+      lockedForBlockProcessing = false;        
+      this._miner.realProvider.on('block', this.doBlockChecks.bind(this));
     }
+
+    console.log("listenerCount after initialise", this._miner.realProvider.listenerCount('block'));
   }
 
   /**
@@ -166,6 +161,14 @@ class ReputationMinerClient {
    * @return {Promise}
    */
   async doBlockChecks(blockNumber) {
+    console.log("doBlockChecks", blockNumber);
+    if (lockedForBlockProcessing) {
+      console.log("skipping this block processing");
+      return;
+    }
+
+    lockedForBlockProcessing = true;
+    console.log("name", name);
     const block = await this._miner.realProvider.getBlock(blockNumber);
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
@@ -190,6 +193,7 @@ class ReputationMinerClient {
     }
 
     const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
+    console.log("windowOpened", windowOpened.toString());
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
@@ -231,7 +235,7 @@ class ReputationMinerClient {
         await repCycle.invalidateHash(round, oppIndex);
         return;
       }
-      console.log(oppSubmission);
+      // console.log(oppSubmission);
 
       // Our opponent hasn't timed out yet. We should check if we can respond to something though
       // 1. Do we still need to confirm JRH?
@@ -267,27 +271,35 @@ class ReputationMinerClient {
       }
     } 
 
+    console.log("lastHashStanding", lastHashStanding);
+    console.log("Elapsed ms in mining cycle", ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).toString());
     if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
       // If the submission window is closed and we are the last hash, confirm it
       best12Submissions = []; // Clear the submissions
       submissionIndex = 0;
       await this.confirmEntry();
     }
+
+    console.log("finishing doBlockChecks", blockNumber);
+    lockedForBlockProcessing = false;
   }
 
   async close() {
-    this.closing = true;
-    await this.closed;
-    // this._miner.realProvider.removeListener('block', boundAndWrappedBlockChecks);
+    console.log("listenerCount before close", this._miner.realProvider.listenerCount('block'));
     this._miner.realProvider.removeAllListeners('block');
+    console.log("listenerCount after close", this._miner.realProvider.listenerCount('block'));
+    // Remove all events listeners
+    console.log("reputation cycle complete listeners before close", this._miner.realProvider.listenerCount(filterReputationMiningCycleComplete));
+    this._miner.realProvider.removeAllListeners(filterReputationMiningCycleComplete);
+    console.log("reputation cycle complete listeners after close", this._miner.realProvider.listenerCount(filterReputationMiningCycleComplete));
     this._miner.realProvider.polling = false;
     this.server.close();
   }
 
   async processReputationLog() {
-    console.log("📁 Processing reputation update log");
+    console.log("📁 Processing reputation update log", name);
     await this._miner.addLogContentsToReputationTree();
-    console.log("💾 Writing new reputation state to database");
+    console.log("💾 Writing new reputation state to database", name);
     await this._miner.saveCurrentState();
   }
 
@@ -338,7 +350,7 @@ class ReputationMinerClient {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
 
-    console.log("⏰ Looks like it's time to confirm the new hash");
+    console.log("⏰ Looks like it's time to confirm the new hash", name);
     // Confirm hash
     // We explicitly use the previous nonce +1, in case we're using Infura and we end up
     // querying a node that hasn't had the above transaction propagate to it yet.

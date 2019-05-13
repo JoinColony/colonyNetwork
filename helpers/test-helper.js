@@ -190,6 +190,7 @@ export async function checkSuccessEthers(promise, errorMessage) {
   if (receipt.status === 1) {
     return;
   }
+  console.log("receipt", receipt);
   const txid = receipt.transactionHash;
   const tx = await web3GetTransaction(txid);
   const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
@@ -269,7 +270,7 @@ export async function forwardTime(seconds, test) {
     if (client.indexOf("TestRPC") === -1) {
       resolve(test.skip());
     } else {
-      // console.log(`Forwarding time with ${seconds}s ...`);
+      console.log(`Forwarding time with ${seconds}s ...`);
       web3.currentProvider.send(
         {
           jsonrpc: "2.0",
