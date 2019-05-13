@@ -1,10 +1,10 @@
 ---
 title: Get Started
 section: Docs
-order: 4
+order: 6
 ---
 
-The [glider](https://github.com/JoinColony/colonyNetwork) release is currently live on `rinkeby` and will soon be deployed on `mainnet`.
+The [glider](https://github.com/JoinColony/colonyNetwork) release is currently live on Görli and will be deployed to mainnet soon.
 
 This page is written for developers contributing features or direct smart contract extensions with the Colony Network.
 
@@ -12,7 +12,7 @@ See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/do
 
 If you want to build a dapp or other integration that doesn't directly extend the Colony Network contracts, it's recommended that you use colonyJS. Analogous instructions for colonyJS can be found in [Local Setup](/colonyjs/intro-local-setup/) for colonyJS.
 
-An even more 'complete' starting point is the [colonyStarter kit](/colonystarter/docs-overview/), which contains boilerplate examples for dapp development, including frontend frameworks like react. 
+An even more 'complete' starting point is the [colonyStarter kit](/colonystarter/docs-overview/), which contains boilerplate examples for dapp development, including frontend frameworks like react.
 
 ## Prerequisites
 
@@ -97,12 +97,12 @@ The reputation mining client is usable for testing but it has limited functional
 You can start the reputation mining client using the following command.
 
 ```
-node packages/reputation-miner/bin/index.js --file ./reputations.json --colonyNetworkAddress 0x5CC4a96B08e8C88f2c6FC5772496FeD9666e4D1F --minerAddress 0x3a965407ced5e62c5ad71de491ce7b23da5331a4
+node packages/reputation-miner/bin/index.js --colonyNetworkAddress { COLONYNETWORK_ADDRESS } --minerAddress { MINER_ADDRESS }
 ```
 
-The `minerAddress` in the execution above is the sixth account in `ganache-accounts.json`.
+The `minerAddress` in the execution above is the sixth account in `ganache-accounts.json` if running locally.
 
-The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-upgrades-to-the-colony-network/) for more information about the EtherRouter design pattern.
+The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-the-delegate-proxy-pattern/) for more information about the EtherRouter design pattern.
 
 ### Force Reputation Updates
 

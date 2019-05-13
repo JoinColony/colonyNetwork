@@ -43,10 +43,8 @@ Once submitted, the issue will be responded to, verified, accepted, and rewarded
 
 ### Submission Branches
 Participants in the program are free to submit bugs on two different branches in the colonyNetwork codebase:
-* the current testnet release (tagged on the `master` branch) and deployed to Rinkeby
+* the current testnet release (tagged on the `master` branch) and deployed to Görli
 * against the `develop` branch where we merge ongoing work
-
-Rinkeby deployments will be updated as _greenfield_ deployments, every one month.
 
 ### Bug Severity and Bounties
 In the same manner as the [Ethereum Bug Bounty Program](https://bounty.ethereum.org/), submissions will be evaluated by the Colony team according to the [OWASP risk rating methodology](https://www.owasp.org/index.php/OWASP_Risk_Rating_Methodology), which grades based on both _Impact_ and _Likelihood_.
