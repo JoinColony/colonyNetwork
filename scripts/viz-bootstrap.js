@@ -87,8 +87,8 @@ module.exports = async function(callback) {
     await forwardTime(MINING_CYCLE_DURATION);
 
     console.log("*".repeat(20));
-    console.log("COLONY NETWORK:", colonyNetwork.address);
-    console.log("MINER ACCOUNT:", MINER);
+    console.log("LAUNCH MINING CLIENT:");
+    console.log(`node ./packages/reputation-miner/bin/index.js --colonyNetworkAddress ${colonyNetwork.address} --minerAddress ${MINER}`);
 
     callback();
   } catch (err) {

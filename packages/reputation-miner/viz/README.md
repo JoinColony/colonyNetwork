@@ -1,9 +1,7 @@
 # Welcome to the Colony Mining visualizers!
 
-To setup, open two tabs:
+To setup, first run: `yarn run viz:bootstrap`
 
-1. `yarn run viz:bootstrap`, note the addresses printed to the console at the end
+This script will print out a command to spin up a reputation miner; run this command in a new tab.
 
-2. `node ./packages/reputation-miner/bin/index.js --colonyNetworkAddress {} --minerAddress {}`
-
-And navigate to `http://localhost:3000/`
+Finally, navigate to `http://localhost:3000/`.
