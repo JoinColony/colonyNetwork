@@ -76,19 +76,17 @@ module.exports = async function(callback) {
 
     // Advance mining cycle.
     // Recall that the miner account is staked during the migrations.
-    let addr = await colonyNetwork.getReputationMiningCycle(true);
-    let repCycle = await IReputationMiningCycle.at(addr);
+    const addr = await colonyNetwork.getReputationMiningCycle(true);
+    const repCycle = await IReputationMiningCycle.at(addr);
 
     await forwardTime(MINING_CYCLE_DURATION);
     await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER });
     await repCycle.confirmNewHash(0);
 
+    // Make it easier for the miner to mine.
     await forwardTime(MINING_CYCLE_DURATION);
-    addr = await colonyNetwork.getReputationMiningCycle(true);
-    repCycle = await IReputationMiningCycle.at(addr);
 
     console.log("*".repeat(20));
-    console.log("CYCLE ADDRESS:", repCycle.address);
     console.log("COLONY NETWORK:", colonyNetwork.address);
     console.log("MINER ACCOUNT:", MINER);
 

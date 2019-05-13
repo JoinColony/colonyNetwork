@@ -51,6 +51,12 @@ class ReputationMinerClient {
       return res.status(200).send(this._miner.repCycleContractDef);
     });
 
+    this._app.get("/repCycleAddresses", async (req, res) => {
+      const activeAddr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+      const inactiveAddr = await this._miner.colonyNetwork.getReputationMiningCycle(false);
+      return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
+    });
+
     // Query specific reputation values
     this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
       const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);

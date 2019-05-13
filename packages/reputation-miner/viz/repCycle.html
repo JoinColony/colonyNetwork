@@ -14,8 +14,13 @@
     <!-- Page HTML -->
     <div id="app">
       <h2>Welome to RepMinCycViz!</h2>
-      <h3>Mining Cycle Address:</h3>
-      <input placeholder="Mining Cycle Address" v-model="cycleAddress">
+      <select v-model="selected">
+        <option>Active Cycle</option>
+        <option>Inactive Cycle</option>
+      </select>
+
+      <p>Cycle Address: {{ cycleAddress }}  </p>
+
       <h3>Reputation Updates</h3>
       <p>Num Log Entries: {{ numEntries }}</p>
       <ol>
@@ -33,7 +38,9 @@
         el: '#app',
         data: {
           cycleContractAbi: '',
+          cycleAddresses: {},
           cycleAddress: '',
+          selected: '',
           miningCycle: {},
           numEntries: 0,
           logEntries: [],
@@ -42,12 +49,13 @@
         },
         methods: {
           updateMiningCycle: function () {
+            this.cycleAddress = this.cycleAddresses[this.selected.split(" ")[0].toLowerCase()];
             this.miningCycle = new ethers.Contract(this.cycleAddress, this.cycleContractAbi, provider);
 
             this.miningCycle.getReputationUpdateLogLength()
               .then((numEntries) => { this.updateReputationLogEntries(numEntries.toNumber()) })
 
-            this.miningCycle.getNSubmittedHashes()
+            this.miningCycle.getNUniqueSubmittedHashes()
               .then((numSubmittedHashes) => { this.numSubmittedHashes = numSubmittedHashes })
 
             this.miningCycle.getNInvalidatedHashes()
@@ -71,11 +79,14 @@
           },
         },
         watch: {
-          cycleAddress: function () { this.updateMiningCycle() }
+          selected: function () { this.updateMiningCycle() }
         },
         created () {
           axios.get('http://localhost:3000/repCycleContractDef')
             .then((res) => { this.cycleContractAbi = res.data.abi });
+
+          axios.get('http://localhost:3000/repCycleAddresses')
+            .then((res) => { this.cycleAddresses = res.data; });
         }
       })
 
