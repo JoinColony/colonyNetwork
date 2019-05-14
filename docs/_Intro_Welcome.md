@@ -20,7 +20,7 @@ The Colony White Paper describes a complete protocol for organizations, with cry
 * Work management and delegation
 * Financial management, including rewards and payments
 
-To learn more about the Colony Protocol, dig in to the [Colony White Paper](https://colony.io/whitepaper/) or read the [white paper TL;DR](/colonynetwork/whitepaper-tldr-colony/)
+To learn more about the Colony Protocol, dig in to the [Colony White Paper](https://colony.io/whitepaper.pdf) or read the [white paper TL;DR](/colonynetwork/whitepaper-tldr-colony/)
 
 ### The Colony Network
 The Colony Network is the infrastructure upon which all colonies run.
