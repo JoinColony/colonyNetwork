@@ -28,7 +28,7 @@ module.exports = {
     },
     goerli: {
       provider: () => {
-        return new HDWalletProvider("replace-with-private-key-when-using", "https://goerli.infura.io/v3/bb4b51e2b2554ae1923183870acc5590");
+        return new HDWalletProvider("replace-with-private-key-when-using", "https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d");
       },
       network_id: "5"
     }
