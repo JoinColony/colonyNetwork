@@ -47,6 +47,10 @@ class ReputationMinerClient {
       return res.status(200).send(reputations);
     });
 
+    this._app.get("/network", async (req, res) => {
+      return res.status(200).send(this._miner.realProvider._network.name); // eslint-disable-line no-underscore-dangle
+    });
+
     this._app.get("/repCycleContractDef", async (req, res) => {
       return res.status(200).send(this._miner.repCycleContractDef);
     });

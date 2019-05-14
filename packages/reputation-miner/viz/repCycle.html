@@ -8,7 +8,7 @@
 
     <!-- Load Dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-    <script src="https://cdn.ethers.io/scripts/ethers-v4.min.js"></script>
+    <script src="https://unpkg.com/ethers@4.0.27/dist/ethers.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
     <!-- Page HTML -->
@@ -32,11 +32,11 @@
 
     <!-- Vue App -->
     <script type="text/javascript">
-      const provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
 
       new Vue({
         el: '#app',
         data: {
+          provider: {},
           cycleContractAbi: '',
           cycleAddresses: {},
           cycleAddress: '',
@@ -50,7 +50,7 @@
         methods: {
           updateMiningCycle: function () {
             this.cycleAddress = this.cycleAddresses[this.selected.split(" ")[0].toLowerCase()];
-            this.miningCycle = new ethers.Contract(this.cycleAddress, this.cycleContractAbi, provider);
+            this.miningCycle = new ethers.Contract(this.cycleAddress, this.cycleContractAbi, this.provider);
 
             this.miningCycle.getReputationUpdateLogLength()
               .then((numEntries) => { this.updateReputationLogEntries(numEntries.toNumber()) })
@@ -87,6 +87,15 @@
 
           axios.get('http://localhost:3000/repCycleAddresses')
             .then((res) => { this.cycleAddresses = res.data; });
+
+          axios.get('http://localhost:3000/network')
+            .then((res) => {
+              if (res.data === 'unknown') {
+                this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+              } else {
+                this.provider = new ethers.providers.InfuraProvider(res.data);
+              }
+            });
         }
       })
 
