@@ -297,6 +297,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
           msg.sender,
           MIN_STAKE
         );
+        emit HashInvalidated(opponentSubmission.proposedNewRootHash, opponentSubmission.nNodes, opponentSubmission.jrh);
+
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
@@ -308,6 +310,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         msg.sender,
         MIN_STAKE
       );
+      emit HashInvalidated(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }

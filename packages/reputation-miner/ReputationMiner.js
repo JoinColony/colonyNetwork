@@ -85,6 +85,7 @@ class ReputationMiner {
     this.clnyAddress = await metaColony.getToken();
 
     if (this.useJsTree) {
+      console.log('new patricia tree')
       this.reputationTree = new PatriciaTree();
     } else {
       this.patriciaTreeContractDef = await this.loader.load({ contractName: "PatriciaTree" }, { abi: true, address: false, bytecode: true });
@@ -108,6 +109,7 @@ class ReputationMiner {
    * @return {Promise}
    */
   async addLogContentsToReputationTree(blockNumber = "latest") {
+    console.log('add log contents');
     if (this.useJsTree) {
       this.justificationTree = new PatriciaTreeNoHash();
     } else {
@@ -122,17 +124,18 @@ class ReputationMiner {
 
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
-
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     // Do updates
 
     this.nReputationsBeforeLatestLog = ethers.utils.bigNumberify(this.nReputations.toString());
+
     // This is also the number of decays we have.
 
     // How many updates from the logs do we have?
     const nLogEntries = await repCycle.getReputationUpdateLogLength({ blockTag: blockNumber });
+    console.log('nLogEntries', nLogEntries)
     if (nLogEntries.toString() === "0") {
       console.log("WARNING: No log entries found. If this is not one of the very first two cycles, something is wrong");
       return;
@@ -168,6 +171,7 @@ class ReputationMiner {
         newestReputationProof
       })
     );
+    console.log('add log contents done');
   }
 
   /**
@@ -1078,7 +1082,6 @@ class ReputationMiner {
     if (localHash === `0x${new BN(0).toString(16, 64)}`) {
       applyLogs = true;
     }
-
     for (let i = 0; i < events.length; i += 1) {
       const event = events[i];
       const hash = event.data.slice(0, 66);
@@ -1205,6 +1208,7 @@ class ReputationMiner {
     if (currentStateHash !== reputationRootHash) {
       console.log("WARNING: The supplied state failed to be recreated successfully. Are you sure it was saved?");
     }
+    console.log(this.reputations)
     await db.close();
   }
 
