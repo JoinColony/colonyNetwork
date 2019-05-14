@@ -102,5 +102,8 @@
   "private": true,
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "truffle-hdwallet-provider": "^1.0.9"
+  }
 }
