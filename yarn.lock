@@ -7849,10 +7849,23 @@ solidity-coverage@0.6.0-beta.5:
     web3 "^1.0.0-beta.50"
     web3-eth-abi "1.0.0-beta.50"
 
+solidity-parser-antlr@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.3.3.tgz#0352e35f914095daa7eef9f3a55cf8074e28cc5b"
+  integrity sha512-RNUc18pjf7DLWs//WF+V+VnvrbetEbNFUYxm2JFbXU62G9WSu+nVyDxV5r+FG4wu8jom17vLdM/3I7bMBGfZ9g==
+
 solidity-parser-antlr@^0.4.1, solidity-parser-antlr@^0.4.2:
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/solidity-parser-antlr/-/solidity-parser-antlr-0.4.2.tgz#b862eba5936e7a90b4f5f1c8eb1d33fe86650f78"
   integrity sha512-0OKT2YKZAqPe14HN7Nbo24hjmnyUYh92UjyZG0Zz2rpQhl/w8asX8qHb+ASSXfayQaiW8g9zGIupXEE355tOQQ==
+
+solidity-steamroller@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/solidity-steamroller/-/solidity-steamroller-1.1.0.tgz#ef44bd794ce7f017796a8fe51f05f9cccade58be"
+  integrity sha512-dZpk7nx0IGZ9FwMp20Y6J7nwF1z7L0vJNpJBOEtQucUtCxlh+DHnRtZ5ygWKJZRu1N5zPg4EVbyqtBwoQ3h13A==
+  dependencies:
+    semver "^5.5.0"
+    solidity-parser-antlr "^0.3.3"
 
 solium-plugin-security@0.1.1:
   version "0.1.1"
