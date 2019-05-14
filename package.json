@@ -83,7 +83,7 @@
     "ethers": "^4.0.27",
     "ethlint": "^1.2.4",
     "ganache-cli": "^6.4.3",
-    "husky": "^2.1.0",
+    "husky": "^2.2.0",
     "istanbul": "^0.4.5",
     "jsonfile": "^5.0.0",
     "mocha": "^6.1.4",
