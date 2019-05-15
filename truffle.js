@@ -1,5 +1,6 @@
 require("@babel/register");
 require("@babel/polyfill");
+const HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
   networks: {
@@ -24,6 +25,12 @@ module.exports = {
       gasPrice: 0x01, // <-- Use this low gas price
       network_id: 1999,
       skipDryRun: true
+    },
+    goerli: {
+      provider: () => {
+        return new HDWalletProvider("replace-with-private-key-when-using", "https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d");
+      },
+      network_id: "5"
     }
   },
   mocha: {
