@@ -13,6 +13,7 @@ let submissionIndex = 0;
 let best12Submissions = [];
 let filterReputationMiningCycleComplete;
 let lockedForBlockProcessing;
+let lockedForLogProcessing;
 let name;
 
 class ReputationMinerClient {
@@ -110,6 +111,7 @@ class ReputationMinerClient {
   async initialise(colonyNetworkAddress, startingBlock, _name) {
     console.log("listenerCount before initialise", this._miner.realProvider.listenerCount('block'));
     this.resolveBlockChecksFinished = undefined;
+    this.resolveLogProcessingFinished = undefined;
     name = _name;
     await this._miner.initialise(colonyNetworkAddress);
     // TODO: Use this._miner.repCycleContractDef which is already initialised
@@ -119,9 +121,7 @@ class ReputationMinerClient {
     // However, for now, we're the only miner, so we can just load the current saved state and go from there.
     const latestReputationHash = await this._miner.colonyNetwork.getReputationRootHash();
     await this._miner.createDB();
-    console.log('loadstate')
     await this._miner.loadState(latestReputationHash);
-    console.log('state loaded')
     if (this._miner.nReputations.eq(0)) {
       console.log("No existing reputations found - starting from scratch");
       await this._miner.sync(startingBlock);
@@ -142,8 +142,19 @@ class ReputationMinerClient {
 
       // If a new mining cycle starts, process the new reputation update log and rehydrate the 12 best submissions
       await this._miner.realProvider.on(filterReputationMiningCycleComplete, async () => {
+        if (lockedForLogProcessing) {
+          // This would be quite a big surprise if it happened, but for completeness
+          console.log("WARNING: Somehow, two log updates were triggered. This seems very unlikely, so maybe something is broken...?")
+          return;
+        }
+        lockedForLogProcessing = true;
+        // No awaits above this line in this function, otherwise race conditions will rear their head
         await this.processReputationLog();
         best12Submissions = await this.getTwelveBestSubmissions();
+        lockedForLogProcessing = false;
+        if (this.resolveLogProcessingFinished){
+          this.resolveLogProcessingFinished();
+        }
       });
       
       this._miner.realProvider.polling = true;
@@ -166,7 +177,7 @@ class ReputationMinerClient {
    */
   async doBlockChecks(blockNumber) {
     console.log("doBlockChecks", blockNumber);
-    if (lockedForBlockProcessing) {
+    if (lockedForBlockProcessing || lockedForLogProcessing) {
       console.log("skipping this block processing");
       return;
     }
@@ -277,22 +288,17 @@ class ReputationMinerClient {
     } 
 
     console.log("lastHashStanding", lastHashStanding);
-    console.log(nUniqueSubmittedHashes, nInvalidatedHashes);
     console.log("Elapsed ms in mining cycle", ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).toString());
     if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
       // If the submission window is closed and we are the last hash, confirm it
-      console.log('CONFIRM');
       best12Submissions = []; // Clear the submissions
       submissionIndex = 0;
       await this.confirmEntry();
     }
-    console.log('doblockchecks at end')
-    await this.endDoBlockChecks() 
-    console.log('doblockchecks done');
+    this.endDoBlockChecks();
   }
 
-  async endDoBlockChecks() {
-    console.log("finishing doBlockChecks");
+  endDoBlockChecks() {
     if (this.resolveBlockChecksFinished){
       this.resolveBlockChecksFinished();
     }
@@ -302,7 +308,10 @@ class ReputationMinerClient {
   async close() {
     const blockChecksFinished = new Promise((resolve, reject) => {
       this.resolveBlockChecksFinished = resolve;
-    })
+    });
+    const logProcessingFinished = new Promise((resolve, reject) => {
+      this.resolveLogProcessingFinished = resolve;
+    });
     console.log("listenerCount before close", this._miner.realProvider.listenerCount('block'));
     this._miner.realProvider.removeAllListeners('block');
     console.log("listenerCount after close", this._miner.realProvider.listenerCount('block'));
@@ -313,8 +322,12 @@ class ReputationMinerClient {
     this._miner.realProvider.polling = false;
     this.server.close();
     if (lockedForBlockProcessing) {
-      await blockChecksFinished
+      await blockChecksFinished;
     }
+    if (lockedForLogProcessing) {
+      await logProcessingFinished;
+    }
+
   }
 
   async processReputationLog() {

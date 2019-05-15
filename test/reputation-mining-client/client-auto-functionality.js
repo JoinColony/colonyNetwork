@@ -87,7 +87,6 @@ process.env.SOLIDITY_COVERAGE
         await goodClient.initialise(colonyNetwork.address);
         await goodClient.sync(startingBlockNumber);
         await goodClient.saveCurrentState();
-
         count += 1;
         await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber, count);
       });
@@ -100,7 +99,7 @@ process.env.SOLIDITY_COVERAGE
 
       describe("core functionality", function() {
  
-        it.only("should successfully complete a hash submission if it's the only miner", async function() {
+        it("should successfully complete a hash submission if it's the only miner", async function() {
           const rootHash = await reputationMinerClient._miner.getRootHash();
           const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
@@ -160,7 +159,7 @@ process.env.SOLIDITY_COVERAGE
           await miningCycleComplete;
         });
 
-        it.only("should successfully complete a hash submission if there are 2 good miners", async function() {
+        it("should successfully complete a hash submission if there are 2 good miners", async function() {
           const oldHash = await colonyNetwork.getReputationRootHash();
           console.log("oldHash", oldHash);
           const rootHash = await reputationMinerClient._miner.getRootHash();
@@ -231,7 +230,7 @@ process.env.SOLIDITY_COVERAGE
           await miningCycleComplete;
         });
 
-        it.only("should successfully complete a dispute resolution", async function() {
+        it("should successfully complete a dispute resolution", async function() {
           const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER2 }, 1, 0);
           await badClient.initialise(colonyNetwork.address);
           // We need to load the current good state in to the bad client.
