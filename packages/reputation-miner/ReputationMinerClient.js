@@ -170,7 +170,6 @@ class ReputationMinerClient {
    * @return {Promise}
    */
   async doBlockChecks(blockNumber) {
-    console.log("doBlockChecks", blockNumber);
     if (lockedForBlockProcessing || lockedForLogProcessing) {
       return;
     }
@@ -201,7 +200,7 @@ class ReputationMinerClient {
     }
 
     const windowOpened = await repCycle.getReputationMiningWindowOpenTimestamp();
-    
+  
     const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     const lastHashStanding = nUniqueSubmittedHashes.sub(nInvalidatedHashes).eq(1);
@@ -285,9 +284,8 @@ class ReputationMinerClient {
       {
         await this._miner.respondToChallenge();
       }
-    } 
+    }
 
-    console.log("lastHashStanding", lastHashStanding);
     if (lastHashStanding && ethers.utils.bigNumberify(block.timestamp).sub(windowOpened).gte(miningCycleDuration)) {
       // If the submission window is closed and we are the last hash, confirm it
       best12Submissions = []; // Clear the submissions

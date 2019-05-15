@@ -190,7 +190,7 @@ export async function checkSuccessEthers(promise, errorMessage) {
   if (receipt.status === 1) {
     return;
   }
-  console.log("receipt", receipt);
+
   const txid = receipt.transactionHash;
   const tx = await web3GetTransaction(txid);
   const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
@@ -270,7 +270,7 @@ export async function forwardTime(seconds, test) {
     if (client.indexOf("TestRPC") === -1) {
       resolve(test.skip());
     } else {
-      console.log(`Forwarding time with ${seconds}s ...`);
+      // console.log(`Forwarding time with ${seconds}s ...`);
       web3.currentProvider.send(
         {
           jsonrpc: "2.0",
@@ -617,13 +617,12 @@ export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
-  console.log("nUniqueSubmittedHashes during finishReputationMiningCycle", nUniqueSubmittedHashes);
+
   if (nUniqueSubmittedHashes.gtn(0)) {
     await forwardTime(MINING_CYCLE_DURATION, test);
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.
-      console.log("*****completed");
       // But for now, that's okay.
     } else {
       // We shouldn't get here. If this fires during a test, you haven't finished writing the test.

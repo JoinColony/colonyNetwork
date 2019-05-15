@@ -42,7 +42,7 @@ process.env.SOLIDITY_COVERAGE
   : contract("Reputation miner client auto enabled functionality", accounts => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
-      // const MINER3 = accounts[7];
+      const MINER3 = accounts[7];
 
       let colonyNetwork;
       let repCycle;
@@ -50,7 +50,7 @@ process.env.SOLIDITY_COVERAGE
       let goodClient;
       let startingBlockNumber;
 
-      const setupNewNetworkInstance = async (_MINER1, _MINER2) => {
+      const setupNewNetworkInstance = async (_MINER1, _MINER2, _MINER3) => {
         colonyNetwork = await setupColonyNetwork();
 
         const { metaColony, clnyToken } = await setupMetaColonyWithLockedCLNYToken(colonyNetwork);
@@ -58,6 +58,7 @@ process.env.SOLIDITY_COVERAGE
 
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER1, DEFAULT_STAKE);
         await giveUserCLNYTokensAndStake(colonyNetwork, _MINER2, DEFAULT_STAKE);
+        await giveUserCLNYTokensAndStake(colonyNetwork, _MINER3, DEFAULT_STAKE);
         await colonyNetwork.initialiseReputationMining();
         await colonyNetwork.startNextCycle();
 
@@ -84,7 +85,7 @@ process.env.SOLIDITY_COVERAGE
       };
 
       before(async () => {
-        await setupNewNetworkInstance(MINER1, MINER2);
+        await setupNewNetworkInstance(MINER1, MINER2, MINER3);
       });
 
       beforeEach(async function() {
@@ -232,14 +233,13 @@ process.env.SOLIDITY_COVERAGE
         });
 
         it("should successfully complete a dispute resolution", async function() {
-          const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER2 }, 1, 0);
+          const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree: true, minerAddress: MINER3 }, 1, 0);
           await badClient.initialise(colonyNetwork.address);
           // We need to load the current good state in to the bad client.
           await badClient.sync(startingBlockNumber);
           // make the bad client behave badly again
           badClient.amountToFalsify = 0xfffffffff;
 
-          await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
           await badClient.addLogContentsToReputationTree();
 
           const rootHash = await reputationMinerClient._miner.getRootHash();
