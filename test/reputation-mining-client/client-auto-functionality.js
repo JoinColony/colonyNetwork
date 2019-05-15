@@ -17,7 +17,13 @@ import {
   finishReputationMiningCycle,
   currentBlock
 } from "../../helpers/test-helper";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, giveUserCLNYTokensAndStake, setupFinalizedTask, fundColonyWithTokens } from "../../helpers/test-data-generator";
+import {
+  setupColonyNetwork,
+  setupMetaColonyWithLockedCLNYToken,
+  giveUserCLNYTokensAndStake,
+  setupFinalizedTask,
+  fundColonyWithTokens
+} from "../../helpers/test-data-generator";
 import ReputationMinerClient from "../../packages/reputation-miner/ReputationMinerClient";
 import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
@@ -33,15 +39,15 @@ const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
 
 process.env.SOLIDITY_COVERAGE
   ? contract.skip
-  : contract.only("Reputation miner client auto enabled functionality", accounts => {
+  : contract("Reputation miner client auto enabled functionality", accounts => {
       const MINER1 = accounts[5];
       const MINER2 = accounts[6];
+      // const MINER3 = accounts[7];
 
       let colonyNetwork;
       let repCycle;
       let reputationMinerClient;
       let goodClient;
-      let count = 0;
       let startingBlockNumber;
 
       const setupNewNetworkInstance = async (_MINER1, _MINER2) => {
@@ -56,17 +62,17 @@ process.env.SOLIDITY_COVERAGE
         await colonyNetwork.startNextCycle();
 
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
-        await setupFinalizedTask( {colonyNetwork, colony:metaColony, token: clnyToken} )
+        await setupFinalizedTask({ colonyNetwork, colony: metaColony, token: clnyToken });
         await advanceMiningCycleNoContest({ colonyNetwork, test: this });
         const startingBlock = await currentBlock();
         startingBlockNumber = startingBlock.number;
-
 
         goodClient = new ReputationMinerTestWrapper({
           loader,
           realProviderPort,
           minerAddress: MINER2,
           useJsTree: true
+          // dbPath: "./reputationStates_good.sqlite"
         });
         reputationMinerClient = new ReputationMinerClient({
           loader,
@@ -87,8 +93,7 @@ process.env.SOLIDITY_COVERAGE
         await goodClient.initialise(colonyNetwork.address);
         await goodClient.sync(startingBlockNumber);
         await goodClient.saveCurrentState();
-        count += 1;
-        await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber, count);
+        await reputationMinerClient.initialise(colonyNetwork.address, startingBlockNumber);
       });
 
       afterEach(async function() {
@@ -98,7 +103,6 @@ process.env.SOLIDITY_COVERAGE
       });
 
       describe("core functionality", function() {
- 
         it("should successfully complete a hash submission if it's the only miner", async function() {
           const rootHash = await reputationMinerClient._miner.getRootHash();
           const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
@@ -130,7 +134,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for 12 hash submissions"));
+              reject(new Error("ERROR: timeout while waiting for 12 hash submissions"));
             }, 30000);
           });
 
@@ -150,7 +154,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for confirming hash"));
+              reject(new Error("ERROR: timeout while waiting for confirming hash"));
             }, 30000);
           });
 
@@ -161,7 +165,6 @@ process.env.SOLIDITY_COVERAGE
 
         it("should successfully complete a hash submission if there are 2 good miners", async function() {
           const oldHash = await colonyNetwork.getReputationRootHash();
-          console.log("oldHash", oldHash);
           const rootHash = await reputationMinerClient._miner.getRootHash();
           const nNodes = await reputationMinerClient._miner.getRootHashNNodes();
           const jrh = await reputationMinerClient._miner.justificationTree.getRootHash();
@@ -194,7 +197,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for 12 hash submissions"));
+              reject(new Error("ERROR: timeout while waiting for 12 hash submissions"));
             }, 30000);
           });
 
@@ -206,12 +209,11 @@ process.env.SOLIDITY_COVERAGE
           await goodClient.saveCurrentState();
           await checkSuccessEthers(goodClient.submitRootHash());
           await receive12Submissions;
-          console.log('12 submissions received')
+
           const colonyNetworkEthers = await reputationMinerClient._miner.colonyNetwork;
           const miningCycleComplete = new Promise(function(resolve, reject) {
             colonyNetworkEthers.on("ReputationMiningCycleComplete", async (_hash, _nNodes, event) => {
               const newHash = await colonyNetwork.getReputationRootHash();
-              console.log("newHash", newHash);
               expect(newHash).to.not.equal(oldHash, "The old and new hashes are the same");
               expect(newHash).to.equal(rootHash, "The network root hash doens't match the one submitted");
               event.removeListener();
@@ -220,12 +222,11 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for confirming hash"));
+              reject(new Error("ERROR: timeout while waiting for confirming hash"));
             }, 30000);
           });
 
           // Forward time to the end of the mining cycle and since we are the only miner, check the client confirmed our hash correctly
-          console.log('FORWARD TIME');
           await forwardTime(MINING_CYCLE_DURATION * 0.1, this);
           await miningCycleComplete;
         });
@@ -237,9 +238,8 @@ process.env.SOLIDITY_COVERAGE
           await badClient.sync(startingBlockNumber);
           // make the bad client behave badly again
           badClient.amountToFalsify = 0xfffffffff;
-          console.log('bad client initialised') 
-          await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
 
+          await giveUserCLNYTokensAndStake(colonyNetwork, MINER2, DEFAULT_STAKE);
           await badClient.addLogContentsToReputationTree();
 
           const rootHash = await reputationMinerClient._miner.getRootHash();
@@ -252,11 +252,10 @@ process.env.SOLIDITY_COVERAGE
 
           const repCycleEthers = await reputationMinerClient._miner.getActiveRepCycle();
 
-          console.log('set up await for 12 submissions')
           const receive12Submissions = new Promise(function(resolve, reject) {
             repCycleEthers.on("ReputationRootHashSubmitted", async (_miner, _hash, _nNodes, _jrh, _entryIndex, event) => {
               const nSubmissions = await repCycle.getNSubmissionsForHash(rootHash, nNodes, jrh);
-              console.log('reputation hash submitted event');
+              console.log("reputation hash submitted event");
               if (nSubmissions.toNumber() === 12) {
                 event.removeListener();
                 resolve();
@@ -267,7 +266,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for 12 hash submissions"));
+              reject(new Error("ERROR: timeout while waiting for 12 hash submissions"));
             }, 30000);
           });
 
@@ -285,7 +284,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for good client to confirm JRH"));
+              reject(new Error("ERROR: timeout while waiting for good client to confirm JRH"));
             }, 30000);
           });
 
@@ -299,7 +298,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for good client to confirm binary search result"));
+              reject(new Error("ERROR: timeout while waiting for good client to confirm binary search result"));
             }, 30000);
           });
 
@@ -314,7 +313,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for goodClientToCompleteChallenge"));
+              reject(new Error("ERROR: timeout while waiting for goodClientToCompleteChallenge"));
             }, 30000);
           });
 
@@ -357,7 +356,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for HashInvalidated"));
+              reject(new Error("ERROR: timeout while waiting for HashInvalidated"));
             }, 30000);
           });
 
@@ -377,7 +376,7 @@ process.env.SOLIDITY_COVERAGE
 
             // After 30s, we throw a timeout error
             setTimeout(() => {
-              reject(new Error("timeout while waiting for new cycle to happen"));
+              reject(new Error("ERROR: timeout while waiting for new cycle to happen"));
             }, 30000);
           });
 

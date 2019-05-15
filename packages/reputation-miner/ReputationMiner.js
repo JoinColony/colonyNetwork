@@ -126,9 +126,7 @@ class ReputationMiner {
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     // Do updates
-
     this.nReputationsBeforeLatestLog = ethers.utils.bigNumberify(this.nReputations.toString());
-
     // This is also the number of decays we have.
 
     // How many updates from the logs do we have?
