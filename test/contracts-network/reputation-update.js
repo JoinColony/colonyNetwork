@@ -12,7 +12,7 @@ import {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   giveUserCLNYTokensAndStake
-} from "../helpers/test-data-generator";
+} from "../../helpers/test-data-generator";
 
 import {
   INT256_MAX,
@@ -33,7 +33,7 @@ import {
   RATING_2_SALT,
   RATING_1_SECRET,
   RATING_2_SECRET
-} from "../helpers/constants";
+} from "../../helpers/constants";
 
 import {
   checkErrorRevert,
@@ -42,7 +42,7 @@ import {
   getTokenArgs,
   removeSubdomainLimit,
   addTaskSkillEditingFunctions
-} from "../helpers/test-helper";
+} from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

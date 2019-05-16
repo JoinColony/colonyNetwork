@@ -16,11 +16,11 @@ import {
   web3GetStorageAt,
   getActiveRepCycle,
   advanceMiningCycleNoContest
-} from "../helpers/test-helper";
-import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
-import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
-import { setupEtherRouter } from "../helpers/upgradable-contracts";
-import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../helpers/constants";
+} from "../../helpers/test-helper";
+import { setupFinalizedTask, giveUserCLNYTokensAndStake, fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
+import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
+import { setupEtherRouter } from "../../helpers/upgradable-contracts";
+import { DEFAULT_STAKE, MINING_CYCLE_DURATION } from "../../helpers/constants";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

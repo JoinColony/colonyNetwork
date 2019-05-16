@@ -5,11 +5,11 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../helpers/test-helper";
-import { giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
-import { UINT256_MAX, MIN_STAKE, DEFAULT_STAKE } from "../helpers/constants";
+import { getTokenArgs, checkErrorRevert, forwardTime, makeReputationKey, getBlockTime, advanceMiningCycleNoContest } from "../../helpers/test-helper";
+import { giveUserCLNYTokensAndStake, setupRandomColony } from "../../helpers/test-data-generator";
+import { UINT256_MAX, MIN_STAKE, DEFAULT_STAKE } from "../../helpers/constants";
 
-import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
+import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

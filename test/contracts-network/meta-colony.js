@@ -2,8 +2,8 @@ import chai from "chai";
 import bnChai from "bn-chai";
 
 import { soliditySha3 } from "web3-utils";
-import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../helpers/constants";
-import { checkErrorRevert, removeSubdomainLimit } from "../helpers/test-helper";
+import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../../helpers/constants";
+import { checkErrorRevert, removeSubdomainLimit } from "../../helpers/test-helper";
 import {
   fundColonyWithTokens,
   setupFundedTask,
@@ -13,7 +13,7 @@ import {
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,
   setupRandomColony
-} from "../helpers/test-data-generator";
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

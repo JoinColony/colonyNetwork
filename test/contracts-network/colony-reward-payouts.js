@@ -8,7 +8,7 @@ import bnChai from "bn-chai";
 import path from "path";
 import { TruffleLoader } from "@colony/colony-js-contract-loader-fs";
 
-import { INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } from "../helpers/constants";
+import { INT128_MAX, WAD, MANAGER_ROLE, INITIAL_FUNDING, DEFAULT_STAKE, SECONDS_PER_DAY } from "../../helpers/constants";
 
 import {
   getTokenArgs,
@@ -18,11 +18,11 @@ import {
   bnSqrt,
   makeReputationKey,
   advanceMiningCycleNoContest
-} from "../helpers/test-helper";
+} from "../../helpers/test-helper";
 
-import { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } from "../helpers/test-data-generator";
+import { fundColonyWithTokens, setupFinalizedTask, giveUserCLNYTokensAndStake, setupRandomColony } from "../../helpers/test-data-generator";
 
-import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
+import ReputationMinerTestWrapper from "../../packages/reputation-miner/test/ReputationMinerTestWrapper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

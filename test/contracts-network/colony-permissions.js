@@ -11,10 +11,10 @@ import {
   ADMINISTRATION_ROLE,
   INITIAL_FUNDING,
   SPECIFICATION_HASH
-} from "../helpers/constants";
+} from "../../helpers/constants";
 
-import { fundColonyWithTokens, makeTask, setupRandomColony, executeSignedRoleAssignment } from "../helpers/test-data-generator";
-import { checkErrorRevert } from "../helpers/test-helper";
+import { fundColonyWithTokens, makeTask, setupRandomColony, executeSignedRoleAssignment } from "../../helpers/test-data-generator";
+import { checkErrorRevert } from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
