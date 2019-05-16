@@ -1063,6 +1063,9 @@ class ReputationMiner {
    * @return {Promise}               A promise that resolves once the state is up-to-date
    */
   async sync(blockNumber, saveHistoricalStates = false) {
+    if (!blockNumber) {
+      throw new Error("Block number not supplied to sync");
+    }
     // Get the events
     const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
     filter.fromBlock = blockNumber;
