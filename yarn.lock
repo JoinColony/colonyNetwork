@@ -1685,6 +1685,11 @@ bcrypt-pbkdf@^1.0.0:
   dependencies:
     tweetnacl "^0.14.3"
 
+bignumber.js@^7.2.1:
+  version "7.2.1"
+  resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-7.2.1.tgz#80c048759d826800807c4bfd521e50edbba57a5f"
+  integrity sha512-S4XzBk5sMB+Rcb/LNcpzXr57VRTxgAvaAEDAl1AwRx27j00hT84O6OkteE7u8UB3NuaaygCRrEpqox4uDOrbdQ==
+
 bignumber.js@^8.1.1:
   version "8.1.1"
   resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-8.1.1.tgz#4b072ae5aea9c20f6730e4e5d529df1271c4d885"
@@ -3583,7 +3588,7 @@ ethers@4.0.0-beta.1:
     uuid "2.0.1"
     xmlhttprequest "1.8.0"
 
-ethers@^4.0.26, ethers@^4.0.27:
+ethers@^4.0.0-beta.1, ethers@^4.0.26, ethers@^4.0.27:
   version "4.0.27"
   resolved "https://registry.yarnpkg.com/ethers/-/ethers-4.0.27.tgz#e570b0da9d805ad65c83d81919abe02b2264c6bf"
   integrity sha512-+DXZLP/tyFnXWxqr2fXLT67KlGUfLuvDkHSOtSC9TUVG9OIj6yrG5JPeXRMYo15xkOYwnjgdMKrXp5V94rtjJA==
@@ -8680,6 +8685,11 @@ truffle-artifactor@^4.0.13:
     lodash "4.17.11"
     truffle-contract-schema "^3.0.9"
 
+truffle-blockchain-utils@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/truffle-blockchain-utils/-/truffle-blockchain-utils-0.0.9.tgz#ac61d703878c36eeabaa770c5bdf553e2260877e"
+  integrity sha512-UJlWLN53AYU108c2A7rY6ri2Ollj8ygRnpSyBD4MPq+MF15PFvqwNHa/4rnj6ajOo7JYV07nNQ4hmBwh0KSeoA==
+
 truffle-compile-vyper@^1.0.13:
   version "1.0.15"
   resolved "https://registry.yarnpkg.com/truffle-compile-vyper/-/truffle-compile-vyper-1.0.15.tgz#15219b318a51c40600f736a0a27f3086b3b5c1e0"
@@ -8739,6 +8749,22 @@ truffle-contract-sources@^0.1.3:
   dependencies:
     debug "^4.1.0"
     glob "^7.1.2"
+
+truffle-contract@^4.0.13:
+  version "4.0.15"
+  resolved "https://registry.yarnpkg.com/truffle-contract/-/truffle-contract-4.0.15.tgz#c8a7be3a9d4223c6bf3477974cb69cbdf3bcd429"
+  integrity sha512-TEye3lotuPZqoXni/t1HomU5w760Kf0x63cZa7q2WXzqtQCnNqdG/FMRlyMim/MRK4geGdo2H+Sg1k4D1VqJDw==
+  dependencies:
+    bignumber.js "^7.2.1"
+    ethers "^4.0.0-beta.1"
+    truffle-blockchain-utils "^0.0.9"
+    truffle-contract-schema "^3.0.9"
+    truffle-error "^0.0.4"
+    truffle-interface-adapter "^0.1.5"
+    web3 "1.0.0-beta.37"
+    web3-core-promievent "1.0.0-beta.37"
+    web3-eth-abi "1.0.0-beta.37"
+    web3-utils "1.0.0-beta.37"
 
 truffle-error@^0.0.4:
   version "0.0.4"
@@ -8809,10 +8835,10 @@ truffle-resolver@^5.0.13:
     truffle-expect "^0.0.8"
     truffle-provisioner "^0.1.4"
 
-truffle-security@1.4.0:
-  version "1.4.0"
-  resolved "https://registry.yarnpkg.com/truffle-security/-/truffle-security-1.4.0.tgz#638b999fadb5f3f823c062dbd2dd1b055bfed1f0"
-  integrity sha512-cxTut9U3gZJ0boJJEOGZu6MMGRpEK6p04la+YkXT28qrtuIpnLO44w6nAfuaUYTFTvnBBQK+XGdSU+ti7knEDA==
+truffle-security@1.4.2:
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/truffle-security/-/truffle-security-1.4.2.tgz#04aa90f0f18e897c683e1f85a8da8900374d2500"
+  integrity sha512-NneeSQYZHuOAvFmqIFCxFryzRd+Bd481eDNIpyWxk1zB+4o9f3dvWmJR4nnCUor2jcGP+DJl2BbXXf3WStD8PA==
   dependencies:
     armlet "^2.6.0"
     configstore "^4.0.0"
@@ -8831,6 +8857,8 @@ truffle-security@1.4.0:
     truffle-artifactor "^4.0.13"
     truffle-compile-vyper "^1.0.13"
     truffle-config "^1.1.10"
+    truffle-contract "^4.0.13"
+    truffle-contract-sources "^0.1.3"
     truffle-expect "0.0.7"
     truffle-external-compile "^1.0.8"
     truffle-resolver "^5.0.13"
