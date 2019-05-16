@@ -34,14 +34,12 @@
     "pretest:contracts:gasCosts": "sed -ie \"s/mocha-circleci-reporter/eth-gas-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:coverage": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
     "pretest:contracts:watch": "sed -ie \"s/eth-gas-reporter/mocha-circleci-reporter/g\" ./truffle.js && rimraf ./truffle.jse",
-    "pretest:contracts:security": "sed -ie \"s/docker: true/docker: false/g\" ./truffle.js && rimraf ./truffle.jse",
     "posttest:contracts": "npm run stop:blockchain:client",
     "posttest:contracts:upgrade:parity": "npm run clean:test:contracts | npm run stop:blockchain:client",
     "posttest:contracts:upgrade:ganache": "npm run clean:test:contracts | npm run stop:blockchain:client",
     "posttest:contracts:gasCosts": "npm run stop:blockchain:client",
     "posttest:contracts:patricia": "npm run stop:blockchain:client",
     "posttest:contracts:watch": "npm run stop:blockchain:client",
-    "posttest:contracts:security": "sed -ie \"s/docker: false/docker: true/g\" ./truffle.js && rimraf ./truffle.jse",
     "viz:bootstrap": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle exec --network development scripts/viz-bootstrap.js"
   },
   "husky": {
