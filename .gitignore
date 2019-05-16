@@ -9,6 +9,7 @@ parityPassword
 **/build/*
 coverage
 coverage.json
+.nyc_output
 lib/*
 ganache-accounts.json
 .vscode/
