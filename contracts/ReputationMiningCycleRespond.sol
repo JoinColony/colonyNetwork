@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.6;
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/math.sol";
@@ -37,6 +37,7 @@ contract ReputationMiningCycleRespond is ReputationMiningCycleStorage, PatriciaT
   /// @param idx The index in the round of the hash under consideration
   modifier challengeOpen(uint256 round, uint256 idx) {
     // Check the binary search has finished, but not necessarily confirmed
+    require(idx < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
     require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
     // Check the binary search result has been confirmed
     Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].firstSubmitter];

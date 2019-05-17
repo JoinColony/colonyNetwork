@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.6;
 
 import "./ColonyDataTypes.sol";
 import "./CommonStorage.sol";
@@ -45,7 +45,7 @@ contract ContractRecovery is CommonStorage {
     uint x = _slot;
     bytes32 y = _value;
     assembly {
-      sstore(x, y)
+      sstore(x, y) // ignore-swc-124
     }
 
     // Restore key variables

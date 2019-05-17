@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.6;
 
 import "./Resolver.sol";
 import "../lib/dappsys/auth.sol";
@@ -52,10 +52,10 @@ contract EtherRouter is DSAuth {
       if eq(size, 0) { revert(0,0) }
 	
       calldatacopy(mload(0x40), 0, calldatasize)
-      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0)
+      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-112 - this is rather the point!
       returndatacopy(mload(0x40), 0, returndatasize)
       switch result
-      case 1 { return(mload(0x40), returndatasize) }
+      case 1 { return(mload(0x40), returndatasize) } // ignore-swc-113 - though I'm not actually sure what it's saying here?
       default { revert(mload(0x40), returndatasize) }
     }
   }

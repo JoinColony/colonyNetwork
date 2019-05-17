@@ -6346,6 +6346,11 @@ npmlog@^4.0.2:
     gauge "~2.7.3"
     set-blocking "~2.0.0"
 
+nthline@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/nthline/-/nthline-1.0.1.tgz#23c6d3a9fd479af387b633fb2832b5352a5a70ec"
+  integrity sha1-I8bTqf1HmvOHtjP7KDK1NSpacOw=
+
 number-is-nan@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/number-is-nan/-/number-is-nan-1.0.1.tgz#097b602b53422a522c1afb8790318336941a011d"

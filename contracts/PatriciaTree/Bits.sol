@@ -1,4 +1,4 @@
-pragma solidity >=0.5.3;
+pragma solidity 0.5.6;
 pragma experimental "ABIEncoderV2";
 
 
@@ -19,7 +19,7 @@ library Bits {
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
       if (val & (ONE << i) - 1 << i != 0) {
-        highest += i;
+        highest += i; // ignore-swc-101
         val >>= i;
       }
     }
@@ -34,7 +34,7 @@ library Bits {
     uint val = self;
     for (uint8 i = 128; i >= 1; i >>= 1) {
       if (val & (ONE << i) - 1 == 0) {
-        lowest += i;
+        lowest += i; // ignore-swc-101
         val >>= i;
       }
     }

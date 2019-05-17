@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.6;
 pragma experimental "ABIEncoderV2";
 
 import "./ColonyAuthority.sol";
@@ -254,7 +254,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
   }
 
   function getParentSkillId(uint _skillId, uint _parentSkillIndex) public view returns (uint256) {
-    return ascendSkillTree(_skillId, _parentSkillIndex + 1);
+    return ascendSkillTree(_skillId, add(_parentSkillIndex,1));
   }
 
   function getChildSkillId(uint _skillId, uint _childSkillIndex) public view returns (uint256) {
