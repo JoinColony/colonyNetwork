@@ -10,6 +10,7 @@ parityPassword
 coverage
 coverage.json
 .nyc_output
+miner_coverage
 lib/*
 ganache-accounts.json
 .vscode/
