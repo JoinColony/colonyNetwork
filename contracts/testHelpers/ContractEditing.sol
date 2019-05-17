@@ -23,7 +23,7 @@ contract ContractEditing {
     uint x = _slot;
     bytes32 y = _value;
     assembly {
-      sstore(x, y)
+      sstore(x, y) // This file is only used in tests for convenience, so ignore-swc-124
     }
   }
 }
