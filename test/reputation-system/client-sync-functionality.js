@@ -20,7 +20,7 @@ const IMetaColony = artifacts.require("IMetaColony");
 const Token = artifacts.require("Token");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
 });
 
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;

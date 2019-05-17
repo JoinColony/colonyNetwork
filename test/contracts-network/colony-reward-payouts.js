@@ -36,7 +36,7 @@ const Token = artifacts.require("Token");
 const DSRoles = artifacts.require("DSRoles");
 
 const contractLoader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
 });
 
 const REAL_PROVIDER_PORT = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;
