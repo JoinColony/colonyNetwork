@@ -98,7 +98,7 @@ jobs:
       - store_artifacts:
           path: test-results.xml
       - store_artifacts:
-          path: /miner-coverage
+          path: coverage-miner
   test-coverage:
     <<: *job_common
     steps:
