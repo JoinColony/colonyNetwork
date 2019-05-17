@@ -5,5 +5,5 @@
   "report-dir": "./coverage-miner",
   "check-coverage": true,
   "lines": 79,
-  "branches": 83
+  "branches": 82
 }
