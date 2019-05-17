@@ -2,5 +2,7 @@
   "require": ["@babel/register", "@babel/polyfill"],
   "include": "packages/reputation-miner/ReputationMiner*.js",
   "reporter": ["lcov", "html"],
-  "report-dir": "./coverage-miner"
+  "report-dir": "./coverage-miner",
+  "check-coverage": true,
+  "branches": 83
 }
