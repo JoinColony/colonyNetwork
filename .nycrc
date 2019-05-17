@@ -4,5 +4,6 @@
   "reporter": ["lcov", "html"],
   "report-dir": "./coverage-miner",
   "check-coverage": true,
+  "lines": 79,
   "branches": 83
 }
