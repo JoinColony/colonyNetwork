@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity 0.5.6;
+pragma solidity >=0.5.6; // ignore-swc-103
 pragma experimental "ABIEncoderV2";
 
 import "./ReputationMiningCycleDataTypes.sol";
