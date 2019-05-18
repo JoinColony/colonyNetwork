@@ -1,7 +1,7 @@
 ---
 title: Reputation Mining Client
 section: Docs
-order: 7
+order: 6
 ---
 
 The reputation mining client is usable for testing but it has limited functionality. Still, it is possible to run a single miner instance for usable reputation scores on a local test network.

@@ -1,7 +1,7 @@
 ---
 title: Get Started
 section: Docs
-order: 6
+order: 7
 ---
 
 There are a few ways to get started with the colonyNetwork contracts, depending on who you are and what you want to do.
