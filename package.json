@@ -20,6 +20,7 @@
     "stop:blockchain:client": "bash ./scripts/stop-blockchain-client.sh",
     "test:contracts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test ./test/contracts-network/* --network development",
     "test:reputation": "npm run start:blockchain:client & truffle migrate --reset --compile-all && nyc truffle test ./test/reputation-system/* --network development",
+    "flatten:contracts": "mkdir -p ./build/flattened/ && steamroller contracts/IColonyNetwork.sol > build/flattened/flatIColonyNetwork.sol && steamroller contracts/IColony.sol > build/flattened/flatIColony.sol",
     "test:contracts:upgrade:parity": "npm run start:blockchain:client parity & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./test-upgrade/* --network integration",
     "test:contracts:upgrade:ganache": "npm run start:blockchain:client & npm run generate:test:contracts && truffle migrate --reset --compile-all && truffle test ./test-upgrade/* --network development",
     "test:contracts:gasCosts": "npm run start:blockchain:client & truffle migrate --reset --compile-all && truffle test test-gas-costs/gasCosts.js --network development",
