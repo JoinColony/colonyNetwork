@@ -21,8 +21,12 @@ The [current colonyNetwork release](https://github.com/JoinColony/colonyNetwork/
 
 `glider-rc.1` is deployed to the Görli testnet, and can be accessed at:
 
-`ColonyNetwork`: `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
+```
+ColonyNetwork: 0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B
+```
 
 The extension factories are at:
-`OneTxPaymentFactory`: `0x3e03f868450ffD588E2cB2034fA2e0F74F9FFbe3`
-`OldRolesFactory`: `0xbe86Bef84fFD76E906e1ffa368a42B538e7aEf75`
+```
+OneTxPaymentFactory: 0x3e03f868450ffD588E2cB2034fA2e0F74F9FFbe3
+OldRolesFactory: 0xbe86Bef84fFD76E906e1ffa368a42B538e7aEf75
+```
