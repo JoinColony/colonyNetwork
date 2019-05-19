@@ -15,7 +15,7 @@ const ColonyPayment = artifacts.require("ColonyPayment");
 const ColonyFunding = artifacts.require("ColonyFunding");
 const UpdatedColony = artifacts.require("UpdatedColony");
 const IUpdatedColony = artifacts.require("IUpdatedColony");
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 const ContractRecovery = artifacts.require("ContractRecovery");
 
 contract("Colony contract upgrade", accounts => {
@@ -43,7 +43,8 @@ contract("Colony contract upgrade", accounts => {
     dueDate = await currentBlockTime();
 
     const tokenArgs = getTokenArgs();
-    const colonyToken = await DSToken.new(tokenArgs[1]);
+    const colonyToken = await Token.new(...tokenArgs);
+    await colonyToken.unlock();
     const { logs } = await colonyNetwork.createColony(colonyToken.address);
     const { colonyAddress } = logs[0].args;
     colony = await IColony.at(colonyAddress);
@@ -52,7 +53,7 @@ contract("Colony contract upgrade", accounts => {
     colonyFunding = await ColonyFunding.new();
     contractRecovery = await ContractRecovery.new();
     const tokenAddress = await colony.getToken();
-    token = await DSToken.at(tokenAddress);
+    token = await Token.at(tokenAddress);
 
     await makeTask({ colony, dueDate });
     await makeTask({ colony, dueDate: dueDate + 1, hash: SPECIFICATION_HASH_UPDATED });

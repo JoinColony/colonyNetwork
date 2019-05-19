@@ -46,7 +46,7 @@ import {
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";
 
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
@@ -88,7 +88,8 @@ contract("All", function(accounts) {
     await IColony.defaults({ gasPrice });
 
     const otherTokenArgs = getTokenArgs();
-    otherToken = await DSToken.new(otherTokenArgs[1]);
+    otherToken = await Token.new(...otherTokenArgs);
+    await otherToken.unlock();
 
     await fundColonyWithTokens(colony, token, INITIAL_FUNDING);
   });
@@ -97,7 +98,8 @@ contract("All", function(accounts) {
   describe("Gas costs", function() {
     it("when working with the Colony Network", async function() {
       const tokenArgs = getTokenArgs();
-      const colonyToken = await DSToken.new(tokenArgs[1]);
+      const colonyToken = await Token.new(...tokenArgs);
+      await colonyToken.unlock();
       await colonyNetwork.createColony(colonyToken.address);
     });
 
@@ -281,7 +283,8 @@ contract("All", function(accounts) {
       const managerReputation = WAD.muln(100);
 
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);

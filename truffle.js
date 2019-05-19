@@ -34,7 +34,7 @@ module.exports = {
     }
   },
   mocha: {
-    reporter: "mocha-circleci-reporter",
+    reporter: "eth-gas-reporter",
     reporterOptions: {
       currency: "USD",
       gasPrice: 5,

@@ -14,7 +14,7 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const IMetaColony = artifacts.require("IMetaColony");
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 
 contract("Colony Payment", accounts => {
   const RECIPIENT = accounts[3];
@@ -38,7 +38,8 @@ contract("Colony Payment", accounts => {
     await fundColonyWithTokens(colony, token, WAD.muln(20));
 
     const tokenArgs = getTokenArgs();
-    otherToken = await DSToken.new(tokenArgs[1]);
+    otherToken = await Token.new(...tokenArgs);
+    await otherToken.unlock();
   });
 
   describe("when adding payments", () => {

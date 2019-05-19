@@ -2,7 +2,7 @@
 /* eslint-disable prefer-arrow-callback */
 import { getTokenArgs } from "../helpers/test-helper";
 
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
@@ -20,12 +20,14 @@ contract("ColonyNetwork contract upgrade", function() {
 
     // Setup 2 test colonies
     const tokenArgs1 = getTokenArgs();
-    const newToken = await DSToken.new(tokenArgs1[1]);
+    const newToken = await Token.new(...tokenArgs1);
+    await newToken.unlock();
     let { logs } = await colonyNetwork.createColony(newToken.address);
     colonyAddress1 = logs[0].args.colonyAddress;
 
     const tokenArgs2 = getTokenArgs();
-    const newToken2 = await DSToken.new(tokenArgs2[1]);
+    const newToken2 = await Token.new(...tokenArgs2);
+    await newToken2.unlock();
     ({ logs } = await colonyNetwork.createColony(newToken2.address));
     colonyAddress2 = logs[0].args.colonyAddress;
 

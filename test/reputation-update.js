@@ -48,7 +48,7 @@ const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
 contract("Reputation Updates", accounts => {
@@ -369,7 +369,8 @@ contract("Reputation Updates", accounts => {
     it("should not add entries to the reputation log for payments that are not in the colony home token", async () => {
       const RECIPIENT = accounts[3];
       const tokenArgs = getTokenArgs();
-      const otherToken = await DSToken.new(tokenArgs[1]);
+      const otherToken = await Token.new(...tokenArgs);
+      await otherToken.unlock();
       await fundColonyWithTokens(metaColony, otherToken, WAD.muln(2));
 
       await metaColony.addPayment(1, 0, RECIPIENT, otherToken.address, WAD, 1, 3);

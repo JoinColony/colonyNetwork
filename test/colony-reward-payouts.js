@@ -32,7 +32,7 @@ const IColony = artifacts.require("IColony");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 const DSRoles = artifacts.require("DSRoles");
 
 const contractLoader = new TruffleLoader({
@@ -75,7 +75,8 @@ contract("Colony Reward Payouts", accounts => {
     await colony.setRewardInverse(100);
 
     const otherTokenArgs = getTokenArgs();
-    otherToken = await DSToken.new(otherTokenArgs[0]);
+    otherToken = await Token.new(...otherTokenArgs);
+    await otherToken.unlock();
 
     await fundColonyWithTokens(colony, otherToken, initialFunding);
     await colony.mintTokens(initialFunding.muln(100).divn(99)); // Tke in to account 1% being siphoned off for rewards
@@ -144,7 +145,8 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should not be able to create reward payout if passed reputation is not from the correct colony", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -262,7 +264,8 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should not be able to start a reward payout if no one holds colony tokens", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -298,7 +301,8 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should be able to collect rewards from multiple payouts of different token", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
       await fundColonyWithTokens(colony, newToken, initialFunding);
 
       const tx1 = await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
@@ -313,7 +317,8 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should not be able to claim payout if colony-wide reputation is 0", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
       const { logs } = await colonyNetwork.createColony(newToken.address);
       const { colonyAddress } = logs[0].args;
       const newColony = await IColony.at(colonyAddress);
@@ -456,7 +461,8 @@ contract("Colony Reward Payouts", accounts => {
 
     it("should not be able to claim funds if previous payout is not claimed", async () => {
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
       await fundColonyWithTokens(colony, newToken, initialFunding);
 
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
@@ -559,7 +565,8 @@ contract("Colony Reward Payouts", accounts => {
     it("should be able to collect payout from two colonies at the same time", async () => {
       // Setting up a new token and two colonies
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
 
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
@@ -676,7 +683,8 @@ contract("Colony Reward Payouts", accounts => {
     it("should not be able to claim reward payout from a colony that didn't create it", async () => {
       // Setting up a new token and two colonies
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
 
       let { logs } = await colonyNetwork.createColony(newToken.address);
       let { colonyAddress } = logs[0].args;
@@ -815,14 +823,16 @@ contract("Colony Reward Payouts", accounts => {
         total reputation/tokens: ${data.totalReputation.toString()}`, async () => {
         // Setting up a new token and colony
         const tokenArgs = getTokenArgs();
-        const newToken = await DSToken.new(tokenArgs[1]);
+        const newToken = await Token.new(...tokenArgs);
+        await newToken.unlock();
         let { logs } = await colonyNetwork.createColony(newToken.address);
         const { colonyAddress } = logs[0].args;
         await newToken.setOwner(colonyAddress);
         const newColony = await IColony.at(colonyAddress);
 
         const payoutTokenArgs = getTokenArgs();
-        const payoutToken = await DSToken.new(payoutTokenArgs[0]);
+        const payoutToken = await Token.new(...payoutTokenArgs);
+        await payoutToken.unlock();
         await fundColonyWithTokens(newColony, payoutToken, data.totalAmountOfPayoutTokens);
         // Issuing colony's internal tokens so they can be given to users in `bootstrapColony`
         await newColony.mintTokens(data.totalReputation);
