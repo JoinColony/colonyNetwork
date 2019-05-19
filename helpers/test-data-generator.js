@@ -17,7 +17,9 @@ import {
   SPECIFICATION_HASH,
   DELIVERABLE_HASH
 } from "./constants";
-import { getTokenArgs, createSignatures, createSignaturesTrezor, web3GetAccounts, getChildSkillIndex } from "./test-helper";
+
+import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
+import { getSigsAndTransactionData } from "./task-review-signing";
 
 const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 
@@ -53,36 +55,6 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
   const { logs } = await colony.makeTask(1, childSkillIndex, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
-}
-
-export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
-  // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
-  const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
-  const convertedArgs = [];
-  args.forEach(arg => {
-    if (Number.isInteger(arg)) {
-      const convertedArg = ethers.utils.bigNumberify(arg);
-      convertedArgs.push(convertedArg);
-    } else if (web3.utils.isBN(arg) || web3.utils.isBigNumber(arg)) {
-      const convertedArg = ethers.utils.bigNumberify(arg.toString());
-      convertedArgs.push(convertedArg);
-    } else {
-      convertedArgs.push(arg);
-    }
-  });
-
-  const txData = await colony.contract.methods[functionName](...convertedArgs).encodeABI();
-  const sigsPromises = sigTypes.map((type, i) => {
-    if (type === 0) {
-      return createSignatures(colony, ethersBNTaskId, [signers[i]], 0, txData);
-    }
-    return createSignaturesTrezor(colony, ethersBNTaskId, [signers[i]], 0, txData);
-  });
-  const sigs = await Promise.all(sigsPromises);
-  const sigV = sigs.map(sig => sig.sigV[0]);
-  const sigR = sigs.map(sig => sig.sigR[0]);
-  const sigS = sigs.map(sig => sig.sigS[0]);
-  return { sigV, sigR, sigS, txData };
 }
 
 export async function executeSignedTaskChange({ colony, taskId, functionName, signers, sigTypes, args }) {
@@ -140,6 +112,7 @@ export async function setupAssignedTask({ colonyNetwork, colony, dueDate, domain
 
   return taskId;
 }
+
 export async function setupFundedTask({
   colonyNetwork,
   colony,

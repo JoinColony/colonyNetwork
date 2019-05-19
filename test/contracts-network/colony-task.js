@@ -30,6 +30,8 @@ import {
   GLOBAL_SKILL_ID
 } from "../../helpers/constants";
 
+import { createSignatures, getSigsAndTransactionData } from "../helpers/task-review-signing";
+
 import {
   getTokenArgs,
   web3GetBalance,
@@ -38,7 +40,6 @@ import {
   expectAllEvents,
   forwardTime,
   currentBlockTime,
-  createSignatures,
   addTaskSkillEditingFunctions
 } from "../../helpers/test-helper";
 
@@ -50,7 +51,6 @@ import {
   setupFundedTask,
   executeSignedTaskChange,
   executeSignedRoleAssignment,
-  getSigsAndTransactionData,
   makeTask,
   setupRandomColony,
   assignRoles
