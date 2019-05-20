@@ -1,0 +1,11 @@
+{
+  "require": ["@babel/register"],
+  "include": "packages/reputation-miner/ReputationMiner*.js",
+  "reporter": ["lcov", "html"],
+  "report-dir": "./coverage-miner",
+  "sourceMap": false,
+  "instrument": false,
+  "check-coverage": true,
+  "lines": 79,
+  "branches": 79
+}

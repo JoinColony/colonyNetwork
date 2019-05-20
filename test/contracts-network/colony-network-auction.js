@@ -4,9 +4,9 @@ import { ethers } from "ethers";
 import chai from "chai";
 import bnChai from "bn-chai";
 
-import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../helpers/test-helper";
-import { WAD, SECONDS_PER_DAY } from "../helpers/constants";
-import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../helpers/test-data-generator";
+import { getTokenArgs, web3GetTransactionReceipt, web3GetCode, checkErrorRevert, forwardTime, getBlockTime } from "../../helpers/test-helper";
+import { WAD, SECONDS_PER_DAY } from "../../helpers/constants";
+import { setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, unlockCLNYToken, giveUserCLNYTokens } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

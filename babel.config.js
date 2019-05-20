@@ -1,5 +1,6 @@
 const babelConfig = {
-  presets: ["@babel/preset-env"]
+  presets: ["@babel/preset-env"],
+  plugins: ["istanbul"]
 };
 
 module.exports = babel => {

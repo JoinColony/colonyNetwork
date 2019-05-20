@@ -12,9 +12,9 @@ import {
   EVALUATOR_PAYOUT,
   WORKER_PAYOUT,
   INITIAL_FUNDING
-} from "../helpers/constants";
+} from "../../helpers/constants";
 
-import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../helpers/test-helper";
+import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
 
 import {
   fundColonyWithTokens,
@@ -23,7 +23,7 @@ import {
   executeSignedRoleAssignment,
   makeTask,
   setupRandomColony
-} from "../helpers/test-data-generator";
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

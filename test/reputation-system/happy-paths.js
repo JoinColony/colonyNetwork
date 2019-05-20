@@ -51,7 +51,7 @@ chai.use(bnChai(web3.utils.BN));
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
 });
 
 const useJsTree = true;

@@ -4,9 +4,9 @@ import bnChai from "bn-chai";
 import BN from "bn.js";
 import { ethers } from "ethers";
 
-import { WAD, MAX_PAYOUT } from "../helpers/constants";
-import { checkErrorRevert, getTokenArgs } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupRandomColony } from "../helpers/test-data-generator";
+import { WAD, MAX_PAYOUT } from "../../helpers/constants";
+import { checkErrorRevert, getTokenArgs } from "../../helpers/test-helper";
+import { fundColonyWithTokens, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

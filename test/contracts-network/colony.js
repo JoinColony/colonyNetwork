@@ -13,9 +13,9 @@ import {
   RATING_1_SECRET,
   RATING_2_SECRET,
   WAD
-} from "../helpers/constants";
-import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../helpers/test-helper";
-import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../helpers/test-data-generator";
+} from "../../helpers/constants";
+import { getTokenArgs, web3GetBalance, checkErrorRevert, expectAllEvents } from "../../helpers/test-helper";
+import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

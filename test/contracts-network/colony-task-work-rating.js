@@ -15,9 +15,9 @@ import {
   DELIVERABLE_HASH,
   INITIAL_FUNDING,
   SECONDS_PER_DAY
-} from "../helpers/constants";
-import { currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../helpers/test-helper";
-import { fundColonyWithTokens, setupAssignedTask, setupRatedTask, setupRandomColony } from "../helpers/test-data-generator";
+} from "../../helpers/constants";
+import { currentBlockTime, checkErrorRevert, forwardTime, expectEvent } from "../../helpers/test-helper";
+import { fundColonyWithTokens, setupAssignedTask, setupRatedTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

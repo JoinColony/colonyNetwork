@@ -3,7 +3,7 @@ import chai from "chai";
 import bnChai from "bn-chai";
 import { ethers } from "ethers";
 
-import { checkErrorRevert } from "../helpers/test-helper";
+import { checkErrorRevert } from "../../helpers/test-helper";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));

@@ -20,7 +20,7 @@ chai.use(bnChai(web3.utils.BN));
 const ITokenLocking = artifacts.require("ITokenLocking");
 
 const loader = new TruffleLoader({
-  contractDir: path.resolve(__dirname, "..", "..", "build", "contracts")
+  contractDir: path.resolve(__dirname, "../..", "build", "contracts")
 });
 
 const realProviderPort = process.env.SOLIDITY_COVERAGE ? 8555 : 8545;

@@ -28,7 +28,7 @@ import {
   RATING_2_SECRET,
   MAX_PAYOUT,
   GLOBAL_SKILL_ID
-} from "../helpers/constants";
+} from "../../helpers/constants";
 
 import {
   getTokenArgs,
@@ -40,7 +40,7 @@ import {
   currentBlockTime,
   createSignatures,
   addTaskSkillEditingFunctions
-} from "../helpers/test-helper";
+} from "../../helpers/test-helper";
 
 import {
   fundColonyWithTokens,
@@ -54,7 +54,7 @@ import {
   makeTask,
   setupRandomColony,
   assignRoles
-} from "../helpers/test-data-generator";
+} from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
