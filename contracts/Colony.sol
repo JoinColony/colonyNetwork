@@ -31,7 +31,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   function setRootRole(address _user, bool _setTo) public stoppable auth {
     ColonyAuthority(address(authority)).setUserRole(_user, uint8(ColonyRole.Root), _setTo);
 
-    emit ColonyRootRoleSet(_user, _setTo);
+    emit ColonyRoleSet(_user, 1, uint8(ColonyRole.Root), _setTo);
   }
 
   function setArchitectureRole(
@@ -47,7 +47,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
     colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
     colonyAuthority.setUserRole(_user, _domainId, uint8(ColonyRole.ArchitectureSubdomain), _setTo);
 
-    emit ColonyArchitectureRoleSet(_user, _setTo);
+    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Architecture), _setTo);
   }
 
   function setFundingRole(
@@ -60,7 +60,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
 
-    emit ColonyFundingRoleSet(_user, _setTo);
+    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Funding), _setTo);
   }
 
   function setAdministrationRole(
@@ -73,7 +73,7 @@ contract Colony is ColonyStorage, PatriciaTreeProofs {
   {
     ColonyAuthority(address(authority)).setUserRole(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
 
-    emit ColonyAdministrationRoleSet(_user, _setTo);
+    emit ColonyRoleSet(_user, _domainId, uint8(ColonyRole.Administration), _setTo);
   }
 
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool) {
