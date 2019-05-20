@@ -402,6 +402,7 @@ export async function setupColonyNetwork() {
 export async function setupRandomColony(colonyNetwork) {
   const tokenArgs = getTokenArgs();
   const token = await Token.new(...tokenArgs);
+  await token.unlock();
 
   const { logs } = await colonyNetwork.createColony(token.address);
   const { colonyAddress } = logs[0].args;

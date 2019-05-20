@@ -16,7 +16,7 @@ const ENSRegistry = artifacts.require("ENSRegistry");
 const EtherRouter = artifacts.require("EtherRouter");
 const Resolver = artifacts.require("Resolver");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 
 contract("Colony Network", accounts => {
   const SAMPLE_RESOLVER = "0x65a760e7441cf435086ae45e14a0c8fc1080f54c";
@@ -115,7 +115,8 @@ contract("Colony Network", accounts => {
     });
 
     it("should maintain correct count of colonies", async () => {
-      const token = await DSToken.new(getTokenArgs()[1]);
+      const token = await Token.new(...getTokenArgs());
+      await token.unlock();
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
@@ -146,7 +147,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should fail to create meta colony if it already exists", async () => {
-      const token = await DSToken.new(TOKEN_ARGS[1]);
+      const token = await Token.new(...TOKEN_ARGS);
       await checkErrorRevert(colonyNetwork.createMetaColony(token.address), "colony-meta-colony-exists-already");
     });
 
@@ -174,7 +175,7 @@ contract("Colony Network", accounts => {
     });
 
     it("should fail if ETH is sent", async () => {
-      const token = await DSToken.new(TOKEN_ARGS[1]);
+      const token = await Token.new(...TOKEN_ARGS);
       await checkErrorRevert(colonyNetwork.createColony(token.address, { value: 1, gas: createColonyGas }));
 
       const colonyNetworkBalance = await web3GetBalance(colonyNetwork.address);
@@ -182,14 +183,14 @@ contract("Colony Network", accounts => {
     });
 
     it("should log a ColonyAdded event", async () => {
-      const token = await DSToken.new(TOKEN_ARGS[1]);
+      const token = await Token.new(...TOKEN_ARGS);
       await expectEvent(colonyNetwork.createColony(token.address), "ColonyAdded");
     });
   });
 
   describe("when getting existing colonies", () => {
     it("should allow users to get the address of a colony by its index", async () => {
-      const token = await DSToken.new(TOKEN_ARGS[1]);
+      const token = await Token.new(...TOKEN_ARGS);
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);
       await colonyNetwork.createColony(token.address);

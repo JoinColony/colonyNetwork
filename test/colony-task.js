@@ -62,7 +62,7 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IMetaColony = artifacts.require("IMetaColony");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 const TaskSkillEditing = artifacts.require("TaskSkillEditing");
 
 contract("ColonyTask", accounts => {
@@ -89,7 +89,8 @@ contract("ColonyTask", accounts => {
     await colony.setAdministrationRole(1, 0, COLONY_ADMIN, 1, true);
 
     const otherTokenArgs = getTokenArgs();
-    otherToken = await DSToken.new(otherTokenArgs[1]);
+    otherToken = await Token.new(...otherTokenArgs);
+    await otherToken.unlock();
   });
 
   describe("when creating tasks", () => {

@@ -20,7 +20,7 @@ import { makeTask, setupColonyNetwork, setupMetaColonyWithLockedCLNYToken, setup
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
 
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 const IReputationMiningCycle = artifacts.require("IReputationMiningCycle");
 
 contract("Colony", accounts => {
@@ -71,7 +71,8 @@ contract("Colony", accounts => {
 
     it("should emit correct Mint event when minting tokens", async () => {
       const tokenArgs = getTokenArgs();
-      const otherToken = await DSToken.new(tokenArgs[1]);
+      const otherToken = await Token.new(...tokenArgs);
+      await otherToken.unlock();
 
       await expectAllEvents(otherToken.methods["mint(uint256)"](100), ["Mint"]);
     });

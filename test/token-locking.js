@@ -17,7 +17,7 @@ chai.use(bnChai(web3.utils.BN));
 const EtherRouter = artifacts.require("EtherRouter");
 const IColonyNetwork = artifacts.require("IColonyNetwork");
 const ITokenLocking = artifacts.require("ITokenLocking");
-const DSToken = artifacts.require("DSToken");
+const Token = artifacts.require("Token");
 
 const contractLoader = new TruffleLoader({
   contractDir: path.resolve(__dirname, "..", "build", "contracts")
@@ -50,7 +50,8 @@ contract("Token Locking", addresses => {
     await colony.bootstrapColony([userAddress], [usersTokens]);
 
     const tokenArgs = getTokenArgs();
-    otherToken = await DSToken.new(tokenArgs[1]);
+    otherToken = await Token.new(...tokenArgs);
+    await otherToken.unlock();
 
     await giveUserCLNYTokensAndStake(colonyNetwork, addresses[4], DEFAULT_STAKE);
     const client = new ReputationMinerTestWrapper({
@@ -254,7 +255,8 @@ contract("Token Locking", addresses => {
       await colony.startNextRewardPayout(otherToken.address, ...colonyWideReputationProof);
 
       const tokenArgs = getTokenArgs();
-      const newToken = await DSToken.new(tokenArgs[1]);
+      const newToken = await Token.new(...tokenArgs);
+      await newToken.unlock();
       await colony.startNextRewardPayout(newToken.address, ...colonyWideReputationProof);
 
       const totalLockCount = await tokenLocking.getTotalLockCount(token.address);
