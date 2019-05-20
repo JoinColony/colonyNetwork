@@ -30,7 +30,7 @@ import {
   GLOBAL_SKILL_ID
 } from "../../helpers/constants";
 
-import { createSignatures, getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../helpers/task-review-signing";
+import { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../helpers/task-review-signing";
 
 import {
   getTokenArgs,
@@ -220,15 +220,15 @@ contract("ColonyTask", accounts => {
 
       const sigTypes = [0, 0];
       const signers = [MANAGER, WORKER];
-      // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
-      const ethersBN = ethers.utils.bigNumberify(taskId.toString());
-      const txData = await colony.contract.methods.setTaskWorkerRole(ethersBN, WORKER).encodeABI();
-      const sigsPromises = sigTypes.map((type, i) => createSignatures(colony, taskId, [signers[i]], 0, txData));
-      const sigs = await Promise.all(sigsPromises);
-      const sigV = sigs.map(sig => sig.sigV[0]);
-      const sigR = sigs.map(sig => sig.sigR[0]);
-      const sigS = sigs.map(sig => sig.sigS[0]);
-
+      const args = [taskId, WORKER];
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers,
+        sigTypes,
+        args
+      });
       await checkErrorRevert(colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 10, txData), "colony-task-role-assignment-non-zero-value");
     });
 
