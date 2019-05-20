@@ -25,7 +25,7 @@ import "./ExtensionFactory.sol";
 import "./OneTxPayment.sol";
 
 
-contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes {
+contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123. TODO Please, someone explain
   mapping (address => OneTxPayment) public deployedExtensions;	
 
   function deployExtension(address _colony) external {
