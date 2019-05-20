@@ -36,21 +36,12 @@ contract ColonyDataTypes {
   /// @param newVersion The new colony version upgraded to
   event ColonyUpgraded(uint256 oldVersion, uint256 newVersion);
 
-  /// @notice Event logged when a new user is assigned the colony funding role
-  /// @param user The newly added colony funding user address
-  event ColonyFundingRoleSet(address user, bool setTo);
-
-  /// @notice Event logged when a new user is assigned the colony administration role
-  /// @param user The newly added colony administration user address
-  event ColonyAdministrationRoleSet(address user, bool setTo);
-
-  /// @notice Event logged when a new user is assigned the colony architecture role
-  /// @param user The newly added colony architecture user address
-  event ColonyArchitectureRoleSet(address user, bool setTo);
-
-  /// @notice Event logged when a new user is assigned the colony root role
-  /// @param user The newly added colony root user address
-  event ColonyRootRoleSet(address user, bool setTo);
+  /// @notice Event logged when a user/domain/role is granted or revoked
+  /// @param user The address of the user being affected
+  /// @param domainId The damainId of the role
+  /// @param role The role being granted/revoked
+  /// @param setTo A boolean representing the action -- granted (`true`) or revoked (`false`)
+  event ColonyRoleSet(address indexed user, uint256 indexed domainId, uint8 indexed role, bool setTo);
 
   /// @notice Event logged when colony funds, either tokens or ether, has been moved between funding pots
   /// @param fromPot The source funding pot
