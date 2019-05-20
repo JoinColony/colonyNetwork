@@ -30,7 +30,7 @@ import {
   GLOBAL_SKILL_ID
 } from "../../helpers/constants";
 
-import { createSignatures, getSigsAndTransactionData, executeSignedTaskChange } from "../helpers/task-review-signing";
+import { createSignatures, getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../helpers/task-review-signing";
 
 import {
   getTokenArgs,
@@ -49,7 +49,6 @@ import {
   setupRatedTask,
   setupAssignedTask,
   setupFundedTask,
-  executeSignedRoleAssignment,
   makeTask,
   setupRandomColony,
   assignRoles

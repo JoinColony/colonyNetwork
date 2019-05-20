@@ -34,15 +34,9 @@ import {
   accommodateChallengeAndInvalidateHash
 } from "../helpers/test-helper";
 
-import {
-  giveUserCLNYTokensAndStake,
-  fundColonyWithTokens,
-  executeSignedRoleAssignment,
-  makeTask,
-  setupRandomColony
-} from "../helpers/test-data-generator";
+import { giveUserCLNYTokensAndStake, fundColonyWithTokens, makeTask, setupRandomColony } from "../helpers/test-data-generator";
 
-import { executeSignedTaskChange } from "../helpers/task-review-signing";
+import { executeSignedTaskChange, executeSignedRoleAssignment } from "../helpers/task-review-signing";
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";

@@ -19,7 +19,7 @@ import {
 } from "./constants";
 
 import { getTokenArgs, web3GetAccounts, getChildSkillIndex } from "./test-helper";
-import { getSigsAndTransactionData, executeSignedTaskChange } from "./task-review-signing";
+import { executeSignedTaskChange, executeSignedRoleAssignment } from "./task-review-signing";
 
 const { setupColonyVersionResolver, setupUpgradableTokenLocking } = require("../helpers/upgradable-contracts");
 
@@ -55,11 +55,6 @@ export async function makeTask({ colonyNetwork, colony, hash = SPECIFICATION_HAS
   const { logs } = await colony.makeTask(1, childSkillIndex, hash, domainId, skillId, dueDate, { from: manager });
   // Reading the ID out of the event triggered by our transaction will allow us to make multiple tasks in parallel in the future.
   return logs.filter(log => log.event === "TaskAdded")[0].args.taskId;
-}
-
-export async function executeSignedRoleAssignment({ colony, taskId, functionName, signers, sigTypes, args }) {
-  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args });
-  return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
 export async function assignRoles({ colony, taskId, manager, evaluator, worker }) {

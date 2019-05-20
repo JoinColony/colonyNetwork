@@ -8,6 +8,11 @@ export async function executeSignedTaskChange({ colony, taskId, functionName, si
   return colony.executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
 }
 
+export async function executeSignedRoleAssignment({ colony, taskId, functionName, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args });
+  return colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 0, txData);
+}
+
 export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
   // and https://github.com/ethereum/web3.js/issues/2077

@@ -13,8 +13,9 @@ import {
   SPECIFICATION_HASH
 } from "../../helpers/constants";
 
-import { fundColonyWithTokens, makeTask, setupRandomColony, executeSignedRoleAssignment } from "../../helpers/test-data-generator";
+import { fundColonyWithTokens, makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 import { checkErrorRevert } from "../../helpers/test-helper";
+import { executeSignedRoleAssignment } from "../../helpers/task-review-signing";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
