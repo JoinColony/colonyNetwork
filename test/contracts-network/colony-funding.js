@@ -15,6 +15,7 @@ import {
 } from "../../helpers/constants";
 
 import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
+import { executeSignedTaskChange } from "../../helpers/task-review-signing";
 
 import {
   fundColonyWithTokens,

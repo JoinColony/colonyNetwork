@@ -37,11 +37,12 @@ import {
 import {
   giveUserCLNYTokensAndStake,
   fundColonyWithTokens,
-  executeSignedTaskChange,
   executeSignedRoleAssignment,
   makeTask,
   setupRandomColony
 } from "../helpers/test-data-generator";
+
+import { executeSignedTaskChange } from "../helpers/task-review-signing";
 
 import ReputationMinerTestWrapper from "../packages/reputation-miner/test/ReputationMinerTestWrapper";
 import MaliciousReputationMinerExtraRep from "../packages/reputation-miner/test/MaliciousReputationMinerExtraRep";

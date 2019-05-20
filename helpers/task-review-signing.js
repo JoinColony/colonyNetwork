@@ -3,8 +3,14 @@ import { hashPersonalMessage, ecsign } from "ethereumjs-util";
 import fs from "fs";
 import { ethers } from "ethers";
 
+export async function executeSignedTaskChange({ colony, taskId, functionName, signers, sigTypes, args }) {
+  const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args });
+  return colony.executeTaskChange(sigV, sigR, sigS, sigTypes, 0, txData);
+}
+
 export async function getSigsAndTransactionData({ colony, taskId, functionName, signers, sigTypes, args }) {
   // We have to pass in an ethers BN because of https://github.com/ethereum/web3.js/issues/1920
+  // and https://github.com/ethereum/web3.js/issues/2077
   const ethersBNTaskId = ethers.utils.bigNumberify(taskId.toString());
   const convertedArgs = [];
   args.forEach(arg => {
@@ -33,7 +39,7 @@ export async function getSigsAndTransactionData({ colony, taskId, functionName, 
   return { sigV, sigR, sigS, txData };
 }
 
-export async function createSignatures(colony, taskId, signers, value, data) {
+async function createSignatures(colony, taskId, signers, value, data) {
   const sourceAddress = colony.address;
   const destinationAddress = colony.address;
   const nonce = await colony.getTaskChangeNonce(taskId);
