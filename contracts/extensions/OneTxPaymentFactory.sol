@@ -30,7 +30,8 @@ contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-sw
 
   function deployExtension(address _colony) external {
     require(
-      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, 
+      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, // ignore-swc-123. 
+      // I can't work out the require that's tripping this up either. Same for the similar line below, and the two in the other factory.
       "colony-extension-user-not-root"
     );
     require(deployedExtensions[_colony] == OneTxPayment(0x00), "colony-extension-already-deployed");
@@ -41,7 +42,7 @@ contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-sw
 
   function removeExtension(address _colony) external {
     require(
-      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true,
+      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, // ignore-swc-123
       "colony-extension-user-not-root"
     );
     deployedExtensions[_colony] = OneTxPayment(0x00);

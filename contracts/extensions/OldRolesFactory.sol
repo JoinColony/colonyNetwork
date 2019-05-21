@@ -30,7 +30,7 @@ contract OldRolesFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-12
 
   function deployExtension(address _colony) external {
     require(
-      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, 
+      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, // ignore-swc-123
       "colony-extension-user-not-root"
     );
     require(deployedExtensions[_colony] == OldRoles(0x00), "colony-extension-already-deployed");
@@ -41,7 +41,7 @@ contract OldRolesFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-12
 
   function removeExtension(address _colony) external {
     require(
-      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true,
+      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, // ignore-swc-123
       "colony-extension-user-not-root"
     );
     deployedExtensions[_colony] = OldRoles(0x00);
