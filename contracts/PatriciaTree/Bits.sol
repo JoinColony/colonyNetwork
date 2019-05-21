@@ -1,4 +1,4 @@
-pragma solidity 0.5.6; // ignore-swc-101 TODO: Now *this* feels like a bug in MythX. Only shows up if analysing PatriciaTree.sol
+pragma solidity 0.5.8; // ignore-swc-101 TODO: Now *this* feels like a bug in MythX. Only shows up if analysing PatriciaTree.sol
 pragma experimental "ABIEncoderV2";
 
 
