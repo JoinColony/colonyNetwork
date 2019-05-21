@@ -64,7 +64,7 @@
     "@babel/polyfill": "^7.4.4",
     "@babel/preset-env": "^7.4.4",
     "@babel/register": "^7.4.4",
-    "@colony/colony-js-contract-loader-fs": "1.10.0",
+    "@colony/colony-js-contract-loader-fs": "1.12.0",
     "@colony/eslint-config-colony": "7.0.0",
     "async-request": "^1.2.0",
     "babel-eslint": "^10.0.1",
