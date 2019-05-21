@@ -14,7 +14,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@colony/colony-js-contract-loader-fs": "1.10.0",
+    "@colony/colony-js-contract-loader-fs": "1.12.0",
     "bn.js": "^4.11.8",
     "ethers": "^4.0.26",
     "express": "^4.16.3",
