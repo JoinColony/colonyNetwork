@@ -28,7 +28,7 @@
   <script src="https://d3js.org/d3.v4.min.js"></script>
   <script>
     // Set the dimensions and margins of the diagram
-    var margin = {top: 30, right: 90, bottom: 30, left: 30},
+    var margin = {top: 30, right: 200, bottom: 30, left: 30},
         width = 1400 - margin.left - margin.right,
         height = 600 - margin.top - margin.bottom;
 
@@ -54,37 +54,21 @@
       if (error) throw error;
 
       const reputations = JSON.parse(res.response)
-        .map(rep => { return { id: rep.key, value: rep.decimalValue } })
+        .map(rep => { return { id: rep.key, value: rep.decimalValue } });
+
+      if (!reputations.length) {
+        console.log("No reputations found!");
+        return;
+      }
 
       keyLength = reputations[0].id.length;
-
-      const searchTerms = new URLSearchParams(window.location.search);
-      const userAddress = searchTerms.get("userAddress")
-      const colonyAddress = searchTerms.get("colonyAddress")
 
       //////////////
       // Patricia Tree Rendering
 
-      let treeRoot = newNode("0x", 0);
-      reputations.forEach(rep => { treeRoot = insert(treeRoot, newNode(rep.id, rep.value)); });
+      const treeNodes = reputations.map(rep => newNode(rep.id, rep.value));
+      const treeRoot = treeNodes.reduce(insert, newNode("0x", null));
       root = d3.hierarchy(finalize(treeRoot));
-
-      //////////////
-      // Full Tree Rendering
-
-      // const parentSet = new Set();
-      // for (let i = 0; i < reputations[0].id.length; i++) {
-      //   reputations.forEach(function(d) { parentSet.add(d.id.substring(0, d.id.length - i)); });
-      // }
-      // const parents = Array.from(parentSet).map(function(d) { return { id: d }});
-
-      // const stratify = d3.stratify()
-      //     .id(function(d) { return d.id + (d.value ? "~" : ""); })
-      //     .parentId(function(d) { return d.id.substring(0, d.id.length - (d.value ? 0 : 1)); });
-
-      // // Assigns parent, children, height, depth
-      // root = stratify(reputations.concat(parents))
-      //     .sort(function(a, b) { return a.height - b.height || a.id.localeCompare(b.id); });
 
       root.x0 = height / 2;
       root.y0 = 0;
@@ -112,7 +96,7 @@
 
       // We need to split the current node into two branches
       } else if (rootPrefixLength < rootNode.name.length) {
-        const newRootNode = newNode(rootNode.name.slice(0, rootPrefixLength), 0);
+        const newRootNode = newNode(rootNode.name.slice(0, rootPrefixLength), null);
 
         newRootNode.prefixLength = rootNode.prefixLength;
         rootNode.prefixLength = rootPrefixLength;
@@ -156,7 +140,7 @@
       // Create leaf nodes
       if (!node.children.length) {
         node.children.push({ name: node.value, value: node.value, prefixLength: keyLength });
-        node.value = 0;
+        node.value = null;
       }
 
       return node
@@ -215,7 +199,7 @@
           .attr("y", -15)
           .attr("text-anchor", "start" )
           // .attr("text-anchor", function (d) { return d.data.value ? "end" : "start" })
-          .text(function(d) { return d.data.value / 10 ** 18 || d.data.name.slice(d.data.prefixLength); });
+          .text(function(d) { return d.data.value !== null ? d.data.value : d.data.name.slice(d.data.prefixLength); });
           // .text(function(d) {
             // return d.id.indexOf("~") > 0 ? d.data.value / 10 ** 18 : d.id.substring(d.id.length - 1)
           // })

@@ -15,19 +15,21 @@
     <div id="app">
       <h2>Welome to RepMinCycViz!</h2>
       <select v-model="selected">
-        <option>Active Cycle</option>
-        <option>Inactive Cycle</option>
+        <option value="active">Active Cycle</option>
+        <option value="inactive">Inactive Cycle</option>
       </select>
 
       <p>Cycle Address: {{ cycleAddress }}  </p>
+      <p>Window Open Timestamp: {{ reputationMiningWindowOpenTimestamp }} | Remaining: {{ timeRemaining }} ({{ Math.round(timeRemaining / 60) }} min)</p>
 
       <h3>Reputation Updates</h3>
       <p>Num Log Entries: {{ numEntries }}</p>
       <ol>
         <li class="logEntry" v-for="logEntry in logEntries">{{ parseLogEntry(logEntry) }}</li>
       </ol>
+
       <h3>Mining Disputes</h3>
-      <p>Num Submitted Hashes: {{ numSubmittedHashes }} | Num Invalidated Hashes: {{ numInvalidatedHashes }}</p>
+      <p>Num Unique Submitted Hashes: {{ nUniqueSubmittedHashes }} | Num Invalidated Hashes: {{ nInvalidatedHashes }}</p>
     </div>
 
     <!-- Vue App -->
@@ -42,24 +44,34 @@
           cycleAddress: '',
           selected: '',
           miningCycle: {},
-          numEntries: 0,
+          numEntries: null,
           logEntries: [],
-          numSubmittedHashes: 0,
-          numInvalidatedHashes: 0,
+          miningWindowDuration: null,
+          reputationMiningWindowOpenTimestamp: null,
+          nUniqueSubmittedHashes: null,
+          nInvalidatedHashes: null,
         },
         methods: {
           updateMiningCycle: function () {
-            this.cycleAddress = this.cycleAddresses[this.selected.split(" ")[0].toLowerCase()];
+            this.cycleAddress = this.cycleAddresses[this.selected];
             this.miningCycle = new ethers.Contract(this.cycleAddress, this.cycleContractAbi, this.provider);
 
             this.miningCycle.getReputationUpdateLogLength()
               .then((numEntries) => { this.updateReputationLogEntries(numEntries.toNumber()) })
 
+            this.miningCycle.getMiningWindowDuration()
+              .then((miningWindowDuration) => { this.miningWindowDuration = miningWindowDuration.toNumber() })
+
+            this.miningCycle.getReputationMiningWindowOpenTimestamp()
+              .then((reputationMiningWindowOpenTimestamp) => {
+                this.reputationMiningWindowOpenTimestamp = reputationMiningWindowOpenTimestamp.toNumber()
+              });
+
             this.miningCycle.getNUniqueSubmittedHashes()
-              .then((numSubmittedHashes) => { this.numSubmittedHashes = numSubmittedHashes })
+              .then((nUniqueSubmittedHashes) => { this.nUniqueSubmittedHashes = nUniqueSubmittedHashes })
 
             this.miningCycle.getNInvalidatedHashes()
-              .then((numInvalidateHashes) => { this.numInvalidateHashes = numInvalidateHashes })
+              .then((nInvalidatedHashes) => { this.nInvalidatedHashes = nInvalidatedHashes })
           },
           updateReputationLogEntries: function (numEntries) {
             this.numEntries = numEntries;
@@ -69,10 +81,10 @@
           },
           parseLogEntry: function (logEntry) {
             return {
-              user: logEntry.user.slice(0, 8),
+              user: logEntry.user,
               amount: ethers.utils.formatEther(logEntry.amount._hex),
               skillId: parseInt(logEntry.skillId._hex),
-              colony: logEntry.colony.slice(0, 8),
+              colony: logEntry.colony,
               nUpdates: parseInt(logEntry.nUpdates._hex),
               nPreviousUpdates: parseInt(logEntry.nPreviousUpdates._hex),
             }
@@ -80,6 +92,13 @@
         },
         watch: {
           selected: function () { this.updateMiningCycle() }
+        },
+        computed: {
+          timeRemaining: function () {
+            const now = parseInt((new Date).getTime() / 1000);
+            const timeRemaining = (this.reputationMiningWindowOpenTimestamp + this.miningWindowDuration) - now;
+            return  Math.max(timeRemaining, 0);
+          }
         },
         created () {
           axios.get('http://localhost:3000/repCycleContractDef')
@@ -102,10 +121,6 @@
     </script>
 
     <style type="text/css">
-      html * {
-        font-family: Comic Sans MS, sans-serif;
-      }
-
       .logEntry {
         font-family: monospace;
       }
