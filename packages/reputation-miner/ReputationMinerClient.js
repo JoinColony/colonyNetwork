@@ -40,11 +40,12 @@ class ReputationMinerClient {
 
     // Serve data for visualizers
     this._app.get("/reputations", async (req, res) => {
+      const rootHash = await this._miner.getRootHash();
       const reputations = Object.keys(this._miner.reputations).map(key => {
         const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
         return { key, decimalValue }
       })
-      return res.status(200).send(reputations);
+      return res.status(200).send({ rootHash, reputations });
     });
 
     this._app.get("/network", async (req, res) => {

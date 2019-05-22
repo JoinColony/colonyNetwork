@@ -25,17 +25,20 @@
 </style>
 
 <body>
+  <h4 id="title"></h4>
+  <svg id="graph"></svg>
+
   <script src="https://d3js.org/d3.v4.min.js"></script>
   <script>
     // Set the dimensions and margins of the diagram
-    var margin = {top: 30, right: 200, bottom: 30, left: 30},
+    var margin = {top: 30, right: 182, bottom: 30, left: 8},
         width = 1400 - margin.left - margin.right,
         height = 600 - margin.top - margin.bottom;
 
     // append the svg object to the body of the page
     // appends a 'group' element to 'svg'
     // moves the 'group' element to the top left margin
-    var svg = d3.select("body").append("svg")
+    var svg = d3.select("#graph")
         .attr("width", width + margin.right + margin.left)
         .attr("height", height + margin.top + margin.bottom)
       .append("g")
@@ -53,20 +56,21 @@
     d3.request(`http://localhost:3000/reputations`, function(error, res) {
       if (error) throw error;
 
-      const reputations = JSON.parse(res.response)
-        .map(rep => { return { id: rep.key, value: rep.decimalValue } });
+      const { rootHash, reputations } = JSON.parse(res.response);
+
+      d3.select("#title").text(`Root Hash: ${rootHash}`);
 
       if (!reputations.length) {
-        console.log("No reputations found!");
+        d3.select("body").append("p").text("No reputations found!")
         return;
       }
 
-      keyLength = reputations[0].id.length;
+      keyLength = reputations[0].key.length;
 
       //////////////
       // Patricia Tree Rendering
 
-      const treeNodes = reputations.map(rep => newNode(rep.id, rep.value));
+      const treeNodes = reputations.map(rep => newNode(rep.key, rep.decimalValue));
       const treeRoot = treeNodes.reduce(insert, newNode("0x", null));
       root = d3.hierarchy(finalize(treeRoot));
 
