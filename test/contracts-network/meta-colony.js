@@ -4,11 +4,12 @@ import bnChai from "bn-chai";
 import { soliditySha3 } from "web3-utils";
 import { INITIAL_FUNDING, DELIVERABLE_HASH, GLOBAL_SKILL_ID } from "../../helpers/constants";
 import { checkErrorRevert, removeSubdomainLimit } from "../../helpers/test-helper";
+import { executeSignedTaskChange } from "../../helpers/task-review-signing";
+
 import {
   fundColonyWithTokens,
   setupFundedTask,
   setupFinalizedTask,
-  executeSignedTaskChange,
   makeTask,
   setupColonyNetwork,
   setupMetaColonyWithLockedCLNYToken,

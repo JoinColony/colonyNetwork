@@ -15,15 +15,8 @@ import {
 } from "../../helpers/constants";
 
 import { getTokenArgs, checkErrorRevert, web3GetBalance } from "../../helpers/test-helper";
-
-import {
-  fundColonyWithTokens,
-  setupFinalizedTask,
-  executeSignedTaskChange,
-  executeSignedRoleAssignment,
-  makeTask,
-  setupRandomColony
-} from "../../helpers/test-data-generator";
+import { executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
+import { fundColonyWithTokens, setupFinalizedTask, makeTask, setupRandomColony } from "../../helpers/test-data-generator";
 
 const { expect } = chai;
 chai.use(bnChai(web3.utils.BN));
