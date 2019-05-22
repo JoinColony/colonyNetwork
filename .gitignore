@@ -17,3 +17,4 @@ ganache-accounts.json
 yarn-error.log
 reputations.json
 reputationStates.sqlite
+truffle-security-output.json
