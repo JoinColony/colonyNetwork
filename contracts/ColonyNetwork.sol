@@ -134,7 +134,7 @@ contract ColonyNetwork is ColonyNetworkStorage {
     require(_tokenAddress != address(0x0), "colony-token-invalid-address");
     EtherRouter etherRouter = new EtherRouter();
     IColony colony = IColony(address(etherRouter));
-    address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion];
+    address resolverForLatestColonyVersion = colonyVersionResolver[currentColonyVersion]; // ignore-swc-107
     etherRouter.setResolver(resolverForLatestColonyVersion);
 
     // Creating new instance of colony's authority

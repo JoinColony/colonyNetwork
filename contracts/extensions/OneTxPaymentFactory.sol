@@ -25,7 +25,7 @@ import "./ExtensionFactory.sol";
 import "./OneTxPayment.sol";
 
 
-contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123. TODO Please, someone explain
+contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123
   mapping (address => OneTxPayment) public deployedExtensions;	
 
   function deployExtension(address _colony) external {
@@ -37,7 +37,7 @@ contract OneTxPaymentFactory is ExtensionFactory, ColonyDataTypes { // ignore-sw
   }
 
   function removeExtension(address _colony) external {
-    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");
+    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root"); // ignore-swc-123
     deployedExtensions[_colony] = OneTxPayment(0x00);
     emit ExtensionRemoved("OneTxPayment", _colony);
   }
