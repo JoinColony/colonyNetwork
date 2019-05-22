@@ -38,7 +38,7 @@ contract TaskSkillEditing is ColonyStorage {
   function removeTaskSkill(uint256 _taskId, uint256 _skillIndex) 
   public
   {
-    tasks[_taskId].skills[_skillIndex] = 0; // ignore-swc-110
+    require(tasks[_taskId].skills.length > _skillIndex, "colony-task-skill-edit-of-bounds");
+    tasks[_taskId].skills[_skillIndex] = 0;
   }
-
 }
