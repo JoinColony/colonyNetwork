@@ -80,7 +80,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
   /// @notice A modifier that checks if the proposed entry is within the current allowable submission window
   /// @dev A submission will only be accepted from a reputation miner if `keccak256(address, N, hash) < target`
-  /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1 after an hour
+  /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1.
   modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
     // Check the ticket is a winning one.
     // All entries are acceptable if the hour-long window is closed, so skip this check if that's the case

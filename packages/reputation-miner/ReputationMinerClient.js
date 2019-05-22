@@ -1,5 +1,6 @@
 const ethers = require("ethers");
 const express = require("express");
+const path = require('path');
 
 const ReputationMiner = require("./ReputationMiner");
 
@@ -18,6 +19,50 @@ class ReputationMinerClient {
     }
 
     this._app = express();
+
+    this._app.use(function(req, res, next) {
+      res.header("Access-Control-Allow-Origin", "*");
+      next();
+    });
+
+    this._app.get("/", async (req, res) => {
+      return res.status(200).sendFile(path.join(__dirname, 'viz/index.html'));
+    });
+
+    // Serve visualizers
+    this._app.get("/repTree", async (req, res) => {
+      return res.status(200).sendFile(path.join(__dirname, 'viz/repTree.html'));
+    });
+
+    this._app.get("/repCycle", async (req, res) => {
+      return res.status(200).sendFile(path.join(__dirname, 'viz/repCycle.html'));
+    });
+
+    // Serve data for visualizers
+    this._app.get("/reputations", async (req, res) => {
+      const rootHash = await this._miner.getRootHash();
+      const reputations = Object.keys(this._miner.reputations).map(key => {
+        const decimalValue = ethers.utils.bigNumberify(`0x${this._miner.reputations[key].slice(2, 66)}`, 16).toString();
+        return { key, decimalValue }
+      })
+      return res.status(200).send({ rootHash, reputations });
+    });
+
+    this._app.get("/network", async (req, res) => {
+      return res.status(200).send(this._miner.realProvider._network.name); // eslint-disable-line no-underscore-dangle
+    });
+
+    this._app.get("/repCycleContractDef", async (req, res) => {
+      return res.status(200).send(this._miner.repCycleContractDef);
+    });
+
+    this._app.get("/repCycleAddresses", async (req, res) => {
+      const activeAddr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
+      const inactiveAddr = await this._miner.colonyNetwork.getReputationMiningCycle(false);
+      return res.status(200).send({ active: activeAddr, inactive: inactiveAddr });
+    });
+
+    // Query specific reputation values
     this._app.get("/:rootHash/:colonyAddress/:skillId/:userAddress", async (req, res) => {
       const key = ReputationMiner.getKey(req.params.colonyAddress, req.params.skillId, req.params.userAddress);
       const currentHash = await this._miner.getRootHash();
@@ -79,7 +124,7 @@ class ReputationMinerClient {
     // TODO: Check how much of this does actually belong into the Miner itself
     // One could introduce lifecycle hooks in the miner to avoid code duplication
 
-    // Check if it's been an hour since the window opened
+    // Check if the mining cycle has elapsed
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
 
@@ -88,7 +133,7 @@ class ReputationMinerClient {
 
     const block = await this._miner.realProvider.getBlock("latest");
     const now = block.timestamp;
-    if (now - windowOpened > 86400) {
+    if (now - windowOpened >= this._miner.getMiningCycleDuration()) {
       console.log("⏰ Looks like it's time to submit an update");
       // If so, process the log
       await this._miner.addLogContentsToReputationTree();

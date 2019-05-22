@@ -27,7 +27,7 @@ Reputation within a specific colony can only be earned and lost by completing ta
 ### Reputation Root Hashes
 Using a [Patricia Tree](https://github.com/ethereum/wiki/wiki/Patricia-Tree), all updates to the global state of reputation are maintained on-chain with a single "Reputation Root Hash".
 
-The Reputation Root Hash is effectively a fingerprint for the network state (of reputation). It is calculated off-chain, but it represents the collection of all reputation-updating events that have occurred on the network, and even a single discrepancy in the complete history of reputational updates will result in a different Root Hash.  
+The Reputation Root Hash is effectively a fingerprint for the network state (of reputation). It is calculated off-chain, but it represents the collection of all reputation-updating events that have occurred on the network, and even a single discrepancy in the complete history of reputational updates will result in a different Root Hash.
 
 
 ## The Reputation Mining Cycle
@@ -58,6 +58,12 @@ Both miners must provide such a justification to the network for each historical
 Whichever miner is found to have performed the calculation incorrectly is punished by losing some of their CLNY stake.
 
 ### Acceptance
-When a new Root Hash is accepted by the network, its corresponding Reputation Update Log is deleted from on-chain memory.  
+When a new Root Hash is accepted by the network, its corresponding Reputation Update Log is deleted from on-chain memory.
 
 All reputation events that occurred during the current cycle are 'frozen' as the new Reputation Update Log to be used by miners in the next cycle.
+
+## The Reputation Mining Client
+
+### Visualizations
+
+The reputation mining client comes with a set of built-in visualizers to make it easier to view reputation states and to see the current state of the mining process. Once a mining client is running and connected to a network, navigate to the client's address in a browser (i.e. `http://localhost:3000/`) to access the available visualization tools.

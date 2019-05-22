@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Colony Mining Cycle Visualizer</title>
+  </head>
+  <body>
+
+    <!-- Load Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/ethers@4.0.27/dist/ethers.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <!-- Page HTML -->
+    <div id="app">
+      <h2>Welome to RepMinCycViz!</h2>
+      <select v-model="selected">
+        <option value="active">Active Cycle</option>
+        <option value="inactive">Inactive Cycle</option>
+      </select>
+
+      <p>Cycle Address: {{ cycleAddress }}  </p>
+      <p>Window Open Timestamp: {{ reputationMiningWindowOpenTimestamp }} | Remaining: {{ timeRemaining }} ({{ Math.round(timeRemaining / 60) }} min)</p>
+
+      <h3>Reputation Updates</h3>
+      <p>Num Log Entries: {{ numEntries }}</p>
+      <ol>
+        <li class="logEntry" v-for="logEntry in logEntries">{{ parseLogEntry(logEntry) }}</li>
+      </ol>
+
+      <h3>Mining Disputes</h3>
+      <p>Num Unique Submitted Hashes: {{ nUniqueSubmittedHashes }} | Num Invalidated Hashes: {{ nInvalidatedHashes }}</p>
+    </div>
+
+    <!-- Vue App -->
+    <script type="text/javascript">
+
+      new Vue({
+        el: '#app',
+        data: {
+          provider: {},
+          cycleContractAbi: '',
+          cycleAddresses: {},
+          cycleAddress: '',
+          selected: '',
+          miningCycle: {},
+          numEntries: null,
+          logEntries: [],
+          miningWindowDuration: null,
+          reputationMiningWindowOpenTimestamp: null,
+          nUniqueSubmittedHashes: null,
+          nInvalidatedHashes: null,
+        },
+        methods: {
+          updateMiningCycle: function () {
+            this.cycleAddress = this.cycleAddresses[this.selected];
+            this.miningCycle = new ethers.Contract(this.cycleAddress, this.cycleContractAbi, this.provider);
+
+            this.miningCycle.getReputationUpdateLogLength()
+              .then((numEntries) => { this.updateReputationLogEntries(numEntries.toNumber()) })
+
+            this.miningCycle.getMiningWindowDuration()
+              .then((miningWindowDuration) => { this.miningWindowDuration = miningWindowDuration.toNumber() })
+
+            this.miningCycle.getReputationMiningWindowOpenTimestamp()
+              .then((reputationMiningWindowOpenTimestamp) => {
+                this.reputationMiningWindowOpenTimestamp = reputationMiningWindowOpenTimestamp.toNumber()
+              });
+
+            this.miningCycle.getNUniqueSubmittedHashes()
+              .then((nUniqueSubmittedHashes) => { this.nUniqueSubmittedHashes = nUniqueSubmittedHashes })
+
+            this.miningCycle.getNInvalidatedHashes()
+              .then((nInvalidatedHashes) => { this.nInvalidatedHashes = nInvalidatedHashes })
+          },
+          updateReputationLogEntries: function (numEntries) {
+            this.numEntries = numEntries;
+            Promise.all([...Array(numEntries).keys()].map(i => this.miningCycle.getReputationUpdateLogEntry(i)))
+              .then((logEntries) => { this.logEntries = logEntries })
+
+          },
+          parseLogEntry: function (logEntry) {
+            return {
+              user: logEntry.user,
+              amount: ethers.utils.formatEther(logEntry.amount._hex),
+              skillId: parseInt(logEntry.skillId._hex),
+              colony: logEntry.colony,
+              nUpdates: parseInt(logEntry.nUpdates._hex),
+              nPreviousUpdates: parseInt(logEntry.nPreviousUpdates._hex),
+            }
+          },
+        },
+        watch: {
+          selected: function () { this.updateMiningCycle() }
+        },
+        computed: {
+          timeRemaining: function () {
+            const now = parseInt((new Date).getTime() / 1000);
+            const timeRemaining = (this.reputationMiningWindowOpenTimestamp + this.miningWindowDuration) - now;
+            return  Math.max(timeRemaining, 0);
+          }
+        },
+        created () {
+          axios.get('http://localhost:3000/repCycleContractDef')
+            .then((res) => { this.cycleContractAbi = res.data.abi });
+
+          axios.get('http://localhost:3000/repCycleAddresses')
+            .then((res) => { this.cycleAddresses = res.data; });
+
+          axios.get('http://localhost:3000/network')
+            .then((res) => {
+              if (res.data === 'unknown') {
+                this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+              } else {
+                this.provider = new ethers.providers.InfuraProvider(res.data);
+              }
+            });
+        }
+      })
+
+    </script>
+
+    <style type="text/css">
+      .logEntry {
+        font-family: monospace;
+      }
+    </style>
+
+  </body>
+</html>
