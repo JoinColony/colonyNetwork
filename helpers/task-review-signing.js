@@ -1,7 +1,8 @@
-import { soliditySha3, padLeft } from "web3-utils";
+import { soliditySha3, padLeft, isBN } from "web3-utils";
 import { hashPersonalMessage, ecsign } from "ethereumjs-util";
 import fs from "fs";
 import { ethers } from "ethers";
+import { BigNumber } from "bignumber.js";
 
 export async function executeSignedTaskChange({ colony, taskId, functionName, signers, privKeys, sigTypes, args }) {
   const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({ colony, taskId, functionName, signers, privKeys, sigTypes, args });
@@ -22,7 +23,8 @@ export async function getSigsAndTransactionData({ colony, taskId, functionName, 
     if (Number.isInteger(arg)) {
       const convertedArg = ethers.utils.bigNumberify(arg);
       convertedArgs.push(convertedArg);
-    } else if (web3.utils.isBN(arg) || web3.utils.isBigNumber(arg)) {
+    } else if (isBN(arg) || BigNumber.isBigNumber(arg)) {
+      // Can use isBigNumber from utils once https://github.com/ethereum/web3.js/issues/2835 sorted
       const convertedArg = ethers.utils.bigNumberify(arg.toString());
       convertedArgs.push(convertedArg);
     } else {

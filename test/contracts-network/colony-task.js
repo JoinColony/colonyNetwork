@@ -30,7 +30,7 @@ import {
   GLOBAL_SKILL_ID
 } from "../../helpers/constants";
 
-import { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../helpers/task-review-signing";
+import { getSigsAndTransactionData, executeSignedTaskChange, executeSignedRoleAssignment } from "../../helpers/task-review-signing";
 
 import {
   getTokenArgs,
