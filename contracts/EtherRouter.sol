@@ -52,10 +52,11 @@ contract EtherRouter is DSAuth {
       if eq(size, 0) { revert(0,0) }
 	
       calldatacopy(mload(0x40), 0, calldatasize)
-      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-112 - this is rather the point!
+      let result := delegatecall(gas, destination, mload(0x40), calldatasize, mload(0x40), 0) // ignore-swc-112 calls are only to trusted contracts 
+      // as their addresses are controlled by the Resolver which we trust
       returndatacopy(mload(0x40), 0, returndatasize)
       switch result
-      case 1 { return(mload(0x40), returndatasize) } // ignore-swc-113 - though I'm not actually sure what it's saying here?
+      case 1 { return(mload(0x40), returndatasize) } // ignore-swc-113
       default { revert(mload(0x40), returndatasize) }
     }
   }
