@@ -729,6 +729,30 @@ Set the resolver to be used by new instances of ReputationMiningCycle
 
 
 
+### `setReplacementReputationUpdateLogEntry`
+
+
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|_reputationMiningCycle|address|
+|_id|uint256|
+|_user|address|
+|_amount|int|
+|_skillId|uint256|
+|_colony|address|
+|_nUpdates|uint128|
+|_nPreviousUpdates|uint128|
+
+
+
+
+
 ### `setReputationRootHash`
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.

@@ -81,7 +81,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
     while(!contractFileArray[noticeLineIndex].includes( '@notice ')) {
       if (methodLineIndex - maxLines === noticeLineIndex) {
         noticeLineIndex = 0;
-        return;
+        break;
       }
       noticeLineIndex -= 1;
     }
@@ -99,7 +99,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       while (paramLineIndex && params.length !== method.parameters.parameters.length) {
         if (noticeLineIndex + maxLines === paramLineIndex) {
           paramLineIndex = 0;
-          return;
+          break;
         }
         if (contractFileArray[paramLineIndex].includes(' @param ')) {
           params.push(contractFileArray[paramLineIndex].split(' @param ')[1]);
@@ -116,7 +116,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       while (returnParamLineIndex && returnParams.length !== method.returnParameters.parameters.length) {
         if (noticeLineIndex + maxLines === returnParamLineIndex) {
           returnParamLineIndex = 0;
-          return;
+          break;
         }
         if (contractFileArray[returnParamLineIndex].includes(' @return ')) {
           returnParams.push(contractFileArray[returnParamLineIndex].split(' @return ')[1]);
@@ -164,7 +164,7 @@ function printMethods(methods) {
 
 ### \`${method.name}\`
 
-${method.natspec.notice}
+${method.natspec.notice ? method.natspec.notice : ''}
 
 ${method.parameters && method.parameters.parameters.length ? `
 
@@ -183,7 +183,8 @@ ${method.returnParameters && method.returnParameters.parameters.length ? `
 }
 
 function printParams(params, natspecParams) {
-  if (params && params.length) return `
+  if (params.length) {
+    return `
 |Name|Type|Description|
 |---|---|---|
 ${params
@@ -191,9 +192,11 @@ ${params
     const noName = '_undefined_';
     const name = param.name ? param.name : noName;
     const type = param.typeName.name;
-    const valid = natspecParams[index].substring(0, name.length) === name
+    const valid = natspecParams[index] && natspecParams[index].substring(0, name.length) === name
     const description = valid ? natspecParams[index].split(name, 2)[1] : '';
     return `|${name}|${type || 'memory' }|${description}`
   })
   .join('\n')}`;
+  }
+  return '';
 }

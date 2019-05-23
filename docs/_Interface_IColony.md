@@ -146,6 +146,28 @@ Claim the payout in `_token` denomination for payment `_id`. Here the network re
 
 
 
+### `claimRewardPayout`
+
+
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|_payoutId|uint256|
+|_squareRoots|memory|
+|key|bytes|
+|value|bytes|
+|branchMask|uint256|
+|siblings|memory|
+
+
+
+
+
 ### `claimTaskPayout`
 
 Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
@@ -177,6 +199,28 @@ Mark a task as complete after the due date has passed.
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256| Id of the task
+
+
+
+
+
+### `executeTaskChange`
+
+
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|_sigV|memory|
+|_sigR|memory|
+|_sigS|memory|
+|_mode|memory|
+|_value|uint256|
+|_data|bytes|
 
 
 
@@ -539,6 +583,37 @@ Get useful information about specific reward payout
 
 
 
+### `getTask`
+
+Get the number of tasks in the colony
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|_id|uint256| Id of the task
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|specificationHash|bytes32|
+|deliverableHash|bytes32|
+|status|memory|
+|dueDate|uint256|
+|fundingPotId|uint256|
+|completionTimestamp|uint256|
+|domainId|uint256|
+|skillIds|memory|
+
+
+
 ### `getTaskChangeNonce`
 
 Starts from 0 and is incremented on every co-reviewed task change via `executeTaskChange` call
@@ -695,6 +770,32 @@ Get the colony token
 |Name|Type|Description|
 |---|---|---|
 |tokenAddress|address| Address of the token contract
+
+
+
+### `hasUserRole`
+
+Check whether a given user has a given role for the colony.
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|_user|address| The user whose role we want to check
+|_domainId|uint256| The domain where we want to check for the role
+|_role|memory| The role we want to check for
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|hasRole|bool|
 
 
 

@@ -32,6 +32,30 @@ Add a new entry to the reputation update log
 
 
 
+### `challengeRoundComplete`
+
+Get whether a challenge round is complete
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|round|uint256|Number The 
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|complete|bool|
+
+
+
 ### `confirmBinarySearchResult`
 
 This function ensures that the intermediate hashes saved are correct.
@@ -53,6 +77,28 @@ This function ensures that the intermediate hashes saved are correct.
 
 
 
+### `confirmJustificationRootHash`
+
+
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|round|uint256|
+|index|uint256|
+|branchMask1|uint|
+|siblings1|memory|
+|branchMask2|uint|
+|siblings2|memory|
+
+
+
+
+
 ### `confirmNewHash`
 
 Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
@@ -67,6 +113,24 @@ Confirm a new reputation hash. The hash in question is either the only one that 
 |roundNumber|uint256| The round number that the hash being confirmed is in as the only contendender. If only one hash was submitted, then this is zero.
 
 
+
+
+
+### `getDecayConstant`
+
+Get the reputation decay constant.
+
+
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|numerator|uint256|
+|denominator|uint256|
 
 
 
@@ -120,6 +184,57 @@ Get the hash for the corresponding entry.
 
 
 
+### `getMiningWindowDuration`
+
+Get the length of the mining window in seconds
+
+
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|miningWindowDuration|uint256|
+
+
+
+### `getMinStake`
+
+Get the minimum stake of CLNY required to mine
+
+
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|minStake|uint256|
+
+
+
+### `getNInvalidatedHashes`
+
+Get the number of hashes that have been invalidated this mining cycle
+
+
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|nInvalidatedHashes|uint256|
+
+
+
 ### `getNSubmissionsForHash`
 
 Get the number of submissions miners made of a particular hash / nNodes / jrh combination
@@ -146,6 +261,23 @@ Get the number of submissions miners made of a particular hash / nNodes / jrh co
 
 
 
+### `getNUniqueSubmittedHashes`
+
+Get the number of unique hashes that have been submitted this mining cycle
+
+
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|nUniqueSubmittedHashes|uint256|
+
+
+
 ### `getReputationHashSubmission`
 
 The getter for the hashSubmissions mapping, which keeps track of submissions by user.
@@ -167,6 +299,23 @@ The getter for the hashSubmissions mapping, which keeps track of submissions by 
 |Name|Type|Description|
 |---|---|---|
 |submission|memory| the Submission struct for the 
+
+
+
+### `getReputationMiningWindowOpenTimestamp`
+
+Get the timestamp that the current reputation mining window opened
+
+
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|timestamp|uint256|
 
 
 
@@ -208,6 +357,51 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 |Name|Type|Description|
 |---|---|---|
 |nUpdates|uint128|
+
+
+
+### `getSubmissionUser`
+
+Get the address that made a particular submission
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|hash|bytes32| The 
+|nNodes|uint256| The number of nodes that was submitted
+|jrh|bytes32| The JRH of that was submitted
+|index|uint256| The 
+
+
+
+**Return Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|user|address|
+
+
+
+### `initialise`
+
+Initialise this reputation mining cycle.
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|tokenLocking|address|
+|clnyToken|address|
+
+
 
 
 
@@ -280,6 +474,52 @@ Respond to a binary search step, to eventually discover where two submitted hash
 |jhIntermediateValue|bytes| The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
 |branchMask|uint| The 
 |siblings|memory| The 
+
+
+
+
+
+### `respondToChallenge`
+
+
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|u|memory|
+|b32|memory|
+|reputationSiblings|memory|
+|agreeStateSiblings|memory|
+|disagreeStateSiblings|memory|
+|previousNewReputationSiblings|memory|
+|userOriginReputationSiblings|memory|
+|childReputationSiblings|memory|
+|adjacentReputationSiblings|memory|
+
+
+
+
+
+### `rewardStakersWithReputation`
+
+Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
+
+
+
+**Parameters**
+
+
+|Name|Type|Description|
+|---|---|---|
+|stakers|memory| The array of 
+|weights|memory| The array of 
+|metaColonyAddress|address| The address of the meta colony, which the special mining skill is earned in
+|reward|uint256| The amount of reputation to be 
+|miningSkillId|uint256|
 
 
 
