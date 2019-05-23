@@ -123,6 +123,8 @@ class ReputationMinerClient {
       await this._miner.sync(startingBlock);
     }
 
+    this.gasBlockAverages = [];
+
     console.log("🏁 Initialised");
     if (this._auto) {
       // Initial call to process the existing log from the cycle we're currently in
@@ -162,6 +164,28 @@ class ReputationMinerClient {
     }
   }
 
+  async updateGasEstimate(block) {
+    // Get the average from this block
+    const gasPriceSum = block.transactions
+    .map(tx => ethers.utils.bigNumberify(tx.gasPrice))
+    .reduce((result, gasPrice) => {
+      return result.add(gasPrice)
+    }, new ethers.utils.bigNumberify(0));
+
+    let average = ethers.utils.bigNumberify(20000000000);
+    if (block.transactions.length > 0){
+      average = gasPriceSum.div(block.transactions.length)
+    }
+    this.gasBlockAverages.push(average);
+
+    if (this.gasBlockAverages.length > 10) {
+      this.gasBlockAverages.shift()
+    }
+
+    this._miner.gasPrice = ethers.utils.hexlify(this.gasBlockAverages.reduce((total, sum) => { return total.add(sum) }, ethers.utils.bigNumberify(0)).div(this.gasBlockAverages.length));
+    // console.log("Average gas price from last 10 blocks: ", this._miner.gasPrice);
+  }
+
   /**
    * Navigate through the mining process logic used when the client is in auto mode.
    * Up to 12 submissions of our current proposed Hash/nNodes/JRH are made at the earliest block possible
@@ -173,10 +197,11 @@ class ReputationMinerClient {
     if (lockedForBlockProcessing || lockedForLogProcessing) {
       return;
     }
+    lockedForBlockProcessing = true;
     // DO NOT PUT ANY AWAITS ABOVE THIS LINE OR YOU WILL GET RACE CONDITIONS
 
-    lockedForBlockProcessing = true;
-    const block = await this._miner.realProvider.getBlock(blockNumber);
+    const block = await this._miner.realProvider.getBlock(blockNumber, true);
+    await this.updateGasEstimate(block);
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
 
@@ -395,7 +420,9 @@ class ReputationMinerClient {
     // This won't be valid anyway if we're not confirming immediately in the next transaction
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: 4000000 });
+      const gasEstimate = await repCycle.estimate.confirmNewHash(round);
+      // This estimate still goes a bit wrong in ganache, it seems, so we add an extra 10%.
+      const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate.mul(11).div(10) , gasPrice: this._miner.gasPrice });
       console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
       await confirmNewHashTx.wait();
       console.log("✅ New reputation hash confirmed");

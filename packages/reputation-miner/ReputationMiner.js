@@ -100,6 +100,7 @@ class ReputationMiner {
 
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
+    this.gasPrice = ethers.utils.hexlify(20000000000);
   }
 
   /**
@@ -637,8 +638,9 @@ class ReputationMiner {
     if (!entryIndex) {
       entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
     }
+    const gasEstimate = await repCycle.estimate.submitRootHash(hash, nNodes, jrh, entryIndex);
     // Submit that entry
-    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: 1000000 });
+    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
   }
 
   async getEntryIndex(startIndex = 1) {
@@ -815,7 +817,8 @@ class ReputationMiner {
       .add(this.nReputationsBeforeLatestLog);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    return repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
+    const gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2);
+    return repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
   }
 
   /**
@@ -883,8 +886,10 @@ class ReputationMiner {
         siblings
       );
     }
+    const gasEstimate = await repCycle.estimate.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings);
     return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
-      gasLimit: 1000000
+      gasLimit: gasEstimate,
+      gasPrice: this.gasPrice
     });
   }
 
@@ -903,8 +908,10 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
+    const gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings);
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
-      gasLimit: 1000000
+      gasLimit: gasEstimate,
+      gasPrice: this.gasPrice
     });
   }
 
@@ -954,7 +961,8 @@ class ReputationMiner {
       lastAgreeJustifications.childReputationProof.branchMask = lastAgreeJustifications.childAdjacentReputationProof.branchMask;
       lastAgreeJustifications.childReputationProof.siblings = lastAgreeJustifications.childAdjacentReputationProof.siblings;
     }
-    return repCycle.respondToChallenge(
+
+    const functionArgs = [
       [
         round,
         index,
@@ -1000,8 +1008,12 @@ class ReputationMiner {
       lastAgreeJustifications.newestReputationProof.siblings,
       lastAgreeJustifications.originReputationProof.siblings,
       lastAgreeJustifications.childReputationProof.siblings,
-      lastAgreeJustifications.adjacentReputationProof.siblings,
-      { gasLimit: 4000000 }
+      lastAgreeJustifications.adjacentReputationProof.siblings]
+    
+    const gasEstimate = await repCycle.estimate.respondToChallenge(...functionArgs);
+
+    return repCycle.respondToChallenge(...functionArgs,
+      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
     );
   }
 
