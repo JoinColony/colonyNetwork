@@ -105,13 +105,13 @@
         },
         created () {
           Promise.all([
-            axios.get('http://localhost:3000/repCycleContractDef')
+            axios.get('repCycleContractDef')
               .then((res) => { this.cycleContractAbi = res.data.abi }),
 
-            axios.get('http://localhost:3000/repCycleAddresses')
+            axios.get('repCycleAddresses')
               .then((res) => { this.cycleAddresses = res.data; }),
 
-            axios.get('http://localhost:3000/network')
+            axios.get('network')
               .then((res) => {
                 if (res.data === 'unknown') {
                   this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
