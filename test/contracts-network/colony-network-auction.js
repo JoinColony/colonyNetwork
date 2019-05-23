@@ -224,6 +224,10 @@ contract("Colony Network Auction", accounts => {
       const newAuctionStartTime = await newTokenAuction.startTime();
       expect(previousAuctionStartTime).to.not.eq.BN(newAuctionStartTime);
     });
+
+    it("should fail to start auction twice", async () => {
+      await checkErrorRevert(tokenAuction.start(), "colony-auction-already-started");
+    });
   });
 
   describe("when bidding in a high quantity auction (quantity >= 1e18)", async () => {
