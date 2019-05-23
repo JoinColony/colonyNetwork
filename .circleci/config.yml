@@ -110,6 +110,8 @@ jobs:
       - run:
           name: "Running unit tests with coverage"
           command: yarn run test:contracts:coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
       # Save coverage artifacts
       - store_artifacts:
           path: coverage

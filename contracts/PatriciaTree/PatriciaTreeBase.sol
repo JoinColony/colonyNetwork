@@ -1,4 +1,4 @@
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
@@ -40,7 +40,7 @@ contract PatriciaTreeBase is PatriciaTreeProofs {
       Data.Label memory prefix;
       Data.Label memory suffix;
       (prefix, suffix) = k.splitCommonPrefix(e.label);
-      assert(prefix.length == e.label.length); // I.e. never an unseen branch
+      assert(prefix.length == e.label.length); // I.e. never an unseen branch ignore-swc-110
       if (suffix.length == 0) {
         // Found it
         break;

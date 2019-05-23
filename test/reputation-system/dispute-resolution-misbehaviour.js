@@ -166,6 +166,65 @@ contract("Reputation Mining - disputes resolution misbehaviour", accounts => {
       await repCycle.confirmNewHash(1);
     });
 
+    it("should prevent a user from attempting to defend a DisputedEntry beyond the size of a round.", async () => {
+      const badClient = new MaliciousReputationMinerExtraRep({ loader, realProviderPort, useJsTree, minerAddress: MINER2 }, 1, 0xfffffffff);
+      await badClient.initialise(colonyNetwork.address);
+
+      await advanceMiningCycleNoContest({ colonyNetwork, test: this });
+
+      const addr = await colonyNetwork.getReputationMiningCycle(true);
+      let repCycle = await IReputationMiningCycle.at(addr);
+      await forwardTime(MINING_CYCLE_DURATION, this);
+      await repCycle.submitRootHash("0x00", 0, "0x00", 10, { from: MINER1 });
+      await repCycle.confirmNewHash(0);
+
+      repCycle = await getActiveRepCycle(colonyNetwork);
+      await submitAndForwardTimeToDispute([goodClient, badClient], this);
+
+      await checkErrorRevert(
+        repCycle.confirmJustificationRootHash(0, 10000, 0, ["0x00"], 0, ["0x00"]),
+        "colony-reputation-mining-index-beyond-round-length"
+      );
+      await goodClient.confirmJustificationRootHash();
+      await badClient.confirmJustificationRootHash();
+
+      await checkErrorRevert(
+        repCycle.respondToBinarySearchForChallenge(0, 10000, "0x00", 0, ["0x00"]),
+        "colony-reputation-mining-index-beyond-round-length"
+      );
+
+      await runBinarySearch(goodClient, badClient);
+
+      await checkErrorRevert(repCycle.confirmBinarySearchResult(0, 10000, "0x00", 0, ["0x00"]), "colony-reputation-mining-index-beyond-round-length");
+
+      // // Check we can't respond to challenge before we've confirmed the binary search result
+      // await checkErrorRevertEthers(goodClient.respondToChallenge(), "colony-reputation-mining-binary-search-result-not-confirmed");
+
+      await goodClient.confirmBinarySearchResult();
+      await badClient.confirmBinarySearchResult();
+
+      await checkErrorRevert(
+        repCycle.respondToChallenge(
+          [0, 10000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          ["0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00", "0x00"],
+          [],
+          [],
+          [],
+          [],
+          [],
+          [],
+          []
+        ),
+        "colony-reputation-mining-index-beyond-round-length"
+      );
+
+      // Cleanup
+      await goodClient.respondToChallenge();
+      await forwardTime(MINING_CYCLE_DURATION / 6, this);
+      await repCycle.invalidateHash(0, 1);
+      await repCycle.confirmNewHash(1);
+    });
+
     it("should prevent a hash from claiming a bye if it might still get an opponent in round 1", async function advancingTest() {
       await giveUserCLNYTokensAndStake(colonyNetwork, MINER3, DEFAULT_STAKE);
 

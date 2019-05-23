@@ -15,12 +15,14 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 
 import "./ColonyNetworkStorage.sol";
 
 
-contract ColonyNetworkAuction is ColonyNetworkStorage {
+contract ColonyNetworkAuction is ColonyNetworkStorage { // ignore-swc-123 . 
+  // This ignore is something to do with the auctionNotStarted and auctionStartedAndOpen modifiers. If we comment out their
+  // contents, there isn't an issue, but I can't understand what MythX would like us to do instead. Open to suggestions!
 
   function startTokenAuction(address _token) public
   stoppable

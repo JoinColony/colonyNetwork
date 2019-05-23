@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
 import "./../ColonyDataTypes.sol";
@@ -25,14 +25,11 @@ import "./ExtensionFactory.sol";
 import "./OldRoles.sol";
 
 
-contract OldRolesFactory is ExtensionFactory, ColonyDataTypes {
+contract OldRolesFactory is ExtensionFactory, ColonyDataTypes { // ignore-swc-123. TODO Any takers to explain to me?
   mapping (address => OldRoles) public deployedExtensions;	
 
   function deployExtension(address _colony) external {
-    require(
-      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true, 
-      "colony-extension-user-not-root"
-    );
+    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");
     require(deployedExtensions[_colony] == OldRoles(0x00), "colony-extension-already-deployed");
     OldRoles newExtensionAddress = new OldRoles(_colony);
     deployedExtensions[_colony] = newExtensionAddress;
@@ -40,12 +37,8 @@ contract OldRolesFactory is ExtensionFactory, ColonyDataTypes {
   }
 
   function removeExtension(address _colony) external {
-    require(
-      ColonyAuthority(IColony(_colony).authority()).hasUserRole(msg.sender, 1, uint8(ColonyRole.Root)) == true,
-      "colony-extension-user-not-root"
-    );
+    require(IColony(_colony).hasUserRole(msg.sender, 1, ColonyRole.Root), "colony-extension-user-not-root");
     deployedExtensions[_colony] = OldRoles(0x00);
     emit ExtensionRemoved("OldRoles", _colony);
   }
-
 }

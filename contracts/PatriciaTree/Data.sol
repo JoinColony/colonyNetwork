@@ -1,4 +1,4 @@
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import {Bits} from "./Bits.sol";
@@ -47,7 +47,7 @@ library Data {
     if (pos == 0) {
       prefix.data = bytes32(0);
     } else {
-      prefix.data = bytes32(uint(self.data) & ~uint(1) << 255 - pos);
+      prefix.data = bytes32(uint(self.data) & ~uint(1) << 255 - pos); // ignore-swc-101
     }
     suffix.length = self.length - pos;
     suffix.data = self.data << pos;
@@ -57,7 +57,7 @@ library Data {
   // label containing the rest of the label (shifted to the left).
   function chopFirstBit(Label memory self) internal pure returns (uint firstBit, Label memory tail) {
     require(self.length > 0, "colony-patricia-tree-zero-self-length");
-    return (uint(self.data >> 255), Label(self.data << 1, self.length - 1));
+    return (uint(self.data >> 255), Label(self.data << 1, self.length - 1)); // ignore-swc-101
   }
 
   function edgeHash(Edge memory self) internal pure returns (bytes32) {

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import "../lib/dappsys/math.sol";
@@ -318,6 +318,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] memory siblings
   ) public
   {
+    require(idx < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
     require(disputeRounds[round][idx].lowerBound != disputeRounds[round][idx].upperBound, "colony-reputation-mining-challenge-not-active");
 
     uint256 targetNode = disputeRounds[round][idx].lowerBound;
@@ -351,6 +352,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] memory siblings
   ) public
   {
+    require(idx < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
     Submission storage submission = reputationHashSubmissions[disputeRounds[round][idx].firstSubmitter];
     require(submission.jrhNNodes != 0, "colony-reputation-jrh-hash-not-verified");
     require(disputeRounds[round][idx].lowerBound == disputeRounds[round][idx].upperBound, "colony-reputation-binary-search-incomplete");
@@ -386,6 +388,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     bytes32[] memory siblings2
   ) public
   {
+    require(index < disputeRounds[round].length, "colony-reputation-mining-index-beyond-round-length");
     Submission storage submission = reputationHashSubmissions[disputeRounds[round][index].firstSubmitter];
     // Require we've not submitted already.
     require(submission.jrhNNodes == 0, "colony-reputation-jrh-hash-already-verified");
@@ -461,6 +464,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   }
 
   function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry memory) {
+    require(_id < reputationUpdateLog.length, "colony-reputation-index-beyond-reputation-log-length");
     return reputationUpdateLog[_id];
   }
 

@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 pragma experimental ABIEncoderV2;
 
 import "./../ColonyStorage.sol";
@@ -38,7 +38,7 @@ contract TaskSkillEditing is ColonyStorage {
   function removeTaskSkill(uint256 _taskId, uint256 _skillIndex) 
   public
   {
+    require(tasks[_taskId].skills.length > _skillIndex, "colony-task-skill-edit-of-bounds");
     tasks[_taskId].skills[_skillIndex] = 0;
   }
-
 }

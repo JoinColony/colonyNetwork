@@ -15,7 +15,7 @@
   along with The Colony Network. If not, see <http://www.gnu.org/licenses/>.
 */
 
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 
 
 contract ContractEditing {
@@ -23,7 +23,7 @@ contract ContractEditing {
     uint x = _slot;
     bytes32 y = _value;
     assembly {
-      sstore(x, y)
+      sstore(x, y) // This file is only used in tests for convenience, so ignore-swc-124
     }
   }
 }

@@ -1,4 +1,4 @@
-pragma solidity >=0.5.3;
+pragma solidity 0.5.8;
 pragma experimental "ABIEncoderV2";
 
 import {Data} from "./Data.sol";
@@ -50,7 +50,7 @@ contract PatriciaTreeProofs {
       uint bit;
       (bit, e.label) = e.label.chopFirstBit();
       edgeHashes[bit] = e.edgeHash();
-      edgeHashes[1 - bit] = siblings[siblings.length - i - 1];
+      edgeHashes[1 - bit] = siblings[siblings.length - i - 1]; // ignore-swc-101
       e.node = keccak256(abi.encodePacked(edgeHashes));
     }
     if (branchMask == 0) {
