@@ -46,7 +46,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn eslint-staged && yarn solium-staged"
+      "pre-commit": "yarn eslint-staged && yarn solium-staged && yarn build:docs && git add docs"
     }
   },
   "repository": {
