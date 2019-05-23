@@ -190,7 +190,6 @@ export async function checkSuccessEthers(promise, errorMessage) {
   if (receipt.status === 1) {
     return;
   }
-
   const txid = receipt.transactionHash;
   const tx = await web3GetTransaction(txid);
   const response = await web3GetRawCall({ from: tx.from, to: tx.to, data: tx.input, gas: tx.gas, value: tx.value });
@@ -320,10 +319,6 @@ export async function mineBlock() {
       }
     );
   });
-}
-
-export function getFunctionSignature(sig) {
-  return sha3(sig).slice(0, 10);
 }
 
 export function bnSqrt(bn, isGreater) {
@@ -615,11 +610,10 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
 
 export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
+  await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
-
   if (nUniqueSubmittedHashes.gtn(0)) {
-    await forwardTime(MINING_CYCLE_DURATION, test);
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.

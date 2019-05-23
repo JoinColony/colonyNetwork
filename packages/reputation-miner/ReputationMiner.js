@@ -818,7 +818,15 @@ class ReputationMiner {
     const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
     const gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2);
-    return repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+    return repCycle.confirmJustificationRootHash(
+      round, 
+      index, 
+      branchMask1, 
+      siblings1, 
+      branchMask2,
+      siblings2,
+      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+    );
   }
 
   /**
@@ -886,11 +894,25 @@ class ReputationMiner {
         siblings
       );
     }
-    const gasEstimate = await repCycle.estimate.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings);
-    return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
-      gasLimit: gasEstimate,
-      gasPrice: this.gasPrice
-    });
+    const gasEstimate = await repCycle.estimate.respondToBinarySearchForChallenge(
+      round, 
+      index, 
+      intermediateReputationHash, 
+      branchMask.toString(),
+      siblings
+    );
+    
+    return repCycle.respondToBinarySearchForChallenge(
+      round, 
+      index, 
+      intermediateReputationHash,
+      branchMask.toString(),
+      siblings,
+      {
+        gasLimit: gasEstimate,
+        gasPrice: this.gasPrice
+      }
+    );
   }
 
   /**

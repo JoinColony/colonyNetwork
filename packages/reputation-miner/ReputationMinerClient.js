@@ -170,7 +170,7 @@ class ReputationMinerClient {
     .map(tx => ethers.utils.bigNumberify(tx.gasPrice))
     .reduce((result, gasPrice) => {
       return result.add(gasPrice)
-    }, new ethers.utils.bigNumberify(0));
+    }, new ethers.utils.bigNumberify(0)); // eslint-disable-line new-cap
 
     let average = ethers.utils.bigNumberify(20000000000);
     if (block.transactions.length > 0){
@@ -182,7 +182,14 @@ class ReputationMinerClient {
       this.gasBlockAverages.shift()
     }
 
-    this._miner.gasPrice = ethers.utils.hexlify(this.gasBlockAverages.reduce((total, sum) => { return total.add(sum) }, ethers.utils.bigNumberify(0)).div(this.gasBlockAverages.length));
+    this._miner.gasPrice = ethers.utils.hexlify(
+      this.gasBlockAverages.reduce(
+        (total, sum) => { 
+          return total.add(sum)
+        }, 
+        ethers.utils.bigNumberify(0)
+      ).div(this.gasBlockAverages.length)
+    );
     // console.log("Average gas price from last 10 blocks: ", this._miner.gasPrice);
   }
 
