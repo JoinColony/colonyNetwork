@@ -41,7 +41,7 @@
           provider: {},
           cycleContractAbi: '',
           cycleAddresses: {},
-          cycleAddress: '',
+          cycleAddress: 'loading...',
           selected: '',
           miningCycle: {},
           numEntries: null,
@@ -104,20 +104,22 @@
           }
         },
         created () {
-          axios.get('http://localhost:3000/repCycleContractDef')
-            .then((res) => { this.cycleContractAbi = res.data.abi });
+          Promise.all([
+            axios.get('http://localhost:3000/repCycleContractDef')
+              .then((res) => { this.cycleContractAbi = res.data.abi }),
 
-          axios.get('http://localhost:3000/repCycleAddresses')
-            .then((res) => { this.cycleAddresses = res.data; });
+            axios.get('http://localhost:3000/repCycleAddresses')
+              .then((res) => { this.cycleAddresses = res.data; }),
 
-          axios.get('http://localhost:3000/network')
-            .then((res) => {
-              if (res.data === 'unknown') {
-                this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-              } else {
-                this.provider = new ethers.providers.InfuraProvider(res.data);
-              }
-            });
+            axios.get('http://localhost:3000/network')
+              .then((res) => {
+                if (res.data === 'unknown') {
+                  this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+                } else {
+                  this.provider = new ethers.providers.InfuraProvider(res.data);
+                }
+              })
+          ]).then((_) => { this.selected = 'active' });
         }
       })
 
