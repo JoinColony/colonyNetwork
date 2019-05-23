@@ -35,7 +35,7 @@ The colonyNetwork smart contracts require the `ethereum/solc:0.5.8` Docker image
 Make sure Docker is installed and then run the following command.
 
 ```
-docker pull ethereum/solc:0.5.6
+docker pull ethereum/solc:0.5.8
 ```
 
 ## Colony Network
@@ -127,12 +127,12 @@ truffle(goerli)> let colonyNetwork = await IColonyNetwork.at("0x79073fc2117dD054
 ```
 From here, you can create a new colony (with an ERC20 token already deployed):
 ```
-truffle(goerli)> await IColonyNetwork.createColony("your-erc20-token-address")
+truffle(goerli)> await colonyNetwork.createColony("your-erc20-token-address")
 ```
 And find your colony's id (the newest created colony) after the transaction is mined:
 ```
 
-truffle(goerli)> await IColonyNetwork.getColonyCount()
+truffle(goerli)> await colonyNetwork.getColonyCount()
 ```
 ### Local Development and Testing
 
