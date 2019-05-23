@@ -7,6 +7,7 @@
     "eslint-staged": "bash ./scripts/eslint.sh",
     "eslint": "eslint .",
     "solium": "solium --dir .",
+    "build:docs": "scripts/docgen.js",
     "ping:osx": "osascript -e 'display notification \"Ping!\"'",
     "check:storagevars": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-storage.js",
     "check:recoverymods": "./node_modules/@babel/node/bin/babel-node.js ./scripts/check-recovery.js",
