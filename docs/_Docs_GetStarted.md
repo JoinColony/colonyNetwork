@@ -30,7 +30,7 @@ It is possible to use `npm` instead of `yarn`, but you'll need to adapt any inst
 
 In order to compile the colonyNetwork smart contracts, you will need to have Docker installed and running. We recommend using Docker Community Version `2.0.0.0`. You can find instructions for installing Docker here: [Docker Installation](https://docs.docker.com/install/).
 
-The colonyNetwork smart contracts require the `ethereum/solc:0.5.6` Docker image, so we will need to pull it down before we can begin.
+The colonyNetwork smart contracts require the `ethereum/solc:0.5.8` Docker image, so we will need to pull it down before we can begin.
 
 Make sure Docker is installed and then run the following command.
 
@@ -94,12 +94,14 @@ Rather than import the entire set of contracts into remix, use the included `sol
 $ yarn flatten:contracts
 ```
 
-Alternatively, you can put them into the directory of your choice, e.g. `~/Downloads/`:
-```
-$ yarn steamroller /contracts/IColonyNetwork.sol > ~/Downloads/flatIColonyNetwork.sol
-```
+Navigate to `colonyNetwork/build/flattened/` to find the contracts you need to import to Remix.
 
-Import the flattened contract into the remix IDE, and then call `createColony()`
+In Remix, you'll need to instantiate `flatIColonyNetwork.sol` to the `ColonyNetwork` address `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` in order to create a new colony.
+
+Use the address of your existing ERC20 token contract to `createColony()`, then immidiately use `getColonyCount()` to get your colony's ID.  
+
+Call `getColony()` to get your colony's address from the ID, then instantiate `flatIColony.sol` to your colony's address in Remix.
+
 
 ### Access with the Truffle console
 
@@ -120,17 +122,17 @@ $ yarn truffle console --network goerli
 ```
 In the truffle console, instantiate the IColonyNetwork interface for `glider-rc.1`:
 ```
-truffle(goerli)> let IColonyNetwork = await IColonyNetwork.at("0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B")
+truffle(goerli)> let colonyNetwork = await IColonyNetwork.at("0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B")
 
 ```
 From here, you can create a new colony (with an ERC20 token already deployed):
 ```
-truffle(goerli)> IColonyNetwork.createColony("your-erc20-token-address")
+truffle(goerli)> await IColonyNetwork.createColony("your-erc20-token-address")
 ```
 And find your colony's id (the newest created colony) after the transaction is mined:
 ```
 
-truffle(goerli)> IColonyNetwork.getColonyCount()
+truffle(goerli)> await IColonyNetwork.getColonyCount()
 ```
 ### Local Development and Testing
 
@@ -139,13 +141,16 @@ You can start a local test node and deploy the contracts yourself using the loca
 ```
 yarn run start:blockchain:client
 
-./node_modules/.bin/truffle migrate --reset --compile-all
+yarn truffle migrate --reset --compile-all
 ```
 
-To deploy all contracts and run all tests, run the following command.
-
+To deploy all contracts and run all contract tests:
 ```
-yarn run test:contracts
+yarn test:contracts
+```
+To deploy all contracts and run all reputation mining tests:
+```
+yarn test:reputation
 ```
 
 For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Local Setup](/colonyjs/intro-local-setup/) documentation.
