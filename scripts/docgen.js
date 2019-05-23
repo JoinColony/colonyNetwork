@@ -96,11 +96,8 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
     if (method.parameters) {
       // Find the params with a maximum number of lines to check
-      while (paramLineIndex && params.length !== method.parameters.parameters.length) {
-        if (noticeLineIndex + maxLines === paramLineIndex) {
-          paramLineIndex = 0;
-          break;
-        }
+      while (params.length !== method.parameters.parameters.length) {
+        if (noticeLineIndex + maxLines === paramLineIndex) break;
         if (contractFileArray[paramLineIndex].includes(' @param ')) {
           params.push(contractFileArray[paramLineIndex].split(' @param ')[1]);
         }
@@ -113,11 +110,8 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
     if (method.returnParameters) {
       // Find the return params with a maximum number of lines to check
-      while (returnParamLineIndex && returnParams.length !== method.returnParameters.parameters.length) {
-        if (noticeLineIndex + maxLines === returnParamLineIndex) {
-          returnParamLineIndex = 0;
-          break;
-        }
+      while (returnParams.length !== method.returnParameters.parameters.length) {
+        if (noticeLineIndex + maxLines === returnParamLineIndex) break;
         if (contractFileArray[returnParamLineIndex].includes(' @return ')) {
           returnParams.push(contractFileArray[returnParamLineIndex].split(' @return ')[1]);
         }
