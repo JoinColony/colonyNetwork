@@ -61,9 +61,3 @@ Whichever miner is found to have performed the calculation incorrectly is punish
 When a new Root Hash is accepted by the network, its corresponding Reputation Update Log is deleted from on-chain memory.
 
 All reputation events that occurred during the current cycle are 'frozen' as the new Reputation Update Log to be used by miners in the next cycle.
-
-## The Reputation Mining Client
-
-### Visualizations
-
-The reputation mining client comes with a set of built-in visualizers to make it easier to view reputation states and to see the current state of the mining process. Once a mining client is running and connected to a network, navigate to the client's address in a browser (i.e. `http://localhost:3000/`) to access the available visualization tools.

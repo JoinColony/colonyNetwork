@@ -130,7 +130,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// Note that the token ownership (if there is one) has to be transferred to the newly created colony
   /// @param _tokenAddress Address of an ERC20 token to serve as the colony token
   /// Additionally token can optionally support `mint` as defined in `ERC20Extended`
-  /// Support for `mint` in mandatory only for the Meta Colony Token
+  /// Support for `mint` is mandatory only for the Meta Colony Token
   /// @return colonyAddress Address of the newly created colony
   function createColony(address _tokenAddress) public returns (address);
 

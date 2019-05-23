@@ -1,18 +1,18 @@
 ---
 title: Get Started
 section: Docs
-order: 6
+order: 7
 ---
 
-The [glider](https://github.com/JoinColony/colonyNetwork) release is currently live on Görli and will be deployed to mainnet soon.
+There are a few ways to get started with the colonyNetwork contracts, depending on who you are and what you want to do.
 
-This page is written for developers contributing features or direct smart contract extensions with the Colony Network.
+This page details how to engage purely on the contract-level, and is intended more for developers looking to contribute new features, extensions, or contract-level integrations. See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/CONTRIBUTING.md) if you're interested in contributing to the colonyNetwork codebase.
 
-See our [guidelines](https://github.com/JoinColony/colonyNetwork/blob/develop/docs/CONTRIBUTING.md) if you're interested in contributing to the colonyNetwork codebase.
+If you're a dapp developer looking to integrate with colony, we recommend using [colonyJS](/colonyjs/intro-welcome/) as an entry point. There you'll find analogous instructions better suited to building applications on top of the colonyNetwork. For those without patience, we have built a [colonyStarter kit](/colonystarter/docs-overview/) which contains boilerplate examples for dapp development, including frontend frameworks like react, and is the fastest way to start building with Colony.
 
-If you want to build a dapp or other integration that doesn't directly extend the Colony Network contracts, it's recommended that you use colonyJS. Analogous instructions for colonyJS can be found in [Local Setup](/colonyjs/intro-local-setup/) for colonyJS.
+Either way, if you run into trouble or have any questions/comments, please post in our [developer forums](https://build.colony.io/).
 
-An even more 'complete' starting point is the [colonyStarter kit](/colonystarter/docs-overview/), which contains boilerplate examples for dapp development, including frontend frameworks like react.
+==TOC==
 
 ## Prerequisites
 
@@ -24,19 +24,24 @@ You will need to have `node` installed. We recommended using `node` version `10.
 
 You will also need to install `yarn`. We recommended using `yarn` version `1.12.0` or higher. Check out the [Yarn Installation](https://yarnpkg.com/lang/en/docs/install/#mac-stable) documentation and then select your operating system for install instructions.
 
+It is possible to use `npm` instead of `yarn`, but you'll need to adapt any instructions yourself ;).
+
 ### Docker
 
 In order to compile the colonyNetwork smart contracts, you will need to have Docker installed and running. We recommend using Docker Community Version `2.0.0.0`. You can find instructions for installing Docker here: [Docker Installation](https://docs.docker.com/install/).
 
-The colonyNetwork smart contracts require the `ethereum/solc:0.4.23` Docker image, so we will need to pull down this image before we can begin.
+The colonyNetwork smart contracts require the `ethereum/solc:0.5.8` Docker image, so we will need to pull it down before we can begin.
 
 Make sure Docker is installed and then run the following command.
 
 ```
-docker pull ethereum/solc:0.4.23
+docker pull ethereum/solc:0.5.8
 ```
 
 ## Colony Network
+
+If you intend to work with `glider-rc.1` on the Görli testnet, proceed with installation below, skipping the "local development and testing" section.
+
 
 ### Installation
 
@@ -68,78 +73,84 @@ The final step for installation is copying over some of the files from our submo
 yarn run provision:token:contracts
 ```
 
-### Testing
+## `glider-rc.1` on the Görli testnet
 
-To deploy all contracts and run all tests, run the following command.
+The [Glider release candidate](/colonynetwork/docs-releases/) is in many ways a simpler and easier way to experiment than setting up a local development environment, and can be very useful if you're looking to just get a sense of how the colonyNetwork contracts work, or want to build extensions/integrations that remain inside the EVM.
+
+To connect, you'll need to know the address of the colonyNetwork (which is, in reality, the address of the `etherRouter` contract; see [The Delegate Proxy Pattern](/colonynetwork/docs-the-delegate-proxy-pattern/) for more info).
+
+`ColonyNetwork`: `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B`
+
+You will also require Görli test ETH, and a deployed ERC20 token to import.
+
+
+### Access with Remix (good for experimenting)
+
+For simple interactions, [Remix](http://remix-alpha.ethereum.org/) is a good lightweight way to call specific functions and get network information from the contracts.
+
+Rather than import the entire set of contracts into remix, use the included `solidity-steamroller` to flatten the needed interface contracts to the `build/flattened/` directory:
 
 ```
-yarn run test:contracts
+$ yarn flatten:contracts
 ```
 
-### Development
+Navigate to `colonyNetwork/build/flattened/` to find the contracts you need to import to Remix.
 
-Alternatively, you can start a local test node and deploy the contracts yourself using the locally installed `truffle` package.
+In Remix, you'll need to instantiate `flatIColonyNetwork.sol` to the `ColonyNetwork` address `0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B` in order to create a new colony.
+
+Use the address of your existing ERC20 token contract to `createColony()`, then immidiately use `getColonyCount()` to get your colony's ID.  
+
+Call `getColony()` to get your colony's address from the ID, then instantiate `flatIColony.sol` to your colony's address in Remix.
+
+
+### Access with the Truffle console
+
+First, add a private key of your choice to the `truffle.js` configuration file:
+```
+goerli: {
+      provider: () => {
+        return new HDWalletProvider("replace-with-private-key-when-using", "https://goerli.infura.io/v3/e21146aa267845a2b7b4da025178196d");
+      },
+      network_id: "5"
+    }
+  },
+```
+
+Then, start up the truffle console and connect to testnet:
+```
+$ yarn truffle console --network goerli
+```
+In the truffle console, instantiate the IColonyNetwork interface for `glider-rc.1`:
+```
+truffle(goerli)> let colonyNetwork = await IColonyNetwork.at("0x79073fc2117dD054FCEdaCad1E7018C9CbE3ec0B")
+
+```
+From here, you can create a new colony (with an ERC20 token already deployed):
+```
+truffle(goerli)> await colonyNetwork.createColony("your-erc20-token-address")
+```
+And find your colony's id (the newest created colony) after the transaction is mined:
+```
+
+truffle(goerli)> await colonyNetwork.getColonyCount()
+```
+### Local Development and Testing
+
+You can start a local test node and deploy the contracts yourself using the locally installed `truffle` package.
 
 ```
 yarn run start:blockchain:client
 
-./node_modules/.bin/truffle migrate --reset --compile-all
+yarn truffle migrate --reset --compile-all
+```
+
+To deploy all contracts and run all contract tests:
+```
+yarn test:contracts
+```
+To deploy all contracts and run all reputation mining tests:
+```
+yarn test:reputation
 ```
 
 For more detailed instructions, and additional steps required to set up an environment for use with [colonyJS](https://github.com/JoinColony/colonyJS), check out the colonyJS [Local Setup](/colonyjs/intro-local-setup/) documentation.
-
-## Reputation Miner
-
-The reputation mining client is usable for testing but it has limited functionality. It currently has no support for the challenge-response process to accommodate multiple submitted reputation root hashes. Still, it is possible to run a single miner instance for usable reputation scores on a local test network.
-
-### Start Mining Client
-
-You can start the reputation mining client using the following command.
-
-```
-node packages/reputation-miner/bin/index.js --colonyNetworkAddress { COLONYNETWORK_ADDRESS } --minerAddress { MINER_ADDRESS }
-```
-
-The `minerAddress` in the execution above is the sixth account in `ganache-accounts.json` if running locally.
-
-The `colonyNetwork` address in the execution above is not the address outputted at contract deployment, but is the address of the Colony Network `EtherRouter`. See [Upgrades to the Colony Network](/colonynetwork/docs-the-delegate-proxy-pattern/) for more information about the EtherRouter design pattern.
-
-### Force Reputation Updates
-
-The client is set to provide a reputation update once per hour. For testing, you'll likely want to "fast-forward" your network through a few submissions to see usable reputation.
-
-You can move the network forward by an hour with the following command.
-
-```
-curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_increaseTime","params":[86400],"id": 1}' localhost:8545
-```
-
-Once you have moved the network forward by an hour, you can then mine a new block with the following command.
-
-```
-curl -H "Content-Type: application/json" -X POST --data '{"jsonrpc":"2.0","method":"evm_mine","params":[]}' localhost:8545
-```
-
-Note that because reputation is awarded for the *previous* submission window, you will need to use the "fast-forward" command above to speed through at least 3 reputation updates before noticing a change in the miner's reputation.
-
-### Get Reputation from the Reputation Oracle
-
-The reputation mining client will answer queries for reputation scores locally over HTTP.
-
-```
-http://127.0.0.1:3000/{reputationState}/{colonyAddress}/{skillId}/{userAddress}
-```
-
-The oracle should be able to provide responses to any valid reputation score in all historical states, as well as the current state.
-
-For example, you can get the reputation score of the miner in the current reputation state (which after three updates, will be `0x7ad8c25e960b823336fea83f761f5199d690c7b230e846eb29a359187943eb33`) using the address of the Meta Colony (`0x1133560dB4AebBebC712d4273C8e3137f58c3A65`), the skill tag of `2`, and the address of the miner (`0x3a965407ced5e62c5ad71de491ce7b23da5331a4`).
-
-```
-http://127.0.0.1:3000/0x7ad8c25e960b823336fea83f761f5199d690c7b230e846eb29a359187943eb33/0x1133560dB4AebBebC712d4273C8e3137f58c3A65/2/0x3a965407ced5e62c5ad71de491ce7b23da5331a4
-```
-
-The oracle should return something similar to the following.
-
-```
-{"branchMask":"0x8000000000000000000000000000000000000000000000000000000000000000","siblings":["0x32c047a86aec6bbbfc1510bb2dd3a9086ec70b7524bd6f92ce1a12dfc7be32ca"],"key":"0x1133560db4aebbebc712d4273c8e3137f58c3a6500000000000000000000000000000000000000000000000000000000000000023a965407ced5e62c5ad71de491ce7b23da5331a4","value":"0x0000000000000000000000000000000000000000000000410d586a20a4c000000000000000000000000000000000000000000000000000000000000000000003","reputationAmount":"0"}
-```
