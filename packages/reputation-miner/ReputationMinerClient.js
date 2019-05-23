@@ -192,7 +192,6 @@ class ReputationMinerClient {
         const canSubmit = await this._miner.submissionPossible(entryIndex);
         if (canSubmit) {
           console.log("⏰ Looks like it's time to submit an entry to the current cycle");
-          await this.submitEntry(entryIndex);
           submissionIndex += 1;
           await this.submitEntry(entryIndex);
         }
