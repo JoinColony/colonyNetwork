@@ -20,7 +20,7 @@ The `colonyNetwork` address in the execution above is not the address outputted 
 
 ### Force Reputation Updates
 
-The client is set to provide a reputation update once per hour. For testing, you'll likely want to "fast-forward" your network through a few submissions to see usable reputation.
+The client is set to provide a reputation update once every 24 hours. For testing, you'll likely want to "fast-forward" your network through a few submissions to see usable reputation.
 
 You can move the network forward by an hour with the following command.
 
