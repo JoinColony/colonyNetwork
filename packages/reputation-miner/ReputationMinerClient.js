@@ -427,7 +427,8 @@ class ReputationMinerClient {
     // This won't be valid anyway if we're not confirming immediately in the next transaction
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      const gasEstimate = await repCycle.estimate.confirmNewHash(round);
+      let gasEstimate = await repCycle.estimate.confirmNewHash(round);
+      if (process.env.SOLIDITY_COVERAGE) { gasEstimate = ethers.utils.bigNumberify(3500000); }
       // This estimate still goes a bit wrong in ganache, it seems, so we add an extra 10%.
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate.mul(11).div(10) , gasPrice: this._miner.gasPrice });
       console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
