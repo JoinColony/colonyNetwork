@@ -151,27 +151,16 @@ function printMethods(methods) {
     return 0;
   });
   return `
-
 ## Interface Methods
-
 ` + methods.map(method => `
-
-### \`${method.name}\`
-
+### \`${method.name}\`\n
 ${method.natspec.notice ? method.natspec.notice : ''}
-
 ${method.parameters && method.parameters.parameters.length ? `
-
 **Parameters**
-
 ` + printParams(method.parameters.parameters, method.natspec.params) : ''}
-
 ${method.returnParameters && method.returnParameters.parameters.length ? `
-
 **Return Parameters**
-
 ` + printParams(method.returnParameters.parameters, method.natspec.returnParams) : ''}
-
 `).join('');
 
 }
@@ -183,11 +172,10 @@ function printParams(params, natspecParams) {
 |---|---|---|
 ${params
   .map((param, index) => {
-    const noName = '_undefined_';
-    const name = param.name ? param.name : noName;
     const type = param.typeName.name;
+    const name = param.name ? param.name : type;
     const valid = natspecParams[index] && natspecParams[index].substring(0, name.length) === name
-    const description = valid ? natspecParams[index].split(name, 2)[1] : '';
+    const description = valid ? natspecParams[index].slice(name.length + 1) : '';
     return `|${name}|${type || 'memory' }|${description}`
   })
   .join('\n')}`;
