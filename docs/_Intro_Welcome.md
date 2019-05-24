@@ -40,7 +40,7 @@ The Colony Network is maintained and improved by the [Meta Colony](/colonynetwor
 
 Membership in the Metacolony is open to all (and heartily encouraged!), but changes such as [network upgrades](/colonynetwork/docs-the-delegate-proxy-pattern/) require a minimum *reputation* within the Metacolony to proceed.
 
-### colonyJS (and colonyStarter?)
+### colonyJS
 colonyJS is a JavaScript library designed to make interaction with the Colony Network as straightforward as possible for (d)app developers.
 
 Using colonyJS, all of the functions of a colony can be imported and called as methods within a JavaScript application.
