@@ -55,7 +55,7 @@ Get the `ColonyAuthority` for the colony
 
 ### `bootstrapColony`
 
-Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users`
+Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users` This reputation is assigned in the colony-wide domain. Secured function to authorised members
 
 **Parameters**
 
@@ -130,7 +130,7 @@ Claim the payout in `_token` denomination for work completed in task `_id` by co
 
 ### `completeTask`
 
-Mark a task as complete after the due date has passed. This allows the task to be rated and finalized (and funds recovered) even in the presence of a worker who has disappeared.
+Mark a task as complete after the due date has passed. This allows the task to be rated and finalized (and funds recovered) even in the presence of a worker who has disappeared. Note that if the due date was not set, then this function will throw.
 
 **Parameters**
 
@@ -157,7 +157,7 @@ Executes a task update transaction `_data` which is approved and signed by two o
 
 ### `executeTaskRoleAssignment`
 
-Executes a task role update transaction `_data` which is approved and signed by two of addresses
+Executes a task role update transaction `_data` which is approved and signed by two of addresses depending of which function we are calling. Allowed functions are `setTaskManagerRole`, `setTaskEvaluatorRole` and `setTaskWorkerRole`. Upon successful execution the `taskChangeNonces` entry for the task is incremented
 
 **Parameters**
 
@@ -173,7 +173,7 @@ Executes a task role update transaction `_data` which is approved and signed by 
 
 ### `finalizePayment`
 
-Finalizes the payment and logs the reputation log updates
+Finalizes the payment and logs the reputation log updates Allowed to be called once after payment is fully funded. Secured function to authorised members
 
 **Parameters**
 
@@ -197,7 +197,7 @@ Finalises the reward payout. Allows creation of next reward payouts for token th
 
 ### `finalizeTask`
 
-Called after task work rating is complete which closes the task and logs the respective reputation log updates
+Called after task work rating is complete which closes the task and logs the respective reputation log updates Allowed to be called once per task. Secured function to authorised members
 
 **Parameters**
 
@@ -526,7 +526,7 @@ Get the colony token
 
 ### `hasUserRole`
 
-Check whether a given user has a given role for the colony.
+Check whether a given user has a given role for the colony. Calls the function of the same name on the colony's authority contract.
 
 **Parameters**
 

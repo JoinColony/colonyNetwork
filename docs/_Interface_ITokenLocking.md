@@ -9,7 +9,7 @@ order: 5
 
 ### `deposit`
 
-Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked
+Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked Before calling this function user has to allow that their tokens can be transferred by token locking contract
 
 **Parameters**
 

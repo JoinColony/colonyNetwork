@@ -57,17 +57,12 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
   contract.subNodes.map(method => {
 
-    // Set the maximum number of lines we want to check
-    const maxLines = 20;
-
-    // Set the intial value of notice
     let notice;
-
-    // Set the intial value of params
     const params = [];
-
-    // Set the intial value of returns
     const returns = [];
+
+    // Set the maximum number of lines to check
+    const maxLines = 20;
 
     // Set the methodLineIndex
     const methodLineIndex = contractFileArray.findIndex(line => {
@@ -86,17 +81,16 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       noticeLineIndex -= 1;
     }
 
-    // Check for additional lines and update notice value
+    // Get natspec notice
     if (noticeLineIndex) {
-      let additionalNoticeLineIndexes = [];
+      const additionalNoticeLineIndexes = [];
       let additionalNoticeLineIndex = noticeLineIndex + 1;
       while(
         contractFileArray[additionalNoticeLineIndex] &&
         contractFileArray[additionalNoticeLineIndex].includes('///') &&
         !contractFileArray[additionalNoticeLineIndex].includes(' @dev ') &&
         !contractFileArray[additionalNoticeLineIndex].includes(' @param ') &&
-        !contractFileArray[additionalNoticeLineIndex].includes(' @return ') &&
-        !contractFileArray[additionalNoticeLineIndex].includes(' function ')
+        !contractFileArray[additionalNoticeLineIndex].includes(' @return ')
       ) {
         additionalNoticeLineIndexes.push(additionalNoticeLineIndex);
         additionalNoticeLineIndex += 1;
@@ -107,26 +101,25 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       });
     }
 
+    // Get natspec params
     if (noticeLineIndex && method.parameters) {
-      // Set the initial value of paramLineIndex
       let paramLineIndex = noticeLineIndex + 1;
-      // Find the params with a maximum number of lines to check
-      while (params.length !== method.parameters.parameters.length) {
-        if (noticeLineIndex + maxLines === paramLineIndex) break;
-        // Check for additional lines and update and push param value
+      while (
+        noticeLineIndex + maxLines !== paramLineIndex &&
+        params.length !== method.parameters.parameters.length
+      ) {
         if (
           contractFileArray[paramLineIndex] &&
           contractFileArray[paramLineIndex].includes(' @param ')
         ) {
-          let additionalParamLineIndexes = [];
+          const additionalParamLineIndexes = [];
           let additionalParamLineIndex = paramLineIndex;
           while(
             contractFileArray[additionalParamLineIndex] &&
             contractFileArray[additionalParamLineIndex].includes('///') &&
             !contractFileArray[additionalParamLineIndex].includes(' @dev ') &&
             !contractFileArray[additionalParamLineIndex].includes(' @param ') &&
-            !contractFileArray[additionalParamLineIndex].includes(' @return ') &&
-            !contractFileArray[additionalParamLineIndex].includes(' function ')
+            !contractFileArray[additionalParamLineIndex].includes(' @return ')
           ) {
             additionalParamLineIndexes.push(additionalParamLineIndex);
             additionalParamLineIndex += 1;
@@ -135,49 +128,45 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
           additionalParamLineIndexes.forEach(index => {
             param += contractFileArray[index].split('///')[1];
           });
-          // Push to params
           params.push(param);
         }
         paramLineIndex += 1;
       }
     }
 
+    // Get natspec return params
     if (noticeLineIndex && method.returnParameters) {
-      // Set the initial value of paramLineIndex
       let returnLineIndex = noticeLineIndex + 1;
-      // Find the return params with a maximum number of lines to check
-      while (returns.length !== method.returnParameters.parameters.length) {
-        if (noticeLineIndex + maxLines === returnLineIndex) break;
-        // Check for additional lines and update and push param value
+      while (
+        noticeLineIndex + maxLines !== returnLineIndex &&
+        returns.length !== method.returnParameters.parameters.length
+      ) {
         if (
           contractFileArray[returnLineIndex] &&
           contractFileArray[returnLineIndex].includes(' @return ')
         ) {
-          let additionalReturnLineIndexes = [];
+          const additionalReturnLineIndexes = [];
           let additionalReturnLineIndex = returnLineIndex;
           while(
             contractFileArray[additionalReturnLineIndex] &&
             contractFileArray[additionalReturnLineIndex].includes('///') &&
             !contractFileArray[additionalReturnLineIndex].includes(' @dev ') &&
             !contractFileArray[additionalReturnLineIndex].includes(' @param ') &&
-            !contractFileArray[additionalReturnLineIndex].includes(' @return ') &&
-            !contractFileArray[additionalReturnLineIndex].includes(' function ')
+            !contractFileArray[additionalReturnLineIndex].includes(' @return ')
           ) {
             additionalReturnLineIndexes.push(additionalReturnLineIndex);
             additionalReturnLineIndex += 1;
           }
-          let param = contractFileArray[returnLineIndex].split(' @return ')[1];
+          let returnParam = contractFileArray[returnLineIndex].split(' @return ')[1];
           additionalReturnLineIndexes.forEach(index => {
-            param += contractFileArray[index].split('///')[1];
+            returnParam += contractFileArray[index].split('///')[1];
           });
-          // Push to returns
-          returns.push(param);
+          returns.push(returnParam);
         }
         returnLineIndex += 1;
       }
     }
 
-    // Push method to methods array
     methods.push({
       ...method,
       natspec: {
