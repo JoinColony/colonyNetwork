@@ -120,6 +120,10 @@ class ReputationMinerClient {
 
     this.gasBlockAverages = [];
 
+    // See if we're talking to Ganache to fix a ganache crash (which, while fun to say, is not fun to see)
+    const clientString = await this._miner.realProvider.send("web3_clientVersion");
+    this.ganacheClient = clientString.indexOf('TestRPC') !== -1
+
     console.log("🏁 Initialised");
     if (this._auto) {
       // Initial call to process the existing log from the cycle we're currently in
@@ -420,10 +424,10 @@ class ReputationMinerClient {
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
       let gasEstimate;
-      if (process.env.SOLIDITY_COVERAGE) { 
+      if (process.env.SOLIDITY_COVERAGE || this.ganacheClient) {
         gasEstimate = ethers.utils.bigNumberify(3500000);
       } else {
-        gasEstimate = await repCycle.estimate.confirmNewHash(round)
+        gasEstimate = await repCycle.estimate.confirmNewHash(round);
       }
       // This estimate still goes a bit wrong in ganache, it seems, so we add an extra 10%.
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate.mul(11).div(10) , gasPrice: this._miner.gasPrice });
