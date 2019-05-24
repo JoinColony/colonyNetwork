@@ -58,7 +58,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
   contract.subNodes.map(method => {
 
     // Set the maximum number of lines we want to check
-    const maxLines = 10;
+    const maxLines = 20;
 
     // Set the intial value of notice
     let notice;
@@ -114,7 +114,10 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       while (params.length !== method.parameters.parameters.length) {
         if (noticeLineIndex + maxLines === paramLineIndex) break;
         // Check for additional lines and update and push param value
-        if (contractFileArray[paramLineIndex].includes(' @param ')) {
+        if (
+          contractFileArray[paramLineIndex] &&
+          contractFileArray[paramLineIndex].includes(' @param ')
+        ) {
           let additionalParamLineIndexes = [];
           let additionalParamLineIndex = paramLineIndex;
           while(
@@ -146,7 +149,10 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       while (returns.length !== method.returnParameters.parameters.length) {
         if (noticeLineIndex + maxLines === returnLineIndex) break;
         // Check for additional lines and update and push param value
-        if (contractFileArray[returnLineIndex].includes(' @return ')) {
+        if (
+          contractFileArray[returnLineIndex] &&
+          contractFileArray[returnLineIndex].includes(' @return ')
+        ) {
           let additionalReturnLineIndexes = [];
           let additionalReturnLineIndex = returnLineIndex;
           while(

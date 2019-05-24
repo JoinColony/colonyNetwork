@@ -56,18 +56,18 @@ This function ensures that the intermediate hashes saved are correct.
 
 ### `confirmJustificationRootHash`
 
-
+Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|round|uint256|
-|index|uint256|
-|branchMask1|uint|
-|siblings1|bytes32[]|
-|branchMask2|uint|
-|siblings2|bytes32[]|
+|round|uint256|The round that the hash is currently in.
+|index|uint256|The index in the round that the hash is currently in
+|branchMask1|uint|The branchmask for the Merkle proof that the currently accepted reputation state (given by `ColonyNetwork.getReputationRootHash()` + `ColonyNetwork.getReputationRootHashNNodes()`, where `+` is concatenation) is at key 0x000..000 in the submitted JRH
+|siblings1|bytes32[]|The siblings for the same Merkle proof
+|branchMask2|uint|The branchmask for the Merkle proof that the proposed new reputation state is at the key corresponding to the number of transactions expected in this update in the submitted JRH. This key should be the number of decay transactions plus the number of transactions the log indicates are to happen.
+|siblings2|bytes32[]|The siblings for the same Merkle proof
 
 
 ### `confirmNewHash`

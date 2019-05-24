@@ -101,18 +101,18 @@ Claim the payout in `_token` denomination for payment `_id`. Here the network re
 
 ### `claimRewardPayout`
 
-
+Claim the reward payout at `_payoutId`. User needs to provide their reputation and colony-wide reputation which will be proven via Merkle proof inside this function. Can only be called if payout is active, i.e if 60 days have not passed from its creation. Can only be called if next in queue
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_payoutId|uint256|
-|_squareRoots|uint256[]|
-|key|bytes|
-|value|bytes|
-|branchMask|uint256|
-|siblings|bytes32[]|
+|_payoutId|uint256|Id of the reward payout
+|_squareRoots|uint256[]|Square roots of values used in equation
+|key|bytes|Some Reputation hash tree key
+|value|bytes|Reputation value
+|branchMask|uint256|The branchmask of the proof
+|siblings|bytes32[]|The siblings of the proof
 
 
 ### `claimTaskPayout`
@@ -141,18 +141,18 @@ Mark a task as complete after the due date has passed. This allows the task to b
 
 ### `executeTaskChange`
 
-
+Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) using the detached signatures for these users.
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_sigV|uint8[]|
-|_sigR|bytes32[]|
-|_sigS|bytes32[]|
-|_mode|uint8[]|
-|_value|uint256|
-|_data|bytes|
+|_sigV|uint8[]|recovery id
+|_sigR|bytes32[]|r output of the ECDSA signature of the transaction
+|_sigS|bytes32[]|s output of the ECDSA signature of the transaction
+|_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
+|_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed
+|_data|bytes|The transaction data
 
 
 ### `executeTaskRoleAssignment`

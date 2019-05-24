@@ -484,20 +484,20 @@ Set the resolver to be used by new instances of ReputationMiningCycle
 
 ### `setReplacementReputationUpdateLogEntry`
 
-
+Set a replacement log Entry if we're in recovery mode.
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_reputationMiningCycle|address|
-|_id|uint256|
-|_user|address|
-|_amount|int|
-|_skillId|uint256|
-|_colony|address|
-|_nUpdates|uint128|
-|_nPreviousUpdates|uint128|
+|_reputationMiningCycle|address|The address of the reputation mining cycle that the log was in.
+|_id|uint256|The number of the log entry in the reputation mining cycle in question.
+|_user|address|The address of the user earning / losing the reputation
+|_amount|int|The amount of reputation being earned / lost
+|_skillId|uint256|The id of the origin skill for the reputation update
+|_colony|address|The address of the colony being updated
+|_nUpdates|uint128|The number of updates the log entry corresponds to
+|_nPreviousUpdates|uint128|The number of updates in the log before this entry
 
 
 ### `setReputationRootHash`
