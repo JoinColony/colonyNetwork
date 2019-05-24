@@ -166,6 +166,8 @@ class ReputationMinerClient {
 
   async updateGasEstimate(block) {
     // Get the average from this block
+    // Logic mostly taken from https://github.com/MetaMask/eth-gas-price-suggestor which
+    // sadly doesn't actually work any more, otherwise I'd have just used it.
     const gasPriceSum = block.transactions
     .map(tx => ethers.utils.bigNumberify(tx.gasPrice))
     .reduce((result, gasPrice) => {
@@ -427,8 +429,12 @@ class ReputationMinerClient {
     // This won't be valid anyway if we're not confirming immediately in the next transaction
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
-      let gasEstimate = await repCycle.estimate.confirmNewHash(round);
-      if (process.env.SOLIDITY_COVERAGE) { gasEstimate = ethers.utils.bigNumberify(3500000); }
+      let gasEstimate;
+      if (process.env.SOLIDITY_COVERAGE) { 
+        gasEstimate = ethers.utils.bigNumberify(3500000);
+      } else {
+        gasEstimate = await repCycle.estimate.confirmNewHash(round)
+      }
       // This estimate still goes a bit wrong in ganache, it seems, so we add an extra 10%.
       const confirmNewHashTx = await repCycle.confirmNewHash(round, { gasLimit: gasEstimate.mul(11).div(10) , gasPrice: this._miner.gasPrice });
       console.log("⛏️ Transaction waiting to be mined", confirmNewHashTx.hash);
