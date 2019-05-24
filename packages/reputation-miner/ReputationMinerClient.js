@@ -1,5 +1,3 @@
-import { checkSuccessEthers } from "../../helpers/test-helper";
-
 const ethers = require("ethers");
 const express = require("express");
 const path = require('path');
@@ -409,8 +407,7 @@ class ReputationMinerClient {
     }
     console.log("⛏️ Transaction waiting to be mined", submitRootHashTx.hash);
     
-    // TODO: Think of a better way to do error handling here
-    await checkSuccessEthers(submitRootHashTx.wait());
+    await submitRootHashTx.wait();
     console.log("🆗 New reputation hash submitted successfully");
   }
 
