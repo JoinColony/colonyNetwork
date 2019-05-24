@@ -111,8 +111,7 @@ class ReputationMinerClient {
     this.resolveBlockChecksFinished = undefined;
     await this._miner.initialise(colonyNetworkAddress);
 
-    // TODO: Get latest state from database, then sync to current state on-chain.
-    // However, for now, we're the only miner, so we can just load the current saved state and go from there.
+    // Get latest state from database if available, otherwise sync to current state on-chain
     const latestReputationHash = await this._miner.colonyNetwork.getReputationRootHash();
     await this._miner.createDB();
     await this._miner.loadState(latestReputationHash);
@@ -421,10 +420,6 @@ class ReputationMinerClient {
 
     console.log("⏰ Looks like it's time to confirm the new hash");
     // Confirm hash
-    // We explicitly use the previous nonce +1, in case we're using Infura and we end up
-    // querying a node that hasn't had the above transaction propagate to it yet.
-    // TODO: not sure we need this still: nonce: confirmNewHashTx.nonce + 1 in the tx below
-    // This won't be valid anyway if we're not confirming immediately in the next transaction
     const [round] = await this._miner.getMySubmissionRoundAndIndex();
     if (round && round.gte(0)) {
       let gasEstimate;
