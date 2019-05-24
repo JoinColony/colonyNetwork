@@ -13,9 +13,11 @@ Indicate approval to exit recovery mode. Can only be called by user with recover
 
 
 
+
 ### `checkNotAdditionalProtectedVariable`
 
 Check whether the supplied slot is a protected variable specific to this contract
+
 
 **Parameters**
 
@@ -30,15 +32,18 @@ Put colony network mining into recovery mode. Can only be called by user with re
 
 
 
+
 ### `exitRecoveryMode`
 
 Exit recovery mode, can be called by anyone if enough whitelist approvals are given.
 
 
 
+
 ### `isInRecoveryMode`
 
 Is colony network in recovery mode
+
 
 
 **Return Parameters**
@@ -52,6 +57,7 @@ Is colony network in recovery mode
 Return number of recovery roles.
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -61,6 +67,7 @@ Return number of recovery roles.
 ### `removeRecoveryRole`
 
 Remove colony recovery role. Can only be called by root role.
+
 
 **Parameters**
 
@@ -73,6 +80,7 @@ Remove colony recovery role. Can only be called by root role.
 
 Set new colony recovery role. Can be called by root.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -83,6 +91,7 @@ Set new colony recovery role. Can be called by root.
 ### `setStorageSlotRecovery`
 
 Update value of arbitrary storage variable. Can only be called by user with recovery role.
+
 
 **Parameters**
 

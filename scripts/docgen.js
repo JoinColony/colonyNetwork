@@ -58,6 +58,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
   contract.subNodes.map(method => {
 
     let notice;
+    let dev;
     const params = [];
     const returns = [];
 
@@ -99,6 +100,29 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       additionalNoticeLineIndexes.forEach(index => {
         notice += contractFileArray[index].split('///')[1];
       });
+    }
+
+    // Get natspec dev
+    if (noticeLineIndex) {
+      const additionalDevLineIndexes = [];
+      let devLineIndex = noticeLineIndex + 1;
+      let additionalDevLineIndex = devLineIndex + 1;
+      while(
+        contractFileArray[additionalDevLineIndex] &&
+        contractFileArray[additionalDevLineIndex].includes('///') &&
+        !contractFileArray[additionalDevLineIndex].includes(' @dev ') &&
+        !contractFileArray[additionalDevLineIndex].includes(' @param ') &&
+        !contractFileArray[additionalDevLineIndex].includes(' @return ')
+      ) {
+        additionalDevLineIndexes.push(additionalDevLineIndex);
+        additionalDevLineIndex += 1;
+      }
+      if (contractFileArray[devLineIndex].includes(' @dev ')) {
+        dev = contractFileArray[devLineIndex].split(' @dev ')[1];
+        additionalDevLineIndexes.forEach(index => {
+          dev += contractFileArray[index].split('///')[1];
+        });
+      }
     }
 
     // Get natspec params
@@ -171,6 +195,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       ...method,
       natspec: {
         notice,
+        dev,
         params,
         returns,
       },
@@ -202,6 +227,8 @@ function printMethods(methods) {
 ` + methods.map(method => `
 ### \`${method.name}\`\n
 ${method.natspec.notice ? method.natspec.notice : ''}
+${method.natspec.dev ? `
+*Note: ${method.natspec.dev}*` : ''}
 ${method.parameters && method.parameters.parameters.length ? `
 **Parameters**
 ` + printParams(method.parameters.parameters, method.natspec.params) : ''}

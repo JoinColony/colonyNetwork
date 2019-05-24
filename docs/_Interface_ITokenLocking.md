@@ -11,6 +11,7 @@ order: 5
 
 Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked Before calling this function user has to allow that their tokens can be transferred by token locking contract
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -24,6 +25,7 @@ Deposit `_amount` of colony tokens. Can only be called if user tokens are not lo
 Get ColonyNetwork address
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -33,6 +35,7 @@ Get ColonyNetwork address
 ### `getTotalLockCount`
 
 Get global lock count for a specific token
+
 
 **Parameters**
 
@@ -49,6 +52,7 @@ Get global lock count for a specific token
 ### `getUserLock`
 
 Get user token lock info (lock count and deposited amount)
+
 
 **Parameters**
 
@@ -67,6 +71,7 @@ Get user token lock info (lock count and deposited amount)
 
 Increments sender's lock count to `_lockId`.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -78,6 +83,7 @@ Increments sender's lock count to `_lockId`.
 ### `lockToken`
 
 Locks everyones' tokens on `_token` address
+
 
 **Parameters**
 
@@ -95,6 +101,8 @@ Locks everyones' tokens on `_token` address
 
 Function called to punish people who staked against a new reputation root hash that turned out to be incorrect
 
+*Note: While public, it can only be called successfully by the current ReputationMiningCycle.*
+
 **Parameters**
 
 |Name|Type|Description|
@@ -108,6 +116,8 @@ Function called to punish people who staked against a new reputation root hash t
 
 Set the ColonyNetwork contract address
 
+*Note: ColonyNetwork is used for checking if sender is a colony created on colony network*
+
 **Parameters**
 
 |Name|Type|Description|
@@ -118,6 +128,7 @@ Set the ColonyNetwork contract address
 ### `unlockTokenForUser`
 
 Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1. Can only be called by a colony
+
 
 **Parameters**
 
@@ -131,6 +142,7 @@ Increments the lock counter to `_lockId` for the `_user` if user's lock count is
 ### `withdraw`
 
 Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked
+
 
 **Parameters**
 

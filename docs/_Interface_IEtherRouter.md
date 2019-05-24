@@ -11,6 +11,7 @@ order: 1
 
 
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -22,6 +23,7 @@ order: 1
 
 
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -30,6 +32,7 @@ order: 1
 
 
 ### `setResolver`
+
 
 
 

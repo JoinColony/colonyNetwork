@@ -11,6 +11,7 @@ order: 2
 
 Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members Allowed to be called by the Meta Colony only
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -22,6 +23,7 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 ### `addr`
 
 Returns the address the supplied node resolves do, if we are the resolver
+
 
 **Parameters**
 
@@ -39,6 +41,7 @@ Returns the address the supplied node resolves do, if we are the resolver
 
 Adds a new skill to the global or local skills tree, under skill `_parentSkillId` Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill` Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -55,6 +58,8 @@ Adds a new skill to the global or local skills tree, under skill `_parentSkillId
 
 Adds a reputation update entry to log
 
+*Note: Errors if it is called by anyone but a colony or if skill with id `_skillId` does not exist or*
+
 **Parameters**
 
 |Name|Type|Description|
@@ -67,6 +72,7 @@ Adds a reputation update entry to log
 ### `calculateMinerWeight`
 
 Calculate raw miner weight in WADs
+
 
 **Parameters**
 
@@ -85,6 +91,7 @@ Calculate raw miner weight in WADs
 
 Creates a new colony in the network Note that the token ownership (if there is one) has to be transferred to the newly created colony
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -101,6 +108,7 @@ Creates a new colony in the network Note that the token ownership (if there is o
 
 Create the Meta Colony, same as a normal colony plus the root skill
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -112,6 +120,7 @@ Create the Meta Colony, same as a normal colony plus the root skill
 
 Mark a global skill as deprecated which stops new tasks and payments from using it.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -122,6 +131,7 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 ### `getChildSkillId`
 
 Get the id of the child skill at index `_childSkillIndex` for skill with Id `_skillId`
+
 
 **Parameters**
 
@@ -140,6 +150,7 @@ Get the id of the child skill at index `_childSkillIndex` for skill with Id `_sk
 
 Get the number of colonies in the network
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -157,6 +168,7 @@ Get the number of colonies in the network
 Get the number of colonies in the network
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -166,6 +178,7 @@ Get the number of colonies in the network
 ### `getColonyVersionResolver`
 
 Get the `Resolver` address for Colony contract version `_version`
+
 
 **Parameters**
 
@@ -184,6 +197,7 @@ Get the `Resolver` address for Colony contract version `_version`
 Returns the latest Colony contract version. This is the version used to create all new colonies
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -193,6 +207,7 @@ Returns the latest Colony contract version. This is the version used to create a
 ### `getENSRegistrar`
 
 Returns the address of the ENSRegistrar for the Network
+
 
 
 **Return Parameters**
@@ -206,6 +221,7 @@ Returns the address of the ENSRegistrar for the Network
 Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -215,6 +231,7 @@ Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), retur
 ### `getMetaColony`
 
 Get the Meta Colony address
+
 
 
 **Return Parameters**
@@ -228,6 +245,7 @@ Get the Meta Colony address
 Get the resolver to be used by new instances of ReputationMiningCycle
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -237,6 +255,7 @@ Get the resolver to be used by new instances of ReputationMiningCycle
 ### `getParentSkillId`
 
 Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_skillId`
+
 
 **Parameters**
 
@@ -255,6 +274,7 @@ Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_
 
 Retrieve the orbitdb address corresponding to a registered account
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -270,6 +290,7 @@ Retrieve the orbitdb address corresponding to a registered account
 ### `getReplacementReputationUpdateLogEntry`
 
 Get a replacement log entry (if set) for the log entry _id in the mining cycle that was at the address _reputationMiningCycle
+
 
 **Parameters**
 
@@ -288,6 +309,7 @@ Get a replacement log entry (if set) for the log entry _id in the mining cycle t
 
 Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -303,6 +325,7 @@ Used by the client to avoid doubling the number of RPC calls when syncing from s
 ### `getReputationMiningCycle`
 
 Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to
+
 
 **Parameters**
 
@@ -321,6 +344,7 @@ Get the address of either the active or inactive reputation mining cycle, based 
 Get the skillId of the reputation mining skill. Only set once the metacolony is set up
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -330,6 +354,7 @@ Get the skillId of the reputation mining skill. Only set once the metacolony is 
 ### `getReputationRootHash`
 
 Get the root hash of the current reputation state tree
+
 
 
 **Return Parameters**
@@ -342,6 +367,8 @@ Get the root hash of the current reputation state tree
 
 Get the number of nodes in the current reputation state tree.
 
+*Note: I cannot see a reason why a user's client would need to call this - only stored to help with some edge cases in reputation mining dispute resolution*
+
 
 **Return Parameters**
 
@@ -352,6 +379,7 @@ Get the number of nodes in the current reputation state tree.
 ### `getSkill`
 
 Get the `nParents` and `nChildren` of skill with id `_skillId`
+
 
 **Parameters**
 
@@ -370,6 +398,7 @@ Get the `nParents` and `nChildren` of skill with id `_skillId`
 Get the number of skills in the network including both global and local skills
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -381,6 +410,7 @@ Get the number of skills in the network including both global and local skills
 Get token locking contract address
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -390,6 +420,8 @@ Get token locking contract address
 ### `initialise`
 
 Initialises the colony network by setting the first Colony version resolver to `_resolver` address
+
+*Note: Only allowed to be run once, by the Network owner before any Colony versions are added*
 
 **Parameters**
 
@@ -404,9 +436,11 @@ Creates initial inactive reputation mining cycle
 
 
 
+
 ### `isColony`
 
 Check if specific address is a colony created on colony network
+
 
 **Parameters**
 
@@ -424,6 +458,7 @@ Check if specific address is a colony created on colony network
 
 Reverse lookup a username from an address.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -440,6 +475,7 @@ Reverse lookup a username from an address.
 
 Register a "colony.joincolony.eth" label. Can only be called by a Colony.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -451,6 +487,7 @@ Register a "colony.joincolony.eth" label. Can only be called by a Colony.
 ### `registerUserLabel`
 
 Register a "user.joincolony.eth" label.
+
 
 **Parameters**
 
@@ -464,6 +501,7 @@ Register a "user.joincolony.eth" label.
 
 Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as _feeInverse
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -475,6 +513,7 @@ Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as 
 
 Set the resolver to be used by new instances of ReputationMiningCycle
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -485,6 +524,7 @@ Set the resolver to be used by new instances of ReputationMiningCycle
 ### `setReplacementReputationUpdateLogEntry`
 
 Set a replacement log Entry if we're in recovery mode.
+
 
 **Parameters**
 
@@ -504,6 +544,7 @@ Set a replacement log Entry if we're in recovery mode.
 
 Set a new Reputation root hash and starts a new mining cycle. Can only be called by the ReputationMiningCycle contract.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -518,6 +559,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 
 Sets the token locking address This is only set once, and can't be changed afterwards
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -528,6 +570,7 @@ Sets the token locking address This is only set once, and can't be changed after
 ### `setupRegistrar`
 
 Setup registrar with ENS and root node
+
 
 **Parameters**
 
@@ -543,9 +586,11 @@ Starts a new Reputation Mining cycle. Explicitly called only the first time, sub
 
 
 
+
 ### `startTokenAuction`
 
 Create and start a new `DutchAuction` for the entire amount of `_token` owned by the Colony Network
+
 
 **Parameters**
 
@@ -557,6 +602,7 @@ Create and start a new `DutchAuction` for the entire amount of `_token` owned by
 ### `supportsInterface`
 
 Query if a contract implements an interface
+
 
 **Parameters**
 

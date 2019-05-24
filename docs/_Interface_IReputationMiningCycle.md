@@ -11,6 +11,7 @@ order: 7
 
 Add a new entry to the reputation update log
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -26,6 +27,7 @@ Add a new entry to the reputation update log
 ### `challengeRoundComplete`
 
 Get whether a challenge round is complete
+
 
 **Parameters**
 
@@ -43,6 +45,7 @@ Get whether a challenge round is complete
 
 This function ensures that the intermediate hashes saved are correct.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -57,6 +60,7 @@ This function ensures that the intermediate hashes saved are correct.
 ### `confirmJustificationRootHash`
 
 Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
+
 
 **Parameters**
 
@@ -74,6 +78,7 @@ Verify the Justification Root Hash (JRH) for a submitted reputation hash is plau
 
 Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle, or the last one standing after all others have been proved wrong.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -86,6 +91,7 @@ Confirm a new reputation hash. The hash in question is either the only one that 
 Get the reputation decay constant.
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -96,6 +102,7 @@ Get the reputation decay constant.
 ### `getDisputeRound`
 
 The getter for the disputeRounds mapping
+
 
 **Parameters**
 
@@ -112,6 +119,7 @@ The getter for the disputeRounds mapping
 ### `getEntryHash`
 
 Get the hash for the corresponding entry.
+
 
 **Parameters**
 
@@ -132,6 +140,7 @@ Get the hash for the corresponding entry.
 Get the length of the mining window in seconds
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -141,6 +150,7 @@ Get the length of the mining window in seconds
 ### `getMinStake`
 
 Get the minimum stake of CLNY required to mine
+
 
 
 **Return Parameters**
@@ -154,6 +164,7 @@ Get the minimum stake of CLNY required to mine
 Get the number of hashes that have been invalidated this mining cycle
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -163,6 +174,7 @@ Get the number of hashes that have been invalidated this mining cycle
 ### `getNSubmissionsForHash`
 
 Get the number of submissions miners made of a particular hash / nNodes / jrh combination
+
 
 **Parameters**
 
@@ -183,6 +195,7 @@ Get the number of submissions miners made of a particular hash / nNodes / jrh co
 Get the number of unique hashes that have been submitted this mining cycle
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -192,6 +205,7 @@ Get the number of unique hashes that have been submitted this mining cycle
 ### `getReputationHashSubmission`
 
 The getter for the hashSubmissions mapping, which keeps track of submissions by user.
+
 
 **Parameters**
 
@@ -210,6 +224,7 @@ The getter for the hashSubmissions mapping, which keeps track of submissions by 
 Get the timestamp that the current reputation mining window opened
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -219,6 +234,7 @@ Get the timestamp that the current reputation mining window opened
 ### `getReputationUpdateLogEntry`
 
 Get the `ReputationLogEntry` at index `_id`
+
 
 **Parameters**
 
@@ -237,6 +253,7 @@ Get the `ReputationLogEntry` at index `_id`
 Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract
 
 
+
 **Return Parameters**
 
 |Name|Type|Description|
@@ -246,6 +263,7 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 ### `getSubmissionUser`
 
 Get the address that made a particular submission
+
 
 **Parameters**
 
@@ -266,6 +284,8 @@ Get the address that made a particular submission
 
 Initialise this reputation mining cycle.
 
+*Note: This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract*
+
 **Parameters**
 
 |Name|Type|Description|
@@ -278,6 +298,7 @@ Initialise this reputation mining cycle.
 
 Invalidate a hash that has timed out relative to its opponent its current challenge step. Note that this can be called to 'invalidate' a nonexistent hash, if the round has an odd number of entrants and so the last hash is being given a bye to the next round.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -289,6 +310,7 @@ Invalidate a hash that has timed out relative to its opponent its current challe
 ### `minerSubmittedEntryIndex`
 
 Returns a boolean result of whether the miner has already submitted at this entry index
+
 
 **Parameters**
 
@@ -307,11 +329,14 @@ Returns a boolean result of whether the miner has already submitted at this entr
 
 Resets the timestamp that the submission window opens to `now`
 
+*Note: only allowed to be called by ColonyNetwork*
+
 
 
 ### `respondToBinarySearchForChallenge`
 
 Respond to a binary search step, to eventually discover where two submitted hashes differ in their Justification trees.
+
 
 **Parameters**
 
@@ -325,6 +350,7 @@ Respond to a binary search step, to eventually discover where two submitted hash
 
 
 ### `respondToChallenge`
+
 
 
 
@@ -347,6 +373,7 @@ Respond to a binary search step, to eventually discover where two submitted hash
 
 Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -361,6 +388,7 @@ Start the reputation log with the rewards for the stakers who backed the accepte
 ### `submitRootHash`
 
 Submit a new reputation root hash
+
 
 **Parameters**
 

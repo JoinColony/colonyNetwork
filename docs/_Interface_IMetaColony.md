@@ -11,6 +11,8 @@ order: 4
 
 Add a new global skill
 
+*Note: Calls `IColonyNetwork.addSkill`*
+
 
 **Return Parameters**
 
@@ -21,6 +23,8 @@ Add a new global skill
 ### `addNetworkColonyVersion`
 
 Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
+
+*Note: Calls `IColonyNetwork.addColonyVersion`*
 
 **Parameters**
 
@@ -34,6 +38,8 @@ Adds a new Colony contract version and the address of associated `_resolver` con
 
 Mark a global skill as deprecated which stops new tasks and payments from using it
 
+*Note: Calls `IColonyNetwork.deprecateSkill`*
+
 **Parameters**
 
 |Name|Type|Description|
@@ -45,6 +51,7 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 
 Mints CLNY in the Meta Colony and transfers them to the colony network Only allowed to be called on the Meta Colony by the colony network
 
+
 **Parameters**
 
 |Name|Type|Description|
@@ -55,6 +62,8 @@ Mints CLNY in the Meta Colony and transfers them to the colony network Only allo
 ### `setNetworkFeeInverse`
 
 Set the Colony Network fee inverse amount
+
+*Note: Calls `IColonyNetwork.setFeeInverse`*
 
 **Parameters**
 
