@@ -41,13 +41,14 @@
           provider: {},
           cycleContractAbi: '',
           cycleAddresses: {},
-          cycleAddress: '',
+          cycleAddress: 'loading...',
           selected: '',
           miningCycle: {},
           numEntries: null,
           logEntries: [],
           miningWindowDuration: null,
           reputationMiningWindowOpenTimestamp: null,
+          currentBlockTime: null,
           nUniqueSubmittedHashes: null,
           nInvalidatedHashes: null,
         },
@@ -67,6 +68,9 @@
                 this.reputationMiningWindowOpenTimestamp = reputationMiningWindowOpenTimestamp.toNumber()
               });
 
+            this.provider.getBlock()
+              .then((block) => { this.currentBlockTime = block.timestamp })
+
             this.miningCycle.getNUniqueSubmittedHashes()
               .then((nUniqueSubmittedHashes) => { this.nUniqueSubmittedHashes = nUniqueSubmittedHashes })
 
@@ -82,7 +86,7 @@
           parseLogEntry: function (logEntry) {
             return {
               user: logEntry.user,
-              amount: ethers.utils.formatEther(logEntry.amount._hex),
+              amount: parseInt(logEntry.amount._hex),
               skillId: parseInt(logEntry.skillId._hex),
               colony: logEntry.colony,
               nUpdates: parseInt(logEntry.nUpdates._hex),
@@ -95,26 +99,27 @@
         },
         computed: {
           timeRemaining: function () {
-            const now = parseInt((new Date).getTime() / 1000);
-            const timeRemaining = (this.reputationMiningWindowOpenTimestamp + this.miningWindowDuration) - now;
+            const timeRemaining = (this.reputationMiningWindowOpenTimestamp + this.miningWindowDuration) - this.currentBlockTime;
             return  Math.max(timeRemaining, 0);
           }
         },
         created () {
-          axios.get('http://localhost:3000/repCycleContractDef')
-            .then((res) => { this.cycleContractAbi = res.data.abi });
+          Promise.all([
+            axios.get('repCycleContractDef')
+              .then((res) => { this.cycleContractAbi = res.data.abi }),
 
-          axios.get('http://localhost:3000/repCycleAddresses')
-            .then((res) => { this.cycleAddresses = res.data; });
+            axios.get('repCycleAddresses')
+              .then((res) => { this.cycleAddresses = res.data; }),
 
-          axios.get('http://localhost:3000/network')
-            .then((res) => {
-              if (res.data === 'unknown') {
-                this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-              } else {
-                this.provider = new ethers.providers.InfuraProvider(res.data);
-              }
-            });
+            axios.get('network')
+              .then((res) => {
+                if (res.data === 'unknown') {
+                  this.provider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+                } else {
+                  this.provider = new ethers.providers.InfuraProvider(res.data);
+                }
+              })
+          ]).then((_) => { this.selected = 'active' });
         }
       })
 
