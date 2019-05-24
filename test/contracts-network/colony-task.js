@@ -232,6 +232,26 @@ contract("ColonyTask", accounts => {
       await checkErrorRevert(colony.executeTaskRoleAssignment(sigV, sigR, sigS, sigTypes, 10, txData), "colony-task-role-assignment-non-zero-value");
     });
 
+    it("should not be able to execute task change when the number of signature parts differ", async () => {
+      const taskId = await makeTask({ colony });
+      const sigTypes = [0, 0];
+      const signers = [MANAGER, WORKER];
+      const args = [taskId, WORKER];
+      const { sigV, sigR, sigS, txData } = await getSigsAndTransactionData({
+        colony,
+        taskId,
+        functionName: "setTaskWorkerRole",
+        signers,
+        sigTypes,
+        args
+      });
+
+      await checkErrorRevert(
+        colony.executeTaskRoleAssignment([sigV[0]], sigR, sigS, [0], 0, txData),
+        "colony-task-role-assignment-signatures-count-do-not-match"
+      );
+    });
+
     it("should allow the worker and evaluator roles to be assigned", async () => {
       const newEvaluator = accounts[1];
       expect(MANAGER).to.not.equal(newEvaluator);
