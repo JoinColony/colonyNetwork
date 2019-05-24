@@ -302,6 +302,25 @@ export async function forwardTime(seconds, test) {
   return p;
 }
 
+export async function mineBlock() {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_mine",
+        params: [],
+        id: new Date().getTime()
+      },
+      err => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve();
+      }
+    );
+  });
+}
+
 export function bnSqrt(bn, isGreater) {
   let a = bn.addn(1).divn(2);
   let b = bn;
@@ -591,10 +610,10 @@ async function navigateChallenge(colonyNetwork, client1, client2, errors) {
 
 export async function finishReputationMiningCycle(colonyNetwork, test) {
   // Finish the current cycle. Can only do this at the start of a new cycle, if anyone has submitted a hash in this current cycle.
-  await forwardTime(MINING_CYCLE_DURATION, test);
   const repCycle = await getActiveRepCycle(colonyNetwork);
   const nUniqueSubmittedHashes = await repCycle.getNUniqueSubmittedHashes();
   if (nUniqueSubmittedHashes.gtn(0)) {
+    await forwardTime(MINING_CYCLE_DURATION, test);
     const nInvalidatedHashes = await repCycle.getNInvalidatedHashes();
     if (nUniqueSubmittedHashes.sub(nInvalidatedHashes).eqn(1)) {
       await repCycle.confirmNewHash(nUniqueSubmittedHashes.eqn(1) ? 0 : 1); // Not a general solution - only works for one or two submissions.

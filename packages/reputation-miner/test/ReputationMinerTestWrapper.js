@@ -1,8 +1,8 @@
 import ReputationMiner from "../ReputationMiner";
 
 class ReputationMinerTestWrapper extends ReputationMiner {
-  async submitRootHash(startIndex) {
-    const tx = await super.submitRootHash(startIndex);
+  async submitRootHash(entryIndex) {
+    const tx = await super.submitRootHash(entryIndex);
     return tx.wait();
   }
 

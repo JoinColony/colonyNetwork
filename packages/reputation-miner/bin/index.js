@@ -11,10 +11,10 @@ const ethers = require("ethers");
 const ReputationMinerClient = require("../ReputationMinerClient");
 
 const supportedInfuraNetworks = ["goerli", "rinkeby", "ropsten", "kovan", "mainnet"];
-const { minerAddress, privateKey, colonyNetworkAddress, dbPath, network, localPort } = argv;
+const { minerAddress, privateKey, colonyNetworkAddress, dbPath, network, localPort, syncFrom, auto } = argv;
 
-if ((!minerAddress && !privateKey) || !colonyNetworkAddress) {
-  console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress on the command line!");
+if ((!minerAddress && !privateKey) || !colonyNetworkAddress || !syncFrom) {
+  console.log("❗️ You have to specify all of ( --minerAddress or --privateKey ) and --colonyNetworkAddress and --syncFrom on the command line!");
   process.exit();
 }
 
@@ -33,5 +33,5 @@ if (network) {
   provider = new ethers.providers.JsonRpcProvider(`http://localhost:${localPort || "8545"}`);
 }
 
-const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true, dbPath });
-client.initialise(colonyNetworkAddress);
+const client = new ReputationMinerClient({ loader, minerAddress, privateKey, provider, useJsTree: true, dbPath, auto });
+client.initialise(colonyNetworkAddress, syncFrom);

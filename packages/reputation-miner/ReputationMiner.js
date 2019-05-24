@@ -83,6 +83,7 @@ class ReputationMiner {
     const metaColonyAddress = await this.colonyNetwork.getMetaColony();
     const metaColony = new ethers.Contract(metaColonyAddress, this.colonyContractDef.abi, this.realWallet);
     this.clnyAddress = await metaColony.getToken();
+
     if (this.useJsTree) {
       this.reputationTree = new PatriciaTree();
     } else {
@@ -99,6 +100,7 @@ class ReputationMiner {
 
     this.nReputations = ethers.constants.Zero;
     this.reputations = {};
+    this.gasPrice = ethers.utils.hexlify(20000000000);
   }
 
   /**
@@ -121,12 +123,10 @@ class ReputationMiner {
 
     this.justificationHashes = {};
     this.reverseReputationHashLookup = {};
-
     const addr = await this.colonyNetwork.getReputationMiningCycle(true, { blockTag: blockNumber });
     const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this.realWallet);
 
     // Do updates
-
     this.nReputationsBeforeLatestLog = ethers.utils.bigNumberify(this.nReputations.toString());
     // This is also the number of decays we have.
 
@@ -629,31 +629,45 @@ class ReputationMiner {
    * @param startIndex What index to start searching at when looking for a valid submission
    * @return {Promise}
    */
-  async submitRootHash(startIndex = 1) {
+  async submitRootHash(entryIndex) {
     const hash = await this.getRootHash();
     const nNodes = await this.getRootHashNNodes();
     const jrh = await this.justificationTree.getRootHash();
     const repCycle = await this.getActiveRepCycle();
+
+    if (!entryIndex) {
+      entryIndex = await this.getEntryIndex(); // eslint-disable-line no-param-reassign
+    }
+    let gasEstimate;
+    if (process.env.SOLIDITY_COVERAGE) { 
+      gasEstimate = ethers.utils.bigNumberify(1000000); 
+    } else {
+      gasEstimate = await repCycle.estimate.submitRootHash(hash, nNodes, jrh, entryIndex);
+    }
+
+    // Submit that entry
+    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: gasEstimate, gasPrice: this.gasPrice });
+  }
+
+  async getEntryIndex(startIndex = 1) {
     // Get how much we've staked, and thefore how many entries we have
     const [, balance] = await this.tokenLocking.getUserLock(this.clnyAddress, this.minerAddress);
 
-    let entryIndex;
     for (let i = ethers.utils.bigNumberify(startIndex); i.lte(balance.div(minStake)); i = i.add(1)) {
       const submissionPossible = await this.submissionPossible(i);
       if (submissionPossible) {
-        entryIndex = i;
-        break;
+        return i;
       }
     }
 
-    if (!entryIndex) {
-      throw new Error("No valid entry for submission found.");
-    }
-    // Submit that entry
-    return repCycle.submitRootHash(hash, nNodes, jrh, entryIndex, { gasLimit: 1000000 });
+    throw new Error("No valid entry for submission found.");
   }
 
-  // Function equivalent of submissionPossible, entryQualifies and withinTarget modifiers in ReputationMiningCycle
+  /**
+   * Check whether a hash submission is possible at the given entryIndex
+   * The logic is equivalent to submissionPossible, entryQualifies and withinTarget modifiers in ReputationMiningCycle
+   * @return {Promise} Resolves to a boolean result
+   */
   async submissionPossible(entryIndex) {
     if (entryIndex.eq(0)) {
       throw new Error();
@@ -809,7 +823,21 @@ class ReputationMiner {
       .add(this.nReputationsBeforeLatestLog);
     const [branchMask2, siblings2] = await this.justificationTree.getProof(ReputationMiner.getHexString(totalnUpdates, 64));
     const [round, index] = await this.getMySubmissionRoundAndIndex();
-    return repCycle.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2, { gasLimit: 6000000 });
+    let gasEstimate;
+    if (process.env.SOLIDITY_COVERAGE) { 
+      gasEstimate = ethers.utils.bigNumberify(6000000); 
+    } else {
+      gasEstimate = await repCycle.estimate.confirmJustificationRootHash(round, index, branchMask1, siblings1, branchMask2, siblings2);
+    }
+    return repCycle.confirmJustificationRootHash(
+      round, 
+      index, 
+      branchMask1, 
+      siblings1, 
+      branchMask2,
+      siblings2,
+      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
+    );
   }
 
   /**
@@ -877,9 +905,31 @@ class ReputationMiner {
         siblings
       );
     }
-    return repCycle.respondToBinarySearchForChallenge(round, index, intermediateReputationHash, branchMask.toString(), siblings, {
-      gasLimit: 1000000
-    });
+    let gasEstimate;
+    
+    if (process.env.SOLIDITY_COVERAGE) { 
+      gasEstimate = ethers.utils.bigNumberify(1000000); 
+    } else {
+      gasEstimate = await repCycle.estimate.respondToBinarySearchForChallenge(
+        round, 
+        index, 
+        intermediateReputationHash, 
+        branchMask.toString(),
+        siblings
+      );
+    }
+
+    return repCycle.respondToBinarySearchForChallenge(
+      round, 
+      index, 
+      intermediateReputationHash,
+      branchMask.toString(),
+      siblings,
+      {
+        gasLimit: gasEstimate,
+        gasPrice: this.gasPrice
+      }
+    );
   }
 
   /**
@@ -897,8 +947,16 @@ class ReputationMiner {
 
     const intermediateReputationHash = this.justificationHashes[targetNodeKey].jhLeafValue;
     const [branchMask, siblings] = await this.justificationTree.getProof(targetNodeKey);
+    let gasEstimate;
+    if (process.env.SOLIDITY_COVERAGE) { 
+      gasEstimate = ethers.utils.bigNumberify(1000000); 
+    } else {
+      gasEstimate = await repCycle.estimate.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings);
+    }
+
     return repCycle.confirmBinarySearchResult(round, index, intermediateReputationHash, branchMask, siblings, {
-      gasLimit: 1000000
+      gasLimit: gasEstimate,
+      gasPrice: this.gasPrice
     });
   }
 
@@ -948,7 +1006,8 @@ class ReputationMiner {
       lastAgreeJustifications.childReputationProof.branchMask = lastAgreeJustifications.childAdjacentReputationProof.branchMask;
       lastAgreeJustifications.childReputationProof.siblings = lastAgreeJustifications.childAdjacentReputationProof.siblings;
     }
-    return repCycle.respondToChallenge(
+
+    const functionArgs = [
       [
         round,
         index,
@@ -994,8 +1053,17 @@ class ReputationMiner {
       lastAgreeJustifications.newestReputationProof.siblings,
       lastAgreeJustifications.originReputationProof.siblings,
       lastAgreeJustifications.childReputationProof.siblings,
-      lastAgreeJustifications.adjacentReputationProof.siblings,
-      { gasLimit: 4000000 }
+      lastAgreeJustifications.adjacentReputationProof.siblings]
+    
+    let gasEstimate;
+    if (process.env.SOLIDITY_COVERAGE) { 
+      gasEstimate = ethers.utils.bigNumberify(4000000); 
+    } else {
+      gasEstimate = await repCycle.estimate.respondToChallenge(...functionArgs);
+    }
+
+    return repCycle.respondToChallenge(...functionArgs,
+      { gasLimit: gasEstimate, gasPrice: this.gasPrice }
     );
   }
 
@@ -1057,6 +1125,9 @@ class ReputationMiner {
    * @return {Promise}               A promise that resolves once the state is up-to-date
    */
   async sync(blockNumber, saveHistoricalStates = false) {
+    if (!blockNumber) {
+      throw new Error("Block number not supplied to sync");
+    }
     // Get the events
     const filter = this.colonyNetwork.filters.ReputationMiningCycleComplete(null, null);
     filter.fromBlock = blockNumber;
@@ -1070,7 +1141,6 @@ class ReputationMiner {
     if (localHash === `0x${new BN(0).toString(16, 64)}`) {
       applyLogs = true;
     }
-
     for (let i = 0; i < events.length; i += 1) {
       const event = events[i];
       const hash = event.data.slice(0, 66);

@@ -83,7 +83,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
   /// At the beginning of the submission window, the target is set to 0 and slowly increases to 2^256 - 1.
   modifier withinTarget(bytes32 newHash, uint256 entryIndex) {
     // Check the ticket is a winning one.
-    // All entries are acceptable if the hour-long window is closed, so skip this check if that's the case
+    // All entries are acceptable if the 24 hour-long window is closed, so skip this check if that's the case
     if (!submissionWindowClosed()) {
       uint256 target = (now - reputationMiningWindowOpenTimestamp) * X;
       require(uint256(getEntryHash(msg.sender, entryIndex, newHash)) < target, "colony-reputation-mining-cycle-submission-not-within-target");
@@ -197,6 +197,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
     submittedHashes[newHash][nNodes][jrh].push(msg.sender);
     // Note that they submitted it.
     submittedEntries[msg.sender][entryIndex] = true;
+
+    emit ReputationRootHashSubmitted(msg.sender, newHash, nNodes, jrh, entryIndex);
   }
 
   function confirmNewHash(uint256 roundNumber) public
@@ -295,6 +297,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
           msg.sender,
           MIN_STAKE
         );
+        emit HashInvalidated(opponentSubmission.proposedNewRootHash, opponentSubmission.nNodes, opponentSubmission.jrh);
+
       }
 
       // Note that two hashes have completed this challenge round (either one accepted for now and one rejected, or two rejected)
@@ -306,6 +310,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
         msg.sender,
         MIN_STAKE
       );
+      emit HashInvalidated(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
     }
     //TODO: Can we do some deleting to make calling this as cheap as possible for people?
   }
@@ -377,6 +382,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       disputeRounds[round][idx].challengeStepCompleted += 1;
     }
 
+    emit BinarySearchConfirmed(submission.proposedNewRootHash, submission.nNodes, submission.jrh, disputeRounds[round][idx].lowerBound);
   }
 
   function confirmJustificationRootHash(
@@ -420,6 +426,8 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
 
     // Set bounds for first binary search if it's going to be needed
     disputeRounds[round][index].upperBound = submission.jrhNNodes - 1;
+
+    emit JustificationRootHashConfirmed(submission.proposedNewRootHash, submission.nNodes, submission.jrh);
   }
 
   function appendReputationUpdateLog(
@@ -459,7 +467,7 @@ contract ReputationMiningCycle is ReputationMiningCycleStorage, PatriciaTreeProo
       nPreviousUpdates));
   }
 
-  function getReputationUpdateLogLength() public view returns (uint) {
+  function getReputationUpdateLogLength() public view returns (uint256) {
     return reputationUpdateLog.length;
   }
 
