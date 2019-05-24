@@ -72,7 +72,7 @@ This function ensures that the intermediate hashes saved are correct.
 
 ### `confirmNewHash`
 
-Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
+Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle, or the last one standing after all others have been proved wrong.
 
 **Parameters**
 
@@ -276,7 +276,7 @@ Initialise this reputation mining cycle.
 
 ### `invalidateHash`
 
-Invalidate a hash that has timed out relative to its opponent its current challenge step. Note that this can be called to 'invalidate'
+Invalidate a hash that has timed out relative to its opponent its current challenge step. Note that this can be called to 'invalidate' a nonexistent hash, if the round has an odd number of entrants and so the last hash is being given a bye to the next round.
 
 **Parameters**
 

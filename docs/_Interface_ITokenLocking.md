@@ -117,7 +117,7 @@ Set the ColonyNetwork contract address
 
 ### `unlockTokenForUser`
 
-Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1.
+Increments the lock counter to `_lockId` for the `_user` if user's lock count is less than `_lockId` by 1. Can only be called by a colony
 
 **Parameters**
 

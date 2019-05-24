@@ -9,7 +9,7 @@ order: 3
 
 ### `addDomain`
 
-Add a colony domain, and its respective local skill under skill with id `_parentSkillId`
+Add a colony domain, and its respective local skill under skill with id `_parentSkillId` New funding pot is created and associated with the domain here
 
 **Parameters**
 
@@ -67,7 +67,7 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 
 ### `cancelTask`
 
-Cancel a task at any point before it is finalized. Secured function to authorised members
+Cancel a task at any point before it is finalized. Secured function to authorised members Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`
 
 **Parameters**
 
@@ -78,7 +78,7 @@ Cancel a task at any point before it is finalized. Secured function to authorise
 
 ### `claimColonyFunds`
 
-Move any funds received by the colony in `_token` denomination to the top-level domain pot,
+Move any funds received by the colony in `_token` denomination to the top-level domain pot, siphoning off a small amount to the reward pot. If called against a colony's own token, no fee is taken
 
 **Parameters**
 
@@ -89,7 +89,7 @@ Move any funds received by the colony in `_token` denomination to the top-level 
 
 ### `claimPayment`
 
-Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout.
+Claim the payout in `_token` denomination for payment `_id`. Here the network receives its fee from each payout. Same as for tasks, ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
 
 **Parameters**
 
@@ -117,7 +117,7 @@ Claim the payout in `_token` denomination for payment `_id`. Here the network re
 
 ### `claimTaskPayout`
 
-Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role`
+Claim the payout in `_token` denomination for work completed in task `_id` by contributor with role `_role` Allowed only after task is finalized. Here the network receives its fee from each payout. Ether fees go straight to the Meta Colony whereas Token fees go to the Network to be auctioned off.
 
 **Parameters**
 
@@ -130,7 +130,7 @@ Claim the payout in `_token` denomination for work completed in task `_id` by co
 
 ### `completeTask`
 
-Mark a task as complete after the due date has passed.
+Mark a task as complete after the due date has passed. This allows the task to be rated and finalized (and funds recovered) even in the presence of a worker who has disappeared.
 
 **Parameters**
 
@@ -186,7 +186,7 @@ Finalizes the payment and logs the reputation log updates
 
 ### `finalizeRewardPayout`
 
-Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId`
+Finalises the reward payout. Allows creation of next reward payouts for token that has been used in `_payoutId` Can only be called when reward payout cycle is finished i.e when 60 days have passed from its creation
 
 **Parameters**
 
@@ -623,7 +623,7 @@ Register colony's ENS label
 
 ### `removeTaskEvaluatorRole`
 
-Removing evaluator role
+Removing evaluator role Agreed between manager and currently assigned evaluator
 
 **Parameters**
 
@@ -634,7 +634,7 @@ Removing evaluator role
 
 ### `removeTaskWorkerRole`
 
-Removing worker role
+Removing worker role Agreed between manager and currently assigned worker
 
 **Parameters**
 
@@ -645,7 +645,7 @@ Removing worker role
 
 ### `revealTaskWorkRating`
 
-Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role`
+Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role` Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted (via `IColony.submitTaskWorkRating`) or the 5 day rating period expiring
 
 **Parameters**
 
@@ -659,7 +659,7 @@ Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_
 
 ### `setAdministrationRole`
 
-Set new colony admin role.
+Set new colony admin role. Can be called by root role or architecture role.
 
 **Parameters**
 
@@ -689,7 +689,7 @@ Set `_token` payout for all roles in task `_id` to the respective amounts
 
 ### `setArchitectureRole`
 
-Set new colony architecture role.
+Set new colony architecture role. Can be called by root role or architecture role.
 
 **Parameters**
 
@@ -704,7 +704,7 @@ Set new colony architecture role.
 
 ### `setFundingRole`
 
-Set new colony funding role.
+Set new colony funding role. Can be called by root role or architecture role.
 
 **Parameters**
 
@@ -787,7 +787,7 @@ Set the reward inverse to pay out from revenue. e.g. if the fee is 1% (or 0.01),
 
 ### `setRootRole`
 
-Set new colony root role.
+Set new colony root role. Can be called by root role only.
 
 **Parameters**
 
@@ -799,7 +799,7 @@ Set new colony root role.
 
 ### `setTaskBrief`
 
-Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb
+Set the hash for the task brief, aka task work specification, which identifies the task brief content in ddb Allowed before a task is finalized
 
 **Parameters**
 
@@ -848,7 +848,7 @@ Set `_token` payout for evaluator in task `_id` to `_amount`
 
 ### `setTaskEvaluatorRole`
 
-Assigning evaluator role
+Assigning evaluator role Can only be set if there is no one currently assigned to be an evaluator Manager of the task and user we want to assign role to both need to agree Managers can assign themselves to this role, if there is no one currently assigned to it
 
 **Parameters**
 
@@ -873,7 +873,7 @@ Set `_token` payout for manager in task `_id` to `_amount`
 
 ### `setTaskManagerRole`
 
-Assigning manager role
+Assigning manager role Current manager and user we want to assign role to both need to agree User we want to set here also needs to be an admin Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking
 
 **Parameters**
 
@@ -912,7 +912,7 @@ Set `_token` payout for worker in task `_id` to `_amount`
 
 ### `setTaskWorkerRole`
 
-Assigning worker role
+Assigning worker role Can only be set if there is no one currently assigned to be a worker Manager of the task and user we want to assign role to both need to agree
 
 **Parameters**
 
@@ -924,7 +924,7 @@ Assigning worker role
 
 ### `startNextRewardPayout`
 
-Add a new payment in the colony. Can only be called by users with root permission.
+Add a new payment in the colony. Can only be called by users with root permission. All tokens will be locked, and can be unlocked by calling `waiveRewardPayout` or `claimRewardPayout`.
 
 **Parameters**
 
@@ -939,7 +939,7 @@ Add a new payment in the colony. Can only be called by users with root permissio
 
 ### `submitTaskDeliverable`
 
-Submit the task deliverable, i.e. the output of the work performed for task `_id`
+Submit the task deliverable, i.e. the output of the work performed for task `_id` Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten
 
 **Parameters**
 
@@ -964,7 +964,7 @@ Submit the task deliverable for Worker and rating for Manager
 
 ### `submitTaskWorkRating`
 
-Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role`
+Submit a hashed secret of the rating for work in task `_id` which was performed by user with task role id `_role` Allowed within 5 days period starting which whichever is first from either the deliverable being submitted or the dueDate been reached Allowed only for evaluator to rate worker and for worker to rate manager performance Once submitted ratings can not be changed or overwritten
 
 **Parameters**
 
@@ -1007,7 +1007,7 @@ Helper function that can be used by a client to verify the correctness of a patr
 
 ### `version`
 
-Get the Colony contract version
+Get the Colony contract version Starts from 1 and is incremented with every deployed contract change
 
 
 **Return Parameters**

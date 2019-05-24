@@ -66,8 +66,8 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
     // Set the intial value of params
     const params = [];
 
-    // Set the intial value of returnParams
-    const returnParams = [];
+    // Set the intial value of returns
+    const returns = [];
 
     // Set the methodLineIndex
     const methodLineIndex = contractFileArray.findIndex(line => {
@@ -78,7 +78,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
     let noticeLineIndex = methodLineIndex;
 
     // Find the noticeLineIndex with a maximum number of lines to check
-    while(!contractFileArray[noticeLineIndex].includes( '@notice ')) {
+    while(!contractFileArray[noticeLineIndex].includes(' @notice ')) {
       if (methodLineIndex - maxLines === noticeLineIndex) {
         noticeLineIndex = 0;
         break;
@@ -86,36 +86,88 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       noticeLineIndex -= 1;
     }
 
-    // Update notice value
+    // Check for additional lines and update notice value
     if (noticeLineIndex) {
+      let additionalNoticeLineIndexes = [];
+      let additionalNoticeLineIndex = noticeLineIndex + 1;
+      while(
+        contractFileArray[additionalNoticeLineIndex] &&
+        contractFileArray[additionalNoticeLineIndex].includes('///') &&
+        !contractFileArray[additionalNoticeLineIndex].includes(' @dev ') &&
+        !contractFileArray[additionalNoticeLineIndex].includes(' @param ') &&
+        !contractFileArray[additionalNoticeLineIndex].includes(' @return ') &&
+        !contractFileArray[additionalNoticeLineIndex].includes(' function ')
+      ) {
+        additionalNoticeLineIndexes.push(additionalNoticeLineIndex);
+        additionalNoticeLineIndex += 1;
+      }
       notice = contractFileArray[noticeLineIndex].split(' @notice ')[1];
+      additionalNoticeLineIndexes.forEach(index => {
+        notice += contractFileArray[index].split('///')[1];
+      });
     }
 
-    // Set the initial value of paramLineIndex
-    let paramLineIndex = noticeLineIndex;
-
-    if (method.parameters) {
+    if (noticeLineIndex && method.parameters) {
+      // Set the initial value of paramLineIndex
+      let paramLineIndex = noticeLineIndex + 1;
       // Find the params with a maximum number of lines to check
       while (params.length !== method.parameters.parameters.length) {
         if (noticeLineIndex + maxLines === paramLineIndex) break;
+        // Check for additional lines and update and push param value
         if (contractFileArray[paramLineIndex].includes(' @param ')) {
-          params.push(contractFileArray[paramLineIndex].split(' @param ')[1]);
+          let additionalParamLineIndexes = [];
+          let additionalParamLineIndex = paramLineIndex;
+          while(
+            contractFileArray[additionalParamLineIndex] &&
+            contractFileArray[additionalParamLineIndex].includes('///') &&
+            !contractFileArray[additionalParamLineIndex].includes(' @dev ') &&
+            !contractFileArray[additionalParamLineIndex].includes(' @param ') &&
+            !contractFileArray[additionalParamLineIndex].includes(' @return ') &&
+            !contractFileArray[additionalParamLineIndex].includes(' function ')
+          ) {
+            additionalParamLineIndexes.push(additionalParamLineIndex);
+            additionalParamLineIndex += 1;
+          }
+          let param = contractFileArray[paramLineIndex].split(' @param ')[1];
+          additionalParamLineIndexes.forEach(index => {
+            param += contractFileArray[index].split('///')[1];
+          });
+          // Push to params
+          params.push(param);
         }
         paramLineIndex += 1;
       }
     }
 
-    // Set the initial value of paramLineIndex
-    let returnParamLineIndex = noticeLineIndex;
-
-    if (method.returnParameters) {
+    if (noticeLineIndex && method.returnParameters) {
+      // Set the initial value of paramLineIndex
+      let returnLineIndex = noticeLineIndex + 1;
       // Find the return params with a maximum number of lines to check
-      while (returnParams.length !== method.returnParameters.parameters.length) {
-        if (noticeLineIndex + maxLines === returnParamLineIndex) break;
-        if (contractFileArray[returnParamLineIndex].includes(' @return ')) {
-          returnParams.push(contractFileArray[returnParamLineIndex].split(' @return ')[1]);
+      while (returns.length !== method.returnParameters.parameters.length) {
+        if (noticeLineIndex + maxLines === returnLineIndex) break;
+        // Check for additional lines and update and push param value
+        if (contractFileArray[returnLineIndex].includes(' @return ')) {
+          let additionalReturnLineIndexes = [];
+          let additionalReturnLineIndex = returnLineIndex;
+          while(
+            contractFileArray[additionalReturnLineIndex] &&
+            contractFileArray[additionalReturnLineIndex].includes('///') &&
+            !contractFileArray[additionalReturnLineIndex].includes(' @dev ') &&
+            !contractFileArray[additionalReturnLineIndex].includes(' @param ') &&
+            !contractFileArray[additionalReturnLineIndex].includes(' @return ') &&
+            !contractFileArray[additionalReturnLineIndex].includes(' function ')
+          ) {
+            additionalReturnLineIndexes.push(additionalReturnLineIndex);
+            additionalReturnLineIndex += 1;
+          }
+          let param = contractFileArray[returnLineIndex].split(' @return ')[1];
+          additionalReturnLineIndexes.forEach(index => {
+            param += contractFileArray[index].split('///')[1];
+          });
+          // Push to returns
+          returns.push(param);
         }
-        returnParamLineIndex += 1;
+        returnLineIndex += 1;
       }
     }
 
@@ -125,7 +177,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
       natspec: {
         notice,
         params,
-        returnParams,
+        returns,
       },
     });
 
@@ -160,7 +212,7 @@ ${method.parameters && method.parameters.parameters.length ? `
 ` + printParams(method.parameters.parameters, method.natspec.params) : ''}
 ${method.returnParameters && method.returnParameters.parameters.length ? `
 **Return Parameters**
-` + printParams(method.returnParameters.parameters, method.natspec.returnParams) : ''}
+` + printParams(method.returnParameters.parameters, method.natspec.returns) : ''}
 `).join('');
 
 }

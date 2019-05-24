@@ -9,7 +9,7 @@ order: 6
 
 ### `approveExitRecovery`
 
-Indicate approval to exit recovery mode.
+Indicate approval to exit recovery mode. Can only be called by user with recovery role.
 
 
 
@@ -26,7 +26,7 @@ Check whether the supplied slot is a protected variable specific to this contrac
 
 ### `enterRecoveryMode`
 
-Put colony network mining into recovery mode.
+Put colony network mining into recovery mode. Can only be called by user with recovery role.
 
 
 
@@ -60,7 +60,7 @@ Return number of recovery roles.
 
 ### `removeRecoveryRole`
 
-Remove colony recovery role.
+Remove colony recovery role. Can only be called by root role.
 
 **Parameters**
 
@@ -71,7 +71,7 @@ Remove colony recovery role.
 
 ### `setRecoveryRole`
 
-Set new colony recovery role.
+Set new colony recovery role. Can be called by root.
 
 **Parameters**
 
@@ -82,7 +82,7 @@ Set new colony recovery role.
 
 ### `setStorageSlotRecovery`
 
-Update value of arbitrary storage variable.
+Update value of arbitrary storage variable. Can only be called by user with recovery role.
 
 **Parameters**
 

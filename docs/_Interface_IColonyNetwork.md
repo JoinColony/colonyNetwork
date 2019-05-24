@@ -9,7 +9,7 @@ order: 2
 
 ### `addColonyVersion`
 
-Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
+Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members Allowed to be called by the Meta Colony only
 
 **Parameters**
 
@@ -37,7 +37,7 @@ Returns the address the supplied node resolves do, if we are the resolver
 
 ### `addSkill`
 
-Adds a new skill to the global or local skills tree, under skill `_parentSkillId`
+Adds a new skill to the global or local skills tree, under skill `_parentSkillId` Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill` Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`
 
 **Parameters**
 
@@ -83,7 +83,7 @@ Calculate raw miner weight in WADs
 
 ### `createColony`
 
-Creates a new colony in the network
+Creates a new colony in the network Note that the token ownership (if there is one) has to be transferred to the newly created colony
 
 **Parameters**
 
@@ -302,7 +302,7 @@ Used by the client to avoid doubling the number of RPC calls when syncing from s
 
 ### `getReputationMiningCycle`
 
-Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle
+Get the address of either the active or inactive reputation mining cycle, based on `active`. The active reputation mining cycle is the one currently under consideration by reputation miners. The inactive reputation cycle is the one with the log that is being appended to
 
 **Parameters**
 
@@ -516,7 +516,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 
 ### `setTokenLocking`
 
-Sets the token locking address
+Sets the token locking address This is only set once, and can't be changed afterwards
 
 **Parameters**
 
@@ -539,7 +539,7 @@ Setup registrar with ENS and root node
 
 ### `startNextCycle`
 
-Starts a new Reputation Mining cycle. Explicitly called only the first time,
+Starts a new Reputation Mining cycle. Explicitly called only the first time, subsequently called from within `setReputationRootHash`
 
 
 

@@ -43,7 +43,7 @@ Mark a global skill as deprecated which stops new tasks and payments from using 
 
 ### `mintTokensForColonyNetwork`
 
-Mints CLNY in the Meta Colony and transfers them to the colony network
+Mints CLNY in the Meta Colony and transfers them to the colony network Only allowed to be called on the Meta Colony by the colony network
 
 **Parameters**
 
