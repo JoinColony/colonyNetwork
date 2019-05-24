@@ -110,8 +110,6 @@ class ReputationMinerClient {
   async initialise(colonyNetworkAddress, startingBlock) {
     this.resolveBlockChecksFinished = undefined;
     await this._miner.initialise(colonyNetworkAddress);
-    // TODO: Use this._miner.repCycleContractDef which is already initialised
-    this.repCycleContractDef = await this._loader.load({ contractName: "IReputationMiningCycle" }, { abi: true, address: false });
 
     // TODO: Get latest state from database, then sync to current state on-chain.
     // However, for now, we're the only miner, so we can just load the current saved state and go from there.
@@ -212,7 +210,7 @@ class ReputationMinerClient {
     const block = await this._miner.realProvider.getBlock(blockNumber, true);
     await this.updateGasEstimate(block);
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
+    const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
     const hash = await this._miner.getRootHash();
     const nNodes = await this._miner.getRootHashNNodes();
@@ -376,7 +374,7 @@ class ReputationMinerClient {
 
   async getTwelveBestSubmissions() {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
+    const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
     const [, balance] = await this._miner.tokenLocking.getUserLock(this._miner.clnyAddress, this._miner.minerAddress);
     const reputationMiningWindowOpenTimestamp = await repCycle.getReputationMiningWindowOpenTimestamp();
     const rootHash = await this._miner.getRootHash();
@@ -419,7 +417,7 @@ class ReputationMinerClient {
 
   async confirmEntry() {
     const addr = await this._miner.colonyNetwork.getReputationMiningCycle(true);
-    const repCycle = new ethers.Contract(addr, this.repCycleContractDef.abi, this._miner.realWallet);
+    const repCycle = new ethers.Contract(addr, this._miner.repCycleContractDef.abi, this._miner.realWallet);
 
     console.log("⏰ Looks like it's time to confirm the new hash");
     // Confirm hash
