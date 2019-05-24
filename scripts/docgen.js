@@ -224,8 +224,12 @@ function printParams(params, natspecParams) {
 |---|---|---|
 ${params
   .map((param, index) => {
-    const type = param.typeName.name;
-    const name = param.name ? param.name : type;
+    let arrayType;
+    if (param.typeName.type === 'ArrayTypeName') {
+      arrayType = `${param.typeName.baseTypeName.name}[]`;
+    }
+    const name = param.name || param.typeName.name;
+    const type = param.typeName.name || arrayType || param.name;
     const valid = natspecParams[index] && natspecParams[index].substring(0, name.length) === name
     const description = valid ? natspecParams[index].slice(name.length + 1) : '';
     return `|${name}|${type || 'memory' }|${description}`

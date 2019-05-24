@@ -61,7 +61,7 @@ Get user token lock info (lock count and deposited amount)
 
 |Name|Type|Description|
 |---|---|---|
-|lock|memory|
+|lock|lock|
 
 ### `incrementLockCounterTo`
 
@@ -99,7 +99,7 @@ Function called to punish people who staked against a new reputation root hash t
 
 |Name|Type|Description|
 |---|---|---|
-|_stakers|memory|Array of the addresses of stakers to punish
+|_stakers|address[]|Array of the addresses of stakers to punish
 |_beneficiary|address|Address of beneficiary to receive forfeited stake
 |_amount|uint256|Amount of stake to slash
 

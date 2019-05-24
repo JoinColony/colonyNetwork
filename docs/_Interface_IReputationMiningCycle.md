@@ -51,7 +51,7 @@ This function ensures that the intermediate hashes saved are correct.
 |idx|uint256|The index in the round that the hash we are responding on behalf of is in
 |jhIntermediateValue|bytes|The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
 |branchMask|uint256|The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
-|siblings|memory|The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
+|siblings|bytes32[]|The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
 
 
 ### `confirmJustificationRootHash`
@@ -65,9 +65,9 @@ This function ensures that the intermediate hashes saved are correct.
 |round|uint256|
 |index|uint256|
 |branchMask1|uint|
-|siblings1|memory|
+|siblings1|bytes32[]|
 |branchMask2|uint|
-|siblings2|memory|
+|siblings2|bytes32[]|
 
 
 ### `confirmNewHash`
@@ -107,7 +107,7 @@ The getter for the disputeRounds mapping
 
 |Name|Type|Description|
 |---|---|---|
-|submissions|memory|
+|submissions|undefined[]|
 
 ### `getEntryHash`
 
@@ -203,7 +203,7 @@ The getter for the hashSubmissions mapping, which keeps track of submissions by 
 
 |Name|Type|Description|
 |---|---|---|
-|submission|memory|the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
+|submission|submission|the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
 
 ### `getReputationMiningWindowOpenTimestamp`
 
@@ -230,7 +230,7 @@ Get the `ReputationLogEntry` at index `_id`
 
 |Name|Type|Description|
 |---|---|---|
-|reputationUpdateLogEntry|memory|The Reputation Update Log Entry
+|reputationUpdateLogEntry|reputationUpdateLogEntry|The Reputation Update Log Entry
 
 ### `getReputationUpdateLogLength`
 
@@ -321,7 +321,7 @@ Respond to a binary search step, to eventually discover where two submitted hash
 |idx|uint256|The index in the round that the hash we are responding on behalf of is in
 |jhIntermediateValue|bytes|The contents of the Justification Tree at the key given by `targetNode` (see function description). The value of `targetNode` is computed locally to establish what to submit to this function.
 |branchMask|uint|The branchMask of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
-|siblings|memory|The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
+|siblings|bytes32[]|The siblings of the Merkle proof that `jhIntermediateValue` is the value at key `targetNode`
 
 
 ### `respondToChallenge`
@@ -332,15 +332,15 @@ Respond to a binary search step, to eventually discover where two submitted hash
 
 |Name|Type|Description|
 |---|---|---|
-|u|memory|
-|b32|memory|
-|reputationSiblings|memory|
-|agreeStateSiblings|memory|
-|disagreeStateSiblings|memory|
-|previousNewReputationSiblings|memory|
-|userOriginReputationSiblings|memory|
-|childReputationSiblings|memory|
-|adjacentReputationSiblings|memory|
+|u|uint256[]|
+|b32|bytes32[]|
+|reputationSiblings|bytes32[]|
+|agreeStateSiblings|bytes32[]|
+|disagreeStateSiblings|bytes32[]|
+|previousNewReputationSiblings|bytes32[]|
+|userOriginReputationSiblings|bytes32[]|
+|childReputationSiblings|bytes32[]|
+|adjacentReputationSiblings|bytes32[]|
 
 
 ### `rewardStakersWithReputation`
@@ -351,8 +351,8 @@ Start the reputation log with the rewards for the stakers who backed the accepte
 
 |Name|Type|Description|
 |---|---|---|
-|stakers|memory|The array of stakers addresses to receive the reward.
-|weights|memory|The array of weights determining the proportion of reward to go to each staker
+|stakers|address[]|The array of stakers addresses to receive the reward.
+|weights|uint256[]|The array of weights determining the proportion of reward to go to each staker
 |metaColonyAddress|address|The address of the meta colony, which the special mining skill is earned in
 |reward|uint256|The amount of reputation to be rewarded to each staker
 |miningSkillId|uint256|

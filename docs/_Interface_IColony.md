@@ -61,8 +61,8 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 
 |Name|Type|Description|
 |---|---|---|
-|_users|memory|Array of address to bootstrap with reputation
-|_amount|memory|Amount of reputation/tokens for every address
+|_users|address[]|Array of address to bootstrap with reputation
+|_amount|int[]|Amount of reputation/tokens for every address
 
 
 ### `cancelTask`
@@ -108,11 +108,11 @@ Claim the payout in `_token` denomination for payment `_id`. Here the network re
 |Name|Type|Description|
 |---|---|---|
 |_payoutId|uint256|
-|_squareRoots|memory|
+|_squareRoots|uint256[]|
 |key|bytes|
 |value|bytes|
 |branchMask|uint256|
-|siblings|memory|
+|siblings|bytes32[]|
 
 
 ### `claimTaskPayout`
@@ -147,10 +147,10 @@ Mark a task as complete after the due date has passed. This allows the task to b
 
 |Name|Type|Description|
 |---|---|---|
-|_sigV|memory|
-|_sigR|memory|
-|_sigS|memory|
-|_mode|memory|
+|_sigV|uint8[]|
+|_sigR|bytes32[]|
+|_sigS|bytes32[]|
+|_mode|uint8[]|
 |_value|uint256|
 |_data|bytes|
 
@@ -163,10 +163,10 @@ Executes a task role update transaction `_data` which is approved and signed by 
 
 |Name|Type|Description|
 |---|---|---|
-|_sigV|memory|recovery id
-|_sigR|memory|r output of the ECDSA signature of the transaction
-|_sigS|memory|s output of the ECDSA signature of the transaction
-|_mode|memory|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
+|_sigV|uint8[]|recovery id
+|_sigR|bytes32[]|r output of the ECDSA signature of the transaction
+|_sigS|bytes32[]|s output of the ECDSA signature of the transaction
+|_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
 |_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed
 |_data|bytes|The transaction data
 
@@ -248,7 +248,7 @@ Get a domain by id
 
 |Name|Type|Description|
 |---|---|---|
-|domain|memory|The domain
+|domain|domain|The domain
 
 ### `getDomainCount`
 
@@ -275,7 +275,7 @@ Get the non-mapping properties of a pot by id
 
 |Name|Type|Description|
 |---|---|---|
-|associatedType|memory|
+|associatedType|associatedType|
 |associatedTypeId|uint256|
 |payoutsWeCannotMake|uint256|Number of payouts that cannot be completed with the current funding
 
@@ -354,7 +354,7 @@ Returns an exiting payment
 
 |Name|Type|Description|
 |---|---|---|
-|payment|memory|The Payment data structure
+|payment|payment|The Payment data structure
 
 ### `getPaymentCount`
 
@@ -392,7 +392,7 @@ Get useful information about specific reward payout
 
 |Name|Type|Description|
 |---|---|---|
-|rewardPayoutCycle|memory|
+|rewardPayoutCycle|rewardPayoutCycle|
 
 ### `getTask`
 
@@ -410,12 +410,12 @@ Get the number of tasks in the colony
 |---|---|---|
 |specificationHash|bytes32|
 |deliverableHash|bytes32|
-|status|memory|
+|status|status|
 |dueDate|uint256|
 |fundingPotId|uint256|
 |completionTimestamp|uint256|
 |domainId|uint256|
-|skillIds|memory|
+|skillIds|uint256[]|
 
 ### `getTaskChangeNonce`
 
@@ -477,7 +477,7 @@ Get the `Role` properties back for role `_role` in task `_id`
 
 |Name|Type|Description|
 |---|---|---|
-|role|memory|The Role
+|role|role|The Role
 
 ### `getTaskWorkRatingSecret`
 
@@ -534,7 +534,7 @@ Check whether a given user has a given role for the colony.
 |---|---|---|
 |_user|address|The user whose role we want to check
 |_domainId|uint256|The domain where we want to check for the role
-|_role|memory|The role we want to check for
+|_role|_role|The role we want to check for
 
 **Return Parameters**
 
@@ -934,7 +934,7 @@ Add a new payment in the colony. Can only be called by users with root permissio
 |key|bytes|Some Reputation hash tree key
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
-|siblings|memory|The siblings of the proof
+|siblings|bytes32[]|The siblings of the proof
 
 
 ### `submitTaskDeliverable`
@@ -997,7 +997,7 @@ Helper function that can be used by a client to verify the correctness of a patr
 |key|bytes|The key of the element the proof is for.
 |value|bytes|The value of the element that the proof is for.
 |branchMask|uint256|The branchmask of the proof
-|siblings|memory|The siblings of the proof
+|siblings|bytes32[]|The siblings of the proof
 
 **Return Parameters**
 

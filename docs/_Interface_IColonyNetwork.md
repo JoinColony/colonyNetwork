@@ -282,7 +282,7 @@ Get a replacement log entry (if set) for the log entry _id in the mining cycle t
 
 |Name|Type|Description|
 |---|---|---|
-|reputationLogEntry|memory|
+|reputationLogEntry|reputationLogEntry|
 
 ### `getReplacementReputationUpdateLogsExist`
 
@@ -363,7 +363,7 @@ Get the `nParents` and `nChildren` of skill with id `_skillId`
 
 |Name|Type|Description|
 |---|---|---|
-|skill|memory|The Skill struct
+|skill|skill|The Skill struct
 
 ### `getSkillCount`
 
@@ -510,7 +510,7 @@ Set a new Reputation root hash and starts a new mining cycle. Can only be called
 |---|---|---|
 |newHash|bytes32|The reputation root hash
 |newNNodes|uint256|The updated nodes count value
-|stakers|memory|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
+|stakers|address[]|Array of users who submitted or backed the hash, being accepted here as the new reputation root hash
 |reward|uint256|Amount of CLNY to be distributed as reward to miners
 
 
