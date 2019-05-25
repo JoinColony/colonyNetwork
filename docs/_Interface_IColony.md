@@ -425,7 +425,7 @@ Get useful information about specific reward payout
 
 ### `getTask`
 
-Get the number of tasks in the colony
+Get a task with id `_id`
 
 
 **Parameters**
@@ -438,14 +438,14 @@ Get the number of tasks in the colony
 
 |Name|Type|Description|
 |---|---|---|
-|specificationHash|bytes32|
-|deliverableHash|bytes32|
-|status|status|
-|dueDate|uint256|
-|fundingPotId|uint256|
-|completionTimestamp|uint256|
-|domainId|uint256|
-|skillIds|uint256[]|
+|specificationHash|bytes32|Task brief hash
+|deliverableHash|bytes32|Task deliverable hash
+|status|status|TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
+|dueDate|uint256|Due date
+|fundingPotId|uint256|Id of funding pot for task
+|completionTimestamp|uint256|Task completion timestamp
+|domainId|uint256|Task domain id, default is root colony domain with id 1
+|skillIds|uint256[]|Array of global skill ids assigned to task
 
 ### `getTaskChangeNonce`
 
@@ -515,7 +515,7 @@ Get the `Role` properties back for role `_role` in task `_id`
 
 ### `getTaskWorkRatingSecret`
 
-Get the `ColonyStorage.RatingSecrets` information for task `_id`
+Get the rating secret submitted for role `_role` in task `_id`
 
 
 **Parameters**
@@ -523,13 +523,13 @@ Get the `ColonyStorage.RatingSecrets` information for task `_id`
 |Name|Type|Description|
 |---|---|---|
 |_id|uint256|Id of the task
-|_role|uint8|
+|_role|uint8|Id of the role, as defined in TaskRole enum
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|secret|bytes32|
+|secret|bytes32|Rating secret `bytes32` value
 
 ### `getTaskWorkRatingSecretsInfo`
 

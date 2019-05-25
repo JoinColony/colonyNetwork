@@ -17,7 +17,7 @@ Deposit `_amount` of colony tokens. Can only be called if user tokens are not lo
 |Name|Type|Description|
 |---|---|---|
 |_token|address|
-|_amount|uint256|Amount to withdraw
+|_amount|uint256|
 
 
 ### `getColonyNetwork`

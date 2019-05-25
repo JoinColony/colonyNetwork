@@ -33,7 +33,7 @@ Get whether a challenge round is complete
 
 |Name|Type|Description|
 |---|---|---|
-|round|uint256|umber The round number that the hash being confirmed is in as the only contendender. If only one hash was submitted, then this is zero.
+|round|uint256|
 
 **Return Parameters**
 
@@ -258,7 +258,7 @@ Get the length of the ReputationUpdateLog stored on this instance of the Reputat
 
 |Name|Type|Description|
 |---|---|---|
-|nUpdates|uint128|
+|nUpdates|uint256|
 
 ### `getSubmissionUser`
 

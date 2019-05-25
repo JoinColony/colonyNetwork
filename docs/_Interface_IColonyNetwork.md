@@ -148,20 +148,20 @@ Get the id of the child skill at index `_childSkillIndex` for skill with Id `_sk
 
 ### `getColony`
 
-Get the number of colonies in the network
+Get a colony address by its Id in the network
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_id|uint256|
+|_id|uint256|Id of the colony to get
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|colonyAddress|address|
+|colonyAddress|address|The colony address, if no colony was found, returns 0x0
 
 ### `getColonyCount`
 

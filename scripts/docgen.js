@@ -50,87 +50,89 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
   const ast = parser.parse(contractFileString);
 
+  const contract = ast.children.find(child => {
+    return child.type === 'ContractDefinition'
+  });
+
   const contractFileArray = contractFileString.split('\n');
-  const contract = ast.children.find(child => child.type === 'ContractDefinition');
+
+  function isValidNatspecLine(index) {
+    return (
+      contractFileArray[index] &&
+      contractFileArray[index].includes('///') &&
+      !contractFileArray[index].includes(' @dev ') &&
+      !contractFileArray[index].includes(' @param ') &&
+      !contractFileArray[index].includes(' @return ')
+    );
+  }
 
   const methods = [];
 
   contract.subNodes.map(method => {
 
-    let notice;
-    let dev;
-    const params = [];
-    const returns = [];
+    // Set initial natspec values
+    const natspec = {
+      notice: null,
+      dev: null,
+      params: [],
+      returns: [],
+    }
 
-    // Set the maximum number of lines to check
-    const maxLines = 20;
-
-    // Set the methodLineIndex
+    // Get the index of the line on which the method is declared
     const methodLineIndex = contractFileArray.findIndex(line => {
-      return line.includes(`function ${method.name}`)
+      return line.includes(`function ${method.name}(`)
     });
 
-    // Set the initial value of noticeLineIndex
-    let noticeLineIndex = methodLineIndex;
+    // Get the initial value for the notice line index
+    let noticeLineIndex = methodLineIndex - 1;
 
-    // Find the noticeLineIndex with a maximum number of lines to check
-    while(!contractFileArray[noticeLineIndex].includes(' @notice ')) {
-      if (methodLineIndex - maxLines === noticeLineIndex) {
-        noticeLineIndex = 0;
-        break;
-      }
+    // Get the line index for the natspec notice
+    while(
+      contractFileArray[noticeLineIndex] &&
+      contractFileArray[noticeLineIndex].includes('///') &&
+      !contractFileArray[noticeLineIndex].includes(' @notice ')
+    ) {
       noticeLineIndex -= 1;
     }
 
-    // Get natspec notice
-    if (noticeLineIndex) {
+    // Get the natspec notice
+    if (contractFileArray[noticeLineIndex]) {
       const additionalNoticeLineIndexes = [];
       let additionalNoticeLineIndex = noticeLineIndex + 1;
-      while(
-        contractFileArray[additionalNoticeLineIndex] &&
-        contractFileArray[additionalNoticeLineIndex].includes('///') &&
-        !contractFileArray[additionalNoticeLineIndex].includes(' @dev ') &&
-        !contractFileArray[additionalNoticeLineIndex].includes(' @param ') &&
-        !contractFileArray[additionalNoticeLineIndex].includes(' @return ')
-      ) {
+      while(isValidNatspecLine(additionalNoticeLineIndex)) {
         additionalNoticeLineIndexes.push(additionalNoticeLineIndex);
         additionalNoticeLineIndex += 1;
       }
-      notice = contractFileArray[noticeLineIndex].split(' @notice ')[1];
+      natspec.notice = contractFileArray[noticeLineIndex].split(' @notice ')[1];
       additionalNoticeLineIndexes.forEach(index => {
-        notice += contractFileArray[index].split('///')[1];
+        natspec.notice += contractFileArray[index].split('///')[1];
       });
     }
 
-    // Get natspec dev
-    if (noticeLineIndex) {
+    // Get the natspec dev
+    if (contractFileArray[noticeLineIndex]) {
       const additionalDevLineIndexes = [];
       let devLineIndex = noticeLineIndex + 1;
       let additionalDevLineIndex = devLineIndex + 1;
-      while(
-        contractFileArray[additionalDevLineIndex] &&
-        contractFileArray[additionalDevLineIndex].includes('///') &&
-        !contractFileArray[additionalDevLineIndex].includes(' @dev ') &&
-        !contractFileArray[additionalDevLineIndex].includes(' @param ') &&
-        !contractFileArray[additionalDevLineIndex].includes(' @return ')
-      ) {
+      while(isValidNatspecLine(additionalDevLineIndex)) {
         additionalDevLineIndexes.push(additionalDevLineIndex);
         additionalDevLineIndex += 1;
       }
       if (contractFileArray[devLineIndex].includes(' @dev ')) {
-        dev = contractFileArray[devLineIndex].split(' @dev ')[1];
+        natspec.dev = contractFileArray[devLineIndex].split(' @dev ')[1];
         additionalDevLineIndexes.forEach(index => {
-          dev += contractFileArray[index].split('///')[1];
+          natspec.dev += contractFileArray[index].split('///')[1];
         });
       }
     }
 
-    // Get natspec params
-    if (noticeLineIndex && method.parameters) {
+    // Get the natspec params
+    if (contractFileArray[noticeLineIndex] && method.parameters) {
       let paramLineIndex = noticeLineIndex + 1;
       while (
-        noticeLineIndex + maxLines !== paramLineIndex &&
-        params.length !== method.parameters.parameters.length
+        contractFileArray[paramLineIndex] &&
+        contractFileArray[paramLineIndex].includes('///') &&
+        natspec.params.length !== method.parameters.parameters.length
       ) {
         if (
           contractFileArray[paramLineIndex] &&
@@ -138,13 +140,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
         ) {
           const additionalParamLineIndexes = [];
           let additionalParamLineIndex = paramLineIndex;
-          while(
-            contractFileArray[additionalParamLineIndex] &&
-            contractFileArray[additionalParamLineIndex].includes('///') &&
-            !contractFileArray[additionalParamLineIndex].includes(' @dev ') &&
-            !contractFileArray[additionalParamLineIndex].includes(' @param ') &&
-            !contractFileArray[additionalParamLineIndex].includes(' @return ')
-          ) {
+          while(isValidNatspecLine(additionalParamLineIndex)) {
             additionalParamLineIndexes.push(additionalParamLineIndex);
             additionalParamLineIndex += 1;
           }
@@ -152,18 +148,19 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
           additionalParamLineIndexes.forEach(index => {
             param += contractFileArray[index].split('///')[1];
           });
-          params.push(param);
+          natspec.params.push(param);
         }
         paramLineIndex += 1;
       }
     }
 
-    // Get natspec return params
-    if (noticeLineIndex && method.returnParameters) {
+    // Get the natspec returns
+    if (contractFileArray[noticeLineIndex] && method.returnParameters) {
       let returnLineIndex = noticeLineIndex + 1;
       while (
-        noticeLineIndex + maxLines !== returnLineIndex &&
-        returns.length !== method.returnParameters.parameters.length
+        contractFileArray[returnLineIndex] &&
+        contractFileArray[returnLineIndex].includes('///') &&
+        natspec.returns.length !== method.returnParameters.parameters.length
       ) {
         if (
           contractFileArray[returnLineIndex] &&
@@ -181,25 +178,18 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
             additionalReturnLineIndexes.push(additionalReturnLineIndex);
             additionalReturnLineIndex += 1;
           }
-          let returnParam = contractFileArray[returnLineIndex].split(' @return ')[1];
+          let param = contractFileArray[returnLineIndex].split(' @return ')[1];
           additionalReturnLineIndexes.forEach(index => {
-            returnParam += contractFileArray[index].split('///')[1];
+            param += contractFileArray[index].split('///')[1];
           });
-          returns.push(returnParam);
+          natspec.returns.push(param);
         }
         returnLineIndex += 1;
       }
     }
 
-    methods.push({
-      ...method,
-      natspec: {
-        notice,
-        dev,
-        params,
-        returns,
-      },
-    });
+    // Push the method and append natspec
+    methods.push({ ...method, natspec });
 
   });
 
@@ -254,7 +244,7 @@ ${params
     const type = param.typeName.name || arrayType || param.name;
     const valid = natspecParams[index] && natspecParams[index].substring(0, name.length) === name
     const description = valid ? natspecParams[index].slice(name.length + 1) : '';
-    return `|${name}|${type || 'memory' }|${description}`
+    return `|${name}|${type}|${description}`
   })
   .join('\n')}`;
   }
