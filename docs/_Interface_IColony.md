@@ -116,7 +116,7 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |Name|Type|Description|
 |---|---|---|
 |_payoutId|uint256|Id of the reward payout
-|_squareRoots|uint256[]|Square roots of values used in equation
+|_squareRoots|uint256[7]|Square roots of values used in equation
 |key|bytes|Some Reputation hash tree key
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof

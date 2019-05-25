@@ -358,8 +358,8 @@ Respond to a binary search step, to eventually discover where two submitted hash
 
 |Name|Type|Description|
 |---|---|---|
-|u|uint256[]|
-|b32|bytes32[]|
+|u|uint256[29]|
+|b32|bytes32[8]|
 |reputationSiblings|bytes32[]|
 |agreeStateSiblings|bytes32[]|
 |disagreeStateSiblings|bytes32[]|

@@ -238,7 +238,8 @@ ${params
   .map((param, index) => {
     let arrayType;
     if (param.typeName.type === 'ArrayTypeName') {
-      arrayType = `${param.typeName.baseTypeName.name}[]`;
+      const length = param.typeName.length ? param.typeName.length.number : '';
+      arrayType = `${param.typeName.baseTypeName.name}[${length}]`;
     }
     const name = param.name || param.typeName.name;
     const type = param.typeName.name || arrayType || param.name;
