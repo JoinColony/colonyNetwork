@@ -68,6 +68,8 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
   const methods = [];
 
+  console.log(`Generating ${contract.name} documentation...`);
+
   contract.subNodes.map(method => {
 
     // Set the initial natspec values
@@ -230,7 +232,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
     } else {
 
       // Log warning for any methods without a valid notice line
-      console.warn(`WARNING: ${method.name} is missing a natspec notice`);
+      console.warn(`WARNING: ${method.name} is missing a natspec @notice`);
 
     }
 
@@ -268,20 +270,21 @@ ${method.natspec.dev ? `
 *Note: ${method.natspec.dev}*` : ''}
 ${method.parameters && method.parameters.parameters.length ? `
 **Parameters**
-` + printParams(method.parameters.parameters, method.natspec.params) : ''}
+` + printParams(method, method.parameters.parameters, method.natspec.params) : ''}
 ${method.returnParameters && method.returnParameters.parameters.length ? `
 **Return Parameters**
-` + printParams(method.returnParameters.parameters, method.natspec.returns) : ''}
+` + printParams(method, method.returnParameters.parameters, method.natspec.returns) : ''}
 `).join('');
 }
 
-function printParams(params, natspecParams) {
+function printParams(method, params, natspecParams) {
   if (params.length) {
     return `
 |Name|Type|Description|
 |---|---|---|
 ${params
   .map((param, index) => {
+    const name = param.name || param.typeName.name;
     let arrayType;
     let userDefinedType;
     if (param.typeName.type === 'ArrayTypeName') {
@@ -291,11 +294,18 @@ ${params
     if (param.typeName.type === 'UserDefinedTypeName') {
       userDefinedType = param.typeName.namePath;
     }
-    const name = param.name || param.typeName.name;
     const type = param.typeName.name || arrayType || userDefinedType;
-    const valid = natspecParams[index] && natspecParams[index].substring(0, name.length) === name
-    const description = valid ? natspecParams[index].slice(name.length + 1) : '';
-    return `|${name}|${type}|${description}`
+    let description = '';
+    const matchingDescription = (
+      natspecParams[index] &&
+      natspecParams[index].substring(0, name.length) === name
+    );
+    if (matchingDescription) {
+      description = natspecParams[index].slice(name.length + 1);
+    } else {
+      console.warn(`WARNING: ${method.name} ${name} has no matching natspec comment`);
+    }
+    return `|${name}|${type}|${description}`;
   })
   .join('\n')}`;
   }
