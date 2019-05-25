@@ -65,7 +65,7 @@ Get user token lock info (lock count and deposited amount)
 
 |Name|Type|Description|
 |---|---|---|
-|lock|lock|
+|lock|Lock|
 
 ### `incrementLockCounterTo`
 

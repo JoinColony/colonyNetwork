@@ -305,7 +305,7 @@ Get a replacement log entry (if set) for the log entry _id in the mining cycle t
 
 |Name|Type|Description|
 |---|---|---|
-|reputationLogEntry|reputationLogEntry|
+|reputationLogEntry|ReputationLogEntry|
 
 ### `getReplacementReputationUpdateLogsExist`
 
@@ -393,7 +393,7 @@ Get the `nParents` and `nChildren` of skill with id `_skillId`
 
 |Name|Type|Description|
 |---|---|---|
-|skill|skill|The Skill struct
+|skill|Skill|The Skill struct
 
 ### `getSkillCount`
 

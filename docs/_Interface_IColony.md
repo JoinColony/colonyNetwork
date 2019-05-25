@@ -272,7 +272,7 @@ Get a domain by id
 
 |Name|Type|Description|
 |---|---|---|
-|domain|domain|The domain
+|domain|Domain|The domain
 
 ### `getDomainCount`
 
@@ -302,7 +302,7 @@ Get the non-mapping properties of a pot by id
 
 |Name|Type|Description|
 |---|---|---|
-|associatedType|associatedType|
+|associatedType|FundingPotAssociatedType|
 |associatedTypeId|uint256|
 |payoutsWeCannotMake|uint256|Number of payouts that cannot be completed with the current funding
 
@@ -386,7 +386,7 @@ Returns an exiting payment
 
 |Name|Type|Description|
 |---|---|---|
-|payment|payment|The Payment data structure
+|payment|Payment|The Payment data structure
 
 ### `getPaymentCount`
 
@@ -427,7 +427,7 @@ Get useful information about specific reward payout
 
 |Name|Type|Description|
 |---|---|---|
-|rewardPayoutCycle|rewardPayoutCycle|
+|rewardPayoutCycle|RewardPayoutCycle|
 
 ### `getTask`
 
@@ -446,7 +446,7 @@ Get a task with id `_id`
 |---|---|---|
 |specificationHash|bytes32|Task brief hash
 |deliverableHash|bytes32|Task deliverable hash
-|status|status|TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
+|status|TaskStatus|TaskStatus property. 0 - Active. 1 - Cancelled. 2 - Finalized
 |dueDate|uint256|Due date
 |fundingPotId|uint256|Id of funding pot for task
 |completionTimestamp|uint256|Task completion timestamp
@@ -517,7 +517,7 @@ Get the `Role` properties back for role `_role` in task `_id`
 
 |Name|Type|Description|
 |---|---|---|
-|role|role|The Role
+|role|Role|The Role
 
 ### `getTaskWorkRatingSecret`
 
@@ -578,7 +578,7 @@ Check whether a given user has a given role for the colony. Calls the function o
 |---|---|---|
 |_user|address|The user whose role we want to check
 |_domainId|uint256|The domain where we want to check for the role
-|_role|_role|The role we want to check for
+|_role|ColonyRole|The role we want to check for
 
 **Return Parameters**
 

@@ -218,7 +218,7 @@ The getter for the hashSubmissions mapping, which keeps track of submissions by 
 
 |Name|Type|Description|
 |---|---|---|
-|submission|submission|the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
+|submission|Submission|the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
 
 ### `getReputationMiningWindowOpenTimestamp`
 
@@ -247,7 +247,7 @@ Get the `ReputationLogEntry` at index `_id`
 
 |Name|Type|Description|
 |---|---|---|
-|reputationUpdateLogEntry|reputationUpdateLogEntry|The Reputation Update Log Entry
+|reputationUpdateLogEntry|ReputationLogEntry|The Reputation Update Log Entry
 
 ### `getReputationUpdateLogLength`
 

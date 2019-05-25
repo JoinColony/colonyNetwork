@@ -245,6 +245,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
   `.trim();
 
   fs.writeFileSync(outputFile, md);
+
 };
 
 INTERFACES.forEach(generateMarkdown);
@@ -272,7 +273,6 @@ ${method.returnParameters && method.returnParameters.parameters.length ? `
 **Return Parameters**
 ` + printParams(method.returnParameters.parameters, method.natspec.returns) : ''}
 `).join('');
-
 }
 
 function printParams(params, natspecParams) {
@@ -283,12 +283,16 @@ function printParams(params, natspecParams) {
 ${params
   .map((param, index) => {
     let arrayType;
+    let userDefinedType;
     if (param.typeName.type === 'ArrayTypeName') {
       const length = param.typeName.length ? param.typeName.length.number : '';
       arrayType = `${param.typeName.baseTypeName.name}[${length}]`;
     }
+    if (param.typeName.type === 'UserDefinedTypeName') {
+      userDefinedType = param.typeName.namePath;
+    }
     const name = param.name || param.typeName.name;
-    const type = param.typeName.name || arrayType || param.name;
+    const type = param.typeName.name || arrayType || userDefinedType;
     const valid = natspecParams[index] && natspecParams[index].substring(0, name.length) === name
     const description = valid ? natspecParams[index].slice(name.length + 1) : '';
     return `|${name}|${type}|${description}`
