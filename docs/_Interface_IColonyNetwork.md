@@ -41,6 +41,7 @@ Returns the address the supplied node resolves do, if we are the resolver
 
 Adds a new skill to the global or local skills tree, under skill `_parentSkillId` Only the Meta Colony is allowed to add a global skill, called via `IColony.addGlobalSkill` Any colony is allowed to add a local skill and which is associated with a new domain via `IColony.addDomain`
 
+*Note: Errors if the parent skill does not exist or if this is called by an unauthorised sender*
 
 **Parameters**
 
@@ -291,6 +292,7 @@ Retrieve the orbitdb address corresponding to a registered account
 
 Get a replacement log entry (if set) for the log entry _id in the mining cycle that was at the address _reputationMiningCycle
 
+*Note: colonyAddress will always be set if the replacement exists*
 
 **Parameters**
 
@@ -525,6 +527,7 @@ Set the resolver to be used by new instances of ReputationMiningCycle
 
 Set a replacement log Entry if we're in recovery mode.
 
+*Note: Note that strictly, _nUpdates and _nPreviousUpdates don't need to be set - they're only used during dispute resolution, which these replacement log entries are never used for. However, for ease of resyncing the client, I have decided to include them for now.*
 
 **Parameters**
 
@@ -603,6 +606,7 @@ Create and start a new `DutchAuction` for the entire amount of `_token` owned by
 
 Query if a contract implements an interface
 
+*Note: Interface identification is specified in ERC-165.*
 
 **Parameters**
 

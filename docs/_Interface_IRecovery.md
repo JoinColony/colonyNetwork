@@ -18,6 +18,7 @@ Indicate approval to exit recovery mode. Can only be called by user with recover
 
 Check whether the supplied slot is a protected variable specific to this contract
 
+*Note: No return value, but should throw if protected.*
 
 **Parameters**
 
@@ -92,6 +93,7 @@ Set new colony recovery role. Can be called by root.
 
 Update value of arbitrary storage variable. Can only be called by user with recovery role.
 
+*Note: certain critical variables are protected from editing in this function*
 
 **Parameters**
 

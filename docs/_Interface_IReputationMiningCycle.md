@@ -61,6 +61,7 @@ This function ensures that the intermediate hashes saved are correct.
 
 Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
 
+*Note: The majority of calls to this function will have `round` equal to `0`. The exception to this is when a submitted hash is given a bye, in which case `round` will be nonzero.*
 
 **Parameters**
 
@@ -373,6 +374,7 @@ Respond to a binary search step, to eventually discover where two submitted hash
 
 Start the reputation log with the rewards for the stakers who backed the accepted new reputation root hash.
 
+*Note: Only callable by colonyNetwork*
 
 **Parameters**
 

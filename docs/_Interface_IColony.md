@@ -11,6 +11,7 @@ order: 3
 
 Add a colony domain, and its respective local skill under skill with id `_parentSkillId` New funding pot is created and associated with the domain here
 
+*Note: Adding new domains is currently retricted to one level only, i.e. `_parentDomainId` has to be the root domain id: 1*
 
 **Parameters**
 
@@ -60,6 +61,7 @@ Get the `ColonyAuthority` for the colony
 
 Allows the colony to bootstrap itself by having initial reputation and token `_amount` assigned to users `_users` This reputation is assigned in the colony-wide domain. Secured function to authorised members
 
+*Note: Only allowed to be called when `taskCount` is 0 by authorized addresses*
 
 **Parameters**
 
@@ -73,6 +75,7 @@ Allows the colony to bootstrap itself by having initial reputation and token `_a
 
 Cancel a task at any point before it is finalized. Secured function to authorised members Any funds assigned to its funding pot can be moved back to the domain via `IColony.moveFundsBetweenPots`
 
+*Note: Set the `task.status` property to 1*
 
 **Parameters**
 
@@ -153,6 +156,7 @@ Mark a task as complete after the due date has passed. This allows the task to b
 
 Executes a task update transaction `_data` which is approved and signed by two of its roles (e.g. manager and worker) using the detached signatures for these users.
 
+*Note: The Colony functions which require approval and the task roles to review these are set in `IColony.initialiseColony` at colony creation Upon successful execution the `taskChangeNonces` entry for the task is incremented*
 
 **Parameters**
 
@@ -213,6 +217,7 @@ Finalises the reward payout. Allows creation of next reward payouts for token th
 
 Called after task work rating is complete which closes the task and logs the respective reputation log updates Allowed to be called once per task. Secured function to authorised members
 
+*Note: Set the `task.finalized` property to true*
 
 **Parameters**
 
@@ -285,6 +290,7 @@ Get the number of domains in the colony
 
 Get the non-mapping properties of a pot by id
 
+*Note: For the reward funding pot (e.g. id: 0) this returns (0, 0, 0)*
 
 **Parameters**
 
@@ -695,6 +701,7 @@ Removing worker role Agreed between manager and currently assigned worker
 
 Reveal the secret rating submitted in `IColony.submitTaskWorkRating` for task `_id` and task role with id `_role` Allowed within 5 days period starting which whichever is first from either both rating secrets being submitted (via `IColony.submitTaskWorkRating`) or the 5 day rating period expiring
 
+*Note: Compares the `keccak256(_salt, _rating)` output with the previously submitted rating secret and if they match, sets the task role properties `rated` to `true` and `rating` to `_rating`*
 
 **Parameters**
 
@@ -914,6 +921,7 @@ Set `_token` payout for evaluator in task `_id` to `_amount`
 
 Assigning evaluator role Can only be set if there is no one currently assigned to be an evaluator Manager of the task and user we want to assign role to both need to agree Managers can assign themselves to this role, if there is no one currently assigned to it
 
+*Note: This function can only be called through `executeTaskRoleAssignment`*
 
 **Parameters**
 
@@ -941,6 +949,7 @@ Set `_token` payout for manager in task `_id` to `_amount`
 
 Assigning manager role Current manager and user we want to assign role to both need to agree User we want to set here also needs to be an admin Note that the domain proof data comes at the end here to not interfere with the assembly argument unpacking
 
+*Note: This function can only be called through `executeTaskRoleAssignment`*
 
 **Parameters**
 
@@ -984,6 +993,7 @@ Set `_token` payout for worker in task `_id` to `_amount`
 
 Assigning worker role Can only be set if there is no one currently assigned to be a worker Manager of the task and user we want to assign role to both need to agree
 
+*Note: This function can only be called through `executeTaskRoleAssignment`*
 
 **Parameters**
 
@@ -1013,6 +1023,7 @@ Add a new payment in the colony. Can only be called by users with root permissio
 
 Submit the task deliverable, i.e. the output of the work performed for task `_id` Submission is allowed only to the assigned worker before the task due date. Submissions cannot be overwritten
 
+*Note: Set the `task.deliverableHash` and `task.completionTimestamp` properties*
 
 **Parameters**
 
@@ -1068,6 +1079,7 @@ Upgrades a colony to a new Colony contract version `_newVersion`
 
 Helper function that can be used by a client to verify the correctness of a patricia proof they have been supplied with.
 
+*Note: For more detail about branchMask and siblings, examine the PatriciaTree implementation While public, likely only to be used by the Colony contracts, as it checks that the user is proving their own reputation in the current colony. The `verifyProof` function can be used to verify any proof, though this function is not currently exposed on the Colony's EtherRouter.*
 
 **Parameters**
 
