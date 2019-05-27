@@ -23,7 +23,15 @@ pragma experimental ABIEncoderV2;
 
 
 contract IEtherRouter {
+  /// @notice Sets the resolver address. This is used in the routing of all delegatecalls by the EtherRouter.
+  /// @param _resolver Address of the new Resolver
   function setResolver(address _resolver) public;
+
+  /// @notice Sets the EtherRouter owner. Inherited from DSAuth.
+  /// @param owner_ Address of the new owner
   function setOwner(address owner_) public;
+
+  /// @notice Sets the EtherRouter authority. Inherited from DSAuth.
+  /// @param authority_ Address of the new DSAuthority instance
   function setAuthority(address authority_) public;
 }

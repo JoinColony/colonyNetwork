@@ -24,28 +24,28 @@ import "./IColony.sol";
 /// @title MetaColony interface
 /// @notice All publicly available functions are available here and registered to work with EtherRouter Network contract
 contract IMetaColony is IColony {
-  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network
-  /// Only allowed to be called on the Meta Colony by the colony network
+  /// @notice Mints CLNY in the Meta Colony and transfers them to the colony network.
+  /// Only allowed to be called on the Meta Colony by the colony network.
   /// @param _wad Amount to mint and transfer to the colony network
   function mintTokensForColonyNetwork(uint256 _wad) public;
 
-  /// @notice Add a new global skill
-  /// @dev Calls `IColonyNetwork.addSkill`
+  /// @notice Add a new global skill.
+  /// @dev Calls `IColonyNetwork.addSkill`.
   /// @return skillId Id of the added skill
   function addGlobalSkill() public returns (uint256 skillId);
 
-  /// @notice Mark a global skill as deprecated which stops new tasks and payments from using it
-  /// @dev Calls `IColonyNetwork.deprecateSkill`
+  /// @notice Mark a global skill as deprecated which stops new tasks and payments from using it.
+  /// @dev Calls `IColonyNetwork.deprecateSkill`.
   /// @param _skillId Id of the added skill
   function deprecateGlobalSkill(uint256 _skillId) public;
 
-  /// @notice Set the Colony Network fee inverse amount
-  /// @dev Calls `IColonyNetwork.setFeeInverse`
+  /// @notice Set the Colony Network fee inverse amount.
+  /// @dev Calls `IColonyNetwork.setFeeInverse`.
   /// @param _feeInverse Nonzero amount for the fee inverse
   function setNetworkFeeInverse(uint256 _feeInverse) public;
 
-  /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members
-  /// @dev Calls `IColonyNetwork.addColonyVersion`
+  /// @notice Adds a new Colony contract version and the address of associated `_resolver` contract. Secured function to authorised members.
+  /// @dev Calls `IColonyNetwork.addColonyVersion`.
   /// @param _version The new Colony contract version
   /// @param _resolver Address of the `Resolver` contract which will be used with the underlying `EtherRouter` contract
   function addNetworkColonyVersion(uint256 _version, address _resolver) public;

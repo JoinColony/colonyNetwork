@@ -22,15 +22,15 @@ import "./ReputationMiningCycleDataTypes.sol";
 
 
 contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
-
-  /// @notice The getter for the disputeRounds mapping
+  /// @notice The getter for the disputeRounds mapping.
   /// @param _round The dispute round to query
-  /// @return An array of DisputedEntrys struct for the round. See ReputationMiningCycleDataTypes for the full description of the properties.
+  /// @return submissions An array of DisputedEntrys struct for the round.
+  /// See ReputationMiningCycleDataTypes for the full description of the properties.
   function getDisputeRound(uint256 _round) public view returns (DisputedEntry[] memory submissions);
 
   /// @notice The getter for the hashSubmissions mapping, which keeps track of submissions by user.
   /// @param _user Address of the user
-  /// @return submission the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description
+  /// @return submission the Submission struct for the submission requested. See ReputationMiningCycleDataTypes.sol for the full description.
   function getReputationHashSubmission(address _user) public view returns (Submission memory submission);
 
   /// @notice Get the hash for the corresponding entry.
@@ -40,24 +40,26 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @return entryHash The hash for the corresponding entry
   function getEntryHash(address submitter, uint256 entryIndex, bytes32 newHash) public pure returns (bytes32 entryHash);
 
-  /// @notice Returns a boolean result of whether the miner has already submitted at this entry index
+  /// @notice Returns a boolean result of whether the miner has already submitted at this entry index.
   /// @param _miner The address that submitted the hash
   /// @param _index The index of the entry that they used to submit the hash
   /// @return result Boolean whether the entryIndex was already submitted
   function minerSubmittedEntryIndex(address _miner, uint256 _index) public view returns (bool result);
 
-  /// @notice Resets the timestamp that the submission window opens to `now`
-  /// @dev only allowed to be called by ColonyNetwork
+  /// @notice Resets the timestamp that the submission window opens to `now`.
+  /// @dev only allowed to be called by ColonyNetwork.
   function resetWindow() public;
 
-  /// @notice Submit a new reputation root hash
+  /// @notice Submit a new reputation root hash.
   /// @param newHash The proposed new reputation root hash
   /// @param nNodes Number of nodes in tree with root `newHash`
   /// @param jrh The justifcation root hash for this submission
   /// @param entryIndex The entry number for the given `newHash` and `nNodes`
   function submitRootHash(bytes32 newHash, uint256 nNodes, bytes32 jrh, uint256 entryIndex) public;
 
-  /// @notice Get whether a challenge round is complete
+  /// @notice Get whether a challenge round is complete.
+  /// @param round The round number to check
+  /// @return complete Boolean indicating whether the given round challenge is complete
   function challengeRoundComplete(uint256 round) public view returns (bool complete);
 
   /// @notice Confirm a new reputation hash. The hash in question is either the only one that was submitted this cycle,
@@ -131,7 +133,6 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 27. A dummy variable that should be set to 0. If nonzero, transaction will still work but be slightly more expensive. For an explanation of why this is present, look at the corresponding solidity code.
   /// * 28. The value of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 29. The value of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
-
   /// @param b32 A `bytes32[8]` array. The elements of this array, in order are:
   /// * 1. The colony address in the key of the reputation being changed that the disagreement is over.
   /// * 2. The skillid in the key of the reputation being changed that the disagreement is over.
@@ -142,7 +143,6 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// * 7. The keccak256 hash of the key of the reputation that would be origin-adjacent that proves that the origin reputation does not exist in the tree
   /// * 8. The keccak256 hash of the key of the reputation that would be child-adjacent that proves that the child reputation does not exist in the tree
   /// @dev note that these are all bytes32; the address should be left padded from 20 bytes to 32 bytes. Strictly, I do not believe the padding matters, but you should use 0s for your own sanity!
-
   /// @param reputationSiblings The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
   /// @param agreeStateSiblings The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
   /// @param disagreeStateSiblings The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
@@ -163,7 +163,7 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     bytes32[] memory childReputationSiblings,
     bytes32[] memory adjacentReputationSiblings) public;
 
-  /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible
+  /// @notice Verify the Justification Root Hash (JRH) for a submitted reputation hash is plausible.
   /// @param round The round that the hash is currently in.
   /// @param index The index in the round that the hash is currently in
   /// @param branchMask1 The branchmask for the Merkle proof that the currently accepted reputation state (given by `ColonyNetwork.getReputationRootHash()` + `ColonyNetwork.getReputationRootHashNNodes()`, where `+` is concatenation) is at key 0x000..000 in the submitted JRH
@@ -182,9 +182,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint branchMask2,
     bytes32[] memory siblings2) public;
 
-  /// @notice Add a new entry to the reputation update log
+  /// @notice Add a new entry to the reputation update log.
   /// @param _user The address of the user having their reputation changed by this log entry
-  /// @param _amount The amount by which the user's reputation is going to change. Can be positive or negative
+  /// @param _amount The amount by which the user's reputation is going to change. Can be positive or negative.
   /// @param _skillId The skillId of the reputation being affected
   /// @param _colonyAddress The address of the colony the reputation is being affected in
   /// @param _nParents The number of parent skills the skill defined by the skillId has
@@ -198,11 +198,11 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint128 _nChildren
     ) public;
 
-  /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract
+  /// @notice Get the length of the ReputationUpdateLog stored on this instance of the ReputationMiningCycle contract.
   /// @return nUpdates
   function getReputationUpdateLogLength() public view returns (uint256 nUpdates);
 
-  /// @notice Get the `ReputationLogEntry` at index `_id`
+  /// @notice Get the `ReputationLogEntry` at index `_id`.
   /// @param _id The reputation log members array index of the entry to get
   /// @return reputationUpdateLogEntry The Reputation Update Log Entry
   function getReputationUpdateLogEntry(uint256 _id) public view returns (ReputationLogEntry memory reputationUpdateLogEntry);
@@ -212,8 +212,9 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
   /// @param weights The array of weights determining the proportion of reward to go to each staker
   /// @param metaColonyAddress The address of the meta colony, which the special mining skill is earned in
   /// @param reward The amount of reputation to be rewarded to each staker
-  /// @dev Only callable by colonyNetwork
-  /// @dev Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
+  /// @param miningSkillId Skill id of the special mining skill
+  /// @dev Only callable by colonyNetwork.
+  /// Note that the same address might be present multiple times in `stakers` - this is acceptable, and indicates the
   /// same address backed the same hash multiple times with different entries.
   function rewardStakersWithReputation(
     address[] memory stakers,
@@ -223,36 +224,46 @@ contract IReputationMiningCycle is ReputationMiningCycleDataTypes {
     uint256 miningSkillId
     ) public;
 
-  /// @notice Get the timestamp that the current reputation mining window opened
+  /// @notice Get the timestamp that the current reputation mining window opened.
+  /// @return timestamp The timestamp
   function getReputationMiningWindowOpenTimestamp() public view returns (uint256 timestamp);
 
   /// @notice Initialise this reputation mining cycle.
-  /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract
+  /// @dev This will only be called once, by ColonyNetwork, in the same transaction that deploys this contract.
+  /// @param tokenLocking Address of the TokenLocking contract
+  /// @param clnyToken Address of the CLNY token
   function initialise(address tokenLocking, address clnyToken) public;
 
-  /// @notice Get the number of unique hashes that have been submitted this mining cycle
+  /// @notice Get the number of unique hash/nnodes/jrh sets that have been submitted this mining cycle.
+  /// @return nUniqueSubmittedHashes Number of unique hash/nnodes/jrh sets in this cycle
   function getNUniqueSubmittedHashes() public view returns (uint256 nUniqueSubmittedHashes);
 
-  /// @notice Get the number of hashes that have been invalidated this mining cycle
+  /// @notice Get the number of hashes that have been invalidated this mining cycle.
+  /// @return nInvalidatedHashes Number of invalidated hashes in this mining cycle
   function getNInvalidatedHashes() public view returns (uint256 nInvalidatedHashes);
 
-  /// @notice Get the minimum stake of CLNY required to mine
+  /// @notice Get the minimum stake of CLNY required to mine.
+  /// @return minStake The minimum stake amount
   function getMinStake() public pure returns (uint256 minStake);
 
-  /// @notice Get the length of the mining window in seconds
+  /// @notice Get the length of the mining window in seconds.
+  /// @return miningWindowDuration Duration of the reputation mining window in seconds
   function getMiningWindowDuration() public pure returns (uint256 miningWindowDuration);
 
   /// @notice Get the reputation decay constant.
+  /// @return numerator The numerator of the decay constant
+  /// @return denominator The denominator of the decay constant
   function getDecayConstant() public pure returns (uint256 numerator, uint256 denominator);
 
-  /// @notice Get the address that made a particular submission
+  /// @notice Get the address that made a particular submission.
   /// @param hash The hash that was submitted
   /// @param nNodes The number of nodes that was submitted
   /// @param jrh The JRH of that was submitted
   /// @param index The index of the submission - should be 0-11, as up to twelve submissions can be made.
+  /// @return user Address of the user that submitted the hash / nNodes/ jrh at index
   function getSubmissionUser(bytes32 hash, uint256 nNodes, bytes32 jrh, uint256 index) public view returns (address user);
 
-  /// @notice Get the number of submissions miners made of a particular hash / nNodes / jrh combination
+  /// @notice Get the number of submissions miners made of a particular hash / nNodes / jrh combination.
   /// @param hash The hash that was submitted
   /// @param nNodes The number of nodes that was submitted
   /// @param jrh The JRH of that was submitted
