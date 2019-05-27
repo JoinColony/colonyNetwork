@@ -115,7 +115,7 @@ Get the reputation decay constant.
 
 |Name|Type|Description|
 |---|---|---|
-|submissions|undefined[]|
+|submissions|DisputedEntry[]|
 
 ### `getEntryHash`
 

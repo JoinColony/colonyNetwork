@@ -289,7 +289,7 @@ ${params
     let userDefinedType;
     if (param.typeName.type === 'ArrayTypeName') {
       const length = param.typeName.length ? param.typeName.length.number : '';
-      arrayType = `${param.typeName.baseTypeName.name}[${length}]`;
+      arrayType = `${param.typeName.baseTypeName.name || param.typeName.baseTypeName.namePath}[${length}]`;
     }
     if (param.typeName.type === 'UserDefinedTypeName') {
       userDefinedType = param.typeName.namePath;
