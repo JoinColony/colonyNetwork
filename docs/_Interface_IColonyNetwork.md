@@ -97,7 +97,7 @@ Creates a new colony in the network Note that the token ownership (if there is o
 
 |Name|Type|Description|
 |---|---|---|
-|_tokenAddress|address|Address of an ERC20 token to serve as the colony token
+|_tokenAddress|address|Address of an ERC20 token to serve as the colony token Additionally token can optionally support `mint` as defined in `ERC20Extended` Support for `mint` is mandatory only for the Meta Colony Token
 
 **Return Parameters**
 
@@ -263,7 +263,7 @@ Get the id of the parent skill at index `_parentSkillIndex` for skill with Id `_
 |Name|Type|Description|
 |---|---|---|
 |_skillId|uint256|Id of the skill
-|_parentSkillIndex|uint256|Index of the `skill.parents` array to get
+|_parentSkillIndex|uint256|Index of the `skill.parents` array to get Note that not all parent skill ids are stored here. See `Skill.parents` member for definition on which parents are stored
 
 **Return Parameters**
 

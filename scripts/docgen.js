@@ -163,7 +163,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
             // Get additional natspec param lines
             const additionalParamLineIndexes = [];
-            let additionalParamLineIndex = paramLineIndex;
+            let additionalParamLineIndex = paramLineIndex + 1;
             while(isValidAdditionalLine(additionalParamLineIndex)) {
               additionalParamLineIndexes.push(additionalParamLineIndex);
               additionalParamLineIndex += 1;
@@ -205,7 +205,7 @@ const generateMarkdown = ({ contractFile, templateFile, outputFile }) => {
 
             // Get additional natspec return lines
             const additionalReturnLineIndexes = [];
-            let additionalReturnLineIndex = returnLineIndex;
+            let additionalReturnLineIndex = returnLineIndex + 1;
             while(isValidAdditionalLine(additionalReturnLineIndex)) {
               additionalReturnLineIndexes.push(additionalReturnLineIndex);
               additionalReturnLineIndex += 1;

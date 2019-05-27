@@ -119,7 +119,7 @@ Claim the reward payout at `_payoutId`. User needs to provide their reputation a
 |Name|Type|Description|
 |---|---|---|
 |_payoutId|uint256|Id of the reward payout
-|_squareRoots|uint256[7]|Square roots of values used in equation
+|_squareRoots|uint256[7]|Square roots of values used in equation _squareRoots[0] - square root of user reputation _squareRoots[1] - square root of user tokens _squareRoots[2] - square root of total reputation _squareRoots[3] - square root of total tokens _squareRoots[4] - square root of numerator (user reputation * user tokens) _squareRoots[5] - square root of denominator (total reputation * total tokens) _squareRoots[6] - square root of payout amount
 |key|bytes|Some Reputation hash tree key
 |value|bytes|Reputation value
 |branchMask|uint256|The branchmask of the proof
@@ -166,7 +166,7 @@ Executes a task update transaction `_data` which is approved and signed by two o
 |_sigR|bytes32[]|r output of the ECDSA signature of the transaction
 |_sigS|bytes32[]|s output of the ECDSA signature of the transaction
 |_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
-|_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed
+|_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed Currently we only accept 0 value transactions but this is kept as a future option
 |_data|bytes|The transaction data
 
 
@@ -183,7 +183,7 @@ Executes a task role update transaction `_data` which is approved and signed by 
 |_sigR|bytes32[]|r output of the ECDSA signature of the transaction
 |_sigS|bytes32[]|s output of the ECDSA signature of the transaction
 |_mode|uint8[]|How the signature was generated - 0 for Geth-style (usual), 1 for Trezor-style (only Trezor does this)
-|_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed
+|_value|uint256|The transaction value, i.e. number of wei to be sent when the transaction is executed Currently we only accept 0 value transactions but this is kept as a future option
 |_data|bytes|The transaction data
 
 
@@ -427,7 +427,7 @@ Get useful information about specific reward payout
 
 |Name|Type|Description|
 |---|---|---|
-|rewardPayoutCycle|RewardPayoutCycle|RewardPayoutCycle, containing propertes:
+|rewardPayoutCycle|RewardPayoutCycle|RewardPayoutCycle, containing propertes:  reputationState Reputation root hash at the time of creation  colonyWideReputation Colony wide reputation in `reputationState`  totalTokens Total colony tokens at the time of creation  amount Total amount of tokens taken aside for reward payout  tokenAddress Token address  blockTimestamp Block number at the time of creation
 
 ### `getTask`
 
@@ -1059,7 +1059,7 @@ Submit a hashed secret of the rating for work in task `_id` which was performed 
 |---|---|---|
 |_id|uint256|Id of the task
 |_role|uint8|Id of the role, as defined in TaskRole enum
-|_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50)
+|_ratingSecret|bytes32|`keccak256` hash of a salt and 0-50 rating score (in increments of 10, .e.g 0, 10, 20, 30, 40 or 50) Can be generated via `IColony.generateSecret` helper function
 
 
 ### `upgrade`
