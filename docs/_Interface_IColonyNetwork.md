@@ -103,7 +103,7 @@ Creates a new colony in the network Note that the token ownership (if there is o
 
 |Name|Type|Description|
 |---|---|---|
-|address|address|
+|colonyAddress|address|Address of the newly created colony
 
 ### `createMetaColony`
 
@@ -239,7 +239,7 @@ Get the Meta Colony address
 
 |Name|Type|Description|
 |---|---|---|
-|address|address|
+|colonyAddress|address|The Meta colony address, if no colony was found, returns 0x0
 
 ### `getMiningResolver`
 
