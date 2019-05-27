@@ -58,15 +58,15 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   /// @notice Get a replacement log entry (if set) for the log entry _id in the mining cycle that was at the address _reputationMiningCycle
   /// @param _reputationMiningCycle The address of the reputation mining cycle we are asking about
   /// @param _id The log entry number we wish to see if there is a replacement for
-  /// @return (address, int256, uint256, address, uint256, uint256) An object with the details of the log entry (if it exists)
-  /// @dev colonyAddress will always be set if the replacement exists
+  /// @return reputationLogEntry ReputationLogEntry instance with the details of the log entry (if it exists)
   function getReplacementReputationUpdateLogEntry(address _reputationMiningCycle, uint256 _id) public view returns
     (ReputationLogEntry memory reputationLogEntry);
 
   /// @notice Get whether any replacement log entries have been set for the supplied reputation mining cycle.
   /// @notice Used by the client to avoid doubling the number of RPC calls when syncing from scratch.
   /// @param _reputationMiningCycle The reputation mining cycle address we want to know if any entries have been replaced in.
-  function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool);
+  /// @return exists Boolean indicating whether there is a replacement log
+  function getReplacementReputationUpdateLogsExist(address _reputationMiningCycle) public view returns (bool exists);
 
   /// @notice Get the Meta Colony address
   /// @return colonyAddress The Meta colony address, if no colony was found, returns 0x0
@@ -111,7 +111,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
 
   /// @notice Get the skillId of the reputation mining skill. Only set once the metacolony is set up
   /// @return skillId The skillId of the reputation mining skill.
-  function getReputationMiningSkillId() public view returns (uint256);
+  function getReputationMiningSkillId() public view returns (uint256 skillId);
 
   /// @notice Sets the token locking address
   /// This is only set once, and can't be changed afterwards
@@ -254,7 +254,7 @@ contract IColonyNetwork is ColonyNetworkDataTypes, IRecovery {
   function getMiningResolver() public view returns (address miningResolverAddress);
 
   /// @notice Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), return 100
-  /// @return feeInverse The inverse of the network fee
+  /// @return _feeInverse The inverse of the network fee
   function getFeeInverse() public view returns (uint256 _feeInverse);
 
   /// @notice Set the colony network fee to pay. e.g. if the fee is 1% (or 0.01), pass 100 as _feeInverse

@@ -51,10 +51,12 @@ contract ITokenLocking is TokenLockingDataTypes {
 
   /// @notice Deposit `_amount` of colony tokens. Can only be called if user tokens are not locked
   /// Before calling this function user has to allow that their tokens can be transferred by token locking contract
+  /// @param _token Address of the token to deposit
   /// @param _amount Amount to deposit
   function deposit(address _token, uint256 _amount) public;
 
   /// @notice Withdraw `_amount` of deposited tokens. Can only be called if user tokens are not locked
+  /// @param _token Address of the token to withdraw from
   /// @param _amount Amount to withdraw
   function withdraw(address _token, uint256 _amount) public;
 
@@ -73,7 +75,7 @@ contract ITokenLocking is TokenLockingDataTypes {
   /// @notice Get user token lock info (lock count and deposited amount)
   /// @param _token Address of the token
   /// @param _user Address of the user
-  /// @return Lock object containing
+  /// @return lock Lock object containing
   ///   lockCount User's token lock count
   ///   amount User's deposited amount
   ///   timestamp Timestamp of deposit

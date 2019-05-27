@@ -93,6 +93,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @param _user The user whose role we want to check
   /// @param _domainId The domain where we want to check for the role
   /// @param _role The role we want to check for
+  /// @return hasRole Boolean indicating whether the given user has the given role in domain
   function hasUserRole(address _user, uint256 _domainId, ColonyRole _role) public view returns (bool hasRole);
 
   /// @notice Called once when the colony is created to initialise certain storage slot values
@@ -529,7 +530,7 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get useful information about specific reward payout
   /// @param _payoutId Id of the reward payout
-  /// @return RewardPayoutCycle, containing propertes:
+  /// @return rewardPayoutCycle RewardPayoutCycle, containing propertes:
   ///  reputationState Reputation root hash at the time of creation
   ///  colonyWideReputation Colony wide reputation in `reputationState`
   ///  totalTokens Total colony tokens at the time of creation
@@ -545,8 +546,8 @@ contract IColony is ColonyDataTypes, IRecovery {
 
   /// @notice Get the non-mapping properties of a pot by id
   /// @param _id Id of the pot which details to get
-  /// @return FundingPotAssociatedType The associated type of the current funding pot, e.g. Domain, Task, Payout
-  /// @return uint256 Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
+  /// @return associatedType The FundingPotAssociatedType value of the current funding pot, e.g. Domain, Task, Payout
+  /// @return associatedTypeId Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
   /// @return payoutsWeCannotMake Number of payouts that cannot be completed with the current funding
   /// @dev For the reward funding pot (e.g. id: 0) this returns (0, 0, 0)
   function getFundingPot(uint256 _id) public view returns (
@@ -567,7 +568,7 @@ contract IColony is ColonyDataTypes, IRecovery {
   /// @notice Get the assigned `_token` payouts of pot with id `_potId`
   /// @param _potId Id of the funding pot
   /// @param _token Address of the token, `0x0` value indicates Ether
-  /// @return balance Funding pot payout amount
+  /// @return payout Funding pot payout amount
   function getFundingPotPayout(uint256 _potId, address _token) public view returns (uint256 payout);
 
   /// @notice Move a given amount: `_amount` of `_token` funds from funding pot with id `_fromPot` to one with id `_toPot`.

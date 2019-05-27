@@ -33,13 +33,13 @@ Get whether a challenge round is complete
 
 |Name|Type|Description|
 |---|---|---|
-|round|uint256|
+|round|uint256|The round number to check
 
 **Return Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|complete|bool|
+|complete|bool|Boolean indicating whether the given round challenge is complete
 
 ### `confirmBinarySearchResult`
 
@@ -97,19 +97,19 @@ Get the reputation decay constant.
 
 |Name|Type|Description|
 |---|---|---|
-|numerator|uint256|
-|denominator|uint256|
+|numerator|uint256|The numerator of the decay constant
+|denominator|uint256|The denominator of the decay constant
 
 ### `getDisputeRound`
 
-The getter for the disputeRounds mapping
+
 
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|_round|uint256|The dispute round to query
+|_round|uint256|
 
 **Return Parameters**
 
@@ -146,7 +146,7 @@ Get the length of the mining window in seconds
 
 |Name|Type|Description|
 |---|---|---|
-|miningWindowDuration|uint256|
+|miningWindowDuration|uint256|Duration of the reputation mining window in seconds
 
 ### `getMinStake`
 
@@ -158,7 +158,7 @@ Get the minimum stake of CLNY required to mine
 
 |Name|Type|Description|
 |---|---|---|
-|minStake|uint256|
+|minStake|uint256|The minimum stake amount
 
 ### `getNInvalidatedHashes`
 
@@ -170,7 +170,7 @@ Get the number of hashes that have been invalidated this mining cycle
 
 |Name|Type|Description|
 |---|---|---|
-|nInvalidatedHashes|uint256|
+|nInvalidatedHashes|uint256|Number of invalidated hashes in this mining cycle
 
 ### `getNSubmissionsForHash`
 
@@ -193,7 +193,7 @@ Get the number of submissions miners made of a particular hash / nNodes / jrh co
 
 ### `getNUniqueSubmittedHashes`
 
-Get the number of unique hashes that have been submitted this mining cycle
+Get the number of unique hash/nnodes/jrh sets that have been submitted this mining cycle
 
 
 
@@ -201,7 +201,7 @@ Get the number of unique hashes that have been submitted this mining cycle
 
 |Name|Type|Description|
 |---|---|---|
-|nUniqueSubmittedHashes|uint256|
+|nUniqueSubmittedHashes|uint256|Number of unique hash/nnodes/jrh sets in this cycle
 
 ### `getReputationHashSubmission`
 
@@ -230,7 +230,7 @@ Get the timestamp that the current reputation mining window opened
 
 |Name|Type|Description|
 |---|---|---|
-|timestamp|uint256|
+|timestamp|uint256|The timestamp
 
 ### `getReputationUpdateLogEntry`
 
@@ -279,7 +279,7 @@ Get the address that made a particular submission
 
 |Name|Type|Description|
 |---|---|---|
-|user|address|
+|user|address|Address of the user that submitted the hash / nNodes/ jrh at index
 
 ### `initialise`
 
@@ -291,8 +291,8 @@ Initialise this reputation mining cycle.
 
 |Name|Type|Description|
 |---|---|---|
-|tokenLocking|address|
-|clnyToken|address|
+|tokenLocking|address|Address of the TokenLocking contract
+|clnyToken|address|Address of the CLNY token
 
 
 ### `invalidateHash`
@@ -352,22 +352,23 @@ Respond to a binary search step, to eventually discover where two submitted hash
 
 ### `respondToChallenge`
 
+Respond to challenge, to establish which (if either) of the two submissions facing off are correct.
 
-
+*Note: note that these are all bytes32; the address should be left padded from 20 bytes to 32 bytes. Strictly, I do not believe the padding matters, but you should use 0s for your own sanity!*
 
 **Parameters**
 
 |Name|Type|Description|
 |---|---|---|
-|u|uint256[29]|
-|b32|bytes32[8]|
-|reputationSiblings|bytes32[]|
-|agreeStateSiblings|bytes32[]|
-|disagreeStateSiblings|bytes32[]|
-|previousNewReputationSiblings|bytes32[]|
-|userOriginReputationSiblings|bytes32[]|
-|childReputationSiblings|bytes32[]|
-|adjacentReputationSiblings|bytes32[]|
+|u|uint256[29]|A `uint256[27]` array. The elements of this array, in order are:
+|b32|bytes32[8]|A `bytes32[8]` array. The elements of this array, in order are:
+|reputationSiblings|bytes32[]|The siblings of the Merkle proof that the reputation corresponding to `_reputationKey` is in the reputation state before and after the disagreement
+|agreeStateSiblings|bytes32[]|The siblings of the Merkle proof that the last reputation state the submitted hashes agreed on is in this submitted hash's justification tree
+|disagreeStateSiblings|bytes32[]|The siblings of the Merkle proof that the first reputation state the submitted hashes disagreed on is in this submitted hash's justification tree
+|previousNewReputationSiblings|bytes32[]|The siblings of the Merkle proof of the newest reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+|userOriginReputationSiblings|bytes32[]|Nonzero for child updates only. The siblings of the Merkle proof of the user's origin skill reputation added to the reputation tree in the last reputation state the submitted hashes agree on
+|childReputationSiblings|bytes32[]|Nonzero for child updates of a colony-wide global skill. The siblings of the Merkle proof of the child skill reputation of the user in the same skill this global update is for
+|adjacentReputationSiblings|bytes32[]|Nonzero for updates involving insertion of a new skill. The siblings of the Merkle proof of a reputation in the agree state that ends adjacent to the new reputation
 
 
 ### `rewardStakersWithReputation`
@@ -384,7 +385,7 @@ Start the reputation log with the rewards for the stakers who backed the accepte
 |weights|uint256[]|The array of weights determining the proportion of reward to go to each staker
 |metaColonyAddress|address|The address of the meta colony, which the special mining skill is earned in
 |reward|uint256|The amount of reputation to be rewarded to each staker
-|miningSkillId|uint256|
+|miningSkillId|uint256|Skill id of the special mining skill
 
 
 ### `submitRootHash`

@@ -16,8 +16,8 @@ Deposit `_amount` of colony tokens. Can only be called if user tokens are not lo
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|
-|_amount|uint256|
+|_token|address|Address of the token to deposit
+|_amount|uint256|Amount to deposit
 
 
 ### `getColonyNetwork`
@@ -65,7 +65,7 @@ Get user token lock info (lock count and deposited amount)
 
 |Name|Type|Description|
 |---|---|---|
-|lock|Lock|
+|lock|Lock|Lock object containing
 
 ### `incrementLockCounterTo`
 
@@ -148,5 +148,5 @@ Withdraw `_amount` of deposited tokens. Can only be called if user tokens are no
 
 |Name|Type|Description|
 |---|---|---|
-|_token|address|
-|_amount|uint256|
+|_token|address|Address of the token to withdraw from
+|_amount|uint256|Amount to withdraw

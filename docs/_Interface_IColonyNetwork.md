@@ -227,7 +227,7 @@ Return 1 / the fee to pay to the network. e.g. if the fee is 1% (or 0.01), retur
 
 |Name|Type|Description|
 |---|---|---|
-|_feeInverse|uint256|
+|_feeInverse|uint256|The inverse of the network fee
 
 ### `getMetaColony`
 
@@ -292,7 +292,6 @@ Retrieve the orbitdb address corresponding to a registered account
 
 Get a replacement log entry (if set) for the log entry _id in the mining cycle that was at the address _reputationMiningCycle
 
-*Note: colonyAddress will always be set if the replacement exists*
 
 **Parameters**
 
@@ -305,7 +304,7 @@ Get a replacement log entry (if set) for the log entry _id in the mining cycle t
 
 |Name|Type|Description|
 |---|---|---|
-|reputationLogEntry|ReputationLogEntry|
+|reputationLogEntry|ReputationLogEntry|ReputationLogEntry instance with the details of the log entry (if it exists)
 
 ### `getReplacementReputationUpdateLogsExist`
 
@@ -322,7 +321,7 @@ Used by the client to avoid doubling the number of RPC calls when syncing from s
 
 |Name|Type|Description|
 |---|---|---|
-|bool|bool|
+|exists|bool|Boolean indicating whether there is a replacement log
 
 ### `getReputationMiningCycle`
 
@@ -351,7 +350,7 @@ Get the skillId of the reputation mining skill. Only set once the metacolony is 
 
 |Name|Type|Description|
 |---|---|---|
-|uint256|uint256|
+|skillId|uint256|The skillId of the reputation mining skill.
 
 ### `getReputationRootHash`
 

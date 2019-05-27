@@ -302,8 +302,8 @@ Get the non-mapping properties of a pot by id
 
 |Name|Type|Description|
 |---|---|---|
-|associatedType|FundingPotAssociatedType|
-|associatedTypeId|uint256|
+|associatedType|FundingPotAssociatedType|The FundingPotAssociatedType value of the current funding pot, e.g. Domain, Task, Payout
+|associatedTypeId|uint256|Id of the associated type, e.g. if associatedType = FundingPotAssociatedType.Domain, this refers to the domainId
 |payoutsWeCannotMake|uint256|Number of payouts that cannot be completed with the current funding
 
 ### `getFundingPotBalance`
@@ -352,7 +352,7 @@ Get the assigned `_token` payouts of pot with id `_potId`
 
 |Name|Type|Description|
 |---|---|---|
-|payout|uint256|
+|payout|uint256|Funding pot payout amount
 
 ### `getNonRewardPotsTotal`
 
@@ -427,7 +427,7 @@ Get useful information about specific reward payout
 
 |Name|Type|Description|
 |---|---|---|
-|rewardPayoutCycle|RewardPayoutCycle|
+|rewardPayoutCycle|RewardPayoutCycle|RewardPayoutCycle, containing propertes:
 
 ### `getTask`
 
@@ -584,7 +584,7 @@ Check whether a given user has a given role for the colony. Calls the function o
 
 |Name|Type|Description|
 |---|---|---|
-|hasRole|bool|
+|hasRole|bool|Boolean indicating whether the given user has the given role in domain
 
 ### `initialiseColony`
 
