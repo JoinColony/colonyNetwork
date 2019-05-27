@@ -151,7 +151,8 @@ contract IColony is ColonyDataTypes, IRecovery {
   // Implemented in ColonyPayment.sol
   /// @notice Add a new payment in the colony. Secured function to authorised members.
   /// @param _permissionDomainId The domainId in which I have the permission to take this action
-  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`
+  /// @param _childSkillIndex The index that the `_domainId` is relative to `_permissionDomainId`, 
+  /// (only used if `_permissionDomainId` is different to `_domainId`)
   /// @param _recipient Address of the payment recipient
   /// @param _token Address of the token, `0x0` value indicates Ether
   /// @param _amount Payout amount
